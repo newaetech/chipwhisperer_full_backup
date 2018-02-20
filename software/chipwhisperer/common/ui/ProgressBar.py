@@ -23,12 +23,13 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
+import sys
 from datetime import *
 from ..utils import util
 
 
 class ProgressBarText(object):
-    def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues=None, show=True, parent=None):
+    def __init__(self, title="Progress", text=None, statusMask="Initializing...", textValues=None, show=True, parent=None):
         self.title = title
         self.last = self.currentProgress = 0
         self.maximum = 100
@@ -41,7 +42,8 @@ class ProgressBarText(object):
         self.printAll = False
         ProgressBarText.setText(self, text)
         logging.info(self.title + ": " + self.getStatusText())
-        if __debug__: logging.debug('Created: ' + str(self))
+        if __debug__:
+            logging.debug('Created: ' + str(self))
 
     def __enter__(self):
         pass
@@ -77,8 +79,8 @@ class ProgressBarText(object):
         return self.statusMask
 
     def printStatus(self):
-        if self.maximum!=0:
-            logging.info(self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getStatusText() + ")")
+        if self.maximum != 0:
+            logging.info(self.title + (": %.1f" % ((self.currentProgress / self.maximum) * 100)) + "% (" + self.getStatusText() + ")")
             logging.info(self.title + ": ETA " + self.getETA())
 
     def getETA(self):
@@ -131,6 +133,75 @@ class ProgressBarText(object):
     def printAll(self, value):
         self.printAll = value
 
+
+ProgressBar = ProgressBarText
+
+try:
+    import tqdm
+
+    class TqdmLogger(object):
+        def __init__(self, stream=sys.stderr):
+            self.stream = stream
+
+        def write(self, x):
+            x = x.rstrip()
+            if x:
+                tqdm.tqdm.write(x, file=self.stream)
+
+
+    class ProgressBarTqdm(ProgressBarText):
+        def __init__(self, title="Progress", text=None, statusMask="Initializing...", textValues=None, show=True, parent=None):
+            ProgressBarText.__init__(self, title=title, text=text, statusMask=statusMask, textValues=textValues)
+            self.tqdm_last = 0
+            self.tqdm = tqdm.tqdm(total=self.maximum, unit="traces",
+                                  initial=self.currentProgress,
+                                  dynamic_ncols=True)
+            self.tqdm.set_description(self.title, refresh=False)
+            self.tqdm.set_postfix_str(self.getStatusText(), refresh=False)
+
+        def __enter__(self):
+            ProgressBarText.__enter__(self)
+            self.orig_logger = logging.root.handlers[0].stream
+            logging.root.handlers[0].stream = TqdmLogger(self.orig_logger)
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            logging.root.handlers[0].stream = self.orig_logger
+            return ProgressBarText.__exit__(self, exc_type, exc_val, exc_tb)
+
+        def printStatus(self):
+            self.tqdm.refresh()
+
+        def updateStatus(self, currentProgress, textValues=None):
+            self.textValues = textValues
+            self.currentProgress = currentProgress
+            if self.tqdm_last != currentProgress:
+                self.tqdm.set_postfix_str(self.getStatusText())
+                self.tqdm.update(currentProgress - self.tqdm_last)
+                self.tqdm_last = currentProgress
+            util.updateUI()
+
+        def close(self):
+            self.tqdm.close()
+            ProgressBarText.close(self)
+
+        def setMaximum(self, value):
+            ProgressBarText.setMaximum(self, value)
+            if value != self.tqdm.total:
+                self.tqdm.leave = False
+                self.tqdm.close()
+                self.tqdm = tqdm.tqdm(total=value, unit="traces",
+                                      initial=self.currentProgress,
+                                      dynamic_ncols=True)
+                self.tqdm.set_description(self.title)
+                self.tqdm.set_postfix_str(self.getStatusText())
+                self.tqdm.refresh()
+
+    ProgressBar = ProgressBarTqdm
+
+except ImportError:
+    ProgressBarTqdm = ProgressBarText
+
+
 try:
     from PySide.QtCore import *
     from PySide.QtGui import *
@@ -138,8 +209,7 @@ try:
 
     class ProgressBarGUI(qt_tweaks.QDialog, ProgressBarText):
         def __init__(self, title="Progress", text=None, statusMask="Initializing...", textValues=None, show=True, parent=None):
-
-            ProgressBarText.__init__(self, title = title, text=text, statusMask=statusMask, textValues=textValues)
+            ProgressBarText.__init__(self, title=title, text=text, statusMask=statusMask, textValues=textValues)
             QDialog.__init__(self, parent)
 
             self.setAttribute(Qt.WA_DeleteOnClose)  # Close and delete all windows/QObj that has it as a parent when closing
@@ -178,7 +248,7 @@ try:
             ProgressBarText.setStatusMask(self, statusTextMask, textValues)
             self.updateStatus(self.currentProgress, textValues)
 
-        def abort(self, message = None):
+        def abort(self, message=None):
             ProgressBarText.abort(self, message)
             if message:
                 QMessageBox.warning(self, "Warning", "Could not complete the execution:\n\n" + self.getStatusText())
@@ -202,4 +272,4 @@ try:
     ProgressBar = ProgressBarGUI
 
 except ImportError:
-    ProgressBar = ProgressBarText
+    pass
