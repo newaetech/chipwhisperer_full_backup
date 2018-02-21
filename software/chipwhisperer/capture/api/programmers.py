@@ -134,9 +134,9 @@ class STM32FProgrammer(Programmer):
         self.stm32 = iface
         self.stm32.setChip(self.supported_chips[0])
 
-    def open_and_find(self):
+    def open_and_find(self, log_func=None):
         self.stm32.open_port()
-        sig, chip = self.stm32.find()
+        sig, chip = self.stm32.find(logfunc=log_func)
 
         # Print signature of unknown device
         if chip is None:

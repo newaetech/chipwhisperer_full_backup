@@ -306,6 +306,17 @@ class STM32FProgrammerDialog(QtFixes.QDialog):
         layoutBut.addWidget(progFlashBut)
         layout.addLayout(layoutBut)
 
+        layoutsetting = QHBoxLayout()
+        mode = QComboBox()
+        mode.addItem("fast", False)
+        mode.addItem("slow", True)
+        mode.currentIndexChanged.connect(self.modechanged)
+        layoutsetting.addWidget(QLabel("Speed:"))
+        layoutsetting.addWidget(mode)
+        layoutsetting.addStretch()
+
+        layout.addLayout(layoutsetting)
+
         # Add status stuff
         self.statusLine = QPlainTextEdit()
         self.statusLine.setReadOnly(True)
@@ -315,6 +326,9 @@ class STM32FProgrammerDialog(QtFixes.QDialog):
 
         # Set dialog layout
         self.setLayout(layout)
+
+    def modechanged(self, newmode):
+        self.stm32f.slow_speed = newmode
 
     def append(self, text):
         self.statusLine.appendPlainText(text)
@@ -327,7 +341,7 @@ class STM32FProgrammerDialog(QtFixes.QDialog):
             QSettings().setValue("stm32f-flash-location", fname)
 
     def readSignature(self, close=True):
-        self.stm32f.open_and_find()
+        self.stm32f.open_and_find(log_func=self.statusLine.appendPlainText)
         if close:
             self.stm32f.close()
 
