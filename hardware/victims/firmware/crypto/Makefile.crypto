@@ -51,6 +51,9 @@ else ifeq ($(CRYPTO_TARGET),MBEDTLS)
 #
   include $(FIRMWAREPATH)/crypto/Makefile.mbedtls
 
+else ifeq ($(CRYPTO_TARGET),MASKEDAES)
+  include $(FIRMWAREPATH)/crypto/Makefile.maskedaes
+
 else ifeq ($(CRYPTO_TARGET),NONE)
   #Nothing to do :)
 
