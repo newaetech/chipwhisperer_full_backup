@@ -229,7 +229,15 @@ class CWCaptureGUI(CWMainGUI):
         try:
             self.stopCaptureMAct.setEnabled(True)
             self.capturingProgressBar = ProgressBar("Capture in Progress", "Capturing:")
-            ret = self.api.captureM(self.capturingProgressBar, self.scope, self.target, self.project, self.aux_list, self.ktp, self.api.getNumTraces())
+            ret = self.api.captureM(
+                progressBar=self.capturingProgressBar,
+                scope=self.scope,
+                target=self.target,
+                project=self.project,
+                aux_list=self.aux_list,
+                ktp=self.ktp,
+                N=self.api.getNumTraces(),
+                seg_size=self.api.tracesPerSet())
         finally:
             self.stopCaptureMAct.setEnabled(False)
         return ret
