@@ -36,6 +36,7 @@ class ProgressBarText(object):
         self.statusMask = statusMask
         self.textValues = textValues
         self.startTime = datetime.now()
+        self.eta = 0
         self.aborted = False
         self.printAll = False
         ProgressBarText.setText(self, text)
@@ -78,6 +79,21 @@ class ProgressBarText(object):
     def printStatus(self):
         if self.maximum!=0:
             logging.info(self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getStatusText() + ")")
+            logging.info(self.title + ": ETA " + self.getETA())
+
+    def getETA(self):
+        if self.maximum == 0 or self.currentProgress == 0:
+            return "n/a"
+        spent = (datetime.now() - self.startTime).total_seconds()
+        eta = spent * (self.maximum - self.currentProgress) / self.currentProgress
+        try:
+            eta = timedelta(seconds=long(eta))
+        except OverflowError:
+            return "n/a"
+        if eta.days > 9:
+            # avoid displaying too big values
+            return "n/a"
+        return str(eta)
 
     def updateStatus(self, currentProgress, textValues=None):
         self.textValues = textValues
@@ -131,7 +147,9 @@ try:
             self.setWindowFlags(Qt.WindowStaysOnTopHint)
             self.setWindowTitle(title)
             self.resize((200 * self.logicalDpiX()) // 100, (100 * self.logicalDpiY()) // 100)
+            self.etaLabel = QLabel("ETA: n/a")
             clayout = QHBoxLayout()
+            clayout.addWidget(self.etaLabel)
             clayout.addStretch()
             cancel = QPushButton("Abort")
             cancel.clicked.connect(self.abort)
@@ -165,11 +183,16 @@ try:
             if message:
                 QMessageBox.warning(self, "Warning", "Could not complete the execution:\n\n" + self.getStatusText())
 
+        def updateETA(self):
+            eta = self.getETA().rjust(16)
+            self.etaLabel.setText("ETA: %s" % eta)
+
         def updateStatus(self, currentProgress, textValues=None):
             ProgressBarText.updateStatus(self, currentProgress, textValues)
             self.statusLabel.setText(self.getStatusText())
             if self.maximum!=0:
                 self.pbar.setValue((self.currentProgress/self.maximum) * 100)
+                self.updateETA()
             util.updateUI()
 
         def close(self):
