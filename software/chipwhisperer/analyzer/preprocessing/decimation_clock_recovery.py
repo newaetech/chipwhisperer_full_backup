@@ -28,6 +28,7 @@ import logging
 
 from ._base import PreprocessingBase
 import scipy
+import scipy.signal
 import scipy.fftpack
 import numpy as np
 from matplotlib.mlab import find
@@ -100,7 +101,7 @@ class DecimationClockRecovery(PreprocessingBase):
 
         logging.info('Designing filter for passband: %f-%f' % (freq[0], freq[1]))
 
-        b, a = sp.signal.butter(order, freq, form)
+        b, a = scipy.signal.butter(order, freq, form)
         self.b = b
         self.a = a
    
@@ -117,7 +118,7 @@ class DecimationClockRecovery(PreprocessingBase):
                 self.setFilterParams(tnum=n, useCached=True)
 
             # Filter Trace
-            inputtrace = sp.signal.lfilter(self.b, self.a, trace)
+            inputtrace = scipy.signal.lfilter(self.b, self.a, trace)
             
             if self._enableZeroCrossing:
 
