@@ -354,18 +354,18 @@ ifeq ($(ELFSIZE),)
   ELFSIZE = $(SIZE) $(TARGET-PLAT).elf
 endif
 
-sizeafter:
+sizeafter: build
 	@echo $(MSG_SIZE_AFTER)
 	@$(ELFSIZE)
 
 $(OBJDIR):
 	mkdir $(OBJDIR)
-	
+
 .dep:
 	mkdir .dep
 
 # Display compiler version information.
-gccversion : 
+gccversion :
 	@$(CC) --version
 
 
@@ -433,7 +433,7 @@ extcoff: $(TARGET-PLAT).elf
 	@$(ECHO_BLANK)
 	@echo $(MSG_FLASH) $@
 	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .lock -R .signature $< $@
-	
+
 
 %.eep: %.elf
 	@$(ECHO_BLANK)
@@ -474,14 +474,14 @@ extcoff: $(TARGET-PLAT).elf
 
 
 # Compile: create object files from C source files.
-$(OBJDIR)/%.o : %.c
+$(OBJDIR)/%.o : %.c clean_objs $(OBJDIR) .dep begin gccversion
 	@$(ECHO_BLANK)
 	@echo $(MSG_COMPILING) $<
 	$(CC) -c $(ALL_CFLAGS) $< -o $@ 
 
 
 # Compile: create object files from C++ source files.
-$(OBJDIR)/%.o : %.cpp
+$(OBJDIR)/%.o : %.cpp clean_objs $(OBJDIR) .dep begin gccversion
 	@$(ECHO_BLANK)
 	@echo $(MSG_COMPILING_CPP) $<
 	$(CC) -c $(ALL_CPPFLAGS) $< -o $@ 
@@ -498,7 +498,7 @@ $(OBJDIR)/%.o : %.cpp
 
 
 # Assemble: create object files from assembler source files.
-$(OBJDIR)/%.o : %.S
+$(OBJDIR)/%.o : %.S clean_objs $(OBJDIR) .dep begin gccversion
 	@$(ECHO_BLANK)
 	@echo $(MSG_ASSEMBLING) $<
 	$(CC) -c $(ALL_ASFLAGS) $< -o $@
@@ -550,11 +550,11 @@ clean_list :
 
 # Create object files directory
 #$(shell mkdir $(OBJDIR) 2>/dev/null)
-	
+
 # Include the dependency files.
 #-include $(shell mkdir .dep 2>/dev/null) $(wildcard .dep/*)
 -include $(wildcard .dep/*)
-    
+
 
 # Listing of phony targets.
 .PHONY : all begin finish end sizeafter gccversion \
