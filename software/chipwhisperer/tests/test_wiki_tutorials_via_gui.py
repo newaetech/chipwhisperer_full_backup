@@ -9,6 +9,7 @@ from datetime import datetime
 
 from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
 import chipwhisperer.tests.tools_for_tests as test_tools
+from chipwhisperer.capture.api.programmers import XMEGAProgrammer
 
 import chipwhisperer as cw
 
@@ -67,8 +68,9 @@ class TestTutorialB1SimpleSerialProject(unittest.TestCase):
         self.project = cw.createProject(os.path.join(self.project_save_path), overwrite=True)
         logging.info('Finished creating project file')
 
-        self.aes_firmware_dir = os.path.join(chipwhisperer_directory, "hardware", "victims",
-                                             "firmware", "simpleserial-aes")
+        self.firmware_dir = os.path.join(chipwhisperer_directory, "hardware", "victims",
+                                             "firmware")
+        self.aes_firmware_dir = os.path.join(self.firmware_dir, "simpleserial-aes")
 
         # Build firmware
         logging.info('Building firmware from make file')
@@ -106,7 +108,15 @@ class TestTutorialB1SimpleSerialProject(unittest.TestCase):
         self.auto_ui.updateUI()
         logging.info('Finished executing "connect_cwlite_simpleserial.py"')
 
-        # TODO Program target
+        # program the target with the built firmware
+        xmega = XMEGAProgrammer()
+        xmega.setUSBInterface(capture_gui.scope.scopetype.dev.xmega)
+        xmega._logging = None
+        xmega.find()
+        xmega.erase()
+        aes_hex = os.path.join(self.aes_firmware_dir, r"simpleserial-aes-CW303.hex")
+        xmega.program(aes_hex, memtype="flash", verify=True)
+        xmega.close()
 
         # Execute the setup script for simple serial aes
         logging.info('Executing "setup_cwlite_xmega_aes.py"')
