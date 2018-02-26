@@ -12,17 +12,12 @@ import chipwhisperer.tests.tools_for_tests as test_tools
 from chipwhisperer.capture.api.programmers import XMEGAProgrammer
 
 import chipwhisperer as cw
-
-# setup directory path needed for most tests
-chipwhisperer_directory = os.path.join(os.path.abspath(cw.__file__), os.pardir, os.pardir, os.pardir)
-capture_scripts_directory = os.path.join(chipwhisperer_directory, "software", "chipwhisperer", "capture", "scripts")
-analyzer_scripts_directory = os.path.join(chipwhisperer_directory, "software", "chipwhisperer", "analyzer", "scripts")
-projects_directory = os.path.join(os.path.expanduser('~'), 'chipwhisperer', 'projects')
-tests_directory = os.path.join(projects_directory, 'Test Logs')
+from chipwhisperer.tests.tools_for_tests import TESTS_DIR, FIRMWARE_DIR, CAPTURE_SCRIPTS_DIR, \
+                                                ANALYZER_SCRIPTS_DIR
 
 # Create test directory if not already there
-if not os.path.exists(tests_directory):
-    os.makedirs(tests_directory)
+if not os.path.exists(TESTS_DIR):
+    os.makedirs(TESTS_DIR)
 
 
 class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
@@ -45,7 +40,7 @@ class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
         ])
 
         # Create directory tutorial B1 tests if it does not exist
-        self.tutorial_directory = os.path.join(tests_directory, self.test_name)
+        self.tutorial_directory = os.path.join(TESTS_DIR, self.test_name)
         if not os.path.exists(self.tutorial_directory):
             os.makedirs(self.tutorial_directory)
 
@@ -62,19 +57,6 @@ class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
         self.project = cw.createProject(os.path.join(self.project_save_path), overwrite=True)
         logging.info('Finished creating project file')
 
-        self.firmware_dir = os.path.join(chipwhisperer_directory, "hardware", "victims",
-                                             "firmware")
-        self.aes_firmware_dir = os.path.join(self.firmware_dir, "simpleserial-aes")
-
-        # Build firmware
-        logging.info('Building firmware from make file')
-        call = ["make", "--directory", self.aes_firmware_dir, "PLATFORM=CW303"]
-        logging.info(call)
-        exit_code = subprocess.check_call(call)
-        if exit_code == 0:
-            logging.info('Finished building firmware')
-        else:
-            logging.error('Build Failed with exit code {}'.format(exit_code))
 
     def tearDown(self):
         try:
@@ -90,6 +72,18 @@ class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
         self.auto_ui.capture.gui.target.dis()
 
     def test_TutorialB1(self):
+        self.aes_firmware_dir = os.path.join(FIRMWARE_DIR, "simpleserial-aes")
+
+        # Build firmware
+        logging.info('Building firmware from make file')
+        call = ["make", "--directory", self.aes_firmware_dir, "PLATFORM=CW303"]
+        logging.info(call)
+        exit_code = subprocess.check_call(call)
+        if exit_code == 0:
+            logging.info('Finished building firmware')
+        else:
+            logging.error('Build Failed with exit code {}'.format(exit_code))
+
         # create capture gui
         self.auto_ui = test_tools.FakeUI()
         self.auto_ui.create_capture()
@@ -99,7 +93,7 @@ class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
 
         # connect scope and target
         logging.info('Executing "connect_cwlite_simpleserial.py"')
-        connect_cwlite_simpleserial = os.path.join(capture_scripts_directory, "connect_cwlite_simpleserial.py")
+        connect_cwlite_simpleserial = os.path.join(CAPTURE_SCRIPTS_DIR, "connect_cwlite_simpleserial.py")
         capture_gui.execute(script_path=connect_cwlite_simpleserial)
         self.auto_ui.updateUI()
         logging.info('Finished executing "connect_cwlite_simpleserial.py"')
@@ -116,7 +110,7 @@ class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
 
         # Execute the setup script for simple serial aes
         logging.info('Executing "setup_cwlite_xmega_aes.py"')
-        setup_cwlite_xmega_aes = os.path.join(capture_scripts_directory, "setup_cwlite_xmega_aes.py")
+        setup_cwlite_xmega_aes = os.path.join(CAPTURE_SCRIPTS_DIR, "setup_cwlite_xmega_aes.py")
         capture_gui.execute(script_path=setup_cwlite_xmega_aes)
         self.auto_ui.updateUI()
         logging.info('Finished executing "setup_cwlite_xmega.py"')
@@ -146,7 +140,7 @@ class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
         #logging.info('Finished opening project')
 
         # Perform the attack
-        attack_cpa_script = os.path.join(analyzer_scripts_directory, "attack_cpa.py")
+        attack_cpa_script = os.path.join(ANALYZER_SCRIPTS_DIR, "attack_cpa.py")
         logging.info('Executing attack script {}'.format(attack_cpa_script))
         analyzer_gui.execute(script_path=attack_cpa_script)
         self.auto_ui.updateUI()

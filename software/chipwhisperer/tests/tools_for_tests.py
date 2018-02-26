@@ -3,12 +3,22 @@ like adding a fake ui that can be used to emulate what the user would do when us
 """
 
 import sys
+import os
 
+import chipwhisperer as cw
 from chipwhisperer.common.utils.parameter import Parameter
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc
 import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.utils.util import updateUI
+
+# setup directory path needed for most tests
+CHIPWHISPERER_DIR = os.path.join(os.path.abspath(cw.__file__), os.pardir, os.pardir, os.pardir)
+CAPTURE_SCRIPTS_DIR = os.path.join(CHIPWHISPERER_DIR, "software", "chipwhisperer", "capture", "scripts")
+ANALYZER_SCRIPTS_DIR = os.path.join(CHIPWHISPERER_DIR, "software", "chipwhisperer", "analyzer", "scripts")
+PROJECTS_DIR = os.path.join(os.path.expanduser('~'), 'chipwhisperer', 'projects')
+TESTS_DIR = os.path.join(PROJECTS_DIR, 'Test Logs')
+FIRMWARE_DIR = os.path.join(CHIPWHISPERER_DIR, "hardware", "victims", "firmware")
 
 
 class FakeUI():

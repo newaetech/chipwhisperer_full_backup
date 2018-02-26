@@ -3,13 +3,19 @@ from __future__ import print_function, division
 import unittest
 import time
 import logging
-import sys
+import os
+import subprocess
 
 import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+
 import chipwhisperer as cw
 from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
-import matplotlib.pyplot as plt
+from chipwhisperer.tests.tools_for_tests import FIRMWARE_DIR, CAPTURE_SCRIPTS_DIR
+from chipwhisperer.capture.api.programmers import XMEGAProgrammer
+from chipwhisperer.capture.auxiliary.ResetCW1173Read import ResetCW1173
+
 
 
 class TestTutorialB6BreakingAESManual(unittest.TestCase):
@@ -46,7 +52,7 @@ class TestTutorialB6BreakingAESManual(unittest.TestCase):
     def intermediate(self, pt, keyguess):
         return self.sbox[pt ^ keyguess]
 
-    def test_Tutorial_B6(self):
+    def test_tutorial_B6(self):
         scope = self.scope
         target = self.target
 
@@ -160,6 +166,97 @@ class TestTutorialB6BreakingAESManual(unittest.TestCase):
         print("PGE: ", end="")
         for b in pge: print("%02d " % b, end="")
         self.assertLess(sum(pge), 5)
+
+
+class TestTutorialA2GlitchAttacks(unittest.TestCase):
+
+    def setUp(self):
+        logging.basicConfig(level=logging.INFO)
+        self.scope = cw.scope()
+        self.target = cw.target(self.scope)
+
+    def tearDown(self):
+        self.scope.dis()
+        self.target.dis()
+
+    def test_tutorial_A2(self):
+        # build the firmware
+        self.glitch_simple_firmware_dir = os.path.join(FIRMWARE_DIR, "glitch-simple")
+
+        # Build firmware
+        logging.info('Building firmware from make file')
+        call = ["make", "--directory", self.glitch_simple_firmware_dir, "PLATFORM=CW303"]
+        logging.info(call)
+        exit_code = subprocess.check_call(call)
+        if exit_code == 0:
+            logging.info('Finished building firmware')
+        else:
+            logging.error('Build Failed with exit code {}'.format(exit_code))
+
+        # connect the scope and target
+        scope = self.scope
+        target = self.target
+
+        # program the XMEGA with the built hex file
+        xmega = XMEGAProgrammer()
+        xmega.setUSBInterface(scope.scopetype.dev.xmega)
+        xmega._logging = None
+        xmega.find()
+        xmega.erase()
+        glitch_simple_hex = os.path.join(self.glitch_simple_firmware_dir, r"glitch-simple-CW303.hex")
+        xmega.program(glitch_simple_hex, memtype="flash", verify=True)
+        xmega.close()
+
+        # setup parameters needed for glitch the XMEGA
+        scope.glitch.clk_src = 'clkgen'
+
+        scope.gain.gain = 45
+        scope.adc.samples = 3000
+        scope.adc.offset = 0
+        scope.adc.basic_mode = "rising_edge"
+        scope.clock.clkgen_freq = 7370000
+        scope.clock.adc_src = "clkgen_x4"
+        scope.trigger.triggers = "tio4"
+        scope.io.tio1 = "serial_rx"
+        scope.io.tio2 = "serial_tx"
+        scope.io.hs2 = "glitch"
+
+        target.go_cmd = ""
+        target.key_cmd = ""
+        target.output_cmd = "$GLITCH$"
+
+        # setup aux modules for automatically resetting target
+        # Delay between arming and resetting, in ms
+        delay_ms = 1000
+
+        # glitch cycle
+        n = 200
+        for i in range(n):
+            target.reinit()
+
+            # run aux stuff that should run before the scope arms here
+
+            scope.arm()
+
+            # run aux stuff that should run after the scope arms here
+
+            target.go()
+            timeout = 50
+            # wait for target to finish
+            while target.isDone() is False and timeout:
+                timeout -= 1
+                time.sleep(0.01)
+
+            try:
+                ret = scope.capture()
+                if ret:
+                    logging.warning('Timeout happened during acquisition')
+            except IOError as e:
+                logging.error('IOError: %s' % str(e))
+
+            # run aux stuff that should happen after trace here
+            self.fail('Finish this test')
+
 
 
 
