@@ -25,13 +25,7 @@ if not os.path.exists(tests_directory):
     os.makedirs(tests_directory)
 
 
-def suite():
-    """Allows ease of loading as a test module"""
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestTutorialB1SimpleSerialProject)
-    return suite
-
-
-class TestTutorialB1SimpleSerialProject(unittest.TestCase):
+class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
     """Contains test for TutorialB1 SimpleSerial
 
     NOTE: This test emulates what the user would do in the gui and is
@@ -39,7 +33,7 @@ class TestTutorialB1SimpleSerialProject(unittest.TestCase):
     """
 
     def setUp(self):
-        self.test_name = 'Tutorial_B1_SimpleSerial'
+        self.test_name = 'Tutorial_B5_AES_StraightForward'
 
         now = datetime.now()
         date_string = '-'.join([
@@ -82,7 +76,6 @@ class TestTutorialB1SimpleSerialProject(unittest.TestCase):
         else:
             logging.error('Build Failed with exit code {}'.format(exit_code))
 
-
     def tearDown(self):
         try:
             self.auto_ui.close_capture()
@@ -92,6 +85,9 @@ class TestTutorialB1SimpleSerialProject(unittest.TestCase):
             self.auto_ui.close_analyzer()
         except Exception as e:
             logging.error(e)
+
+        self.auto_ui.capture.gui.scope.dis()
+        self.auto_ui.capture.gui.target.dis()
 
     def test_TutorialB1(self):
         # create capture gui
@@ -175,7 +171,7 @@ class TestTutorialB1SimpleSerialProject(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    tutB1_suite = unittest.makeSuite(TestTutorialB1SimpleSerialProject)
+    tutB1_suite = unittest.makeSuite(TestTutorialB5BreakingAESStraightForward)
 
     test_runner = unittest.TextTestRunner(verbosity=2)
     test_runner.run(tutB1_suite)
