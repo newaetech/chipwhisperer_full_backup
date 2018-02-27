@@ -203,7 +203,7 @@ class TestTutorialA2GlitchAttacks(unittest.TestCase):
         xmega._logging = None
         xmega.find()
         xmega.erase()
-        glitch_simple_hex = os.path.join(self.glitch_simple_firmware_dir, r"glitch-simple-CW303.hex")
+        glitch_simple_hex = os.path.join(self.glitch_simple_firmware_dir, r"glitchsimple-CW303.hex")
         xmega.program(glitch_simple_hex, memtype="flash", verify=True)
         xmega.close()
 
