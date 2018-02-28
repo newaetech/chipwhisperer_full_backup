@@ -5,17 +5,15 @@ import time
 import logging
 import os
 import subprocess
+from collections import namedtuple
 
 import numpy as np
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 import chipwhisperer as cw
 from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
-from chipwhisperer.tests.tools_for_tests import FIRMWARE_DIR, CAPTURE_SCRIPTS_DIR
+from chipwhisperer.tests.tools_for_tests import FIRMWARE_DIR
 from chipwhisperer.capture.api.programmers import XMEGAProgrammer
-from chipwhisperer.capture.auxiliary.ResetCW1173Read import ResetCW1173
-
 
 
 class TestTutorialB6BreakingAESManual(unittest.TestCase):
@@ -223,42 +221,63 @@ class TestTutorialA2GlitchAttacks(unittest.TestCase):
 
         target.go_cmd = ""
         target.key_cmd = ""
-        target.output_cmd = "$GLITCH$"
 
-        # setup aux modules for automatically resetting target
-        # Delay between arming and resetting, in ms
-        delay_ms = 1000
+        # set glitch parameters
+        # trigger glitches with external trigger
+        scope.glitch.trigger_src = 'ext_single'
+        scope.glitch.repeat = 105
+
+        traces = []
+        outputs = []
+
+        # named tuples to make it easier to change the scope of the test
+        Range = namedtuple('Range', ['min', 'max', 'step'])
+        width_range = Range(-10, 10, 4)
+        offset_range = Range(-10, 10, 4)
 
         # glitch cycle
-        n = 200
-        for i in range(n):
-            target.reinit()
+        scope.glitch.width = width_range.min
+        while tqdm(scope.glitch.width < width_range.max):
+            scope.glitch.offset = offset_range.min
+            while scope.glitch.offset < offset_range.max:
+                # call before trace things here
+                # similar to check signature
+                xmega.find()
+                xmega.close()
+                # similar to check signature
 
-            # run aux stuff that should run before the scope arms here
+                target.reinit()
+                # call target functions here, setModeEncrypt...
 
-            scope.arm()
+                # run aux stuff that should run before the scope arms here
 
-            # run aux stuff that should run after the scope arms here
+                scope.arm()
 
-            target.go()
-            timeout = 50
-            # wait for target to finish
-            while target.isDone() is False and timeout:
-                timeout -= 1
-                time.sleep(0.01)
+                # run aux stuff that should run after the scope arms here
 
-            try:
-                ret = scope.capture()
-                if ret:
-                    logging.warning('Timeout happened during acquisition')
-            except IOError as e:
-                logging.error('IOError: %s' % str(e))
+                target.go()
+                timeout = 50
+                # wait for target to finish
+                while target.isDone() is False and timeout:
+                    timeout -= 1
+                    time.sleep(0.01)
 
-            # run aux stuff that should happen after trace here
-            self.fail('Finish this test')
+                try:
+                    ret = scope.capture()
+                    if ret:
+                        logging.warning('Timeout happened during acquisition')
+                except IOError as e:
+                    logging.error('IOError: %s' % str(e))
 
+                #textout = target.readOutput() # raises invalid literal for int base 16
 
+                # get the results
+                trace = scope.getLastTrace()
+                output = target.ser.read(target.output_len * 2, timeout=1000)
+                traces.append(trace)
+                outputs.append(output)
 
-
-
-
+                # run aux stuff that should happen after trace here
+                scope.glitch.offset += offset_range.step
+            scope.glitch.width += width_range.step
+        self.assertIn('1234', repr(outputs), 'There is no "1234" in the outputs, maybe glitch1() in c file is not active')
