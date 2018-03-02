@@ -54,6 +54,16 @@ class TestTutorialB6BreakingAESManual(unittest.TestCase):
         scope = self.scope
         target = self.target
 
+        xmega = XMEGAProgrammer()
+        xmega.setUSBInterface(scope.scopetype.dev.xmega)
+        xmega._logging = None
+        xmega.find()
+        xmega.erase()
+        glitch_simple_firmware_dir = os.path.join(FIRMWARE_DIR, 'simpleserial-aes')
+        glitch_simple_hex = os.path.join(glitch_simple_firmware_dir, r"simpleserial-aes-CW303.hex")
+        xmega.program(glitch_simple_hex, memtype="flash", verify=True)
+        xmega.close()
+
         # setup scope parameters
         scope.gain.gain = 45
         scope.adc.samples = 3000
@@ -232,14 +242,15 @@ class TestTutorialA2GlitchAttacks(unittest.TestCase):
 
         # named tuples to make it easier to change the scope of the test
         Range = namedtuple('Range', ['min', 'max', 'step'])
-        width_range = Range(-10, 10, 4)
-        offset_range = Range(-10, 10, 4)
+        width_range = Range(-10, 10, 1.7)
+        offset_range = Range(-10, 10, 1.7)
 
         # glitch cycle
         scope.glitch.width = width_range.min
-        while tqdm(scope.glitch.width < width_range.max):
+        success = False
+        while scope.glitch.width < width_range.max and not success:
             scope.glitch.offset = offset_range.min
-            while scope.glitch.offset < offset_range.max:
+            while scope.glitch.offset < offset_range.max and not success:
                 # call before trace things here
                 # similar to check signature
                 xmega.find()
@@ -276,8 +287,10 @@ class TestTutorialA2GlitchAttacks(unittest.TestCase):
                 output = target.ser.read(target.output_len * 2, timeout=1000)
                 traces.append(trace)
                 outputs.append(output)
+                if '1234' in repr(output):
+                    success = True
 
                 # run aux stuff that should happen after trace here
                 scope.glitch.offset += offset_range.step
             scope.glitch.width += width_range.step
-        self.assertIn('1234', repr(outputs), 'There is no "1234" in the outputs, maybe glitch1() in c file is not active')
+        self.assertTrue(success, 'There is no "1234" in the outputs, maybe glitch1() in c file is not active')
