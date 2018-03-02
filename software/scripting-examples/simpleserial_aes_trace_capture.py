@@ -47,11 +47,15 @@ xmega.close()
 ktp = AcqKeyTextPattern_Basic(target=target)
 
 traces = []
+textin = []
+keys = []
 N = 50  # Number of traces
 for i in tqdm(range(N), desc='Capturing traces'):
     # run aux stuff that should come before trace here
 
     key, text = ktp.newPair()  # manual creation of a key, text pair can be substituted here
+    textin.append(text)
+    keys.append(key) # always the same key for fixed key
 
     target.reinit()
 
@@ -82,14 +86,22 @@ for i in tqdm(range(N), desc='Capturing traces'):
     # run aux stuff that should happen after trace here
 
     traces.append(scope.getLastTrace())
-
 trace_array = np.asarray(traces)  # if you prefer to work with numpy array for number crunching
+textin_array = np.asarray(textin)
+known_keys = np.asarray(keys)  # for fixed key, these keys are all the same
 
 now = datetime.now()
-file_name = 'trace_array_{:02}{:02}.npy'.format(now.hour, now.minute)
-print('Saving traces to {}...'.format(file_name), end='')
-with open(file_name, 'w') as f:
-    np.save(f, trace_array)  # save to a file for later processing
+fmt_string = '{}_{:02}{:02}.npy'
+trace_file_path = fmt_string.format("traces", now.hour, now.minute)
+textin_file_path = fmt_string.format("textins", now.hour, now.minute)
+keys_file_path = fmt_string.format("keys", now.hour, now.minute)
+
+print('Saving results to {},{} and {}...'.format(trace_file_path, textin_file_path, keys_file_path), end='')
+with open(trace_file_path, 'w') as f1, open(textin_file_path, 'w') as f2, open(keys_file_path, 'w') as f3:
+    # save to a files for later processing
+    np.save(f1, trace_array)
+    np.save(f2, textin_array)
+    np.save(f3, known_keys)
 print('Done')
 
 # show an example trace
