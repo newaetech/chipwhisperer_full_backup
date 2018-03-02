@@ -55,7 +55,7 @@ for i in tqdm(range(N), desc='Capturing traces'):
 
     key, text = ktp.newPair()  # manual creation of a key, text pair can be substituted here
     textin.append(text)
-    keys.append(key) # always the same key for fixed key
+    keys.append(key)
 
     target.reinit()
 
@@ -91,17 +91,16 @@ textin_array = np.asarray(textin)
 known_keys = np.asarray(keys)  # for fixed key, these keys are all the same
 
 now = datetime.now()
-fmt_string = '{}_{:02}{:02}.npy'
-trace_file_path = fmt_string.format("traces", now.hour, now.minute)
-textin_file_path = fmt_string.format("textins", now.hour, now.minute)
-keys_file_path = fmt_string.format("keys", now.hour, now.minute)
+fmt_string = '{:02}{:02}_{}.npy'
+trace_file_path = fmt_string.format(now.hour, now.minute, "traces")
+textin_file_path = fmt_string.format(now.hour, now.minute, "textins")
+keys_file_path = fmt_string.format(now.hour, now.minute, "keys")
 
 print('Saving results to {},{} and {}...'.format(trace_file_path, textin_file_path, keys_file_path), end='')
-with open(trace_file_path, 'w') as f1, open(textin_file_path, 'w') as f2, open(keys_file_path, 'w') as f3:
-    # save to a files for later processing
-    np.save(f1, trace_array)
-    np.save(f2, textin_array)
-    np.save(f3, known_keys)
+# save to a files for later processing
+np.save(trace_file_path, trace_array)
+np.save(textin_file_path, textin_array)
+np.save(keys_file_path, known_keys)
 print('Done')
 
 # show an example trace
