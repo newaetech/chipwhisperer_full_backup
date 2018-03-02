@@ -48,7 +48,7 @@ ktp = AcqKeyTextPattern_Basic(target=target)
 
 traces = []
 N = 50  # Number of traces
-for i in tqdm(range(N)):
+for i in tqdm(range(N), desc='Capturing traces'):
     # run aux stuff that should come before trace here
 
     key, text = ktp.newPair()  # manual creation of a key, text pair can be substituted here
@@ -84,9 +84,13 @@ for i in tqdm(range(N)):
     traces.append(scope.getLastTrace())
 
 trace_array = np.asarray(traces)  # if you prefer to work with numpy array for number crunching
+
 now = datetime.now()
-with open('trace_array_{:02}{:02}.npy'.format(now.hour, now.minute), 'w') as f:
+file_name = 'trace_array_{:02}{:02}.npy'.format(now.hour, now.minute)
+print('Saving traces to {}...'.format(file_name), end='')
+with open(file_name, 'w') as f:
     np.save(f, trace_array)  # save to a file for later processing
+print('Done')
 
 # show an example trace
 plt.plot(traces[0])
