@@ -1,4 +1,4 @@
-"""Example for scripting glitching of the target using the chipwhisperer
+"""Example for scripting glitching of the XMEGA target using the chipwhisperer
 tool. Similar to what the glitch explorer does. This script does not spawn a
 gui, and uses the 4.0 api.
 """
@@ -74,6 +74,9 @@ while scope.glitch.width < width_range.max:
     scope.glitch.offset = offset_range.min
     while scope.glitch.offset < offset_range.max:
         # call before trace things here
+
+        # flush the garbage from the computer's target read buffer
+        target.ser.flush()
 
         # resets the target for the next glitch cycle
         # similar to Check Signature button in GUI
