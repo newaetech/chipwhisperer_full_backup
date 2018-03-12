@@ -103,7 +103,7 @@ def target(scope, type = cwtarget, *args):
 def auxList(api):
     # TODO: this should create a fresh aux list
     # We can already access API one via self.aux_list
-    api.getAuxList()
+    return api.getAuxList()
 
 @gui_only
 def captureN(api, scope=None, target=None, project=None, aux_list=None, ktp=None, N=1, seg_size=None):
