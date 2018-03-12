@@ -92,11 +92,11 @@ def scope(type = cwhardware):
     scope.con()
     return scope
 
-def target(scope, type = cwtarget, *args):
+def target(scope, type = cwtarget, **kwargs):
     """Create a target object and connect to it.
     """
     target = type()
-    target.con(scope)
+    target.con(scope, **kwargs)
     return target
 
 @gui_only
