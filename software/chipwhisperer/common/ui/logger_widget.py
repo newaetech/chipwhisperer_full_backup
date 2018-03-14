@@ -24,6 +24,10 @@ class QPlainTextEditLogger(logging.Handler):
         self.widget.insertPlainText(text)
         self.widget.moveCursor(QTextCursor.End)
 
+    def getvalue(self):
+        self.widget.toPlainText()
+
+
 
 class LoggingWidget(QWidget):
     def __init__(self, parent=None):

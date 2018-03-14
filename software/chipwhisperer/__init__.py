@@ -1,3 +1,44 @@
+from chipwhisperer.capture.api.acquisition_controller import AcquisitionController
+from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
+from chipwhisperer.common.utils.util import updateUI
+
+import os, os.path
+from chipwhisperer.common.traces import TraceContainerNative as trace_container_native
+from chipwhisperer.common.api import ProjectFormat as project
+
+from chipwhisperer.capture.scopes.OpenADC import OpenADC as cwhardware
+from chipwhisperer.capture.targets.SimpleSerial import SimpleSerial as cwtarget
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic as BasicKtp
+from chipwhisperer.common.utils.util import cw_bytearray
+
+from chipwhisperer.common.utils.parameter import Parameter
+import chipwhisperer.capture.ui.CWCaptureGUI as cwc
+import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.capture.scopes.base import ScopeTemplate
+from chipwhisperer.capture.targets._base import TargetTemplate
+
+
+class gui_only(object):
+    """Decorator for the functions that can only be used in the gui
+    If it is called outside the gui, it will raise UserWarning
+    """
+
+    def __init__(self, f):
+        self.f = f
+
+    def __call__(self, *args, **kwargs):
+        gui_warning = "This api function is for use inside GUI Python Console"
+        try:
+            api = CWCoreAPI.getInstance()
+            if api is None:
+                raise Exception
+        except:
+            raise UserWarning(gui_warning)
+        return self.f(api)
+
+
 def capture_gui():
     """Open the CWCapture GUI, blocking until it's closed.
 
@@ -14,10 +55,6 @@ def analyzer_gui():
     """
     from chipwhisperer.analyzer.ui.CWAnalyzerGUI import main
     main()
-
-import os, os.path
-from chipwhisperer.common.traces import TraceContainerNative as trace_container_native
-from chipwhisperer.common.api import ProjectFormat as project
 
 def openProject(filename):
     """Load an existing project from disk.
@@ -43,10 +80,6 @@ def createProject(filename, overwrite=False):
 
     return proj
 
-from chipwhisperer.capture.scopes.OpenADC import OpenADC as cwhardware
-from chipwhisperer.capture.targets.SimpleSerial import SimpleSerial as cwtarget
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic as BasicKtp
 
 def scope(type = cwhardware):
     """Create a scope object and connect to it.
@@ -59,20 +92,21 @@ def scope(type = cwhardware):
     scope.con()
     return scope
 
-def target(scope, type = cwtarget, *args):
+def target(scope, type = cwtarget, **kwargs):
     """Create a target object and connect to it.
     """
     target = type()
-    target.con(scope)
+    target.con(scope, **kwargs)
     return target
 
-def auxList():
+@gui_only
+def auxList(api):
     # TODO: this should create a fresh aux list
     # We can already access API one via self.aux_list
-    api = CWCoreAPI.getInstance()
     return api.getAuxList()
 
-def captureN(scope=None, target=None, project=None, aux_list=None, ktp=None, N=1, seg_size=None):
+@gui_only
+def captureN(api, scope=None, target=None, project=None, aux_list=None, ktp=None, N=1, seg_size=None):
     """Capture a number of traces, saving power traces and input/output text
     and keys to disk along the way.
 
@@ -96,38 +130,46 @@ def captureN(scope=None, target=None, project=None, aux_list=None, ktp=None, N=1
     To emulate GUI capture:
     >>> cw.captureN(self.scope, self.target, self.project, self.aux_list, self.ktp, 50)
     """
-    api = CWCoreAPI.getInstance()
     api.captureM(scope=scope, target=target, project=project, aux_list=aux_list, ktp=ktp, N=N, seg_size=seg_size)
 
-def getLastKey():
+@gui_only
+def getLastKey(core_api):
     """Return the last key used in captureN
     """
-    api = CWCoreAPI.getInstance()
-    return api.getLastKey()
+    key = core_api.getLastKey()
+    if key is None:
+        return key
+    else:
+        return cw_bytearray(key)
 
-def getLastTextin():
+@gui_only
+def getLastTextin(core_api):
     """Return the last input text used in captureN
     """
-    api = CWCoreAPI.getInstance()
-    return api.getLastTextin()
+    lti = core_api.getLastTextin()
+    if lti is None:
+        return lti
+    else:
+        return cw_bytearray(lti)
 
-def getLastTextout():
+@gui_only
+def getLastTextout(core_api):
     """Return the last input text used in captureN
     """
-    api = CWCoreAPI.getInstance()
-    return api.getLastTextout()
+    lto = core_api.getLastTextout()
+    return cw_bytearray(lto)
 
-def getLastExpected():
+@gui_only
+def getLastExpected(core_api):
     """Return the last input text used in captureN
     """
-    api = CWCoreAPI.getInstance()
-    return api.getLastExpected()
+    le = core_api.getLastExpected()
 
-from chipwhisperer.common.utils.parameter import Parameter
-import chipwhisperer.capture.ui.CWCaptureGUI as cwc
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.capture.scopes.base import ScopeTemplate
-from chipwhisperer.capture.targets._base import TargetTemplate
+    if le is None:
+        return le
+    else:
+        return cw_bytearray(le)
+
 
 # TODO: decide whether to remove all of this
 class gui(object):
@@ -157,3 +199,9 @@ class gui(object):
         self.window.show()
         # Run the main Qt loop
         self.app.exec_()
+
+
+def acquisition_controller(scope, target=None, writer=None, aux=None, key_text_pattern=None):
+    """Not required when running GUI"""
+    ac = AcquisitionController(scope=scope, target=target, keyTextPattern=key_text_pattern)
+    return ac

@@ -1,0 +1,21 @@
+
+CRYPTO_LIB = secAES-ATmega8515/src
+SRC += aes-independant.c
+ASRC += maskedAES128enc.S
+EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)
+CDEFS += -DMASKEDAES
+
+ifeq ($(CRYPTO_OPTIONS),VERSION1)
+ VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/Version1
+ EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/Version1
+
+else ifeq ($(CRYPTO_OPTIONS),VERSION2)
+ VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/Version2
+ EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/Version2
+
+else
+
+ $(error: Unknown or blank CRYPTO_OPTIONS: $(CRYPTO_OPTIONS). CRYPTO_OPTIONS is required for this CRYPTO_TARGET)
+endif #MASKEDAES
+
+

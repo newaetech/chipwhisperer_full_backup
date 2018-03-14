@@ -166,3 +166,20 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
         val0to1 = val0to1 if self.colorGradient else 0
         r, g, b = r+(255-r)*val0to1, g+(255-g)*val0to1, b+(255-b)*val0to1
         return r, g, b
+
+    def text_at_index(self, row, col):
+        return self.item(row, col).text()
+
+    def row(self, row):
+        """Returns a list of all the text items in a row of the table"""
+        ls = []
+        for i in range(self.columnCount()):
+            ls.append(self.item(row, i))
+        return ls
+
+    def sub_key_row(self, row):
+        """Returns a list of just the subkeys in a row of the table"""
+        subkeys = []
+        for col in range(self.columnCount()):
+            subkeys.append(self.text_at_index(1, col).split('\n')[0])
+        return subkeys

@@ -1110,401 +1110,737 @@ HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
   }
 }
 
-/// ----- From stm32f4xx_cryp.c ------------------------------------------------
-#define FLAG_MASK     ((uint8_t)0x20)
+///// ----- From stm32f4xx_cryp.c ------------------------------------------------
+//#define FLAG_MASK     ((uint8_t)0x20)
+
+///**
+  //* @brief  Fills each CRYP_KeyInitStruct member with its default value.
+  //* @param  CRYP_KeyInitStruct: pointer to a CRYP_KeyInitTypeDef structure 
+  //*         which will be initialized.
+  //* @retval None
+  //*/
+//void CRYP_KeyStructInit(CRYP_KeyInitTypeDef* CRYP_KeyInitStruct)
+//{
+  //CRYP_KeyInitStruct->CRYP_Key0Left  = 0;
+  //CRYP_KeyInitStruct->CRYP_Key0Right = 0;
+  //CRYP_KeyInitStruct->CRYP_Key1Left  = 0;
+  //CRYP_KeyInitStruct->CRYP_Key1Right = 0;
+  //CRYP_KeyInitStruct->CRYP_Key2Left  = 0;
+  //CRYP_KeyInitStruct->CRYP_Key2Right = 0;
+  //CRYP_KeyInitStruct->CRYP_Key3Left  = 0;
+  //CRYP_KeyInitStruct->CRYP_Key3Right = 0;
+//}
+
+///**
+  //* @brief  Flushes the IN and OUT FIFOs (that is read and write pointers of the 
+  //*         FIFOs are reset)
+  //* @note   The FIFOs must be flushed only when BUSY flag is reset.  
+  //* @param  None
+  //* @retval None
+  //*/
+//void CRYP_FIFOFlush(void)
+//{
+  ///* Reset the read and write pointers of the FIFOs */
+  //CRYP->CR |= CRYP_CR_FFLUSH;
+//}
+
+///**
+  //* @brief  Initializes the CRYP peripheral according to the specified parameters
+  //*         in the CRYP_InitStruct.
+  //* @param  CRYP_InitStruct: pointer to a CRYP_InitTypeDef structure that contains
+  //*         the configuration information for the CRYP peripheral.
+  //* @retval None
+  //*/
+//void CRYP_Init(CRYP_InitTypeDef* CRYP_InitStruct)
+//{
+  ///* Check the parameters */
+  //assert_param(IS_CRYP_ALGOMODE(CRYP_InitStruct->CRYP_AlgoMode));
+  //assert_param(IS_CRYP_DATATYPE(CRYP_InitStruct->CRYP_DataType));
+  //assert_param(IS_CRYP_ALGODIR(CRYP_InitStruct->CRYP_AlgoDir));
+
+  ///* Select Algorithm mode*/  
+  //CRYP->CR &= ~CRYP_CR_ALGOMODE;
+  //CRYP->CR |= CRYP_InitStruct->CRYP_AlgoMode;
+
+  ///* Select dataType */ 
+  //CRYP->CR &= ~CRYP_CR_DATATYPE;
+  //CRYP->CR |= CRYP_InitStruct->CRYP_DataType;
+
+  ///* select Key size (used only with AES algorithm) */
+  //if ((CRYP_InitStruct->CRYP_AlgoMode != CRYP_AlgoMode_TDES_ECB) &&
+      //(CRYP_InitStruct->CRYP_AlgoMode != CRYP_AlgoMode_TDES_CBC) &&
+      //(CRYP_InitStruct->CRYP_AlgoMode != CRYP_AlgoMode_DES_ECB) &&
+      //(CRYP_InitStruct->CRYP_AlgoMode != CRYP_AlgoMode_DES_CBC))
+  //{
+    //assert_param(IS_CRYP_KEYSIZE(CRYP_InitStruct->CRYP_KeySize));
+    //CRYP->CR &= ~CRYP_CR_KEYSIZE;
+    //CRYP->CR |= CRYP_InitStruct->CRYP_KeySize; /* Key size and value must be 
+                                                  //configured once the key has 
+                                                  //been prepared */
+  //}
+
+  ///* Select data Direction */ 
+  //CRYP->CR &= ~CRYP_CR_ALGODIR;
+  //CRYP->CR |= CRYP_InitStruct->CRYP_AlgoDir;
+//}
+
+///**
+  //* @brief  Initializes the CRYP Keys according to the specified parameters in
+  //*         the CRYP_KeyInitStruct.
+  //* @param  CRYP_KeyInitStruct: pointer to a CRYP_KeyInitTypeDef structure that
+  //*         contains the configuration information for the CRYP Keys.
+  //* @retval None
+  //*/
+//void CRYP_KeyInit(CRYP_KeyInitTypeDef* CRYP_KeyInitStruct)
+//{
+  ///* Key Initialisation */
+  //CRYP->K0LR = CRYP_KeyInitStruct->CRYP_Key0Left;
+  //CRYP->K0RR = CRYP_KeyInitStruct->CRYP_Key0Right;
+  //CRYP->K1LR = CRYP_KeyInitStruct->CRYP_Key1Left;
+  //CRYP->K1RR = CRYP_KeyInitStruct->CRYP_Key1Right;
+  //CRYP->K2LR = CRYP_KeyInitStruct->CRYP_Key2Left;
+  //CRYP->K2RR = CRYP_KeyInitStruct->CRYP_Key2Right;
+  //CRYP->K3LR = CRYP_KeyInitStruct->CRYP_Key3Left;
+  //CRYP->K3RR = CRYP_KeyInitStruct->CRYP_Key3Right;
+//}
+
+///**
+  //* @brief  Enables or disables the CRYP peripheral.
+  //* @param  NewState: new state of the CRYP peripheral.
+  //*          This parameter can be: ENABLE or DISABLE.
+  //* @retval None
+  //*/
+//void CRYP_Cmd(FunctionalState NewState)
+//{
+  ///* Check the parameters */
+  //assert_param(IS_FUNCTIONAL_STATE(NewState));
+
+  //if (NewState != DISABLE)
+  //{
+    ///* Enable the Cryptographic processor */
+    //CRYP->CR |= CRYP_CR_CRYPEN;
+  //}
+  //else
+  //{
+    ///* Disable the Cryptographic processor */
+    //CRYP->CR &= ~CRYP_CR_CRYPEN;
+  //}
+//}
+
+///**
+  //* @brief  Returns whether CRYP peripheral is enabled or disabled.
+  //* @param  none.
+  //* @retval Current state of the CRYP peripheral (ENABLE or DISABLE).
+  //*/
+//FunctionalState CRYP_GetCmdStatus(void)
+//{
+  //FunctionalState state = DISABLE;
+
+  //if ((CRYP->CR & CRYP_CR_CRYPEN) != 0)
+  //{
+    ///* CRYPEN bit is set */
+    //state = ENABLE;
+  //}
+  //else
+  //{
+    ///* CRYPEN bit is reset */
+    //state = DISABLE;
+  //}
+  //return state;
+//}
+
+///**
+  //* @brief  Writes data in the Data Input register (DIN).
+  //* @note   After the DIN register has been read once or several times, 
+  //*         the FIFO must be flushed (using CRYP_FIFOFlush() function).  
+  //* @param  Data: data to write in Data Input register
+  //* @retval None
+  //*/
+//void CRYP_DataIn(uint32_t Data)
+//{
+  //CRYP->DR = Data;
+//}
+
+///**
+  //* @brief  Returns the last data entered into the output FIFO.
+  //* @param  None
+  //* @retval Last data entered into the output FIFO.
+  //*/
+//uint32_t CRYP_DataOut(void)
+//{
+  //return CRYP->DOUT;
+//}
+
+///**
+  //* @brief  Checks whether the specified CRYP flag is set or not.
+  //* @param  CRYP_FLAG: specifies the CRYP flag to check.
+  //*          This parameter can be one of the following values:
+  //*            @arg CRYP_FLAG_IFEM: Input FIFO Empty flag.
+  //*            @arg CRYP_FLAG_IFNF: Input FIFO Not Full flag.
+  //*            @arg CRYP_FLAG_OFNE: Output FIFO Not Empty flag.
+  //*            @arg CRYP_FLAG_OFFU: Output FIFO Full flag.
+  //*            @arg CRYP_FLAG_BUSY: Busy flag.
+  //*            @arg CRYP_FLAG_OUTRIS: Output FIFO raw interrupt flag.
+  //*            @arg CRYP_FLAG_INRIS: Input FIFO raw interrupt flag.
+  //* @retval The new state of CRYP_FLAG (SET or RESET).
+  //*/
+//FlagStatus CRYP_GetFlagStatus(uint8_t CRYP_FLAG)
+//{
+  //FlagStatus bitstatus = RESET;
+  //uint32_t tempreg = 0;
+
+  ///* Check the parameters */
+  //assert_param(IS_CRYP_GET_FLAG(CRYP_FLAG));
+
+  ///* check if the FLAG is in RISR register */
+  //if ((CRYP_FLAG & FLAG_MASK) != 0x00) 
+  //{
+    //tempreg = CRYP->RISR;
+  //}
+  //else  /* The FLAG is in SR register */
+  //{
+    //tempreg = CRYP->SR;
+  //}
+
+
+  ///* Check the status of the specified CRYP flag */
+  //if ((tempreg & CRYP_FLAG ) != (uint8_t)RESET)
+  //{
+    ///* CRYP_FLAG is set */
+    //bitstatus = SET;
+  //}
+  //else
+  //{
+    ///* CRYP_FLAG is reset */
+    //bitstatus = RESET;
+  //}
+
+  ///* Return the CRYP_FLAG status */
+  //return  bitstatus;
+//}
+
+///// ----- From stm32f4xx_cryp_aes.c --------------------------------------------
+//#define AESBUSY_TIMEOUT    ((uint32_t) 0x00010000)
+
+///**
+  //* @brief  Encrypt and decrypt using AES in ECB Mode
+  //* @param  Mode: encryption or decryption Mode.
+  //*          This parameter can be one of the following values:
+  //*            @arg MODE_ENCRYPT: Encryption
+  //*            @arg MODE_DECRYPT: Decryption
+  //* @param  Key: Key used for AES algorithm.
+  //* @param  Keysize: length of the Key, must be a 128, 192 or 256.
+  //* @param  Input: pointer to the Input buffer.
+  //* @param  Ilength: length of the Input buffer, must be a multiple of 16.
+  //* @param  Output: pointer to the returned buffer.
+  //* @retval An ErrorStatus enumeration value:
+  //*          - SUCCESS: Operation done
+  //*          - ERROR: Operation failed
+  //*/
+//ErrorStatus CRYP_AES_ECB(uint8_t Mode, uint8_t* Key, uint16_t Keysize,
+                         //uint8_t* Input, uint32_t Ilength, uint8_t* Output)
+//{
+  //CRYP_InitTypeDef AES_CRYP_InitStructure;
+  //CRYP_KeyInitTypeDef AES_CRYP_KeyInitStructure;
+  //__IO uint32_t counter = 0;
+  //uint32_t busystatus = 0;
+  //ErrorStatus status = SUCCESS;
+  //uint32_t keyaddr    = (uint32_t)Key;
+  //uint32_t inputaddr  = (uint32_t)Input;
+  //uint32_t outputaddr = (uint32_t)Output;
+  //uint32_t i = 0;
+
+  ///* Crypto structures initialisation*/
+  //CRYP_KeyStructInit(&AES_CRYP_KeyInitStructure);
+
+  //switch(Keysize)
+  //{
+    //case 128:
+    //AES_CRYP_InitStructure.CRYP_KeySize = CRYP_KeySize_128b;
+    //AES_CRYP_KeyInitStructure.CRYP_Key2Left = __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key2Right= __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key3Left = __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key3Right= __REV(*(uint32_t*)(keyaddr));
+    //break;
+    //case 192:
+    //AES_CRYP_InitStructure.CRYP_KeySize  = CRYP_KeySize_192b;
+    //AES_CRYP_KeyInitStructure.CRYP_Key1Left = __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key1Right= __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key2Left = __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key2Right= __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key3Left = __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key3Right= __REV(*(uint32_t*)(keyaddr));
+    //break;
+    //case 256:
+    //AES_CRYP_InitStructure.CRYP_KeySize  = CRYP_KeySize_256b;
+    //AES_CRYP_KeyInitStructure.CRYP_Key0Left = __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key0Right= __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key1Left = __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key1Right= __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key2Left = __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key2Right= __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key3Left = __REV(*(uint32_t*)(keyaddr));
+    //keyaddr+=4;
+    //AES_CRYP_KeyInitStructure.CRYP_Key3Right= __REV(*(uint32_t*)(keyaddr));
+    //break;
+    //default:
+    //break;
+  //}
+  
+  ///*------------------ AES Decryption ------------------*/
+  //if(Mode == MODE_DECRYPT) /* AES decryption */
+  //{
+    ///* Flush IN/OUT FIFOs */
+    //CRYP_FIFOFlush();
+
+    ///* Crypto Init for Key preparation for decryption process */
+    //AES_CRYP_InitStructure.CRYP_AlgoDir = CRYP_AlgoDir_Decrypt;
+    //AES_CRYP_InitStructure.CRYP_AlgoMode = CRYP_AlgoMode_AES_Key;
+    //AES_CRYP_InitStructure.CRYP_DataType = CRYP_DataType_32b;
+    //CRYP_Init(&AES_CRYP_InitStructure);
+
+    ///* Key Initialisation */
+    //CRYP_KeyInit(&AES_CRYP_KeyInitStructure);
+
+    ///* Enable Crypto processor */
+    //CRYP_Cmd(ENABLE);
+
+    ///* wait until the Busy flag is RESET */
+    //do
+    //{
+      //busystatus = CRYP_GetFlagStatus(CRYP_FLAG_BUSY);
+      //counter++;
+    //}while ((counter != AESBUSY_TIMEOUT) && (busystatus != RESET));
+
+    //if (busystatus != RESET)
+   //{
+       //status = ERROR;
+    //}
+    //else
+    //{
+      ///* Crypto Init for decryption process */  
+      //AES_CRYP_InitStructure.CRYP_AlgoDir = CRYP_AlgoDir_Decrypt;
+    //}
+  //}
+  ///*------------------ AES Encryption ------------------*/
+  //else /* AES encryption */
+  //{
+
+    //CRYP_KeyInit(&AES_CRYP_KeyInitStructure);
+
+    ///* Crypto Init for Encryption process */
+    //AES_CRYP_InitStructure.CRYP_AlgoDir  = CRYP_AlgoDir_Encrypt;
+  //}
+
+  //AES_CRYP_InitStructure.CRYP_AlgoMode = CRYP_AlgoMode_AES_ECB;
+  //AES_CRYP_InitStructure.CRYP_DataType = CRYP_DataType_8b;
+  //CRYP_Init(&AES_CRYP_InitStructure);
+
+  ///* Flush IN/OUT FIFOs */
+  //CRYP_FIFOFlush();
+
+  ///* Enable Crypto processor */
+  //CRYP_Cmd(ENABLE);
+
+  //if(CRYP_GetCmdStatus() == DISABLE)
+  //{
+    ///* The CRYP peripheral clock is not enabled or the device doesn't embed 
+       //the CRYP peripheral (please check the device sales type. */
+    //return(ERROR);
+  //}
+  
+  //for(i=0; ((i<Ilength) && (status != ERROR)); i+=16)
+  //{
+
+    ///* Write the Input block in the IN FIFO */
+    //CRYP_DataIn(*(uint32_t*)(inputaddr));
+    //inputaddr+=4;
+    //CRYP_DataIn(*(uint32_t*)(inputaddr));
+    //inputaddr+=4;
+    //CRYP_DataIn(*(uint32_t*)(inputaddr));
+    //inputaddr+=4;
+    //CRYP_DataIn(*(uint32_t*)(inputaddr));
+    //inputaddr+=4;
+
+    ///* Wait until the complete message has been processed */
+    //counter = 0;
+    //do
+    //{
+      //busystatus = CRYP_GetFlagStatus(CRYP_FLAG_BUSY);
+      //counter++;
+    //}while ((counter != AESBUSY_TIMEOUT) && (busystatus != RESET));
+
+    //if (busystatus != RESET)
+   //{
+       //status = ERROR;
+    //}
+    //else
+    //{
+
+      ///* Read the Output block from the Output FIFO */
+      //*(uint32_t*)(outputaddr) = CRYP_DataOut();
+      //outputaddr+=4;
+      //*(uint32_t*)(outputaddr) = CRYP_DataOut();
+      //outputaddr+=4;
+      //*(uint32_t*)(outputaddr) = CRYP_DataOut();
+      //outputaddr+=4;
+      //*(uint32_t*)(outputaddr) = CRYP_DataOut(); 
+      //outputaddr+=4;
+    //}
+  //}
+
+  ///* Disable Crypto */
+  //CRYP_Cmd(DISABLE);
+
+  //return status; 
+//}
 
 /**
-  * @brief  Fills each CRYP_KeyInitStruct member with its default value.
-  * @param  CRYP_KeyInitStruct: pointer to a CRYP_KeyInitTypeDef structure 
-  *         which will be initialized.
+  * @brief  Writes the Key in Key registers. 
+  * @param  hcryp pointer to a CRYP_HandleTypeDef structure that contains
+  *         the configuration information for CRYP module
+  * @param  Key Pointer to Key buffer
+  * @param  KeySize Size of Key
   * @retval None
   */
-void CRYP_KeyStructInit(CRYP_KeyInitTypeDef* CRYP_KeyInitStruct)
+static void CRYP_SetKey(CRYP_HandleTypeDef *hcryp, uint8_t *Key, uint32_t KeySize)
 {
-  CRYP_KeyInitStruct->CRYP_Key0Left  = 0;
-  CRYP_KeyInitStruct->CRYP_Key0Right = 0;
-  CRYP_KeyInitStruct->CRYP_Key1Left  = 0;
-  CRYP_KeyInitStruct->CRYP_Key1Right = 0;
-  CRYP_KeyInitStruct->CRYP_Key2Left  = 0;
-  CRYP_KeyInitStruct->CRYP_Key2Right = 0;
-  CRYP_KeyInitStruct->CRYP_Key3Left  = 0;
-  CRYP_KeyInitStruct->CRYP_Key3Right = 0;
+  uint32_t keyaddr = (uint32_t)Key;
+  
+  switch(KeySize)
+  {
+  case CRYP_KEYSIZE_256B:
+    /* Key Initialisation */
+    hcryp->Instance->K0LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K0RR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K1LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K1RR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K2LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K2RR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K3LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K3RR = __REV(*(uint32_t*)(keyaddr));
+    break;
+  case CRYP_KEYSIZE_192B:
+    hcryp->Instance->K1LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K1RR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K2LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K2RR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K3LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K3RR = __REV(*(uint32_t*)(keyaddr));
+    break;
+  case CRYP_KEYSIZE_128B:       
+    hcryp->Instance->K2LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K2RR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K3LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K3RR = __REV(*(uint32_t*)(keyaddr));
+    break;
+  default:
+    break;
+  }
 }
 
+static HAL_StatusTypeDef CRYP_ProcessData(CRYP_HandleTypeDef *hcryp, uint8_t* Input, uint16_t Ilength, uint8_t* Output, uint32_t Timeout);
+
 /**
-  * @brief  Flushes the IN and OUT FIFOs (that is read and write pointers of the 
-  *         FIFOs are reset)
-  * @note   The FIFOs must be flushed only when BUSY flag is reset.  
-  * @param  None
+  * @brief  Process Data: Writes Input data in polling mode and read the output data
+  * @param  hcryp pointer to a CRYP_HandleTypeDef structure that contains
+  *         the configuration information for CRYP module
+  * @param  Input Pointer to the Input buffer
+  * @param  Ilength Length of the Input buffer, must be a multiple of 16.
+  * @param  Output Pointer to the returned buffer
+  * @param  Timeout Timeout value
   * @retval None
   */
-void CRYP_FIFOFlush(void)
+static HAL_StatusTypeDef CRYP_ProcessData(CRYP_HandleTypeDef *hcryp, uint8_t* Input, uint16_t Ilength, uint8_t* Output, uint32_t Timeout)
 {
-  /* Reset the read and write pointers of the FIFOs */
-  CRYP->CR |= CRYP_CR_FFLUSH;
-}
-
-/**
-  * @brief  Initializes the CRYP peripheral according to the specified parameters
-  *         in the CRYP_InitStruct.
-  * @param  CRYP_InitStruct: pointer to a CRYP_InitTypeDef structure that contains
-  *         the configuration information for the CRYP peripheral.
-  * @retval None
-  */
-void CRYP_Init(CRYP_InitTypeDef* CRYP_InitStruct)
-{
-  /* Check the parameters */
-  assert_param(IS_CRYP_ALGOMODE(CRYP_InitStruct->CRYP_AlgoMode));
-  assert_param(IS_CRYP_DATATYPE(CRYP_InitStruct->CRYP_DataType));
-  assert_param(IS_CRYP_ALGODIR(CRYP_InitStruct->CRYP_AlgoDir));
-
-  /* Select Algorithm mode*/  
-  CRYP->CR &= ~CRYP_CR_ALGOMODE;
-  CRYP->CR |= CRYP_InitStruct->CRYP_AlgoMode;
-
-  /* Select dataType */ 
-  CRYP->CR &= ~CRYP_CR_DATATYPE;
-  CRYP->CR |= CRYP_InitStruct->CRYP_DataType;
-
-  /* select Key size (used only with AES algorithm) */
-  if ((CRYP_InitStruct->CRYP_AlgoMode != CRYP_AlgoMode_TDES_ECB) &&
-      (CRYP_InitStruct->CRYP_AlgoMode != CRYP_AlgoMode_TDES_CBC) &&
-      (CRYP_InitStruct->CRYP_AlgoMode != CRYP_AlgoMode_DES_ECB) &&
-      (CRYP_InitStruct->CRYP_AlgoMode != CRYP_AlgoMode_DES_CBC))
-  {
-    assert_param(IS_CRYP_KEYSIZE(CRYP_InitStruct->CRYP_KeySize));
-    CRYP->CR &= ~CRYP_CR_KEYSIZE;
-    CRYP->CR |= CRYP_InitStruct->CRYP_KeySize; /* Key size and value must be 
-                                                  configured once the key has 
-                                                  been prepared */
-  }
-
-  /* Select data Direction */ 
-  CRYP->CR &= ~CRYP_CR_ALGODIR;
-  CRYP->CR |= CRYP_InitStruct->CRYP_AlgoDir;
-}
-
-/**
-  * @brief  Initializes the CRYP Keys according to the specified parameters in
-  *         the CRYP_KeyInitStruct.
-  * @param  CRYP_KeyInitStruct: pointer to a CRYP_KeyInitTypeDef structure that
-  *         contains the configuration information for the CRYP Keys.
-  * @retval None
-  */
-void CRYP_KeyInit(CRYP_KeyInitTypeDef* CRYP_KeyInitStruct)
-{
-  /* Key Initialisation */
-  CRYP->K0LR = CRYP_KeyInitStruct->CRYP_Key0Left;
-  CRYP->K0RR = CRYP_KeyInitStruct->CRYP_Key0Right;
-  CRYP->K1LR = CRYP_KeyInitStruct->CRYP_Key1Left;
-  CRYP->K1RR = CRYP_KeyInitStruct->CRYP_Key1Right;
-  CRYP->K2LR = CRYP_KeyInitStruct->CRYP_Key2Left;
-  CRYP->K2RR = CRYP_KeyInitStruct->CRYP_Key2Right;
-  CRYP->K3LR = CRYP_KeyInitStruct->CRYP_Key3Left;
-  CRYP->K3RR = CRYP_KeyInitStruct->CRYP_Key3Right;
-}
-
-/**
-  * @brief  Enables or disables the CRYP peripheral.
-  * @param  NewState: new state of the CRYP peripheral.
-  *          This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
-void CRYP_Cmd(FunctionalState NewState)
-{
-  /* Check the parameters */
-  assert_param(IS_FUNCTIONAL_STATE(NewState));
-
-  if (NewState != DISABLE)
-  {
-    /* Enable the Cryptographic processor */
-    CRYP->CR |= CRYP_CR_CRYPEN;
-  }
-  else
-  {
-    /* Disable the Cryptographic processor */
-    CRYP->CR &= ~CRYP_CR_CRYPEN;
-  }
-}
-
-/**
-  * @brief  Returns whether CRYP peripheral is enabled or disabled.
-  * @param  none.
-  * @retval Current state of the CRYP peripheral (ENABLE or DISABLE).
-  */
-FunctionalState CRYP_GetCmdStatus(void)
-{
-  FunctionalState state = DISABLE;
-
-  if ((CRYP->CR & CRYP_CR_CRYPEN) != 0)
-  {
-    /* CRYPEN bit is set */
-    state = ENABLE;
-  }
-  else
-  {
-    /* CRYPEN bit is reset */
-    state = DISABLE;
-  }
-  return state;
-}
-
-/**
-  * @brief  Writes data in the Data Input register (DIN).
-  * @note   After the DIN register has been read once or several times, 
-  *         the FIFO must be flushed (using CRYP_FIFOFlush() function).  
-  * @param  Data: data to write in Data Input register
-  * @retval None
-  */
-void CRYP_DataIn(uint32_t Data)
-{
-  CRYP->DR = Data;
-}
-
-/**
-  * @brief  Returns the last data entered into the output FIFO.
-  * @param  None
-  * @retval Last data entered into the output FIFO.
-  */
-uint32_t CRYP_DataOut(void)
-{
-  return CRYP->DOUT;
-}
-
-/**
-  * @brief  Checks whether the specified CRYP flag is set or not.
-  * @param  CRYP_FLAG: specifies the CRYP flag to check.
-  *          This parameter can be one of the following values:
-  *            @arg CRYP_FLAG_IFEM: Input FIFO Empty flag.
-  *            @arg CRYP_FLAG_IFNF: Input FIFO Not Full flag.
-  *            @arg CRYP_FLAG_OFNE: Output FIFO Not Empty flag.
-  *            @arg CRYP_FLAG_OFFU: Output FIFO Full flag.
-  *            @arg CRYP_FLAG_BUSY: Busy flag.
-  *            @arg CRYP_FLAG_OUTRIS: Output FIFO raw interrupt flag.
-  *            @arg CRYP_FLAG_INRIS: Input FIFO raw interrupt flag.
-  * @retval The new state of CRYP_FLAG (SET or RESET).
-  */
-FlagStatus CRYP_GetFlagStatus(uint8_t CRYP_FLAG)
-{
-  FlagStatus bitstatus = RESET;
-  uint32_t tempreg = 0;
-
-  /* Check the parameters */
-  assert_param(IS_CRYP_GET_FLAG(CRYP_FLAG));
-
-  /* check if the FLAG is in RISR register */
-  if ((CRYP_FLAG & FLAG_MASK) != 0x00) 
-  {
-    tempreg = CRYP->RISR;
-  }
-  else  /* The FLAG is in SR register */
-  {
-    tempreg = CRYP->SR;
-  }
-
-
-  /* Check the status of the specified CRYP flag */
-  if ((tempreg & CRYP_FLAG ) != (uint8_t)RESET)
-  {
-    /* CRYP_FLAG is set */
-    bitstatus = SET;
-  }
-  else
-  {
-    /* CRYP_FLAG is reset */
-    bitstatus = RESET;
-  }
-
-  /* Return the CRYP_FLAG status */
-  return  bitstatus;
-}
-
-/// ----- From stm32f4xx_cryp_aes.c --------------------------------------------
-#define AESBUSY_TIMEOUT    ((uint32_t) 0x00010000)
-
-/**
-  * @brief  Encrypt and decrypt using AES in ECB Mode
-  * @param  Mode: encryption or decryption Mode.
-  *          This parameter can be one of the following values:
-  *            @arg MODE_ENCRYPT: Encryption
-  *            @arg MODE_DECRYPT: Decryption
-  * @param  Key: Key used for AES algorithm.
-  * @param  Keysize: length of the Key, must be a 128, 192 or 256.
-  * @param  Input: pointer to the Input buffer.
-  * @param  Ilength: length of the Input buffer, must be a multiple of 16.
-  * @param  Output: pointer to the returned buffer.
-  * @retval An ErrorStatus enumeration value:
-  *          - SUCCESS: Operation done
-  *          - ERROR: Operation failed
-  */
-ErrorStatus CRYP_AES_ECB(uint8_t Mode, uint8_t* Key, uint16_t Keysize,
-                         uint8_t* Input, uint32_t Ilength, uint8_t* Output)
-{
-  CRYP_InitTypeDef AES_CRYP_InitStructure;
-  CRYP_KeyInitTypeDef AES_CRYP_KeyInitStructure;
-  __IO uint32_t counter = 0;
-  uint32_t busystatus = 0;
-  ErrorStatus status = SUCCESS;
-  uint32_t keyaddr    = (uint32_t)Key;
+  uint32_t tickstart = 0U;
+  
+  uint32_t i = 0U;
   uint32_t inputaddr  = (uint32_t)Input;
   uint32_t outputaddr = (uint32_t)Output;
-  uint32_t i = 0;
-
-  /* Crypto structures initialisation*/
-  CRYP_KeyStructInit(&AES_CRYP_KeyInitStructure);
-
-  switch(Keysize)
-  {
-    case 128:
-    AES_CRYP_InitStructure.CRYP_KeySize = CRYP_KeySize_128b;
-    AES_CRYP_KeyInitStructure.CRYP_Key2Left = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key2Right= __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key3Left = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key3Right= __REV(*(uint32_t*)(keyaddr));
-    break;
-    case 192:
-    AES_CRYP_InitStructure.CRYP_KeySize  = CRYP_KeySize_192b;
-    AES_CRYP_KeyInitStructure.CRYP_Key1Left = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key1Right= __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key2Left = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key2Right= __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key3Left = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key3Right= __REV(*(uint32_t*)(keyaddr));
-    break;
-    case 256:
-    AES_CRYP_InitStructure.CRYP_KeySize  = CRYP_KeySize_256b;
-    AES_CRYP_KeyInitStructure.CRYP_Key0Left = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key0Right= __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key1Left = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key1Right= __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key2Left = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key2Right= __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key3Left = __REV(*(uint32_t*)(keyaddr));
-    keyaddr+=4;
-    AES_CRYP_KeyInitStructure.CRYP_Key3Right= __REV(*(uint32_t*)(keyaddr));
-    break;
-    default:
-    break;
-  }
   
-  /*------------------ AES Decryption ------------------*/
-  if(Mode == MODE_DECRYPT) /* AES decryption */
+  for(i=0U; (i < Ilength); i+=16U)
   {
-    /* Flush IN/OUT FIFOs */
-    CRYP_FIFOFlush();
-
-    /* Crypto Init for Key preparation for decryption process */
-    AES_CRYP_InitStructure.CRYP_AlgoDir = CRYP_AlgoDir_Decrypt;
-    AES_CRYP_InitStructure.CRYP_AlgoMode = CRYP_AlgoMode_AES_Key;
-    AES_CRYP_InitStructure.CRYP_DataType = CRYP_DataType_32b;
-    CRYP_Init(&AES_CRYP_InitStructure);
-
-    /* Key Initialisation */
-    CRYP_KeyInit(&AES_CRYP_KeyInitStructure);
-
-    /* Enable Crypto processor */
-    CRYP_Cmd(ENABLE);
-
-    /* wait until the Busy flag is RESET */
-    do
-    {
-      busystatus = CRYP_GetFlagStatus(CRYP_FLAG_BUSY);
-      counter++;
-    }while ((counter != AESBUSY_TIMEOUT) && (busystatus != RESET));
-
-    if (busystatus != RESET)
-   {
-       status = ERROR;
-    }
-    else
-    {
-      /* Crypto Init for decryption process */  
-      AES_CRYP_InitStructure.CRYP_AlgoDir = CRYP_AlgoDir_Decrypt;
-    }
-  }
-  /*------------------ AES Encryption ------------------*/
-  else /* AES encryption */
-  {
-
-    CRYP_KeyInit(&AES_CRYP_KeyInitStructure);
-
-    /* Crypto Init for Encryption process */
-    AES_CRYP_InitStructure.CRYP_AlgoDir  = CRYP_AlgoDir_Encrypt;
-  }
-
-  AES_CRYP_InitStructure.CRYP_AlgoMode = CRYP_AlgoMode_AES_ECB;
-  AES_CRYP_InitStructure.CRYP_DataType = CRYP_DataType_8b;
-  CRYP_Init(&AES_CRYP_InitStructure);
-
-  /* Flush IN/OUT FIFOs */
-  CRYP_FIFOFlush();
-
-  /* Enable Crypto processor */
-  CRYP_Cmd(ENABLE);
-
-  if(CRYP_GetCmdStatus() == DISABLE)
-  {
-    /* The CRYP peripheral clock is not enabled or the device doesn't embed 
-       the CRYP peripheral (please check the device sales type. */
-    return(ERROR);
-  }
-  
-  for(i=0; ((i<Ilength) && (status != ERROR)); i+=16)
-  {
-
     /* Write the Input block in the IN FIFO */
-    CRYP_DataIn(*(uint32_t*)(inputaddr));
-    inputaddr+=4;
-    CRYP_DataIn(*(uint32_t*)(inputaddr));
-    inputaddr+=4;
-    CRYP_DataIn(*(uint32_t*)(inputaddr));
-    inputaddr+=4;
-    CRYP_DataIn(*(uint32_t*)(inputaddr));
-    inputaddr+=4;
+    hcryp->Instance->DR = *(uint32_t*)(inputaddr);
+    inputaddr+=4U;
+    hcryp->Instance->DR = *(uint32_t*)(inputaddr);
+    inputaddr+=4U;
+    hcryp->Instance->DR  = *(uint32_t*)(inputaddr);
+    inputaddr+=4U;
+    hcryp->Instance->DR = *(uint32_t*)(inputaddr);
+    inputaddr+=4U;
+    
+    /* Get tick */
+    tickstart = HAL_GetTick();
 
-    /* Wait until the complete message has been processed */
-    counter = 0;
-    do
-    {
-      busystatus = CRYP_GetFlagStatus(CRYP_FLAG_BUSY);
-      counter++;
-    }while ((counter != AESBUSY_TIMEOUT) && (busystatus != RESET));
-
-    if (busystatus != RESET)
-   {
-       status = ERROR;
+    while(HAL_IS_BIT_CLR(hcryp->Instance->SR, CRYP_FLAG_OFNE))
+    {    
+      /* Check for the Timeout */
+      if(Timeout != HAL_MAX_DELAY)
+      {
+        if((Timeout == 0U)||((HAL_GetTick() - tickstart ) > Timeout))
+        {
+          /* Change state */
+          hcryp->State = HAL_CRYP_STATE_TIMEOUT;
+          
+          /* Process Unlocked */
+          __HAL_UNLOCK(hcryp);
+        
+          return HAL_TIMEOUT;
+        }
+      }
     }
-    else
-    {
+    /* Read the Output block from the Output FIFO */
+    *(uint32_t*)(outputaddr) = hcryp->Instance->DOUT;
+    outputaddr+=4U;
+    *(uint32_t*)(outputaddr) = hcryp->Instance->DOUT;
+    outputaddr+=4U;
+    *(uint32_t*)(outputaddr) = hcryp->Instance->DOUT;
+    outputaddr+=4U;
+    *(uint32_t*)(outputaddr) = hcryp->Instance->DOUT;
+    outputaddr+=4U;
+  }
+  /* Return function status */
+  return HAL_OK;
+}
 
-      /* Read the Output block from the Output FIFO */
-      *(uint32_t*)(outputaddr) = CRYP_DataOut();
-      outputaddr+=4;
-      *(uint32_t*)(outputaddr) = CRYP_DataOut();
-      outputaddr+=4;
-      *(uint32_t*)(outputaddr) = CRYP_DataOut();
-      outputaddr+=4;
-      *(uint32_t*)(outputaddr) = CRYP_DataOut(); 
-      outputaddr+=4;
-    }
+HAL_StatusTypeDef HAL_CRYP_Init(CRYP_HandleTypeDef *hcryp)
+{ 
+  /* Check the CRYP handle allocation */
+  if(hcryp == NULL)
+  {
+    return HAL_ERROR;
   }
 
-  /* Disable Crypto */
-  CRYP_Cmd(DISABLE);
+  /* Check the parameters */
+  assert_param(IS_CRYP_KEYSIZE(hcryp->Init.KeySize));
+  assert_param(IS_CRYP_DATATYPE(hcryp->Init.DataType));
+    
+  if(hcryp->State == HAL_CRYP_STATE_RESET)
+  {
+    /* Allocate lock resource and initialize it */
+    hcryp->Lock = HAL_UNLOCKED;
+    /* Init the low level hardware */
+    //HAL_CRYP_MspInit(hcryp);
+  }
+  
+  /* Change the CRYP state */
+  hcryp->State = HAL_CRYP_STATE_BUSY;
+  
+  /* Set the key size and data type*/
+  CRYP->CR = (uint32_t) (hcryp->Init.KeySize | hcryp->Init.DataType);
+  
+  /* Reset CrypInCount and CrypOutCount */
+  hcryp->CrypInCount = 0U;
+  hcryp->CrypOutCount = 0U;
+  
+  /* Change the CRYP state */
+  hcryp->State = HAL_CRYP_STATE_READY;
+  
+  /* Set the default CRYP phase */
+  hcryp->Phase = HAL_CRYP_PHASE_READY;
+  
+  /* Return function status */
+  return HAL_OK;
+}
 
-  return status; 
+/**
+  * @brief  DeInitializes the CRYP peripheral. 
+  * @param  hcryp pointer to a CRYP_HandleTypeDef structure that contains
+  *         the configuration information for CRYP module
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_CRYP_DeInit(CRYP_HandleTypeDef *hcryp)
+{
+  /* Check the CRYP handle allocation */
+  if(hcryp == NULL)
+  {
+    return HAL_ERROR;
+  }
+  
+  /* Change the CRYP state */
+  hcryp->State = HAL_CRYP_STATE_BUSY;
+  
+  /* Set the default CRYP phase */
+  hcryp->Phase = HAL_CRYP_PHASE_READY;
+  
+  /* Reset CrypInCount and CrypOutCount */
+  hcryp->CrypInCount = 0U;
+  hcryp->CrypOutCount = 0U;
+  
+  /* Disable the CRYP Peripheral Clock */
+  __HAL_CRYP_DISABLE(hcryp);
+  
+  /* DeInit the low level hardware: CLOCK, NVIC.*/
+  //HAL_CRYP_MspDeInit(hcryp);
+  
+  /* Change the CRYP state */
+  hcryp->State = HAL_CRYP_STATE_RESET;
+
+  /* Release Lock */
+  __HAL_UNLOCK(hcryp);
+
+  /* Return function status */
+  return HAL_OK;
+}
+
+HAL_StatusTypeDef HAL_CRYP_AESECB_Encrypt(CRYP_HandleTypeDef *hcryp, uint8_t *pPlainData, uint16_t Size, uint8_t *pCypherData, uint32_t Timeout)
+{
+  /* Process Locked */
+  __HAL_LOCK(hcryp);
+  
+  /* Change the CRYP state */
+  hcryp->State = HAL_CRYP_STATE_BUSY;
+  
+  /* Check if initialization phase has already been performed */
+  if(hcryp->Phase == HAL_CRYP_PHASE_READY)
+  {
+    /* Set the key */
+    CRYP_SetKey(hcryp, hcryp->Init.pKey, hcryp->Init.KeySize);
+    
+    /* Set the CRYP peripheral in AES ECB mode */
+    __HAL_CRYP_SET_MODE(hcryp, CRYP_CR_ALGOMODE_AES_ECB);
+    
+    /* Flush FIFO */
+    __HAL_CRYP_FIFO_FLUSH(hcryp);
+    
+    /* Enable CRYP */
+    __HAL_CRYP_ENABLE(hcryp);
+    
+    /* Set the phase */
+    hcryp->Phase = HAL_CRYP_PHASE_PROCESS;
+  }
+  
+    /* Write Plain Data and Get Cypher Data */
+    if(CRYP_ProcessData(hcryp, pPlainData, Size, pCypherData, Timeout) != HAL_OK)
+    {
+      return HAL_TIMEOUT;
+    }
+  
+  /* Change the CRYP state */
+  hcryp->State = HAL_CRYP_STATE_READY;
+  
+  /* Process Unlocked */
+  __HAL_UNLOCK(hcryp);
+  
+  /* Return function status */
+  return HAL_OK;
+}
+
+/**
+  * @brief  Initializes the CRYP peripheral in AES ECB decryption mode
+  *         then decrypted pCypherData. The cypher data are available in pPlainData
+  * @param  hcryp pointer to a CRYP_HandleTypeDef structure that contains
+  *         the configuration information for CRYP module
+  * @param  pCypherData Pointer to the cyphertext buffer
+  * @param  Size Length of the plaintext buffer, must be a multiple of 16.
+  * @param  pPlainData Pointer to the plaintext buffer
+  * @param  Timeout Specify Timeout value  
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_CRYP_AESECB_Decrypt(CRYP_HandleTypeDef *hcryp, uint8_t *pCypherData, uint16_t Size, uint8_t *pPlainData, uint32_t Timeout)
+{
+   uint32_t tickstart = 0U;
+  
+  /* Process Locked */
+  __HAL_LOCK(hcryp);
+  
+  /* Change the CRYP state */
+  hcryp->State = HAL_CRYP_STATE_BUSY;
+  
+  /* Check if initialization phase has already been performed */
+  if(hcryp->Phase == HAL_CRYP_PHASE_READY)
+  {
+    /* Set the key */
+    CRYP_SetKey(hcryp, hcryp->Init.pKey, hcryp->Init.KeySize);
+    
+    /* Set the CRYP peripheral in AES Key mode */
+    __HAL_CRYP_SET_MODE(hcryp, CRYP_CR_ALGOMODE_AES_KEY | CRYP_CR_ALGODIR);
+    
+    /* Enable CRYP */
+    __HAL_CRYP_ENABLE(hcryp);
+    
+    /* Get tick */ 
+    tickstart = HAL_GetTick();
+
+    while(HAL_IS_BIT_SET(hcryp->Instance->SR, CRYP_FLAG_BUSY))
+    {
+      /* Check for the Timeout */
+      if(Timeout != HAL_MAX_DELAY)
+      {
+        if((Timeout == 0U)||((HAL_GetTick() - tickstart ) > Timeout))
+        {
+          /* Change state */
+          hcryp->State = HAL_CRYP_STATE_TIMEOUT;
+          
+          /* Process Unlocked */          
+          __HAL_UNLOCK(hcryp);
+        
+          return HAL_TIMEOUT;
+        }
+      }
+    }
+    
+    /* Disable CRYP */
+    __HAL_CRYP_DISABLE(hcryp);
+    
+    /* Reset the ALGOMODE bits*/
+    CRYP->CR &= (uint32_t)(~CRYP_CR_ALGOMODE);
+    
+    /* Set the CRYP peripheral in AES ECB decryption mode */
+    __HAL_CRYP_SET_MODE(hcryp, CRYP_CR_ALGOMODE_AES_ECB | CRYP_CR_ALGODIR);
+    /* Flush FIFO */
+    __HAL_CRYP_FIFO_FLUSH(hcryp);
+    
+    /* Enable CRYP */
+    __HAL_CRYP_ENABLE(hcryp);
+    
+    /* Set the phase */
+    hcryp->Phase = HAL_CRYP_PHASE_PROCESS;
+  }
+    
+    /* Write Plain Data and Get Cypher Data */
+    if(CRYP_ProcessData(hcryp, pCypherData, Size, pPlainData, Timeout) != HAL_OK)
+    {
+      return HAL_TIMEOUT;
+    }
+  
+  /* Change the CRYP state */
+  hcryp->State = HAL_CRYP_STATE_READY;
+  
+  /* Process Unlocked */
+  __HAL_UNLOCK(hcryp);
+  
+  /* Return function status */
+  return HAL_OK;
 }

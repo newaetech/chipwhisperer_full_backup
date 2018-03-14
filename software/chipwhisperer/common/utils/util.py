@@ -388,3 +388,17 @@ def dict_to_str(input_dict, indent=""):
             ret += str(input_dict[n]) + '\n'
 
     return ret
+
+
+class cw_bytearray(bytearray):
+    """Overwrites the __repr__ and __str__ methods of the builtin bytearray class
+    so it prints without trying to turn everything into ascii characters
+
+    It should be usable like the builtin bytearray class in all other regards
+    """
+
+    def __repr__(self):
+        return "CWbytearray({})".format([hex(c)[-2:] for c in self])
+
+    def __str__(self):
+        return self.__repr__()

@@ -21,10 +21,14 @@
 # <http://www.gnu.org/licenses/>.
 #==========================================================================
 
-import logging, os, time, traceback
+import logging
+import os
+import struct
+import time
+import traceback
 from datetime import datetime
-from naeusb import packuint32
 from chipwhisperer.capture.utils.IntelHex import IntelHex
+from chipwhisperer.common.utils.timer import nonBlockingDelay
 
 #From ST AN2606, See Section 50 (Device-dependent bootloader parameters), Page 244/268 on Rev 30 of document
 #http://www.st.com/content/ccc/resource/technical/document/application_note/b9/9b/16/3a/12/1e/40/0c/CD00167594.pdf/files/CD00167594.pdf/jcr:content/translations/en.CD00167594.pdf
@@ -87,7 +91,7 @@ class STM32FSerial(object):
     Class for programming an STM32F device using a serial port or ChipWhisperer-Serial
     """
 
-    def __init__(self, cwserial=None, cwapi=None, spname=None, timeout=200):
+    def __init__(self, cwserial=None, cwapi=None, spname=None, timeout=200, slow_speed=False):
         """
         Set the communications instance.
         """
@@ -98,6 +102,7 @@ class STM32FSerial(object):
         self._chip = STM32FDummy()
         self.lastFlashedFile = "unknown"
         self.extended_erase = 0
+        self.slow_speed = slow_speed
 
         self._old_baud = None
 
@@ -141,19 +146,30 @@ class STM32FSerial(object):
         if hasattr(self.sp, "close"):
             self.sp.close()
 
-    def find(self):
+    def find(self, logfunc=print_fun):
         #setup serial port (or CW-serial port?)
 
-        self.initChip()
+        if logfunc is None:
+            logfunc = print_fun
+
+        try:
+            self.initChip()
+        except IOError:
+            logfunc("Failed to detect chip. Check following: ")
+            logfunc("   1. Connections and device power. ")
+            logfunc("   2. Device has valid clock (or remove clock entirely for internal osc).")
+            logfunc("   3. On Rev -02 CW308T-STM32Fx boards, BOOT0 is routed to PDIC.")
+            raise
+
         boot_version = self.cmdGet()
         chip_id = self.cmdGetID()
 
         for t in supported_stm32f:
             if chip_id == t.signature:
-                logging.info("Detected known STMF32: %s"% t.name)
+                logfunc("Detected known STMF32: %s" % t.name)
                 self.setChip(t)
                 return chip_id, t
-        logging.warning("Detected unknown STM32F ID: 0x%03x"%chip_id)
+        logfunc("Detected unknown STM32F ID: 0x%03x" % chip_id)
         return chip_id, None
 
     def program(self, filename, memtype="flash", verify=True, logfunc=print_fun, waitfunc=None):
@@ -166,7 +182,7 @@ class STM32FSerial(object):
         fdata = f.tobinarray(start=f.minaddr())
         startaddr = f.minaddr()
 
-        logging.info("Programming %d bytes at 0x%x", fsize, startaddr)
+        logfunc("Attempting to programming %d bytes at 0x%x"% (fsize, startaddr))
 
         logfunc("STM32F Programming %s..." % memtype)
         if waitfunc: waitfunc()
@@ -200,10 +216,11 @@ class STM32FSerial(object):
                 if logfunc: logfunc("Entering Programming Mode")
                 if waitfunc: waitfunc()
                 self.open_port()
-                self.find()
+                self.find(logfunc)
 
                 if erase:
                     self.cmdEraseMemory()
+                    logfunc("Erasing memory")
 
                 if waitfunc: waitfunc()
                 self.program(hexfile, memtype="flash", verify=verify, logfunc=logfunc, waitfunc=waitfunc)
@@ -235,9 +252,9 @@ class STM32FSerial(object):
 
     def reset(self):
         self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'Low'])
-        time.sleep(0.1)
+        nonBlockingDelay(10)
         self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'High'])
-        time.sleep(0.25)
+        nonBlockingDelay(25)
 
     def set_boot(self, enter_bootloader):
         if enter_bootloader:
@@ -262,7 +279,7 @@ class STM32FSerial(object):
                     # NACK
                     raise CmdException("NACK " + info)
                 else:
-                    # Unknown responce
+                    # Unknown response
                     raise CmdException("Unknown response. " + info + ": " + hex(ask))
 
     def initChip(self):
@@ -280,8 +297,9 @@ class STM32FSerial(object):
             except CmdException:
                 logging.info("Sync failed with error %s, retrying..." % traceback.format_exc())
                 fails += 1
-        raise
 
+        self.releaseChip()
+        raise IOError("Could not detect STM32F, check connections, BOOT MODE entry setup")
 
     def releaseChip(self):
         self.set_boot(False)
@@ -332,15 +350,13 @@ class STM32FSerial(object):
             raise CmdException("GetID (0x02) failed")
 
     def _encode_addr(self, addr):
-        byte3 = (addr >> 0) & 0xFF
-        byte2 = (addr >> 8) & 0xFF
-        byte1 = (addr >> 16) & 0xFF
-        byte0 = (addr >> 24) & 0xFF
-        crc = byte0 ^ byte1 ^ byte2 ^ byte3
-        return (chr(byte0) + chr(byte1) + chr(byte2) + chr(byte3) + chr(crc))
+        baddr = bytearray(struct.pack(">L", addr))
+        crc = reduce(lambda x, y: x ^ y, baddr)
+        baddr.append(crc)
+        return str(baddr)
 
     def cmdReadMemory(self, addr, lng):
-        assert (lng <= 256)
+        assert (0 < lng <= 256)
         if self.cmdGeneric(0x11):
             logging.debug("*** ReadMemory command")
             self.sp.write(self._encode_addr(addr))
@@ -362,19 +378,24 @@ class STM32FSerial(object):
             raise CmdException("Go (0x21) failed")
 
     def cmdWriteMemory(self, addr, data):
-        assert (len(data) <= 256)
+        padding = len(data) & 3
+        if padding:
+            data += [0xff, 0xff, 0xff, 0xff][padding:]
+        assert (0 < len(data) <= 256)
         if self.cmdGeneric(0x31):
             logging.debug("*** Write memory command")
             self.sp.write(self._encode_addr(addr))
             self._wait_for_ask("0x31 address failed")
             # map(lambda c: hex(ord(c)), data)
             lng = (len(data) - 1) & 0xFF
-            logging.debug("    %s bytes to write" % [lng + 1]);
+            logging.debug("    %s bytes to write" % [lng + 1])
             self.sp.write(chr(lng))  # len really
-            crc = 0xFF
+            crc = lng
             for c in data:
-                crc = crc ^ c
+                crc ^= c
                 self.sp.write(chr(c))
+                if self.slow_speed:
+                    nonBlockingDelay(5)
             self.sp.write(chr(crc))
             self._wait_for_ask("0x31 programming failed")
             logging.debug("    Write memory done")
@@ -469,12 +490,15 @@ class STM32FSerial(object):
         data = []
         while lng > 256:
             logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': 256})
-            data = data + self.cmdReadMemory(addr, 256)
-            addr = addr + 256
-            lng = lng - 256
+            data += self.cmdReadMemory(addr, 256)
+            if self.slow_speed:
+                nonBlockingDelay(1)
+            addr += 256
+            lng -= 256
 
-        logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': 256})
-        data = data + self.cmdReadMemory(addr, lng)
+        logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
+        if lng:
+            data += self.cmdReadMemory(addr, lng)
         return data
 
     def writeMemory(self, addr, data):
@@ -485,11 +509,11 @@ class STM32FSerial(object):
         while lng > 256:
             logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': 256})
             self.cmdWriteMemory(addr, data[offs:offs + 256])
-            offs = offs + 256
-            addr = addr + 256
-            lng = lng - 256
-        logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': 256})
-        self.cmdWriteMemory(addr, data[offs:offs + lng] + ([0xFF] * (256 - lng)))
-
-        def __init__(self):
-            pass
+            if self.slow_speed:
+                nonBlockingDelay(1)
+            offs += 256
+            addr += 256
+            lng -= 256
+        if lng:
+            logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
+            self.cmdWriteMemory(addr, data[offs:])
