@@ -71,7 +71,7 @@ void simpleserial_init()
 
 int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t*))
 {
-	if(num_commands > MAX_SS_CMDS)
+	if(num_commands >= MAX_SS_CMDS)
 		return 1;
 
 	if(len > MAX_SS_LEN)
