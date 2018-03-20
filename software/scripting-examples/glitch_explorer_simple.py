@@ -9,6 +9,7 @@ import time
 import logging
 import os
 from collections import namedtuple
+import csv
 
 import numpy as np
 
@@ -70,6 +71,9 @@ offset_range = Range(-10, 10, 4)
 
 # glitch cycle
 scope.glitch.width = width_range.min
+open('glitch_out.csv', 'w').close()
+f = open('glitch_out.csv', 'ab')
+writer = csv.writer(f)
 while scope.glitch.width < width_range.max:
     scope.glitch.offset = offset_range.min
     while scope.glitch.offset < offset_range.max:
@@ -117,13 +121,15 @@ while scope.glitch.width < width_range.max:
 
         # for table display purposes
         success = '1234' in repr(output) # check for glitch success (depends on targets active firmware)
-        glitch_display.add_data([repr(output), scope.glitch.width, scope.glitch.offset, success])
+        data = [repr(output), scope.glitch.width, scope.glitch.offset, success]
+        glitch_display.add_data(data)
+        writer.writerow(data)
 
         # run aux stuff that should happen after trace here
         scope.glitch.offset += offset_range.step
     scope.glitch.width += width_range.step
-
+f.close()
 traces = np.asarray(traces)
 # the rest of the data is available with the outputs, widths, and offsets lists
-glitch_display.display()
+glitch_display.display_table()
 print('Done')
