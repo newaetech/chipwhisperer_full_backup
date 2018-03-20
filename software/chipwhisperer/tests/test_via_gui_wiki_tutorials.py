@@ -71,7 +71,7 @@ class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
         self.auto_ui.capture.gui.scope.dis()
         self.auto_ui.capture.gui.target.dis()
 
-    def test_TutorialB1(self):
+    def test_TutorialB5(self):
         self.aes_firmware_dir = os.path.join(FIRMWARE_DIR, "simpleserial-aes")
 
         # Build firmware
@@ -165,10 +165,10 @@ class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    tutB1_suite = unittest.makeSuite(TestTutorialB5BreakingAESStraightForward)
+    tutB5_suite = unittest.makeSuite(TestTutorialB5BreakingAESStraightForward)
 
     test_runner = unittest.TextTestRunner(verbosity=2)
-    test_runner.run(tutB1_suite)
+    test_runner.run(tutB5_suite)
 
 
 
