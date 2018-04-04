@@ -67,7 +67,7 @@ uint32_t aes_sts;
         memcpy(key, k, 16);
         while (aes_busy());
         if (aes_set_key(key, 0, AES_KEYLEN_128, 1) != AES_OK)
-           UART0_Write_Text("Bad key\n");
+           return 0x01;
         return 0x00;
 }
 
@@ -77,7 +77,7 @@ uint8_t get_pt(uint8_t* pt)
 
         int i;
         if (!pt || !outbuf) {
-           UART0_Write_Text("Null pointer\n");
+           return 0x01;
         }
 
 
@@ -94,7 +94,7 @@ uint8_t get_pt(uint8_t* pt)
         //not needed
 
         if (aes_crypt(ptbuf, outbuf, 1, AES_MODE_ECB) != AES_OK)
-              UART0_Write_Text("Bad crypt\n");
+              return 0x02;
         aes_start(0);
         while (!aes_done_status(&aes_sts));
         trigger_low();
