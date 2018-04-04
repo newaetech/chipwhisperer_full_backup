@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<devices>
+  <default version="1.0">
+
+    <manufacturerName>Microchip/SST</manufacturerName>
+    <maxBitrate> 8*1000 </maxBitrate>
+    <writeTime>64</writeTime>
+    <deviceAlgorithm>SPI Flash</deviceAlgorithm>
+    <!-- <ioModeAddress> 1 </ioModeAddress> -->
+    <!-- <ioModeDataIn> 1 </ioModeDataIn> -->
+    <!-- <ioModeDataOut> 1 </ioModeDataOut> -->
+  </default>
+  <device version="1.0">
+    <deviceName>SST26VF016B</deviceName>
+    <deviceDescription>SST-SST26VF016B-16-Megabyte-SPI-Flash</deviceDescription>
+    <eraseInstruction>0x20</eraseInstruction>
+    <eraseSize>4*1024</eraseSize>
+    <eraseTime> 18000 </eraseTime>
+    <maxBitrate> 8*1000 </maxBitrate>
+    <capacity> 16*1024*1024 </capacity>
+    <addressWidth> 3 </addressWidth>
+    <writeSize> 256 </writeSize>
+    <writeTime> 64 </writeTime>
+    <readDeviceIdInstruction> 0x9F </readDeviceIdInstruction>
+    <readInstruction> 0x03 </readInstruction>
+    <writeAutoAddressIncrementSize> 2 </writeAutoAddressIncrementSize>
+    <writeAutoAddressIncrementTime> 10 </writeAutoAddressIncrementTime>
+    <eraseAllInstruction> 0xC7 </eraseAllInstruction>
+    <eraseAllTime> 16000 </eraseAllTime>
+    <hasEraseAll> true </hasEraseAll>
+    <expectedDeviceId> \xbf\x26\x41 </expectedDeviceId>
+    <userTransaction1> \x98 </userTransaction1>
+    <userTransaction1Time> 10000 </userTransaction1Time>
+    <userTransaction1WriteEnable> false </userTransaction1WriteEnable>
+  </device>
+</devices>
