@@ -34,15 +34,15 @@ scope.io.tio2 = "serial_tx"
 scope.io.hs2 = "clkgen"
 
 # program the target
-xmega = XMEGAProgrammer()
-xmega.setUSBInterface(scope.scopetype.dev.xmega)
-xmega._logging = None
-xmega.find()
-xmega.erase()
-glitch_simple_firmware_dir = os.path.join(FIRMWARE_DIR, 'simpleserial-aes')
-glitch_simple_hex = os.path.join(glitch_simple_firmware_dir, r"simpleserial-aes-CW303.hex")
-xmega.program(glitch_simple_hex, memtype="flash", verify=True)
-xmega.close()
+programmer = XMEGAProgrammer()
+programmer.setUSBInterface(scope.scopetype.dev.xmega)
+programmer._logging = None
+programmer.find()
+programmer.erase()
+aes_firmware_dir = os.path.join(FIRMWARE_DIR, 'simpleserial-aes')
+aes_hex = os.path.join(aes_firmware_dir, r"simpleserial-aes-CW303.hex")
+programmer.program(aes_hex, memtype="flash", verify=True)
+programmer.close()
 
 ktp = AcqKeyTextPattern_Basic(target=target)
 
