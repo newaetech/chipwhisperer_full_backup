@@ -134,6 +134,17 @@ class STM32FProgrammer(Programmer):
         self.stm32 = iface
         self.stm32.setChip(self.supported_chips[0])
 
+    @property
+    def scope(self):
+        return self.stm32.scope
+
+    @scope.setter
+    def scope(self, value):
+        if self.stm32:
+            self.stm32.scope = value
+        else:
+            raise AttributeError('requires USB interface to be set')
+
     def open_and_find(self, log_func=None):
         self.stm32.open_port()
         sig, chip = self.stm32.find(logfunc=log_func)
@@ -142,7 +153,27 @@ class STM32FProgrammer(Programmer):
         if chip is None:
             self.log("Detected Unknown Chip, sig=%3x"% (sig))
         else:
-             self.log("Detected %s" % chip.name)
+            self.log("Detected %s" % chip.name)
+
+    def open(self):
+        self.stm32.open_port()
+
+    def find(self):
+        sig, chip = self.stm32.find()
+
+        if chip is None:
+            self.log("Detected Unknown Chip, sig=%3x" % (sig))
+        else:
+            self.log("Detected %s" % chip.name)
+
+    def program(self, filename, memtype="flash", verify=True):
+        Programmer.lastFlashedFile = filename
+        self.stm32.program(filename, memtype, verify)
+
+    def erase(self):
+        self.log("Erasing Chip")
+        self.stm32.cmdEraseMemory()
 
     def close(self):
         self.stm32.close_port()
+        self.stm32.releaseChip()

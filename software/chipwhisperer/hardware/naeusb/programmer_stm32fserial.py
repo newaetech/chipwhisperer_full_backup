@@ -97,6 +97,7 @@ class STM32FSerial(object):
         """
 
         self._cwapi = cwapi
+        self.scope = None # set with the programmer (needed for non-gui compatibility)
         self._cwserial = cwserial
         self._timeout = timeout
         self._chip = STM32FDummy()
@@ -142,6 +143,9 @@ class STM32FSerial(object):
 
         if self._cwapi:
             self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'Default'])
+
+        if self.scope:
+            self.scope.io.nrst = 'default'
 
         if hasattr(self.sp, "close"):
             self.sp.close()
@@ -251,16 +255,34 @@ class STM32FSerial(object):
         self._chip = chiptype
 
     def reset(self):
-        self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'Low'])
-        nonBlockingDelay(10)
-        self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'High'])
-        nonBlockingDelay(25)
+        if self._cwapi:
+            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'Low'])
+            nonBlockingDelay(10)
+            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'High'])
+            nonBlockingDelay(25)
+        elif self.scope:
+            self.scope.io.nrst = 'low'
+            time.sleep(0.010)
+            self.scope.io.nrst = 'high'
+            time.sleep(0.025)
+        else:
+            raise ValueError('requires either scope or api to be set')
 
     def set_boot(self, enter_bootloader):
         if enter_bootloader:
-            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'High'])
+            if self._cwapi:
+                self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'High'])
+            elif self.scope:
+                self.scope.io.pdic = 'high'
+            else:
+                raise ValueError('requires either scope or api to be set')
         else:
-            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'Default'])
+            if self._cwapi:
+                self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'Default'])
+            elif self.scope:
+                self.scope.io.pdic = 'default'
+            else:
+                raise ValueError('requires either scope or api to be set')
         logging.info("Assuming appropriate BOOT pins set HIGH on STM32F Hardware now")
 
 
