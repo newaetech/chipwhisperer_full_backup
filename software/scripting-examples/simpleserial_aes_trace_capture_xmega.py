@@ -50,6 +50,7 @@ traces = []
 textin = []
 keys = []
 N = 50  # Number of traces
+target.init()
 for i in tqdm(range(N), desc='Capturing traces'):
     # run aux stuff that should come before trace here
 

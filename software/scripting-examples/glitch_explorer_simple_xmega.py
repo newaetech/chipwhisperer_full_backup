@@ -22,17 +22,6 @@ logging.basicConfig(level=logging.WARN)
 scope = cw.scope()
 target = cw.target(scope)
 
-# program the XMEGA with the built hex file
-xmega = XMEGAProgrammer()
-xmega.setUSBInterface(scope.scopetype.dev.xmega)
-xmega._logging = None
-xmega.find()
-xmega.erase()
-glitch_simple_firmware_dir = os.path.join(FIRMWARE_DIR, 'glitch-simple')
-glitch_simple_hex = os.path.join(glitch_simple_firmware_dir, r"glitchsimple-CW303.hex")
-xmega.program(glitch_simple_hex, memtype="flash", verify=True)
-xmega.close()
-
 # setup parameters needed for glitch the XMEGA
 scope.glitch.clk_src = 'clkgen'
 
@@ -49,6 +38,17 @@ scope.io.hs2 = "glitch"
 
 target.go_cmd = ""
 target.key_cmd = ""
+
+# program the XMEGA with the built hex file
+programmer = XMEGAProgrammer()
+programmer.setUSBInterface(scope.scopetype.dev.xmega)
+programmer._logging = None
+programmer.find()
+programmer.erase()
+glitch_simple_firmware_dir = os.path.join(FIRMWARE_DIR, 'glitch-simple')
+glitch_simple_hex = os.path.join(glitch_simple_firmware_dir, r"glitchsimple-CW303.hex")
+programmer.program(glitch_simple_hex, memtype="flash", verify=True)
+programmer.close()
 
 # format output table
 headers = ['target output', 'width', 'offset', 'success']
@@ -74,6 +74,7 @@ scope.glitch.width = width_range.min
 open('glitch_out.csv', 'w').close()
 f = open('glitch_out.csv', 'ab')
 writer = csv.writer(f)
+target.init()
 while scope.glitch.width < width_range.max:
     scope.glitch.offset = offset_range.min
     while scope.glitch.offset < offset_range.max:
@@ -82,13 +83,8 @@ while scope.glitch.width < width_range.max:
         # flush the garbage from the computer's target read buffer
         target.ser.flush()
 
-        # resets the target for the next glitch cycle
-        # similar to Check Signature button in GUI
-        xmega.find()
-        xmega.close()
-
-        target.reinit()
-        # call target functions here, setModeEncrypt...
+        # target enters reset mode
+        scope.io.nrst = 'low'
 
         # run aux stuff that should run before the scope arms here
 
@@ -96,7 +92,9 @@ while scope.glitch.width < width_range.max:
 
         # run aux stuff that should run after the scope arms here
 
-        target.go()
+        # target exits reset mode
+        scope.io.nrst = 'high'
+
         timeout = 50
         # wait for target to finish
         while target.isDone() is False and timeout:
