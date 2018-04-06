@@ -301,8 +301,11 @@ class STM32FSerial(object):
                 #First 2-times, try resetting. After that don't in case reset is causing garbage on lines.
                 if fails < 2:
                     self.reset()
-                self.sp.flush()
-                self.sp.write("\x7F")
+                try:
+                    self.sp.flush()
+                    self.sp.write("\x7F")
+                except AttributeError:
+                    raise AttributeError('sp attribute requires call to open_port')
                 return self._wait_for_ask("Syncro")
             except CmdException:
                 logging.info("Sync failed with error %s, retrying..." % traceback.format_exc())
