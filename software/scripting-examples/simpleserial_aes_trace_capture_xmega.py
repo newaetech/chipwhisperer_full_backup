@@ -85,7 +85,7 @@ for i in tqdm(range(N), desc='Capturing traces'):
         print('IOError: %s' % str(e))
 
     # run aux stuff that should happen after trace here
-
+    _ = target.readOutput()  # clears the response from the serial port
     traces.append(scope.getLastTrace())
 trace_array = np.asarray(traces)  # if you prefer to work with numpy array for number crunching
 textin_array = np.asarray(textin)
