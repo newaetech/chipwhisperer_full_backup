@@ -84,7 +84,7 @@ while scope.glitch.width < width_range.max:
         target.ser.flush()
 
         # target enters reset mode
-        scope.io.nrst = 'low'
+        scope.io.pdic = 'low'
 
         # run aux stuff that should run before the scope arms here
 
@@ -93,7 +93,7 @@ while scope.glitch.width < width_range.max:
         # run aux stuff that should run after the scope arms here
 
         # target exits reset mode
-        scope.io.nrst = 'high'
+        scope.io.pdic = 'high'
 
         timeout = 50
         # wait for target to finish

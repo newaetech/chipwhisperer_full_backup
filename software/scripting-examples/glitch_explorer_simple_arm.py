@@ -1,4 +1,4 @@
-"""Example for scripting glitching of the XMEGA target using the chipwhisperer
+"""Example for scripting glitching of the stm32f3 target using the chipwhisperer
 tool. Similar to what the glitch explorer does. This script does not spawn a
 gui, and uses the 4.0 api.
 """
