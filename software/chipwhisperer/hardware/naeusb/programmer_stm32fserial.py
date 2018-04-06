@@ -107,18 +107,6 @@ class STM32FSerial(object):
 
         self._old_baud = None
 
-#    def open(self, aport='/dev/tty.usbserial-ftCYPMYJ', abaudrate=115200):
-#        self.sp = serial.Serial(
-#            port=aport,
-#            baudrate=abaudrate,  # baudrate
-#            bytesize=8,  # number of databits
-#            parity=serial.PARITY_EVEN,
-#            stopbits=1,
-#            xonxoff=0,  # don't enable software flow control
-#            rtscts=0,  # don't enable RTS/CTS flow control
-#            timeout=5  # set a timeout value, None for waiting forever
-#        )
-
     def open_port(self):
 
         if self._cwserial:
