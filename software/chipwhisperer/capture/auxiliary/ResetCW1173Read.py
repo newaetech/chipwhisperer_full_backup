@@ -24,13 +24,15 @@
 #=================================================
 
 from chipwhisperer.common.utils.timer import nonBlockingDelay
+import time
 
 class ResetCW1173(object):
     """Reset an AVR/XMEGA via the PDI/ISP interface.
     
     This class must be initialized with 2 values:
-    - XMEGA/AVR: True if reseting XMEGA; False for AVR
     - Delay: How long to wait between device reset and scope arm
+    - pin: (string) to identify pin to toggle
+        XMEGA: use 'pdic', AVR and STM32Fx use 'nrst'
     
     Then, there are three self-explanatory functions that can be registered:
     - reset(): no delay. Useful for testing
@@ -43,16 +45,22 @@ class ResetCW1173(object):
     measurement. 
     """
     
-    def __init__(self, xmega, delay_ms):
-        self._xmega = xmega
+    def __init__(self, delay_ms, pin='nrst'):
         self._delay_ms = delay_ms
+        self._pin = pin
         
     def reset(self, scope):
-        if self._xmega:
-            scope.scopetype.dev.getCwliteXMEGA().readSignature()
+        if self._pin == 'nrst':
+            scope.io.nrst = 'low'
+            time.sleep(0.01)
+            scope.io.nrst = 'high'
+        elif self._pin == 'pdic':
+            scope.io.pdic = 'low'
+            time.sleep(0.01)
+            scope.io.pdic = 'high'
         else:
-            scope.scopetype.dev.getCwliteAVR().readSignature()
-        
+            ValueError('currently only nrst and pdic are toggleable')
+
     def resetThenDelay(self, scope, target, project):
         self.reset(scope)
         nonBlockingDelay(self._delay_ms)
