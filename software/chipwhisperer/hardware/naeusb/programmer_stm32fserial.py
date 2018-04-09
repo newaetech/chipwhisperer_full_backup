@@ -29,6 +29,7 @@ import traceback
 from datetime import datetime
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 from chipwhisperer.common.utils.timer import nonBlockingDelay
+from chipwhisperer.common.utils.util import updateUI
 
 #From ST AN2606, See Section 50 (Device-dependent bootloader parameters), Page 244/268 on Rev 30 of document
 #http://www.st.com/content/ccc/resource/technical/document/application_note/b9/9b/16/3a/12/1e/40/0c/CD00167594.pdf/files/CD00167594.pdf/jcr:content/translations/en.CD00167594.pdf
@@ -522,6 +523,7 @@ class STM32FSerial(object):
         while lng > 256:
             logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': 256})
             self.cmdWriteMemory(addr, data[offs:offs + 256])
+            updateUI()
             if self.slow_speed:
                 nonBlockingDelay(1)
             offs += 256
