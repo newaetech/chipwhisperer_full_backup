@@ -14,4 +14,5 @@ These tests also include testing for the scripts found in scripting-examples.
 ## TODO ##
  1. Make it so that both the GUI tests and the non GUI tests can be run at the same time
  1. Add a gui test for the glitch explorer
+ 1. Add the ability to specify what hardware is being tested (right now only xmega can be tested)
 
