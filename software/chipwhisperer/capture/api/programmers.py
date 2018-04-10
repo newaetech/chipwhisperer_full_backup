@@ -56,16 +56,22 @@ def save_and_restore_pins(func):
         # the stm32f uses the toggling of the nrst and pdic pins for resetting
         # and boot mode setting respectively
         logging.debug('Changing pdic, pdid, and nrst pin configuration')
-        self.scope.io.pdic = 'default'
-        self.scope.io.pdid = 'default'
-        self.scope.io.nrst = 'default'
+        if pin_setup['pdic'] != 'high_z':
+            self.scope.io.pdic = 'high_z'
+        if pin_setup['pdid'] != 'high_z':
+            self.scope.io.pdid = 'high_z'
+        if pin_setup['nrst'] != 'high_z':
+            self.scope.io.nrst = 'high_z'
         try:
             val = func(self, *args, **kwargs)
         finally:
             logging.debug('Restoring pdic, pdid, and nrst pin configuration')
-            self.scope.io.pdic = pin_setup['pdic']
-            self.scope.io.pdid = pin_setup['pdid']
-            self.scope.io.nrst = pin_setup['nrst']
+            if self.scope.io.pdic != pin_setup['pdic']:
+                self.scope.io.pdic = pin_setup['pdic']
+            if self.scope.io.pdid != pin_setup['pdid']:
+                self.scope.io.pdid = pin_setup['pdid']
+            if self.scope.io.nrst != pin_setup['nrst']:
+                self.scope.io.nrst = pin_setup['nrst']
         return val # only returns value when decorating a function with return value
     return func_wrapper
 
