@@ -296,3 +296,25 @@ class TestTutorialA2GlitchAttacks(unittest.TestCase):
                 scope.glitch.offset += offset_range.step
             scope.glitch.width += width_range.step
         self.assertTrue(success, 'There is no "1234" in the outputs, maybe glitch1() in c file is not active')
+
+class TestExampleScripts(unittest.TestCase):
+
+    def setUp(self):
+        logging.basicConfig(level=logging.INFO)
+
+
+    def test_xmega_scripts(self):
+        files = os.listdir(SCRIPTING_EXAMPLES_DIR)
+        xmega_scripts = []
+        for file in files:
+            if 'xmega' in file:
+                xmega_scripts.append(os.path.join(SCRIPTING_EXAMPLES_DIR, file))
+        try:
+            for xmega_script in xmega_scripts:
+                exec(open(xmega_script, 'r').read())
+        finally:
+            try:
+                scope.dis()
+                target.dis()
+            except:
+                pass

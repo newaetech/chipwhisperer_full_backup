@@ -104,9 +104,9 @@ np.save(textin_file_path, textin_array)
 np.save(keys_file_path, known_keys)
 print('Done')
 
-# show an example trace
+# uncomment plt.show() to show an example trace
 plt.plot(traces[0])
-plt.show()
+#plt.show()
 
 # cleanup the connection to the target and scope
 scope.dis()

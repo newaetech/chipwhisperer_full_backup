@@ -16,7 +16,7 @@ import numpy as np
 import chipwhisperer as cw
 from chipwhisperer.tests.tools_for_tests import FIRMWARE_DIR
 from chipwhisperer.capture.api.programmers import XMEGAProgrammer
-from scripting_utils import GlitchResultsDisplay
+#from scripting_utils import GlitchResultsDisplay
 
 logging.basicConfig(level=logging.WARN)
 scope = cw.scope()
@@ -52,7 +52,7 @@ programmer.close()
 
 # format output table
 headers = ['target output', 'width', 'offset', 'success']
-glitch_display = GlitchResultsDisplay(headers)
+#glitch_display = GlitchResultsDisplay(headers)
 
 # set glitch parameters
 # trigger glitches with external trigger
@@ -120,7 +120,7 @@ while scope.glitch.width < width_range.max:
         # for table display purposes
         success = '1234' in repr(output) # check for glitch success (depends on targets active firmware)
         data = [repr(output), scope.glitch.width, scope.glitch.offset, success]
-        glitch_display.add_data(data)
+        #glitch_display.add_data(data)
         writer.writerow(data)
 
         # run aux stuff that should happen after trace here
@@ -129,5 +129,9 @@ while scope.glitch.width < width_range.max:
 f.close()
 traces = np.asarray(traces)
 # the rest of the data is available with the outputs, widths, and offsets lists
-glitch_display.display_table()
+#glitch_display.display_table()
 print('Done')
+
+# clean up the connection to the scope and target
+scope.dis()
+target.dis()
