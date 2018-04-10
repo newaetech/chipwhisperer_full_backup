@@ -41,7 +41,7 @@ target.key_cmd = ""
 
 # program the XMEGA with the built hex file
 programmer = XMEGAProgrammer()
-programmer.setUSBInterface(scope.scopetype.dev.xmega)
+programmer.scope = scope
 programmer._logging = None
 programmer.find()
 programmer.erase()

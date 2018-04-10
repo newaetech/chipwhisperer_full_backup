@@ -41,7 +41,6 @@ target.key_cmd = ""
 
 # program the XMEGA with the built hex file
 programmer = STM32FProgrammer()
-programmer.setUSBInterface(scope.scopetype.dev.serialstm32f)
 programmer.scope = scope
 programmer._logging = None
 programmer.open()

@@ -35,7 +35,6 @@ scope.io.hs2 = "clkgen"
 
 # program the target
 programmer = STM32FProgrammer()
-programmer.setUSBInterface(scope.scopetype.dev.serialstm32f)
 programmer.scope = scope
 programmer._logging = None
 programmer.open()

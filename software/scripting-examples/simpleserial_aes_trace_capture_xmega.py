@@ -35,7 +35,7 @@ scope.io.hs2 = "clkgen"
 
 # program the target
 programmer = XMEGAProgrammer()
-programmer.setUSBInterface(scope.scopetype.dev.xmega)
+programmer.scope = scope
 programmer._logging = None
 programmer.find()
 programmer.erase()
