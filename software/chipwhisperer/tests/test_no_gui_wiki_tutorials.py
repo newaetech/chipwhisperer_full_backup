@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 import chipwhisperer as cw
 from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
-from chipwhisperer.tests.tools_for_tests import FIRMWARE_DIR
+from chipwhisperer.tests.tools_for_tests import FIRMWARE_DIR, SCRIPTING_EXAMPLES_DIR
 from chipwhisperer.capture.api.programmers import XMEGAProgrammer
 
 
@@ -54,15 +54,15 @@ class TestTutorialB6BreakingAESManual(unittest.TestCase):
         scope = self.scope
         target = self.target
 
-        xmega = XMEGAProgrammer()
-        xmega.setUSBInterface(scope.scopetype.dev.xmega)
-        xmega._logging = None
-        xmega.find()
-        xmega.erase()
-        glitch_simple_firmware_dir = os.path.join(FIRMWARE_DIR, 'simpleserial-aes')
-        glitch_simple_hex = os.path.join(glitch_simple_firmware_dir, r"simpleserial-aes-CW303.hex")
-        xmega.program(glitch_simple_hex, memtype="flash", verify=True)
-        xmega.close()
+        programmer = XMEGAProgrammer()
+        programmer.scope = scope
+        programmer._logging = None
+        programmer.find()
+        programmer.erase()
+        aes_firmware_dir = os.path.join(FIRMWARE_DIR, 'simpleserial-aes')
+        aes_hex = os.path.join(aes_firmware_dir, r"simpleserial-aes-CW303.hex")
+        programmer.program(aes_hex, memtype="flash", verify=True)
+        programmer.close()
 
         # setup scope parameters
         scope.gain.gain = 45
@@ -82,6 +82,7 @@ class TestTutorialB6BreakingAESManual(unittest.TestCase):
         textin = []
         N = 100 # Number of traces
         print('Capturing traces...')
+        target.init()
         for i in tqdm(range(N)):
             key, text = ktp.newPair() # manual creation of a key, text pair can be substituted here
             textin.append(text)
@@ -113,7 +114,7 @@ class TestTutorialB6BreakingAESManual(unittest.TestCase):
                 logging.error('IOError: %s' % str(e))
 
             # run aux stuff that should happen after trace here
-
+            _ = target.readOutput() # for keep the v1.1 protocol working
             traces.append(scope.getLastTrace())
 
         knownkey = key
@@ -206,14 +207,14 @@ class TestTutorialA2GlitchAttacks(unittest.TestCase):
         target = self.target
 
         # program the XMEGA with the built hex file
-        xmega = XMEGAProgrammer()
-        xmega.setUSBInterface(scope.scopetype.dev.xmega)
-        xmega._logging = None
-        xmega.find()
-        xmega.erase()
+        programmer = XMEGAProgrammer()
+        programmer.scope = scope
+        programmer._logging = None
+        programmer.find()
+        programmer.erase()
         glitch_simple_hex = os.path.join(self.glitch_simple_firmware_dir, r"glitchsimple-CW303.hex")
-        xmega.program(glitch_simple_hex, memtype="flash", verify=True)
-        xmega.close()
+        programmer.program(glitch_simple_hex, memtype="flash", verify=True)
+        programmer.close()
 
         # setup parameters needed for glitch the XMEGA
         scope.glitch.clk_src = 'clkgen'
@@ -248,17 +249,16 @@ class TestTutorialA2GlitchAttacks(unittest.TestCase):
         # glitch cycle
         scope.glitch.width = width_range.min
         success = False
+        target.init()
         while scope.glitch.width < width_range.max and not success:
             scope.glitch.offset = offset_range.min
             while scope.glitch.offset < offset_range.max and not success:
                 # call before trace things here
-                # similar to check signature
-                xmega.find()
-                xmega.close()
-                # similar to check signature
+                # flush the garbage from the computer's target read buffer
+                target.ser.flush()
 
-                target.reinit()
-                # call target functions here, setModeEncrypt...
+                # target enters reset mode
+                scope.io.pdic = 'low'
 
                 # run aux stuff that should run before the scope arms here
 
@@ -266,7 +266,9 @@ class TestTutorialA2GlitchAttacks(unittest.TestCase):
 
                 # run aux stuff that should run after the scope arms here
 
-                target.go()
+                # target exits reset mode
+                scope.io.pdic = 'high'
+
                 timeout = 50
                 # wait for target to finish
                 while target.isDone() is False and timeout:
@@ -284,7 +286,7 @@ class TestTutorialA2GlitchAttacks(unittest.TestCase):
 
                 # get the results
                 trace = scope.getLastTrace()
-                output = target.ser.read(target.output_len * 2, timeout=1000)
+                output = target.ser.read(target.output_len * 2, timeout=10)
                 traces.append(trace)
                 outputs.append(output)
                 if '1234' in repr(output):
