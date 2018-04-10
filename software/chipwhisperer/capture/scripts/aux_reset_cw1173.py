@@ -21,7 +21,13 @@ Resetter = ResetCW1173(pin='pdic', delay_ms=delay_ms)
 # Reset AVR
 #Resetter = ResetCW1173(pin='nrst', delay_ms=delay_ms)
 
-# Reset before arming - more stable
-aux_list.register(Resetter.resetThenDelay, "before_trace")
-# Reset after arming - scope can catch entire reset
-#aux_list.register(Resetter.delayThenReset, "after_arm")
+# Reset before arming
+# avoids possibility of false triggers
+# need delay in target firmware to avoid race condition
+#aux_list.register(Resetter.resetThenDelay, "before_trace")
+
+# Reset after arming
+# scope can catch entire reset
+# avoids race condition
+# target reset can cause false triggers (usually not an issue)
+aux_list.register(Resetter.delayThenReset, "after_arm")
