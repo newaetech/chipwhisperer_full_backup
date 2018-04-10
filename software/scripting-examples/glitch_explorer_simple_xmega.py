@@ -111,7 +111,7 @@ while scope.glitch.width < width_range.max:
         # get the results from the scope
         trace = scope.getLastTrace()
         # read from the targets buffer
-        output = target.ser.read(target.output_len * 2, timeout=1000)
+        output = target.ser.read(32, timeout=10)
         traces.append(trace)
         outputs.append(output)
         widths.append(scope.glitch.width)
