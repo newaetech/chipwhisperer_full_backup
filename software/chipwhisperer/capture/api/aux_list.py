@@ -182,12 +182,12 @@ class AuxList(Parameterized):
 
         Raises:
             ValueError if timing not recognized
-            TypeError if func not a function (TODO)
+            TypeError if func not a function
         """
         if not callable(func):
             raise TypeError("Provided function is not callable" % func)
         if timing not in self._valid_timings.keys():
-            raise ValueError("Invalid timing provided: expected one of %s" % self._valid_timings, keys(), timing)
+            raise ValueError("Invalid timing provided: expected one of %s" % self._valid_timings.keys(), timing)
 
         existing_item = None
         if override_class:
