@@ -160,7 +160,6 @@ class Parameter(object):
     suppertedAttributes = {"name", "key", "type", "values", "value", "set", "get", "limits", "step", "linked",
                            "default", "tip", "action", "visible", "children", "readonly", "graphwidget"}
     usePyQtGraph = False
-    printParameterPath = True
 
     def __init__(self, parent=None, ignoreChildren=False, **opts):
         self.sigValueChanged = util.Signal()
@@ -377,7 +376,7 @@ class Parameter(object):
 
             if echo and not self.opts.get("echooff", False) and not self.readonly():
                 path = self.getPath()
-                if path is not None and Parameter.printParameterPath:
+                if (path is not None) and (Parameter.scriptingOutput is not None):
                     print >> Parameter.scriptingOutput, str(path + [value]) + ","
 
     def callLinked(self):
@@ -391,7 +390,7 @@ class Parameter(object):
         if act is not None:
             act(self)
             path = self.getPath()
-            if path is not None and Parameter.printParameterPath:
+            if (path is not None) and (Parameter.scriptingOutput is not None):
                 print >> Parameter.scriptingOutput, (str(path + [None]) + ",")
         self.callLinked()
 
