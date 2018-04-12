@@ -374,9 +374,9 @@ class Parameter(object):
                     if v == value:
                         value = k
 
-            if echo and not self.opts.get("echooff", False) and not self.readonly():
+            if echo and not self.opts.get("echooff", False) and not self.readonly() and Parameter.scriptingOutput:
                 path = self.getPath()
-                if (path is not None) and (Parameter.scriptingOutput is not None):
+                if path is not None:
                     print >> Parameter.scriptingOutput, str(path + [value]) + ","
 
     def callLinked(self):
@@ -389,9 +389,10 @@ class Parameter(object):
         act = self.opts.get("action", None)
         if act is not None:
             act(self)
-            path = self.getPath()
-            if (path is not None) and (Parameter.scriptingOutput is not None):
-                print >> Parameter.scriptingOutput, (str(path + [None]) + ",")
+            if Parameter.scriptingOutput:
+                path = self.getPath()
+                if path is not None:
+                    print >> Parameter.scriptingOutput, (str(path + [None]) + ",")
         self.callLinked()
 
     def setDefault(self, default):
