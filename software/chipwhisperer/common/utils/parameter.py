@@ -374,7 +374,7 @@ class Parameter(object):
                     if v == value:
                         value = k
 
-            if echo and not self.opts.get("echooff", False) and not self.readonly() and Parameter.scriptingOutput:
+            if echo and not self.opts.get("echooff", False) and not self.readonly() and Parameter.scriptingOutput and Parameter.usePyQtGraph:
                 path = self.getPath()
                 if path is not None:
                     print >> Parameter.scriptingOutput, str(path + [value]) + ","
@@ -389,7 +389,7 @@ class Parameter(object):
         act = self.opts.get("action", None)
         if act is not None:
             act(self)
-            if Parameter.scriptingOutput:
+            if Parameter.scriptingOutput and Parameter.usePyQtGraph:
                 path = self.getPath()
                 if path is not None:
                     print >> Parameter.scriptingOutput, (str(path + [None]) + ",")
