@@ -32,88 +32,106 @@ uint8_t tmp[BUFLEN];
 char asciibuf[BUFLEN];
 uint8_t pt[16];
 
-/* Enable printf() / scanf() use for application */
-static int uart_putchar(char c, FILE *stream);
-static int uart_getchar(FILE *stream);
-FILE mystdout = FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);
-FILE mystdin = FDEV_SETUP_STREAM(NULL, uart_getchar, _FDEV_SETUP_READ);
+static void delay_200_ms(void);
 
-static int uart_putchar(char c, FILE *stream)
+
+void my_puts(char *c)
 {
-	putch(c);
-	return 0;
+  do {
+    putch(*c);
+
+  } while (*++c);
 }
 
-static int uart_getchar(FILE *stream)
+static void delay_200_ms()
 {
-	return getch();
+  for (volatile unsigned int i=0; i < 100000; i++ ){
+    ;
+  }
+}
+
+void my_read(char *buf, int len)
+{
+  for(int i = 0; i < len; i++) {
+    while (buf[i] = getch(), buf[i] == '\0');
+
+    /* my_puts("test1"); */
+    /* snprintf(puts_buffer, sizeof(puts_buffer), "i: :%d\n", i); */
+    /* my_puts("test2"); */
+    /* my_puts(puts_buffer); */
+    /* my_puts("test3"); */
+    if (buf[i] == '\n') {
+      buf[i] = '\0';
+      return;
+    }
+  }
+  buf[len - 1] = '\0';
 }
 
 int main(void)
-	{
+  {
     platform_init();
-	init_uart();	
-	trigger_setup();
-    stdout = &mystdout;
-	stdin = &mystdin;
-		
-    char passwd[32];	 
+  init_uart();
+  trigger_setup();
+
+    char passwd[32];
     char correct_passwd[] = "h0px3";
-     
-	while(1){
-	
-        printf("*****Safe-o-matic 3000 Booting...\n");
+
+  while(1){
+
+        my_puts("*****Safe-o-matic 3000 Booting...\n");
         //Print some fancy-sounding stuff so that attackers
         //will get scared and leave us alone
-        printf("Aligning bits........[DONE]\n");
-        _delay_ms(200);
-        printf("Checking Cesium RNG..[DONE]\n");
-        _delay_ms(200);
-        printf("Masquerading flash...[DONE]\n");
-        _delay_ms(200);
-        printf("Decrypting database..[DONE]\n");
-        _delay_ms(200);
-        printf("\n\n");
-              
+        my_puts("Aligning bits........[DONE]\n");
+        delay_200_ms();
+        my_puts("Checking Cesium RNG..[DONE]\n");
+        delay_200_ms();
+        my_puts("Masquerading flash...[DONE]\n");
+        delay_200_ms();
+        my_puts("Decrypting database..[DONE]\n");
+        delay_200_ms();
+        my_puts("\n\n");
+
         //Give them one last warning
-        printf("WARNING: UNAUTHORIZED ACCESS WILL BE PUNISHED\n");
-        
+        my_puts("WARNING: UNAUTHORIZED ACCESS WILL BE PUNISHED\n");
+
         trigger_low();
-        
+
         //Get password
-        printf("Please enter password to continue: ");
-    	scanf("%s", passwd);
-        
+        my_puts("Please enter password to continue: ");
+        my_read(passwd, 32);
+
         uint8_t passbad = 0;
-        
+
         trigger_high();
-        
+
         for(uint8_t i = 0; i < sizeof(correct_passwd); i++){
             if (correct_passwd[i] != passwd[i]){
                 passbad = 1;
                 break;
             }
         }
-		
+
         if (passbad){
             //Stop them fancy timing attacks
-            int wait = rand();
+             int wait = rand() % 100000; //% 100000 can be removed for xmega
             for(volatile int i = 0; i < wait; i++){
                 ;
             }
-            _delay_ms(500);
-            printf("PASSWORD FAIL\n");        
+            delay_200_ms();
+            delay_200_ms();
+            my_puts("PASSWORD FAIL\n");
             led_error(1);
         } else {
-            printf("Access granted, Welcome!\n");
+            my_puts("Access granted, Welcome!\n");
             led_ok(1);
         }
 
         //All done;
         while(1);
-	}
-		
-	return 1;
-	}
-	
-	
+  }
+
+  return 1;
+  }
+
+

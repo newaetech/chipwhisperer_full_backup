@@ -1165,6 +1165,7 @@ HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
     /* Process Locked */
     __HAL_LOCK(huart);
 
+    huart->Instance->ICR = 0xFFFFFFFF;
     huart->ErrorCode = HAL_UART_ERROR_NONE;
     huart->RxState = HAL_UART_STATE_BUSY_RX;
 
