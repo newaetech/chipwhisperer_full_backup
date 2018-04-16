@@ -94,7 +94,7 @@ class AcquisitionController:
 
 
 
-    def doSingleReading(self):
+    def doSingleReading(self, previous_ok=True):
         """This function is called as a result of pressing the Capture button.
         The order of events is as follows and is reflected in the source code:
             - the auxiliary functions that need to be executed before the
@@ -123,7 +123,10 @@ class AcquisitionController:
 
         if self._target:
             # Get key / plaintext now
-            self.key, self.textin = self._pattern.newPair()
+            if previous_ok:
+                self.key, self.textin = self._pattern.newPair()
+            else:
+                logging.info('Previous trace failed. Redoing with same pair.')
 
             self._target.setModeEncrypt()
             self._target.loadEncryptionKey(self.key)
@@ -178,20 +181,24 @@ class AcquisitionController:
             self._target.init()
 
         self.currentTrace = 0
+        previous_ok = True
         while self.currentTrace < self.maxtraces:
-            if self.doSingleReading():
+            if self.doSingleReading(previous_ok):
                 try:
                     if self._scope and self._writer:
                         self._writer.setKnownKey(self.key)
                         for channelNum in channelNumbers:
                             self._writer.addTrace(self._scope.channels[channelNum].getTrace(), self.textin, self.textout,
                                                   self.key, channelNum=channelNum)
+                    previous_ok = True
                 except ValueError as e:
                     logging.warning('Exception caught in adding trace %d, trace skipped.' % self.currentTrace)
                     logging.debug(str(e))
+                    previous_ok = False
                 self.sigTraceDone.emit()
                 self.currentTrace += 1
             else:
+                previous_ok = False
                 util.updateUI()  # Check if it was aborted
 
             if progressBar is not None:
