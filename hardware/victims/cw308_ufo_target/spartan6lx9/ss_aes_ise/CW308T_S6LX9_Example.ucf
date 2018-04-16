@@ -4,8 +4,8 @@
 #        If you need the input clock routed to the _P clock pin, you can do so by using the jumpers to route your
 #        clock source to the "CLKOUT" pin instead.
 
-NET clk            LOC="P84"  | IOSTANDARD=LVTTL | PERIOD=136.75ns;              # CLK signal from CW board
-NET clk2           LOC="P85"  | IOSTANDARD=LVTTL | PERIOD=136.75ns;              # CLK signal out
+NET clk            LOC="P84"  | IOSTANDARD=LVTTL | PERIOD=100ns;              # CLK signal from CW board
+NET clk2           LOC="P85"  | IOSTANDARD=LVTTL | PERIOD=100ns;              # CLK signal out
 
 ##UART and GPIO
 NET TxD            LOC="P92"  | IOSTANDARD=LVTTL | DRIVE=8 | SLEW=FAST;          # TX/GPIO1

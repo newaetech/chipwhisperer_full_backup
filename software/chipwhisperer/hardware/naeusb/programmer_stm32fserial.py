@@ -29,6 +29,7 @@ import traceback
 from datetime import datetime
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 from chipwhisperer.common.utils.timer import nonBlockingDelay
+from chipwhisperer.common.utils.util import updateUI
 
 #From ST AN2606, See Section 50 (Device-dependent bootloader parameters), Page 244/268 on Rev 30 of document
 #http://www.st.com/content/ccc/resource/technical/document/application_note/b9/9b/16/3a/12/1e/40/0c/CD00167594.pdf/files/CD00167594.pdf/jcr:content/translations/en.CD00167594.pdf
@@ -97,6 +98,7 @@ class STM32FSerial(object):
         """
 
         self._cwapi = cwapi
+        self.scope = None # set with the programmer (needed for non-gui compatibility)
         self._cwserial = cwserial
         self._timeout = timeout
         self._chip = STM32FDummy()
@@ -105,18 +107,6 @@ class STM32FSerial(object):
         self.slow_speed = slow_speed
 
         self._old_baud = None
-
-#    def open(self, aport='/dev/tty.usbserial-ftCYPMYJ', abaudrate=115200):
-#        self.sp = serial.Serial(
-#            port=aport,
-#            baudrate=abaudrate,  # baudrate
-#            bytesize=8,  # number of databits
-#            parity=serial.PARITY_EVEN,
-#            stopbits=1,
-#            xonxoff=0,  # don't enable software flow control
-#            rtscts=0,  # don't enable RTS/CTS flow control
-#            timeout=5  # set a timeout value, None for waiting forever
-#        )
 
     def open_port(self):
 
@@ -142,6 +132,9 @@ class STM32FSerial(object):
 
         if self._cwapi:
             self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'Default'])
+
+        if self.scope:
+            self.scope.io.nrst = 'default'
 
         if hasattr(self.sp, "close"):
             self.sp.close()
@@ -251,16 +244,34 @@ class STM32FSerial(object):
         self._chip = chiptype
 
     def reset(self):
-        self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'Low'])
-        nonBlockingDelay(10)
-        self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'High'])
-        nonBlockingDelay(25)
+        if self._cwapi:
+            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'Low'])
+            nonBlockingDelay(10)
+            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'High'])
+            nonBlockingDelay(25)
+        elif self.scope:
+            self.scope.io.nrst = 'low'
+            time.sleep(0.010)
+            self.scope.io.nrst = 'high'
+            time.sleep(0.025)
+        else:
+            raise ValueError('requires either scope or api to be set')
 
     def set_boot(self, enter_bootloader):
         if enter_bootloader:
-            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'High'])
+            if self._cwapi:
+                self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'High'])
+            elif self.scope:
+                self.scope.io.pdic = 'high'
+            else:
+                raise ValueError('requires either scope or api to be set')
         else:
-            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'Default'])
+            if self._cwapi:
+                self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'Default'])
+            elif self.scope:
+                self.scope.io.pdic = 'default'
+            else:
+                raise ValueError('requires either scope or api to be set')
         logging.info("Assuming appropriate BOOT pins set HIGH on STM32F Hardware now")
 
 
@@ -291,8 +302,11 @@ class STM32FSerial(object):
                 #First 2-times, try resetting. After that don't in case reset is causing garbage on lines.
                 if fails < 2:
                     self.reset()
-                self.sp.flush()
-                self.sp.write("\x7F")
+                try:
+                    self.sp.flush()
+                    self.sp.write("\x7F")
+                except AttributeError:
+                    raise AttributeError('sp attribute requires call to open_port')
                 return self._wait_for_ask("Syncro")
             except CmdException:
                 logging.info("Sync failed with error %s, retrying..." % traceback.format_exc())
@@ -509,6 +523,7 @@ class STM32FSerial(object):
         while lng > 256:
             logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': 256})
             self.cmdWriteMemory(addr, data[offs:offs + 256])
+            updateUI()
             if self.slow_speed:
                 nonBlockingDelay(1)
             offs += 256

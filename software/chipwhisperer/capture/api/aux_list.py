@@ -27,6 +27,7 @@ from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setup
 from collections import OrderedDict
 import inspect
 import textwrap
+import linecache
 from PySide.QtGui import QMessageBox
 
 class AuxListObject(Parameterized):
@@ -54,6 +55,12 @@ class AuxListObject(Parameterized):
 
     def _getCodePreview(self):
         try:
+            # TODO: maybe there is a better way
+            # Important!, the linecache.clearcache call is needed to avoid
+            # a very bad situation where the function, and aux module is changed
+            # but the inspection of the source uses a cache where the old version of
+            # the source code is accessed instead of the new source code
+            linecache.clearcache()
             return textwrap.dedent(inspect.getsource(self._func))
         except IOError:
             return "?"
@@ -175,12 +182,12 @@ class AuxList(Parameterized):
 
         Raises:
             ValueError if timing not recognized
-            TypeError if func not a function (TODO)
+            TypeError if func not a function
         """
         if not callable(func):
             raise TypeError("Provided function is not callable" % func)
         if timing not in self._valid_timings.keys():
-            raise ValueError("Invalid timing provided: expected one of %s" % self._valid_timings, keys(), timing)
+            raise ValueError("Invalid timing provided: expected one of %s" % self._valid_timings.keys(), timing)
 
         existing_item = None
         if override_class:

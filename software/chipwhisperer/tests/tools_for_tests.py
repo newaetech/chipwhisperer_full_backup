@@ -19,6 +19,7 @@ ANALYZER_SCRIPTS_DIR = os.path.join(CHIPWHISPERER_DIR, "software", "chipwhispere
 PROJECTS_DIR = os.path.join(os.path.expanduser('~'), 'chipwhisperer', 'projects')
 TESTS_DIR = os.path.join(PROJECTS_DIR, 'Test Logs')
 FIRMWARE_DIR = os.path.join(CHIPWHISPERER_DIR, "hardware", "victims", "firmware")
+SCRIPTING_EXAMPLES_DIR = os.path.join(CHIPWHISPERER_DIR, "software", "scripting-examples")
 
 
 class FakeUI():

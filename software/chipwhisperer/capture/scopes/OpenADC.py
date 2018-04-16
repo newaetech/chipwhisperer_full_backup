@@ -65,6 +65,8 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         scope.glitch
     """
 
+    scope_disconnected_signal = util.Signal()
+
     _name = "ChipWhisperer/OpenADC"
 
     def __init__(self):
@@ -101,6 +103,7 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
                 Parameter.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
             except USBError:
                 self.dis()
+                self.scope_disconnected_signal.emit()
                 raise Warning("Error in the scope. It may have been disconnected.")
             except Exception as e:
                 self.dis()

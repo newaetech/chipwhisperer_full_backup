@@ -126,10 +126,10 @@ class AVRProgrammerDialog(QtFixes.QDialog):
 
     def toggleSlowClock(self):
         if self.clockMode.isChecked():
-            self.avr.avr.enableSlowClock(True)
+            self.avr.enableSlowClock(True)
             self.clockMode.setText("Disable Slow Clock Mode")
         else:
-            self.avr.avr.enableSlowClock(False)
+            self.avr.enableSlowClock(False)
             self.clockMode.setText("Enable Slow Clock Mode")
 
     def reject(self):
@@ -158,9 +158,9 @@ class AVRProgrammerDialog(QtFixes.QDialog):
         try:
             self.readSignature(close=False)
             self.statusLine.appendPlainText("Reading fuses")
-            lfuse = self.avr.avr.readFuse("low")
-            hfuse = self.avr.avr.readFuse("high")
-            efuse = self.avr.avr.readFuse("extended")
+            lfuse = self.avr.readFuse("low")
+            hfuse = self.avr.readFuse("high")
+            efuse = self.avr.readFuse("extended")
             self.statusLine.appendPlainText("OK: %02x %02x %02x" % (lfuse, hfuse, efuse))
             self.lowfuseLine.setText("%02x" % lfuse)
             self.highfuseLine.setText("%02x" % hfuse)
@@ -181,9 +181,9 @@ class AVRProgrammerDialog(QtFixes.QDialog):
 
         try:
             self.readSignature(close=False)
-            self.avr.avr.writeFuse("low", lfuse)
-            # self.avr.avr.writeFuse("high", hfuse)
-            # self.avr.avr.writeFuse("extended", efuse)
+            self.avr.writeFuse("low", lfuse)
+            # self.avr.writeFuse("high", hfuse)
+            # self.avr.writeFuse("extended", efuse)
             # print("%x %x %x" % (lfuse, hfuse, efuse))
             self.avr.close()
         except:
@@ -194,7 +194,7 @@ class AVRProgrammerDialog(QtFixes.QDialog):
         self.statusLine.appendPlainText("Verify not implemented")
 
     def writeFlash(self, erase=True, verify=True):
-        self.avr.avr.autoProgram(self.flashLocation.text(), erase, verify, self.statusLine.appendPlainText,
+        self.avr.autoProgram(self.flashLocation.text(), erase, verify, self.statusLine.appendPlainText,
                                      QCoreApplication.processEvents)
 
     def setUSBInterface(self, iface):
@@ -264,7 +264,7 @@ class XMEGAProgrammerDialog(QtFixes.QDialog):
         pass
 
     def writeFlash(self, erase=True, verify=True):
-        self.xmega.xmega.autoProgram(self.flashLocation.text(), erase, verify, self.statusLine.appendPlainText, QCoreApplication.processEvents)
+        self.xmega.autoProgram(self.flashLocation.text(), erase, verify, self.statusLine.appendPlainText, QCoreApplication.processEvents)
 
 
     def setUSBInterface(self, iface):
@@ -349,7 +349,7 @@ class STM32FProgrammerDialog(QtFixes.QDialog):
         pass
 
     def writeFlash(self, erase=True, verify=True):
-        self.stm32f.stm32.autoProgram(self.flashLocation.text(), erase, verify, self.statusLine.appendPlainText,
+        self.stm32f.autoProgram(self.flashLocation.text(), erase, verify, self.statusLine.appendPlainText,
                     QCoreApplication.processEvents)
 
     def setUSBInterface(self, iface):

@@ -75,17 +75,14 @@ class CWLiteUSB(Parameterized):
     def getCwliteXMEGA(self):
         if not hasattr(self, 'cwliteXMEGA'):
             self.cwliteXMEGA = XMEGAProgrammerDialog()
-            self.cwliteXMEGA.setUSBInterface(self.xmega)
         return self.cwliteXMEGA
 
     def getCwliteAVR(self):
         if not hasattr(self, 'cwliteAVR'):
             self.cwliteAVR = AVRProgrammerDialog()
-            self.cwliteAVR.setUSBInterface(self.avr)
         return self.cwliteAVR
 
     def getSerialSTM32F(self):
         if not hasattr(self, 'serialSTM32F'):
             self.serialSTM32F = STM32FProgrammerDialog()
-            self.serialSTM32F.setUSBInterface(self.serialstm32f)
         return self.serialSTM32F

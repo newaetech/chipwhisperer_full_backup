@@ -34,15 +34,15 @@ scope.io.tio2 = "serial_tx"
 scope.io.hs2 = "clkgen"
 
 # program the target
-xmega = XMEGAProgrammer()
-xmega.setUSBInterface(scope.scopetype.dev.xmega)
-xmega._logging = None
-xmega.find()
-xmega.erase()
-glitch_simple_firmware_dir = os.path.join(FIRMWARE_DIR, 'simpleserial-aes')
-glitch_simple_hex = os.path.join(glitch_simple_firmware_dir, r"simpleserial-aes-CW303.hex")
-xmega.program(glitch_simple_hex, memtype="flash", verify=True)
-xmega.close()
+programmer = XMEGAProgrammer()
+programmer.scope = scope
+programmer._logging = None
+programmer.find()
+programmer.erase()
+aes_firmware_dir = os.path.join(FIRMWARE_DIR, 'simpleserial-aes')
+aes_hex = os.path.join(aes_firmware_dir, r"simpleserial-aes-CW303.hex")
+programmer.program(aes_hex, memtype="flash", verify=True)
+programmer.close()
 
 ktp = AcqKeyTextPattern_Basic(target=target)
 
@@ -50,6 +50,7 @@ traces = []
 textin = []
 keys = []
 N = 50  # Number of traces
+target.init()
 for i in tqdm(range(N), desc='Capturing traces'):
     # run aux stuff that should come before trace here
 
@@ -84,7 +85,7 @@ for i in tqdm(range(N), desc='Capturing traces'):
         print('IOError: %s' % str(e))
 
     # run aux stuff that should happen after trace here
-
+    _ = target.readOutput()  # clears the response from the serial port
     traces.append(scope.getLastTrace())
 trace_array = np.asarray(traces)  # if you prefer to work with numpy array for number crunching
 textin_array = np.asarray(textin)
@@ -103,9 +104,9 @@ np.save(textin_file_path, textin_array)
 np.save(keys_file_path, known_keys)
 print('Done')
 
-# show an example trace
+# uncomment plt.show() to show an example trace
 plt.plot(traces[0])
-plt.show()
+#plt.show()
 
 # cleanup the connection to the target and scope
 scope.dis()

@@ -73,7 +73,7 @@ module CW308T_S6LX9_Example(
 	*/
 	aes_core AESGoogleVault(
 		.clk(clk),
-		.load_i(load_input),
+		.load_i(enc_go),
 		.key_i({enc_key, 128'h0}),
 		.data_i(enc_input),
 		.size_i(2'd0),

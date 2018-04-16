@@ -19,16 +19,14 @@ from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.capture.scopes.base import ScopeTemplate
 from chipwhisperer.capture.targets._base import TargetTemplate
 
+from functools import wraps
 
-class gui_only(object):
+def gui_only(func):
     """Decorator for the functions that can only be used in the gui
     If it is called outside the gui, it will raise UserWarning
     """
-
-    def __init__(self, f):
-        self.f = f
-
-    def __call__(self, *args, **kwargs):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
         gui_warning = "This api function is for use inside GUI Python Console"
         try:
             api = CWCoreAPI.getInstance()
@@ -36,7 +34,8 @@ class gui_only(object):
                 raise Exception
         except:
             raise UserWarning(gui_warning)
-        return self.f(api)
+        return func(api, *args, **kwargs)
+    return wrapper
 
 
 def capture_gui():
@@ -157,7 +156,10 @@ def getLastTextout(core_api):
     """Return the last input text used in captureN
     """
     lto = core_api.getLastTextout()
-    return cw_bytearray(lto)
+    if lto is None:
+        return lto
+    else:
+        return cw_bytearray(lto)
 
 @gui_only
 def getLastExpected(core_api):

@@ -71,7 +71,7 @@ class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
         self.auto_ui.capture.gui.scope.dis()
         self.auto_ui.capture.gui.target.dis()
 
-    def test_TutorialB1(self):
+    def test_TutorialB5(self):
         self.aes_firmware_dir = os.path.join(FIRMWARE_DIR, "simpleserial-aes")
 
         # Build firmware
@@ -99,14 +99,14 @@ class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
         logging.info('Finished executing "connect_cwlite_simpleserial.py"')
 
         # program the target with the built firmware
-        xmega = XMEGAProgrammer()
-        xmega.setUSBInterface(capture_gui.scope.scopetype.dev.xmega)
-        xmega._logging = None
-        xmega.find()
-        xmega.erase()
+        programmer = XMEGAProgrammer()
+        programmer.scope = capture_gui.scope
+        programmer._logging = None
+        programmer.find()
+        programmer.erase()
         aes_hex = os.path.join(self.aes_firmware_dir, r"simpleserial-aes-CW303.hex")
-        xmega.program(aes_hex, memtype="flash", verify=True)
-        xmega.close()
+        programmer.program(aes_hex, memtype="flash", verify=True)
+        programmer.close()
 
         # Execute the setup script for simple serial aes
         logging.info('Executing "setup_cwlite_xmega_aes.py"')
@@ -165,10 +165,10 @@ class TestTutorialB5BreakingAESStraightForward(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    tutB1_suite = unittest.makeSuite(TestTutorialB5BreakingAESStraightForward)
+    tutB5_suite = unittest.makeSuite(TestTutorialB5BreakingAESStraightForward)
 
     test_runner = unittest.TextTestRunner(verbosity=2)
-    test_runner.run(tutB1_suite)
+    test_runner.run(tutB5_suite)
 
 
 
