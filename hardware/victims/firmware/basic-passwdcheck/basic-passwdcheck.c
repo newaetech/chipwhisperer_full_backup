@@ -55,11 +55,6 @@ void my_read(char *buf, int len)
   for(int i = 0; i < len; i++) {
     while (buf[i] = getch(), buf[i] == '\0');
 
-    /* my_puts("test1"); */
-    /* snprintf(puts_buffer, sizeof(puts_buffer), "i: :%d\n", i); */
-    /* my_puts("test2"); */
-    /* my_puts(puts_buffer); */
-    /* my_puts("test3"); */
     if (buf[i] == '\n') {
       buf[i] = '\0';
       return;
