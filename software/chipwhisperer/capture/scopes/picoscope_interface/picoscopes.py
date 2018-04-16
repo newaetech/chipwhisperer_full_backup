@@ -164,7 +164,7 @@ class PicoScopeBase(Parameterized):
         self.dataUpdated.emit(channelNum, self.datapoints, 0, self.ps.sampleRate)
 
         # No timeout?
-        return False
+        return data[1]
 
 
 class PicoScope6000(PicoScopeBase, Plugin):
