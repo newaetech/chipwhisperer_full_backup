@@ -65,8 +65,6 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         scope.glitch
     """
 
-    scope_disconnected_signal = util.Signal()
-
     _name = "ChipWhisperer/OpenADC"
 
     def __init__(self):

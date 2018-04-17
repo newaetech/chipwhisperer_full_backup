@@ -34,6 +34,8 @@ from chipwhisperer.common.utils.parameter import Parameterized
 class ScopeTemplate(Parameterized):
     _name = "None"
 
+    scope_disconnected_signal = util.Signal()
+
     def __init__(self):
         self.connectStatus = util.Observable(False)
         self.getParams().register()
