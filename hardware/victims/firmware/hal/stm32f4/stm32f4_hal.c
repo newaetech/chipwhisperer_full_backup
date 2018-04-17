@@ -77,7 +77,7 @@ void trigger_low(void)
 char getch(void)
 {
 	uint8_t d;
-	HAL_UART_Receive(&UartHandle, &d, 1, 5000);
+	while (HAL_UART_Receive(&UartHandle, &d, 1, 5000) != HAL_OK);
 	return d;
 }
 
