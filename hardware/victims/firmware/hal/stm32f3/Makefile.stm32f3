@@ -27,4 +27,4 @@ ASFLAGS += -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fmessage-length=0 -ffunct
 CDEFS += -DSTM32F303xC -DSTM32F3 -DSTM32 -DDEBUG
 CPPDEFS += -DSTM32F303xC -DSTM32F3 -DSTM32 -DDEBUG
 
-LDFLAGS += -T $(HALPATH)/stm32f3/LinkerScript.ld -Wl,--gc-sections -lm
+LDFLAGS += --specs=nano.specs -T $(HALPATH)/stm32f3/LinkerScript.ld -Wl,--gc-sections -lm

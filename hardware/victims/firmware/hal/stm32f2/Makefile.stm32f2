@@ -23,4 +23,4 @@ ASFLAGS += -mthumb -fmessage-length=0 -ffunction-sections
 CDEFS += -DSTM32F205RETx -DSTM32F2 -DSTM32 -DDEBUG
 CPPDEFS += -DSTM32F205RETx -DSTM32F2 -DSTM32 -DDEBUG
 
-LDFLAGS += -T $(HALPATH)/stm32f2/LinkerScript.ld -Wl,--gc-sections -lm
+LDFLAGS +=  --specs=nano.specs -T $(HALPATH)/stm32f2/LinkerScript.ld -Wl,--gc-sections -lm
