@@ -30,8 +30,6 @@ void platform_init(void)
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
 	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 	HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_ACR_LATENCY_5WS);
-	
-	__HAL_RCC_CRYP_CLK_ENABLE();
 }
 
 void init_uart(void)
@@ -74,7 +72,7 @@ void trigger_high(void)
 void trigger_low(void)
 {
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, RESET);
-}   
+}
 
 char getch(void)
 {
@@ -95,6 +93,8 @@ void HW_AES128_Init(void)
 	cryp.Init.DataType = CRYP_DATATYPE_8B;
 	cryp.Init.KeySize = CRYP_KEYSIZE_128B;
 	cryp.Init.pKey = hw_key;
+  HW_AES128_LoadKey(hw_key);
+  __HAL_RCC_CRYP_CLK_ENABLE();
 	HAL_CRYP_Init(&cryp);
 }
 
@@ -108,31 +108,12 @@ void HW_AES128_LoadKey(uint8_t* key)
 
 void HW_AES128_Enc(uint8_t* pt)
 {
-	HAL_CRYP_DeInit(&cryp);
 	HAL_CRYP_Init(&cryp);
-	uint8_t store[16];
-	if (HAL_CRYP_AESECB_Encrypt(&cryp, pt, 16, store, 1000) != HAL_OK) {
-		for (int i = 0; i < 16; i++) {
-			pt[i] = 0;
-		}
-	} else {
-		for (int i = 0; i < 16; i++) {
-			pt[i] = store[i];
-		}
-	}
-	
+  HAL_CRYP_AESECB_Encrypt(&cryp, pt, 16, pt, 1000);
 }
 
 void HW_AES128_Dec(uint8_t *pt)
 {
-	uint8_t store[16];
-	if (HAL_CRYP_AESECB_Decrypt(&cryp, pt, 16, store, 1000) != HAL_OK) {
-		for (int i = 0; i < 16; i++) {
-			pt[i] = 0;
-		}
-	} else {
-		for (int i = 0; i < 16; i++) {
-			pt[i] = store[i];
-		}
-	}
+     HAL_CRYP_Init(&cryp);
+     HAL_CRYP_AESECB_Decrypt(&cryp, pt, 16, pt, 1000);
 }
