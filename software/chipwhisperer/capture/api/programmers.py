@@ -240,10 +240,21 @@ class STM32FProgrammer(Programmer):
     def __init__(self):
         super(STM32FProgrammer, self).__init__()
         self.supported_chips = supported_stm32f
+        
+        self.slow_speed = False
+        self.small_blocks = False
+        
+    def stm32prog(self):
+        stm = self.scope.scopetype.dev.serialstm32f
+        
+        stm.slow_speed = self.slow_speed
+        stm.small_blocks = self.small_blocks
+        
+        return stm
 
     @save_and_restore_pins
     def open_and_find(self, log_func=None):
-        stm32f = self.scope.scopetype.dev.serialstm32f
+        stm32f = self.stm32prog()
         stm32f.open_port()
         sig, chip = stm32f.find(logfunc=log_func)
 
@@ -251,12 +262,12 @@ class STM32FProgrammer(Programmer):
 
     @save_and_restore_pins
     def open(self):
-        stm32f = self.scope.scopetype.dev.serialstm32f
+        stm32f = self.stm32prog()
         stm32f.open_port()
 
     @save_and_restore_pins
     def find(self):
-        stm32f = self.scope.scopetype.dev.serialstm32f
+        stm32f = self.stm32prog()
         stm32f.scope = self.scope
         sig, chip = stm32f.find()
 
@@ -265,24 +276,24 @@ class STM32FProgrammer(Programmer):
     @save_and_restore_pins
     def program(self, filename, memtype="flash", verify=True):
         Programmer.lastFlashedFile = filename
-        stm32f = self.scope.scopetype.dev.serialstm32f
+        stm32f = self.stm32prog()
         stm32f.scope = self.scope
         stm32f.program(filename, memtype, verify)
 
     @save_and_restore_pins
     def autoProgram(self, hexfile, erase, verify, logfunc, waitfunc):
-        stm32f = self.scope.scopetype.dev.serialstm32f
+        stm32f = self.stm32prog()
         stm32f.scope = self.scope
         stm32f.autoProgram(hexfile, erase, verify, logfunc, waitfunc)
 
     @save_and_restore_pins
     def erase(self):
         self.log("Erasing Chip")
-        stm32f = self.scope.scopetype.dev.serialstm32f
+        stm32f = self.stm32prog()
         stm32f.cmdEraseMemory()
 
     @save_and_restore_pins
     def close(self):
-        stm32f = self.scope.scopetype.dev.serialstm32f
+        stm32f = self.stm32prog()
         stm32f.close_port()
         stm32f.releaseChip()
