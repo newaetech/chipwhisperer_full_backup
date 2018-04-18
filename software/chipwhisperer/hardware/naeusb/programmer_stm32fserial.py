@@ -92,7 +92,7 @@ class STM32FSerial(object):
     Class for programming an STM32F device using a serial port or ChipWhisperer-Serial
     """
 
-    def __init__(self, cwserial=None, cwapi=None, spname=None, timeout=200, slow_speed=False):
+    def __init__(self, cwserial=None, cwapi=None, spname=None, timeout=200, slow_speed=False, small_blocks=False):
         """
         Set the communications instance.
         """
@@ -105,6 +105,7 @@ class STM32FSerial(object):
         self.lastFlashedFile = "unknown"
         self.extended_erase = 0
         self.slow_speed = slow_speed
+        self.small_blocks = small_blocks
 
         self._old_baud = None
 
@@ -184,7 +185,7 @@ class STM32FSerial(object):
         logfunc("STM32F Reading %s..." % memtype)
         if waitfunc: waitfunc()
         # Do verify run
-        rdata = self.readMemory(startaddr, len(fdata))
+        rdata = self.readMemory(startaddr, len(fdata), self.small_blocks)
 
         for i in range(0, len(fdata)):
             if fdata[i] != rdata[i]:
@@ -500,15 +501,24 @@ class STM32FSerial(object):
 
             # Complex commands section
 
-    def readMemory(self, addr, lng):
+    def readMemory(self, addr, lng, smallblocks=False):
+        """Read from flash using bootloader. If smallblocks is true uses a smaller
+           block size, which can be more reliable as sometimes the full block size
+           causes weird timeouts"""
+        
+        if smallblocks:
+            block_size = 64
+        else:
+            block_size = 256
+        
         data = []
-        while lng > 256:
-            logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': 256})
-            data += self.cmdReadMemory(addr, 256)
+        while lng > block_size:
+            logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
+            data += self.cmdReadMemory(addr, block_size)
             if self.slow_speed:
                 nonBlockingDelay(1)
-            addr += 256
-            lng -= 256
+            addr += block_size
+            lng -= block_size
 
         logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
         if lng:

@@ -313,8 +313,14 @@ class STM32FProgrammerDialog(QtFixes.QDialog):
         mode.currentIndexChanged.connect(self.modechanged)
         layoutsetting.addWidget(QLabel("Speed:"))
         layoutsetting.addWidget(mode)
+        
+        blocksize = QComboBox()
+        blocksize.addItem("256", False)
+        blocksize.addItem("64", True)    
+        blocksize.currentIndexChanged.connect(self.blocksizechanged)    
         layoutsetting.addStretch()
-
+        layoutsetting.addWidget(QLabel("Read Block Size:"))
+        layoutsetting.addWidget(blocksize)
         layout.addLayout(layoutsetting)
 
         # Add status stuff
@@ -329,6 +335,9 @@ class STM32FProgrammerDialog(QtFixes.QDialog):
 
     def modechanged(self, newmode):
         self.stm32f.slow_speed = newmode
+        
+    def blocksizechanged(self, use_small_block):
+        self.stm32f.small_blocks = use_small_block
 
     def append(self, text):
         self.statusLine.appendPlainText(text)
