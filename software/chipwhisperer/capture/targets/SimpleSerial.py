@@ -373,7 +373,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
     @baud.setter
     def baud(self, new_baud):
-        if isinstance(self.ser, SimpleSerial_ChipWhispererLite):
+        if hasattr(self.ser, 'baud') and callable(self.ser.baud):
             self.ser.setBaud(new_baud)
         else:
             raise AttributeError("Can't access baud rate")
