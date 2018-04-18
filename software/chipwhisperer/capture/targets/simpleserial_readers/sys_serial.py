@@ -26,6 +26,7 @@
 from ._base import SimpleSerialTemplate
 import serial
 from collections import OrderedDict
+from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils import serialport
 
 
@@ -34,10 +35,10 @@ class SimpleSerial_serial(SimpleSerialTemplate):
 
     def __init__(self):
         SimpleSerialTemplate.__init__(self)
-        self.ser = None
+        self.ser = serial.Serial(baudrate=38400)
         baud_values = OrderedDict(zip([str(X) for X in serial.Serial.BAUDRATES], serial.Serial.BAUDRATES))
         self.params.addChildren([
-            {'name':'Baud', 'key':'baud', 'type':'list', 'values':baud_values, 'value':38400},
+            {'name':'Baud', 'key':'baud', 'type':'list', 'values':baud_values, 'value':self.ser.baudrate},
             {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
             {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
         ])
@@ -54,6 +55,18 @@ class SimpleSerial_serial(SimpleSerialTemplate):
     def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
         pass
 
+    def baud(self):
+        return self.ser.baudrate
+
+    @setupSetParam("baud")
+    def setBaud(self, baud):
+        if baud == self.ser.baudrate:
+            return
+        self.ser.baudrate = baud
+        if self.ser.is_open:
+            self.ser.close()
+            self.ser.open()
+
     def hardware_write(self, string):
         return self.ser.write(bytearray(string.encode('utf-8')))
 
@@ -69,9 +82,8 @@ class SimpleSerial_serial(SimpleSerialTemplate):
             self.ser = None
 
     def con(self, scope = None):
-        if self.ser == None:
+        if not self.ser.is_open:
             # Open serial port if not already
-            self.ser = serial.Serial()
             self.ser.port     = self.findParam('port').getValue()
             self.ser.baudrate = self.findParam('baud').getValue()
             self.ser.timeout  = 2     # 2 second timeout
