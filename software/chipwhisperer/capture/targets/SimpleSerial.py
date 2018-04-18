@@ -366,17 +366,17 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         Setter: Set a new baud rate. Valid baud rates are any integer in the
                 range [500, 2000000].
         """
-        if isinstance(self.ser, SimpleSerial_ChipWhispererLite):
+        if hasattr(self.ser, 'baud') and callable(self.ser.baud):
             return self.ser.baud()
         else:
-            raise AttributeError("Can't access baud rate unless using CW-Lite serial port")
+            raise AttributeError("Can't access baud rate")
 
     @baud.setter
     def baud(self, new_baud):
         if isinstance(self.ser, SimpleSerial_ChipWhispererLite):
             self.ser.setBaud(new_baud)
         else:
-            raise AttributeError("Can't access baud rate unless using CW-Lite serial port")
+            raise AttributeError("Can't access baud rate")
 
     @setupSetParam("Key Length (Bytes)")
     def setKeyLen(self, klen):
