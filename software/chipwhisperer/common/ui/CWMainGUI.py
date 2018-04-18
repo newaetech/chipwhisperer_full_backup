@@ -220,12 +220,21 @@ class CWMainGUI(QMainWindow):
         QSettings().setValue("geometry", self.saveGeometry())
         QSettings().setValue("windowState", self.saveState())
 
+    def beforeExit(self):
+        """Hook that can be inherited to do actions before the UI got closed."""
+        pass
+
     def closeEvent(self, event):
         """Called when window is closed, attempts to save state/geometry"""
         if not (hasattr(self, "dontSaveGeometry") and self.dontSaveGeometry):
             self.saveSettings()
 
         if self.okToContinue():
+            try:
+                self.beforeExit()
+            except:
+                # We don't want this callback to prevent us from exiting.
+                pass
             sys.excepthook = sys.__excepthook__  # Restore exception handlers
             sys.stdout = sys.__stdout__          # Restore print statements
             sys.stderr = sys.__stderr__

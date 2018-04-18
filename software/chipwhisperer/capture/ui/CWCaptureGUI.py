@@ -242,6 +242,13 @@ class CWCaptureGUI(CWMainGUI):
             self.stopCaptureMAct.setEnabled(False)
         return ret
 
+    def beforeExit(self):
+        # Disconnected whatever is still connected before exiting
+        if self.targetStatus.defaultAction() == self.targetStatusActionCon:
+            self.api.disconnectTarget()
+        if self.scopeStatus.defaultAction() == self.scopeStatusActionCon:
+            self.api.disconnectScope()
+
     # Helpful properties for the Python console
     @property
     def scope(self):
