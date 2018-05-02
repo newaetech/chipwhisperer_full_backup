@@ -20,7 +20,6 @@ Note all development occurs on the [develop](https://github.com/newaetech/chipwh
 
 ## Help!
 Stuck? If you need a hand, there are a few places you can ask for help:
-* The #ChipWhisperer channel on [Freenode](https://webchat.freenode.net/)
 * The [NewAE Forum](https://www.newae.com/forum/) is full of helpful people that can point you in the right direction
 * If you find a bug, let us know through the [issue tracker](https://github.com/newaetech/chipwhisperer/issues)
 
