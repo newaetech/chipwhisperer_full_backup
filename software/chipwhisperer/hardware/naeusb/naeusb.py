@@ -143,6 +143,7 @@ class NAEUSB(object):
                 #User did not help us out - throw it in their face
                 raise Warning("Found multiple potential USB devices. Please specify device to use. Possible S/Ns:\n" + snlist)
         try:
+            dev.set_configuration(0)
             dev.set_configuration()
         except ValueError:
             raise IOError("NAEUSB: Could not configure USB device")
