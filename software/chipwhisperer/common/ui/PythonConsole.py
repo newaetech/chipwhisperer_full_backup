@@ -155,9 +155,13 @@ class QPythonConsole(QtGui.QWidget):
             self.ui.prompt.setText(">>> ")
 
     def _on_enter_line(self):
-        line = self.ui.input.text()
+        text = self.ui.input.text()
         self.ui.input.setText("")
-        self.runLine(line)
+        # allow copy and pasting multiple lines
+        lines = text.split('\n')
+        lines = filter(None, lines)  # removes empty lines
+        for line in lines:
+            self.runLine(line)
         
     def eventFilter(self, obj, event):
         if hasattr(event, "type") and event.type() == QtCore.QEvent.KeyPress:
