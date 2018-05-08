@@ -25,6 +25,8 @@
 
 from chipwhisperer.common.utils.timer import nonBlockingDelay
 import time
+import warnings
+import logging
 
 class ResetCW1173(object):
     """Reset an AVR/XMEGA via the PDI/ISP interface.
@@ -33,6 +35,7 @@ class ResetCW1173(object):
     - Delay: How long to wait between device reset and scope arm
     - pin: (string) to identify pin to toggle
         XMEGA: use 'pdic', AVR and STM32Fx use 'nrst'
+    - xmega: !DEPRECATED, use pin instead!(boolean)  true for xmega false for everything else
     
     Then, there are three self-explanatory functions that can be registered:
     - reset(): no delay. Useful for testing
@@ -45,11 +48,25 @@ class ResetCW1173(object):
     measurement. 
     """
     
-    def __init__(self, delay_ms, pin='nrst'):
+    def __init__(self, delay_ms, pin=None, xmega=None):
         self._delay_ms = delay_ms
         self._pin = pin
+        self._xmega = xmega
         
     def reset(self, scope):
+
+        # To keep backwards compatability
+        if self._xmega is not None and self._pin is None:
+            warnings.warn('xmega argument has been deprecated, use pin instead')
+            logging.warning('xmega argument has been deprecated, use pin instead')
+            if self._xmega:
+                self._pin = 'pdic'
+            else:
+                self._pin = 'nrst'
+        elif self._xmega is not None and self._pin is not None:
+            warnings.warn('xmega argument is deprecated, do not use it and the new pin argument')
+            logging.warning('xmega argument is deprecated, do not use it and the new pin argument')
+
         if self._pin == 'nrst':
             scope.io.nrst = 'low'
             time.sleep(0.01)
