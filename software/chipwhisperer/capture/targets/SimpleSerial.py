@@ -50,7 +50,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         self.outputlength = 16
         self.input = ""
         self.key = ""
-        self.protver = ''
+        self._protver = 'auto'
         self.maskEnabled = False
         self.masklength = 18
         self._fixedMask = True
@@ -378,6 +378,18 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         else:
             raise AttributeError("Can't access baud rate unless using CW-Lite serial port")
 
+    @property
+    def protver(self):
+        """Get the protocol version used for the target
+        """
+        return self.findParam(['proto', 'ver']).getValue()
+
+    @protver.setter
+    def protver(self, value):
+        """Set the protocol version used for the target
+        """
+        self.findParam(['proto', 'ver']).setValue(value)
+
     @setupSetParam("Key Length (Bytes)")
     def setKeyLen(self, klen):
         """ Set key length in bytes """
@@ -476,19 +488,20 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         data = self.ser.read(4, timeout=t_ms)
 
         if len(data) > 1 and data[0] == 'z':
-            self.protver = '1.1'
             logging.info("SimpleSerial: protocol V1.1 detected")
+            return '1.1'
         else:
-            self.protver = '1.0'
             logging.info("SimpleSerial: protocol V1.0 detected")
+            return '1.0'
+
 
     def init(self):
         self.ser.flush()
-        ver = self.findParam(['proto', 'ver']).getValue()
+        ver = self.protver
         if ver == 'auto':
-            self.getVersion()
+            self._protver = self.getVersion()
         else:
-            self.protver = ver
+            self._protver = ver
         self.outstanding_ack = False
 
         self.runCommand(self.findParam('cmdinit').getValue())
@@ -533,7 +546,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             return
 
         # Protocol version 1.1 waits for ACK - if we have outstanding ACK, wait now
-        if self.protver == '1.1':
+        if self._protver == '1.1':
             if self.outstanding_ack:
                 # TODO - Should be user-defined maybe
                 data = self.ser.read(4, timeout=500)
@@ -573,7 +586,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         except Exception as e:
             self.dis()
             raise e
-        if self.protver == '1.1':
+        if self._protver == '1.1':
             self.outstanding_ack = True
 
     def loadEncryptionKey(self, key):
