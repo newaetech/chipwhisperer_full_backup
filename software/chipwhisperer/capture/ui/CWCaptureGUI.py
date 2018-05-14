@@ -23,6 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+import warnings
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.capture.ui.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
@@ -31,7 +32,7 @@ from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI, makeApplication
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.util import NoneTypeScope, NoneTypeTarget
 from chipwhisperer.common.utils.parameter import Parameter
 from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
 
@@ -252,7 +253,11 @@ class CWCaptureGUI(CWMainGUI):
     # Helpful properties for the Python console
     @property
     def scope(self):
-        return self.api.getScope()
+        scope = self.api.getScope()
+        if scope is None:
+            warnings.warn('Scope not connected', UserWarning, stacklevel=2)
+            return NoneTypeScope()  # raises AttributeError on access of attribute for good error message
+        return scope
 
     @scope.setter
     def scope(self, new_scope):
@@ -260,7 +265,11 @@ class CWCaptureGUI(CWMainGUI):
 
     @property
     def target(self):
-        return self.api.getTarget()
+        target = self.api.getTarget()
+        if target is None:
+            warnings.warn('Target is not connected', UserWarning, stacklevel=2)
+            return NoneTypeTarget()  # raises AttributeError on access of attribute for good error message
+        return target
 
     @target.setter
     def target(self, new_target):

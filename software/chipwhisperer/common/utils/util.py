@@ -402,3 +402,18 @@ class cw_bytearray(bytearray):
 
     def __str__(self):
         return self.__repr__()
+
+
+class NoneTypeScope(object):
+    """Raises an intelligible error related to scope disconnect when any attribute is accessed
+    """
+
+    def __getattr__(self, item):
+        raise AttributeError('Scope has not been connected')
+
+
+class NoneTypeTarget(object):
+    """Raises an intelligble error related to target disconnect when any attribute is accessed
+    """
+    def __getattr__(self, item):
+        raise AttributeError('Target has not been connected')
