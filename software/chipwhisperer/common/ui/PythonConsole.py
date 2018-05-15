@@ -17,6 +17,8 @@ from code import InteractiveConsole as _InteractiveConsole
 from PySide import QtCore, QtGui
 from chipwhisperer.common.utils.util import requestConsoleBreak, updateUI
 from os.path import expanduser
+import time
+from datetime import timedelta
 
 # Note: we'd like to use cStringIO (it's faster) but we can't subclass it
 from StringIO import StringIO
@@ -622,7 +624,13 @@ class QPythonScriptRunner(QtGui.QWidget):
                 QtGui.QMessageBox.NoButton
             )
         else:
+            logging.info('Script %s is being executed' % path)
+            start = time.time()
             self.console.runLine("execfile('%s')" % path)
+            end = time.time()
+            exec_time = timedelta(seconds=end-start)
+            logging.info('Script %s has finished executing' % path)
+            logging.info('Execution time: %s' % exec_time)
             self.browser.addRecentFile(path)
 
     def editCopyScript(self):
