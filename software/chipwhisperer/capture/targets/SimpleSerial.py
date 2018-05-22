@@ -51,6 +51,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         self.input = ""
         self.key = ""
         self._protver = 'auto'
+        self._read_timeout = 500
         self.maskEnabled = False
         self.masklength = 18
         self._fixedMask = True
@@ -82,6 +83,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
                 {'name':'Version', 'key':'ver', 'type':'list', 'values':['1.0', '1.1', 'auto'], 'value':'auto'},
                 {'name':'Timeout (ms)', 'key':'timeout', 'type':'int', 'value':20, 'range':(0, 500), 'step':1},
             ]},
+            {'name':'Read timeout (ms)', 'key':'timeout', 'type':'int', 'get': self.readTimeout , 'set': self.setReadTimeout ,'range':(0, 5000), 'step':1},
             {'name':'Preset Mode', 'key': 'preset', 'type': 'list', 'values': self.presets, 'get': self.getPreset, 'set': self.setPreset},
             {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
             {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
@@ -167,6 +169,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         dict['input_len'] = self.input_len
         dict['output_len'] = self.output_len
         dict['mask_len'] = self.mask_len
+        dict['read_timeout'] = self.read_timeout
 
         dict['init_cmd']    = self.init_cmd
         dict['key_cmd']  = self.key_cmd
@@ -206,6 +209,21 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     def output_len(self):
         """The length of the output expected from the crypto algorithm (in bytes)"""
         return self.textLen()
+
+    @property
+    def read_timeout(self):
+        return self.readTimeout()
+
+    @read_timeout.setter
+    def read_timeout(self, timeout):
+        self.setReadTimeout(timeout)
+
+    def readTimeout(self):
+        return self._read_timeout
+
+    @setupSetParam("timeout")
+    def setReadTimeout(self, value):
+        self._read_timeout = value
 
     @output_len.setter
     def output_len(self, length):
@@ -624,14 +642,14 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
                 databytes = 64
 
 
-            self.newInputData.emit(self.ser.read(databytes))
+            self.newInputData.emit(self.ser.read(databytes,timeout=self.read_timeout))
             return None
 
         dataLen += len(fmt.replace("$RESPONSE$", ""))
         expected = fmt.split("$RESPONSE$")
 
         #Read data from serial port
-        response = self.ser.read(dataLen, timeout=500)
+        response = self.ser.read(dataLen, timeout=self.read_timeout)
 
         # If the protocol format is bin convert is back to hex for handling by CW
         if self.protformat == "bin":
