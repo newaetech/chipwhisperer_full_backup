@@ -161,7 +161,8 @@ class QPythonConsole(QtGui.QWidget):
         self.ui.input.setText("")
         # allow copy and pasting multiple lines
         lines = text.split('\n')
-        lines = filter(None, lines)  # removes empty lines
+        if len(lines) > 1:
+            lines = filter(None, lines)  # removes empty lines
         for line in lines:
             self.runLine(line)
         
