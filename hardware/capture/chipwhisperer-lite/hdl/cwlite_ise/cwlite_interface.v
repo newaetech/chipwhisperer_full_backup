@@ -58,6 +58,8 @@ module cwlite_interface(
 	 
 	 output wire		target_npower,
 	 
+	 output wire      trigger_out, //trigger out pin CW-Lite
+	 
 	 /* Various connections to USB Chip */
 	 input wire			USB_ser0_tx_i,
 	 output wire		USB_ser0_rx_o,
@@ -263,6 +265,8 @@ module cwlite_interface(
 		.glitchclk(glitchclk),
 		.exttrigger(ext_trigger)	
 		);
+		
+	 assign trigger_out = ext_trigger;
 	
 `ifdef ENABLE_RECONFIG
 	reg_reconfig reg_reconfig(

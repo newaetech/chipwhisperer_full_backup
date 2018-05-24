@@ -86,6 +86,8 @@ NET target_hs2			LOC=P95       |IOSTANDARD = LVCMOS33 | SLEW=FAST;
 
 NET glitchout_highpwr LOC=P66       |IOSTANDARD = LVCMOS33 | SLEW=FAST | DRIVE=24;
 NET glitchout_lowpwr LOC=P67       |IOSTANDARD = LVCMOS33 | SLEW=FAST | DRIVE=12;
+ 
+NET trigger_out LOC=P105           |IOSTANDARD = LVCMOS33 | SLEW=FAST;
 
 NET target_npower    LOC=P121      |IOSTANDARD = LVCMOS33;
 
