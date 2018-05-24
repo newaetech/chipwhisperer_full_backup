@@ -673,7 +673,7 @@ class ChipWhispererGlitch(Parameterized):
         self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
 
     def getGlitchWidthFine(self):
-        return self.getDCMStatus()[0]
+        return self.getDCMStatus()[1]
 
     @setupSetParam("Glitch Width (fine adjust)")
     def setGlitchWidthFine(self, fine):
@@ -697,18 +697,18 @@ class ChipWhispererGlitch(Parameterized):
         self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
 
     def getGlitchOffsetFine(self):
-        return self.getDCMStatus()[1]
+        return self.getDCMStatus()[0]
 
     def getDCMStatus(self):
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
 
-        phase1 = current[2] >> 3
-        phase1 |= (current[3] & 0x0F) << 5
-        phase1 = SIGNEXT(phase1, 9)
+        glitch_offset_fine_loaded = current[2] >> 3
+        glitch_offset_fine_loaded |= (current[3] & 0x0F) << 5
+        glitch_offset_fine_loaded = SIGNEXT(glitch_offset_fine_loaded, 9)
 
-        phase2 = (current[3] & 0xF0) >> 4
-        phase2 |= (current[4] & 0x1F) << 4
-        phase2 = SIGNEXT(phase2, 9)
+        glitch_width_fine_loaded = (current[3] & 0xF0) >> 4
+        glitch_width_fine_loaded |= (current[4] & 0x1F) << 4
+        glitch_width_fine_loaded = SIGNEXT(glitch_width_fine_loaded, 9)
 
         dcm1Lock = False
         dcm2Lock = False
@@ -719,7 +719,7 @@ class ChipWhispererGlitch(Parameterized):
         if current[5] & 0x01:
             dcm2Lock = True
 
-        return (phase1, phase2, dcm1Lock, dcm2Lock)
+        return (glitch_offset_fine_loaded, glitch_width_fine_loaded, dcm1Lock, dcm2Lock)
 
     def actionResetDCMs(self, _=None):
         """Action for parameter class"""
