@@ -103,6 +103,7 @@ module reg_chipwhisperer(
 	 `define CW_TRIGSRC_ADDR		39
 	 `define CW_TRIGMOD_ADDR		40
 	 `define CW_IOROUTE_ADDR      55
+	 `define CW_IOREAD_ADDR       59
  
  /*  0xXX - External Clock Connections (One Byte)
 	 
@@ -229,6 +230,7 @@ module reg_chipwhisperer(
 	 reg [7:0] registers_cwtrigsrc;
 	 reg [7:0] registers_cwtrigmod;
 	 reg [63:0] registers_iorouting;
+	 reg [3:0] registers_ioread;
   	 
 	 wire targetio_highz;
 	 
@@ -573,6 +575,15 @@ module reg_chipwhisperer(
 	 assign output_pdid = registers_iorouting[51];
 	 assign enable_output_pdic = registers_iorouting[52];
 	 assign output_pdic = registers_iorouting[53];
+
+	 always @(posedge clk) begin
+		if (reset) begin
+			registers_ioread <= 4'b0000;
+		end else begin
+			registers_ioread[3:0] <= {targetio4_io, targetio3_io, targetio2_io, targetio1_io};
+		end
+	 end
+
 	 
 	 reg [15:0] reg_hyplen_reg;
 	 assign reg_hyplen = reg_hyplen_reg;
@@ -583,6 +594,7 @@ module reg_chipwhisperer(
 				`CW_TRIGSRC_ADDR: reg_hyplen_reg <= 1;
 				`CW_TRIGMOD_ADDR: reg_hyplen_reg <= 1;
 				`CW_IOROUTE_ADDR: reg_hyplen_reg <= 8;
+				`CW_IOREAD_ADDR: reg_hyplen_reg <= 1;
 				default: reg_hyplen_reg<= 0;
 		endcase
 	 end
@@ -598,6 +610,7 @@ module reg_chipwhisperer(
 				`CW_TRIGSRC_ADDR: begin reg_datao_valid_reg <= 1; end
 				`CW_TRIGMOD_ADDR: begin reg_datao_valid_reg <= 1; end
 				`CW_IOROUTE_ADDR: begin reg_datao_valid_reg <= 1; end
+				`CW_IOREAD_ADDR: begin reg_datao_valid_reg <= 1; end
 				default: begin reg_datao_valid_reg <= 0; end	
 			endcase
 		end else begin
@@ -612,6 +625,7 @@ module reg_chipwhisperer(
 				`CW_TRIGSRC_ADDR: reg_datao_reg <= registers_cwtrigsrc; 
 				`CW_TRIGMOD_ADDR: reg_datao_reg <= registers_cwtrigmod; 
 				`CW_IOROUTE_ADDR: reg_datao_reg <= registers_iorouting[reg_bytecnt*8 +: 8];
+				`CW_IOREAD_ADDR: reg_datao_reg <= {4'b0000, registers_ioread};
 				default: reg_datao_reg <= 0;	
 			endcase
 		end

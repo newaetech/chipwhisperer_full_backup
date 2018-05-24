@@ -43,6 +43,7 @@ ADDR_TRIGMOD = 40
 ADDR_I2CSTATUS = 47
 ADDR_I2CDATA = 48
 ADDR_IOROUTE = 55
+ADDR_IOREAD = 59
 
 # API aliases for the TIO settings
 _tio_alias = {
@@ -1000,6 +1001,32 @@ class CWExtraSettings(Parameterized):
             return None
 
         return data[IONumber] & self.IOROUTE_GPIO
+    
+    def readTIOPins(self):
+        """Read signal level of all 4 Target IOn pins synchronously.
+
+        In most cases this is useful for low-speed digital input, hence the
+        GPIO state of the Target IOn pin(s) used for digital input should be
+        configured as 'High-Z'.
+
+        Returns a bit mask where set bits indicate which of the 4 target IOn
+        pins is read as high. Counting starts at bit 0, for example, bit0
+        refers to tio1.
+        """
+        
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOREAD, Validate=False, maxResp=1)
+        return data[0]
+
+    def readTIOPin(self, tio):
+        """Read signal level of a Target IOn pin.
+
+        Returns True if the signal level of the Target IOn pin is high,
+        otherwise False is returned.
+        """
+        if tio < 1 or tio > 4:
+            raise ValueError("Invalid Target IO. Currently only tio1 to tio4 are supported.")
+        tios = self.readTIOPins()
+        return (tios & (1<<(tio-1))) > 0
 
     @setupSetParam(['Target IOn Pins', 'Target IO1'])
     def setTargetIOMode1(self, setting):
