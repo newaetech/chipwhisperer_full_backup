@@ -143,7 +143,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self._attackSettings = AttackSettings()
         self._preprocessSettings = PreprocessingSettings(api)
 
-        super(CWAnalyzerGUI, self).__init__(api, name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
+        super(CWAnalyzerGUI, self).__init__(api, name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__ + "[*]", icon="cwiconA")
         #self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.scripts", False, False, self))
         CWAnalyzerGUI.instance = self
 
