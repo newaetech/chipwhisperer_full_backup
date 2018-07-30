@@ -164,6 +164,7 @@ class NAEUSB(object):
             fw_latest = NEWAE_PIDS[foundId]['fwver']
         else:
             name = "Unknown (PID = %04x)"%foundId
+            fw_latest = [0, 0]
 
         logging.info('Found %s, Serial Number = %s' % (name, self.snum))
 
