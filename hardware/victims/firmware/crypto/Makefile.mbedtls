@@ -15,10 +15,14 @@ ifeq ($(CRYPTO_OPTIONS),AES128C)
  else
  CDEFS += -DMBEDTLS_AES_ROM_TABLES=$(MBEDTLS_AES_ROM_TABLES)
  endif
+ 
+else ifeq ($(CRYPTO_OPTIONS),RSA)
+ SRC += rsa.c bignum.c md.c md5.c md_wrap.c sha1.c sha256.c sha512.c ripemd160.c
+ CDEFS += -DMBEDTLS
     
 else ifeq ($(CRYPTO_OPTIONS),SHA1)
  SRC += sha1.c
- CDEFS += -DMBEDTLS -DMBEDtlS_SHA
+ CDEFS += -DMBEDTLS -DMBEDTLS_SHA
     
 else
 

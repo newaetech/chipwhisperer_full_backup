@@ -54,6 +54,11 @@ else ifeq ($(CRYPTO_TARGET),MBEDTLS)
 else ifeq ($(CRYPTO_TARGET),MASKEDAES)
   include $(FIRMWAREPATH)/crypto/Makefile.maskedaes
 
+else ifeq ($(CRYPTO_TARGET),HWAES)
+  CFLAGS += -DHWCRYPTO=1
+  CPPFLAGS += -DHWCRYPTO=1
+  SRC += aes-independant.c
+
 else ifeq ($(CRYPTO_TARGET),NONE)
   #Nothing to do :)
 
