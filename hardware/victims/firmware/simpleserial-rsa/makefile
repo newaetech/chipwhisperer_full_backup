@@ -34,12 +34,18 @@ TARGET = simpleserial-rsa
 
 # List C source files here.
 # Header files (.h) are automatically pulled in.
-SRC += simpleserial-rsa.c 
+SRC += simpleserial-rsa.c simpleserial-rsa-xmega.c simpleserial-rsa-arm.c
 
 # -----------------------------------------------------------------------------
 
-ifeq ($(CRYPTO_TARGET),)
+ifeq ($(PLATFORM),CW303)
 CRYPTO_TARGET = AVRCRYPTOLIB
+else ifeq ($(PLATFORM),CW308_STM32F3)
+CRYPTO_TARGET = MBEDTLS
+else ifeq ($(PLATFORM),CWLITEARM)
+CRYPTO_TARGET = MBEDTLS
+else
+$(error: Must specify CRYPTO_TARGET=MBEDTLS or CRYPTO_TARGET=AVRCRYPTOLIB)
 endif
 
 CRYPTO_OPTIONS = RSA
