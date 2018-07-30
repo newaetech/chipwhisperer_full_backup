@@ -1598,6 +1598,7 @@ class OpenADCInterface(object):
         self._sbuf = []
         self.settings()
         self._support_decimate = True
+        self._nosampletimeout = 100
 
         # Send clearing function if using streaming mode
         if hasattr(self.serial, "stream") and self.serial.stream == False:
@@ -2003,14 +2004,14 @@ class OpenADCInterface(object):
             self.arm(False)
 
             # If using large offsets, system doesn't know we are delaying api
-            nosampletimeout = 100
+            nosampletimeout = self._nosampletimeout
             while (self.getBytesInFifo() == 0) and nosampletimeout:
                 time.sleep(0.05)
                 nosampletimeout -= 1
 
             if nosampletimeout == 0:
                 logging.warning('No samples received. Either very long offset, or no ADC clock (try "Reset ADC DCM"). '
-                                'If you need such a long offset, manually update "nosampletimeout" limit in source code.')
+                                'If you need such a long offset, increase "scope.qtadc.sc._nosampletimeout" limit.')
                 timeout = True
 
         return timeout

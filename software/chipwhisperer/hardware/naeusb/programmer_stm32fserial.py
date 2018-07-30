@@ -184,14 +184,11 @@ class STM32FSerial(object):
 
         logfunc("STM32F Reading %s..." % memtype)
         if waitfunc: waitfunc()
-        # Do verify run
-        rdata = self.readMemory(startaddr, len(fdata), self.small_blocks)
 
-        for i in range(0, len(fdata)):
-            if fdata[i] != rdata[i]:
-                raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i], rdata[i]))
+        self.verifyMemory(startaddr, fdata, self.small_blocks)
 
         logfunc("Verified %s OK, %d bytes" % (memtype, fsize))
+
 
     def autoProgram(self, hexfile, erase=True, verify=True, logfunc=print_fun, waitfunc=None):
         # Helper function for programmer UI
@@ -240,6 +237,9 @@ class STM32FSerial(object):
 
         return status == "SUCCEEDED"
 
+    def delay_func(self, ms_delay):
+        """If using outside of GUI, can override this function"""
+        nonBlockingDelay(ms_delay)
 
     def setChip(self, chiptype):
         self._chip = chiptype
@@ -247,9 +247,9 @@ class STM32FSerial(object):
     def reset(self):
         if self._cwapi:
             self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'Low'])
-            nonBlockingDelay(10)
+            self.delay_func(10)
             self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'High'])
-            nonBlockingDelay(25)
+            self.delay_func(25)
         elif self.scope:
             self.scope.io.nrst = 'low'
             time.sleep(0.010)
@@ -268,9 +268,9 @@ class STM32FSerial(object):
                 raise ValueError('requires either scope or api to be set')
         else:
             if self._cwapi:
-                self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'Default'])
+                self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'Low'])
             elif self.scope:
-                self.scope.io.pdic = 'default'
+                self.scope.io.pdic = 'low'
             else:
                 raise ValueError('requires either scope or api to be set')
         logging.info("Assuming appropriate BOOT pins set HIGH on STM32F Hardware now")
@@ -410,7 +410,7 @@ class STM32FSerial(object):
                 crc ^= c
                 self.sp.write(chr(c))
                 if self.slow_speed:
-                    nonBlockingDelay(5)
+                    self.delay_func(5)
             self.sp.write(chr(crc))
             self._wait_for_ask("0x31 programming failed")
             logging.debug("    Write memory done")
@@ -501,6 +501,75 @@ class STM32FSerial(object):
 
             # Complex commands section
 
+    def verifyMemory(self, addr, fdata, smallblocks=False):
+
+        fdata_idx = 0
+
+        if smallblocks:
+            block_size = 64
+        else:
+            block_size = 256
+
+        lng = len(fdata)
+
+        fails = 0
+
+        data = []
+        while lng > block_size:
+            logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
+            data = self.cmdReadMemory(addr, block_size)
+            if self.slow_speed:
+                self.delay_func(1)
+
+            redo_block = False
+            for i in range(0, len(data)):
+                if fdata[i+fdata_idx] != data[i]:
+                    fails += 1
+                    logging.info("Verify failed at 0x%04x, %x != %x" % (i, fdata[i+fdata_idx], data[i]))
+                    if fails > 3:
+                        raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i+fdata_idx], data[i]))
+                    else:
+                        #Redo this block
+                        logging.info("Read error - attempting retry")
+                        redo_block = True
+                        break
+
+            if redo_block:
+                continue
+
+            fails = 0
+
+            fdata_idx += block_size
+            addr += block_size
+            lng -= block_size
+
+        logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
+        fails = 0
+        while lng:
+            data = self.cmdReadMemory(addr, lng)
+            block_size = lng
+
+            redo_block = False
+            for i in range(0, len(data)):
+                if fdata[i + fdata_idx] != data[i]:
+                    fails += 1
+                    logging.info("Verify read failure in block at address 0x%04x" % (i + fdata_idx))
+                    if fails > 3:
+                        raise IOError("Verify repeated failure at 0x%04x, %x != %x" % (i + fdata_idx, fdata[i + fdata_idx], data[i]))
+                    else:
+                        # Redo this block
+                        logging.info("Verify failure - attempting retry now")
+                        redo_block = True
+                        break
+
+            if redo_block:
+                continue
+
+            fdata_idx += block_size
+            addr += block_size
+            lng -= block_size
+
+
     def readMemory(self, addr, lng, smallblocks=False):
         """Read from flash using bootloader. If smallblocks is true uses a smaller
            block size, which can be more reliable as sometimes the full block size
@@ -516,7 +585,7 @@ class STM32FSerial(object):
             logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
             data += self.cmdReadMemory(addr, block_size)
             if self.slow_speed:
-                nonBlockingDelay(1)
+                self.delay_func(1)
             addr += block_size
             lng -= block_size
 
@@ -535,7 +604,7 @@ class STM32FSerial(object):
             self.cmdWriteMemory(addr, data[offs:offs + 256])
             updateUI()
             if self.slow_speed:
-                nonBlockingDelay(1)
+                self.delay_func(1)
             offs += 256
             addr += 256
             lng -= 256

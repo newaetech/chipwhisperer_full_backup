@@ -87,7 +87,21 @@ class XMEGA128D4(object):
        "fuse5":{"offset":0x8f0025, "size":1},
      }
 
-supported_xmega = [XMEGA128A4U(), XMEGA128D4(), XMEGA16A4()]
+class XMEGA128A3U(object):
+    signature = [0x1e, 0x97, 0x42]
+    name = "XMEGA128A3U"
+
+    memtypes = {
+       "signature":{"offset":0x1000090, "size":3},
+       "flash":{"offset":0x0800000, "size":0x00022000, "pagesize":0x100, "type":XMEGAMEM_TYPE_APP},
+       "eeprom":{"offset":0x08c0000, "size":0x0800, "pagesize":0x20, "readsize":0x100, "type":XMEGAMEM_TYPE_EEPROM},
+       "fuse1":{"offset":0x8f0021, "size":1},
+       "fuse2":{"offset":0x8f0022, "size":1},
+       "fuse4":{"offset":0x8f0024, "size":1},
+       "fuse5":{"offset":0x8f0025, "size":1},
+     }
+
+supported_xmega = [XMEGA128A4U(), XMEGA128D4(), XMEGA16A4(), XMEGA128A3U()]
 
 def print_fun(s):
     print s

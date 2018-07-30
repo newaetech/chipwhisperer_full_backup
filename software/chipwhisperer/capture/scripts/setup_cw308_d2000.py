@@ -20,7 +20,7 @@ scope.adc.samples = 25000
 scope.adc.offset = 0
 scope.adc.basic_mode = "rising_edge"
 scope.clock.clkgen_freq = 7370000
-scope.clock.adc_src = "extclk_x4"
+scope.clock.adc_src = "extclk_x1"
 scope.trigger.triggers = "tio4"
 #TX/RX backwards from XMEGA
 scope.io.tio1 = "serial_tx"
@@ -34,9 +34,9 @@ ext_freq = scope.clock.freq_ctr
 
 if ext_freq > 10:
 
-    baud = (115200 / 32E6) * ext_freq
+    baud = int((115200 / 32E6) * ext_freq)
     print "Based on extclk of %d Hz, setting baud to %d" % (ext_freq, baud)
     target.baud = baud
     
 else:
-    raise IOError("Did not detect external clock from D2000. Confirm jumpers and rerun, or increase delay before sample."
+    raise IOError("Did not detect external clock from D2000. Confirm jumpers and rerun, or increase delay before sample.")
