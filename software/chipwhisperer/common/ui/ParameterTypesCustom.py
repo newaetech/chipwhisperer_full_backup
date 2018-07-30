@@ -933,11 +933,20 @@ def setValue_Fix(self, value, blockSignal=None):
     try:
         if blockSignal is not None:
             self.sigValueChanged.disconnect(blockSignal)
+
+        #Don't allow failures to keep repeating which is a rather annoying bug when it happens
+        if hasattr(self, '_last_time_failed') and self._last_time_failed and value == self.opts['value']:
+            return value
+
         self.opts['value'] = value
+        self._last_time_failed = True
         self.sigValueChanged.emit(self, value)
     finally:
         if blockSignal is not None:
             self.sigValueChanged.connect(blockSignal)
+
+    self._last_time_failed = False
+    return value
 
 Parameter.setValue = setValue_Fix
 
