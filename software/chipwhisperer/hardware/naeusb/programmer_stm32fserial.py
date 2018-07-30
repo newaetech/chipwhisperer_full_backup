@@ -240,6 +240,9 @@ class STM32FSerial(object):
 
         return status == "SUCCEEDED"
 
+    def delay_func(self, ms_delay):
+        """If using outside of GUI, can override this function"""
+        nonBlockingDelay(ms_delay)
 
     def setChip(self, chiptype):
         self._chip = chiptype
@@ -247,9 +250,9 @@ class STM32FSerial(object):
     def reset(self):
         if self._cwapi:
             self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'Low'])
-            nonBlockingDelay(10)
+            self.delay_func(10)
             self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'High'])
-            nonBlockingDelay(25)
+            self.delay_func(25)
         elif self.scope:
             self.scope.io.nrst = 'low'
             time.sleep(0.010)
@@ -268,9 +271,9 @@ class STM32FSerial(object):
                 raise ValueError('requires either scope or api to be set')
         else:
             if self._cwapi:
-                self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'Default'])
+                self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'Low'])
             elif self.scope:
-                self.scope.io.pdic = 'default'
+                self.scope.io.pdic = 'low'
             else:
                 raise ValueError('requires either scope or api to be set')
         logging.info("Assuming appropriate BOOT pins set HIGH on STM32F Hardware now")
@@ -410,7 +413,7 @@ class STM32FSerial(object):
                 crc ^= c
                 self.sp.write(chr(c))
                 if self.slow_speed:
-                    nonBlockingDelay(5)
+                    self.delay_func(5)
             self.sp.write(chr(crc))
             self._wait_for_ask("0x31 programming failed")
             logging.debug("    Write memory done")
@@ -516,7 +519,7 @@ class STM32FSerial(object):
             logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
             data += self.cmdReadMemory(addr, block_size)
             if self.slow_speed:
-                nonBlockingDelay(1)
+                self.delay_func(1)
             addr += block_size
             lng -= block_size
 
@@ -535,7 +538,7 @@ class STM32FSerial(object):
             self.cmdWriteMemory(addr, data[offs:offs + 256])
             updateUI()
             if self.slow_speed:
-                nonBlockingDelay(1)
+                self.delay_func(1)
             offs += 256
             addr += 256
             lng -= 256

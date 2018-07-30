@@ -44,6 +44,11 @@ def save_and_restore_pins(func):
         """
     @wraps(func) # updates func_wrapper aatributes to be same
     def func_wrapper(self, *args, **kwargs):
+
+        #If no scope, we don't do any pin magic
+        if self.scope is None:
+            return func(self, *args, **kwargs)
+
         pin_setup = {
             'pdic': self.scope.io.pdic,
             'pdid': self.scope.io.pdid,
@@ -84,6 +89,7 @@ class Programmer(object):
 
     def __init__(self):
         self.newTextLog = util.Signal()
+        self._scope = None
 
     @property
     def scope(self):
@@ -94,7 +100,8 @@ class Programmer(object):
         if api:
             return api.getScope()
         else:
-            raise ValueError('Programmer needs scope object, retrieval from api failed, please set manually')
+            #No scope object so we won't toggle pins
+            return None
 
     @scope.setter
     def scope(self, value):
@@ -201,10 +208,18 @@ class XMEGAProgrammer(Programmer):
     def __init__(self):
         super(XMEGAProgrammer, self).__init__()
         self.supported_chips = supported_xmega
+        self.xmega = None
+
+    def xmegaprog(self):
+        if self.xmega is None:
+            xmega = self.scope.scopetype.dev.xmega
+        else:
+            xmega = self.xmega
+        return xmega
 
     @save_and_restore_pins
     def find(self, xmega=None):
-        xmega = self.scope.scopetype.dev.xmega
+        xmega = self.xmegaprog()
         sig, chip = xmega.find()
 
         # Print signature of unknown device
@@ -216,7 +231,7 @@ class XMEGAProgrammer(Programmer):
     @save_and_restore_pins
     def erase(self, memtype="chip"):
         self.log("Erasing Chip")
-        xmega = self.scope.scopetype.dev.xmega
+        xmega = self.xmegaprog()
         xmega.erase(memtype)
 
     @save_and_restore_pins
@@ -227,12 +242,12 @@ class XMEGAProgrammer(Programmer):
     @save_and_restore_pins
     def program(self, filename, memtype="flash", verify=True):
         Programmer.lastFlashedFile = filename
-        xmega = self.scope.scopetype.dev.xmega
+        xmega = self.xmegaprog()
         xmega.program(filename, memtype, verify)
 
     @save_and_restore_pins
     def close(self):
-        xmega = self.scope.scopetype.dev.xmega
+        xmega = self.xmegaprog()
         xmega.enablePDI(False)
 
 class STM32FProgrammer(Programmer):
@@ -243,9 +258,14 @@ class STM32FProgrammer(Programmer):
         
         self.slow_speed = False
         self.small_blocks = False
+        self.stm = None
         
     def stm32prog(self):
-        stm = self.scope.scopetype.dev.serialstm32f
+
+        if self.stm is None:
+            stm = self.scope.scopetype.dev.serialstm32f
+        else:
+            stm = self.stm
         
         stm.slow_speed = self.slow_speed
         stm.small_blocks = self.small_blocks
