@@ -184,14 +184,11 @@ class STM32FSerial(object):
 
         logfunc("STM32F Reading %s..." % memtype)
         if waitfunc: waitfunc()
-        # Do verify run
-        rdata = self.readMemory(startaddr, len(fdata), self.small_blocks)
 
-        for i in range(0, len(fdata)):
-            if fdata[i] != rdata[i]:
-                raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i], rdata[i]))
+        self.verifyMemory(startaddr, fdata, self.small_blocks)
 
         logfunc("Verified %s OK, %d bytes" % (memtype, fsize))
+
 
     def autoProgram(self, hexfile, erase=True, verify=True, logfunc=print_fun, waitfunc=None):
         # Helper function for programmer UI
@@ -503,6 +500,75 @@ class STM32FSerial(object):
 
 
             # Complex commands section
+
+    def verifyMemory(self, addr, fdata, smallblocks=False):
+
+        fdata_idx = 0
+
+        if smallblocks:
+            block_size = 64
+        else:
+            block_size = 256
+
+        lng = len(fdata)
+
+        fails = 0
+
+        data = []
+        while lng > block_size:
+            logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
+            data = self.cmdReadMemory(addr, block_size)
+            if self.slow_speed:
+                self.delay_func(1)
+
+            redo_block = False
+            for i in range(0, len(data)):
+                if fdata[i+fdata_idx] != data[i]:
+                    fails += 1
+                    logging.info("Verify failed at 0x%04x, %x != %x" % (i, fdata[i+fdata_idx], data[i]))
+                    if fails > 3:
+                        raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i+fdata_idx], data[i]))
+                    else:
+                        #Redo this block
+                        logging.info("Read error - attempting retry")
+                        redo_block = True
+                        break
+
+            if redo_block:
+                continue
+
+            fails = 0
+
+            fdata_idx += block_size
+            addr += block_size
+            lng -= block_size
+
+        logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
+        fails = 0
+        while lng:
+            data = self.cmdReadMemory(addr, lng)
+            block_size = lng
+
+            redo_block = False
+            for i in range(0, len(data)):
+                if fdata[i + fdata_idx] != data[i]:
+                    fails += 1
+                    logging.info("Verify read failure in block at address 0x%04x" % (i + fdata_idx))
+                    if fails > 3:
+                        raise IOError("Verify repeated failure at 0x%04x, %x != %x" % (i + fdata_idx, fdata[i + fdata_idx], data[i]))
+                    else:
+                        # Redo this block
+                        logging.info("Verify failure - attempting retry now")
+                        redo_block = True
+                        break
+
+            if redo_block:
+                continue
+
+            fdata_idx += block_size
+            addr += block_size
+            lng -= block_size
+
 
     def readMemory(self, addr, lng, smallblocks=False):
         """Read from flash using bootloader. If smallblocks is true uses a smaller
