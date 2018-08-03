@@ -45,10 +45,9 @@ class ResyncSAD(PreprocessingBase):
         PreprocessingBase.__init__(self, traceSource, name=name)
         self._rtrace = None
         self._debugReturnSad = False
-        self._ccStart = 0
-        self._ccEnd = 1
         self._wdStart = 0
         self._wdEnd = 1
+        self._maxshift = 1
 
         if connectTracePlot:
             traceplot = ResultsBase.registeredObjects["Trace Output Plot"]
@@ -57,13 +56,12 @@ class ResyncSAD(PreprocessingBase):
 
         self.params.addChildren([
             {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'get':self._getRefTrace, 'set':self._setRefTrace},
-            {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':traceplot, 'get':self._getRefPoints, 'set':self._setRefPoints},
-            {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':traceplot, 'get':self._getWindow, 'set':self._setWindow},
-             #{'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
-            # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad}
+            {'name':'Max Shift +/-', 'key':'maxshift', 'type':'int', 'get':self._getMaxShift, 'set':self._setMaxShift},
+            {'name':'Target Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':traceplot, 'get':self._getWindow, 'set':self._setWindow},
         ])
         self.updateLimits()
         self.sigTracesChanged.connect(self.updateLimits)
+        self._init_not_done = True
 
     @setupSetParam("Ref Trace")
     def _setRefTrace(self, num):
@@ -72,6 +70,13 @@ class ResyncSAD(PreprocessingBase):
 
     def _getRefTrace(self):
         return self._rtrace
+
+    @setupSetParam("Max Shift +/-")
+    def _setMaxShift(self, shift):
+        self._maxshift = shift
+
+    def _getMaxShift(self):
+        return self._maxshift
 
     @property
     def ref_trace(self):
@@ -86,36 +91,7 @@ class ResyncSAD(PreprocessingBase):
             raise TypeError("Expected int; got %s" % type(num), num)
         self._setRefTrace(num)
 
-    @setupSetParam("Reference Points")
-    def _setRefPoints(self, window):
-        self._ccStart, self._ccEnd = window
-        self._calculateRef()
-
-    def _getRefPoints(self):
-        return (self._ccStart, self._ccEnd)
-
-    @property
-    def ref_points(self):
-        """The section of the input trace swept over the reference section.
-
-        This must be a tuple of (first point, last point).
-
-        Setter raises TypeError if value is not a tuple or if points are not
-        integers.
-        """
-        return self._getRefPoints()
-
-    @ref_points.setter
-    def ref_points(self, win):
-        if not isinstance(win, tuple):
-            raise TypeError("Expected tuple; got %s" % type(win), win)
-        if not isinstance(win[0], (int, long)):
-            raise TypeError("Expected int; got %s" % type(win[0]), win[0])
-        if not isinstance(win[1], (int, long)):
-            raise TypeError("Expected int; got %s" % type(win[1]), win[1])
-        self._setRefPoints(win)
-
-    @setupSetParam("Input Window")
+    @setupSetParam("Target Window")
     def _setWindow(self, window):
         self._wdStart, self._wdEnd = window
         self._calculateRef()
@@ -124,8 +100,8 @@ class ResyncSAD(PreprocessingBase):
         return (self._wdStart, self._wdEnd)
 
     @property
-    def input_window(self):
-        """The section of the input trace swept over the reference section.
+    def target_window(self):
+        """Section of the trace we are trying to mimimize SAD for.
 
         This must be a tuple of (first point, last point).
 
@@ -134,8 +110,8 @@ class ResyncSAD(PreprocessingBase):
         """
         return self._getWindow()
 
-    @input_window.setter
-    def input_window(self, win):
+    @target_window.setter
+    def target_window(self, win):
         if not isinstance(win, tuple):
             raise TypeError("Expected tuple; got %s" % type(win), win)
         if not isinstance(win[0], (int, long)):
@@ -144,9 +120,16 @@ class ResyncSAD(PreprocessingBase):
             raise TypeError("Expected int; got %s" % type(win[1]), win[1])
         self._setWindow(win)
 
+    @property
+    def input_window(self):
+        raise NotImplementedError("SAD interface changed. See target_window now.")
+
+    @input_window.setter
+    def input_window(self, _):
+        raise NotImplementedError("SAD interface changed. See target_window now.")
+
     def updateLimits(self):
         if self._traceSource:
-            self.findParam('refpts').setLimits((0, self._traceSource.numPoints()-1))
             self.findParam('windowpt').setLimits((0, self._traceSource.numPoints()-1))
             self._calculateRef()
 
@@ -155,6 +138,10 @@ class ResyncSAD(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
+            if self._init_not_done:
+                self._calculateRef()
+                self._init_not_done = False
+
             trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
@@ -192,21 +179,33 @@ class ResyncSAD(PreprocessingBase):
             pass
         
     def _findSAD(self, inputtrace):
-        reflen = self._ccEnd - self._ccStart
-        sadlen = self._wdEnd - self._wdStart
-        sadarray = np.empty(sadlen-reflen)
-        
-        for ptstart in range(self._wdStart, self._wdEnd-reflen):
-            #Find SAD        
-            sadarray[ptstart - self._wdStart] = np.sum(np.abs(inputtrace[ptstart:(ptstart + reflen)] - self.reftrace))
-            
+        sadlen = self._maxshift * 2
+        sadarray = np.ones(sadlen)*1E6
+
+        wdlen = self._wdEnd - self._wdStart
+
+        #Shift values
+        minshift = -self._maxshift
+        maxshift = self._maxshift
+
+        if minshift + self._wdStart < 0:
+            raise ValueError("Invalid size or maximum shift, starting search location is < 0")
+
+        if maxshift + self._wdEnd > len(inputtrace):
+            raise ValueError("Invalid size or maximum shift, ending search location is outside trace")
+
+        for ptoffset in range(minshift, maxshift):
+            ptstart = ptoffset + self._wdStart
+            diff_data = inputtrace[ptstart:(ptstart+wdlen)] - self.reftrace
+            abs_data = np.abs(diff_data)
+            sadarray[ptoffset + self._maxshift] = np.sum(abs_data)
         return sadarray
         
     def calcRefTrace(self, tnum):
         if self.enabled == False:
             return
         
-        self.reftrace = self._traceSource.getTrace(tnum)[self._ccStart:self._ccEnd]
+        self.reftrace = self._traceSource.getTrace(tnum)[self._wdStart:self._wdEnd]
         sad = self._findSAD(self._traceSource.getTrace(tnum))
         self.refmaxloc = np.argmin(sad)
         self.refmaxsize = min(sad)
