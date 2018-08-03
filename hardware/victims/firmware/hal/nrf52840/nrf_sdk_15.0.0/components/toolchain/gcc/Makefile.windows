@@ -1,0 +1,3 @@
+GNU_INSTALL_ROOT := E:\arm\GNU_ARM_TOOLS_4.9 2014q4/bin/
+GNU_VERSION := 4.9.3
+GNU_PREFIX := arm-none-eabi

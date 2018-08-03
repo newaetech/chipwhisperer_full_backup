@@ -359,7 +359,7 @@ sizeafter: build
 	@$(ELFSIZE)
 
 $(OBJDIR):
-	mkdir $(OBJDIR)
+	mkdir $(OBJDIR) $(addprefix $(OBJDIR)\, $(subst /,\,$(MKDIR_LIST) ) )
 
 .dep:
 	mkdir .dep
@@ -539,8 +539,9 @@ clean_all_objs :
 	$(REMOVE) $(addsuffix .map,$(TARGET-ALL))
 	$(REMOVE) $(addsuffix .sym,$(TARGET-ALL))
 	$(REMOVE) $(addsuffix .lss,$(TARGET-ALL))
-	-$(REMOVE) $(OBJDIR)/*.o
-	-$(REMOVE) $(OBJDIR)/*.lst
+	$(REMOVE) $(OBJDIR)/*.o
+	$(REMOVE) $(OBJDIR)/*.lst
+	$(REMOVEDIR) $(OBJDIR)
 	$(REMOVE) $(SRC:.c=.s)
 	$(REMOVE) $(SRC:.c=.d)
 	$(REMOVE) $(SRC:.c=.i)
