@@ -91,6 +91,18 @@ class ResyncSAD(PreprocessingBase):
             raise TypeError("Expected int; got %s" % type(num), num)
         self._setRefTrace(num)
 
+    @property
+    def max_shift(self):
+        """Maximum amount to shift around a trace around the target_window"""
+
+        return self._getMaxShift()
+
+    @max_shift.setter
+    def max_shift(self, m):
+        if not isinstance(m, (int, long)):
+            raise TypeError("Expected int; got %s" % type(m), m)
+        self._setMaxShift(m)
+
     @setupSetParam("Target Window")
     def _setWindow(self, window):
         self._wdStart, self._wdEnd = window
@@ -216,6 +228,6 @@ class ResyncSAD(PreprocessingBase):
         dict = OrderedDict()
         dict['enabled'] = self.enabled
         dict['ref_trace'] = self.ref_trace
-        dict['ref_points'] = self.ref_points
-        dict['input_window']    = self.input_window
+        dict['max_shift'] = self.max_shift
+        dict['target_window']    = self.target_window
         return dict
