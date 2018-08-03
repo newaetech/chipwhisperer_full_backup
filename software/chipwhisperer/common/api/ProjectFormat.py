@@ -170,6 +170,9 @@ class ProjectFormat(Parameterized):
         if f is not None:
             self.setFilename(f)
 
+        if not os.path.isfile(self.filename):
+            raise IOError("File " + self.filename + " does not exist or is not a file")
+
         self.config = ConfigObjProj(infile=self.filename, callback=self.configObjChanged)
         self._traceManager.loadProject(self.filename)
         self.dirty.setValue(False)
