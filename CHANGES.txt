@@ -1,3 +1,15 @@
+V4.0.2:
+-Improve SAD logic
+-Add RSA firmware build for ARM.
+-Add new setup scripts (CEC1702, ESP32)
+-Various small fixes
+
+V4.0.1:
+-State for GUI Programmers is not held in between actions, allowing the programmers to be left open during captures/glitching without causing problems
+-The GUI programmers now use the 4.0 api to set pins for programming, saving pin states before an action to restore them after.
+-Most firmware files are now compatible with the ARM compiler
+-Example scripts in chipwhisperer/software/scripting-examples have been updated for 4.0, providing an example of using the ChipWhisperer tool without the GUI for clock glitching, trace capture during encryption, and trace analysis.
+
 V4.0.0:
 -Rewritten script interface, now almost all work is done via preconfigured scripts
 -New API allows direct access to configuration (useful with new script architecture)
