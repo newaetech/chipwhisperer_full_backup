@@ -139,6 +139,19 @@ class LastroundStateDiff(AESLeakageHelper):
     def processKnownKey(self, inpkey):
         return keyScheduleRounds(inpkey, 0, 10)
 
+class LastroundStateDiffAlternate(AESLeakageHelper):
+    name = 'HD: AES Last-Round State Alternate'
+    def leakage(self, pt, ct, key, bnum):
+        # Alternate leakage
+        st10 = ct[bnum]
+        st9 = inv_sbox(ct[bnum] ^ key[bnum])
+        return (st9 ^ st10)
+
+    def processKnownKey(self, inpkey):
+        k = keyScheduleRounds(inpkey, 0, 10)
+        k = self.shiftrows(k)
+        return k
+
 class SBoxInOutDiff(AESLeakageHelper):
     name = 'HD: AES SBox Input to Output'
     c_model_enum_value = 3
@@ -193,6 +206,14 @@ class Mixcolumns_output(AESLeakageHelper):
         state = self.mixcolumns(state)
         return state[bnum]
 
+class ShiftColumns_output(AESLeakageHelper):
+    name = 'HW: AES ShiftColumns Output'
+    def leakage(self, pt, ct, key, bnum):
+        state = [pt[i] ^ key[i] for i in range(0, 16)]
+        state = self.subbytes(state)
+        state = self.shiftrows(state)
+        return state[bnum]
+
 class Round1Round2StateDiff_Text(AESLeakageHelper):
     name = 'HD: AES Round1/Round2 State diff for text'
     def leakage(self, pt, ct, key, bnum):
@@ -232,7 +253,7 @@ class Round1Round2StateDiff_SBox(AESLeakageHelper):
         return state[bnum] ^ state1[bnum]
 
 #List of all classes you can use
-enc_list = [SBox_output, PtKey_XOR, SBoxInputSuccessive, SBoxInOutDiff, LastroundStateDiff, SBoxOutputSuccessive, Mixcolumns_output, Round1Round2StateDiff_Text, Round1Round2StateDiff_KeyMix, Round1Round2StateDiff_SBox]
+enc_list = [SBox_output, PtKey_XOR, SBoxInputSuccessive, SBoxInOutDiff, LastroundStateDiff, LastroundStateDiffAlternate, SBoxOutputSuccessive, ShiftColumns_output, Mixcolumns_output, Round1Round2StateDiff_Text, Round1Round2StateDiff_KeyMix, Round1Round2StateDiff_SBox]
 dec_list = [InvSBox_output]
 
 class AES128_8bit(ModelsBase, Plugin):
