@@ -37,7 +37,7 @@ class GPIOToggle(object):
     
     Arguments to __init__():
     - pin: The pin to toggle. Can be one of the strings "tio1"-"tio4", "nrst",
-        "pdid", "pdic"
+        "pdid", "pdic", "target_pwr"
     - default_state: The standby state of the pin. Can be True (high, toggle
         low) or False (low, toggle high)
     - active_ms: Length of toggle in ms
