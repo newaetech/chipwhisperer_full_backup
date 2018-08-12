@@ -25,7 +25,7 @@
 
 import time
 import logging
-from naeusb import packuint32
+from .naeusb import packuint32
 
 class FPGA(object):
 
@@ -170,7 +170,7 @@ class FPGA(object):
                 # t0 += Date().getTime()
             except IOError as e:
                 if tries > 1:
-                    print("Warning: " + str(e) + ": Retrying it ...")
+                    print(("Warning: " + str(e) + ": Retrying it ..."))
                 else:
                     raise
             tries -= 1

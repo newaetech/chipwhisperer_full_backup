@@ -24,7 +24,7 @@
 
 
 import time
-from naeusb import packuint32
+from .naeusb import packuint32
 
 class USART(object):
     """

@@ -245,8 +245,8 @@ class PLLCDCE906(object):
         # can take a little while to calculate
         for outdiv in range(minoutdiv, maxoutdiv + 1):
             fvco = freqdesired * outdiv
-            for N in xrange(1, 4096):
-                for M in xrange(1, 512):
+            for N in range(1, 4096):
+                for M in range(1, 512):
                     err = abs(fvco - ((freqsource * N) / M))
                     if err < lowerror:
                         lowerror = err / outdiv

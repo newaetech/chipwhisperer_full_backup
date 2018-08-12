@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014-2016, NewAE Technology Inc
+# Copyright (c) 2014-2018, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -28,7 +28,6 @@ import usb.core
 import usb.util
 import math
 from threading import Condition, Thread
-import array
 
 import chipwhisperer.hardware.firmware.cwlite as fw_cwlite
 import chipwhisperer.hardware.firmware.cw1200 as fw_cw1200
@@ -392,60 +391,12 @@ class NAEUSB(object):
             diff = time.time() - start
             logging.debug("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
 
-            #while(self.drx < num_totalbytes):
-            #    bytesread = self.serial.usbdev().read(self.serial.rep, buf, timeout=to)
-            #    self.dbuf_temp[self.drx:self.drx+bytesread] = buf[:]
-            #    self.drx += bytesread
-            #    to = 50
-
-
-            # # Get block size of samples, bytes per block
-            # _, self.bsize_samples, self.bsize_bytes = self.serial._cmdReadStream_blockSizes(self.dlen)
-            #
-            # dlen = self.dlen
-            # to = self.timeout_ms
-            #
-            # self.drx = 0
-            #
-            # start = time.time()
-            # while dlen > 0:
-            #     try:
-            #         if dlen > 9216:
-            #             bsize = self.bsize_bytes
-            #         elif dlen >= 6122:
-            #             bsize = 4096*3
-            #         elif dlen >= 3072:
-            #             bsize = 4096*2
-            #         else:
-            #             bsize = 4096
-            #
-            #         #Commented out normally for performance
-            #         #logging.debug("USB Read Request: %d bytes, %d samples left"%(bsize, dlen))
-            #         diff = time.time() - start
-            #         logging.debug("Sending USB read request at %.20f" % diff)
-            #
-            #         #self.dbuf_temp[self.drx:(self.drx+bsize)] = (self.serial.usbdev().read(self.serial.rep, bsize, timeout=to))
-            #         self.serial.usbdev().read(self.serial.rep, bsize, timeout=to)
-            #     except IOError as e:
-            #         self.timeout = True
-            #         if self.drx == 0:
-            #             logging.debug("Timeout during stream mode with no data - assumed no trigger")
-            #         else:
-            #             logging.debug("Timeout during stream mode after %d bytes" % self.drx)
-            #         break
-            #
-            #     #once we have a block of data, quicker timeout is OK
-            #     to = 50
-            #
-            #     dlen -= (bsize / 4) * 3
-            #     self.drx += bsize
-
 
 if __name__ == '__main__':
-    from fpga import FPGA
-    from programmer_avr import AVRISP
-    from programmer_xmega import XMEGAPDI, supported_xmega
-    from serial import USART
+    from .fpga import FPGA
+    from .programmer_avr import AVRISP
+    from .programmer_xmega import XMEGAPDI, supported_xmega
+    from .serial import USART
 
     cwtestusb = NAEUSB()
     cwtestusb.con()
@@ -464,7 +415,7 @@ if __name__ == '__main__':
         # fpga.FPGAProgram(open(r"C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\temp\artix7test\artix7test.runs\impl_1\cw305_top.bit", "rb"))
         # fpga.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\api\chipwhisperer-lite\hdl\cwlite_ise_spifake\cwlite_interface.bit", "rb"))
         stoptime = datetime.now()
-        print "FPGA Config time: %s" % str(stoptime - starttime)
+        print("FPGA Config time: %s" % str(stoptime - starttime))
 
     # print fpga.cmdReadMem(10, 6)
     # print fpga.cmdReadMem(0x1A, 4)
@@ -483,21 +434,21 @@ if __name__ == '__main__':
         xmega.setParamTimeout(200)
 
         try:
-            print "Enable"
+            print("Enable")
             xmega.enablePDI(True)
 
-            print "Read sig"
+            print("Read sig")
             # Read signature bytes
             data = xmega.readMemory(0x01000090, 3, "signature")
 
-            print data
+            print(data)
 
             if data[0] != 0x1E or data[1] != 0x97 or data[2] != 0x46:
-                print "Signature bytes failed: %02x %02x %02x != 1E 97 46" % (data[0], data[1], data[2])
+                print("Signature bytes failed: %02x %02x %02x != 1E 97 46" % (data[0], data[1], data[2]))
             else:
-                print "Detected XMEGA128A4U"
+                print("Detected XMEGA128A4U")
 
-            print "Erasing"
+            print("Erasing")
             # Chip erase
             try:
                 xmega.eraseChip()
@@ -506,63 +457,24 @@ if __name__ == '__main__':
                 xmega.enablePDI(True)
 
             fakedata = [i & 0xff for i in range(0, 2048)]
-            print "Programming FLASH Memory"
+            print("Programming FLASH Memory")
             xmega.writeMemory(0x0800000, fakedata, memname="flash")
 
-            print "Verifying"
+            print("Verifying")
             test = xmega.readMemory(0x0800000, 512)
 
-            print test
+            print(test)
 
 
-        except TypeError, e:
-            print str(e)
+        except TypeError as e:
+            print(str(e))
 
-        except IOError, e:
-            print str(e)
+        except IOError as e:
+            print(str(e))
 
         xmega.enablePDI(False)
 
-
-    # cwtestusb.cmdReadMem(0x00, 25)
-    # cwtestusb.cmdWriteMem(0, [1, 2, 3, 4, 5, 0xFF])
-    # cwtestusb.cmdWriteMem(0x100, [0xFF, 2, 3])
-    # time.sleep(1)
-    # cwtestusb.cmdWriteMem(0x100, [0x00])
-    # time.sleep(1)
-    # cwtestusb.cmdWriteMem(0x100, [0xFF])
-
-    # key = [0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c]
-    # key = [i for i in range(0, 16)]
-    # text = [0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a]
-    # text = [i for i in range(0, 16)]
-    # text = key
-    # text = [0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2b]
-
-    # key = key[::-1]
-    # text = text[::-1]
-
-    # cwtestusb.cmdWriteMem(0x200, key)
-    # cwtestusb.cmdWriteMem(0x300, text)
-
-    # print "enable AES and wait..."
-    # print cwtestusb.cmdReadMem(0x110, 1)[0]
-    # cwtestusb.cmdWriteMem(0x100, [1])
-    # print cwtestusb.cmdReadMem(0x110, 1)[0]
-
-    # print "done"
-    # print cwtestusb.cmdReadMem(0x110, 1)[0]
-    # while cwtestusb.cmdReadMem(0x110, 1)[0] == 0:
-    #    time.sleep(0.01)
-    #    print "waiting..."
-    # cwtestusb.cmdWriteMem(0x100, [0])
-    # # time.sleep(0.5)
-    # print ["%02x" % i for i in cwtestusb.cmdReadMem(0x600, 16)]
-    # print ["%02x" % i for i in cwtestusb.cmdReadMem(0x200, 16)]
-    # print ["%02x" % i for i in cwtestusb.cmdReadMem(0x300, 16)]
-
-
-    print "Let's Rock and Roll baby"
+    print("Let's Rock and Roll baby")
 
     sertest = True
 
@@ -570,19 +482,4 @@ if __name__ == '__main__':
         usart.init()
         usart.write("hello\n")
         time.sleep(0.1)
-        print usart.read()
-
-    # cwtestusb.sendCtrl(0x1F, 0x01)
-    # flog = open("spilog.txt", "w+")
-    # while True:
-    #    try:
-    #        data = cwtestusb._usbdev.read(cwtestusb.rep, 512)
-    #        slog = ""
-    #        slog += "%s: " % str(datetime.now())
-    #        for d in data:
-    #            slog += "%02x " % d
-    #        print slog
-    #        flog.write(slog + "\n")
-    #        flog.flush()
-    #    except usb.core.USBError:
-    #        pass
+        print(usart.read())

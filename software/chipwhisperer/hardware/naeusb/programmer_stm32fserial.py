@@ -30,6 +30,7 @@ from datetime import datetime
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 from chipwhisperer.common.utils.timer import nonBlockingDelay
 from chipwhisperer.common.utils.util import updateUI
+from functools import reduce
 
 #From ST AN2606, See Section 50 (Device-dependent bootloader parameters), Page 244/268 on Rev 30 of document
 #http://www.st.com/content/ccc/resource/technical/document/application_note/b9/9b/16/3a/12/1e/40/0c/CD00167594.pdf/files/CD00167594.pdf/jcr:content/translations/en.CD00167594.pdf
@@ -82,7 +83,7 @@ supported_stm32f = [STM32F071(), STM32F10xxx_LD(), STM32F10xxx_MD(), STM32F10xxx
                     STM32F10xxx_HDV(), STM32F2(), STM32F303cBC(), STM32F40xxx()]
 
 def print_fun(s):
-    print s
+    print(s)
 
 class CmdException(Exception):
     pass
@@ -223,7 +224,7 @@ class STM32FSerial(object):
 
                 status = "SUCCEEDED"
 
-            except IOError, e:
+            except IOError as e:
                 if logfunc: logfunc("FAILED: %s" % str(e))
                 try:
                     self.close_port()
@@ -332,7 +333,7 @@ class STM32FSerial(object):
             version = self.sp.read(1)[0]
             logging.info("    Bootloader version: " + hex(version))
             #dat = map(lambda c: hex(self.sp.read(len))
-            dat = map(hex, self.sp.read(len))
+            dat = list(map(hex, self.sp.read(len)))
             if '0x44' in dat:
                 self.extended_erase = 1
             else:
@@ -380,7 +381,7 @@ class STM32FSerial(object):
             crc = N ^ 0xFF
             self.sp.write(chr(N) + chr(crc))
             self._wait_for_ask("0x11 length failed")
-            return map(lambda c: c, self.sp.read(lng))
+            return [c for c in self.sp.read(lng)]
         else:
             raise CmdException("ReadMemory (0x11) failed")
 
@@ -450,7 +451,7 @@ class STM32FSerial(object):
             self.sp.write(chr(0x00))
             tmp = self.sp.timeout
             self.sp.timeout = 30000
-            print "Extended erase (0x44), this can take ten seconds or more"
+            print("Extended erase (0x44), this can take ten seconds or more")
             self._wait_for_ask("0x44 erasing failed")
             self.sp.timeout = tmp
             logging.info("    Extended Erase memory done")

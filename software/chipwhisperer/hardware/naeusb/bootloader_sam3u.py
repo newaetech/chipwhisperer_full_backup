@@ -29,7 +29,7 @@
 #
 
 #Avoid namespace collision with 'serial'
-from __future__ import absolute_import
+
 
 import logging
 

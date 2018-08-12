@@ -26,7 +26,7 @@ from datetime import datetime
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 
-from naeusb import packuint32
+from .naeusb import packuint32
 
 # NOTE: These objects are currently manually maintained. Eventually it will be automatically created
 #      from avrdude.conf, but I'd like to test with a few more devices before doing that.
@@ -143,7 +143,7 @@ class ATMega2564RFR2(AVRBase):
 supported_avr = [ATMega328P(), ATMega328(), ATMega168A(), ATMega168PA(), ATMega88A(), ATMega88PA(), ATMega48A(), ATMega48PA(), ATMega128RFA1(), ATMega2564RFR2()]
 
 def print_fun(s):
-    print s
+    print(s)
 
 class AVRISP(object):
 
@@ -309,7 +309,7 @@ class AVRISP(object):
 
                 status = "SUCCEEDED"
 
-            except IOError, e:
+            except IOError as e:
                 if logfunc: logfunc("FAILED: %s" % str(e))
                 try:
                     self.enableISP(False)
