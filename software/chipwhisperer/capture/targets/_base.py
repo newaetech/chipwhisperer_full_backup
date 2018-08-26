@@ -40,7 +40,7 @@ class TargetTemplate(Parameterized, Plugin):
     def __init__(self):
         self.newInputData = util.Signal()
         self.connectStatus = util.Observable(False)
-        self.getParams().register()
+        #self.getParams().register()
 
     def setSomething(self):
         """Here you would send value to the reader hardware"""

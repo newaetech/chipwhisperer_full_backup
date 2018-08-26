@@ -25,32 +25,16 @@
 
 from ._base import SimpleSerialTemplate
 import serial
-from collections import OrderedDict
-from chipwhisperer.common.utils.parameter import setupSetParam
-from chipwhisperer.common.utils import serialport
-
 
 class SimpleSerial_serial(SimpleSerialTemplate):
     _name = "System Serial Port"
 
-    def __init__(self):
+    def __init__(self, portname=None):
         SimpleSerialTemplate.__init__(self)
         self.ser = serial.Serial(baudrate=38400)
-        baud_values = OrderedDict(list(zip([str(X) for X in serial.Serial.BAUDRATES], serial.Serial.BAUDRATES)))
-        self.params.addChildren([
-            {'name':'Baud', 'key':'baud', 'type':'list', 'values':baud_values, 'value':self.ser.baudrate},
-            {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
-            {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
-        ])
 
-    def updateSerial(self, _=None):
-        serialnames = serialport.scan()
-        self.findParam('port').setLimits(serialnames)
-        if len(serialnames) > 0:
-            self.findParam('port').setValue(serialnames[0])
-
-    def selectionChanged(self):
-        self.updateSerial()
+        if portname:
+            self.set_port(portname)
 
     def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
         pass
@@ -58,14 +42,16 @@ class SimpleSerial_serial(SimpleSerialTemplate):
     def baud(self):
         return self.ser.baudrate
 
-    @setupSetParam("baud")
-    def setBaud(self, baud):
+    def set_baud(self, baud):
         if baud == self.ser.baudrate:
             return
         self.ser.baudrate = baud
         if self.ser.is_open:
             self.ser.close()
             self.ser.open()
+
+    def set_port(self, portname):
+        self.ser.port = portnames
 
     def hardware_write(self, string):
         return self.ser.write(bytearray(string.encode('utf-8')))
@@ -84,7 +70,6 @@ class SimpleSerial_serial(SimpleSerialTemplate):
     def con(self, scope = None):
         if not self.ser.is_open:
             # Open serial port if not already
-            self.ser.port     = self.findParam('port').getValue()
-            self.ser.baudrate = self.findParam('baud').getValue()
+            self.ser.port     = self.portname
             self.ser.timeout  = 2     # 2 second timeout
             self.ser.open()

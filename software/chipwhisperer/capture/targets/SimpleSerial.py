@@ -29,9 +29,7 @@ from usb import USBError
 
 import binascii
 from ._base import TargetTemplate
-from chipwhisperer.common.utils import pluginmanager, util
 from .simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
-from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils import util
 from collections import OrderedDict
 
@@ -51,7 +49,6 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         self.key = ""
         self._protver = 'auto'
         self._read_timeout = 500
-        self.maskEnabled = False
         self.masklength = 18
         self._fixedMask = True
         self.initmask = '1F 70 D6 3C 23 EB 1A B8 6A D5 E2 0D 5F D9 58 A3 CA 9D'
@@ -72,61 +69,28 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         self._linkedmaskgroup = (('maskgroup', 'cmdmask'), ('maskgroup', 'initmask'), ('maskgroup', 'masktype'),
                                  ('maskgroup', 'masklen'), ('maskgroup', 'newmask'))
-        self.params.addChildren([
-            #{'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons, 'get':self.getConnection, 'set':self.setConnection},
-            {'name':'Key Length (Bytes)', 'type':'list', 'values':[8, 16, 32], 'get':self.keyLen, 'set':self.setKeyLen},
-            {'name':'Input Length (Bytes)', 'type':'list', 'values':[1, 2, 4, 8, 16, 32], 'default':16, 'get':self.textLen, 'set':self.setTextLen},
-            {'name':'Output Length (Bytes)', 'type':'list', 'values':[8, 16, 32], 'default':16, 'get':self.outputLen, 'set':self.setOutputLen},
-            # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
-            {'name':'Protocol Version', 'key':'proto', 'type':'group', 'expanded':True, 'children':[
-                {'name':'Version', 'key':'ver', 'type':'list', 'values':['1.0', '1.1', 'auto'], 'value':'auto'},
-                {'name':'Timeout (ms)', 'key':'timeout', 'type':'int', 'value':20, 'range':(0, 500), 'step':1},
-            ]},
-            {'name':'Read timeout (ms)', 'key':'timeout', 'type':'int', 'get': self.readTimeout , 'set': self.setReadTimeout ,'range':(0, 5000), 'step':1},
-            {'name':'Preset Mode', 'key': 'preset', 'type': 'list', 'values': self.presets, 'get': self.getPreset, 'set': self.setPreset},
-            {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
-            {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
-            {'name':'Load Input Command', 'key':'cmdinput', 'type':'str', 'value':''},
-            {'name':'Go Command','key':'cmdgo', 'type':'str', 'value':'p$TEXT$\\n'},
-            {'name':'Output Format', 'key':'cmdout', 'type':'str', 'value':'r$RESPONSE$\\n'},
-            {'name':'Mask', 'key':'maskgroup', 'type':'group', 'expanded':True, 'children':[
-                {'name':'Mask Supported', 'key':'maskenabled', 'type':'bool', 'get':self.getMaskEnabled, 'set':self.setMaskEnabled, 'linked':self._linkedmaskgroup, 'action':self.changeMaskEnabled},
-                {'name':'Mask Length (Bytes)', 'key':'masklen', 'type':'list', 'values':[18], 'default':18, 'get':self.maskLen, 'set':self.setMaskLen, 'visible':self.getMaskEnabled()},
-                {'name':'Load Mask Command', 'key':'cmdmask', 'type':'str', 'value':'m$MASK$\\n', 'visible':self.getMaskEnabled()},
-                {'name':'Mask Type', 'key':'masktype', 'type':'list', 'values':{'Random': False, 'Fixed': True}, 'get':self.getMaskType, 'set':self.setMaskType, 'visible':self.getMaskEnabled(), 'action':self.changeMaskType},
-                {'name':'Fixed Mask', 'key':'initmask', 'type':'str', 'get':self.getInitialMask, 'set':self.setInitialMask, 'visible':self.getMaskEnabled() and self.getMaskType()},
-                {'name':'New Random Mask', 'key':'newmask', 'type':'action', 'action':self.newRandMask, 'visible':self.getMaskEnabled() and self.getMaskType()},
-            ]},
-            {'name':'Protocol format', 'type':'list', 'values':['bin','hex'], 'get':self.protFormat, 'set':self.setProtFormat, 'help':"Assume the protocol to be in the given format. The original SimpleSerial module assumed that the keys where to be sent in hex format but in some situations it is needed to conver the contents to a binary string representation"}
-            #{'name':'Data Format', 'key':'datafmt', 'type':'list', 'values':{'DEADBEEF':'',
-            #                                                                 'DE AD BE EF':' ',
-            #                                                                 'DE:AD:BE:EF':':',
-            #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
-        ])
+
+
+
+        self._proto_ver = "auto"
+        self._proto_timeoutms = 20
+        self._init_cmd = ''
+        self._key_cmd = 'k$KEY$\n'
+        self._input_cmd = ''
+        self._go_cmd = 'p$TEXT$\n'
+        self._output_cmd = 'r$RESPONSE$\n'
+
+        self._mask_enabled = False
+        self._mask_cmd = 'm$MASK$\n'
 
         self.outstanding_ack = False
 
-        self.setConnection(self.ser, blockSignal=True)
+        self.setConnection(self.ser)
         self.disable_newattr()
-
-    def getMaskEnabled(self):
-        return self.maskEnabled
-
-    @setupSetParam(("maskgroup", "Mask Supported"))
-    def setMaskEnabled(self, v):
-        self.maskEnabled = v
-
-    def getMaskType(self):
-        return self._fixedMask
-
-    @setupSetParam(("maskgroup", "Mask Type"))
-    def setMaskType(self, t):
-        self._fixedMask = t
 
     def getInitialMask(self):
         return " ".join(["%02X" % b for b in self._mask])
 
-    @setupSetParam(("maskgroup", "Fixed Mask"))
     def setInitialMask(self, initialMask, binaryMask=False):
         if initialMask:
             if binaryMask:
@@ -147,20 +111,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
     @fixed_mask.setter
     def fixed_mask(self, m):
-        self.findParam(("maskgroup", "Fixed Mask")).setValue(m)
-
-    def changeMaskEnabled(self, p):
-        v = p.getValue()
-        for linked in self._linkedmaskgroup:
-            self.findParam(linked).show(v)
-        v &= self.getMaskType()
-        for l in ('initmask', 'newmask'):
-            self.findParam(('maskgroup', l)).show(v)
-
-    def changeMaskType(self, p):
-        v = p.getValue() and self.getMaskEnabled()
-        self.findParam(("maskgroup", "initmask")).show(v)
-        self.findParam(("maskgroup", "newmask")).show(v)
+        self.setInitialMask(m)
 
     def _dict_repr(self):
         dict = OrderedDict()
@@ -209,27 +160,23 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         """The length of the output expected from the crypto algorithm (in bytes)"""
         return self.textLen()
 
-    @property
-    def read_timeout(self):
-        return self.readTimeout()
-
-    @read_timeout.setter
-    def read_timeout(self, timeout):
-        self.setReadTimeout(timeout)
-
-    def readTimeout(self):
-        return self._read_timeout
-
-    @setupSetParam("timeout")
-    def setReadTimeout(self, value):
-        self._read_timeout = value
-
     @output_len.setter
     def output_len(self, length):
         return self.setOutputLen(length)
 
+
+    @property
+    def read_timeout(self):
+        """Timeout in mS on how long to wait for target to respond."""
+        return self.readTimeout()
+
+    @read_timeout.setter
+    def read_timeout(self, timeout):
+        self._read_timeout(timeout)
+
     @property
     def mask_len(self):
+        """The length of the mask to send (in bytes)"""
         return self.maskLen()
 
     @mask_len.setter
@@ -253,11 +200,11 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         Setter: Set a new init command
         """
-        return self.findParam("Init Command").getValue()
+        return self._init_cmd
 
     @init_cmd.setter
     def init_cmd(self, cmd):
-        self.findParam("Init Command").setValue(cmd)
+        self._init_cmd = cmd
 
     @property
     def key_cmd(self):
@@ -269,11 +216,11 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         Setter: Set a new key command
         """
-        return self.findParam("Load Key Command").getValue()
+        return self._key_cmd
 
     @key_cmd.setter
     def key_cmd(self, cmd):
-        self.findParam("Load Key Command").setValue(cmd)
+        self._key_cmd = cmd
 
     @property
     def input_cmd(self):
@@ -285,11 +232,11 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         Setter: Set a new text input command
         """
-        return self.findParam("Load Input Command").getValue()
+        return self._input_cmd
 
     @input_cmd.setter
     def input_cmd(self, cmd):
-        self.findParam("Load Input Command").setValue(cmd)
+        self._input_cmd = cmd
 
     @property
     def go_cmd(self):
@@ -301,11 +248,11 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         Setter: Set a new text input command
         """
-        return self.findParam("Go Command").getValue()
+        return self._go_cmd
 
     @go_cmd.setter
     def go_cmd(self, cmd):
-        self.findParam("Go Command").setValue(cmd)
+        self._go_cmd = cmd
 
     @property
     def output_cmd(self):
@@ -326,11 +273,11 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         Setter: Set a new output format
         """
-        return self.findParam("Output Format").getValue()
+        return self._output_cmd
 
     @output_cmd.setter
     def output_cmd(self, cmd):
-        self.findParam("Output Format").setValue(cmd)
+        self._output_cmd = cmd
 
     @property
     def mask_cmd(self):
@@ -343,32 +290,33 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         Setter: Set a new mask command
         """
-        return self.findParam(('maskgroup', 'cmdmask')).getValue()
+        return self._mask_cmd
 
     @mask_cmd.setter
     def mask_cmd(self, cmd):
-        self.findParam(('maskgroup', 'cmdmask')).setValue(cmd)
+        self._mask_cmd = cmd
 
     @property
     def mask_type(self):
+        """mask_type is either 'fixed' or 'random'."""
         return "fixed" if self.getMaskType() else "random"
 
     @mask_type.setter
     def mask_type(self, masktype):
         if masktype == 'fixed' or masktype == True:
-            self.findParam(("maskgroup", "Mask Type")).setValue(True)
+            self._fixedMask = True
         elif masktype == 'random' or masktype == False:
-            self.findParam(("maskgroup", "Mask Type")).setValue(False)
+            self._fixedMask = False
         else:
             raise ValueError('Invalid value for mask_type. Should be "fixed" or "random"')
 
     @property
     def mask_enabled(self):
-        return self.getMaskEnabled()
+        return self._mask_enabled
 
     @mask_enabled.setter
     def mask_enabled(self, enable):
-        self.setMaskEnabled(enable)
+        self._mask_enabled = enable
 
     @property
     def baud(self):
@@ -399,15 +347,14 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     def protver(self):
         """Get the protocol version used for the target
         """
-        return self.findParam(['proto', 'ver']).getValue()
+        return self._proto_ver
 
     @protver.setter
     def protver(self, value):
-        """Set the protocol version used for the target
+        """Set the protocol version used for the target ('1.1', '1.0', or 'auto')
         """
-        self.findParam(['proto', 'ver']).setValue(value)
+        self._proto_ver = value
 
-    @setupSetParam("Key Length (Bytes)")
     def setKeyLen(self, klen):
         """ Set key length in bytes """
         self.keylength = klen
@@ -416,14 +363,12 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         """ Return key length in bytes """
         return self.keylength
 
-    @setupSetParam(("maskgroup", "Mask Length (Bytes)"))
     def setMaskLen(self, mlen):
         self.masklength = mlen
 
     def maskLen(self):
         return self.masklength
 
-    @setupSetParam("Input Length (Bytes)")
     def setTextLen(self, tlen):
         """ Set plaintext length. tlen given in bytes """
         self.textlength = tlen
@@ -432,7 +377,6 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         """ Return plaintext length in bytes """
         return self.textlength
 
-    @setupSetParam("Output Length (Bytes)")
     def setOutputLen(self, tlen):
         """ Set plaintext length in bytes """
         self.outputlength = tlen
@@ -441,7 +385,6 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         """ Return output length in bytes """
         return self.outputlength
 
-    @setupSetParam("Protocol format")
     def setProtFormat(self, protformat):
         """ Set the protocol format used 'bin' or 'hex' """
         self.protformat = protformat
@@ -450,34 +393,11 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         """ Return the protocol format used 'bin' or 'hex' """
         return self.protformat
 
-    @setupSetParam("Preset")
-    def setPreset(self, mode):
-        self._preset = mode
-        settings = ['cmdinit', 'cmdkey', 'cmdinput', 'cmdgo', 'cmdout']
-        values = mode
-        for i in range(len(settings)):
-            try:
-                if values[i] is None:
-                    self.findParam(settings[i]).setReadonly(False)
-                else:
-                    self.findParam(settings[i]).setReadonly(False)
-                    self.findParam(settings[i]).setValue(values[i])
-                    self.findParam(settings[i]).setReadonly(True)
-            except KeyError as e:
-                # This happens at startup when this parameter is being loaded before the text settings are ready
-                logging.debug("SimpleSerial: could not find parameters for preset settings")
-                pass
-
-    def getPreset(self):
-        return self._preset
-
     def getConnection(self):
         return self.ser
 
-    @setupSetParam("Connection")
     def setConnection(self, con):
         self.ser = con
-        self.params.append(self.ser.getParams())
 
         self.ser.connectStatus.setValue(False)
         self.ser.connectStatus.connect(self.connectStatus.emit)
@@ -501,8 +421,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     def getVersion(self):
         self.ser.flush()
         self.ser.write("v\n")
-        t_ms = ver = self.findParam(['proto', 'timeout']).getValue()
-        data = self.ser.read(4, timeout=t_ms)
+        data = self.ser.read(4, timeout=self._proto_timeoutms)
 
         if len(data) > 1 and data[0] == 'z':
             logging.info("SimpleSerial: protocol V1.1 detected")
@@ -521,25 +440,23 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             self._protver = ver
         self.outstanding_ack = False
 
-        self.runCommand(self.findParam('cmdinit').getValue())
+        self.runCommand(self._init_cmd)
         # If we use a fix mask, set it once at init
-        cmdmask = self.findParam(('maskgroup', 'cmdmask')).getValue()
-        if self.maskEnabled and cmdmask and self.getMaskType():
+        if self._mask_enabled and self._mask_cmd and self.getMaskType():
             self._mask = self.checkMask(self._mask)
-            self.runCommand(cmdmask)
+            self.runCommand(self._mask_cmd)
 
     def newRandMask(self, _=None):
         new_mask = [random.randint(0, 255) for _ in range(self.maskLen())]
         self._mask = bytearray(new_mask)
 
     def reinit(self):
-        cmdmask = self.findParam(('maskgroup', 'cmdmask')).getValue()
-        if self.maskEnabled and cmdmask:
+        if self._mask_enabled and self._mask_cmd:
             # Only set a mask if it's random. Fixed mask is set by init()
             if not self.getMaskType():  # Random
                 self.newRandMask()
                 self._mask = self.checkMask(self._mask)
-                self.runCommand(cmdmask)
+                self.runCommand(self._mask_cmd)
 
     def setModeEncrypt(self):
         pass
@@ -609,15 +526,15 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     def loadEncryptionKey(self, key):
         self.key = key
         if self.key:
-            self.runCommand(self.findParam('cmdkey').getValue())
+            self.runCommand(self._key_cmd)
 
     def loadInput(self, inputtext):
         self.input = inputtext
-        self.runCommand(self.findParam('cmdinput').getValue())
+        self.runCommand(self._input_cmd)
 
     def loadMask(self, mask):
         self.mask = mask
-        self.runCommand(self.findParam(('maskgroup', 'cmdmask')).getValue())
+        self.runCommand(self._mask_cmd)
 
     def isDone(self):
         return True
@@ -625,7 +542,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     def readOutput(self):
         dataLen= self.outputlength*2
 
-        fmt = self.findParam('cmdout').getValue()
+        fmt = self._output_cmd
         #This is dumb
         fmt = fmt.replace("\\n", "\n")
         fmt = fmt.replace("\\r", "\r")
@@ -639,7 +556,6 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
                 databytes = int(fmt.replace("$GLITCH$",""))
             except ValueError:
                 databytes = 64
-
 
             self.newInputData.emit(self.ser.read(databytes,timeout=self.read_timeout))
             return None
@@ -688,7 +604,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         return data
 
     def go(self):
-        self.runCommand(self.findParam('cmdgo').getValue())
+        self.runCommand(self._go_cmd)
 
     def checkEncryptionKey(self, kin):
         blen = self.keyLen()
