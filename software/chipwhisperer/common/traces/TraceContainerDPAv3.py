@@ -32,7 +32,7 @@ from PySide.QtCore import *
 from chipwhisperer.common.utils import tracereader_dpacontestv3, tracereader_native
 import numpy as np
 from time import gmtime, strftime
-from _base import TraceContainer
+from ._base import TraceContainer
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
 class TraceContainerDPAv3(TraceContainer):

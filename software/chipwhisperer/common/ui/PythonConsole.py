@@ -21,7 +21,7 @@ import time
 from datetime import timedelta
 
 # Note: we'd like to use cStringIO (it's faster) but we can't subclass it
-from StringIO import StringIO
+from io import StringIO
 
 class MyStringIO(StringIO):
     """Custom StringIO class - prints everything to console"""
@@ -162,7 +162,7 @@ class QPythonConsole(QtGui.QWidget):
         # allow copy and pasting multiple lines
         lines = text.split('\n')
         if len(lines) > 1:
-            lines = filter(None, lines)  # removes empty lines
+            lines = [_f for _f in lines if _f]  # removes empty lines
         for line in lines:
             self.runLine(line)
         

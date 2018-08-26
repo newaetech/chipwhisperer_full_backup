@@ -703,7 +703,7 @@ class FilelistItem(WidgetParameterItem):
     def makeLayout(self):
         opts = self.param.opts
 
-        if 'editor' in opts.keys():
+        if 'editor' in list(opts.keys()):
             self.editor = opts['editor']
         else:
             self.editor = None

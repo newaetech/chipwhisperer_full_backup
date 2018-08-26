@@ -16,7 +16,7 @@ class GlitchParam(object):
         """ return the amount of items """
         return len(self.range)
 
-    def next(self):
+    def __next__(self):
         """ return the next item in the list """
         self.index = self.index+1
         if self.index > self.size():
@@ -25,8 +25,8 @@ class GlitchParam(object):
 
     def set_next(self):
         """ Get the next value of the glitch param and set it in hardware """
-        a = self.next()
-        print("Setting %s to value %d" % (self._attr_name,a))
+        a = next(self)
+        print(("Setting %s to value %d" % (self._attr_name,a)))
         setattr(self._o,self._attr_name,a)
 
     def get_desc(self):

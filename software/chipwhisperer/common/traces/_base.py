@@ -26,7 +26,7 @@ import copy
 import logging
 import re
 import numpy as np
-import _cfgfile
+from . import _cfgfile
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
@@ -179,7 +179,7 @@ class TraceContainer(Parameterized, Plugin):
         """
 
         # Get all section names
-        for sname in self.config.config.keys():
+        for sname in list(self.config.config.keys()):
             # Find if starts with 'Aux Data'
             if sname.startswith("Aux Data"):
 
@@ -191,7 +191,7 @@ class TraceContainer(Parameterized, Plugin):
                     # print "Found %s" % sname
 
                     # Finally confirm unique dictionary values
-                    for k in newmodule["values"].keys():
+                    for k in list(newmodule["values"].keys()):
                         try:
                             if newmodule["values"][k]["definesunique"]:
                                 try:
@@ -223,7 +223,7 @@ class TraceContainer(Parameterized, Plugin):
                 maxNumber = max(maxNumber, ad.auxNumber + 1)
 
         #Check configuration file
-        for sname in self.config.config.keys():
+        for sname in list(self.config.config.keys()):
             # Find if starts with 'Aux Data'
             if sname.startswith("Aux Data"):
                 maxNumber = max(int(re.findall(r'\d+', sname)[0]) + 1, maxNumber)
@@ -288,5 +288,5 @@ if __name__ == "__main__":
     test.addTrace(wave, None, None, None)
     test.addTrace(wave, None, None, None)
     test.addTrace(wave, None, None, None)
-    print test.numTraces()
-    print test.numPoints()
+    print(test.numTraces())
+    print(test.numPoints())

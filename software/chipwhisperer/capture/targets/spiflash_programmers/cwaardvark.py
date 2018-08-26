@@ -25,9 +25,9 @@
 #=================================================
 import logging
 
-from _base import SPIFlashTemplate
+from ._base import SPIFlashTemplate
 from chipwhisperer.common.utils.parameter import setupSetParam
-from lowlevel.aardvark_py import *
+from .lowlevel.aardvark_py import *
 
 class SPIFlash_Aardvark(SPIFlashTemplate):
     _name = 'Total Phase Aardvark'

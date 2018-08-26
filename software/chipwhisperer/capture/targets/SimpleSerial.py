@@ -30,7 +30,7 @@ from usb import USBError
 import binascii
 from ._base import TargetTemplate
 from chipwhisperer.common.utils import pluginmanager, util
-from simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
+from .simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
 from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils import util
 from collections import OrderedDict
@@ -42,8 +42,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     def __init__(self):
         TargetTemplate.__init__(self)
 
-        ser_cons = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.simpleserial_readers", True, False)
-        self.ser = ser_cons[SimpleSerial_ChipWhispererLite._name]
+        self.ser = SimpleSerial_ChipWhispererLite()
 
         self.keylength = 16
         self.textlength = 16
@@ -74,7 +73,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         self._linkedmaskgroup = (('maskgroup', 'cmdmask'), ('maskgroup', 'initmask'), ('maskgroup', 'masktype'),
                                  ('maskgroup', 'masklen'), ('maskgroup', 'newmask'))
         self.params.addChildren([
-            {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons, 'get':self.getConnection, 'set':self.setConnection},
+            #{'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons, 'get':self.getConnection, 'set':self.setConnection},
             {'name':'Key Length (Bytes)', 'type':'list', 'values':[8, 16, 32], 'get':self.keyLen, 'set':self.setKeyLen},
             {'name':'Input Length (Bytes)', 'type':'list', 'values':[1, 2, 4, 8, 16, 32], 'default':16, 'get':self.textLen, 'set':self.setTextLen},
             {'name':'Output Length (Bytes)', 'type':'list', 'values':[8, 16, 32], 'default':16, 'get':self.outputLen, 'set':self.setOutputLen},
@@ -665,8 +664,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         #Is a beginning part
         if len(expected[0]) > 0:
             if response[0:len(expected[0])] != expected[0]:
-                print("Sync Error: %s"%response)
-                print("Hex Version: %s" % (" ".join(["%02x" % ord(t) for t in response])))
+                print(("Sync Error: %s"%response))
+                print(("Hex Version: %s" % (" ".join(["%02x" % ord(t) for t in response]))))
 
                 return None
 
@@ -683,7 +682,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         #Is end part?
         if len(expected[1]) > 0:
             if response[startindx:startindx+len(expected[1])] != expected[1]:
-                print("Sync Error: %s"%response)
+                print(("Sync Error: %s"%response))
                 return None
 
         return data

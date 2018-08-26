@@ -58,7 +58,7 @@ import os, os.path
 import sys
 try:
     import aardvark as api
-except ImportError, ex1:
+except ImportError as ex1:
     import imp, platform
     ext = platform.system() in ('Windows', 'Microsoft') and '.dll' or '.so'
     try:
@@ -69,7 +69,7 @@ except ImportError, ex1:
             fname = 'aardvark'
         fname += ext
         api = imp.load_dynamic('aardvark', os.path.join(fdir, fname))
-    except ImportError, ex2:
+    except ImportError as ex2:
         import_err_msg  = 'Error importing %s\n' % fname
         import_err_msg += '  Architecture of %s may be wrong\n' % fname
         import_err_msg += '%s\n%s' % (ex1, ex2)

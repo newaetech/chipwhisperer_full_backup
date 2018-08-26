@@ -25,7 +25,7 @@
 #=================================================
 import logging
 import time
-from _base import TargetTemplate
+from ._base import TargetTemplate
 from chipwhisperer.common.utils import pluginmanager
 from chipwhisperer.common.utils.parameter import setupSetParam
 

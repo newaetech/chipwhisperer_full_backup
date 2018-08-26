@@ -28,12 +28,12 @@ import glob
 from PySide.QtCore import *
 from PySide.QtGui import *
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
-import ConfigParser
+import configparser
 import chipwhisperer.common.traces._cfgfile
 import chipwhisperer.common.traces.TraceContainerNative
 from chipwhisperer.common.traces.TraceContainerDPAv3 import ImportDPAv3Dialog
 from chipwhisperer.common.utils import util
-from TraceManagerImport import TraceManagerImport
+from .TraceManagerImport import TraceManagerImport
 
 __author__ = "Colin O'Flynn"
 
@@ -177,7 +177,7 @@ class TraceManagerDialog(QtFixes.QDialog):
             newcfgname = targetdir + cfgname
 
             #Get prefix from config file
-            config = ConfigParser.RawConfigParser()
+            config = configparser.RawConfigParser()
             config.read(fname)
             prefix = config.get("Trace Config", "prefix")
 

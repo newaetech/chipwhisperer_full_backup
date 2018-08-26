@@ -25,12 +25,12 @@
 import logging
 import pickle
 import numpy as np
-from _base import TraceContainer
-from _cfgfile import makeAttrDict
+from ._base import TraceContainer
+from ._cfgfile import makeAttrDict
 
 try:
     import umysql as sql
-except ImportError, e:
+except ImportError as e:
     # This isn't really needed, no need to bother users
     # print "umysql required: https://pypi.python.org/pypi/umysql"
     raise ImportError(e)

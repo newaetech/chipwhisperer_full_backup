@@ -376,7 +376,7 @@ class CWCoreAPI(Parameterized):
                     notes_str = "AckPattern: " + str(ktp) + "; "
                     notes_str += "Aux: "
                     if aux_dict is not None:
-                        for t in aux_dict.keys():
+                        for t in list(aux_dict.keys()):
                             notes_str += "%s" % t + ", ".join([str(item) for item in aux_dict[t] if item])
                     currentTrace.config.setAttr("notes", notes_str)
                     currentTrace.setTraceHint(this_seg_size)

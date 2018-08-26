@@ -25,7 +25,7 @@ from functools import partial
 
 from PySide.QtGui import *
 from PySide.QtCore import *
-from projectdiffwidget import ProjectDiffWidget
+from .projectdiffwidget import ProjectDiffWidget
 
 
 class SaveProjectDialog(QDialog):

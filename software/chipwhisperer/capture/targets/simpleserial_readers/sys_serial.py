@@ -36,7 +36,7 @@ class SimpleSerial_serial(SimpleSerialTemplate):
     def __init__(self):
         SimpleSerialTemplate.__init__(self)
         self.ser = serial.Serial(baudrate=38400)
-        baud_values = OrderedDict(zip([str(X) for X in serial.Serial.BAUDRATES], serial.Serial.BAUDRATES))
+        baud_values = OrderedDict(list(zip([str(X) for X in serial.Serial.BAUDRATES], serial.Serial.BAUDRATES)))
         self.params.addChildren([
             {'name':'Baud', 'key':'baud', 'type':'list', 'values':baud_values, 'value':self.ser.baudrate},
             {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},

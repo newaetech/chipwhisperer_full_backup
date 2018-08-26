@@ -50,7 +50,7 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
         self.findParam('knownkey').hide()
 
     def updateAll(self, _=None):
-        for i in self.registeredObjects.itervalues():
+        for i in self.registeredObjects.values():
             if isinstance(i, AttackObserver):
                 i.processAnalysis()
 

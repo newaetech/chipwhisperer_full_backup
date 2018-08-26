@@ -22,7 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import ConfigParser
+import configparser
 import logging
 import os.path
 import re
@@ -66,7 +66,7 @@ class TraceManager(TraceSource):
 
     def loadProject(self, configfilename):
         """Load the trace segments information from a project file."""
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
         config.read(configfilename)
         alltraces = config.items(self.name)
         self.newProject()
@@ -81,7 +81,7 @@ class TraceManager(TraceSource):
                 ti = TraceContainerNative()
                 try:
                     ti.config.loadTrace(fname)
-                except Exception, e:
+                except Exception as e:
                     logging.error(e.message)
                 self.traceSegments.append(ti)
             if t[0].startswith("enabled"):

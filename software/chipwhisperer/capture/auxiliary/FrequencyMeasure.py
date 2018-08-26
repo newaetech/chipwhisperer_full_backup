@@ -26,7 +26,7 @@ import logging
 import time
 import numpy as np
 from matplotlib.mlab import find
-from _base import AuxiliaryTemplate
+from ._base import AuxiliaryTemplate
 from chipwhisperer.common.utils.parameter import setupSetParam
 
 try:

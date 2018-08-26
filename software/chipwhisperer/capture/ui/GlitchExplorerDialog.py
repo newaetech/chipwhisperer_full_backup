@@ -101,7 +101,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
     def add_data(self, name, value):
         doupdate = False
 
-        if name not in self.tune_parameter_list.keys():
+        if name not in list(self.tune_parameter_list.keys()):
             doupdate = True
 
         self.tune_parameter_list[name] = value
@@ -121,8 +121,8 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         widget = ResultsBase.registeredObjects.get("Glitch Explorer", None)
         if widget is not None:
             widget.clearPushed()
-            widget.setLabels(top="Glitch Map", xaxis=self.tune_parameter_list.keys()[0] if len(self.tune_parameter_list)>0 else "",
-                             yaxis=self.tune_parameter_list.keys()[1] if len(self.tune_parameter_list)>1 else "")
+            widget.setLabels(top="Glitch Map", xaxis=list(self.tune_parameter_list.keys())[0] if len(self.tune_parameter_list)>0 else "",
+                             yaxis=list(self.tune_parameter_list.keys())[1] if len(self.tune_parameter_list)>1 else "")
 
     def campaignStart(self, prefixname):
         """Called when acqusition campaign (multi-api) starts, generates filename"""
@@ -171,7 +171,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
             for c in override:
                 headerlist.append(c)
         else:
-            for t in self.tune_parameter_list.keys():
+            for t in list(self.tune_parameter_list.keys()):
                 headerlist.append(t)
 
         self.table.setColumnCount(len(headerlist))
@@ -255,7 +255,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         respstr = str(bytearray(resp))
         # respstr = ' '.join(["%02x" % t for t in bytearray(resp)])
 
-        settingsList = self.tune_parameter_list.values()
+        settingsList = list(self.tune_parameter_list.values())
         newdata = {"input":"", "output":respstr, "normal":normresult, "success":succresult, "settings":settingsList, "date":starttime}
 
         self.tableList.append(newdata)
@@ -276,7 +276,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
                 pickle.dump({"notes":self.findParam(["Recordings",'savenotes']).getValue()}, self._autosavef)
 
                 # Add headers
-                cmds = self.tune_parameter_list.keys()
+                cmds = list(self.tune_parameter_list.keys())
                 pickle.dump({"commands":cmds}, self._autosavef)
 
             # Add data

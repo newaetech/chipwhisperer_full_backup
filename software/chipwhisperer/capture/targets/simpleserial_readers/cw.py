@@ -151,7 +151,7 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
 
     def hardware_write(self, string):
         for s in string:
-            if isinstance(string, basestring):
+            if isinstance(string, str):
                 d = bytearray(s, 'latin-1')
             else:
                 d = [s]

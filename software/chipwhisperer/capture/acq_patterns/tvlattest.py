@@ -25,7 +25,7 @@
 import logging
 import random
 from chipwhisperer.common.utils import util
-from _base import AcqKeyTextPattern_Base
+from ._base import AcqKeyTextPattern_Base
 
 try:
     from Crypto.Cipher import AES

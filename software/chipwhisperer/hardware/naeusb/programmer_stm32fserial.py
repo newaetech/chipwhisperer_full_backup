@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Original Author: Ivan A-R <ivan@tuxotronic.org>
-# Modified by: Colin O'Flynn (2017), NewAE Technology Inc.
+# Modified by: Colin O'Flynn (2017-2018), NewAE Technology Inc.
 # Original Project page: http://tuxotronic.org/wiki/projects/stm32loader
 #
 # This file is part of stm32loader.

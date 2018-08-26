@@ -37,7 +37,7 @@ aux_list.register(resetter.resetThenDelay, "before_trace")
 # Test one capture
 cw.captureN(self.scope, self.target, None, self.aux_list, self.ktp, 1)
 trace = scope.getLastTrace()
-print trace
+print(trace)
 
 # Crack the first letter
 password = ''
@@ -59,5 +59,5 @@ for i in range(5):
             
         # If we got here, we've found the right letter
         password += c
-        print '{} characters: {}'.format(i+1, password)
+        print('{} characters: {}'.format(i+1, password))
         break

@@ -26,4 +26,4 @@ target.output_len = 8
 
 #The following shows the "old" method of accessing elements where the new API
 #is not yet ready.
-self.api.setParameter(['Generic Settings', 'Basic', 'Fixed Encryption Key', u'2B 7E 15 16 28 AE D2 A6'])
+self.api.setParameter(['Generic Settings', 'Basic', 'Fixed Encryption Key', '2B 7E 15 16 28 AE D2 A6'])

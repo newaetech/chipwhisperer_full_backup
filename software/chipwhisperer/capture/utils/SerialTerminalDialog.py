@@ -177,7 +177,7 @@ class SerialTerminalDialog(QtFixes.QDialog):
     def checkRead(self):
         try:
             bavail = self.driver.terminal_inWaiting()
-        except IOError, e:
+        except IOError as e:
             logging.error("IOError in read (%s), serial port disabled"%str(e))
             self.tryDis()
             return

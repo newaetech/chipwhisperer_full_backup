@@ -35,7 +35,7 @@ def reset_8751():
     
 reset_8751()
 
-print "**************************************************************"
-print "Use jumpers on H1/H3/H5 to select application.                "
-print "Default should work by opening terminal & see testing printed."
-print "Call reset_8751() to reset target (needed when changing jumpers"
+print("**************************************************************")
+print("Use jumpers on H1/H3/H5 to select application.                ")
+print("Default should work by opening terminal & see testing printed.")
+print("Call reset_8751() to reset target (needed when changing jumpers")

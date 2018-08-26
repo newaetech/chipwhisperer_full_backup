@@ -89,7 +89,7 @@ class ProgressBarText(object):
         spent = (datetime.now() - self.startTime).total_seconds()
         eta = spent * (self.maximum - self.currentProgress) / self.currentProgress
         try:
-            eta = timedelta(seconds=long(eta))
+            eta = timedelta(seconds=int(eta))
         except OverflowError:
             return "n/a"
         if eta.days > 9:

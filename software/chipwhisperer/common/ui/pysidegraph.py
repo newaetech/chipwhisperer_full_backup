@@ -138,9 +138,9 @@ class TestClass(QMainWindow):
         self.initUI()
 
         #Generate some data
-        self.preview.updateData(range(0,2000), holdOn=True)
-        self.preview.updateData(range(1000,3000), holdOn=True)
-        self.preview.updateData(range(500,1000), holdOn=True)
+        self.preview.updateData(list(range(0,2000)), holdOn=True)
+        self.preview.updateData(list(range(1000,3000)), holdOn=True)
+        self.preview.updateData(list(range(500,1000)), holdOn=True)
         
     def initUI(self):
         self.setCentralWidget(self.preview.getWidget())

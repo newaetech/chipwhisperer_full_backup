@@ -25,7 +25,7 @@
 
 import random
 from chipwhisperer.common.utils import util
-from _base import AcqKeyTextPattern_Base
+from ._base import AcqKeyTextPattern_Base
 from chipwhisperer.common.utils.parameter import setupSetParam
 
 

@@ -24,7 +24,7 @@
 
 import os
 import numpy as np
-from _base import TraceContainer
+from ._base import TraceContainer
 
 
 class TraceContainerNative(TraceContainer):
@@ -38,12 +38,12 @@ class TraceContainerNative(TraceContainer):
         self.textins = np.zeros([self.numTrace, 16], dtype=np.uint8)
         for n in range(0, self.numTrace):
             tin = srcTraces.textins[n]
-            self.textins[n] = map(int, tin, [16] * len(tin))
+            self.textins[n] = list(map(int, tin, [16] * len(tin)))
 
         self.textouts = np.zeros([self.numTrace, 16], dtype=np.uint8)
         for n in range(0, self.numTrace):
             tout = srcTraces.textouts[n]
-            self.textouts[n] = map(int, tout, [16] * len(tout))
+            self.textouts[n] = list(map(int, tout, [16] * len(tout)))
 
         if srcTraces.tracedtype:
             userdtype = srcTraces.tracedtype

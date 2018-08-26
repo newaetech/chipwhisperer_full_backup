@@ -28,7 +28,7 @@ import time
 from datetime import datetime
 from functools import partial
 import os.path
-from _base import TargetTemplate
+from ._base import TargetTemplate
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
 from chipwhisperer.hardware.naeusb.fpga import FPGA
@@ -177,7 +177,7 @@ class CW305(TargetTemplate):
             if bsfile is None:
                 bsfile = self.params.getChild(['FPGA Bitstream',"fpgabsfile"]).getValue()
             if not os.path.isfile(bsfile):
-                print("FPGA Bitstream not configured or '%s' not a file." % str(bsfile))
+                print(("FPGA Bitstream not configured or '%s' not a file." % str(bsfile)))
             else:
                 from datetime import datetime
                 starttime = datetime.now()

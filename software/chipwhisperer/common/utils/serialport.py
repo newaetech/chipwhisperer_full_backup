@@ -51,4 +51,4 @@ def scan(max_range=256):
 if __name__=='__main__':
     print ("Found ports:")
     for n,s in enumerate(scan()):
-        print ("(%d) %s" % (n,s))
+        print(("(%d) %s" % (n,s)))

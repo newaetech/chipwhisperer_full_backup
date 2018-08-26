@@ -334,7 +334,7 @@ class GraphWidget(QWidget):
             self.acolor = self.color
             
         if xaxis is None:
-            xaxis = range(startoffset, len(trace)+startoffset)
+            xaxis = list(range(startoffset, len(trace)+startoffset))
 
         if dsmode is None:
             enableds = False
@@ -372,7 +372,7 @@ class GraphWidget(QWidget):
 
     def checkPersistantItems(self):
         for t in self.persistantItems:
-            if t not in self.pw.items():
+            if t not in list(self.pw.items()):
                 self.pw.addItem(t)
 
     def addWidget(self, widget):

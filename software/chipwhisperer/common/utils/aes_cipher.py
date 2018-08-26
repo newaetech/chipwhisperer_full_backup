@@ -18,7 +18,7 @@ Licensed under the MIT license http://www.opensource.org/licenses/mit-license.ph
 """
 __author__ = "Adam Newman"
 
-import aes_tables
+from . import aes_tables
 
 class AESCipher:
     """Perform single block AES cipher/decipher"""

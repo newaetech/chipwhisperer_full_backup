@@ -25,7 +25,7 @@
 
 import time
 from subprocess import call
-from _base import AuxiliaryTemplate
+from ._base import AuxiliaryTemplate
 
 
 class ResetAVR(object):

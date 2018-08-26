@@ -441,7 +441,7 @@ if __name__ == '__main__':
         time.sleep(1)
         ztex.probe()
     else:
-        print "ZTEX Firmware upload skipped"
+        print("ZTEX Firmware upload skipped")
 
     if ztex.deviceInfo["interfaceVersion"] != 1:
         raise IOError("Unknown interface version, invalid ZTEX Firmware?. Device info: %s" % str(ztex.deviceInfo))
@@ -451,8 +451,8 @@ if __name__ == '__main__':
 
     ztex.getFpgaState()
     if ztex.fpgaConfigured == False:
-        print "Programming FPGA..."
+        print("Programming FPGA...")
         ztex.configureFpgaLS(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-rev2\hdl\ztex_rev2_1.11c_ise\interface.bit", "rb"))
 
     else:
-        print "FPGA Configuration skipped"
+        print("FPGA Configuration skipped")

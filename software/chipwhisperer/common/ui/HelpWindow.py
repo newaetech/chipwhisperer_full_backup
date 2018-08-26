@@ -13,7 +13,7 @@ from PySide import QtWebKit
 try:
     from docutils import core, io
 except ImportError:
-    print "ERROR: Should install 'docutils' package, help functions not parsing text properly"
+    print("ERROR: Should install 'docutils' package, help functions not parsing text properly")
     core = None
 import sys
 
@@ -96,7 +96,7 @@ else:
             self.setWindowFlags(Qt.Window)
 
         def showHelp(self, rstinput, curParam):
-            self.setHtml(html_body(unicode(rstinput)))
+            self.setHtml(html_body(str(rstinput)))
             self.raise_()
             self.show()
 
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     wid.setWindowTitle('ChipWhisperer Help Browser')
     wid.show()
 
-    test = html_body(unicode("test\n=====\n\nHello There."))
+    test = html_body(str("test\n=====\n\nHello There."))
 
     view = QtWebKit.QWebView(None)
     # view.load(QUrl("http://www.google.com/"))

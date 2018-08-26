@@ -24,7 +24,7 @@
 #=================================================
 import logging
 
-from _base import SimpleSerialTemplate
+from ._base import SimpleSerialTemplate
 from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
 from chipwhisperer.common.utils.parameter import setupSetParam
 

@@ -38,6 +38,8 @@ import chipwhisperer.hardware.firmware.cw305  as fw_cw305
 def packuint32(data):
     """Converts a 32-bit integer into format expected by USB firmware"""
 
+    data = int(data)
+
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
 
 def unpackuint32(buf):
@@ -51,6 +53,8 @@ def unpackuint32(buf):
 
 def packuint16(data):
     """Converts a 16-bit integer into format expected by USB firmware"""
+
+    data = int(data)
 
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
 
@@ -219,6 +223,8 @@ class NAEUSB(object):
         Send command to read over external memory interface from FPGA. Automatically
         decides to use control-transfer or bulk-endpoint transfer based on data length.
         """
+
+        dlen = int(dlen)
 
         if dlen < 48:
             cmd = self.CMD_READMEM_CTRL

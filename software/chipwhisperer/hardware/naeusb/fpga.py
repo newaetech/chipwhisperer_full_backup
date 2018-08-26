@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014-2016, NewAE Technology Inc
+# Copyright (c) 2014-2018, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -97,7 +97,7 @@ class FPGA(object):
         transactionBytes = 2048
         t0 = 0
 
-        buffer_ = [None] * (16 * 1024 * 1024 / transactionBytes)
+        buffer_ = [None] * int(16 * 1024 * 1024 / transactionBytes)
         size = 0
 
         # Read entire thing in
@@ -108,7 +108,7 @@ class FPGA(object):
         # Might need a few extra CCLKs at end to finish off, and as written elsewhere this is done with DO=1
         # Perhaps micro should add these instead? For now this should be reliable enough (things worked even w/o this it seemed, so this is
         # a just in case item)
-        inputStream += "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+        inputStream += bytes([0xff] * 32)
 
         inputStream = inputStream[0x7C:]
 

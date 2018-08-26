@@ -32,28 +32,28 @@ from chipwhisperer.common.ui.logger_widget import LoggingWidget
 try:
     from PySide.QtCore import *
     from PySide.QtGui import *
-except ImportError, e:
-    print "**********************************************"
-    print "ERROR: PySide is required for this program.\nTry installing with 'pip install pyside' first."
-    print "**********************************************\n\n"
+except ImportError as e:
+    print("**********************************************")
+    print("ERROR: PySide is required for this program.\nTry installing with 'pip install pyside' first.")
+    print("**********************************************\n\n")
 
-    print "Failed to import 'PySide', original exception information:"
+    print("Failed to import 'PySide', original exception information:")
     raise
 
 try:
     import pyqtgraph
     pyqtgraph.setConfigOption('background', 'w')
     pyqtgraph.setConfigOption('foreground', 'k')
-except ImportError, e:
-    print "***********************************************"
-    print "ERROR: PyQtGraph is required for this program.\nTry installing with 'pip install pyqtgraph' first."
-    print "***********************************************\n\n"
+except ImportError as e:
+    print("***********************************************")
+    print("ERROR: PyQtGraph is required for this program.\nTry installing with 'pip install pyqtgraph' first.")
+    print("***********************************************\n\n")
 
-    print "Failed to import 'pyqtgraph', full exception trace given below in case it's another problem:"
+    print("Failed to import 'pyqtgraph', full exception trace given below in case it's another problem:")
     raise
 from datetime import datetime
-from PythonConsole import QPythonConsole
-from saveproject import SaveProjectDialog
+from .PythonConsole import QPythonConsole
+from .saveproject import SaveProjectDialog
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
@@ -66,7 +66,7 @@ from chipwhisperer.common.utils import qt_tweaks
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui import ParameterTypesCustom
 from chipwhisperer.common.ui.PreferencesDialog import CWPreferencesDialog
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 __author__ = "Colin O'Flynn"
 
@@ -253,10 +253,10 @@ class CWMainGUI(QMainWindow):
     def aboutdialog(self):
         """Tells the User"""
         QMessageBox.about(self, 'About',
-            '<h3>ChipWhisperer' + u'\u2122' + '</h3>'
+            '<h3>ChipWhisperer' + '\u2122' + '</h3>'
             '<h4>Copyright Information</h4>'
-            'Copyright ' + u'\u00A9' + ' NewAE Technology Inc., 2013-2017. <br>'
-            'Copyright ' + u'\u00A9' + ' Colin O\'Flynn, 2012-2017.'
+            'Copyright ' + '\u00A9' + ' NewAE Technology Inc., 2013-2017. <br>'
+            'Copyright ' + '\u00A9' + ' Colin O\'Flynn, 2012-2017.'
             '<h4>License Information</h4>'
             'Released under the GPLv3 License, see <a href="http://www.gnu.org/copyleft/gpl.html">License Details</a>.<br>'
             'Various parts of this project may be released under additional open-source licenses such as the BSD License '
@@ -348,7 +348,7 @@ class CWMainGUI(QMainWindow):
 
     def checkForUpdates(self):
         try:
-            source = urllib.urlopen("https://raw.githubusercontent.com/newaetech/chipwhisperer/master/software/chipwhisperer/common/api/CWCoreAPI.py")
+            source = urllib.request.urlopen("https://raw.githubusercontent.com/newaetech/chipwhisperer/master/software/chipwhisperer/common/api/CWCoreAPI.py")
             content = source.read()
 
             version = None
@@ -362,7 +362,7 @@ class CWMainGUI(QMainWindow):
                     message = "Your current version is already the most recent one."
                 else:
                     message = "There is an updated version available:\n"
-                    source = urllib.urlopen("https://raw.githubusercontent.com/newaetech/chipwhisperer/master/CHANGES.txt")
+                    source = urllib.request.urlopen("https://raw.githubusercontent.com/newaetech/chipwhisperer/master/CHANGES.txt")
                     content = source.read()
                     for line in content.split("\n"):
                         if self.api.__version__+":" in line:
@@ -430,7 +430,7 @@ class CWMainGUI(QMainWindow):
         self.projectMenu.addAction(self.exampleScriptAct)
         subMenu = QMenu("Submenu", self)
 
-        for name, script in scripts.iteritems():
+        for name, script in scripts.items():
             subMenu.addAction(QAction(name, self, statusTip=script.getDescription(), triggered=util.Command(self.runScript, script)))
 
         self.exampleScriptAct.setMenu(subMenu)

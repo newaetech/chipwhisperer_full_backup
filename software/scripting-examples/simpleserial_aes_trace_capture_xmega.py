@@ -3,18 +3,14 @@ with the chipwhisperer tool. This script does not spawn a gui, and
 uses the 4.0 api.
 """
 
-from __future__ import division, print_function
-
 import time
-import os
-
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 from tqdm import tqdm
+import os
 
 import chipwhisperer as cw
-from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
 from chipwhisperer.tests.tools_for_tests import FIRMWARE_DIR
 from chipwhisperer.capture.api.programmers import XMEGAProgrammer
 
@@ -33,18 +29,16 @@ scope.io.tio1 = "serial_rx"
 scope.io.tio2 = "serial_tx"
 scope.io.hs2 = "clkgen"
 
-# program the target
+# program the XMEGA with the built hex file
 programmer = XMEGAProgrammer()
 programmer.scope = scope
 programmer._logging = None
 programmer.find()
 programmer.erase()
-aes_firmware_dir = os.path.join(FIRMWARE_DIR, 'simpleserial-aes')
-aes_hex = os.path.join(aes_firmware_dir, r"simpleserial-aes-CW303.hex")
-programmer.program(aes_hex, memtype="flash", verify=True)
+simple_serial_firmware_dir = os.path.join(FIRMWARE_DIR, 'simpleserial-aes')
+simple_hex = os.path.join(simple_serial_firmware_dir, r"simpleserial-aes-xmega.hex")
+programmer.program(simple_hex, memtype="flash", verify=True)
 programmer.close()
-
-ktp = AcqKeyTextPattern_Basic(target=target)
 
 traces = []
 textin = []
@@ -54,7 +48,8 @@ target.init()
 for i in tqdm(range(N), desc='Capturing traces'):
     # run aux stuff that should come before trace here
 
-    key, text = ktp.newPair()  # manual creation of a key, text pair can be substituted here
+    text = [0]*16
+    key = [0]*16
     textin.append(text)
     keys.append(key)
 

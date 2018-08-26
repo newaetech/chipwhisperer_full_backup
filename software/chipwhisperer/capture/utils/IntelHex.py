@@ -50,21 +50,21 @@ import sys
 asbytes = str
 asstr = str
 
-IntTypes = (int, long)
-StrType = basestring
-UnicodeType = unicode
+IntTypes = (int, int)
+StrType = str
+UnicodeType = str
 
-range_g = xrange  # range generator
+range_g = range  # range generator
 range_l = range  # range list
 
 def dict_keys(dikt):  # dict keys list
-    return dikt.keys()
+    return list(dikt.keys())
 def dict_keys_g(dikt):  # dict keys generator
-    return dikt.keys()
+    return list(dikt.keys())
 def dict_items_g(dikt):  # dict items generator
-    return dikt.items()
+    return list(dikt.items())
 
-from cStringIO import StringIO
+from io import StringIO
 BytesIO = StringIO
 
 class _DeprecatedParam(object):
@@ -982,7 +982,7 @@ def hex2bin(fin, fout, start=None, end=None, size=None, pad=None):
     """
     try:
         h = IntelHex(fin)
-    except HexReaderError, e:
+    except HexReaderError as e:
         txt = "ERROR: bad HEX file: %s" % str(e)
         print(txt)
         return 1
@@ -1004,7 +1004,7 @@ def hex2bin(fin, fout, start=None, end=None, size=None, pad=None):
             # using .padding attribute rather than pad argument to function call
             h.padding = pad
         h.tobinfile(fout, start, end)
-    except IOError, e:
+    except IOError as e:
         txt = "ERROR: Could not write to file: %s: %s" % (fout, str(e))
         print(txt)
         return 1
@@ -1024,14 +1024,14 @@ def bin2hex(fin, fout, offset=0):
     h = IntelHex()
     try:
         h.loadbin(fin, offset)
-    except IOError, e:
+    except IOError as e:
         txt = 'ERROR: unable to load bin file:', str(e)
         print(txt)
         return 1
 
     try:
         h.tofile(fout, format='hex')
-    except IOError, e:
+    except IOError as e:
         txt = "ERROR: Could not write to file: %s: %s" % (fout, str(e))
         print(txt)
         return 1
@@ -1233,7 +1233,7 @@ class IntelHexError(Exception):
             return self.msg
         try:
             return self._fmt % self.__dict__
-        except (NameError, ValueError, KeyError), e:
+        except (NameError, ValueError, KeyError) as e:
             return 'Unprintable exception %s: %s' \
                 % (repr(e), str(e))
 

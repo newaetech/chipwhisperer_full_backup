@@ -142,7 +142,7 @@ class HWInformation(Parameterized, util.DisableNewAttr):
         freq = freq | (temp[2] << 16)
         freq = freq | (temp[3] << 24)
 
-        self.sysFreq = long(freq)
+        self.sysFreq = int(freq)
         return self.sysFreq
 
     def __del__(self):
@@ -217,7 +217,7 @@ class GainSettings(Parameterized, util.DisableNewAttr):
             self.oa.setSettings(self.oa.settings() & ~SETTINGS_GAIN_HIGH)
             self.gainlow_cached = True
         else:
-            raise ValueError, "Invalid Gain Mode, only 'low' or 'high' allowed"
+            raise ValueError("Invalid Gain Mode, only 'low' or 'high' allowed")
 
     def getMode(self):
         gain_high = self.oa.settings() & SETTINGS_GAIN_HIGH
@@ -249,7 +249,7 @@ class GainSettings(Parameterized, util.DisableNewAttr):
     def setGain(self, gain):
         '''Set the Gain range 0-78'''
         if (gain < 0) | (gain > 78):
-            raise ValueError,  "Invalid Gain, range 0-78 Only"
+            raise ValueError("Invalid Gain, range 0-78 Only")
 
         self.gain_cached = gain
 
@@ -590,7 +590,7 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
             "low": "low"
         }
         if mode not in api_alias:
-            raise ValueError("Invalid trigger mode %s. Valid modes: %s" % (mode, api_alias.keys()), mode)
+            raise ValueError("Invalid trigger mode %s. Valid modes: %s" % (mode, list(api_alias.keys())), mode)
 
         self._set_mode(api_alias[mode])
 
@@ -780,7 +780,7 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
             trigmode = SETTINGS_TRIG_LOW | SETTINGS_WAIT_NO
 
         else:
-            raise ValueError,  "%s invalid trigger mode. Valid modes: 'rising edge', 'falling edge', 'high', 'low'"%mode
+            raise ValueError("%s invalid trigger mode. Valid modes: 'rising edge', 'falling edge', 'high', 'low'"%mode)
 
         cur = self.oa.settings() & ~(SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES)
         self.oa.setSettings(cur | trigmode)
@@ -1560,7 +1560,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         freq |= temp[3] << 24
 
         measured = freq * samplefreq
-        return long(measured)
+        return int(measured)
 
     def _getAdcFrequency(self):
         """Return the external frequency measured on 'CLOCK' pin. Returned value
@@ -1580,7 +1580,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         measured = freq * samplefreq
 
-        return long(measured)
+        return int(measured)
 
     def _adcSampleRate(self):
         """Return the sample rate, takes account of decimation factor (if set)"""
@@ -1626,7 +1626,7 @@ class OpenADCInterface(object):
 
         for n in range(10):
             # Generate 500 bytes
-            testData = bytearray(range(250) + range(250)) #bytearray(random.randint(0,255) for r in xrange(500))
+            testData = bytearray(list(range(250)) + list(range(250))) #bytearray(random.randint(0,255) for r in xrange(500))
             self.sendMessage(CODE_WRITE, ADDR_MULTIECHO, testData, False)
             testDataEcho = self.sendMessage(CODE_READ, ADDR_MULTIECHO, None, False, 502)
             testDataEcho = testDataEcho[2:]
@@ -2155,7 +2155,7 @@ class OpenADCInterface(object):
             fpData = []
             # Slow, verbose processing method
             # Useful for fixing issues in ADC read
-            for i in xrange(1, len(data) - 3, 4):
+            for i in range(1, len(data) - 3, 4):
                 # Convert
                 temppt = (data[i + 3] << 0) | (data[i + 2] << 8) | (data[i + 1] << 16) | (data[i + 0] << 24)
 
@@ -2254,10 +2254,10 @@ if __name__ == "__main__":
     try:
         ser.open()
     except serial.SerialException as e:
-        print "Could not open %s" % ser.name
+        print("Could not open %s" % ser.name)
         sys.exit()
     except ValueError as s:
-        print "Invalid settings for serial port"
+        print("Invalid settings for serial port")
         ser.close()
         ser = None
         sys.exit()

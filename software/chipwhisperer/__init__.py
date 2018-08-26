@@ -13,8 +13,6 @@ from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic as 
 from chipwhisperer.common.utils.util import cw_bytearray
 
 from chipwhisperer.common.utils.parameter import Parameter
-import chipwhisperer.capture.ui.CWCaptureGUI as cwc
-import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.capture.scopes.base import ScopeTemplate
 from chipwhisperer.capture.targets._base import TargetTemplate
@@ -36,24 +34,6 @@ def gui_only(func):
             raise UserWarning(gui_warning)
         return func(api, *args, **kwargs)
     return wrapper
-
-
-def capture_gui():
-    """Open the CWCapture GUI, blocking until it's closed.
-
-    Note that opening the GUI does not use any existing scope/target/project objects that were made using the API.
-
-    Known issue: after finishing this function, many API calls don't work from the command line, as ChipWhisperer
-    then relies on PyQT for timers and other utilities.
-    """
-    from chipwhisperer.capture.ui.CWCaptureGUI import main
-    main()
-
-def analyzer_gui():
-    """Open the Analyzer GUI, blocking until it's closed.
-    """
-    from chipwhisperer.analyzer.ui.CWAnalyzerGUI import main
-    main()
 
 def openProject(filename):
     """Load an existing project from disk.

@@ -187,7 +187,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
                     raise ValueError("Failed to parse: %s" % cmd_tracenum)
                 start = int(cmd_tracenumint[0])
                 end = int(cmd_tracenumint[1])
-                plotlist.extend(range(start, end+1))
+                plotlist.extend(list(range(start, end+1)))
                 plotinfo.extend([cmdtracedict] * ((end+1)-start))
             else:
                 plotlist.append(int(cmd_tracenumint[0]))
@@ -236,7 +236,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             xScale = self.findParam('X Axis').getValueKey()
             self.pw.setLabel('bottom', text=xScale, units=xUnit)
             self.pw.setLabel('left', units=yUnit)
-            xaxis = range(pstart + self._traceSource.offset(), pend + self._traceSource.offset() + 1)
+            xaxis = list(range(pstart + self._traceSource.offset(), pend + self._traceSource.offset() + 1))
             if xScale == 'Time':
                 tmp = float(self._traceSource.getSampleRate())
                 if tmp == 0:

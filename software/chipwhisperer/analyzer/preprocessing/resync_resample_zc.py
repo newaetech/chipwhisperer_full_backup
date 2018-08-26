@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2018, NewAE Technology Inc
 # All rights reserved.
 #
 # Author: Colin O'Flynn

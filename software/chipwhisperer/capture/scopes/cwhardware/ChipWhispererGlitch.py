@@ -26,7 +26,7 @@
 #=================================================
 import logging
 import zipfile
-import StringIO
+import io
 import base64
 from collections import OrderedDict
 import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr

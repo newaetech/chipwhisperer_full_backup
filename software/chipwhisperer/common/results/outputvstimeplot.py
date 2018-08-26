@@ -51,7 +51,7 @@ class OutputVsTime(AttackResultPlot, Plugin):
         if (prange[1] - prange[0]) != len(diffs[0]):
             prange[1] = prange[0] + len(diffs[0])
 
-        return range(prange[0], prange[1])
+        return list(range(prange[0], prange[1]))
 
     def redrawPlot(self):
         progress = ProgressBar("Redrawing " + OutputVsTime._name, "Status:")

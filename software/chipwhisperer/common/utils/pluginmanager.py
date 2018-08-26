@@ -30,7 +30,7 @@ import traceback
 
 import imp
 
-import util
+from . import util
 from chipwhisperer.common.api.settings import Settings
 
 loadedItems = []
@@ -150,7 +150,7 @@ def module_reorder(resp):
     if 'None' in resp:
         newresp['None'] = resp['None']
         del resp['None']
-    newresp.update(sorted(resp.items(), key=lambda t: t[0]))
+    newresp.update(sorted(list(resp.items()), key=lambda t: t[0]))
     return newresp
 
 def get_module_logtype(module_dir, module_name, module_full_name):

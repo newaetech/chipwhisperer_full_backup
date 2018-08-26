@@ -26,7 +26,7 @@
 #=================================================
 import logging
 import time
-from _base import AuxiliaryTemplate
+from ._base import AuxiliaryTemplate
 from chipwhisperer.common.utils.timer import nonBlockingDelay
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 

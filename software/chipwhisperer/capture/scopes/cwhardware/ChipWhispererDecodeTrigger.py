@@ -87,7 +87,7 @@ class ChipWhispererDecodeTrigger(Parameterized):
         """
 
 
-        if isinstance(tp, basestring):
+        if isinstance(tp, str):
             # If we can't evaluate the string, give up now
             try:
                 tl = eval(tp)
@@ -117,7 +117,7 @@ class ChipWhispererDecodeTrigger(Parameterized):
             if tli == "XX" or tli == "xx":
                 pass
             # Other strings need to be length 1
-            elif (isinstance(tli, basestring)) and (len(tli) != 1):
+            elif (isinstance(tli, str)) and (len(tli) != 1):
                 logging.error("Trigger pattern with list of strings must have length = 1 for each string")
                 return
             else:

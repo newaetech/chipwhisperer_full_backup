@@ -28,7 +28,6 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.naeusb.programmer_avr import supported_avr
 from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import supported_stm32f
-import chipwhisperer.common.api.CWCoreAPI
 
 from functools import wraps
 
@@ -93,6 +92,8 @@ class Programmer(object):
 
     @property
     def scope(self):
+        import chipwhisperer.common.api.CWCoreAPI
+
         if self._scope:
             return self._scope
 

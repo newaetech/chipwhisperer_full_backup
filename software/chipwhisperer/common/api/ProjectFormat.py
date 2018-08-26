@@ -37,7 +37,7 @@ from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNativ
 try:
     from configobj import ConfigObj  # import the module
 except ImportError:
-    print "ERROR: configobj (https://pypi.python.org/pypi/configobj/) is required for this program"
+    print("ERROR: configobj (https://pypi.python.org/pypi/configobj/) is required for this program")
     sys.exit()
 
 __author__ = "Colin O'Flynn"
@@ -205,7 +205,7 @@ class ProjectFormat(Parameterized):
         sections = []
 
         # Get all section names
-        for sname in self.config.keys():
+        for sname in list(self.config.keys()):
             # Find if starts with 'Aux Data'
             if sname.startswith(sectionName):
                 # print "Found %s" % sname
@@ -223,7 +223,7 @@ class ProjectFormat(Parameterized):
     def addDataConfig(self, settings=None, sectionName="Aux Data", subsectionName=None):
         # Check configuration file to find incrementing number
         maxNumber = 0
-        for sname in self.config.keys():
+        for sname in list(self.config.keys()):
             # Find if starts with 'Aux Data'
             if sname.startswith(sectionName):
                 maxNumber = int(re.findall(r'\d+', sname)[0]) + 1
@@ -236,7 +236,7 @@ class ProjectFormat(Parameterized):
         self.config[cfgSectionName] = {}
 
         if settings is not None:
-            for k in settings.keys():
+            for k in list(settings.keys()):
                 self.config[cfgSectionName][k] = settings[k]
 
         return self.config[cfgSectionName]

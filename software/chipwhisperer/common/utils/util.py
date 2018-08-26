@@ -119,9 +119,9 @@ def convert_to_str(data):
     be doing when it saves and loads the data.
     """
     if isinstance(data, collections.Mapping):
-        return dict(map(convert_to_str, data.iteritems()))
-    elif isinstance(data, collections.Iterable) and not isinstance(data, basestring):
-        return type(data)(map(convert_to_str, data))
+        return dict(list(map(convert_to_str, iter(list(data.items())))))
+    elif isinstance(data, collections.Iterable) and not isinstance(data, str):
+        return type(data)(list(map(convert_to_str, data)))
     else:
         return str(data)
 
@@ -218,7 +218,7 @@ class Signal(object):
         self.callbacks = {}  # observing object ID -> weak ref, methods
 
     def emit(self, *args, **kwargs):
-        callbacks = self.callbacks.keys()
+        callbacks = list(self.callbacks.keys())
         for ID in callbacks:
             try:
                 target, methods = self.callbacks[ID]
@@ -316,15 +316,15 @@ class Command:
         self.kwargs = kwargs
 
     def __call__(self, *args, **kwargs):
-        return apply(self.callback, self.args, self.kwargs)
+        return self.callback(*self.args, **self.kwargs)
 
 if __name__ == '__main__':
     class test(object):
         def m(self):
-            print "here"
+            print("here")
 
         def __del__(self):
-            print "deleted"
+            print("deleted")
 
     x = test()
     y = x.m

@@ -65,7 +65,7 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
 
             try:
                 dev = usb.core.find(idVendor=0x221A, idProduct=0x0100)
-            except IOError, e:
+            except IOError as e:
                 exctype, value = sys.exc_info()[:2]
                 raise IOError("FX2 Port " +  str(exctype) + str(value))
 
@@ -83,7 +83,7 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
         try:
             self.scope.con(self.ser)
             logging.info('OpenADC Found, Connecting')
-        except IOError,e:
+        except IOError as e:
             exctype, value = sys.exc_info()[:2]
             raise IOError("OpenADC Error (FX2 Port): " + (str(exctype) + str(value)) + " - Did you download firmware/FPGA data to ChipWhisperer?")
 
@@ -102,19 +102,19 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
 
         data = bytearray(data)
         if debug:
-            print "RX: ",
+            print("RX: ", end=' ')
             for b in data:
-                print "%02x "%b,
-            print ""
+                print("%02x "%b, end=' ')
+            print("")
         return data
 
     def write(self, data, debug=False):
         data = bytearray(data)
         if debug:
-            print "TX: ",
+            print("TX: ", end=' ')
             for b in data:
-                print "%02x "%b,
-            print ""
+                print("%02x "%b, end=' ')
+            print("")
         # self.interface removed from call for latest API compatibility
         self.dev.write(self.writeEP, data, timeout=500)
 

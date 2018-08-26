@@ -23,7 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _base import ProtocolTemplate
+from ._base import ProtocolTemplate
 from chipwhisperer.capture.targets.smartcard_readers import chipwhisperer_ser
 
 

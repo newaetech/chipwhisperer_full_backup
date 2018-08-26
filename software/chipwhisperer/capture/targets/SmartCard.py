@@ -23,8 +23,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _smartcard_gui import SmartCardGUICard
-from _base import TargetTemplate
+from ._smartcard_gui import SmartCardGUICard
+from ._base import TargetTemplate
 from chipwhisperer.common.utils import pluginmanager
 from chipwhisperer.common.utils.parameter import setupSetParam
 

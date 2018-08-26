@@ -24,7 +24,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _base import TargetTemplate
+from ._base import TargetTemplate
 import unicodedata
 
 try:
@@ -203,7 +203,7 @@ class SaseboGII(TargetTemplate):
             serialnames = [" No Connected Devices "]
 
         for i,s in enumerate(serialnames):
-            if isinstance(s, unicode):
+            if isinstance(s, str):
                 serialnames[i] = unicodedata.normalize('NFC', s)
 
         self.findParam('serno').setLimits(serialnames)

@@ -26,3 +26,4 @@ hardware/victims/firmware/simpleserial-aes/simpleserial-aes-CW*
 hardware/victims/firmware/basic-passwdcheck/basic-passwdcheck-CW*
 hardware/victims/firmware/simpleserial-aes-auth/simpleserial-aes-auth-CW*
 *.csv
+*py.bak

@@ -1,5 +1,5 @@
 #
-# SAM3U Programming via Python, Copyright (c) 2016 NewAE Technology Inc.
+# SAM3U Programming via Python, Copyright (c) 2016-2018 NewAE Technology Inc.
 #
 # This file is a based on BOSSA, which is:
 # Copyright (c) 2011-2012, ShumaTech

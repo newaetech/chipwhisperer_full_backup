@@ -58,7 +58,7 @@ class PGEVsTrace(AttackResultPlot, Plugin):
             for i in range(0, self._numKeys()):
                 spge += "Subkey %d, "%i
             spge += "\n"
-            for (tnum, plist) in allpge.iteritems():
+            for (tnum, plist) in allpge.items():
                 spge += "%d, "%tnum
                 for j in plist:
                     if j['trials'] > 0:
@@ -70,7 +70,7 @@ class PGEVsTrace(AttackResultPlot, Plugin):
             tracestr = "tnum = ["
             spge = "pge = ["
             trials = 0
-            for (tnum, plist) in allpge.iteritems():
+            for (tnum, plist) in allpge.items():
                 tracestr += "%d "%tnum
                 for j in plist:
                     if j['trials'] > 0:
@@ -116,7 +116,7 @@ class PGEVsTrace(AttackResultPlot, Plugin):
             allpge[tnum][i['subkey']]['pgesum'] += i['pge']
             allpge[tnum][i['subkey']]['trials'] += 1
 
-        for (tnum, plist) in allpge.iteritems():
+        for (tnum, plist) in allpge.items():
             for j in plist:
                 if j['trials'] > 0:
                     j['pge'] = float(j['pgesum']) / float(j['trials'])
@@ -138,7 +138,7 @@ class PGEVsTrace(AttackResultPlot, Plugin):
                 if self.enabledbytes[bnum]:
                     trace = []
                     pge = []
-                    for (tnum, plist) in allpge.iteritems():
+                    for (tnum, plist) in allpge.items():
                         if plist[bnum]['pge'] is not None:
                             trace.append(tnum)
                             pge.append(plist[bnum]['pge'])

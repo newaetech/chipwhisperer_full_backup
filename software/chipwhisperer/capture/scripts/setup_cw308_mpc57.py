@@ -22,7 +22,7 @@ scope.io.hs2 = "clkgen"
 
 target.baud = 38400
 
-print "Ensure CW308 Board has +5.0V power supply"
+print("Ensure CW308 Board has +5.0V power supply")
 
 # NOTE: If needed you can toggle target power. MPC5748G sometimes needs power cycle to come up.
 #import time

@@ -24,7 +24,6 @@ import traceback
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 from chipwhisperer.common.utils.util import DictType
@@ -51,12 +50,6 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         self.scope = None
         self.last_id = None
 
-        self.getParams().addChildren([
-            {'name':"CW Firmware Preferences", 'tip':"Configure ChipWhisperer FW Paths", 'type':"menu", "action":lambda _:self.getFwLoaderConfigGUI().show()}, # Can' use Config... name with MacOS
-            {'name':"Download CW Firmware", 'tip':"Download Firmware+FPGA To Hardware", 'type':"menu", "action":lambda _:self.cwFirmwareConfig[self.last_id].loadRequired()},
-            {'name':"Serial Number", 'key':'cwsn', 'type':"list", 'values':{"Auto":None}, 'value':"Auto"},
-        ])
-
         if (openadc_qt is None) or (usb is None):
             missingInfo = ""
             if openadc_qt is None:
@@ -72,7 +65,6 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             self.scope = oadcInstance
 
     def con(self):
-        self.findParam('cwsn').setReadonly(False)
         if self.ser is None:
             self.dev = CWL.CWLiteUSB()
             self.getParams().append(self.dev.getParams())
@@ -86,14 +78,8 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
                     for d in possible_sn:
                         snlist[str(d.serial_number) + " (" + str(d.product) + ")"] = d.serial_number
 
-                    if self.findParam('cwsn').getValue() not in snlist.values():
-                        self.findParam('cwsn').setValue(None)
-
-                    self.findParam('cwsn').setLimits(snlist)
-                    sn = self.findParam('cwsn').getValue()
+                    #TODO3: What to do with snlist?
                 else:
-                    self.findParam('cwsn').setValue(None)
-                    self.findParam('cwsn').setLimits({"Auto":None})
                     sn = None
                 found_id = self.dev.con(idProduct=nae_products, serial_number=sn)
             except (IOError, ValueError):
@@ -115,15 +101,11 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         try:
             self.scope.con(self.ser)
             logging.info('OpenADC Found, Connecting')
-        except IOError, e:
+        except IOError as e:
             exctype, value = sys.exc_info()[:2]
             raise IOError("OpenADC: " + (str(exctype) + str(value)))
 
-        #OK everything worked?
-        self.findParam('cwsn').setReadonly(True)
-
     def dis(self):
-        self.findParam('cwsn').setReadonly(False)
         if self.ser is not None:
             self.getFWConfig().setInterface(None)
             self.scope.close()
@@ -142,6 +124,3 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             return self.cwFirmwareConfig[self.last_id]
         except KeyError as e:
             return FWLoaderConfig(CWLite_Loader())
-
-    def getFwLoaderConfigGUI(self):
-        return FWLoaderConfigGUI(self.getFWConfig(), self.ser is not None)

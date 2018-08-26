@@ -64,7 +64,7 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
                 self.dev.setTimeouts(500, 500)
                 self.dev.setLatencyTimer(2)
                 self.ser = self
-            except ft.ftd2xx.DeviceError, e:
+            except ft.ftd2xx.DeviceError as e:
                 self.ser = None
                 raise IOError("Could not open %s: %s" % (self.serialNumber, e))
 

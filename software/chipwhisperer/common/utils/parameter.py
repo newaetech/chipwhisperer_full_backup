@@ -174,11 +174,11 @@ class Parameter(object):
         self.opts = {"visible": True}
         self.opts.update(opts)
 
-        if 'name' not in self.opts or not isinstance(self.opts['name'], basestring):
+        if 'name' not in self.opts or not isinstance(self.opts['name'], str):
             raise Exception("Parameter must have a name.")
 
         name = self.opts["name"]
-        if 'type' not in self.opts or not isinstance(self.opts['type'], basestring) or self.opts[
+        if 'type' not in self.opts or not isinstance(self.opts['type'], str) or self.opts[
             'type'] not in Parameter.supportedTypes:
             raise Exception("Parameter \"%s\" must have a valid string type." % name)
 
@@ -256,8 +256,8 @@ class Parameter(object):
             else:
                 return val()
         except Exception as e:
-            raise type(e), type(e)(e.message +
-                                   ' happens on parameter "%s"' % self.getName()), sys.exc_info()[2]
+            raise type(e)(type(e)(e.message +
+                                   ' happens on parameter "%s"' % self.getName())).with_traceback(sys.exc_info()[2])
 
     def getKeyFromValue(self, value):
         """Return the key used to set list type parameters"""
@@ -265,7 +265,7 @@ class Parameter(object):
             limits = self.opts["limits"]
             if isinstance(limits, dict):
                 try:
-                    return limits.keys()[limits.values().index(value)]
+                    return list(limits.keys())[list(limits.values()).index(value)]
                 except ValueError:
                     ValueError(
                         "Error: Value " + str(value) + " is not valid in Parameter \"" + self.getName() + "\". Options are: " + str(
@@ -331,7 +331,7 @@ class Parameter(object):
 
         elif limits is not None and not self.invalid:
             if (type == "list" and
-                    ((isinstance(limits, dict) and value not in limits.values()) or \
+                    ((isinstance(limits, dict) and value not in list(limits.values())) or \
                              (not isinstance(limits, dict) and value not in limits))
                 ) or \
                     (type == "bool" and value not in [True, False]) or \
@@ -339,7 +339,7 @@ class Parameter(object):
                     (type == "rangegraph" and (value[1] - value[0] != -1) and (
                                     value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] >
                         limits[1])):
-                if isinstance(limits, dict) and value in limits.keys():
+                if isinstance(limits, dict) and value in list(limits.keys()):
                     value = limits[value]
                 else:
                     #raise ValueError("Value %s out of limits (%s) in parameter \"%s\"" % (str(value), str(limits), self.getName()))
@@ -370,14 +370,14 @@ class Parameter(object):
             if not blockAction:
                 self.callAction()
             if isinstance(limits, dict):
-                for k, v in limits.iteritems():
+                for k, v in limits.items():
                     if v == value:
                         value = k
 
             if echo and not self.opts.get("echooff", False) and not self.readonly() and Parameter.scriptingOutput and Parameter.usePyQtGraph:
                 path = self.getPath()
                 if path is not None:
-                    print >> Parameter.scriptingOutput, str(path + [value]) + ","
+                    print(str(path + [value]) + ",", file=Parameter.scriptingOutput)
 
     def callLinked(self):
         for name in self.opts.get("linked", []):
@@ -392,7 +392,7 @@ class Parameter(object):
             if Parameter.scriptingOutput and Parameter.usePyQtGraph:
                 path = self.getPath()
                 if path is not None:
-                    print >> Parameter.scriptingOutput, (str(path + [None]) + ",")
+                    print((str(path + [None]) + ","), file=Parameter.scriptingOutput)
         self.callLinked()
 
     def setDefault(self, default):
@@ -410,7 +410,7 @@ class Parameter(object):
         else:
             self.invalid = False
             self.sigOptionsChanged.emit(visible=self.isVisible())
-            self.sigLimitsChanged.emit(limits.keys() if isinstance(limits, dict) else limits)
+            self.sigLimitsChanged.emit(list(limits.keys()) if isinstance(limits, dict) else limits)
 
     def readonly(self):
         return self.opts.get('readonly', False)
@@ -506,7 +506,7 @@ class Parameter(object):
         if "default" in self.opts:
             opts["value"] = opts["default"]
         if "limits" in self.opts and isinstance(self.opts["limits"], dict):
-            opts['limits'] = opts['limits'].keys()
+            opts['limits'] = list(opts['limits'].keys())
             opts["value"] = self.getKeyFromValue(opts["default"])
             del opts['values']
         self._PyQtGraphParameter = pyqtgraphParameter.create(**opts)
@@ -531,7 +531,7 @@ class Parameter(object):
 
     def getPath(self):
         """Return the path to the root."""
-        if self in Parameter.registeredParameters.values():
+        if self in list(Parameter.registeredParameters.values()):
             path = []
         elif self.parent is None:
             return None
@@ -544,7 +544,7 @@ class Parameter(object):
     def stealDynamicParameters(self, parent):
         """In list type parameters, append each of the Parameterized objects to the parent argument."""
         if self.opts.get("type", None) == "list" and isinstance(self.opts["values"], dict):
-            for value in self.opts["values"].itervalues():
+            for value in self.opts["values"].values():
                 if isinstance(value, Parameterized):
                     parent.append(value.getParams())
                     value.getParams().show(self.getValue() == value)
@@ -555,7 +555,7 @@ class Parameter(object):
         In list type parameters, append each of the Parameterized objects to the parent, root or child hierarchy.
         """
         if self.opts.get("type", None) == "list" and isinstance(self.opts["values"], dict):
-            for value in self.opts["values"].itervalues():
+            for value in self.opts["values"].values():
                 if isinstance(value, Parameterized):
                     mode = self.opts.get("childmode", None)
                     if mode == "parent":
@@ -588,7 +588,7 @@ class Parameter(object):
     def getAllParameters(cls, type=None):
         """Return a list with all parameters with a given type in the hierarchy."""
         ret = []
-        for p in cls.registeredParameters.itervalues():
+        for p in cls.registeredParameters.values():
             parameters = p._getAllParameters(type)
             [ret.append(param) for param in parameters if param not in ret]
         return ret
@@ -634,7 +634,7 @@ class Parameter(object):
     @classmethod
     def saveRegistered(cls, fname, onlyVisibles=False):
         f = open(fname, 'w')
-        for p in cls.registeredParameters.itervalues():
+        for p in cls.registeredParameters.values():
             if 'addLoadSave' in p.opts and p.opts['addLoadSave'] is not False:
                 txt, _ = p.toString(0, onlyVisibles)
                 f.write(txt)
@@ -726,7 +726,7 @@ class Parameter(object):
                 value = child.getOpts()["values"][value]
             except KeyError:
                 raise ValueError("Invalid value '%s' for parameter '%s'.\nValid values: %s" %
-                                 (value, str(parameter), child.getOpts()["values"].keys()))
+                                 (value, str(parameter), list(child.getOpts()["values"].keys())))
         child.setValue(value, echo=echo)
 
 
@@ -777,7 +777,7 @@ if __name__ == '__main__':
             self.params = Parameter(name='Sub-module %d' % d, type='group', children=moreparams)
 
         def action(self, e):
-            print "action %s" % e.getValue()
+            print("action %s" % e.getValue())
 
         def getLinked(self):
             return 1.0 / float(self.params.getChild('Value').getValue())
@@ -845,14 +845,14 @@ if __name__ == '__main__':
             self.params.load("abcde.txt")
 
         def printhelp(self, msg, obj):
-            print msg
+            print(msg)
 
         def getmodule(self):
             return self.module
 
         @setupSetParam("Module")
         def setmodule(self, module):
-            print "Changing Module"
+            print("Changing Module")
             self.module = module
 
         def getLinked(self):

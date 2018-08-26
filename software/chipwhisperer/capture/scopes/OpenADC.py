@@ -31,8 +31,8 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger as Chi
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
-import _qt as openadc_qt
-from base import ScopeTemplate
+from . import _qt as openadc_qt
+from .base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.utils import util, timer, pluginmanager
 from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
@@ -79,17 +79,9 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
 
         self._is_connected = False
 
-        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self.qtadc)
-        self.scopetype = scopes[OpenADCInterface_NAEUSBChip._name]
-        self.params.addChildren([
-            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'get':self.getCurrentScope, 'set':self.setCurrentScope, 'childmode':'parent'},
-            {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'action':self.setAutorefreshDCM, 'help':"Refresh status/info automatically every second."}
-        ])
+        self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
         self.params.init()
         self.params.append(self.qtadc.getParams())
-
-        self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
-        self.refreshTimer.start()
 
     def dcmTimeout(self):
         if self.connectStatus.value():
@@ -107,16 +99,9 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
                 self.dis()
                 raise e
 
-    def setAutorefreshDCM(self, parameter):
-        if parameter.getValue():
-            self.refreshTimer.start()
-        else:
-            self.refreshTimer.stop()
-
     def getCurrentScope(self):
         return self.scopetype
 
-    @setupSetParam("Connection")
     def setCurrentScope(self, scope):
         self.scopetype = scope
 
@@ -216,7 +201,6 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         if self.connectStatus.value() is False:
             raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
 
-        self.refreshTimer.stop()  # Disable DCM Status Auto-Refresh during capture
         try:
             if self.advancedSettings:
                 self.advancedSettings.armPreScope()
@@ -229,15 +213,11 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
             self.qtadc.startCaptureThread()
         except Exception:
             self.dis()
-            self.setAutorefreshDCM(self.findParam('Auto-Refresh DCM Status'))
             raise
 
     def capture(self):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
-        try:
-            ret = self.qtadc.capture()
-        finally:
-            self.setAutorefreshDCM(self.findParam('Auto-Refresh DCM Status'))
+        ret = self.qtadc.capture()
         return ret
 
     def getLastTrace(self):

@@ -20,7 +20,7 @@
 #=================================================
 import logging
 import time
-from _base import VisaScope
+from ._base import VisaScope
 
 
 class VisaScopeInterface_MSO54831D(VisaScope):

@@ -28,7 +28,7 @@ import logging
 import time
 from collections import OrderedDict
 from functools import partial
-import ChipWhispererGlitch
+from . import ChipWhispererGlitch
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 from chipwhisperer.common.utils import util
 
@@ -277,7 +277,7 @@ class GPIOSettings(util.DisableNewAttr):
         mode &= ~self.cwe.IOROUTE_GPIO
 
         # Find string
-        for s, bmask in self.TIO_VALID[pinnum].iteritems():
+        for s, bmask in self.TIO_VALID[pinnum].items():
             if mode == bmask:
                 return s
 
@@ -290,7 +290,7 @@ class GPIOSettings(util.DisableNewAttr):
         if pinnum < 0 or pinnum >= 4:
             raise ValueError("Invalid PIN: %d. Valid range = 0-3." % pinnum, pinnum)
 
-        valid_modes = self.TIO_VALID[pinnum].keys()
+        valid_modes = list(self.TIO_VALID[pinnum].keys())
 
         try:
             iomode = self.TIO_VALID[pinnum][mode]
@@ -388,7 +388,7 @@ class GPIOSettings(util.DisableNewAttr):
             Raises: ValueError if new value not listed above
         """
         mode = self.cwe.targetClkOut()
-        for k, v in self.HS2_VALID.iteritems():
+        for k, v in self.HS2_VALID.items():
             if mode == v:
                 if k == 'disabled':
                     return None
@@ -404,7 +404,7 @@ class GPIOSettings(util.DisableNewAttr):
 
         if mode not in self.HS2_VALID:
             raise ValueError(
-                "Unknown mode for HS2 pin: '%s'. Valid modes: [%s]" % (mode, self.HS2_VALID.keys()), mode)
+                "Unknown mode for HS2 pin: '%s'. Valid modes: [%s]" % (mode, list(self.HS2_VALID.keys())), mode)
 
         self.cwe.setTargetCLKOut(self.HS2_VALID[mode])
 
@@ -604,7 +604,7 @@ class TriggerSettings(util.DisableNewAttr):
         enablelogic = 0
 
         #Figure out enabled triggers
-        for t in self.supported_tpins.keys():
+        for t in list(self.supported_tpins.keys()):
             if t in triggers:
                 if triggers.count(t) != 1:
                     raise ValueError("Pin '%s' appears %d times, only 1 apperance supported" % (t, triggers.count(t)), s)
@@ -625,8 +625,8 @@ class TriggerSettings(util.DisableNewAttr):
         expect_tpin = True
         for t in triggers:
             if expect_tpin:
-                if t not in self.supported_tpins.keys():
-                    raise ValueError("Error processing string at expected pin '%s'. Valid pins: %s"%(t, self.supported_tpins.keys()), s)
+                if t not in list(self.supported_tpins.keys()):
+                    raise ValueError("Error processing string at expected pin '%s'. Valid pins: %s"%(t, list(self.supported_tpins.keys())), s)
             else:
                 if t != modes:
                     raise ValueError("Unexpected combination mode '%s'. Expected %s."%(t, modes), s)

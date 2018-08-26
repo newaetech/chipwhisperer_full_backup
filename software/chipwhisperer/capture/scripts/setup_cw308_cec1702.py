@@ -9,8 +9,8 @@ try:
 except NameError:
     pass
 
-print "***********************************************"
-print "1. Ensure J3 on UFO Board routines CLKFB to HS1/IN"
+print("***********************************************")
+print("1. Ensure J3 on UFO Board routines CLKFB to HS1/IN")
     
 scope.gain.gain = 40
 scope.gain.mode = "high"
@@ -28,10 +28,10 @@ scope.io.hs2 = None
 
 
 ext_freq = scope.clock.freq_ctr
-print "Input frequency of %d Hz" % ext_freq
+print("Input frequency of %d Hz" % ext_freq)
 
 if ext_freq > 11850000 and ext_freq < 12150000:
-    print "CLK frequency in expected range."
+    print("CLK frequency in expected range.")
 else:
-    print "WARNING: CLK frequency outside of expected range."
+    print("WARNING: CLK frequency outside of expected range.")
     

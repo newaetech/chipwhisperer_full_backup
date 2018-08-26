@@ -144,7 +144,7 @@ class PicoScopeBase(Parameterized):
             self.ps.setSimpleTrigger(TrigCh, self.findParam(['trig', 'triglevel']).getValue(), direction=self.findParam(['trig', 'trigtype']).getValue(), timeout_ms=1000)
 
             self.updateSampleRateFreq()
-        except IOError, e:
+        except IOError as e:
             raise IOError("Caught Error: %s" % str(e))
 
     def arm(self):
