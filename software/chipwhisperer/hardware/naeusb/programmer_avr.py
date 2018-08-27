@@ -332,7 +332,7 @@ class AVRISP(object):
         """
 
         # windex selects interface
-        self._usb.usbdev().ctrl_transfer(0x41, self.CMD_AVR_PROGRAM, cmd, 0, data, timeout=self._timeout)
+        self._usb.sendCtrl(self.CMD_AVR_PROGRAM, cmd, data)
 
         # Check status
         if checkStatus:
@@ -349,7 +349,7 @@ class AVRISP(object):
         Read the result of some command.
         """
         # windex selects interface, set to 0
-        return self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_AVR_PROGRAM, cmd, 0, dlen, timeout=self._timeout)
+        return self._usb.readCtrl(self.CMD_AVR_PROGRAM, cmd, dlen)
 
     # Low-level functions
 
@@ -595,6 +595,6 @@ class AVRISP(object):
 
     def enableSlowClock(self, enabled):
         if enabled:
-            self._usb.usbdev().ctrl_transfer(0x41, self.CMD_SAM3U_CFG, 0x01, 0, timeout=self._timeout)
+            self._usb.sendCtrl(self.CMD_SAM3U_CFG, 0x01)
         else:
-            self._usb.usbdev().ctrl_transfer(0x41, self.CMD_SAM3U_CFG, 0x02, 0, timeout=self._timeout)
+            self._usb.sendCtrl(self.CMD_SAM3U_CFG, 0x02)
