@@ -110,7 +110,7 @@ class USART(object):
         while datasent < len(data):
             datatosend = len(data) - datasent
             datatosend = min(datatosend, 58)
-            self._usb.usbdev().ctrl_transfer(0x41, self.CMD_USART0_DATA, 0, 0, data[datasent:(datasent + datatosend)], timeout=self.timeout)
+            self._usb.sendCtrl(self.CMD_USART0_DATA, 0, data[datasent:(datasent + datatosend)])
             datasent += datatosend
 
     def flush(self):
@@ -150,7 +150,7 @@ class USART(object):
 
         while dlen and timeout > 0:
             if waiting > 0:
-                newdata = self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_USART0_DATA, 0, 0, min(waiting, dlen), timeout=timeout)
+                newdata = self._usb.readCtrl(self.CMD_USART0_DATA, 0, min(waiting, dlen))
                 resp.extend(newdata)
                 dlen -= len(newdata)
             waiting = self.inWaiting()
@@ -166,12 +166,11 @@ class USART(object):
         """
 
         # windex selects interface
-        self._usb.usbdev().ctrl_transfer(0x41, self.CMD_USART0_CONFIG, cmd, 0, data, timeout=self.timeout)
-
+        self._usb.sendCtrl(self.CMD_USART0_CONFIG, cmd, data)
 
     def _usartRxCmd(self, cmd, dlen=1):
         """
         Read the result of some command (internal function).
         """
         # windex selects interface, set to 0
-        return self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_USART0_CONFIG, cmd, 0, dlen, timeout=self.timeout)
+        return self._usb.readCtrl(self.CMD_USART0_CONFIG, cmd, dlen)

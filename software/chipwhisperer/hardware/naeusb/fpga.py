@@ -151,7 +151,7 @@ class FPGA(object):
                     if j > transactionBytes:
                         j = transactionBytes
 
-                    self._usb.usbdev().write(self._usb.wep, buffer_[i], timeout=self._timeout)
+                    self._usb.writeBulkEP(buffer_[i])
 
                     bs += j
                     for k in range(0, len(buffer_[i])):

@@ -495,7 +495,7 @@ class XMEGAPDI(object):
         """
 
         # windex selects interface
-        self._usb.usbdev().ctrl_transfer(0x41, self.CMD_XMEGA_PROGRAM, cmd, 0, data, timeout=self._timeout)
+        self._usb.sendCtrl(self.CMD_XMEGA_PROGRAM, cmd, data)
 
         # Check status
         if checkStatus:
@@ -508,4 +508,4 @@ class XMEGAPDI(object):
         Read the result of some command.
         """
         # windex selects interface, set to 0
-        return self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_XMEGA_PROGRAM, cmd, 0, dlen, timeout=self._timeout)
+        return self._usb.readCtrl(self.CMD_XMEGA_PROGRAM, cmd, dlen)

@@ -9,10 +9,13 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from tqdm import tqdm
 import os
+import logging
 
 import chipwhisperer as cw
 from chipwhisperer.tests.tools_for_tests import FIRMWARE_DIR
 from chipwhisperer.capture.api.programmers import XMEGAProgrammer
+
+logging.basicConfig(level=logging.INFO)
 
 scope = cw.scope()
 target = cw.target(scope)

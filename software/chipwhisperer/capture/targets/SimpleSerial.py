@@ -168,11 +168,11 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     @property
     def read_timeout(self):
         """Timeout in mS on how long to wait for target to respond."""
-        return self.readTimeout()
+        return self._read_timeout
 
     @read_timeout.setter
     def read_timeout(self, timeout):
-        self._read_timeout(timeout)
+        self._read_timeout = timeout
 
     @property
     def mask_len(self):

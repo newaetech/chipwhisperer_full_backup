@@ -18,6 +18,7 @@ from chipwhisperer.tests.tools_for_tests import FIRMWARE_DIR
 from chipwhisperer.capture.api.programmers import XMEGAProgrammer
 #from scripting_utils import GlitchResultsDisplay
 
+
 logging.basicConfig(level=logging.WARN)
 scope = cw.scope()
 target = cw.target(scope)
