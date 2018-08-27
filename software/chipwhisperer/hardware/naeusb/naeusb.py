@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2014-2018, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
-# project, http://www.assembla.com/spaces/chipwhisperer
+# project, http://www.chipwhisperer.com
 #
 #    This file is part of chipwhisperer.
 #
@@ -20,17 +19,20 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-#==========================================================================
+# ChipWhisperer is a trademark of NewAE Technology Inc., registered in the
+# United States of America, the European Union, and other jurisdictions.
+# ==========================================================================
 import logging
 import time
-import usb.backend.libusb0 as libusb0
-import usb.core
-import usb.util
 import math
 from threading import Condition, Thread
 import struct
 import pickle
 import traceback
+
+import usb.backend.libusb0 as libusb0
+import usb.core
+import usb.util
 
 import chipwhisperer.hardware.firmware.cwlite as fw_cwlite
 import chipwhisperer.hardware.firmware.cw1200 as fw_cw1200
@@ -42,7 +44,6 @@ def packuint32(data):
     """Converts a 32-bit integer into format expected by USB firmware"""
 
     data = int(data)
-
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
 
 def unpackuint32(buf):
@@ -71,6 +72,11 @@ NEWAE_PIDS = {
 }
 
 class NAEUSB_Serializer_base(object):
+    """
+    Base clase for packaging USB commands. The seralizer class is used when the USB may talk via a daemon instead
+    of directly running from the Python code. This is useful when you want the USB device to be handled asynchronously,
+    such as required to keep serial data being sent to/from the device.
+    """
 
     FLUSH_INPUT = 0xE0
     CLOSE = 0xF0
@@ -107,7 +113,9 @@ class NAEUSB_Serializer_base(object):
 
 class NAEUSB_Serializer(NAEUSB_Serializer_base):
     """
-    USB Interface for NewAE Products with Custom USB Firmware
+    This class does not talk to libusb directly, but instead uses a class that expects special commands passed
+    to it. The function which will process commands must be passed to the initilizer, which allows passing the
+    data over a network or similar.
     """
 
     def __init__(self, transmitfunc):
@@ -116,10 +124,12 @@ class NAEUSB_Serializer(NAEUSB_Serializer_base):
 
 
     def get_possible_devices(self, idProduct=None):
+        """Get a list of connected USB devices."""
         cmdpacket = self.make_cmd(self.GET_POSSIBLE_DEVICES, idProduct)
         return self.process_rx(self.txrx(tx=cmdpacket))
 
     def process_rx(self, inp):
+        """Process the data received back from the end, normally means find errors or return payload."""
         resp = inp[0]
 
         plen = struct.unpack("!I", inp[1:5])[0]
@@ -209,12 +219,20 @@ class NAEUSB_Serializer(NAEUSB_Serializer_base):
         return self.process_rx(self.txrx(tx=cmdpacket))
 
     def flushInput(self):
+        """
+        Of dubious value: flushes the USB endpoints. Causes slowdowns on MAC OS X, so need to investigate
+        the usefulness of this.
+        """
 
         cmdpacket = self.make_cmd(self.FLUSH_INPUT, None)
         return self.process_rx(self.txrx(tx=cmdpacket))
 
 
 class NAEUSB_Backend(NAEUSB_Serializer_base):
+    """
+    This backend actually talks to the USB device itself. It is designed to mostly be used via the serializer, but
+    can be called directly too.
+    """
 
     CMD_READMEM_BULK = 0x10
     CMD_WRITEMEM_BULK = 0x11
@@ -233,7 +251,10 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         return self._usbdev
 
     def txrx(self, tx=[]):
-        """Process USB command"""
+        """
+        Process USB command, and returns a result such as data or an encoded exception. Excepts that happen
+        are not raised, but instead only printed (for debug) and passed back.
+        """
 
         response = None
 
@@ -491,7 +512,8 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
 
 class NAEUSB(object):
     """
-    USB Interface for NewAE Products with Custom USB Firmware
+    USB Interface for NewAE Products with Custom USB Firmware. This function allows use of a daemon backend, as it is
+    not directly touching the USB device itself.
     """
 
     CMD_FW_VERSION = 0x17
