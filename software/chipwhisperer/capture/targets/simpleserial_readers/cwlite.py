@@ -59,7 +59,11 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
             Warning("You need a scope with OpenADC connected to use this Target")
 
         scope.connectStatus.connect(self.dis)
-        self.cwlite_usart = CWL_USART(scope.qtadc.ser)
+        if hasattr(scope, 'qtadc'):
+            ser = scope.qtadc.ser
+        else:
+            ser = scope._cwusb
+        self.cwlite_usart = CWL_USART(ser)
         self.cwlite_usart.init(baud=self.findParam('baud').getValue())
         self.params.refreshAllParameters()
         self.connectStatus.setValue(True)
