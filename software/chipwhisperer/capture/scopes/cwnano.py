@@ -26,6 +26,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
+import numpy as np
 from usb import USBError
 from base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
@@ -56,6 +57,9 @@ class GPIOSettings(util.DisableNewAttr):
 
     USB_GPIO_SET   = 0x25
     USB_GPIO_READ  = 0x26
+
+    USB_CLKOUT_SET = 0x27
+    USB_ADCLK_SET  = 0x28
 
     USB_GPIO1_MASK = (1<<0)
     USB_GPIO2_MASK = (1<<1)
@@ -241,6 +245,39 @@ class GPIOSettings(util.DisableNewAttr):
     def nrst(self, state):
         state = self._gpio_name_to_state(state)
         self.gpio_generic_set(self.USB_nRST_MASK, state)
+
+
+    @property
+    def clkout(self):
+        """The CLKOUT speed in MHz."""
+
+        resp = self.usb.readCtrl(self.USB_CLKOUT_SET, 0, 3)
+        return resp[0]*240E6
+
+    @clkout.setter
+    def clkout(self, freqset):
+        """"Set the frequency for CLKOUT. Will be rounded to nearest possible values, check results to see
+        programmed value. Set to 'None' for disabling (High-Z) output."""
+
+        if freqset is None:
+            best_div = 0
+        else:
+            #Get as close as possible - 240 MHz clock
+            #Divider options: 1,2,4,8,16,32,64
+            div_options = [1,2,4,8,16,32,64]
+
+            freqsrc = 240E6
+
+            err_list = [100E6]*len(div_options)
+
+            for i, div in enumerate(div_options):
+                err_list[i] = abs((freqsrc / div) - freqset)
+
+            best_div = div_options[np.argmin(err_list)]
+
+        self.usb.sendCtrl(self.USB_CLKOUT_SET, 0, [best_div, 0, 0])
+
+        return best_div * 240E6
 
 
     def gpio_generic_set(self, gpiomask, state, setdir=True):
