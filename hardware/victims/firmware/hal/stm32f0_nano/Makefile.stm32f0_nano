@@ -1,5 +1,6 @@
 VPATH += :$(HALPATH)/stm32f0
-SRC += stm32f0_hal.c stm32f0_hal_lowlevel.c
+VPATH += :$(HALPATH)/stm32f0_nano
+SRC += stm32f0_hal_nano.c stm32f0_hal_lowlevel.c
 EXTRAINCDIRS += $(HALPATH)/stm32f0 $(HALPATH)/stm32f0/CMSIS $(HALPATH)/stm32f0/CMSIS/core $(HALPATH)/stm32f0/CMSIS/device $(HALPATH)/stm32f0/Legacy
 
 ASRC += stm32f0_startup.S
@@ -20,8 +21,8 @@ CFLAGS +=   -mthumb -mfloat-abi=soft -ffunction-sections
 CPPFLAGS += -mthumb -mfloat-abi=soft -ffunction-sections
 ASFLAGS +=  -mthumb -mfloat-abi=soft -ffunction-sections
 
-CDEFS   += -DSTM32F071xB -DSTM32F071RBTX -DSTM32F0 -DSTM32 -DDEBUG
-CPPDEFS += -DSTM32F071xB -DSTM32F071RBTX -DSTM32F0 -DSTM32 -DDEBUG
+CDEFS   += -DSTM32F030x6 -DSTM32F0 -DSTM32 -DDEBUG
+CPPDEFS += -DSTM32F030x6 -DSTM32F0 -DSTM32 -DDEBUG
 
-LDFLAGS += --specs=nano.specs -T $(HALPATH)/stm32f0/LinkerScript.ld -Wl,--gc-sections -lm
+LDFLAGS += --specs=nano.specs -T $(HALPATH)/stm32f0_nano/LinkerScript.ld -Wl,--gc-sections -lm
 LDFLAGS += -mthumb -mcpu=cortex-m0 

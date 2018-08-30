@@ -13,41 +13,47 @@ EXTRAINCDIRS += $(HALPATH)
 #Manually have to update these lists...
 PLATFORM_LIST = CW308_CC2538 CW301_AVR CW303 CW304 CW308_MEGARF CW308_SAM4L \
 	CW308_STM32F0 CW308_STM32F1 CW308_STM32F2 CW308_STM32F3 CW308_STM32F4 CW308_K24F \
-    CW308_NRF52840
+    CW308_NRF52
 
 define KNOWN_PLATFORMS
 
-+--------------------------------------------------+
-| PLATFORM      | DESCRIPTION                      |
-+--------------------------------------------------+
-| CW301_AVR     | Multi-Target Board, AVR Target   |
-+--------------------------------------------------+
-| CW303         | XMEGA Target (CWLite), Also works|
-|               | for CW308T-XMEGA                 |
-+--------------------------------------------------+
-| CW304         | ATMega328P (NOTDUINO), Also works|
-|               | for CW308T-AVR                   |
-+--------------------------------------------------+
-| CW308_MEGARF  | ATMega2564RFR2 Target for CW308T |
-+--------------------------------------------------+
-| CW308_SAM4L   | CW308T-SAM4L (Atmel SAM4L)       |
-+--------------------------------------------------+
-| CW308_STM32F0 | CW308T-STM32F0 (ST Micro STM32F0)|
-+--------------------------------------------------+
-| CW308_STM32F1 | CW308T-STM32F0 (ST Micro STM32F1)|
-+--------------------------------------------------+
-| CW308_STM32F2 | CW308T-STM32F2 (ST Micro STM32F2)|
-+--------------------------------------------------+
-| CW308_STM32F3 | CW308T-STM32F3 (ST Micro STM32F3)|
-+--------------------------------------------------+
-| CW308_STM32F4 | CW308T-STM32F4 (ST Micro STM32F4)|
-+--------------------------------------------------+
-| CW308_CC2538  | CW308T-CC2538 (TI CC2538)        |
-+--------------------------------------------------+
-| CW308_K24F    | CW308T-K24F (NXP Kinetis K24F)   |
-+--------------------------------------------------+
-| CW308_NRF52   | CW308T-NRF52840 (Nordic Semi)    |
-+--------------------------------------------------+
++-------------------------------------------------------+
+| PLATFORM      | DESCRIPTION                           |
++-------------------------------------------------------+
+| CW301_AVR     | Multi-Target Board, AVR Target        |
++-------------------------------------------------------+
+| CW303         | XMEGA Target (CWLite), Also works     |
+|               | for CW308T-XMEGA                      |
++-------------------------------------------------------+
+| CW304         | ATMega328P (NOTDUINO), Also works     |
+|               | for CW308T-AVR                        |
++-------------------------------------------------------+
+| CW308_MEGARF  | ATMega2564RFR2 Target for CW308T      |
++-------------------------------------------------------+
+| CW308_SAM4L   | CW308T-SAM4L (Atmel SAM4L)            |
++-------------------------------------------------------+
+| CW308_STM32F0 | CW308T-STM32F0 (ST Micro STM32F0)     |
++-------------------------------------------------------+
+| CW308_STM32F1 | CW308T-STM32F0 (ST Micro STM32F1)     |
++-------------------------------------------------------+
+| CW308_STM32F2 | CW308T-STM32F2 (ST Micro STM32F2)     |
++-------------------------------------------------------+
+| CW308_STM32F3 | CW308T-STM32F3 (ST Micro STM32F3)     |
++-------------------------------------------------------+
+| CW308_STM32F4 | CW308T-STM32F4 (ST Micro STM32F4)     |
++-------------------------------------------------------+
+| CW308_CC2538  | CW308T-CC2538 (TI CC2538)             |
++-------------------------------------------------------+
+| CW308_K24F    | CW308T-K24F (NXP Kinetis K24F)        |
++-------------------------------------------------------+
+| CW308_NRF52   | CW308T-NRF52840 (Nordic Semi)         |
++-------------------------------------------------------+
+| CWLITEXMEGA   | CW-Lite XMEGA (Alias for CW303)       |
++-------------------------------------------------------+
+| CWLITEARM     | CW-Lite Arm (Alias for CW308_STM32F3) |
++-------------------------------------------------------+
+| CWNANO        | CW-Lite Nano (STM32F0_NANO)           |
++-------------------------------------------------------+
 
 Options to define platform:
 (1) Run make with PLATFORM specified as follows:
@@ -81,6 +87,11 @@ else ifeq ($(PLATFORM),CW303)
  MCU = atxmega128d3
  HAL = xmega
  PLTNAME = CW-Lite XMEGA
+else ifeq ($(PLATFORM),CWLITEXMEGA)
+#d4 not officially supported, by has same reg map
+ MCU = atxmega128d3
+ HAL = xmega
+ PLTNAME = CW-Lite XMEGA
 else ifeq ($(PLATFORM),CW304)
  MCU = atmega328
  HAL = avr
@@ -105,6 +116,9 @@ else ifeq ($(PLATFORM),CW308_STM32F2)
 else ifeq ($(PLATFORM),CW308_STM32F3)
  HAL = stm32f3
  PLTNAME = CW308T: STM32F3 Target
+else ifeq ($(PLATFORM),CWLITEARM)
+ HAL = stm32f3
+ PLTNAME = CW-Lite Arm (STM32F3)
 else ifeq ($(PLATFORM),CW308_STM32F4)
  HAL = stm32f4
  PLTNAME = CW308T: STM32F4 Target
@@ -117,9 +131,11 @@ else ifeq ($(PLATFORM),CW308_K24F)
 else ifeq ($(PLATFORM),CW308_NRF52)
  HAL = nrf52840
  PLTNAME = NRF52840 Target
+else ifeq ($(PLATFORM),CWNANO)
+ HAL = stm32f0_nano
+ PLTNAM = CWNANO STM32F030
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
-  $(error haHA)
 endif
 
 include $(HALPATH)/$(HAL)/Makefile.$(HAL)

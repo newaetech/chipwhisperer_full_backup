@@ -53,6 +53,7 @@ void platform_init(void);
 #define HAL_cc2538  10
 #define HAL_k24f    11
 #define HAL_nrf52840 12
+#define HAL_stm32f0_nano 13
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
@@ -87,7 +88,9 @@ void platform_init(void);
 #elif HAL_TYPE == HAL_k24f
     #include "k24f/k24f_hal.h"
 #elif HAL_TYPE == HAL_nrf52840
-    #include "nrf52840/nrf52840_hal.h"    
+    #include "nrf52840/nrf52840_hal.h"   
+#elif HAL_TYPE == HAL_stm32f0_nano
+    #include "stm32f0/stm32f0_hal.h" 
 #else
     #error "Unsupported HAL Type"
 #endif
