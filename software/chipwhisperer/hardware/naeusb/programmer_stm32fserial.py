@@ -369,7 +369,7 @@ class STM32FSerial(object):
         baddr = bytearray(struct.pack(">L", addr))
         crc = reduce(lambda x, y: x ^ y, baddr)
         baddr.append(crc)
-        return str(baddr)
+        return bytes(baddr)
 
     def cmdReadMemory(self, addr, lng):
         assert (0 < lng <= 256)
