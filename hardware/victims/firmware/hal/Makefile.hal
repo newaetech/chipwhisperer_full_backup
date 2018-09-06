@@ -54,6 +54,8 @@ define KNOWN_PLATFORMS
 +-------------------------------------------------------+
 | CWNANO        | CW-Lite Nano (STM32F0_NANO)           |
 +-------------------------------------------------------+
+| CW308_AURIX   | CW-Lite AURIX (Infineon TC233A)       |
++-------------------------------------------------------+
 
 Options to define platform:
 (1) Run make with PLATFORM specified as follows:
@@ -134,6 +136,9 @@ else ifeq ($(PLATFORM),CW308_NRF52)
 else ifeq ($(PLATFORM),CWNANO)
  HAL = stm32f0_nano
  PLTNAM = CWNANO STM32F030
+else ifeq ($(PLATFORM),CW308_AURIX)
+ HAL = aurix
+ PLTNAM = AURIX
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
 endif
