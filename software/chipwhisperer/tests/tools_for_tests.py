@@ -8,7 +8,7 @@ import os
 import chipwhisperer as cw
 
 # setup directory path needed for most tests
-CHIPWHISPERER_DIR = os.path.join(os.path.abspath(cw.__file__), os.pardir, os.pardir, os.pardir)
+CHIPWHISPERER_DIR = os.path.abspath(os.path.join(os.path.dirname(cw.__file__), os.pardir, os.pardir))
 CAPTURE_SCRIPTS_DIR = os.path.join(CHIPWHISPERER_DIR, "software", "chipwhisperer", "capture", "scripts")
 ANALYZER_SCRIPTS_DIR = os.path.join(CHIPWHISPERER_DIR, "software", "chipwhisperer", "analyzer", "scripts")
 PROJECTS_DIR = os.path.join(os.path.expanduser('~'), 'chipwhisperer', 'projects')
