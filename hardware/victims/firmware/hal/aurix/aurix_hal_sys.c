@@ -40,9 +40,9 @@ static const PllInitValue_t g_PllInitValue_100_50;
 
 
 static const PllInitValue_t g_PllInitValue_7_37;
-#define PLL_VALUE_7_37  ((const PllInitValue_t *)(&g_PllInitValue_7_37))
+#define PLL_VALUE_20_10  ((const PllInitValue_t *)(&g_PllInitValue_20_10))
 
-#define DEFAULT_PLL_VALUE PLL_VALUE_7_37
+#define DEFAULT_PLL_VALUE PLL_VALUE_20_10
 
 #ifndef DEFAULT_PLL_VALUE
 # define DEFAULT_PLL_VALUE		PLL_VALUE_200_100
@@ -56,7 +56,7 @@ static const PllInitValue_t g_PllInitValue_7_37;
 #pragma section ".rodata"
 /* PLL settings for 20MHz ext. clock */
 
-static const PllInitValue_t g_PllInitValue_7_37 = {
+static const PllInitValue_t g_PllInitValue_20_10 = {
      0x0007001C, 0x01017600, 0x00022020, 0x12120118, 0x10012242, 0x00000002, 29
 };
 /* 200/100 MHz @ 20MHz ext. clock */
