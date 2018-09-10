@@ -32,35 +32,17 @@ typedef struct _PllInitValue_t
 	unsigned int finalK;		/* final K2DIV value */
 } PllInitValue_t;
 
-#pragma section ".startup.bmhd" ax 4
-/* the BMI header description at start of internal flash at 0xa0000000 */
-/*********************************************************************************
- * startup code
- *********************************************************************************/
-void _RESET(void)
-{
-     __asm (".global _START");
-     __asm (".word 0xAAAAAAAA");
-     __asm (".word 0xb3590170");
-     __asm (".word 0x00000000");
-     __asm (".word 0x00000000");
-     __asm (".word 0x00000000");
-     __asm (".word 0x00000000");
-     __asm (".word 0x964C0E85");
-     __asm (".word 0x69B3F17A");
-     /* we must make a jump to cached segment, why trap_tab follow */
-     __asm ("_START: movh.a %a15,hi:_start");
-     __asm ("  lea  %a15,[%a15]lo:_start");
-     __asm ("  ji %a15");
-}
-#pragma section
-
 static const PllInitValue_t g_PllInitValue_200_100;
 #define PLL_VALUE_200_100 ((const PllInitValue_t *)(&g_PllInitValue_200_100))
 
 static const PllInitValue_t g_PllInitValue_100_50;
 #define PLL_VALUE_100_50  ((const PllInitValue_t *)(&g_PllInitValue_100_50))
 
+
+static const PllInitValue_t g_PllInitValue_7_37;
+#define PLL_VALUE_7_37  ((const PllInitValue_t *)(&g_PllInitValue_7_37))
+
+#define DEFAULT_PLL_VALUE PLL_VALUE_7_37
 
 #ifndef DEFAULT_PLL_VALUE
 # define DEFAULT_PLL_VALUE		PLL_VALUE_200_100
@@ -71,10 +53,12 @@ static const PllInitValue_t g_PllInitValue_100_50;
 #endif
 
 
-
 #pragma section ".rodata"
 /* PLL settings for 20MHz ext. clock */
 
+static const PllInitValue_t g_PllInitValue_7_37 = {
+     0x0007001C, 0x01017600, 0x00022020, 0x12120118, 0x10012242, 0x00000002, 29
+};
 /* 200/100 MHz @ 20MHz ext. clock */
 static const PllInitValue_t g_PllInitValue_200_100 =
 {

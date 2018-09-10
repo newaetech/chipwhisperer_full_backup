@@ -133,7 +133,7 @@ void init_uart(void)
 
 	UART->DATCON.U = 7; //8bit data length
 
-#define BAUD_NUM (48 * 4)
+#define BAUD_NUM (48 * 40)
 #define BAUD_DEN (3125)
 /* #define BAUD_NUM (200) */
 /* #define BAUD_DEN (120) */
