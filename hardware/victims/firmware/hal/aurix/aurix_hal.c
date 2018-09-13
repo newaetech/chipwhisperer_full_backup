@@ -126,18 +126,17 @@ void init_uart(void)
 	//HighTec UART assumes 100MHz clock and uses prescale of 9+1, so we have prescale of 1+1
 	//to keep things the same
 	//prescale 9+1, oversample 16, sample position 7,8,9, 3 samples per bit
-  //prescale 0+1
-	UART->BITCON.U = (0) | (7 << 16) | (5 << 24) | (1 << 31);
+	UART->BITCON.U = (9) | (15 << 16) | (9 << 24) | (1 << 31);
 
 	//8n1 UART
 	UART->FRAMECON.U = (1 << 9) | (0 << 16) | (0 << 30);
 
 	UART->DATCON.U = 7; //8bit data length
 
-/* #define BAUD_NUM (48 * 40) */
-/* #define BAUD_DEN (3125) */
-#define BAUD_NUM (100)
-#define BAUD_DEN (1203)
+#define BAUD_NUM (48 * 40)
+#define BAUD_DEN (3125)
+/* #define BAUD_NUM (200) */
+/* #define BAUD_DEN (120) */
 
 	/*
 	 * fosc * num / ((prescale + 1) * den * (oversample + 1))
