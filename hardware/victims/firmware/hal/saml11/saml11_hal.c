@@ -5,8 +5,19 @@ static uint8_t hw_key[16];
 void platform_init(void)
 {
      SystemInit();
+
+     //enable ext clock and clock failure detection
+     OSCCTRL->XOSCCTRL.reg = (1 << 1) | (1 << 3);
+
+     //wait for clock to be ready and check for failure
+     while (!OSCCTRL->STATUS.bit.XOSCRDY);
+     while (OSCCTRL->STATUS.bit.XOSCFAIL);
+
+     GCLK->GENCTRL[0].bit.SRC = 0; //switch to xosc
+
      PORT_SEC->Group[0].DIRSET.reg = 1 << 23;
      PORT_SEC->Group[0].OUTSET.reg = 1 << 23;
+
 }
 
 void init_uart(void)
@@ -25,7 +36,7 @@ void init_uart(void)
      SERCOM0->USART.CTRLA.reg = (1 << 30) | (1 << 20) | (0 << 16) | (1 << 2);
      //enable TX and RX
 
-     SERCOM0->USART.BAUD.reg = 55470;
+     SERCOM0->USART.BAUD.reg = 60073;
 
      //DEFAULT FOR ABOVE IS 8n1
      SERCOM0->USART.CTRLA.bit.ENABLE = 1; //enable
