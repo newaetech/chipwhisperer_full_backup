@@ -98,7 +98,7 @@ void platform_init(void);
 #elif HAL_TYPE == HAL_aurix
     #include "aurix/aurix_hal.h"
 #elif HAL_TYPE == HAL_saml11
-     #include "aurix/aurix_hal.h"
+     #include "saml11/saml11_hal.h"
 #else
     #error "Unsupported HAL Type"
 #endif
