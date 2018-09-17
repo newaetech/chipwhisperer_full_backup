@@ -1,5 +1,7 @@
 #include "sam.h"
 
+static uint8_t hw_key[16];
+
 void platform_init(void)
 {
      SystemInit();
@@ -61,4 +63,33 @@ void trigger_low(void)
 void trigger_high(void)
 {
      PORT_SEC->Group[0].OUTSET.reg = 1 << 22;
+}
+
+typedef void (*IDAU_AES_FUNC)(const uint8_t *keys, uint32_t key_len,
+                              const uint8_t *src, uint8_t *dst);
+
+//or with 0x01 because thumb instructions are all on odd PC
+IDAU_AES_FUNC idau_aes_enc = (IDAU_AES_FUNC)(IDAU_CRYA_AES_ENCRYPT_T | 0x01);
+IDAU_AES_FUNC idau_aes_dec = (IDAU_AES_FUNC)(IDAU_CRYA_AES_DECRYPT_T | 0x01);
+
+void HW_AES128_Init(void)
+{
+}
+
+void HW_AES128_LoadKey(uint8_t* key)
+{
+     for(int i = 0; i < 16; i++)
+     {
+          hw_key[i] = key[i];
+     }
+}
+
+void HW_AES128_Enc(uint8_t* pt)
+{
+     idau_aes_enc(hw_key, 4, pt, pt);
+}
+
+void HW_AES128_Dec(uint8_t *pt)
+{
+     idau_aes_dec(hw_key, 4, pt, pt);
 }
