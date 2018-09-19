@@ -21,6 +21,7 @@ CPPFLAGS += $(CFLAGS)
 ASFLAGS += $(CFLAGS)
 
 CDEFS += -DEFM32TG11B340F64GQ48
+#-D__STARTUP_COPY_MULTIPLE -D__STARTUP_CLEAR_BSS_MULTIPLE
 
+LDFLAGS += --specs=nano.specs -T $(HALPATH)/efm32tg11b/efm32tg11b.ld -Wl,--gc-sections -Wl,--start-group -lgcc -lc -lnosys -Wl,--end-group -lm
 # LDFLAGS += --specs=nano.specs -T $(HALPATH)/efm32tg11b/efm32tg11b.ld -Wl,--gc-sections -lm -nostdlib
-LDFLAGS += --specs=nano.specs -T $(HALPATH)/efm32tg11b/efm32tg11b.ld -Wl,--gc-sections -lm -nostdlib

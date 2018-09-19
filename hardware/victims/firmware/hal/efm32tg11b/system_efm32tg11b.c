@@ -29,6 +29,22 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+// System Handler Control and State Register
+#define SYSHND_CTRL (*(volatile unsigned int*) (0xE000ED24u))
+// Memory Management Fault Status Register
+#define NVIC_MFSR (*(volatile unsigned char*) (0xE000ED28u))
+// Bus Fault Status Register
+#define NVIC_BFSR (*(volatile unsigned char*) (0xE000ED29u))
+// Usage Fault Status Register
+#define NVIC_UFSR (*(volatile unsigned short*)(0xE000ED2Au))
+// Hard Fault Status Register
+#define NVIC_HFSR (*(volatile unsigned int*) (0xE000ED2Cu))
+// Debug Fault Status Register
+#define NVIC_DFSR (*(volatile unsigned int*) (0xE000ED30u))
+// Bus Fault Manage Address Register
+#define NVIC_BFAR (*(volatile unsigned int*) (0xE000ED38u))
+// Auxiliary Fault Status Register
+#define NVIC_AFSR (*(volatile unsigned int*) (0xE000ED3Cu))
 
 #include <stdint.h>
 #include "em_device.h"

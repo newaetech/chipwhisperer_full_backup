@@ -14,6 +14,7 @@ MEMORY
 {
   FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 131072
   RAM (rwx)  : ORIGIN = 0x20000000, LENGTH = 32768
+  DEBUG_LOCK (rw) : ORIGIN = 0xFE041E8, LENGTH = 4 /* debug lock location, 1 4 byte word*/
 }
 
 /* Linker script to place sections and symbol values. Should be used together
@@ -52,6 +53,10 @@ ENTRY(Reset_Handler)
 
 SECTIONS
 {
+  .debug_lock 0xFE041E8 :
+  {
+    KEEP(*(.debug_lock))
+  } > DEBUG_LOCK
   .text :
   {
     KEEP(*(.vectors))

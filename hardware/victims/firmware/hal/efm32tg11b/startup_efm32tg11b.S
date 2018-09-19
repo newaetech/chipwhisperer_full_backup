@@ -37,7 +37,6 @@
 
     .section    .stack
     .align      3
-#define __START main
 #ifdef __STACK_SIZE
     .equ        Stack_Size, __STACK_SIZE
 #else
@@ -277,7 +276,9 @@ Reset_Handler:
     .weak   Default_Handler
     .type   Default_Handler, %function
 Default_Handler:
-    b       .
+  b .
+
+
     .size   Default_Handler, . - Default_Handler
 
 /*    Macro to define default handlers. Default handler

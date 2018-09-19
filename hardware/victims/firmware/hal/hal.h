@@ -41,6 +41,7 @@ void platform_init(void);
 #define CW308_NRF52840 21
 #define CW308_AURIX     22
 #define CW308_SAML11     23
+#define CW308_EFM32TG11B     24
 
 //HAL_TYPE Define Types
 #define HAL_avr     1
@@ -58,6 +59,7 @@ void platform_init(void);
 #define HAL_stm32f0_nano 13
 #define HAL_aurix 14
 #define HAL_saml11 15
+#define HAL_efm32tg11b 15
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
@@ -99,6 +101,8 @@ void platform_init(void);
     #include "aurix/aurix_hal.h"
 #elif HAL_TYPE == HAL_saml11
      #include "saml11/saml11_hal.h"
+#elif HAL_TYPE == HAL_efm32tg11b
+     #include "efm32tg11b/efm32tg11b_hal.h"
 #else
     #error "Unsupported HAL Type"
 #endif
