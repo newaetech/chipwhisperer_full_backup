@@ -1,5 +1,7 @@
 #
-# SAM3U Programming via Python, Copyright (c) 2016 NewAE Technology Inc.
+# SAMx Programming via Python, Copyright (c) 2016-2018 NewAE Technology Inc.
+#
+# Originally only supported SAM3U, now extended to other devices.
 #
 # This file is a based on BOSSA, which is:
 # Copyright (c) 2011-2012, ShumaTech
@@ -69,21 +71,26 @@ class Samba(object):
 
         logging.info('FWUP: CID = %04x' % cid)
 
-        eproc = (cid >> 5) & 0x7
-        arch = (cid >> 20) & 0xff
+        #Originally this was used to limit to SAM3U
+        #eproc = (cid >> 5) & 0x7
+        #arch = (cid >> 20) & 0xff
+        #if eproc == 3 and ((0x80 <= arch <= 0x8a) or (0x93 <= arch <= 0x9a)):
+        #    logging.info('FWUP: Detected SAM3')
 
-        if eproc == 3 and ((0x80 <= arch <= 0x8a) or (0x93 <= arch <= 0x9a)):
-            logging.info('FWUP: Detected SAM3')
-            self.flash = self.get_flash_instance(cid)
-            return True
+        self.flash = self.get_flash_instance(cid)
 
-        logging.warning('FWUP: Unsupported chip')
-        return False
+        logging.info('FWUP: Detected ' + self.flash.name)
+        return True
+
 
 
     def get_flash_instance(self, chipid):
 
         chipid = chipid & 0x7fffffe0
+
+        #Find settings by looking at following sources:
+        # https://github.com/shumatech/BOSSA/blob/master/src/Device.cpp which has EXACT same parameters passed as here
+        # OpenOCD files such as https://github.com/ntfreak/openocd/blob/master/src/flash/nor/at91sam4.c
 
         if chipid == 0x28000960 or chipid == 0x28100960:
             flash = EefcFlash(self, "ATSAM3U4", 0xE0000, 1024, 256, 2, 32, 0x20001000, 0x20008000, 0x400e0800, False)
@@ -91,6 +98,8 @@ class Samba(object):
             flash = EefcFlash(self, "ATSAM3U2", 0x80000, 512, 256, 1, 16, 0x20001000, 0x20004000, 0x400e0800, False)
         elif chipid == 0x28090560 or chipid == 0x28190560:
             flash = EefcFlash(self, "ATSAM3U1", 0x80000, 256, 256, 1, 8, 0x20001000, 0x20002000, 0x400e0800, False)
+        elif chipid == 0x29970ce0:
+            flash = EefcFlash(self, "at91sam4sd16b", 0x400000, 2048, 512, 2, 256, 0x20001000, 0x20010000, 0x400e0a00, False);
         else:
             raise AttributeError("FWUP: Unsupported ChipID = %x" % chipid)
 
@@ -578,11 +587,11 @@ class EefcFlash(object):
             return self.samba._read_buf(self._pageBufferB, self.size)
 
 
-    def waitFSR(self):
+    def waitFSR(self, wait_ms=5000):
         tries = 0
         fsr1 = 0x1
 
-        while (tries <= 500):
+        while (tries <= wait_ms):
             tries = tries + 1
             fsr0 = self.samba.read_word(self.EEFC0_FSR)
             if (fsr0 & (1 << 2)):
@@ -595,7 +604,7 @@ class EefcFlash(object):
             if (fsr0 & fsr1 & 0x1):
                 break;
             time.sleep(0.001)
-        if (tries > 500):
+        if (tries > wait_ms):
             raise IOError("Timeout")
 
     def writeFCR0(self, cmd, arg):
@@ -612,10 +621,12 @@ class EefcFlash(object):
 
 if __name__ == "__main__":
     # Example usage
+    logging.basicConfig(level=logging.INFO)
     sam = Samba()
-    sam.con('com46')
+    sam.con('com131')
     sam.erase()
-    data = open(r'C:\chipwhisperer\hardware\capture\chipwhisperer-lite\sam3u_fw\SAM3U_VendorExample\Debug\SAM3U_CW1173.bin', 'rb').read()
+    #data = open(r'C:\chipwhisperer\hardware\capture\chipwhisperer-lite\sam3u_fw\SAM3U_VendorExample\Debug\SAM3U_CW1173.bin', 'rb').read()
+    data = open(r'c:\users\colin\dropbox\engineering\git_repos\CW1101_CWNano\cwnano-firmware\cwnano-firmware\Debug\cwnano-firmware.bin', 'rb').read()
     sam.write(data)
     if sam.verify(data):
         sam.flash.setBootFlash(True)
