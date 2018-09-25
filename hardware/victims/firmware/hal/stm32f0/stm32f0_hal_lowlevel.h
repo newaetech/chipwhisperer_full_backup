@@ -104,8 +104,6 @@
 #define  INSTRUCTION_CACHE_ENABLE     1U
 #define  DATA_CACHE_ENABLE            1U
 
-
-#define STM32F051x8
 #include "stm32f0xx.h"
 
 #endif
