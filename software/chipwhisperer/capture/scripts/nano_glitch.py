@@ -47,7 +47,7 @@ self.aux_list.register(glitcher.check_read_protect, "after_trace")
 
 scope.adc.clk_freq = 128 #sets clock to 15 GHz :)
 scope.glitch.width = 7
-scope.glitch.offset=400000
+scope.glitch.offset=40
 
 
 target.baud = 38400
