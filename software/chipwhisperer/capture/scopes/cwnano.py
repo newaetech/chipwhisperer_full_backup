@@ -44,6 +44,8 @@ from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
 from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import STM32FSerial
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+import time
+import datetime
 
 
 
@@ -517,6 +519,7 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
         self.io = GPIOSettings(self._cwusb)
         self.adc = ADCSettings(self._cwusb)
         self.glitch = GlitchSettings(self._cwusb)
+        self._timeout = 2
 
         self._lasttrace = None
 
@@ -550,8 +553,16 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
     def capture(self):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
 
+        starttime = datetime.datetime.now()
         while self._cwusb.readCtrl(self.REQ_ARM, dlen=1)[0] == 0:
-            continue
+            # Wait for a moment before re-running the loop
+            time.sleep(0.05)
+            diff = datetime.datetime.now() - starttime
+
+            # If we've timed out, don't wait any longer for a trigger
+            if (diff.total_seconds() > self._timeout):
+                logging.warning('Timeout in cwnano capture()')
+                return True
 
         self._lasttrace = self._cwusb.cmdReadMem(0, self.adc.samples)
 
