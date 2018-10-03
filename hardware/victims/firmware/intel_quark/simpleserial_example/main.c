@@ -66,7 +66,7 @@ int main(void)
 
     qm_pmux_select(QM_PIN_ID_5, QM_PMUX_FN_2); /* Set clock out */
 
-    //QM_PRINTF("D2000 SimpleSerial Test\n");
+    QM_PRINTF("D2000 SimpleSerial Test\n");
 
 	struct tc_aes_key_sched_struct ks;
 	TCAesKeySched_t ksp = &ks;

@@ -25,12 +25,11 @@ void aes_init(void)
 	//volatile uint32_t param = AESA->AESA_PARAMETER;
 	
     /* AES Mode */
-    AESA->AESA_MODE = AESA_MODE_ENCRYPT | (AESA_MODE_CTYPE(0x0F)); /* Encrypt Mode, with all countermeasures */    
-	//AESA->AESA_MODE = AESA_MODE_ENCRYPT; /* Encrypt Mode, without countermeasures */   
+    //AESA->AESA_MODE = AESA_MODE_ENCRYPT | (AESA_MODE_CTYPE(0x0F)); /* Encrypt Mode, with all countermeasures */    
+	AESA->AESA_MODE = AESA_MODE_ENCRYPT; /* Encrypt Mode, without countermeasures */   
     
     /* Setup random seed for countermeasures to work */
-    AESA->AESA_DRNGSEED = 0xDEADBEEF; //A very random number
-        
+    AESA->AESA_DRNGSEED = 0xDEADBEEF; //A very random number        
 }
 
 void aes_set_key(uint8_t * key)
@@ -41,6 +40,10 @@ void aes_set_key(uint8_t * key)
     AESA->AESA_KEY[3].AESA_KEY = *(WoReg *)(key + 12);
 }
 
+void aes_indep_mask(uint8_t* m)
+{
+	;
+}
 
 
 void aes_encrypt(uint8_t * pt)
