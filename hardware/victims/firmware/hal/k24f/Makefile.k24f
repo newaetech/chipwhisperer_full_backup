@@ -18,10 +18,10 @@ NM = arm-none-eabi-nm
 #Output Format = Binary for this target
 FORMAT = binary
 
-CFLAGS += -O0 -g -DDEBUG -DCPU_MK24FN1M0VLL12 -DFRDM_K64F -DFREEDOM -w -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin 
+CFLAGS += -Os -g -DDEBUG -DCPU_MK24FN1M0VLL12 -DFRDM_K64F -DFREEDOM -w -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin 
 CFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -MMD -MP -static 
 CPPFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -MMD -MP -static 
-CPPFLAGS += -O0 -g -DDEBUG -DCPU_MK24FN1M0VLL12 -DFRDM_K64F -DFREEDOM -w -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin 
+CPPFLAGS += -Os -g -DDEBUG -DCPU_MK24FN1M0VLL12 -DFRDM_K64F -DFREEDOM -w -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin 
 
 
 ASFLAGS += -g -DDEBUG -D__STARTUP_CLEAR_BSS -g -Wall -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin
