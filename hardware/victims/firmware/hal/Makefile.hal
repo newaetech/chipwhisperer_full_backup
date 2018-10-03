@@ -13,7 +13,7 @@ EXTRAINCDIRS += $(HALPATH)
 #Manually have to update these lists...
 PLATFORM_LIST = CW308_CC2538 CW301_AVR CW303 CW304 CW308_MEGARF CW308_SAM4L \
 	CW308_STM32F0 CW308_STM32F1 CW308_STM32F2 CW308_STM32F3 CW308_STM32F4 CW308_K24F \
-    CW308_NRF52
+    CW308_NRF52 CW308_AURIX CW308_SAML11 CW308_EFM32TG11B
 
 define KNOWN_PLATFORMS
 
@@ -53,6 +53,13 @@ define KNOWN_PLATFORMS
 | CWLITEARM     | CW-Lite Arm (Alias for CW308_STM32F3) |
 +-------------------------------------------------------+
 | CWNANO        | CW-Lite Nano (STM32F0_NANO)           |
++-------------------------------------------------------+
+| CW308_AURIX   | CW-Lite AURIX (Infineon TC233A)       |
++-------------------------------------------------------+
+| CW308_SAML11  | CW-Lite SAML11 (Atmel SAML11)         |
++-------------------------------------------------------+
+| CW308_        | CW-Lite EFM32TG11B                    |
+| EFM32TG11B    | (Silicon Labs EFM32TG11B)             |
 +-------------------------------------------------------+
 
 Options to define platform:
@@ -118,7 +125,7 @@ else ifeq ($(PLATFORM),CW308_STM32F3)
  PLTNAME = CW308T: STM32F3 Target
 else ifeq ($(PLATFORM),CWLITEARM)
  HAL = stm32f3
- PLTNAME = CW-Lite Arm (STM32F3)
+ PLTNAME = CW-Lite Arm \(STM32F3\)
 else ifeq ($(PLATFORM),CW308_STM32F4)
  HAL = stm32f4
  PLTNAME = CW308T: STM32F4 Target
@@ -133,7 +140,16 @@ else ifeq ($(PLATFORM),CW308_NRF52)
  PLTNAME = NRF52840 Target
 else ifeq ($(PLATFORM),CWNANO)
  HAL = stm32f0_nano
- PLTNAM = CWNANO STM32F030
+ PLTNAME = CWNANO STM32F030
+else ifeq ($(PLATFORM),CW308_AURIX)
+ HAL = aurix
+ PLTNAME = AURIX
+else ifeq ($(PLATFORM),CW308_SAML11)
+ HAL = saml11
+ PLTNAME = SAML11
+else ifeq ($(PLATFORM),CW308_EFM32TG11B)
+ HAL = efm32tg11b
+ PLTNAME = EFM32TG11B
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
 endif

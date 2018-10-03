@@ -39,11 +39,168 @@ from collections import OrderedDict
 from chipwhisperer.capture.ui.programmers_dialog import XMEGAProgrammerDialog, AVRProgrammerDialog, STM32FProgrammerDialog
 from chipwhisperer.common.utils.parameter import Parameterized
 from chipwhisperer.hardware.naeusb.serial import USART
-from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
+from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, packuint32, unpackuint32
 from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
 from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import STM32FSerial
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+import time
+import datetime
+
+
+
+class ADCSettings(util.DisableNewAttr):
+    USB_ADCLK_SET = 0x28
+    USB_SAMPLES = 0x2A
+
+
+    def __init__(self, usb):
+        self.usb = usb
+        self.disable_newattr()
+
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['clk_src'] = self.clk_src
+        dict['clk_freq'] = self.clk_freq
+        dict['samples'] = self.samples
+        return dict
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
+    @property
+    def samples(self):
+        """Number of samples to store"""
+
+        resp = self.usb.readCtrl(self.USB_SAMPLES, 0, 4)
+        return unpackuint32(resp)
+
+    @samples.setter
+    def samples(self, numsamples):
+
+        nresp = packuint32(numsamples)
+        self.usb.sendCtrl(self.USB_SAMPLES, 0, nresp)
+
+
+    @property
+    def clk_src(self):
+        """ADC Clock source: 'int' or 'ext' """
+
+        resp = self.usb.readCtrl(self.USB_ADCLK_SET, 0, 5)
+        if resp[3] == 0:
+            return 'int'
+        else:
+            return 'ext'
+
+
+    @clk_src.setter
+    def clk_src(self, src):
+
+        if src == "int":
+            src = 0
+        elif src == "ext":
+            src = 1
+        else:
+            raise ValueError("Invalid source: %s"%str(src))
+
+        resp = self.usb.readCtrl(self.USB_ADCLK_SET, 0, 5)
+
+        resp[3] = src
+        resp[4] = 1
+
+        self.usb.sendCtrl(self.USB_ADCLK_SET, 0, 5)
+
+    @property
+    def clk_freq(self):
+        """"Set the frequency for CLKOUT. Will be rounded to nearest possible values, check results to see
+        programmed value. Set to 'None' for disabling (High-Z) output."""
+
+        resp = self.usb.readCtrl(self.USB_ADCLK_SET, 0, 5)
+        return resp[0]*240E6
+
+    @clk_freq.setter
+    def clk_freq(self, freqset):
+
+        resp = self.usb.readCtrl(self.USB_ADCLK_SET, 0, 5)
+
+        if freqset is None:
+            best_div = 0
+        else:
+            #Get as close as possible - 240 MHz clock
+            #Divider options: 1,2,4,8,16,32,64
+            div_options = [1,2,4,8,16,32,64]
+
+            freqsrc = 240E6
+
+            err_list = [100E6]*len(div_options)
+
+            for i, div in enumerate(div_options):
+                err_list[i] = abs((freqsrc / div) - freqset)
+
+            best_div = div_options[np.argmin(err_list)]
+
+        resp[0] = best_div
+        resp[4] = 1
+
+        self.usb.sendCtrl(self.USB_ADCLK_SET, 0, resp)
+
+        return best_div * 240E6
+
+class GlitchSettings(util.DisableNewAttr):
+    USB_GLITCH_SETTINGS = 0x2C
+    USB_GLITCH_GO = 0x2D
+
+    def __init__(self, usb):
+        self.usb = usb
+        self.disable_newattr()
+
+
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['width'] = self.width
+        dict['offset'] = self.offset
+        return dict
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
+    @property
+    def offset(self):
+        """Offset of glitch in cycles"""
+
+        resp = self.usb.readCtrl(self.USB_GLITCH_SETTINGS, 0, 8)[0:4]
+        return unpackuint32(resp)
+
+    @offset.setter
+    def offset(self, offset):
+        resp = self.usb.readCtrl(self.USB_GLITCH_SETTINGS, 0, 8)
+        nresp = packuint32(offset)
+        nresp.extend(resp[4:8])
+        self.usb.sendCtrl(self.USB_GLITCH_SETTINGS, 0, nresp)
+
+    @property
+    def width(self):
+        """Width of glitch in cycles"""
+
+        resp = self.usb.readCtrl(self.USB_GLITCH_SETTINGS, 0, 8)[4:8]
+        return unpackuint32(resp)
+
+    @width.setter
+    def width(self, width):
+        resp = self.usb.readCtrl(self.USB_GLITCH_SETTINGS, 0, 8)
+        nresp = resp[0:4]
+        nresp.extend(packuint32(width))
+        self.usb.sendCtrl(self.USB_GLITCH_SETTINGS, 0, nresp)
+
+    def insert(self):
+        self.usb.sendCtrl(self.USB_GLITCH_GO)
+
 
 class GPIOSettings(util.DisableNewAttr):
 
@@ -55,11 +212,11 @@ class GPIOSettings(util.DisableNewAttr):
     USB_MODE_PERA = 0x05
     USB_MODE_PERB = 0x06
 
+    USB_GPIO_READDIR = 0x24
     USB_GPIO_SET   = 0x25
     USB_GPIO_READ  = 0x26
 
     USB_CLKOUT_SET = 0x27
-    USB_ADCLK_SET  = 0x28
 
     USB_GPIO1_MASK = (1<<0)
     USB_GPIO2_MASK = (1<<1)
@@ -70,9 +227,7 @@ class GPIOSettings(util.DisableNewAttr):
     USB_nRST_MASK = (1<<6)
 
     def __init__(self, usb):
-
         self.usb = usb
-
         self.disable_newattr()
 
 
@@ -87,9 +242,8 @@ class GPIOSettings(util.DisableNewAttr):
         dict['pdic'] = self.pdic
         dict['nrst'] = self.nrst
 
-        dict['glitch_lp'] = self.glitch_lp
+        #dict['glitch_lp'] = self.glitch_lp
 
-        dict['adcclk_src'] = self.adcclk_src
         dict['clkout'] = self.clkout
 
         return dict
@@ -175,7 +329,7 @@ class GPIOSettings(util.DisableNewAttr):
     @tio3.setter
     def tio3(self, state):
         state = self._gpio_name_to_state(state)
-        self.gpio_generic_set(self.USB_GPIO1_MASK, state)
+        self.gpio_generic_set(self.USB_GPIO3_MASK, state)
 
     @property
     def tio4(self):
@@ -199,7 +353,7 @@ class GPIOSettings(util.DisableNewAttr):
     @tio4.setter
     def tio4(self, state):
         state = self._gpio_name_to_state(state)
-        self.gpio_generic_set(self.USB_GPIO1_MASK, state)
+        self.gpio_generic_set(self.USB_GPIO4_MASK, state)
 
     @property
     def pdic(self):
@@ -249,15 +403,15 @@ class GPIOSettings(util.DisableNewAttr):
 
     @property
     def clkout(self):
-        """The CLKOUT speed in MHz."""
+        """"Set the frequency for CLKOUT. Will be rounded to nearest possible values, check results to see
+        programmed value. Set to 'None' for disabling (High-Z) output."""
 
         resp = self.usb.readCtrl(self.USB_CLKOUT_SET, 0, 3)
         return resp[0]*240E6
 
     @clkout.setter
     def clkout(self, freqset):
-        """"Set the frequency for CLKOUT. Will be rounded to nearest possible values, check results to see
-        programmed value. Set to 'None' for disabling (High-Z) output."""
+
 
         if freqset is None:
             best_div = 0
@@ -337,13 +491,14 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
     For more help about scope settings, try help() on each of the ChipWhisperer
     scope submodules:
         scope.adc
-        scope.clock
         scope.io
-        scope.trigger
         scope.glitch
     """
 
     _name = "ChipWhisperer Nano"
+
+    REQ_ARM = 0x29
+    REQ_SAMPLES = 0x2A
 
     def __init__(self):
         ScopeTemplate.__init__(self)
@@ -362,6 +517,11 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
         self.serialstm32f = STM32FSerial(cwserial=self.usart)
         self.serialstm32f.scope = self
         self.io = GPIOSettings(self._cwusb)
+        self.adc = ADCSettings(self._cwusb)
+        self.glitch = GlitchSettings(self._cwusb)
+        self._timeout = 2
+
+        self._lasttrace = None
 
         self.getParams().addChildren([
             {'name':"CW-Lite XMEGA Programmer", 'tip':"Open XMEGA Programmer (ChipWhisperer-Lite Only)", 'type':"menu", "action":lambda _:self.getCwliteXMEGA().show()},
@@ -387,19 +547,43 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
         if self.connectStatus.value() is False:
             raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
 
+        self._cwusb.sendCtrl(self.REQ_ARM, 1)
+
 
     def capture(self):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
-        pass
+
+        starttime = datetime.datetime.now()
+        while self._cwusb.readCtrl(self.REQ_ARM, dlen=1)[0] == 0:
+            # Wait for a moment before re-running the loop
+            time.sleep(0.05)
+            diff = datetime.datetime.now() - starttime
+
+            # If we've timed out, don't wait any longer for a trigger
+            if (diff.total_seconds() > self._timeout):
+                logging.warning('Timeout in cwnano capture()')
+                return True
+
+        self._lasttrace = self._cwusb.cmdReadMem(0, self.adc.samples)
+
+        self._lasttrace = np.array(self._lasttrace) / 256.0 - 0.5
+
+        self.newDataReceived(0, self._lasttrace, 0, self.adc.clk_freq)
+
+        return False
+
 
     def getLastTrace(self):
         """Return the last trace captured with this scope.
         """
-        return None
+        return self._lasttrace
 
 
     def _dict_repr(self):
         dict = OrderedDict()
+        dict['io']    = self.io._dict_repr()
+        dict['adc']   = self.adc._dict_repr()
+        dict['glitch'] = self.glitch._dict_repr()
         return dict
 
     def __repr__(self):

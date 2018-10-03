@@ -1,0 +1,25 @@
+VPATH += :$(HALPATH)/aurix
+SRC += aurix_hal.c aurix_hal_sys.c
+ASRC += crt0-tc2x.S
+EXTRAINCDIRS += $(HALPATH)/aurix
+
+
+
+CC = tricore-gcc
+OBJCOPY = tricore-objcopy
+OBJDUMP = tricore-objdump
+SIZE = tricore-size
+AR = tricore-ar rcs
+NM = tricore-nm
+
+#Output Format = Binary for this target
+FORMAT = binary
+
+CFLAGS += -fno-common -fshort-double -mcpu=tc23xx -mversion-info
+CPPFLAGS += -fno-common -fshort-double -mcpu=tc23xx -mversion-info
+ASFLAGS += -Wa,--gdwarf-2 -mcpu=tc23xx -Wa,--insn32-preferred
+
+CDEFS += -DTRIBOARD_TC233A
+CPPDEFS += -DTRIBOARD_TC233A
+
+LDFLAGS += -nocrt0 -Wl,--mem-holes -Wl,--no-warn-flags -Wl,--cref -fshort-double -Wl,-n -T $(HALPATH)/aurix/LinkerScript.ld
