@@ -2,13 +2,13 @@
 # HIGHLEVEL_CLASSLOAD_FAIL_FUNC_WARN
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2018, NewAE Technology Inc
 # All rights reserved.
 #
 # Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
-# project, http://www.assembla.com/spaces/chipwhisperer
+# project, http://www.github.com/newaetech/chipwhisperer
 #
 #    This file is part of chipwhisperer.
 #
@@ -160,8 +160,8 @@ class GlitchSettings(util.DisableNewAttr):
 
     def _dict_repr(self):
         dict = OrderedDict()
-        dict['width'] = self.width
-        dict['offset'] = self.offset
+        dict['repeat'] = self.repeat
+        dict['ext_offset'] = self.ext_offset
         return dict
 
     def __repr__(self):
@@ -171,32 +171,36 @@ class GlitchSettings(util.DisableNewAttr):
         return self.__repr__()
 
     @property
-    def offset(self):
-        """Offset of glitch in cycles"""
-
+    def ext_offset(self):
+        """Offset from rising edge of trigger & when glitch gets inserted, approx = 8.3 ns * ext_offset"""
         resp = self.usb.readCtrl(self.USB_GLITCH_SETTINGS, 0, 8)[0:4]
         return unpackuint32(resp)
 
-    @offset.setter
-    def offset(self, offset):
+    @ext_offset.setter
+    def ext_offset(self, offset):
+
         resp = self.usb.readCtrl(self.USB_GLITCH_SETTINGS, 0, 8)
         nresp = packuint32(offset)
         nresp.extend(resp[4:8])
         self.usb.sendCtrl(self.USB_GLITCH_SETTINGS, 0, nresp)
 
     @property
-    def width(self):
-        """Width of glitch in cycles"""
+    def repeat(self):
+        """Width of glitch in cycles (approx = 8.3 ns * width)"""
 
         resp = self.usb.readCtrl(self.USB_GLITCH_SETTINGS, 0, 8)[4:8]
         return unpackuint32(resp)
 
-    @width.setter
-    def width(self, width):
+    @repeat.setter
+    def repeat(self, width):
         resp = self.usb.readCtrl(self.USB_GLITCH_SETTINGS, 0, 8)
         nresp = resp[0:4]
         nresp.extend(packuint32(width))
         self.usb.sendCtrl(self.USB_GLITCH_SETTINGS, 0, nresp)
+
+    def manualTrigger(self):
+        """Manually trigger the glitch"""
+        self.insert()
 
     def insert(self):
         self.usb.sendCtrl(self.USB_GLITCH_GO)
@@ -412,7 +416,6 @@ class GPIOSettings(util.DisableNewAttr):
     @clkout.setter
     def clkout(self, freqset):
 
-
         if freqset is None:
             best_div = 0
         else:
@@ -529,11 +532,13 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
             {'name':'Serial STM32F Programmer', 'tip':"Open STM32F Programmer (Serial/ChipWhisperer)", 'type':"menu", "action":lambda _:self.getSerialSTM32F().show()}
         ])
 
+        self.disable_newattr()
+
     def getCurrentScope(self):
         return self
 
     def _con(self):
-        self._cwusb.con()
+        self._cwusb.con(idProduct=[0xACE0])
         self.disable_newattr()
         self._is_connected = True
         return True
@@ -544,6 +549,7 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
         return True
 
     def arm(self):
+        """Arm the ADC, the trigger will be GPIO4 rising edge (fixed trigger)."""
         if self.connectStatus.value() is False:
             raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
 
