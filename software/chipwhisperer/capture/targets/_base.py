@@ -136,8 +136,8 @@ class TargetTemplate(Parameterized, Plugin):
         
         # e.g. for AES we can do this:
         if AES and hasattr(self, 'key') and hasattr(self, 'input') and self.input and self.key:
-            cipher = AES.new(str(self.key), AES.MODE_ECB)
-            ct = cipher.encrypt(str(self.input))
+            cipher = AES.new(bytes(self.key), AES.MODE_ECB)
+            ct = cipher.encrypt(bytes(self.input))
             ct = bytearray(ct)
             return ct
         else:

@@ -68,8 +68,4 @@ setup(
         #trigger a bunch of stuff like pyside, numpy, etc.
         #pyqtgraph
     ],
-    scripts=[
-        'scripts/chipwhisperer-ana',
-        'scripts/chipwhisperer-cap',
-    ],
 )
