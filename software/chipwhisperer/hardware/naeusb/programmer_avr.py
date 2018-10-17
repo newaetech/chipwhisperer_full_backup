@@ -225,7 +225,7 @@ class AVRISP(object):
         self._chip = supported_avr[0]
 
     # High-level interface
-    def find(self, slow_delay):
+    def find(self, slow_delay = False):
         # Attempts to find a connected AVR device
         # Returns a pair of (signature, device)
         #   Signature: list of 3 bytes
@@ -605,14 +605,6 @@ class AVRISP(object):
 
     def enableSlowClock(self, enabled):
         if enabled:
-            # fix Sam3u delays for slow clock
-            #self._chip.timeout = 20
-            #self._chip.stabdelay = 10
-            #self._chip.cmdexedelay = 2
             self._usb.usbdev().ctrl_transfer(0x41, self.CMD_SAM3U_CFG, 0x01, 0, timeout=self._timeout)
         else:
-            # fix Sam3u delays for fast clock
-            #self._chip.timeout = 200
-            #self._chip.stabdelay = 100
-            #self._chip.cmdexedelay = 25
             self._usb.usbdev().ctrl_transfer(0x41, self.CMD_SAM3U_CFG, 0x02, 0, timeout=self._timeout)
