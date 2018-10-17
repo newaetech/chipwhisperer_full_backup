@@ -146,12 +146,13 @@ class Programmer(object):
 
 class AVRProgrammer(Programmer):
     def __init__(self):
+        self.slow_clock = False
         super(AVRProgrammer, self).__init__()
 
     @save_and_restore_pins
     def find(self):
         avr = self.scope.scopetype.dev.avr
-        sig, chip = avr.find()
+        sig, chip = avr.find(self.slow_clock)
         if chip is None:
             self.log("AVR: Detected unknown device with signature=%2x %2x %2x" % (sig[0], sig[1], sig[2]))
         else:
@@ -180,6 +181,10 @@ class AVRProgrammer(Programmer):
 
     @save_and_restore_pins
     def enableSlowClock(self, value):
+        if value:
+            self.slow_clock = True
+        else:
+            self.slow_clock = False
         avr = self.scope.scopetype.dev.avr
         avr.enableSlowClock(value)
 

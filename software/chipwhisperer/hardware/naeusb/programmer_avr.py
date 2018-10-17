@@ -225,14 +225,14 @@ class AVRISP(object):
         self._chip = supported_avr[0]
 
     # High-level interface
-    def find(self):
+    def find(self, slow_delay):
         # Attempts to find a connected AVR device
         # Returns a pair of (signature, device)
         #   Signature: list of 3 bytes
         #   Device: an AVR device class or None (if unknown device found)
 
         # Read signature
-        self.enableISP(True)
+        self.enableISP(True, slow_delay)
         sig = self.readSignature()
 
         # Compare to our known signatures
@@ -353,7 +353,7 @@ class AVRISP(object):
 
     # Low-level functions
 
-    def enableISP(self, status):
+    def enableISP(self, status, slow_clock=False):
         """
         Enable or disable ISP interface and prepare AVR chip for new status, either entering or exiting
         programming mode.
@@ -364,6 +364,16 @@ class AVRISP(object):
         if status:
             util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
             time.sleep(0.1)
+
+            if slow_clock:
+                self._chip.timeout = 20
+                self._chip.stabdelay = 10
+                self._chip.cmdexedelay = 2
+            else:
+                # fix Sam3u delays for fast clock
+                self._chip.timeout = 200
+                self._chip.stabdelay = 100
+                self._chip.cmdexedelay = 25
             self._avrDoWrite(self.ISP_CMD_ENTER_PROGMODE_ISP, [self._chip.timeout, self._chip.stabdelay, self._chip.cmdexedelay, self._chip.synchloops,
                                                                self._chip.bytedelay, self._chip.pollvalue, self._chip.pollindex, 0xAC, 0x53, 0, 0])
         else:
@@ -595,6 +605,14 @@ class AVRISP(object):
 
     def enableSlowClock(self, enabled):
         if enabled:
+            # fix Sam3u delays for slow clock
+            #self._chip.timeout = 20
+            #self._chip.stabdelay = 10
+            #self._chip.cmdexedelay = 2
             self._usb.usbdev().ctrl_transfer(0x41, self.CMD_SAM3U_CFG, 0x01, 0, timeout=self._timeout)
         else:
+            # fix Sam3u delays for fast clock
+            #self._chip.timeout = 200
+            #self._chip.stabdelay = 100
+            #self._chip.cmdexedelay = 25
             self._usb.usbdev().ctrl_transfer(0x41, self.CMD_SAM3U_CFG, 0x02, 0, timeout=self._timeout)
