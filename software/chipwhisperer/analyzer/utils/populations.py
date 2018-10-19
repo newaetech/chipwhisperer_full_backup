@@ -46,7 +46,7 @@ def partition_traces(tracemanager, ptool, start_trace=0, end_trace=None, index_o
     if end_trace is None:
         end_trace = tracemanager.numTraces()
 
-    groups = [list() for _ in xrange(ptool.num_parts)]
+    groups = [list() for _ in range(ptool.num_parts)]
 
     for i in range(start_trace, end_trace):
         gnum = ptool.get_partition(i, key_guess=key_guess)

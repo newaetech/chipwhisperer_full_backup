@@ -27,7 +27,7 @@
 from collections import OrderedDict
 import inspect
 
-from base import ModelsBase
+from .base import ModelsBase
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import setupSetParam
 

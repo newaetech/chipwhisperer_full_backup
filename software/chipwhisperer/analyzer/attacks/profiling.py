@@ -29,7 +29,7 @@
 
 import sys
 from chipwhisperer.common.utils import pluginmanager
-from _base import AttackBaseClass
+from ._base import AttackBaseClass
 
 
 class Profiling(AttackBaseClass):

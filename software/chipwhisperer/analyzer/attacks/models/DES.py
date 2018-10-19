@@ -15,7 +15,7 @@
 #=================================================
 from collections import OrderedDict
 import inspect
-from base import ModelsBase
+from .base import ModelsBase
 import numpy as np
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.util import binarylist2bytearray, bytearray2binarylist
