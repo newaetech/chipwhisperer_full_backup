@@ -63,7 +63,7 @@ class ResyncDTW(PreprocessingBase):
 
     @ref_trace.setter
     def ref_trace(self, num):
-        if not isinstance(num, (int, long)):
+        if not isinstance(num, int):
             raise TypeError("Expected int; got %s" % type(num), num)
         self._setRefTrace(num)
 
@@ -86,7 +86,7 @@ class ResyncDTW(PreprocessingBase):
 
     @radius.setter
     def radius(self, radius):
-        if not isinstance(radius, (int, long)):
+        if not isinstance(radius, int):
             raise TypeError("Expected int; got %s" % type(radius), radius)
         self._setRadius(radius)
    

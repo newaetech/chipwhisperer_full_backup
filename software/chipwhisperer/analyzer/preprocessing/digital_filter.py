@@ -161,7 +161,7 @@ class Filter(PreprocessingBase):
 
     @order.setter
     def order(self, order):
-        if not isinstance(order, (int, long)):
+        if not isinstance(order, int):
             raise TypeError("Expected int; got %s" % type(order), order)
         self._setOrder(order)
 

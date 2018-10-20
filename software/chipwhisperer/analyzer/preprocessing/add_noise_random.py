@@ -63,7 +63,7 @@ class AddNoiseRandom(PreprocessingBase):
 
     @noise.setter
     def noise(self, std_dev):
-        if not isinstance(std_dev, (int, long, float)):
+        if not isinstance(std_dev, (int, float)):
             raise TypeError("Expected number; got %s" % type(std_dev), std_dev)
         self._setNoise(std_dev)
 
