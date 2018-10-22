@@ -112,7 +112,7 @@ class ChannelEstimateAttackOneSubkey(object):
 #Hacks for main()
 sys.path.append('../../common')
 sys.path.append('../.')
-import models.AES128_8bit as AES128_8bit
+from . import models.AES128_8bit as AES128_8bit
 
 def main(tracedir, fitrange, tryrange):    
     preflist = []

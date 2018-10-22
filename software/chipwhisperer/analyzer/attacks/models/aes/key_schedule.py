@@ -234,12 +234,12 @@ def test():
     #Manual tests right now - need to automate this.
 
     ##### AES-128 Tests
-    print "**********AES-128 Tests***************"
+    print("**********AES-128 Tests***************")
 
     ik = [0]*16
     for i in range(0, 11):
         result = keyScheduleRounds(ik, 0, i)
-        print " ".join(["%2x"%d for d in result])
+        print(" ".join(["%2x"%d for d in result]))
         ok = result
 
     # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -254,19 +254,19 @@ def test():
     # b1 d4 d8 e2 8a 7d b9 da 1d 7b b3 de 4c 66 49 41
     #b4 ef 5b cb 3e 92 e2 11 23 e9 51 cf 6f 8f 18 8e
 
-    print ""
+    print("")
 
     for i in range(0, 11):  # 10 Rounds
         result = keyScheduleRounds(ok, 10, i)
-        print " ".join(["%2x" % d for d in result])
+        print(" ".join(["%2x" % d for d in result]))
 
     ##### AES-256 Tests
-    print "**********AES-256 Tests***************"
+    print("**********AES-256 Tests***************")
 
     ik = [0]*32
     for i in range(0, 15):  # 14 Rounds
         result = keyScheduleRounds(ik, 0, i)
-        print " ".join(["%02x"%d for d in result])
+        print(" ".join(["%02x"%d for d in result]))
 
     # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
     # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -284,7 +284,7 @@ def test():
     # 74 ed 0b a1 73 9b 7e 25 22 51 ad 14 ce 20 d4 3b
     #10 f8 0a 17 53 bf 72 9c 45 c9 79 e7 cb 70 63 85
 
-    print ""
+    print("")
 
     ik = [0x74 ,0xed ,0x0b ,0xa1 ,0x73 ,0x9b ,0x7e ,0x25 ,0x22 ,
           0x51 ,0xad ,0x14 ,0xce ,0x20 ,0xd4 ,0x3b ,0x10 ,0xf8 ,
@@ -293,7 +293,7 @@ def test():
 
     for i in range(0, 14):
         result = keyScheduleRounds(ik, 13, i)
-        print " ".join(["%2x"%d for d in result])
+        print(" ".join(["%2x"%d for d in result]))
 
 if __name__ == "__main__":
     test()

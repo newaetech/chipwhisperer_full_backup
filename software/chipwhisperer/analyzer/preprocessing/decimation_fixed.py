@@ -59,7 +59,7 @@ class DecimationFixed(PreprocessingBase):
 
     @dec_factor.setter
     def dec_factor(self, dec):
-        if not isinstance(dec, (int, long)):
+        if not isinstance(dec, int):
             raise TypeError("Expected int; got %s" % type(dec), dec)
         self._setDecFactor(dec)
 

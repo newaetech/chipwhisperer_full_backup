@@ -25,7 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _stats import DataTypeDiffs
+from ._stats import DataTypeDiffs
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.parameter import Parameterized
 

@@ -29,7 +29,6 @@ from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
 from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import STM32FSerial
 from chipwhisperer.hardware.naeusb.serial import USART
-#from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 
 class CWLiteUSB(Parameterized):
@@ -51,31 +50,11 @@ class CWLiteUSB(Parameterized):
     def con(self, *args, **kwargs):
         return self._cwusb.con(*args, **kwargs)
 
-    # def __del__(self):
-    #     print "here"
-
     def dis(self):
         if self.params is not None:
             self.getParams().delete()
         self.params = None
-        # gc.collect()
-        # print sys.getrefcount(self)
-        # print gc.get_referrers(self)
 
     def usbdev(self):
         return self._cwusb
 
-    def getCwliteXMEGA(self):
-        if not hasattr(self, 'cwliteXMEGA'):
-            self.cwliteXMEGA = XMEGAProgrammerDialog()
-        return self.cwliteXMEGA
-
-    def getCwliteAVR(self):
-        if not hasattr(self, 'cwliteAVR'):
-            self.cwliteAVR = AVRProgrammerDialog()
-        return self.cwliteAVR
-
-    def getSerialSTM32F(self):
-        if not hasattr(self, 'serialSTM32F'):
-            self.serialSTM32F = STM32FProgrammerDialog()
-        return self.serialSTM32F

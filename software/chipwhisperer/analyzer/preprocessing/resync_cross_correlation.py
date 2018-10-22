@@ -72,7 +72,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
 
     @ref_trace.setter
     def ref_trace(self, num):
-        if not isinstance(num, (int, long)):
+        if not isinstance(num, int):
             raise TypeError("Expected int; got %s" % type(num), num)
         self._setRefTrace(num)
 
@@ -99,9 +99,9 @@ class ResyncCrossCorrelation(PreprocessingBase):
     def window(self, win):
         if not isinstance(win, tuple):
             raise TypeError("Expected tuple; got %s" % type(win), win)
-        if not isinstance(win[0], (int, long)):
+        if not isinstance(win[0], int):
             raise TypeError("Expected int; got %s" % type(win[0]), win[0])
-        if not isinstance(win[1], (int, long)):
+        if not isinstance(win[1], int):
             raise TypeError("Expected int; got %s" % type(win[1]), win[1])
         self._setWindow(win)
    

@@ -29,7 +29,7 @@ import inspect
 
 from chipwhisperer.analyzer.attacks.models.aes.funcs import sbox, inv_sbox, subbytes, inv_subbytes, mixcolumns, inv_mixcolumns, shiftrows, inv_shiftrows
 
-from base import ModelsBase
+from .base import ModelsBase
 from chipwhisperer.analyzer.attacks.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.common.utils.pluginmanager import Plugin
 

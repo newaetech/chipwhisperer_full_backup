@@ -15,7 +15,7 @@
 #=================================================
 from collections import OrderedDict
 import inspect
-from base import ModelsBase
+from .base import ModelsBase
 import numpy as np
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.util import binarylist2bytearray, bytearray2binarylist
@@ -369,7 +369,7 @@ if __name__ == "__main__":
 #22 10 30 21 32 38 07 3F
     guessedkey = [0x22, 0x10, 0x30, 0x21, 0x32, 0x38, 0x07, 0x3F]
     originalkey = [0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6]
-    print str(model.array_of_bytes_to_bin(originalkey, 8))
-    print str(model.array_of_bytes_to_bin(guessedkey, 6))
+    print(str(model.array_of_bytes_to_bin(originalkey, 8)))
+    print(str(model.array_of_bytes_to_bin(guessedkey, 6)))
 
-    print "Unknown bits = %s, Wrong bit guesses = %s" % model.compare(model.array_of_bytes_to_bin(originalkey, 8), model.keyScheduleRounds(guessedkey, 1, 0, returnSubkeys=False))
+    print("Unknown bits = %s, Wrong bit guesses = %s" % model.compare(model.array_of_bytes_to_bin(originalkey, 8), model.keyScheduleRounds(guessedkey, 1, 0, returnSubkeys=False)))

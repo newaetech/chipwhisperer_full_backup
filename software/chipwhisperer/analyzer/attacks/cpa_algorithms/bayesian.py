@@ -68,7 +68,7 @@ class AttackCPA_Bayesian(AlgorithmsBase):
                 textins.append(traceSource.getTextin(tnum))
                 textouts.append(traceSource.getTextout(tnum))
                 knownkeys.append(traceSource.getKnownKey(tnum))
-            except Exception, e:
+            except Exception as e:
                 progressBar.abort(e.message)
                 return
 

@@ -178,7 +178,7 @@ def dtw(x, y, window=None, dist=lambda a, b: abs(a - b)):
 
     window = list(window)
     window_len = len(window)
-    print window_len
+    print(window_len)
     idx = 0
     if window_len > 10000:
         progress_bar = ProgressBarGUI("Applying DTW to traces...", "Warping Traces:")

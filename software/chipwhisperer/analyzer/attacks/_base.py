@@ -69,7 +69,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
             {'name':'Crypto Algorithm', 'type':'list', 'values':models, 'value':models['AES 128'], 'action':self.refreshByteList, 'childmode':'child'},
             {'name':'Points Range', 'key':'prange', 'type':'range', 'get':self.getPointRange, 'set':self.setPointRange, 'action':self.updateScript},
         ])
-        for m in models.itervalues():
+        for m in models.values():
             m.sigParametersChanged.connect(self.updateScript)
 
         self.getParams().addChildren([

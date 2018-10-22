@@ -33,7 +33,7 @@
 
 import logging
 
-import serial
+from . import serial
 import time
 
 class Samba(object):
