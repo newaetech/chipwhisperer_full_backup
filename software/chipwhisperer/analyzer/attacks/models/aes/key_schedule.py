@@ -239,7 +239,7 @@ def test():
     ik = [0]*16
     for i in range(0, 11):
         result = keyScheduleRounds(ik, 0, i)
-        print(" ".join(["%2x"%d for d in result]))
+        print((" ".join(["%2x"%d for d in result])))
         ok = result
 
     # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -258,7 +258,7 @@ def test():
 
     for i in range(0, 11):  # 10 Rounds
         result = keyScheduleRounds(ok, 10, i)
-        print(" ".join(["%2x" % d for d in result]))
+        print((" ".join(["%2x" % d for d in result])))
 
     ##### AES-256 Tests
     print("**********AES-256 Tests***************")
@@ -266,7 +266,7 @@ def test():
     ik = [0]*32
     for i in range(0, 15):  # 14 Rounds
         result = keyScheduleRounds(ik, 0, i)
-        print(" ".join(["%02x"%d for d in result]))
+        print((" ".join(["%02x"%d for d in result])))
 
     # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
     # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -293,7 +293,7 @@ def test():
 
     for i in range(0, 14):
         result = keyScheduleRounds(ik, 13, i)
-        print(" ".join(["%2x"%d for d in result]))
+        print((" ".join(["%2x"%d for d in result])))
 
 if __name__ == "__main__":
     test()

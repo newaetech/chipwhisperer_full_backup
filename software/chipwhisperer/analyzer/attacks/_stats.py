@@ -80,7 +80,7 @@ class DataTypeDiffs(object):
 
     def findMaximums(self, bytelist=None, useAbsolute=True, useSingle=False):
         if bytelist is None:
-            bytelist = range(0, self.numSubkeys)
+            bytelist = list(range(0, self.numSubkeys))
 
         # print useAbsolute
 
