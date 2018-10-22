@@ -134,7 +134,7 @@ class SimpleSerialTemplate(object):
             return ret
 
         # If we didn't get enough data, try to read more from the hardware
-        data = bytearray(self.hardware_read(num, timeout=timeout)).decode()
+        data = bytearray(self.hardware_read(num, timeout=timeout)).decode('latin-1')
         for c in data:
             self.terminal_queue.append(['in', c])
             if self.terminal_count < self.max_queue_size:
