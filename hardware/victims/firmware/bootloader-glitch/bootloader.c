@@ -112,6 +112,11 @@ int main(void)
 				ascii_buffer[ascii_idx++] = 'r';
 				ascii_buffer[ascii_idx++] = '0';
 				ascii_buffer[ascii_idx++] = '\n';
+				ascii_buffer[ascii_idx++] = '\n';
+				ascii_buffer[ascii_idx++] = '\n';
+				ascii_buffer[ascii_idx++] = '\n';
+				ascii_buffer[ascii_idx++] = '\n';
+				ascii_buffer[ascii_idx++] = '\n';
 				state = RESPOND;
 			} 
 			else if (ascii_idx >= ASCII_BUFLEN)
