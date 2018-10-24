@@ -9,6 +9,10 @@ ChipWhisperer is an open source toolchain dedicated to hardware security researc
 
 ---
 
+## ChipWhisperer 5.0 Is Coming
+
+The biggest (and most breaking) change is coming. ChipWhisperer 5.0 uses Python 3 & Juypter Notebooks. Check out the [GITHub issue](https://github.com/newaetech/chipwhisperer/issues/177) to track this, which is in a new branch on the git repo. No major changes to the current branch will be done as all new features will be going into 5.0.
+
 ## Getting Started
 First time using ChipWhisperer? All of the documentation is available on the Wiki. Here are a few quick links to get you started:
 * [Getting Started](https://wiki.newae.com/Getting_Started) if you have no idea where to start

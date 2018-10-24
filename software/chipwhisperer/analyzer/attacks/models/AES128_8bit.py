@@ -125,6 +125,19 @@ class InvSBox_output(AESLeakageHelper):
     def leakage(self, pt, ct, key, bnum):
         return self.inv_sbox(pt[bnum] ^ key[bnum])
 
+class LastroundHW(AESLeakageHelper):
+    name = 'HW: AES Last-Round State'
+    def leakage(self, pt, ct, key, bnum):
+        # HD Leakage of AES State between 9th and 10th Round
+        # Used to break SASEBO-GII / SAKURA-G
+        st10 = ct[self.INVSHIFT_undo[bnum]]
+        st9 = inv_sbox(ct[bnum] ^ key[bnum])
+        return st9
+
+    def processKnownKey(self, inpkey):
+        return keyScheduleRounds(inpkey, 0, 10)
+
+
 class LastroundStateDiff(AESLeakageHelper):
     name = 'HD: AES Last-Round State'
     c_model_enum_value = 2

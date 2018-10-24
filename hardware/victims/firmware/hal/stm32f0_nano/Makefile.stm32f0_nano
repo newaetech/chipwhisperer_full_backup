@@ -1,0 +1,28 @@
+VPATH += :$(HALPATH)/stm32f0
+VPATH += :$(HALPATH)/stm32f0_nano
+SRC += stm32f0_hal_nano.c stm32f0_hal_lowlevel.c
+EXTRAINCDIRS += $(HALPATH)/stm32f0 $(HALPATH)/stm32f0/CMSIS $(HALPATH)/stm32f0/CMSIS/core $(HALPATH)/stm32f0/CMSIS/device $(HALPATH)/stm32f0/Legacy
+
+ASRC += stm32f0_startup.S
+
+MCU_FLAGS = -mcpu=cortex-m0
+
+CC = arm-none-eabi-gcc
+OBJCOPY = arm-none-eabi-objcopy
+OBJDUMP = arm-none-eabi-objdump
+SIZE = arm-none-eabi-size
+AR = arm-none-eabi-ar rcs
+NM = arm-none-eabi-nm
+
+#Output Format = Binary for this target
+FORMAT = binary
+
+CFLAGS +=   -mthumb -mfloat-abi=soft -ffunction-sections
+CPPFLAGS += -mthumb -mfloat-abi=soft -ffunction-sections
+ASFLAGS +=  -mthumb -mfloat-abi=soft -ffunction-sections
+
+CDEFS   += -DSTM32F030x6 -DSTM32F0 -DSTM32 -DDEBUG
+CPPDEFS += -DSTM32F030x6 -DSTM32F0 -DSTM32 -DDEBUG
+
+LDFLAGS += --specs=nano.specs --specs=nosys.specs -T $(HALPATH)/stm32f0_nano/LinkerScript.ld -Wl,--gc-sections -lm
+LDFLAGS += -mthumb -mcpu=cortex-m0 

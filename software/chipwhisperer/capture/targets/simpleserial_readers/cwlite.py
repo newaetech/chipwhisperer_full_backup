@@ -52,7 +52,11 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         if scope is None or not hasattr(scope, "qtadc"):
             Warning("You need a scope with OpenADC connected to use this Target")
 
-        self.cwlite_usart = CWL_USART(scope.qtadc.ser)
+        if hasattr(scope, 'qtadc'):
+            ser = scope.qtadc.ser
+        else:
+            ser = scope._cwusb
+        self.cwlite_usart = CWL_USART(ser)
         self.cwlite_usart.init(baud=self._baud)
 
 
