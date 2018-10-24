@@ -34,7 +34,7 @@ TARGET = bootloader-aes256
 
 # List C source files here.
 # Header files (.h) are automatically pulled in.
-SRC += bootloader.c aes256.c 
+SRC += bootloader.c aes256.c crcccitt.c
 
 CRYPTO_TARGET = NONE
 CRYPTO_OPTIONS = NONE

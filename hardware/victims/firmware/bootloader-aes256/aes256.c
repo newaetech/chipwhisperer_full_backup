@@ -18,7 +18,6 @@
 *   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include <util/delay.h>
 
 #include "aes256.h"
 

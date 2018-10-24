@@ -1,0 +1,27 @@
+VPATH += :$(HALPATH)/efm32tg11b
+# SRC += system_efm32tg11b.c startup_efm32tg11b.c
+SRC += system_efm32tg11b.c efm32tg11b_hal.c
+ASRC += startup_efm32tg11b.S
+EXTRAINCDIRS += $(HALPATH)/efm32tg11b $(HALPATH)/efm32tg11b/CMSIS
+
+MCU_FLAGS = -mcpu=cortex-m0plus
+
+CC = arm-none-eabi-gcc
+OBJCOPY = arm-none-eabi-objcopy
+OBJDUMP = arm-none-eabi-objdump
+SIZE = arm-none-eabi-size
+AR = arm-none-eabi-ar rcs
+NM = arm-none-eabi-nm
+
+#Output Format = Binary for this target
+FORMAT = binary
+
+CFLAGS += -gdwarf-2 -mthumb -fmessage-length=0 -mno-sched-prolog -fno-builtin -ffunction-sections -fdata-sections
+CPPFLAGS += $(CFLAGS)
+ASFLAGS += $(CFLAGS)
+
+CDEFS += -DEFM32TG11B340F64GQ48
+#-D__STARTUP_COPY_MULTIPLE -D__STARTUP_CLEAR_BSS_MULTIPLE
+
+LDFLAGS += --specs=nano.specs -T $(HALPATH)/efm32tg11b/efm32tg11b.ld -Wl,--gc-sections -Wl,--start-group -lgcc -lc -lnosys -Wl,--end-group -lm
+# LDFLAGS += --specs=nano.specs -T $(HALPATH)/efm32tg11b/efm32tg11b.ld -Wl,--gc-sections -lm -nostdlib
