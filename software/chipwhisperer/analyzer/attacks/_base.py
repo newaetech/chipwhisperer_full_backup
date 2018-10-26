@@ -117,6 +117,20 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         """
         return inpkey
 
+    def processTracesNoGUI(self):
+        self.attack.setModel(self.attackModel)
+        self.attack.getStatistics().clear()
+        self.attack.setReportingInterval(self.getReportingInterval())
+        self.attack.setTargetSubkeys(self.getTargetSubkeys())
+        
+        for itNum in range(self.getIterations()):
+            startingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
+            endingTrace = startingTrace + self.getTracesPerAttack() - 1
+
+            # TODO:support start/end point different per byte
+            self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), None, pointRange=self.getPointRange(None))
+        return self.attack.getStatistics()
+
     def processTraces(self):
         progressBar = ProgressBar("Analysis in Progress", "Attacking with " + self.getName())
         with progressBar:
