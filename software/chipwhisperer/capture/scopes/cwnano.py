@@ -28,7 +28,7 @@
 import logging
 import numpy as np
 from usb import USBError
-from base import ScopeTemplate
+from .base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.utils import util, timer, pluginmanager
 from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
@@ -36,7 +36,6 @@ from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.util import dict_to_str
 from collections import OrderedDict
 
-from chipwhisperer.capture.ui.programmers_dialog import XMEGAProgrammerDialog, AVRProgrammerDialog, STM32FProgrammerDialog
 from chipwhisperer.common.utils.parameter import Parameterized
 from chipwhisperer.hardware.naeusb.serial import USART
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, packuint32, unpackuint32
@@ -609,24 +608,3 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
 
     def usbdev(self):
         return self._cwusb
-
-    def getCwliteXMEGA(self):
-        if not hasattr(self, 'cwliteXMEGA'):
-            self.enable_newattr()
-            self.cwliteXMEGA = XMEGAProgrammerDialog()
-            self.disable_newattr()
-        return self.cwliteXMEGA
-
-    def getCwliteAVR(self):
-        if not hasattr(self, 'cwliteAVR'):
-            self.enable_newattr()
-            self.cwliteAVR = AVRProgrammerDialog()
-            self.disable_newattr()
-        return self.cwliteAVR
-
-    def getSerialSTM32F(self):
-        if not hasattr(self, 'serialSTM32F'):
-            self.enable_newattr()
-            self.serialSTM32F = STM32FProgrammerDialog()
-            self.disable_newattr()
-        return self.serialSTM32F
