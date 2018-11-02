@@ -118,27 +118,12 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         """
         return inpkey
 
-    def processTracesInitChunks(self):
+    def processTracesNoGUI(self, callback=None):
         self.attack.setModel(self.attackModel)
         self.attack.getStatistics().clear()
         self.attack.setReportingInterval(self.getReportingInterval())
         self.attack.setTargetSubkeys(self.getTargetSubkeys())
-        self._itNum = 0
-
-    def processTracesNextChunk(self):
-        if self._itNum >= self.getIterations():
-            return None
-        startingTrace = self.getTracesPerAttack() * self._itNum + self.getTraceStart()
-        endingTrace = startingTrace + self.getTracesPerAttack() - 1
-        self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), None, pointRange=self.getPointRange(None))
-        self._itNum += 1
-        return self.attack.getStatistics()
-
-    def processTracesNoGUI(self):
-        self.attack.setModel(self.attackModel)
-        self.attack.getStatistics().clear()
-        self.attack.setReportingInterval(self.getReportingInterval())
-        self.attack.setTargetSubkeys(self.getTargetSubkeys())
+        self.attack.setStatsReadyCallback(callback)
 
         for itNum in range(self.getIterations()):
             startingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
