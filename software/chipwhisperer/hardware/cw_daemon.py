@@ -142,7 +142,7 @@ class CWServerThreadManager(object):
         return devlist
 
     def open(self, sn=None):
-
+        pass
 
 
     def close(self, sn=None):
