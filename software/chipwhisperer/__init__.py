@@ -1,6 +1,7 @@
 from chipwhisperer.capture.api.acquisition_controller import AcquisitionController
 from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
 from chipwhisperer.common.utils.util import updateUI
+from chipwhisperer.common.results.noguiplots import NoGUIPlots
 
 import os, os.path
 from chipwhisperer.common.traces import TraceContainerNative as trace_container_native
@@ -77,6 +78,13 @@ def target(scope, type = cwtarget, **kwargs):
     target = type()
     target.con(scope, **kwargs)
     return target
+
+
+def analyzerPlots(attack_results=None):
+    """Create an object to get plot data for analyzer results
+    """
+    return NoGUIPlots(attack_results)
+        
 
 @gui_only
 def auxList(api):
