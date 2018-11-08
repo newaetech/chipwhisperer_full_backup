@@ -27,13 +27,8 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.pluginmanager import Plugin
 
 class PGEVsTraceNoGUI(object):
-    def __init__(self, stats=None, keys=None):
+    def __init__(self, stats):
         self._stats = stats
-        self._keys = keys
-        if stats and keys:
-            stats.setKnownkey(keys)
-        else:
-            print("WARNING: stats.setKnownkey() must be used to set key before findMaximums() called!")
         
     def calculatePGE(self):
         stats = self._stats
