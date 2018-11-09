@@ -123,9 +123,8 @@ int main(void)
                    //We now have 12 bytes of useful data to write to flash memory.
                    //We don't actually write anything here though in real life would
                    //probably do more than just delay a moment
-                   _delay_ms(1);
                     volatile int k = 0;
-                    k +=1; //stop check from being optimized out
+                    k += 1;
                 }
             } else {
                 putch(COMM_BADCHECKSUM);
