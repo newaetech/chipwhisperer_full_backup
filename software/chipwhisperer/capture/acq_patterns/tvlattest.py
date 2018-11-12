@@ -89,8 +89,8 @@ class AcqKeyTextPattern_TVLATTest(AcqKeyTextPattern_Base):
             self._textin = self._textin1
 
             if AES is not None:
-                cipher = AES.new(str(self._key), AES.MODE_ECB)
-                self._textin1 = bytearray(cipher.encrypt(str(self._textin1)))
+                cipher = AES.new(bytes(self._key), AES.MODE_ECB)
+                self._textin1 = bytearray(cipher.encrypt(bytes(self._textin1)))
             else:
                 self._textin1 = bytearray(16)
                 for i in range(0, 16):

@@ -1,0 +1,1926 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Tutorial A5 (Breaking AES-256 Bootloader)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This tutorial will take you through a complete attack on an encrypted bootloader using AES-256. This demonstrates how to use side-channel power analysis on practical systems, along with discussing how to perform analysis with different Analyzer models."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+<<<<<<< HEAD
+    "hidden": true
+=======
+    "heading_collapsed": true
+>>>>>>> training
+   },
+   "source": [
+    "## Background"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "In the world of microcontrollers, a bootloader is a special piece of firmware that is made to let the user upload new programs into memory. This is especially useful for devices with complex code that may need to be patched or otherwise updated in the future - a bootloader makes it possible for the user to upload a patched version of the firmware onto the micro. The bootloader receives information from a communication line (a USB port, serial port, ethernet port, WiFi connection, etc...) and stores this data into program memory. Once the full firmware has been received, the micro can happily run its updated code.\n",
+    "\n",
+    "There is one big security issue to worry about with bootloaders. A company may want to stop their customers from writing their own firmware and uploading it onto the micro. For example, this might be for protection reasons - hackers might be able to access parts of the device that weren't meant to be accessed. One way of stopping this is to add encryption. The company can add their own secret signature to the firmware code and encrypt it with a secret key. Then, the bootloader can decrypt the incoming firmware and confirm that the incoming firmware is correctly signed. Users will not know the secret key or the signature tied to the firmware, so they won't be able to \"fake\" their own.\n",
+    "\n",
+    "This tutorial will work with a simple AES-256 bootloader. The victim will receive data through a serial connection, decrypt the command, and confirm that the included signature is correct. Then, it will only save the code into memory if the signature check succeeded. To make this system more robust against attacks, the bootloader will use cipher-block chaining (CBC mode). Our goal is to find the secret key and the CBC initialization vector so that we could successfully fake our own firmware."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true,
+    "hidden": true
+   },
+   "source": [
+    "### Bootloader Communications Protocol"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "The bootloader's communications protocol operates over a serial port at 38400 baud rate. The bootloader is always waiting for new data to be sent in this example; in real life one would typically force the bootloader to enter through a command sequence.\n",
+    "\n",
+    "Commands sent to the bootloader look as follows:\n",
+    "\n",
+    "```\n",
+    "       |<-------- Encrypted block (16 bytes) ---------->|\n",
+    "       |                                                |\n",
+    "+------+------+------+------+------+------+ .... +------+------+------+\n",
+    "| 0x00 |    Signature (4 Bytes)    |  Data (12 Bytes)   |   CRC-16    |\n",
+    "+------+------+------+------+------+------+ .... +------+------+------+\n",
+    "```\n",
+    "\n",
+    "This frame has four parts:\n",
+    "\n",
+    "* `0x00`: 1 byte of fixed header\n",
+    "* Signature: A secret 4 byte constant. The bootloader will confirm that this signature is correct after decrypting the frame.\n",
+    "* Data: 12 bytes of the incoming firmware. This system forces us to send the code 12 bytes at a time; more complete bootloaders may allow longer variable-length frames.\n",
+    "* CRC-16: A 16-bit checksum using the CRC-CCITT polynomial (0x1021). The LSB of the CRC is sent first, followed by the MSB. The bootloader will reply over the serial port, describing whether or not this CRC check was valid.\n",
+    "\n",
+    "As described in the diagram, the 16 byte block is not sent as plaintext. Instead, it is encrypted using AES-256 in CBC mode. This encryption method will be described in the next section.\n",
+    "\n",
+    "The bootloader responds to each command with a single byte indicating if the CRC-16 was OK or not:\n",
+    "\n",
+    "```\n",
+    "            +------+\n",
+    "CRC-OK:     | 0xA1 |\n",
+    "            +------+\n",
+    "\n",
+    "            +------+\n",
+    "CRC Failed: | 0xA4 |\n",
+    "            +------+\n",
+    "```\n",
+    "Then, after replying to the command, the bootloader veries that the signature is correct. If it matches the expected manufacturer's signature, the 12 bytes of data will be written to flash memory. Otherwise, the data is discarded."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true,
+    "hidden": true
+   },
+   "source": [
+    "### Details of AES-256 CBC"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "The system uses the AES algorithm in Cipher Block Chaining (CBC) mode. In general one avoids using encryption 'as-is' (i.e. Electronic Code Book), since it means any piece of plaintext always maps to the same piece of ciphertext. Cipher Block Chaining ensures that if you encrypted the same thing a bunch of times it would always encrypt to a new piece of ciphertext.\n",
+    "\n",
+    "You can see another reference on the design of the encryption side; we'll be only talking about the decryption side here. In this case AES-256 CBC mode is used as follows, where the details of the AES-256 Decryption block will be discussed in detail later:\n",
+    "\n",
+    "![AES-256](https://wiki.newae.com/images/8/88/Aes256_cbc.png)\n",
+    "\n",
+    "This diagram shows that the output of the decryption is no longer used directly as the plaintext. Instead, the output is XORed with a 16 byte mask, which is usually taken from the previous ciphertext. Also, the first decryption block has no previous ciphertext to use, so a secret initialization vector (IV) is used instead. If we are going to decrypt the entire ciphertext (including block 0) or correctly generate our own ciphertext, we'll need to find this IV along with the AES key."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true,
+    "hidden": true
+   },
+   "source": [
+    "### Attacking AES-256"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "The system in this tutorial uses AES-256 encryption, which has a 256 bit (32 byte) key - twice as large as the 16 byte key we've attacked in previous tutorials. This means that our regular AES-128 CPA attacks won't quite work. However, extending these attacks to AES-256 is fairly straightforward: the theory is explained in detail in Extending AES-128 Attacks to AES-256.\n",
+    "\n",
+    "As the theory page explains, our AES-256 attack will have 4 steps:\n",
+    "\n",
+    "1. Perform a standard attack (as in AES-128 decryption) to determine the first 16 bytes of the key, corresponding to the 14th round encryption key.\n",
+    "1. Using the known 14th round key, calculate the hypothetical outputs of each S-Box from the 13th round using the ciphertext processed by the 14th round, and determine the 16 bytes of the 13th round key manipulated by inverse MixColumns.\n",
+    "1. Perform the MixColumns and ShiftRows operation on the hypothetical key determined above, recovering the 13th round key.\n",
+    "1. Using the AES-256 key schedule, reverse the 13th and 14th round keys to determine the original AES-256 encryption key."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+<<<<<<< HEAD
+    "hidden": true
+=======
+    "heading_collapsed": true
+>>>>>>> training
+   },
+   "source": [
+    "## Firmware"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "For this tutorial, we'll be using the `bootloader-aes256` project, which we'll build as usual:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "hidden": true
+   },
+   "outputs": [],
+   "source": [
+    "PLATFORM = \"CWLITEARM\"\n",
+    "CRYPTO_TARGET=\"NONE\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "hidden": true
+   },
+   "outputs": [],
+   "source": [
+    "%%bash -s \"$PLATFORM\" \"$CRYPTO_TARGET\"\n",
+    "cd ../../hardware/victims/firmware/bootloader-aes256\n",
+    "make PLATFORM=$1 CRYPTO_TARGET=$2"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+<<<<<<< HEAD
+   "metadata": {
+    "hidden": true
+   },
+=======
+   "metadata": {},
+>>>>>>> training
+   "source": [
+    "## Capturing Traces"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+<<<<<<< HEAD
+   "metadata": {
+    "hidden": true
+   },
+=======
+   "metadata": {},
+>>>>>>> training
+   "source": [
+    "### Setup"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "To start, we'll proceed with setup as usual:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "%run \"Helper Scripts/CWLite_Connect.ipynb\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "%run \"Helper Scripts/Setup_Target_Generic.ipynb\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# uncomment based on your target\n",
+    "fw_path = \"../../hardware/victims/firmware/bootloader-aes256/bootloader-aes256-CWLITEARM.hex\"\n",
+    "#%run \"Helper Scripts/Program_XMEGA.ipynb\"\n",
+    "%run \"Helper Scripts/Program_STM.ipynb\"\n",
+    "#%run \"Helper Scripts/No_Programmer.ipynb\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "program_target(scope, fw_path)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Calculating the CRC"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The next step we'll need to take in attacking this target is to communicate with it. Most of the transmission is fairly straight forward, but the CRC is a little tricky. Luckily, there's a lot of open source out there for calculating CRCs. In this case, we'll pull some code from pycrc:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Class Crc\n",
+    "#############################################################\n",
+    "# These CRC routines are copy-pasted from pycrc, which are:\n",
+    "# Copyright (c) 2006-2013 Thomas Pircher <tehpeh@gmx.net>\n",
+    "#\n",
+    "class Crc(object):\n",
+    "    \"\"\"\n",
+    "    A base class for CRC routines.\n",
+    "    \"\"\"\n",
+    "\n",
+    "    def __init__(self, width, poly):\n",
+    "        \"\"\"The Crc constructor.\n",
+    "\n",
+    "        The parameters are as follows:\n",
+    "            width\n",
+    "            poly\n",
+    "            reflect_in\n",
+    "            xor_in\n",
+    "            reflect_out\n",
+    "            xor_out\n",
+    "        \"\"\"\n",
+    "        self.Width = width\n",
+    "        self.Poly = poly\n",
+    "\n",
+    "\n",
+    "        self.MSB_Mask = 0x1 << (self.Width - 1)\n",
+    "        self.Mask = ((self.MSB_Mask - 1) << 1) | 1\n",
+    "\n",
+    "        self.XorIn = 0x0000\n",
+    "        self.XorOut = 0x0000\n",
+    "\n",
+    "        self.DirectInit = self.XorIn\n",
+    "        self.NonDirectInit = self.__get_nondirect_init(self.XorIn)\n",
+    "        if self.Width < 8:\n",
+    "            self.CrcShift = 8 - self.Width\n",
+    "        else:\n",
+    "            self.CrcShift = 0\n",
+    "\n",
+    "    def __get_nondirect_init(self, init):\n",
+    "        \"\"\"\n",
+    "        return the non-direct init if the direct algorithm has been selected.\n",
+    "        \"\"\"\n",
+    "        crc = init\n",
+    "        for i in range(self.Width):\n",
+    "            bit = crc & 0x01\n",
+    "            if bit:\n",
+    "                crc ^= self.Poly\n",
+    "            crc >>= 1\n",
+    "            if bit:\n",
+    "                crc |= self.MSB_Mask\n",
+    "        return crc & self.Mask\n",
+    "\n",
+    "\n",
+    "    def bit_by_bit(self, in_data):\n",
+    "        \"\"\"\n",
+    "        Classic simple and slow CRC implementation.  This function iterates bit\n",
+    "        by bit over the augmented input message and returns the calculated CRC\n",
+    "        value at the end.\n",
+    "        \"\"\"\n",
+    "        # If the input data is a string, convert to bytes.\n",
+    "        if isinstance(in_data, str):\n",
+    "            in_data = [ord(c) for c in in_data]\n",
+    "\n",
+    "        register = self.NonDirectInit\n",
+    "        for octet in in_data:\n",
+    "            for i in range(8):\n",
+    "                topbit = register & self.MSB_Mask\n",
+    "                register = ((register << 1) & self.Mask) | ((octet >> (7 - i)) & 0x01)\n",
+    "                if topbit:\n",
+    "                    register ^= self.Poly\n",
+    "\n",
+    "        for i in range(self.Width):\n",
+    "            topbit = register & self.MSB_Mask\n",
+    "            register = ((register << 1) & self.Mask)\n",
+    "            if topbit:\n",
+    "                register ^= self.Poly\n",
+    "\n",
+    "        return register ^ self.XorOut\n",
+    "    \n",
+    "bl_crc = Crc(width = 16, poly=0x1021)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now we can easily get the CRC for our message by calling `bl_crc.bit_by_bit(message)`. "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Communicating with the Bootloader"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "With that done, we can start communicating with the bootloader. Recall that the bootloader expects:\n",
+    "* To start with `0x00`\n",
+    "* A 16 byte encrypted message (4 bytes signature + 12 bytes data)\n",
+    "* CRC16\n",
+    "\n",
+    "We don't really care what the 16 byte message is (just that each is different so that we get a variety of hamming weights), so we'll use the same text/key module from earlier attacks.\n",
+    "\n",
+    "We can now run the following block, and we should get `0xA4` back. You may need to run this block a few times to get the right response back."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic\n",
+    "import time\n",
+    "message = [0x00]\n",
+    "ktp = AcqKeyTextPattern_Basic(target=target)\n",
+    "\n",
+    "# clear serial buffer\n",
+    "num_char = target.ser.inWaiting()\n",
+    "print(target.ser.read(num_char))\n",
+    "\n",
+    "key, text = ktp.newPair() #don't care about key here\n",
+    "message.extend(text)\n",
+    "\n",
+    "crc = bl_crc.bit_by_bit(text)\n",
+    "\n",
+    "message.append(crc >> 8)\n",
+    "message.append(crc & 0xFF)\n",
+    "\n",
+    "target.ser.write(message)\n",
+    "time.sleep(0.1)\n",
+    "\n",
+    "num_char = target.ser.inWaiting()\n",
+    "response = target.ser.read(num_char)\n",
+    "print(\"Response: {:02X}\".format(ord(response[0])))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+<<<<<<< HEAD
+   "metadata": {
+    "hidden": true
+   },
+=======
+   "metadata": {},
+>>>>>>> training
+   "source": [
+    "### Capturing Traces"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "With that out of the way, we can proceed to capturing our traces. The normal 5000 traces we capture isn't long enough to get the rounds we care about, so we'll need to increase it (11000 should be fine):"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "scope.adc.samples = 11000"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We'll be working with Analyzer, so we'll need to use a ChipWhisperer project to store our traces and text:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "project = cw.createProject(\"projects/Tutorial A5\", overwrite=True)\n",
+    "tc = project.getTraceFormat()\n",
+    "ktp = AcqKeyTextPattern_Basic(target=target)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Below you'll find our capture loop. This will be pretty similar to Tutorial B5, but we've added our communication code. We also check the response and just skip the data we get if it isn't correct."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#Capture Traces\n",
+    "from tqdm import tqdm\n",
+    "from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic\n",
+    "import numpy as np\n",
+    "import time\n",
+    "keys = []\n",
+    "N = 100  # Number of traces\n",
+    "target.init()\n",
+    "for i in tqdm(range(N), desc='Capturing traces'):\n",
+    "    message = [0x00]\n",
+    "    \n",
+    "    num_char = target.ser.inWaiting()\n",
+    "    target.ser.read(num_char)\n",
+    "    \n",
+    "    key, text = ktp.newPair()  # manual creation of a key, text pair can be substituted here\n",
+    "    keys.append(key)\n",
+    "    \n",
+    "    message.extend(text)\n",
+    "    \n",
+    "    crc = bl_crc.bit_by_bit(text)\n",
+    "    message.append(crc >> 8)\n",
+    "    message.append(crc & 0xFF)\n",
+    "\n",
+    "    # run aux stuff that should run before the scope arms here\n",
+    "\n",
+    "    scope.arm()\n",
+    "\n",
+    "    # run aux stuff that should run after the scope arms here\n",
+    "\n",
+    "    target.ser.write(message)\n",
+    "    timeout = 50\n",
+    "    # wait for target to finish\n",
+    "    while target.isDone() is False and timeout:\n",
+    "        timeout -= 1\n",
+    "        time.sleep(0.01)\n",
+    "\n",
+    "    try:\n",
+    "        ret = scope.capture()\n",
+    "        if ret:\n",
+    "            print('Timeout happened during acquisition')\n",
+    "    except IOError as e:\n",
+    "        print('IOError: %s' % str(e))\n",
+    "\n",
+    "    # run aux stuff that should happen after trace here\n",
+    "    num_char = target.ser.inWaiting()\n",
+    "    response = target.ser.read(num_char)\n",
+    "    if ord(response[0]) != 0xA4:\n",
+    "        # Bad response, just skip\n",
+    "        print(\"Bad response: {:02X}\".format(ord(response[0])))\n",
+    "        continue\n",
+    "    \n",
+    "    tc.addTrace(scope.getLastTrace(), text, \"\", key)\n",
+    "    \n",
+    "tc._isloaded = True\n",
+    "project.traceManager().appendSegment(tc)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+<<<<<<< HEAD
+=======
+    "With that, we're done with capturing traces! We can now disconnect from the hardware:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "scope.dis()\n",
+    "target.dis()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+>>>>>>> training
+    "## Analysis"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now that we have our traces, we can go ahead and perform the attack. As described in the background theory, we'll have to do two attacks - one to get the 14th round key, and another (using the first result) to get the 13th round key. Then, we'll do some post-processing to finally get the 256 bit encryption key."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+<<<<<<< HEAD
+   "metadata": {
+    "hidden": true
+   },
+=======
+   "metadata": {},
+>>>>>>> training
+   "source": [
+    "### 14th Round Key"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can attack the 14th round key with a standard, no-frills CPA attack (using the inverse sbox, since it's a decryption that we're breaking):"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import chipwhisperer as cw\n",
+    "from chipwhisperer.analyzer.attacks.cpa import CPA\n",
+    "from chipwhisperer.analyzer.attacks.cpa_algorithms.progressive import CPAProgressive\n",
+    "from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit, InvSBox_output\n",
+    "\n",
+    "tm = project.traceManager()\n",
+    "\n",
+    "attack = CPA()\n",
+    "leak_model = AES128_8bit(InvSBox_output)\n",
+    "attack.setAnalysisAlgorithm(CPAProgressive, leak_model)\n",
+    "attack.setTraceSource(tm)\n",
+    "attack.setTraceStart(0)\n",
+    "attack.setTracesPerAttack(tm.numTraces())\n",
+    "attack.setIterations(1)\n",
+    "attack.setReportingInterval(10)\n",
+    "attack.setTargetSubkeys([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "With the setup done, we can actually preform the attack. 11000 samples is a rather large amount to chew through, so if you want a faster attack you can use a smaller range in `attack.setPointRange()`. `(2900, 4200)` will work for XMEGA, while `(1400, 2600)` will work for the STM32F3 (CWLite ARM)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "key = [0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb]\n",
+    "\n",
+    "import pandas as pd\n",
+    "def format_stat(stat):\n",
+    "    return str(\"{:02X}<br>{:.3f}\".format(stat[0], stat[2]))\n",
+    "\n",
+    "def color_corr_key(row):\n",
+    "    global key\n",
+    "    ret = [\"\"] * 16\n",
+    "    for i,bnum in enumerate(row):\n",
+    "        if bnum[0] == key[i]:\n",
+    "            ret[i] = \"color: red\"\n",
+    "        else:\n",
+    "            ret[i] = \"\"\n",
+    "    return ret\n",
+    "\n",
+    "from IPython.display import clear_output\n",
+    "import numpy as np\n",
+    "        \n",
+    "def stats_callback():\n",
+    "    attack_results = attack.getStatistics()\n",
+    "    attack_results.setKnownkey(key)\n",
+    "    stat_data = attack_results.findMaximums()\n",
+    "    df = pd.DataFrame(stat_data).transpose()\n",
+    "    clear_output(wait=True)\n",
+    "    display(df.head().style.format(format_stat).apply(color_corr_key,axis=1))\n",
+    "    \n",
+    "attack.setPointRange((0, -1))\n",
+    "attack_results = attack.processTracesNoGUI(stats_callback)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Below you'll find the key that we should recover from this attack. You may want to check what we actually get against this key to make sure the attack is working."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "key = [0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb]\n",
+    "#key = keys[0]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "rec_key = []\n",
+    "for bnum in stats.findMaximums():\n",
+    "    print(\"Best Guess = 0x{:02X} Corr = {}\".format(bnum[0][0], bnum[0][2]))\n",
+    "    rec_key.append(bnum[0][0])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+<<<<<<< HEAD
+   "metadata": {
+    "hidden": true
+   },
+=======
+   "metadata": {},
+>>>>>>> training
+   "source": [
+    "### 13th Round Key"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Analyzer doesn't have a leakage model for the 13th round key built in, so we'll need to create our own. An example class is shown below along with the beginning of the setup. **NOTE: You'll need to update `calc_round_key` with the key you found in the last step**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import chipwhisperer as cw\n",
+    "from chipwhisperer.analyzer.attacks.cpa import CPA\n",
+    "from chipwhisperer.analyzer.attacks.cpa_algorithms.progressive import CPAProgressive\n",
+    "from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit, AESLeakageHelper\n",
+    "from chipwhisperer.analyzer.preprocessing.resync_sad import ResyncSAD\n",
+    "\n",
+    "class AES256_Round13_Model(AESLeakageHelper):\n",
+    "    def leakage(self, pt, ct, guess, bnum):\n",
+    "        #You must put YOUR recovered 14th round key here - this example may not be accurate!\n",
+    "        calc_round_key = [0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb]\n",
+    "        xored = [calc_round_key[i] ^ pt[i] for i in range(0, 16)]\n",
+    "        block = xored\n",
+    "        block = self.inv_shiftrows(block)\n",
+    "        block = self.inv_subbytes(block)\n",
+    "        block = self.inv_mixcolumns(block)\n",
+    "        block = self.inv_shiftrows(block)\n",
+    "        result = block\n",
+    "        return self.inv_sbox((result[bnum] ^ guess[bnum]))\n",
+    "    \n",
+    "attack = CPA()\n",
+    "leak_model = AES128_8bit(AES256_Round13_Model)\n",
+    "attack.setAnalysisAlgorithm(CPAProgressive, leak_model)\n",
+    "attack.setTraceSource(tm)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true
+   },
+   "source": [
+    "#### Resyncing Traces (XMEGA Only)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "The traces for the XMEGA version of the firmware become desynced around sample 7000. This is due to a non-constant AES implementation: the code does not always take the same amount of time to run for every input. (It's actually possible to do a timing attack on this AES implementation! We'll stick with our CPA attack for now.)\n",
+    "\n",
+    "While this does open up a timing attack, it actually makes our AES attack a little harder, since we'll have to resync the traces. Luckily, this can be done pretty easily by using the ResyncSAD preprocessing module:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "hidden": true
+   },
+   "outputs": [],
+   "source": [
+    "resync_traces = ResyncSAD(tm)\n",
+    "resync_traces.enabled = True\n",
+    "resync_traces.ref_trace = 0\n",
+    "resync_traces.target_window = (9100, 9300)\n",
+    "resync_traces.max_shift = 200\n",
+    "attack.setTraceSource(resync_traces)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Running the Attack"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Like in the 14th round attack, we can use a smaller range of points to make the attack faster. `(8000,10990)` works well for the XMEGA, while `(6500, 8500)` works well for the STM32F3."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "attack.setTraceStart(0)\n",
+    "attack.setTracesPerAttack(tm.numTraces())\n",
+    "attack.setIterations(1)\n",
+    "attack.setReportingInterval(10)\n",
+    "attack.setTargetSubkeys([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])\n",
+    "attack.setPointRange((0,-1))\n",
+    "stats = attack.processTracesNoGUI()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "You can run the block below and the correct key should be printed out:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "rec_key2 = []\n",
+    "for bnum in stats.findMaximums():\n",
+    "    print(\"Best Guess = 0x{:02X}, Corr = {}\".format(bnum[0][0], bnum[0][2]))\n",
+    "    rec_key2.append(bnum[0][0])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This, however, isn't actually the 13th round key. To get the real 13th round key, we'll need to run what we've recovered through a `shiftrows()` and `mixcolumns()` operation:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from chipwhisperer.analyzer.attacks.models.aes.funcs import shiftrows,mixcolumns\n",
+    "    \n",
+    "real_key2 = shiftrows(rec_key2)\n",
+    "real_key2 = mixcolumns(real_key2)\n",
+    "\n",
+    "print(\"Recovered:\", end=\"\")\n",
+    "for subkey in real_key2:\n",
+    "    print(\" {:02X}\".format(subkey), end=\"\")\n",
+    "print(\"\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We now have everything we need to recover the full key! We'll start by combining the 13th and 14th round keys:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "rec_key_comb = real_key2.copy()\n",
+    "rec_key_comb.extend(rec_key)\n",
+    "\n",
+    "print(\"Key:\", end=\"\")\n",
+    "for subkey in rec_key_comb:\n",
+    "    print(\" {:02X}\".format(subkey), end=\"\")\n",
+    "print(\"\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "and then we can use the `AES128_8bit` leakage model to recover the first two rounds:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "result = leak_model.keyScheduleRounds(rec_key_comb, 13, 0)\n",
+    "result.extend(leak_model.keyScheduleRounds(rec_key_comb, 13, 1))\n",
+    "print(\"Key:\", end=\"\")\n",
+    "for subkey in result:\n",
+    "    print(\" {:02X}\".format(subkey), end=\"\")\n",
+    "print(\"\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "You should see a 32 byte key printed out. Open `supersecret.h`, confirm that we have the right key, and celebrate! "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+<<<<<<< HEAD
+   "metadata": {
+    "hidden": true
+   },
+=======
+   "metadata": {},
+>>>>>>> training
+   "source": [
+    "## Recovering the IV"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now that we have the encryption key, we can proceed onto an attack of the next secret value: the IV.\n",
+    "\n",
+    "Here, we have the luxury of seeing the source code of the bootloader. This is generally not something we would have access to in the real world, so we'll try not to use it to cheat. (Peeking at `supersecret.h` counts as cheating.) Instead, we'll use the source to help us identify important parts of the power traces."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true
+   },
+   "source": [
+    "### Bootloader Source Code"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "Inside the bootloader's main loop, it does three tasks that we're interested in:\n",
+    "\n",
+    "* it decrypts the incoming ciphertext;\n",
+    "* it applies the IV to the decryption's result; and\n",
+    "* it checks for the signature in the resulting plaintext.\n",
+    "\n",
+    "This snippet from `bootloader.c` shows all three of the tasks:\n",
+    "\n",
+    "```C\n",
+    "// Continue with decryption\n",
+    "trigger_high();                \n",
+    "aes256_decrypt_ecb(&ctx, tmp32);\n",
+    "trigger_low();\n",
+    "             \n",
+    "// Apply IV (first 16 bytes)\n",
+    "for (i = 0; i < 16; i++){\n",
+    "    tmp32[i] ^= iv[i];\n",
+    "}\n",
+    "\n",
+    "//Save IV for next time from original ciphertext                \n",
+    "for (i = 0; i < 16; i++){\n",
+    "    iv[i] = tmp32[i+16];\n",
+    "}\n",
+    "\n",
+    "// Tell the user that the CRC check was okay\n",
+    "putch(COMM_OK);\n",
+    "putch(COMM_OK);\n",
+    "\n",
+    "//Check the signature\n",
+    "if ((tmp32[0] == SIGNATURE1) &&\n",
+    "   (tmp32[1] == SIGNATURE2) &&\n",
+    "   (tmp32[2] == SIGNATURE3) &&\n",
+    "   (tmp32[3] == SIGNATURE4)){\n",
+    "   \n",
+    "   // Delay to emulate a write to flash memory\n",
+    "   _delay_ms(1);\n",
+    "}   \n",
+    "```\n",
+    "\n",
+    "This gives us a pretty good idea of how the microcontroller is going to do its job, but if you'd like to go further, you can open the `.lss` file for the binary that was built. This is called a listing file and it lets you see the assembly that the C was compiled and linked to."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+<<<<<<< HEAD
+    "hidden": true
+=======
+    "heading_collapsed": true
+>>>>>>> training
+   },
+   "source": [
+    "### Power Traces"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "As you can see from both files, after the decryption process, the bootloader executes a few distinct pieces of code:\n",
+    "\n",
+    "* To apply the IV, it uses an XOR operation;\n",
+    "* To store the new IV, it copies the previous ciphertext into the IV array;\n",
+    "* It sends two bytes on the serial port;\n",
+    "* It checks the bytes of the signature one by one.\n",
+    "\n",
+    "We should be able to recognize these four parts of the code in the power traces. Let's modify our capture routine to find them:\n",
+    "\n",
+    "1. We're looking for the original IV, but it's overwritten after each successful decryption. This means we'll have to reset the target before each trace we capture\n",
+    "1. We'd like to skip over all of the decryption process. Recall that the trigger pin is set low after the decryption finishes. This means we can skip over the AES-256 function by triggering on a falling edge instead\n",
+    "1. Depending on the target, we may have to flush the target's serial lines by sending it a bunch of invalid data and looking for a bad CRC return. This slows down the capture process by a lot, so you may want to try without doing this first.\n",
+    "1. We won't need as many samples, so we can reduce how many we capture. 3000 should be sufficient for most targets.\n",
+    "\n",
+    "Let's start by reducing our samples and making a function to reset our target (depending on your target, you may need to change the reset pin):"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "hidden": true
+   },
+   "outputs": [],
+   "source": [
+    "import time\n",
+    "scope.adc.samples = 3000\n",
+    "def reset_target(scope):\n",
+    "    scope.io.nrst = 'low'\n",
+    "    #scope.io.pdic = 'low'\n",
+    "    time.sleep(0.05)\n",
+    "    scope.io.nrst = 'high'\n",
+    "    #scope.io.pdic = 'high'"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "We can trigger on a falling edge by changing `scope.adc.basic_mode` to `\"falling_edge\"`:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "hidden": true
+   },
+   "outputs": [],
+   "source": [
+    "scope.adc.basic_mode = \"falling_edge\""
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "We can flush the serial line by sending an invalid message, then checking for a bad CRC return value (`0xA1`). Let's make sure our changes work by getting a trace:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "hidden": true
+   },
+   "outputs": [],
+   "source": [
+    "from bokeh.plotting import figure, show\n",
+    "from bokeh.io import output_notebook\n",
+    "from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic\n",
+    "reset_target(scope)\n",
+    "message = [0x00]\n",
+    "\n",
+    "\n",
+    "num_char = target.ser.inWaiting()\n",
+    "target.ser.read(num_char)\n",
+    "\n",
+    "key, text = ktp.newPair()  # manual creation of a key, text pair can be substituted here\n",
+    "\n",
+    "message.extend(text)\n",
+    "\n",
+    "crc = bl_crc.bit_by_bit(text)\n",
+    "message.append(crc >> 8)\n",
+    "message.append(crc & 0xFF)\n",
+    "\n",
+    "#flush target's serial\n",
+    "okay = 0\n",
+    "while not okay:\n",
+    "    target.ser.write(\"\\0xxxxxxxxxxxxxxxxxx\")\n",
+    "    time.sleep(0.005)\n",
+    "    num_char = target.ser.inWaiting()\n",
+    "    response = target.ser.read(num_char)\n",
+    "    if response:\n",
+    "        if ord(response[0]) == 0xA1:\n",
+    "            okay = 1\n",
+    "\n",
+    "scope.arm()\n",
+    "\n",
+    "target.ser.write(message)\n",
+    "timeout = 50\n",
+    "# wait for target to finish\n",
+    "while target.isDone() is False and timeout:\n",
+    "    timeout -= 1\n",
+    "    time.sleep(0.01)\n",
+    "\n",
+    "try:\n",
+    "    ret = scope.capture()\n",
+    "    if ret:\n",
+    "        print('Timeout happened during acquisition')\n",
+    "except IOError as e:\n",
+    "    print('IOError: %s' % str(e))\n",
+    "\n",
+    "# run aux stuff that should happen after trace here\n",
+    "num_char = target.ser.inWaiting()\n",
+    "response = target.ser.read(num_char)\n",
+    "if ord(response[0]) != 0xA4:\n",
+    "    # Bad response, just skip\n",
+    "    print(\"Bad response: {:02X}\".format(ord(response[0])))\n",
+    "\n",
+    "\n",
+    "trace = scope.getLastTrace()\n",
+    "\n",
+    "\n",
+    "output_notebook()\n",
+    "p = figure()\n",
+    "\n",
+    "xrange = range(len(trace))\n",
+    "p.line(xrange, trace, line_color=\"red\")\n",
+    "show(p)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "You should see 5 different sections:\n",
+    "\n",
+    "* 16 XORs\n",
+    "* 16 register loads (this is the new IV being copied over)\n",
+    "* Some serial communication\n",
+    "* The signature check\n",
+    "* The serial line going idle\n",
+    "\n",
+    "Different targets have different power traces (for example, on Arm the XORs and register loads are almost identical), but hopefully you can pick out where each section is. For example, on XMEGA:\n",
+    "\n",
+    "![XMEGA_Bonus_Trace](https://wiki.newae.com/images/f/f6/Tutorial-A5-Bonus-Trace-Notes.PNG)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "With all of these things clearly visible, we have a pretty good idea of how to attack the IV and the signature. We should be able to look at each of the XOR spikes to find each of the IV bytes - each byte is processed on its own. Then, the signature check uses a short-circuiting comparison: as soon as it finds a byte in error, it stops checking the remaining bytes. This type of check is susceptible to a timing attack."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "With those things done, we can move onto our capture loop. It's pretty similar to our last one. We're done with Analyzer, so we can store our traces in Python lists (we'll convert to numpy arrays later for easy analysis)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "hidden": true,
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "from tqdm import tqdm\n",
+    "from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic\n",
+    "import numpy as np\n",
+    "import time\n",
+    "traces = []\n",
+    "keys = []\n",
+    "plaintexts = []\n",
+    "N = 1000  # Number of traces\n",
+    "target.init()\n",
+    "for i in tqdm(range(N), desc='Capturing traces'):\n",
+    "    reset_target(scope)\n",
+    "    message = [0x00]\n",
+    "    \n",
+    "\n",
+    "    num_char = target.ser.inWaiting()\n",
+    "    target.ser.read(num_char)\n",
+    "    \n",
+    "    key, text = ktp.newPair()  # manual creation of a key, text pair can be substituted here\n",
+    "    keys.append(key)\n",
+    "    plaintexts.append(text)\n",
+    "    \n",
+    "    message.extend(text)\n",
+    "    \n",
+    "    crc = bl_crc.bit_by_bit(text)\n",
+    "    message.append(crc >> 8)\n",
+    "    message.append(crc & 0xFF)\n",
+    "\n",
+    "    # run aux stuff that should run before the scope arms here\n",
+    "    \n",
+    "    #flush target's serial\n",
+    "    okay = 0\n",
+    "    while not okay:\n",
+    "        target.ser.write(\"\\0xxxxxxxxxxxxxxxxxx\")\n",
+    "        time.sleep(0.005)\n",
+    "        num_char = target.ser.inWaiting()\n",
+    "        response = target.ser.read(num_char)\n",
+    "        if response:\n",
+    "            if ord(response[0]) == 0xA1:\n",
+    "                okay = 1\n",
+    "    scope.arm()\n",
+    "\n",
+    "    # run aux stuff that should run after the scope arms here\n",
+    "\n",
+    "    target.ser.write(message)\n",
+    "    timeout = 50\n",
+    "    # wait for target to finish\n",
+    "    while target.isDone() is False and timeout:\n",
+    "        timeout -= 1\n",
+    "        time.sleep(0.01)\n",
+    "\n",
+    "    try:\n",
+    "        ret = scope.capture()\n",
+    "        if ret:\n",
+    "            print('Timeout happened during acquisition')\n",
+    "            continue\n",
+    "    except IOError as e:\n",
+    "        print('IOError: %s' % str(e))\n",
+    "\n",
+    "    # run aux stuff that should happen after trace here\n",
+    "    num_char = target.ser.inWaiting()\n",
+    "    response = target.ser.read(num_char)\n",
+    "    if ord(response[0]) != 0xA4:\n",
+    "        # Bad response, just skip\n",
+    "        print(\"Bad response: {:02X}\".format(ord(response[0])))\n",
+    "        continue\n",
+    "    \n",
+    "    traces.append(scope.getLastTrace())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Analysis"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true
+   },
+   "source": [
+    "#### Attack Theory"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "The bootloader applies the IV to the AES decryption result by calculating\n",
+    "\n",
+    "\n",
+    "$\\text{PT} = \\text{DR} \\oplus \\text{IV}$\n",
+    "\n",
+    "where DR is the decrypted ciphertext, IV is the secret vector, and PT is the plaintext that the bootloader will use later. We only have access to one of these: since we know the AES-256 key, we can calculate DR. This exclusive or should be visible in the power traces\n",
+    "\n",
+    "This is enough information for us to attack a single bit of the IV. Suppose we only wanted to get the first bit (number 0) of the IV. We could do the following:\n",
+    "\n",
+    "* Split all of the traces into two groups: those with DR[0] = 0, and those with DR[0] = 1.\n",
+    "* Calculate the average trace for both groups.\n",
+    "* Find the difference between the two averages. It should include a noticeable spike during the first iteration of the loop.\n",
+    "* Look at the direction of the spike to decide if the IV bit is 0 `(PT[0] = DR[0])` or if the IV bit is 1 `(PT[0] = ~DR[0])`.\n",
+    "\n",
+    "This is effectively a DPA attack on a single bit of the IV. We can repeat this attack 128 times to recover the entire IV."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### A 1-Bit Attack"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Recall that we're looking for the xor operation between the last decrypted block, so we'll need to decrypt it up to that point. The PyCrypto includes an AES decyprtion routine, so we'll be using that. We'll start by importing the necessary modules and converting our traces/plaintext to numpy arrays:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from Crypto.Cipher import AES\n",
+    "import numpy as np\n",
+    "\n",
+    "trace_array = np.asarray(traces)  # if you prefer to work with numpy array for number crunching\n",
+    "textin_array = np.asarray(plaintexts)\n",
+    "\n",
+    "numTraces = len(trace_array)\n",
+    "traceLen = len(trace_array[0])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Next we'll do the AES256 decryption. If you got a different key in the earlier part, you'll need to change `knownkey`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "knownkey = [0x94, 0x28, 0x5D, 0x4D, 0x6D, 0xCF, 0xEC, 0x08, 0xD8, 0xAC, 0xDD, 0xF6, 0xBE, 0x25, 0xA4, 0x99,\n",
+    "            0xC4, 0xD9, 0xD0, 0x1E, 0xC3, 0x40, 0x7E, 0xD7, 0xD5, 0x28, 0xD4, 0x09, 0xE9, 0xF0, 0x88, 0xA1]\n",
+    "\n",
+    "knownkey = bytes(knownkey)\n",
+    "dr = []\n",
+    "aes = AES.new(knownkey, AES.MODE_ECB)\n",
+    "for i in range(numTraces):\n",
+    "    ct = bytes(textin_array[i])\n",
+    "    pt = aes.decrypt(ct)\n",
+    "    d = [bytearray(pt)[i] for i in range(16)]\n",
+    "    dr.append(d)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now, let's split the traces into two groups by comparing bit 0 of the DR:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "groupedTraces = [[] for _ in range(2)]\n",
+    "for i in range(numTraces):\n",
+    "    bit0 = dr[i][0] & 0x01\n",
+    "    groupedTraces[bit0].append(trace_array[i])\n",
+    "print(len(groupedTraces[0]))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "If you have 1000 traces, you should expect this to print a number around 500 - roughly half of the traces should fit into each group. Now, NumPy's average function lets us easily calculate the average at each point:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Find averages and differences\n",
+    "means = []\n",
+    "for i in range(2):\n",
+    "    means.append(np.average(groupedTraces[i], axis=0))\n",
+    "diff = means[1] - means[0]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Finally, we can plot this difference to see if we can spot the IV:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Split traces into 2 groups\n",
+    "from bokeh.plotting import figure, show\n",
+    "from bokeh.io import output_notebook\n",
+    "\n",
+    "output_notebook()\n",
+    "p = figure()\n",
+    "\n",
+    "xrange = range(len(diff))\n",
+    "xrange2 = range(len(traces[0]))\n",
+    "p.line(xrange, diff, line_color=\"red\")\n",
+    "#p.line(xrange2, traces[0], line_color='blue')\n",
+    "show(p)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "You should see a few visible spikes. We're looking for the XOR for byte 0 here, so any later spikes won't be the XOR. Use bokeh's zoom functionality to pinpoint all the largest spikes and record their sample location. You'll probably need to record a few: only one is the correct spike, but we won't be able to tell until we repeat this with other bytes. For example, you might have spikes at 37, 41, and 45. Make sure you record all these values. These peaks won't all be above 0, so make sure you're looking at both positive and negative values.\n",
+    "\n",
+    "Next, we'll need to repeat this with a few more bytes. To make things easier, the necessary code has been combined into the below block. Increment the `0` in `bit0 = dr[i][0] & 0x01` to other numbers to attack other bytes. Attacking bytes 0 through 3 should be sufficient."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "groupedTraces = [[] for _ in range(2)]\n",
+    "for i in range(numTraces):\n",
+    "    bit0 = dr[i][0] & 0x01\n",
+    "    groupedTraces[bit0].append(trace_array[i])\n",
+    "print(len(groupedTraces[0]))\n",
+    "\n",
+    "# Find averages and differences\n",
+    "means = []\n",
+    "for i in range(2):\n",
+    "    means.append(np.average(groupedTraces[i], axis=0))\n",
+    "diff = means[1] - means[0]\n",
+    "\n",
+    "# Split traces into 2 groups\n",
+    "from bokeh.plotting import figure, show\n",
+    "from bokeh.io import output_notebook\n",
+    "\n",
+    "output_notebook()\n",
+    "p = figure()\n",
+    "\n",
+    "xrange = range(len(diff))\n",
+    "xrange2 = range(len(traces[0]))\n",
+    "p.line(xrange, diff, line_color=\"red\")\n",
+    "show(p)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now that you have some peak data, you'll want to use this to find the time shift between XORs. This time shift should be constant between samples and needs to work for all samples (each run through the loop is the same, so it makes sense that the time shift should be constant). For example, you might have:\n",
+    "\n",
+    "```\n",
+    "0th byte @ 37, 41\n",
+    "1st byte @ 77, 81\n",
+    "2nd byte @ 105, 117, 121\n",
+    "3rd byte @ 141, 157, 161\n",
+    "4th byte @ 197, 201\n",
+    "```\n",
+    "\n",
+    "With this data, peaks at 41, 81, 121, 161, and 201 have a constant time shift of 40. This means the location of the XORs is `41 + 40 * byte#`"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true
+   },
+   "source": [
+    "#### The Other 127"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "The best way to attack the IV would be to repeat the 1-bit conceptual attack for each of the bits. Try to do this yourself! (Really!) If you're stuck, here are a few hints to get you going:\n",
+    "\n",
+    "One easy way of looping through the bits is by using two nested loops, like this:\n",
+    "\n",
+    "```python\n",
+    "for byte in range(16):\n",
+    "    for bit in range(8):\n",
+    "        # Attack bit number (byte*8 + bit)\n",
+    "```\n",
+    "\n",
+    "The sample that you'll want to look at will depend on which byte you're attacking. We had success when we used `location = 51 + byte*60`, but your mileage will vary.\n",
+    "\n",
+    "The bitshift operator and the bitwise-AND operator are useful for getting at a single bit:\n",
+    "\n",
+    "```python\n",
+    "# This will either result in a 0 or a 1\n",
+    "checkIfBitSet = (byteToCheck >> bit) & 0x01\n",
+    "```\n",
+    "\n",
+    "If you're really, really stuck, the end of this tutorial has a working script. After finding the IV, check `supersecret.h` and verify that your attack was successful."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true
+   },
+   "source": [
+    "## Attacking the Signature"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "The last thing we can do with this bootloader is attack the signature. This final section will show how one byte of the signature could be recovered. If you want more of this kind of analysis, a more complete timing attack is shown in Tutorial B3-1 Timing Analysis with Power for Password Bypass."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true,
+    "hidden": true
+   },
+   "source": [
+    "### Attack Theory"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "Recall from earlier that the signature check in C looks like:\n",
+    "\n",
+    "```C\n",
+    "if ((tmp32[0] == SIGNATURE1) &&\n",
+    "    (tmp32[1] == SIGNATURE2) &&\n",
+    "    (tmp32[2] == SIGNATURE3) &&\n",
+    "    (tmp32[3] == SIGNATURE4)){\n",
+    "```\n",
+    "\n",
+    "In C, boolean expressions support short-circuiting. When checking multiple conditions, the program will stop evaluating these booleans as soon as it can tell what the final value will be. In this case, unless all four of the equality checks are true, the result will be false. Thus, as soon as the program finds a single false condition, it's done.\n",
+    "\n",
+    "Open the listing file for your binary (`.lss`), find the signature check, and confirm that this is happening. For example, on the STM32F3, the assembly looks like this:\n",
+    "\n",
+    "```C\n",
+    "                //Check the signature\n",
+    "                if ((tmp32[0] == SIGNATURE1) &&\n",
+    " 8000338:\tf89d 3018 \tldrb.w\tr3, [sp, #24]\n",
+    " 800033c:\t2b00      \tcmp\tr3, #0\n",
+    " 800033e:\td1c2      \tbne.n\t80002c6 <main+0x52>\n",
+    " 8000340:\tf89d 2019 \tldrb.w\tr2, [sp, #25]\n",
+    " 8000344:\t2aeb      \tcmp\tr2, #235\t; 0xeb\n",
+    " 8000346:\td1be      \tbne.n\t80002c6 <main+0x52>\n",
+    "                   (tmp32[1] == SIGNATURE2) &&\n",
+    " 8000348:\tf89d 201a \tldrb.w\tr2, [sp, #26]\n",
+    " 800034c:\t2a02      \tcmp\tr2, #2\n",
+    " 800034e:\td1ba      \tbne.n\t80002c6 <main+0x52>\n",
+    "                   (tmp32[2] == SIGNATURE3) &&\n",
+    " 8000350:\tf89d 201b \tldrb.w\tr2, [sp, #27]\n",
+    " 8000354:\t2a1d      \tcmp\tr2, #29\n",
+    " 8000356:\td1b6      \tbne.n\t80002c6 <main+0x52>\n",
+    "                   (tmp32[3] == SIGNATURE4)){\n",
+    "```\n",
+    "\n",
+    "This assembly code confirms the short-circuiting operation. Each of the four assembly blocks include a comparison and a conditional branch. All four of the conditional branches (`bne.n`) return the program to the same location (the start of the `while(1)` loop). All four branches must fail to get into the body of the if block.\n",
+    "\n",
+    "The short-circuiting conditions are perfect for us. We can use our power traces to watch how long it takes for the signature check to fail. If the check takes longer than usual, then we know that the first byte of our signature was right."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true,
+    "hidden": true
+   },
+   "source": [
+    "### Power Traces"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "Our capture loop will be pretty similar to the one we used to break the IV, but now that we know the secret values of the encryption process we can make some improvements by encrypting the text that we send. This has two important advantages:\n",
+    "\n",
+    "1. We can control the signature. We could reuse the traces we took during the IV attack, but this way ensures that we hit each possible value once. It also simplifies the analysis, since we don't have to worry about decrypting the text we sent.\n",
+    "1. We no longer have to reset after each attempt, since we know what the next IV is going to be (we do need to reset at the beginning to make sure we're on the same starting IV as the target). This speeds up the capture process considerably. \n",
+    "\n",
+    "To perform the AES256 CBC encryption, there's a few steps we need to take:\n",
+    "\n",
+    "1. XOR the IV with the text we want to send\n",
+    "1. Encrypt this new text\n",
+    "1. Set this cipher text as the new IV\n",
+    "\n",
+    "We can use PyCrypto again to make the encryption process easy and the other two steps are simple operations. We'll run our loop 256 times (one for each possible byte value) and assign that value to the byte we want to check. We're not quite sure where the check is happening, so we'll be safe and capture 24000 traces. Everthing else should look familiar from earlier parts of the tutorial:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "hidden": true
+   },
+   "outputs": [],
+   "source": [
+    "from tqdm import tqdm\n",
+    "import numpy as np\n",
+    "from Crypto.Cipher import AES\n",
+    "import time\n",
+    "\n",
+    "traces = []\n",
+    "keys = []\n",
+    "plaintexts = []\n",
+    "\n",
+    "iv = [0xC1, 0x25, 0x68, 0xDF, 0xE7, 0xD3, 0x19, 0xDA, 0x10, 0xE2, 0x41, 0x71, 0x33, 0xB0, 0xEB, 0x3C]\n",
+    "\n",
+    "knownkey = [0x94, 0x28, 0x5D, 0x4D, 0x6D, 0xCF, 0xEC, 0x08, 0xD8, 0xAC, 0xDD, 0xF6, 0xBE, 0x25, 0xA4, 0x99,\n",
+    "            0xC4, 0xD9, 0xD0, 0x1E, 0xC3, 0x40, 0x7E, 0xD7, 0xD5, 0x28, 0xD4, 0x09, 0xE9, 0xF0, 0x88, 0xA1]\n",
+    "\n",
+    "knownkey = bytes(knownkey)\n",
+    "aes = AES.new(knownkey, AES.MODE_ECB)\n",
+    "N = 256 # Number of traces\n",
+    "\n",
+    "reset_target(scope)\n",
+    "okay=0\n",
+    "scope.adc.basic_mode = \"falling_edge\"\n",
+    "while not okay:\n",
+    "    target.ser.write(\"\\0xxxxxxxxxxxxxxxxxx\")\n",
+    "    time.sleep(0.005)\n",
+    "    num_char = target.ser.inWaiting()\n",
+    "    response = target.ser.read(num_char)\n",
+    "    if response:\n",
+    "        if ord(response[0]) == 0xA1:\n",
+    "            okay = 1\n",
+    "\n",
+    "scope.adc.samples = 24000\n",
+    "scope.adc.offset = 0\n",
+    "target.init()\n",
+    "for byte in tqdm(range(N), desc='Attacking Signature Byte'):\n",
+    "    message = [0x00]\n",
+    "    text = [0] * 16\n",
+    "    \n",
+    "    # the 4 signature bytes\n",
+    "    text[0] = byte\n",
+    "    text[1] = 0\n",
+    "    text[2] = 0\n",
+    "    text[3] = 0\n",
+    "    \n",
+    "\n",
+    "    num_char = target.ser.inWaiting()\n",
+    "    target.ser.read(num_char)\n",
+    "    \n",
+    "    textcpy = [0] * 16\n",
+    "    textcpy[:] = text[:]\n",
+    "    plaintexts.append(textcpy)\n",
+    "    \n",
+    "    # Apply IV\n",
+    "    for i in range(len(iv)):\n",
+    "        text[i] ^= iv[i]\n",
+    "    \n",
+    "    # Encrypt text\n",
+    "    ct = aes.encrypt(bytes(text))\n",
+    "    \n",
+    "    message.extend(ct)\n",
+    "    \n",
+    "    # Use ct as new IV\n",
+    "    iv[:] = ct[:]\n",
+    "    \n",
+    "    crc = bl_crc.bit_by_bit(ct)\n",
+    "    message.append(crc >> 8)\n",
+    "    message.append(crc & 0xFF)\n",
+    "\n",
+    "    # run aux stuff that should run before the scope arms here\n",
+    "\n",
+    "    scope.arm()\n",
+    "\n",
+    "    # run aux stuff that should run after the scope arms here\n",
+    "\n",
+    "    target.ser.write(message)\n",
+    "    timeout = 50\n",
+    "    # wait for target to finish\n",
+    "    while target.isDone() is False and timeout:\n",
+    "        timeout -= 1\n",
+    "        time.sleep(0.01)\n",
+    "\n",
+    "    try:\n",
+    "        ret = scope.capture()\n",
+    "        if ret:\n",
+    "            print('Timeout happened during acquisition')\n",
+    "            continue\n",
+    "    except IOError as e:\n",
+    "        print('IOError: %s' % str(e))\n",
+    "\n",
+    "    # run aux stuff that should happen after trace here\n",
+    "    num_char = target.ser.inWaiting()\n",
+    "    response = target.ser.read(num_char)\n",
+    "    if ord(response[0]) != 0xA4:\n",
+    "        # Bad response, just skip\n",
+    "        print(\"Bad response: {:02X}\".format(ord(response[0])))\n",
+    "        continue\n",
+    "    \n",
+    "    traces.append(scope.getLastTrace())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true,
+    "hidden": true
+   },
+   "source": [
+    "### Analysis"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "Now that we've captured our traces, the actual analysis is pretty simple. We're looking for a single trace that looks very different from the rest. A simple way to find this is to compare all the traces to a reference trace. We'll use the average of all the traces as our reference:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "hidden": true
+   },
+   "outputs": [],
+   "source": [
+    "mean = np.average(traces, axis=0)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "That leaves us with comparing the traces. Let's start by plotting the difference between some of the traces and the mean:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "hidden": true
+   },
+   "outputs": [],
+   "source": [
+    "from bokeh.plotting import figure, show\n",
+    "from bokeh.io import output_notebook\n",
+    "\n",
+    "output_notebook()\n",
+    "p = figure()\n",
+    "colors = [\"red\", \"blue\", \"green\", \"yellow\"]\n",
+    "for i in range(0,10):\n",
+    "    p.line(range(len(traces[i])), traces[i]-mean, line_color=colors[i%4])\n",
+    "        \n",
+    "show(p)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "Depending on your target, you might have seen something like this:\n",
+    "\n",
+    "![](https://wiki.newae.com/images/2/25/Bokeh_plot_%285%29.png)\n",
+    "\n",
+    "Looks like we've found our trace! However, let's clean this up with some statistics. We can use the correlation coefficient to see which bytes are the furthest away from the average. We only want to take the correlation across where the plots differ, chose a subset of the plot where there's a large difference. In the case of the above picture, the difference starts at around 18k, and continues until the end. A range of 18000 to 20000 should work nicely:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "hidden": true
+   },
+   "outputs": [],
+   "source": [
+    "corr = []\n",
+    "for i in range(256):\n",
+    "    corr.append(np.corrcoef(mean[18000:20000], traces[i][18000:20000])[0, 1])\n",
+    "print(np.sort(corr))\n",
+    "print(np.argsort(corr))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "This output tells us two things:\n",
+    "\n",
+    "* The first list says that almost every trace looks very similar to the overall mean (98% correlated or higher). However, there's one trace that is totally different, with 68% correlation. This is probably our correct guess.\n",
+    "* The second list gives the signature guess that matches each of the above correlations. The first number in the list is 0x00, which is the correct signature!\n",
+    "\n",
+    "To finish this attack, change the capture loop to keep the first byte fixed and vary the second byte instead. Repeat this with the rest of the bytes and you should have the signature."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true
+   },
+   "source": [
+    "## Conclusion"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "We've now successfully recovered all of the secrets of the bootloader!"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "heading_collapsed": true
+   },
+   "source": [
+    "## Appendix A: IV Attack Script"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "hidden": true
+   },
+   "source": [
+    "Make sure you've run the IV analysis blocks before running this block."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "hidden": true
+   },
+   "outputs": [],
+   "source": [
+    "for byte in range(16):\n",
+    "    location = 41 + byte * 40\n",
+    "    iv = 0\n",
+    "    for bit in range(8):\n",
+    "        pt_bits = [((dr[i][byte] >> (7-bit)) & 0x01) for i in range(numTraces)]\n",
+    "\n",
+    "        # Split traces into 2 groups\n",
+    "        groupedPoints = [[] for _ in range(2)]\n",
+    "        for i in range(numTraces):\n",
+    "            groupedPoints[pt_bits[i]].append(trace_array[i][location])\n",
+    "            \n",
+    "        means = []\n",
+    "        for i in range(2):\n",
+    "            means.append(np.average(groupedPoints[i]))\n",
+    "        diff = means[1] - means[0]\n",
+    "        \n",
+    "        iv_bit = 1 if diff > 0 else 0\n",
+    "        iv = (iv << 1) | iv_bit\n",
+    "        \n",
+    "        print(iv_bit, end = \" \")\n",
+    "        \n",
+    "    print(\"{:02X}\".format(iv))"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.6"
+  },
+  "toc": {
+   "base_numbering": 1,
+   "nav_menu": {},
+   "number_sections": true,
+   "sideBar": true,
+   "skip_h1_title": true,
+   "title_cell": "Table of Contents",
+   "title_sidebar": "Contents",
+   "toc_cell": false,
+   "toc_position": {
+    "height": "calc(100% - 180px)",
+    "left": "10px",
+    "top": "150px",
+    "width": "384px"
+   },
+   "toc_section_display": true,
+   "toc_window_display": true
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
