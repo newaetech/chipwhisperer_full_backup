@@ -36,7 +36,8 @@ try:
     from pyqtgraph.parametertree import Parameter as pyqtgraphParameter
     import chipwhisperer.common.ui.ParameterTypesCustom  # Do not remove!!!
 except:
-    logging.warning("PySide or PyQtGraph not installed, disabling support for pyqtgraph parameters")
+    pass
+    #logging.warning("PySide or PyQtGraph not installed, disabling support for pyqtgraph parameters")
 
 
 class Parameterized(object):
