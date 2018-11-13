@@ -45,7 +45,7 @@ void trigger_setup(void)
           kGPIO_DigitalOutput, 0
      };
 
-     GPIO_PinInit(GPIOB, 3, &trigconf);
+     GPIO_PinInit(GPIOB, 19, &trigconf);
      GPIO_WritePinOutput(GPIOB, 19, 0);
 }
 
