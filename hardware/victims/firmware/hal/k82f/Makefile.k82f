@@ -1,0 +1,31 @@
+VPATH += :$(HALPATH)/k82f
+TMPSRC += $(wildcard $(HALPATH)/k82f/*.c)
+DVRSRC += $(wildcard $(HALPATH)/k82f/Drivers/*.c)
+SRC += $(subst $(HALPATH)/k82f/,,$(TMPSRC))
+$(info SRC is $(SRC))
+EXTRAINCDIRS += $(HALPATH)/k82f $(HALPATH)/k82f/CMSIS $(HALPATH)/k82f/Drivers
+
+ASRC += startup_MK82F25615.S
+
+#MCU_FLAGS = -mcpu=cortex-m4
+CC = arm-none-eabi-gcc
+OBJCOPY = arm-none-eabi-objcopy
+OBJDUMP = arm-none-eabi-objdump
+SIZE = arm-none-eabi-size
+AR = arm-none-eabi-ar rcs
+NM = arm-none-eabi-nm
+
+#Output Format = Binary for this target
+FORMAT = binary
+
+CFLAGS += -Os -g -DDEBUG -DCPU_MK82FN256VLL15 -w -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin 
+CFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -MMD -MP -static 
+CPPFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -MMD -MP -static 
+CPPFLAGS += -Os -g -DDEBUG -DCPU_MK82FN256VLL15 -DFRDM_K64F -DFREEDOM -w -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin 
+
+
+ASFLAGS += -g -DDEBUG -D__STARTUP_CLEAR_BSS -g -Wall -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin
+ASFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16
+
+LDFLAGS += -Xlinker --gc-sections -Xlinker -static -Xlinker -z -Xlinker muldefs -T $(HALPATH)/k82f/MK82FN256xxx15_flash.ld 
+LDFLAGS += --specs=nano.specs --specs=nosys.specs -Wl,--start-group -L $(HALPATH)/k82f/ -l:lib_mmcau.a -lm -lc -lgcc -lnosys -Wl,--end-group 
