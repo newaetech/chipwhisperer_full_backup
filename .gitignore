@@ -2,8 +2,7 @@
 *.autopilot/*
 *.s#*
 *.b#?
-software/jupyter/.ipynb_checkpoints/*
-software/jupyter/Helper\ Scripts/.ipynb_checkpoints/*
+*.ipynb_checkpoints*
 software/capture/capture-*
 */.autopilot*
 *.autopilot*
