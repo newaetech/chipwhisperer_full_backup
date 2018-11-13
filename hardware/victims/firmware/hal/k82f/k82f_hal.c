@@ -7,6 +7,7 @@
 #include "fsl_clock.h"
 #include "clock_config.h"
 #include "fsl_lpuart.h"
+#include "fsl_mmcau.h"
 
 #include <stdint.h>
 
@@ -71,18 +72,18 @@ void putch(char c)
 }
 
 //nothing needed?
-/* void HW_AES128_Init(void) */
-/* { */
-/* } */
-/* void HW_AES128_LoadKey(uint8_t* key) */
-/* { */
-/*      MMCAU_AES_SetKey(key, 16, AES_KEY_SCH); */
-/* } */
-/* void HW_AES128_Enc(uint8_t* pt) */
-/* { */
-/*      MMCAU_AES_EncryptEcb(pt, AES_KEY_SCH, 10, pt); */
-/* } */
-/* void HW_AES128_Dec(uint8_t *pt) */
-/* { */
-/*      MMCAU_AES_DecryptEcb(pt, AES_KEY_SCH, 10, pt); */
-/* } */
+void HW_AES128_Init(void)
+{
+}
+void HW_AES128_LoadKey(uint8_t* key)
+{
+     MMCAU_AES_SetKey(key, 16, AES_KEY_SCH);
+}
+void HW_AES128_Enc(uint8_t* pt)
+{
+     MMCAU_AES_EncryptEcb(pt, AES_KEY_SCH, 10, pt);
+}
+void HW_AES128_Dec(uint8_t *pt)
+{
+     MMCAU_AES_DecryptEcb(pt, AES_KEY_SCH, 10, pt);
+}
