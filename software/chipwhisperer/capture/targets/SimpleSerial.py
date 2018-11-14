@@ -580,8 +580,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         #Is a beginning part
         if len(expected[0]) > 0:
             if response[0:len(expected[0])] != expected[0]:
-                print(("Sync Error: %s"%response))
-                print(("Hex Version: %s" % (" ".join(["%02x" % ord(t) for t in response]))))
+                logging.warning("Sync Error: %s"%response)
+                logging.warning("Hex Version: %s" % (" ".join(["%02x" % ord(t) for t in response])))
 
                 return None
 
@@ -591,14 +591,18 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         data = bytearray(self.outputlength)
         if len(expected) == 2:
             for i in range(0,self.outputlength):
-                data[i] = int(response[(i * 2 + startindx):(i * 2 + startindx + 2)], 16)
+                # when glitched, the target might send us corrupted data...
+                try:
+                    data[i] = int(response[(i * 2 + startindx):(i * 2 + startindx + 2)], 16)
+                except ValueError as e:
+                    logging.warning('ValueError: %s' % str(e))
 
             startindx += self.outputlength*2
 
         #Is end part?
         if len(expected[1]) > 0:
             if response[startindx:startindx+len(expected[1])] != expected[1]:
-                print(("Sync Error: %s"%response))
+                logging.warning("Sync Error: %s"%response)
                 return None
 
         return data
