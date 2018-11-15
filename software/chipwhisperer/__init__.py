@@ -84,7 +84,48 @@ def analyzerPlots(attack_results=None):
     """Create an object to get plot data for analyzer results
     """
     return NoGUIPlots(attack_results)
-        
+
+# JUPYTER ONLY
+try:
+    import pandas as pd
+    from IPython.display import clear_output
+    def defaultJupyterCallback(attack):
+        attack_results = attack.getStatistics()
+        key = attack.knownKey()
+
+        def format_stat(stat):
+            if type(stat) is int:
+                return str(stat)
+            return str("{:02X}<br>{:.3f}".format(stat[0], stat[2]))
+
+        def color_corr_key(row):
+            ret = [""] * 16
+            key = attack.knownKey()
+            for i,bnum in enumerate(row):
+                if type(bnum) is int:
+                    continue
+                if bnum[0] == key[i]:
+                    ret[i] = "color: red"
+                else:
+                    ret[i] = ""
+            return ret
+        attack_results.setKnownkey(key)
+        stat_data = attack_results.findMaximums()
+        df = pd.DataFrame(stat_data).transpose()
+
+        #Add PGE row
+        df_pge = pd.DataFrame(attack_results.pge).transpose().rename(index={0:"PGE="}, columns=int)
+        df = pd.concat([df_pge, df], ignore_index=False)
+
+        clear_output(wait=True)
+        display((df.head().style.format(format_stat).apply(color_corr_key, axis=1)))
+
+    def getJupyterCallback(attack):
+        return lambda : defaultJupyterCallback(attack)
+except ImportError:
+    def getJupyterCallback(attack):
+        raise UserWarning("This function is only available in Jupyter with pandas installed")
+        return None
 
 @gui_only
 def auxList(api):
