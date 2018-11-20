@@ -53,7 +53,7 @@ void putch(char c)
      SERCOM0->USART.DATA.reg = c;
 }
 
-char getch(char c)
+char getch()
 {
      //wait for data
      while(!SERCOM0->USART.INTFLAG.bit.RXC);
