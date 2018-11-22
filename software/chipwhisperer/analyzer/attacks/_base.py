@@ -24,7 +24,7 @@
 #=================================================
 import logging
 
-from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.ui.ProgressBar import ProgressBar, ProgressBarTqdm
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver, TraceSource
 from chipwhisperer.common.utils.analysissource import AnalysisSource, AnalysisObserver
@@ -118,19 +118,41 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         """
         return inpkey
 
-    def processTracesNoGUI(self, callback=None):
-        self.attack.setModel(self.attackModel)
-        self.attack.getStatistics().clear()
-        self.attack.setReportingInterval(self.getReportingInterval())
-        self.attack.setTargetSubkeys(self.getTargetSubkeys())
-        self.attack.setStatsReadyCallback(callback)
+    def processTracesNoGUI(self, callback=None, show_progress_bar=False):
+        
+        if show_progress_bar:
+            progressBar = ProgressBarTqdm("Analysis in Progress", "Attacking with " + self.getName())
+            
+            with progressBar:
+                self.attack.setModel(self.attackModel)
+                self.attack.getStatistics().clear()
+                self.attack.setReportingInterval(self.getReportingInterval())
+                self.attack.setTargetSubkeys(self.getTargetSubkeys())
+                self.attack.setStatsReadyCallback(callback)
 
-        for itNum in range(self.getIterations()):
-            startingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
-            endingTrace = startingTrace + self.getTracesPerAttack() - 1
+                for itNum in range(self.getIterations()):
+                    startingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
+                    endingTrace = startingTrace + self.getTracesPerAttack() - 1
 
-            # TODO:support start/end point different per byte
-            self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), None, pointRange=self.getPointRange(None))
+                    # TODO:support start/end point different per byte
+                    self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange(None))
+
+        else:
+            progressBar = None
+
+            self.attack.setModel(self.attackModel)
+            self.attack.getStatistics().clear()
+            self.attack.setReportingInterval(self.getReportingInterval())
+            self.attack.setTargetSubkeys(self.getTargetSubkeys())
+            self.attack.setStatsReadyCallback(callback)
+
+            for itNum in range(self.getIterations()):
+                startingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
+                endingTrace = startingTrace + self.getTracesPerAttack() - 1
+
+                # TODO:support start/end point different per byte
+                self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange(None))
+            
         return self.attack.getStatistics()
 
     def processTraces(self):

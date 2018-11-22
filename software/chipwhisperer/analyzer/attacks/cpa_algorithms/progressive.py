@@ -219,7 +219,8 @@ class CPAProgressive(AlgorithmsBase, Plugin):
                         textouts.append(traceSource.getTextout(tnum))
                         knownkeys.append(traceSource.getKnownKey(tnum))
                     except Exception as e:
-                        progressBar.abort(e.message)
+                        if progressBar:
+                            progressBar.abort(e.message)
                         return
 
                 traces = np.array(data)
