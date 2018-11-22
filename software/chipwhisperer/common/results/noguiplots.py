@@ -30,10 +30,10 @@ import numpy as np
 class NoGUIPlots(object):
     def __init__(self, attack_results=None):
         self._results = attack_results
-        
+
     def setResults(self, attack_results):
         self._results = attack_results
-        
+
     def corrVsTrace(self, bnum):
         attack_results = self._results
         data = attack_results.maxes_list
@@ -45,9 +45,9 @@ class NoGUIPlots(object):
         for i, m in enumerate(maxdata):
             for j in range(0, len(attack_results.diffs[bnum])):
                 maxlist[m['maxes'][j][0], i] = m['maxes'][j][2]
-                
+
         return [tlist, maxlist]
-                
+
     def pgeVsTrace(self, bnum):
         attack_results = self._results
         pge = attack_results.pge_total
@@ -77,40 +77,19 @@ class NoGUIPlots(object):
                 pge.append(plist[bnum]['pge'])
 
         return [trace, pge]
-    
+
     def outputVsTime(self, bnum):
         if self._results is None:
             return None
-        
+
         attack_results = self._results
-        
-        ## get < key data
+
         key = attack_results.knownkey[bnum]
         data = attack_results.diffs[bnum]
-        
+
         xrangelist = range(0, len(data[0]))
 
-        max1 = np.amax(data[0:key-1], 0)
-        min1 = np.amin(data[0:key-1], 0)
+        maxes = [np.amax(data[0:key-1], 0), np.amax(data[key+1:-1], 0)]
+        mins = [np.amin(data[0:key-1], 0), np.amin(data[key+1:-1], 0)]
 
-        arr1 = np.zeros(len(data[0]))
-        for obj in enumerate(max1):
-            i = obj[0]
-            if abs(max1[i]) > abs(min1[i]):
-                arr1[i] = max1[i]
-            else:
-                arr1[i] = min1[i]
-
-        ## get > key data
-        max2 = np.amax(data[key+1:-1], 0)
-        min2 = np.amin(data[key+1:-1], 0)
-
-        arr2 = np.zeros(len(data[0]))
-        for obj in enumerate(max1):
-            i = obj[0]
-            if abs(max2[i]) > abs(min2[i]):
-                arr2[i] = max2[i]
-            else:
-                arr2[i] = min2[i]
-
-        return [xrangelist, data[key], arr1, arr2]
+        return [xrangelist, data[key], np.amax(maxes, 0), np.amin(mins, 0)]
