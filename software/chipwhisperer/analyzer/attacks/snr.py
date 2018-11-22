@@ -35,10 +35,14 @@ def calculate_snr(trace_manager, leak_model, bnum=0, db=True, trace_data=None, t
     key = None
     trace = None
     
-    ntrace = len(trace_data)
-    npoints = len(trace_data[0])
-    
     hwarray = []
+    
+    if trace_manager:        
+        ntrace = trace_manager.numTraces()
+        npoints = trace_manager.numPoints()
+    else:
+        ntrace = len(trace_data)
+        npoints = len(trace_data[0])
     
     for tnum in range(0, ntrace):
     
@@ -51,6 +55,11 @@ def calculate_snr(trace_manager, leak_model, bnum=0, db=True, trace_data=None, t
                 textout = textout_data[tnum]
             if key_data:
                 key = key_data[tnum]
+        else:
+            trace = trace_manager.getTrace(tnum)
+            textin = trace_manager.getTextin(tnum)
+            textout = trace_manager.getTextout(tnum)
+            key = trace_manager.getKnownKey(tnum)
     
         state = {'knownkey':key}
     
