@@ -87,9 +87,11 @@ def analyzerPlots(attack_results=None):
 
 # JUPYTER ONLY
 try:
+    current_trace_iteration = 0
     import pandas as pd
     from IPython.display import clear_output
-    def defaultJupyterCallback(attack):
+    def defaultJupyterCallback(attack, head = 6):
+        global current_trace_iteration
         attack_results = attack.getStatistics()
         key = attack.knownKey()
 
@@ -118,12 +120,17 @@ try:
         df = pd.concat([df_pge, df], ignore_index=False)
 
         clear_output(wait=True)
-        display((df.head().style.format(format_stat).apply(color_corr_key, axis=1)))
-
-    def getJupyterCallback(attack):
-        return lambda : defaultJupyterCallback(attack)
+        reporting_interval = attack.getReportingInterval()
+        tstart = current_trace_iteration * reporting_interval
+        tend = tstart + reporting_interval
+        current_trace_iteration += 1
+        display(df.head(head).style.format(format_stat).apply(color_corr_key, axis=1).set_caption("Finished traces {} to {}".format(tstart, tend)))
+                
+    def getJupyterCallback(attack, head = 6):
+        current_trace_iteration = 0
+        return lambda : defaultJupyterCallback(attack, head)
 except ImportError:
-    def getJupyterCallback(attack):
+    def getJupyterCallback(attack, head = 6):
         raise UserWarning("This function is only available in Jupyter with pandas installed")
         return None
 
