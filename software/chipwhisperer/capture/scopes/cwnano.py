@@ -118,7 +118,10 @@ class ADCSettings(util.DisableNewAttr):
         programmed value. Set to 'None' for disabling (High-Z) output."""
 
         resp = self.usb.readCtrl(self.USB_ADCLK_SET, 0, 5)
-        return resp[0]*240E6
+        if resp[0] == 0:
+            return 0
+        else:
+            return 240E6/resp[0]
 
     @clk_freq.setter
     def clk_freq(self, freqset):
@@ -146,7 +149,10 @@ class ADCSettings(util.DisableNewAttr):
 
         self.usb.sendCtrl(self.USB_ADCLK_SET, 0, resp)
 
-        return best_div * 240E6
+        if best_div == 0:
+            return 0
+        else:
+            return 240E6 / best_div
 
 class GlitchSettings(util.DisableNewAttr):
     USB_GLITCH_SETTINGS = 0x2C
@@ -410,7 +416,10 @@ class GPIOSettings(util.DisableNewAttr):
         programmed value. Set to 'None' for disabling (High-Z) output."""
 
         resp = self.usb.readCtrl(self.USB_CLKOUT_SET, 0, 3)
-        return resp[0]*240E6
+        if resp[0] == 0:
+            return 0
+        else:
+            return 240E6/resp[0]
 
     @clkout.setter
     def clkout(self, freqset):
@@ -433,7 +442,10 @@ class GPIOSettings(util.DisableNewAttr):
 
         self.usb.sendCtrl(self.USB_CLKOUT_SET, 0, [best_div, 0, 0])
 
-        return best_div * 240E6
+        if best_div == 0:
+            return 0
+        else:
+            return 240E6 / best_div
 
 
     def gpio_generic_set(self, gpiomask, state, setdir=True):
