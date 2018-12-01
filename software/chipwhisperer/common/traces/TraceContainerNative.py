@@ -24,11 +24,19 @@
 
 import os
 import numpy as np
+from datetime import datetime
 from ._base import TraceContainer
 
 
 class TraceContainerNative(TraceContainer):
     _name = "ChipWhisperer/Native"
+    
+    def default_config_setup(self, project):
+        starttime = datetime.now()
+        prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S') + "_"
+        self.config.setConfigFilename(project.datadirectory + "traces/config_" + prefix + ".cfg")
+        self.config.setAttr("prefix", prefix)
+        self.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
 
     def copyTo(self, srcTraces=None):
         self.numTrace = srcTraces.numTraces()
