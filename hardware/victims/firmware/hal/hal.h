@@ -42,7 +42,7 @@ void platform_init(void);
 #define CW308_AURIX     22
 #define CW308_SAML11     23
 #define CW308_EFM32TG11B     24
-#define CW308_K24F     25
+#define CW308_K82F     25
 
 //HAL_TYPE Define Types
 #define HAL_avr     1
@@ -61,7 +61,7 @@ void platform_init(void);
 #define HAL_aurix 14
 #define HAL_saml11 15
 #define HAL_efm32tg11b 16
-#define HAL_k24f    17
+#define HAL_k82f    17
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
