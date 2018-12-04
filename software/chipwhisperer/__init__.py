@@ -1,20 +1,15 @@
-from chipwhisperer.capture.api.acquisition_controller import AcquisitionController
-from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
-from chipwhisperer.common.utils.util import updateUI
+from chipwhisperer.capture.api.acquisition_controller import AcquisitionController #what is this?
 from chipwhisperer.common.results.noguiplots import NoGUIPlots
 
 import os, os.path
-from chipwhisperer.common.traces import TraceContainerNative as trace_container_native
 from chipwhisperer.common.api import ProjectFormat as project
 
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic as BasicKtp
-from chipwhisperer.common.utils.util import cw_bytearray
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI #gui only
+from chipwhisperer.common.utils.util import cw_bytearray #gui only
 
-from chipwhisperer.common.utils.parameter import Parameter
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.capture.scopes.base import ScopeTemplate
-from chipwhisperer.capture.targets._base import TargetTemplate
+from chipwhisperer.common.utils.parameter import Parameter #gui only
+from chipwhisperer.capture.scopes.base import ScopeTemplate #gui only
+from chipwhisperer.capture.targets._base import TargetTemplate #gui only
 
 #analyzer imports
 from chipwhisperer.analyzer.attacks.cpa import CPA
@@ -90,6 +85,7 @@ def target(scope, type = targets.SimpleSerial, **kwargs):
     return target
 
 
+#probably not needed
 def analyzerPlots(attack_results=None):
     """Create an object to get plot data for analyzer results
     """
@@ -135,7 +131,7 @@ try:
         tend = tstart + reporting_interval
         current_trace_iteration += 1
         display(df.head(head).style.format(format_stat).apply(color_corr_key, axis=1).set_caption("Finished traces {} to {}".format(tstart, tend)))
-                
+
     def getJupyterCallback(attack, head = 6):
         current_trace_iteration = 0
         return lambda : defaultJupyterCallback(attack, head)
