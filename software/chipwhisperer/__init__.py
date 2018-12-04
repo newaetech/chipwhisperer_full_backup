@@ -26,6 +26,9 @@ from chipwhisperer.analyzer.attacks.models import AES128_8bit as AES128Leakage
 
 import chipwhisperer.capture.scopes as scopes
 
+import chipwhisperer.capture.acq_patterns as key_text_patterns
+ktp = key_text_patterns #alias
+
 from functools import wraps
 
 def gui_only(func):
@@ -69,7 +72,7 @@ def createProject(filename, overwrite=False):
     return proj
 
 
-def scope(type = cwhardware):
+def scope(type = scopes.CWLite):
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the scope
