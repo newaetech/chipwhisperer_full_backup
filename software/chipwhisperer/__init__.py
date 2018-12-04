@@ -23,7 +23,7 @@ import chipwhisperer.capture.targets as targets
 import chipwhisperer.capture.acq_patterns as key_text_patterns
 ktp = key_text_patterns #alias
 
-from functools import wraps
+from functools import wraps #gui only wrapper
 
 def gui_only(func):
     """Decorator for the functions that can only be used in the gui
@@ -66,7 +66,7 @@ def createProject(filename, overwrite=False):
     return proj
 
 
-def scope(type = scopes.CWLite):
+def scope(type = scopes.OpenADC):
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the scope
