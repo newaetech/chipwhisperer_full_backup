@@ -19,10 +19,12 @@ from chipwhisperer.capture.scopes.base import ScopeTemplate
 from chipwhisperer.capture.targets._base import TargetTemplate
 
 #analyzer imports
-from chipwhisperer.analyzer.attacks.cpa import CPA as cpa
-from chipwhisperer.analyzer.attacks.cpa_algorithms.progressive import CPAProgressive as cpaProgressive
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as aes128
-from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128Leakage
+from chipwhisperer.analyzer.attacks.cpa import CPA
+from chipwhisperer.analyzer.attacks.cpa_algorithms.progressive import CPAProgressive
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES128
+from chipwhisperer.analyzer.attacks.models import AES128_8bit as AES128Leakage
+
+import chipwhisperer.capture.scopes as scopes
 
 from functools import wraps
 
