@@ -7,8 +7,6 @@ import os, os.path
 from chipwhisperer.common.traces import TraceContainerNative as trace_container_native
 from chipwhisperer.common.api import ProjectFormat as project
 
-from chipwhisperer.capture.scopes.OpenADC import OpenADC as cwhardware
-from chipwhisperer.capture.targets.SimpleSerial import SimpleSerial as cwtarget
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic as BasicKtp
 from chipwhisperer.common.utils.util import cw_bytearray
@@ -25,6 +23,7 @@ from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as AES128Leakage
 
 import chipwhisperer.capture.scopes as scopes
+import chipwhisperer.capture.targets as targets
 
 import chipwhisperer.capture.acq_patterns as key_text_patterns
 ktp = key_text_patterns #alias
@@ -83,7 +82,7 @@ def scope(type = scopes.CWLite):
     scope.con()
     return scope
 
-def target(scope, type = cwtarget, **kwargs):
+def target(scope, type = targets.SimpleSerial, **kwargs):
     """Create a target object and connect to it.
     """
     target = type()
