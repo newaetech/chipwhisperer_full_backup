@@ -105,6 +105,12 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         if hasattr(self._analysisAlgorithm, 'runScriptFunction'):
             self._analysisAlgorithm.runScriptFunction.connect(self.runScriptFunction.emit)
 
+    def setLeakModel(self, leakage_object):
+        self.attackModel = leakage_object
+
+    def leakModel(self):
+        return self.attackModel
+
     def setAnalysisAlgorithm(self, analysisAlgorithm, leakage_object=None):
         """Called from the script to setup the attack"""
         self.attack = analysisAlgorithm()
@@ -118,11 +124,11 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         """
         return inpkey
 
-    def processTracesNoGUI(self, callback=None, show_progress_bar=False):
-        
+    def processTraces(self, callback=None, show_progress_bar=False):
+
         if show_progress_bar:
             progressBar = ProgressBarTqdm("Analysis in Progress", "Attacking with " + self.getName())
-            
+
             with progressBar:
                 self.attack.setModel(self.attackModel)
                 self.attack.getStatistics().clear()
@@ -155,27 +161,9 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
             
         return self.attack.getStatistics()
 
-    def processTraces(self):
-        progressBar = ProgressBar("Analysis in Progress", "Attacking with " + self.getName())
-        with progressBar:
-            self.attack.setModel(self.attackModel)
-            self.attack.getStatistics().clear()
-            self.attack.setReportingInterval(self.getReportingInterval())
-            self.attack.setTargetSubkeys(self.getTargetSubkeys())
-            self.attack.setStatsReadyCallback(self.sigAnalysisUpdated.emit)
-            self.sigAnalysisStarted.emit()
-
-            for itNum in range(self.getIterations()):
-                startingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
-                endingTrace = startingTrace + self.getTracesPerAttack() - 1
-
-                # TODO:support start/end point different per byte
-                self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange(None))
-
-                if progressBar and progressBar.wasAborted():
-                    return
-
-        self.sigAnalysisDone.emit()
+    # for backwards compatability
+    def processTracesNoGUI(self, callback=None, show_progress_bar=False):
+        return self.processTraces(callback, show_progress_bar)
 
     def setProject(self, project):
         self._project = project
