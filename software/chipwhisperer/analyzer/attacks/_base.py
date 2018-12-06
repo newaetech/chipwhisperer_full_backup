@@ -106,9 +106,11 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
             self._analysisAlgorithm.runScriptFunction.connect(self.runScriptFunction.emit)
 
     def setLeakModel(self, leakage_object):
+        """Set the leak model to leakage_object"""
         self.attackModel = leakage_object
 
     def leakModel(self):
+        """Get the leak model for the attack"""
         return self.attackModel
 
     def setAnalysisAlgorithm(self, analysisAlgorithm, leakage_object=None):

@@ -1,36 +1,90 @@
-from chipwhisperer.common.results.noguiplots import NoGUIPlots
+"""
+.. module:: chipwhisperer
+   :platform: Unix, Windows
+   :synopsis: Test
 
+.. moduleauthor:: NewAE
+
+"""
 import os, os.path
-from chipwhisperer.common.api import ProjectFormat as project
 
 #analyzer imports
-from chipwhisperer.analyzer.attacks.cpa import CPA
-from chipwhisperer.analyzer.attacks.profiling import Profiling
-from chipwhisperer.analyzer.attacks.cpa_algorithms.progressive import CPAProgressive
 
-from chipwhisperer.analyzer.attacks import cpa_algorithms
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES128
-from chipwhisperer.analyzer.attacks.models import AES128_8bit as AES128Leakage
+from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128leakage
 
-from chipwhisperer.analyzer.attacks.snr import calculate_snr
+from chipwhisperer.analyzer.attacks.snr import calculate_snr as calculateSNR
 import chipwhisperer.capture.scopes as scopes
 import chipwhisperer.capture.targets as targets
+
+from chipwhisperer.analyzer.attacks import cpa_algorithms
+from chipwhisperer.analyzer import preprocessing
+
+from chipwhisperer.capture.api import programmers
 
 
 import chipwhisperer.capture.acq_patterns as key_text_patterns
 ktp = key_text_patterns #alias
 
+def programTarget(scope, type, fw_path):
+    """Program the target using the programmer <type>
 
-# def cpa(trace_manager, leak_model, algorithm=cpa_algorithms.Progressive):
-#     from chipwhisperer.analyzer.attacks.cpa import CPA
-#     attack = CPA()
-#     attack.setAnalysisAlgorithm(algorithm, leak_model)
+    Programmers can be found in the programmers submodule
+    """
+    prog = type()
+    prog.scope = scope
+    prog._logging = None
+    prog.open()
+    prog.find()
+    prog.erase()
+    prog.program(fw_path, memtype="flash", verify=True)
+    prog.close()
+
+def cpa(trace_source, leak_model = None, algorithm=cpa_algorithms.Progressive):
+    """Create a CPA attack object with sane defaults
+
+    Create a CPA attack object with:
+    * trace source = trace_source
+    * traces start at beginning
+    * uses all traces for attack
+    * 1 iteration
+    * Reporting Interval = 10
+    * Attack all keys
+    * Full point range
+
+    leak_model must be set either by this function or by attack.setLeakModel() before running attack.
+    Args:
+        trace_source (TraceManager): TraceManager or preprocessing object that holds traces, plaintext, etc.
+
+    Kwargs:
+        leak_model (AESLeakageHelper): Model describing information leaked from target. Must be set before running attack.
+        algorithm (AlgorithmsBase): Algorithm to perform CPA loop. Default is almost always the right choice
+
+    Returns:
+        A CPA object. For more information, see documentation for CPA.
+    """
+    from chipwhisperer.analyzer.attacks.cpa import CPA
+    attack = CPA()
+    attack.setAnalysisAlgorithm(algorithm, leak_model)
+    attack.setTraceSource(trace_source)
+    attack.setTraceStart(0)
+    attack.setTracesPerAttack(trace_source.numTraces())
+    attack.setIterations(1)
+    attack.setReportingInterval(10)
+    attack.setTargetSubkeys([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+    attack.setPointRange((0, -1))
+    return attack
+
+def profiling(trace_source):
+    """Not yet implemented, create/import manually"""
+    pass
 
 def openProject(filename):
     """Load an existing project from disk.
 
     Raise an IOError if no such project exists.
     """
+    from chipwhisperer.common.api import ProjectFormat as project
     if not os.path.isfile(filename):
         raise IOError("File " + filename + " does not exist or is not a file")
     proj = project.ProjectFormat()
@@ -42,6 +96,7 @@ def createProject(filename, overwrite=False):
 
     If <overwrite> is False, raise an IOError if this path already exists.
     """
+    from chipwhisperer.common.api import ProjectFormat as project
     if os.path.isfile(filename) and (overwrite == False):
         raise IOError("File " + filename + " already exists")
 
@@ -75,6 +130,7 @@ def target(scope, type = targets.SimpleSerial, **kwargs):
 def analyzerPlots(attack_results=None):
     """Create an object to get plot data for analyzer results
     """
+    from chipwhisperer.common.results.noguiplots import NoGUIPlots
     return NoGUIPlots(attack_results)
 
 # JUPYTER ONLY
