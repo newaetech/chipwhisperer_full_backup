@@ -26,7 +26,6 @@ import os
 import numpy as np
 from ._base import TraceContainer
 
-
 class TraceContainerNative(TraceContainer):
     _name = "ChipWhisperer/Native"
 

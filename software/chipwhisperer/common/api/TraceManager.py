@@ -92,6 +92,7 @@ class TraceManager(TraceSource):
                 ti = TraceContainerNative()
                 try:
                     ti.config.loadTrace(fname)
+                    ti.loadAllTraces()
                 except Exception as e:
                     logging.error(e.message)
                 self.traceSegments.append(ti)
