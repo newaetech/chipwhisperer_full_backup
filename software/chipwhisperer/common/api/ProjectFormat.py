@@ -33,6 +33,7 @@ from chipwhisperer.common.api.settings import Settings
 from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
 from chipwhisperer.common.utils import util, pluginmanager
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
+from copy import copy
 
 try:
     from configobj import ConfigObj  # import the module
@@ -102,11 +103,11 @@ class ProjectFormat(Parameterized):
         if __debug__:
             logging.debug('Created: ' + str(self))
 
-        # I hope this works
-        #self._traceManager.appendSegment(self._trace_format)
+    def appendSegment(self, segment):
+        self._traceManager.appendSegment(copy(segment))
 
-    def addTrace(self, trace, pt, ct, key):
-        self._trace_format.addTrace(trace, pt, ct, key)
+    def newSegment(self):
+        return self._trace_format.__class__()
 
     def getTraceFormat(self):
         return self._trace_format

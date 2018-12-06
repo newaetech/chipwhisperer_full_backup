@@ -51,6 +51,7 @@ class TraceManager(TraceSource):
         self._sampleRate = 0
         self.lastUsedSegment = None
         self.traceSegments = []
+        self.saved = False
         if __debug__: logging.debug('Created: ' + str(self))
 
     def newProject(self):
@@ -74,6 +75,7 @@ class TraceManager(TraceSource):
             # did that actually save anything? ^^^
             t.saveAllTraces(os.path.dirname(t.config.configFilename())) #actually saving stuff now?
         self.dirty.setValue(False)
+        self.saved = True
 
     def loadProject(self, configfilename):
         """Load the trace segments information from a project file."""
@@ -141,8 +143,10 @@ class TraceManager(TraceSource):
                 return self.lastUsedSegment
             else:
                 # Only load one segment at a time for memory reasons
-                self.lastUsedSegment.unloadAllTraces()
-                self.lastUsedSegment = None
+                # If the traces are actually saved :)
+                if self.saved:
+                    self.lastUsedSegment.unloadAllTraces()
+                    self.lastUsedSegment = None
 
         for traceSegment in self.traceSegments:
             if traceSegment.mappedRange and traceSegment.mappedRange[0] <= traceIndex <= traceSegment.mappedRange[1]:
