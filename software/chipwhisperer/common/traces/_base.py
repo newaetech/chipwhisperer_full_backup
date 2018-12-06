@@ -50,6 +50,7 @@ class TraceContainer(Parameterized, Plugin):
                 {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},
         ])
         self.clear()
+        # just auto setup file names to make stuff easier
 
     def clear(self):
         self.config = _cfgfile.TraceContainerConfig(configfile=self.configfile)

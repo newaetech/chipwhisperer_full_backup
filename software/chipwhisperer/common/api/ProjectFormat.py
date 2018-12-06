@@ -102,6 +102,12 @@ class ProjectFormat(Parameterized):
         if __debug__:
             logging.debug('Created: ' + str(self))
 
+        # I hope this works
+        #self._traceManager.appendSegment(self._trace_format)
+
+    def addTrace(self, trace, pt, ct, key):
+        self._trace_format.addTrace(trace, pt, ct, key)
+
     def getTraceFormat(self):
         return self._trace_format
 
@@ -136,8 +142,6 @@ class ProjectFormat(Parameterized):
     def setFileVersion(self, ver):
         self.settingsDict['Project File Version']=ver
         
-    def addWave(self, configfile):
-        return       
         
     def getFilename(self):
         return self.filename

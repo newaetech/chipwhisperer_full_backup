@@ -31,6 +31,9 @@ from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNativ
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import TraceSource
 
+from datetime import datetime
+from pathlib import Path
+import copy
 
 class TraceManager(TraceSource):
     """
@@ -60,8 +63,16 @@ class TraceManager(TraceSource):
         """Save the trace segments information to a project file."""
         config[self.name].clear()
         for indx, t in enumerate(self.traceSegments):
+            starttime = datetime.now()
+            prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S') + "_"
+            t.config.setConfigFilename(os.path.splitext(configfilename)[0] + "_data" + "/traces/config_" + prefix + ".cfg")
+            t.config.setAttr("prefix", prefix)
+            t.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
             config[self.name]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
             config[self.name]['enabled%d' % indx] = str(t.enabled)
+
+            # did that actually save anything? ^^^
+            t.saveAllTraces(os.path.dirname(t.config.configFilename())) #actually saving stuff now?
         self.dirty.setValue(False)
 
     def loadProject(self, configfilename):
@@ -214,6 +225,7 @@ class TraceManager(TraceSource):
     def appendSegment(self, ti, enabled=True):
         """Append a new segment to the list of trace segments."""
         ti.enabled = enabled
+        ti._isloaded = True
         self.traceSegments.append(ti)
         self._setModified()
 
