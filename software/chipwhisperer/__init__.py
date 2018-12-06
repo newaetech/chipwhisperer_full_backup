@@ -44,6 +44,7 @@ def cpa(trace_source, leak_model = None, algorithm=cpa_algorithms.Progressive):
     """Create a CPA attack object with sane defaults
 
     Create a CPA attack object with:
+
     * trace source = trace_source
     * traces start at beginning
     * uses all traces for attack
@@ -53,15 +54,18 @@ def cpa(trace_source, leak_model = None, algorithm=cpa_algorithms.Progressive):
     * Full point range
 
     leak_model must be set either by this function or by attack.setLeakModel() before running attack.
-    Args:
-        trace_source (TraceManager): TraceManager or preprocessing object that holds traces, plaintext, etc.
 
-    Kwargs:
-        leak_model (AESLeakageHelper): Model describing information leaked from target. Must be set before running attack.
-        algorithm (AlgorithmsBase): Algorithm to perform CPA loop. Default is almost always the right choice
+    Args:
+
+       trace_source (TraceManager): TraceManager or preprocessing object that holds traces, plaintext, etc.
+
+       leak_model (AESLeakageHelper): Model describing information leaked from target. Must be set before running attack.
+
+       algorithm (AlgorithmsBase): Algorithm to perform CPA loop. Default is almost always the right choice
 
     Returns:
-        A CPA object. For more information, see documentation for CPA.
+
+       A CPA object. For more information, see documentation for CPA.
     """
     from chipwhisperer.analyzer.attacks.cpa import CPA
     attack = CPA()
