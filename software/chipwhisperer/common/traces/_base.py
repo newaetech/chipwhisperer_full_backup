@@ -41,7 +41,7 @@ class TraceContainer(Parameterized, Plugin):
     """
     _name = "Trace Configuration"
     
-    def __init__(self, configfile=None):
+    def __init__(self, configfile=None, project=None, default_setup=False):
         self.configfile = configfile
         self.fmt = None
         self.getParams().register()
@@ -50,7 +50,10 @@ class TraceContainer(Parameterized, Plugin):
                 {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},
         ])
         self.clear()
-        # just auto setup file names to make stuff easier
+        
+        #If we have a project file, do specific setup related to project
+        if project and default_setup:
+            self.default_config_setup(project)
 
     def clear(self):
         self.config = _cfgfile.TraceContainerConfig(configfile=self.configfile)

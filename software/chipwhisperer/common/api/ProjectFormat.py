@@ -25,6 +25,8 @@ import logging
 import os
 import re
 import sys
+from datetime import datetime
+import copy
 
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.dictdiffer import DictDiffer
@@ -111,6 +113,17 @@ class ProjectFormat(Parameterized):
 
     def getTraceFormat(self):
         return self._trace_format
+    
+    def getNewTraceSegment(self):
+        """Return a new trace object for the specified format."""
+        tmp = copy.copy(self._trace_format)
+        tmp.clear()
+        starttime = datetime.now()
+        prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S') + "_"
+        tmp.config.setConfigFilename(self.datadirectory + "traces/config_" + prefix + ".cfg")
+        tmp.config.setAttr("prefix", prefix)
+        tmp.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
+        return tmp
 
     @setupSetParam("Trace Format")
     def setTraceFormat(self, trace_format):
