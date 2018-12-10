@@ -58,10 +58,10 @@ class FPGA(object):
         # Erase the FPGA by toggling PROGRAM pin, setup
         # NAEUSB chip for FPGA programming
         self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA0)
-        time.sleep(0.01)
+        time.sleep(0.001)
         self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA1)
 
-        time.sleep(0.05)
+        time.sleep(0.001)
 
         # Download actual bitstream now if present
         if bitstream:
@@ -74,7 +74,7 @@ class FPGA(object):
                 programStatus = self.isFPGAProgrammed()
                 if programStatus:
                     break
-                time.sleep(0.01)
+                time.sleep(0.001)
                 wait -= 1
 
             # Exit FPGA programming mode

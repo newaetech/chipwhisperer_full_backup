@@ -97,5 +97,5 @@ def nonBlockingDelay(delay_ms):
     DC = _DelayCallback()
     Timer().singleShot(delay_ms, DC.done)
     while DC.running:
-        time.sleep(0.01)
+        #time.sleep(0.01)
         util.updateUI()

@@ -179,7 +179,7 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
                 if resp:
                     data.append(resp[0])
             else:
-                time.sleep(0.01)
+                time.sleep(0.001)
                 timeout = timeout - 1
             waiting = self.inWaiting()
 

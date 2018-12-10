@@ -1382,15 +1382,15 @@ class CWPLLDriver(object):
     def readByte(self, regaddr, slaveaddr=0x69):
         d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
-        time.sleep(0.05)
+        time.sleep(0.001)
 
         d = bytearray([0x04, 0x80 | 0x69, 0x80 |  regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
-        time.sleep(0.05)
+        time.sleep(0.001)
 
         d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
-        time.sleep(0.05)
+        time.sleep(0.001)
 
         stat = self.oa.sendMessage(CODE_READ, ADDR_I2CSTATUS, Validate=False, maxResp=3)
         if stat[0] & 0x01:
@@ -1405,15 +1405,15 @@ class CWPLLDriver(object):
 
         d = bytearray([0x00, 0x69, 0x80 | regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
-        time.sleep(0.05)
+        time.sleep(0.005)
 
         d = bytearray([0x04, 0x69, 0x80 | regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
-        time.sleep(0.05)
+        time.sleep(0.005)
 
         d = bytearray([0x00, 0x69, 0x80 | regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
-        time.sleep(0.05)
+        time.sleep(0.005)
 
         stat = self.oa.sendMessage(CODE_READ, ADDR_I2CSTATUS, Validate=False, maxResp=3)
         if stat[0] & 0x01:

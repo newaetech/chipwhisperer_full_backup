@@ -73,10 +73,10 @@ class AcquisitionController:
             return []
 
         self._target.go()
-        timeout = 50
+        timeout = 500
         while self._target.isDone() is False and timeout:
             timeout -= 1
-            time.sleep(0.01)
+            time.sleep(0.001)
 
         if timeout == 0:
             logging.warning('Target timeout')
