@@ -27,13 +27,10 @@
 #=================================================
 import logging
 from usb import USBError
-import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger as ChipWhispererDecodeTrigger
-import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
-import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
-import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
+from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD
 from . import _qt as openadc_qt
 from .base import ScopeTemplate
-from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
+from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.utils import util, timer, pluginmanager
 from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
 from chipwhisperer.common.utils.pluginmanager import Plugin

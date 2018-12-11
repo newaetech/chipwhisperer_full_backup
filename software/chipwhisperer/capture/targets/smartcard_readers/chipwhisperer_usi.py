@@ -25,7 +25,7 @@
 import logging
 
 from ._base import ReaderTemplate
-import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhispererTargets
+from chipwhisperer.capture.scopes.cwhardware import ChipWhispererTargets
 
 
 class ReaderChipWhispererUSI(ReaderTemplate):

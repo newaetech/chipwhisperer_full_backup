@@ -28,13 +28,13 @@ import os.path
 from PySide.QtCore import *
 from PySide.QtGui import *
 try:
-    import chipwhisperer.common.utils.serialport as scan
+    from chipwhisperer.common.utils import serialport as scan
 except ImportError:
     class scan:
         @staticmethod
         def scan():
             return ["pyserial not installed"]
-import chipwhisperer.common.utils.qt_tweaks as QtFixes
+from chipwhisperer.common.utils import qt_tweaks as QtFixes
 from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
 

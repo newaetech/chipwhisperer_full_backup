@@ -33,7 +33,7 @@ from chipwhisperer.common.utils import tracereader_dpacontestv3, tracereader_nat
 import numpy as np
 from time import gmtime, strftime
 from ._base import TraceContainer
-import chipwhisperer.common.utils.qt_tweaks as QtFixes
+from chipwhisperer.common.utils import qt_tweaks as QtFixes
 
 class TraceContainerDPAv3(TraceContainer):
     _name = "DPAContestv3"

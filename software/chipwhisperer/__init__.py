@@ -14,8 +14,7 @@ from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128leakage
 
 from chipwhisperer.analyzer.attacks.snr import calculate_snr as calculateSNR
-import chipwhisperer.capture.scopes as scopes
-import chipwhisperer.capture.targets as targets
+from chipwhisperer.capture.scopes import scopes, targets
 
 from chipwhisperer.analyzer.attacks import cpa_algorithms
 from chipwhisperer.analyzer import preprocessing
@@ -23,7 +22,7 @@ from chipwhisperer.analyzer import preprocessing
 from chipwhisperer.capture.api import programmers
 
 
-import chipwhisperer.capture.acq_patterns as key_text_patterns
+from chipwhisperer.capture import acq_patterns as key_text_patterns
 ktp = key_text_patterns #alias
 
 def programTarget(scope, type, fw_path):

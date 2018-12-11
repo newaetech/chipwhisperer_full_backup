@@ -29,7 +29,7 @@ import zipfile
 import io
 import base64
 from collections import OrderedDict
-import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
+from chipwhisperer.capture.scopes.cwhardware import PartialReconfiguration as pr
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 from chipwhisperer.common.utils import util
 

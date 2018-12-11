@@ -24,7 +24,8 @@ raise DeprecationWarning("ChipWhisperer Rev2 is no longer supported")
 
 import logging
 import sys
-import chipwhisperer.capture.scopes._qt as openadc_qt
+# import chipwhisperer.capture.scopes._qt as openadc_qt
+from .. import _qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWCRev2_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI

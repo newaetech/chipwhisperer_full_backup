@@ -34,9 +34,9 @@ import usb.backend.libusb0 as libusb0
 import usb.core
 import usb.util
 
-import chipwhisperer.hardware.firmware.cwlite as fw_cwlite
-import chipwhisperer.hardware.firmware.cw1200 as fw_cw1200
-import chipwhisperer.hardware.firmware.cw305  as fw_cw305
+from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
+from chipwhisperer.hardware.firmware import cw1200 as fw_cw1200
+from chipwhisperer.hardware.firmware import cw305  as fw_cw305
 
 
 

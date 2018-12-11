@@ -29,7 +29,7 @@ from PySide.QtGui import *
 
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.utils.util import hexstr2list
-import chipwhisperer.common.utils.qt_tweaks as QtFixes
+from chipwhisperer.common.utils import qt_tweaks as QtFixes
 
 
 class APDUFilter(QObject):

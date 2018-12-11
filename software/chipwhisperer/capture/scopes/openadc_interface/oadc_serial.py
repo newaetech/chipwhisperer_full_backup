@@ -25,7 +25,8 @@ from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
 import serial
-import chipwhisperer.common.utils.serialport as scan
+# import chipwhisperer.common.utils.serialport as scan
+from chipwhisperer.common.utils import serialport as scan
 
 
 class OpenADCInterface_Serial(Parameterized, Plugin):

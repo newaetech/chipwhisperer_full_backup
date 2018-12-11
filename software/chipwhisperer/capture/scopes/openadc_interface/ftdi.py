@@ -21,7 +21,8 @@
 #=================================================
 import logging
 import sys
-import chipwhisperer.capture.scopes._qt as openadc_qt
+# import chipwhisperer.capture.scopes._qt as openadc_qt
+from .. import _qt as openadc_qt
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 try:

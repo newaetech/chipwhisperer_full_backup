@@ -57,9 +57,5 @@ setup(
         # pyusb could be removed from required list, but for most people it's needed
         # and it's not "too" bad (i.e., won't hurt on a cloud platform I think)
         'pyusb',
-
-        #This is normally required, but not listed to avoid pulling in on cloud platforms, which will also
-        #trigger a bunch of stuff like pyside, numpy, etc.
-        #pyqtgraph
     ],
 )

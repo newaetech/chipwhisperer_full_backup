@@ -21,7 +21,8 @@
 import logging
 import sys
 import traceback
-import chipwhisperer.capture.scopes._qt as openadc_qt
+# import chipwhisperer.capture.scopes._qt as openadc_qt
+from .. import _qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.common.utils.pluginmanager import Plugin
@@ -29,7 +30,7 @@ from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 from chipwhisperer.common.utils.util import DictType
 
 try:
-    import chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite as CWL
+    from chipwhisperer.capture.scopes.cwhardware import ChipWhispererLite as CWL
 except ImportError:
     CWL = None
     logging.error("Could not import ChipWhispererLite\n" + traceback.format_exc())
