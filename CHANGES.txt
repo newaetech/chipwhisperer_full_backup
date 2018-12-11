@@ -1,3 +1,12 @@
+V5.0.0:
+-Replaced GUI with Jupyter
+-Moved to Python 3 (Python 2.7 no longer supported)
+-Improved API for Projects
+-Added GUILess Analyzer support
+-Added Jupyter Notebooks for most major tutorials
+-Added Notebooks for new tutorials
+-Small cleanups to API
+
 V4.0.2:
 -Improve SAD logic
 -Add RSA firmware build for ARM.
