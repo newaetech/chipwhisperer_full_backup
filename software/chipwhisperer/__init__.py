@@ -14,7 +14,7 @@ from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128leakage
 
 from chipwhisperer.analyzer.attacks.snr import calculate_snr as calculateSNR
-from chipwhisperer.capture.scopes import scopes, targets
+from chipwhisperer.capture import scopes, targets
 
 from chipwhisperer.analyzer.attacks import cpa_algorithms
 from chipwhisperer.analyzer import preprocessing
