@@ -1,9 +1,7 @@
 """Example for scripting glitching of the stm32f3 target using the chipwhisperer
 tool. Similar to what the glitch explorer does. This script does not spawn a
-gui, and uses the 4.0 api.
+gui, and uses the 5.0 api.
 """
-
-from __future__ import print_function, division
 
 import time
 import logging
@@ -14,8 +12,6 @@ import csv
 import numpy as np
 
 import chipwhisperer as cw
-from chipwhisperer.tests.tools_for_tests import FIRMWARE_DIR
-from chipwhisperer.capture.api.programmers import STM32FProgrammer
 from scripting_utils import GlitchResultsDisplay
 
 logging.basicConfig(level=logging.WARN)
@@ -39,17 +35,17 @@ scope.io.hs2 = "glitch"
 target.go_cmd = ""
 target.key_cmd = ""
 
-# program the XMEGA with the built hex file
-programmer = STM32FProgrammer()
-programmer.scope = scope
-programmer._logging = None
-programmer.open()
-programmer.find()
-programmer.erase()
-glitch_simple_firmware_dir = os.path.join(FIRMWARE_DIR, 'glitch-simple')
-glitch_simple_hex = os.path.join(glitch_simple_firmware_dir, r"glitchsimple-CW308_STM32F3.hex")
-programmer.program(glitch_simple_hex, memtype="flash", verify=True)
-programmer.close()
+# program the STM32F3 with the built hex file
+prog = cw.programmers.STM32FProgrammer
+fw_path = "../../hardware/victims/firmware/glitch-simple/glitchsimple-CWLITEARM.hex"
+
+cw.programTarget(scope, prog, fw_path)
+
+import time
+def reset_target(scope):
+    scope.io.nrst = 'low'
+    time.sleep(0.05)
+    scope.io.nrst = 'high'
 
 # format output table
 headers = ['target output', 'width', 'offset', 'success']
@@ -58,77 +54,73 @@ glitch_display = GlitchResultsDisplay(headers)
 # set glitch parameters
 # trigger glitches with external trigger
 scope.glitch.trigger_src = 'ext_single'
-scope.glitch.repeat = 105
-
-traces = []
-outputs = []
-widths = []
-offsets = []
+scope.glitch.ext_offset = 37
+scope.glitch.repeat = 10
 
 # named tuples to make it easier to change the scope of the test
 Range = namedtuple('Range', ['min', 'max', 'step'])
-width_range = Range(-10, 10, 4)
-offset_range = Range(-10, 10, 4)
+width_range = Range(-40, 10, 1)
+offset_range = Range(-49, -30, 1)
 
-# glitch cycle
 scope.glitch.width = width_range.min
-open('glitch_out.csv', 'w').close()
-f = open('glitch_out.csv', 'ab')
-writer = csv.writer(f)
 target.init()
+
+attack1_data = []
+sample_size = 5
+
 while scope.glitch.width < width_range.max:
     scope.glitch.offset = offset_range.min
     while scope.glitch.offset < offset_range.max:
-        # call before trace things here
+        successes = 0
+        for i in range(sample_size):
+            # call before trace things here
 
-        # flush the garbage from the computer's target read buffer
-        target.ser.flush()
+            # flush the garbage from the computer's target read buffer
+            target.ser.flush()
 
-        # run aux stuff that should run before the scope arms here
+            # run aux stuff that should run before the scope arms here
 
-        # target enters reset state
-        scope.io.nrst = 'low'
+            scope.arm()
+            reset_target(scope)
 
-        scope.arm()
+            timeout = 50
+            # wait for target to finish
+            while target.isDone() is False and timeout:
+                timeout -= 1
+                time.sleep(0.01)
 
-        # run aux stuff that should run after the scope arms here
+            try:
+                ret = scope.capture()
+                if ret:
+                    print('Timeout happened during acquisition')
+            except IOError as e:
+                print('IOError: %s' % str(e))
 
-        # target exits reset state and starts execution
-        scope.io.nrst = 'high'
+            # get the results from the scope
+            # read from the targets buffer
+            num_chars = target.ser.inWaiting()
+            response = target.ser.read(num_chars, timeout = 10)
 
-        timeout = 50
-        # wait for target to finish
-        while target.isDone() is False and timeout:
-            timeout -= 1
-            time.sleep(0.01)
+            # for table display purposes
+            success = '1234' in repr(response) # check for glitch success (depends on targets active firmware)
+            if success:
+                successes += 1
 
-        try:
-            ret = scope.capture()
-            if ret:
-                logging.warning('Timeout happened during acquisition')
-        except IOError as e:
-            logging.error('IOError: %s' % str(e))
-
-        # get the results from the scope
-        trace = scope.getLastTrace()
-        # read from the targets buffer
-        output = target.ser.read(32, timeout=10)
-        traces.append(trace)
-        outputs.append(output)
-        widths.append(scope.glitch.width)
-        offsets.append(scope.glitch.width)
-
-        # for table display purposes
-        success = '1234' in repr(output) # check for glitch success (depends on targets active firmware)
-        data = [repr(output), scope.glitch.width, scope.glitch.offset, success]
-        glitch_display.add_data(data)
-        writer.writerow(data)
-
+        data = [scope.glitch.width, scope.glitch.offset, successes/sample_size, repr(response)]
+        attack1_data.append(data)
         # run aux stuff that should happen after trace here
         scope.glitch.offset += offset_range.step
     scope.glitch.width += width_range.step
-f.close()
-traces = np.asarray(traces)
-# the rest of the data is available with the outputs, widths, and offsets lists
-glitch_display.display_table()
+
+def sort_glitch(glitch):
+    return glitch[2]
+
+attack1_data.sort(key=sort_glitch, reverse=True)
+for row in attack1_data:
+    print(row)
+
 print('Done')
+
+# clean up the connection to the scope and target
+scope.dis()
+target.dis()

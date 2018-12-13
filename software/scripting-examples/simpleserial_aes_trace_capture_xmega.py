@@ -1,19 +1,17 @@
 """Example for scripting capturing of traces during AES encryption
 with the chipwhisperer tool. This script does not spawn a gui, and
-uses the 4.0 api.
+uses the 5.0 api.
 """
 
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
-from tqdm import tqdm
+from tqdm import trange
 import os
 import logging
 
 import chipwhisperer as cw
-from chipwhisperer.tests.tools_for_tests import FIRMWARE_DIR
-from chipwhisperer.capture.api.programmers import XMEGAProgrammer
 
 logging.basicConfig(level=logging.INFO)
 
@@ -33,22 +31,19 @@ scope.io.tio2 = "serial_tx"
 scope.io.hs2 = "clkgen"
 
 # program the XMEGA with the built hex file
-programmer = XMEGAProgrammer()
-programmer.scope = scope
-programmer._logging = None
-programmer.find()
-programmer.erase()
-simple_serial_firmware_dir = os.path.join(FIRMWARE_DIR, 'simpleserial-aes')
-simple_hex = os.path.join(simple_serial_firmware_dir, r"simpleserial-aes-xmega.hex")
-programmer.program(simple_hex, memtype="flash", verify=True)
-programmer.close()
+prog = cw.programmers.XMEGAProgrammer
+fw_path = "../../hardware/victims/firmware/simpleserial-aes/simpleserial-aes-xmega.hex"
+
+cw.programTarget(scope, prog, fw_path)
+
+ktp = cw.ktp.Basic(target=target)
 
 traces = []
 textin = []
 keys = []
 N = 50  # Number of traces
 target.init()
-for i in tqdm(range(N), desc='Capturing traces'):
+for i in trange(N, desc='Capturing traces'):
     # run aux stuff that should come before trace here
 
     text = [0]*16

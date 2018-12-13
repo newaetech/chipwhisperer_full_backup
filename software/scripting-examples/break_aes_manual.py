@@ -1,8 +1,6 @@
 """Example script for breaking AES manually, similar to the tutorial.
 """
 
-from __future__ import division, print_function
-
 import numpy as np
 from tqdm import tqdm
 
