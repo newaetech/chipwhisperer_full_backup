@@ -90,6 +90,9 @@ class Programmer(object):
         self.newTextLog = util.Signal()
         self._scope = None
 
+    def open(self):
+        pass
+
     @property
     def scope(self):
         import chipwhisperer.common.api.CWCoreAPI
