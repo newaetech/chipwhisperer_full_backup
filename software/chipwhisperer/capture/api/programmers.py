@@ -241,7 +241,13 @@ class XMEGAProgrammer(Programmer):
     def erase(self, memtype="chip"):
         self.log("Erasing Chip")
         xmega = self.xmegaprog()
-        xmega.erase(memtype)
+        try:
+            xmega.erase(memtype)
+        except IOError:
+            logging.warn("Full chip erase timed out. Erasing app only instead")
+            xmega.enablePDI(False)
+            xmega.enablePDI(True)
+            xmega.erase("app")
 
     @save_and_restore_pins
     def autoProgram(self, hexfile, erase, verify, logfunc, waitfunc):
