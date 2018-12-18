@@ -548,6 +548,9 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
     def getCurrentScope(self):
         return self
 
+    def _getNAEUSB(self):
+        return self._cwusb
+
     def _con(self, sn=None):
         try:
             possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])

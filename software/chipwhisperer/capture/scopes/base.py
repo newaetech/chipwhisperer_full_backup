@@ -41,6 +41,9 @@ class ScopeTemplate(Parameterized):
         self.getParams().register()
         self.channels = [Channel(self.getName() + " - Channel " + str(n)) for n in range(1,2)]
 
+    def _getNAEUSB(self):
+        raise Warning("Can't find low level USB interface for scope " + self.getName())
+
     def dcmTimeout(self):
         pass
 

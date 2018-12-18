@@ -23,6 +23,7 @@ from chipwhisperer.capture.api import programmers
 
 
 from chipwhisperer.capture import acq_patterns as key_text_patterns
+from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 ktp = key_text_patterns #alias
 
 def programTarget(scope, type, fw_path):

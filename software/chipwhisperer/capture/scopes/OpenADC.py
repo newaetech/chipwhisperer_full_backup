@@ -80,6 +80,9 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         self.params.init()
         self.params.append(self.qtadc.getParams())
 
+    def _getNAEUSB(self):
+        return self.scopetype.dev._cwusb
+
     def dcmTimeout(self):
         if self.connectStatus.value():
             try:

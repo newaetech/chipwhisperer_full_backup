@@ -25,8 +25,6 @@
 
 
 import os.path
-from PySide.QtCore import *
-from PySide.QtGui import *
 try:
     from chipwhisperer.common.utils import serialport as scan
 except ImportError:
@@ -34,175 +32,56 @@ except ImportError:
         @staticmethod
         def scan():
             return ["pyserial not installed"]
-from chipwhisperer.common.utils import qt_tweaks as QtFixes
 from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
 
-#The firmware files
+#The firmware files, may still be useful
 from chipwhisperer.hardware.firmware.cwlite import getsome as cwlite_getsome
 
+class SAMFWLoader(object):
+    def __init__(self, scope=None):
+        # other class gets NAEUSB object, so we need to get it as well
+        if scope:
+            self.usb = scope._getNAEUSB()
+        self._warning_seen = False
 
-class SAM3LoaderConfig(QtFixes.QDialog):
-    def __init__(self, parent=None, cwliteUSB=None):
-        super(SAM3LoaderConfig, self).__init__(parent)
+    def enterBootloader(self, really_enter=False):
+        if not really_enter and not self._warning_seen:
+            self._warning_seen = True
+            raise Warning("""This method puts the SAM3U into bootloader mode
 
-        if cwliteUSB:
-            self.cwLiteUSB = cwliteUSB._usb
+            If you enter the bootloader mode, you must upload new firmware to exit this mode.
+            Power cycling will not exit bootloader mode. If you really want to enter bootloader
+            mode, recall this method or call as enterBootloader(really_enter=True).
+
+            See documentation or ask at https://forum.newae.com/ for more information """)
+
+
         else:
-            self.cwLiteUSB = None
+            print("""Entering bootloader mode...
+            Please wait until the ChipWhisperer shows up as a serial port. Once it has, call
+            the program(COMPORT, FWPATH) to program the ChipWhisperer
 
-        self.setWindowTitle("SAM3U Firmware Loader")
-        layout = QVBoxLayout()
+            Default firmware can be found at chipwhisperer/hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin""")
+            self.usb.enterBootloader(True)
 
-        gbSAMMode = QGroupBox("Step 1. Enable Bootloader")
-        layoutGB = QVBoxLayout()
-
-        if self.cwLiteUSB:
-            pbBootmode = QPushButton("Enable Bootloader Mode")
-            pbBootmode.clicked.connect(self.enableBootloader)
-            layoutGB.addWidget(pbBootmode)
-        else:
-            labelUnconnected = QLabel("USB not connected. If you have not yet enabled bootload mode: close this dialog, " +
-                                      "connect to the scope/target, and open it again. If you have already enabled bootload " +
-                                      "mode skip to Step 2.")
-            labelUnconnected.setWordWrap(True)
-            layoutGB.addWidget(labelUnconnected)
-
-        labelWarnBoot1 = QLabel("WARNING: Bootload mode will stay enabled until new firmware is loaded.")
-        labelWarnBoot2 = QLabel("NOTE: This only works on firmware 0.11 or later. Short 'ERASE' jumper to enable bootloader mode on earlier firmwares.")
-        labelWarnBoot1.setWordWrap(True)
-        labelWarnBoot2.setWordWrap(True)
-        layoutGB.addWidget(labelWarnBoot1)
-        layoutGB.addWidget(labelWarnBoot2)
-        gbSAMMode.setLayout(layoutGB)
-        layout.addWidget(gbSAMMode)
-
-        gbSAMProgram = QGroupBox("Step 2. Program Binary")
-
-        layoutSAMGB = QVBoxLayout()
-
-        layoutFW = QHBoxLayout()
-        self.firmwareLocation = QtFixes.QLineEdit()
-        self.firmwareButton = QPushButton("Find")
-        self.firmwareButton.clicked.connect(self.findFirmware)
-        layoutFW.addWidget(QLabel("SAM3U Firmware"))
-        layoutFW.addWidget(self.firmwareLocation)
-        layoutFW.addWidget(self.firmwareButton)
-
-        self.firmwareButton.setEnabled(False)
-        self.firmwareLocation.setEnabled(False)
-
-        self.serlist = QComboBox()
-        serrefresh = QPushButton("Update List")
-        serrefresh.clicked.connect(self.serialRefresh)
-
-        layoutSerList = QHBoxLayout()
-        layoutSerList.addWidget(self.serlist)
-        layoutSerList.addWidget(serrefresh)
-
-        pbProgram = QPushButton("Run Program")
-        pbProgram.clicked.connect(self.runSamba)
-
-        self.programStatus = QTextEdit("You will have to wait for device to attach as a serial port. Once this " +
-                                       "happens, press the 'Update List' button and select the proper serial port." +
-                                       " Then hit 'Run Program' to update your device.")
-        self.programStatus.setReadOnly(True)
-
-        self.rbBuiltin = QRadioButton("Built-in")
-        self.rbExternal = QRadioButton("External File")
-        self.rbBuiltin.setChecked(True)
-        FWModeRBLayout = QHBoxLayout()
-        FWModeRBLayout.addWidget(self.rbBuiltin)
-        FWModeRBLayout.addWidget(self.rbExternal)
-
-        self.rbExternal.clicked.connect(self.rbbuiltinchange)
-        self.rbBuiltin.clicked.connect(self.rbbuiltinchange)
-
-        layoutSAMGB.addLayout(FWModeRBLayout)
-        layoutSAMGB.addLayout(layoutFW)
-        layoutSAMGB.addLayout(layoutSerList)
-        layoutSAMGB.addWidget(pbProgram)
-        layoutSAMGB.addWidget(self.programStatus)
-        gbSAMProgram.setLayout(layoutSAMGB)
-        layout.addWidget(gbSAMProgram)
-
-        sam3uFWLoc = QSettings().value("cwlite-sam3u-firmware-location")
-
-        rootprefix = util.getRootDir() + "/"
-
-        if not sam3uFWLoc:
-            defLocfwF = rootprefix + "../../../hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin"
-            if os.path.isfile(defLocfwF):
-                sam3uFWLoc = str(defLocfwF)
-                QSettings().setValue("cwlite-sam3u-firmware-location", sam3uFWLoc)
-
-        self.firmwareLocation.setText(sam3uFWLoc)
-
-        gbDone = QGroupBox("Step 3. Reset")
-        gbDoneLayout = QHBoxLayout()
-        gbDone.setLayout(gbDoneLayout)
-        gbDoneLabel = QLabel("If the above succeeds, you need to power-cycle the target. Unplug & replug target. You may also " +
-                             "need to close and re-open ChipWhisperer-Capture.")
-        gbDoneLabel.setWordWrap(True)
-        gbDoneLayout.addWidget(gbDoneLabel)
-        layout.addWidget(gbDone)
-
-        self.setLayout(layout)
-
-    def rbbuiltinchange(self, _=None):
-        if self.rbExternal.isChecked():
-            self.firmwareButton.setEnabled(True)
-            self.firmwareLocation.setEnabled(True)
-
-        if self.rbBuiltin.isChecked():
-            self.firmwareButton.setEnabled(False)
-            self.firmwareLocation.setEnabled(False)
-
-    def findFirmware(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware',  QSettings().value("cwlite-sam3u-firmware-location"), '*.bin')
-        if fname:
-            self.firmwareLocation.setText(fname)
-            QSettings().setValue("cwlite-sam3u-firmware-location", fname)
-
-    def enableBootloader(self, ask=True):
-        if ask:
-            # Check user isn't dumb
-            reply = QMessageBox.warning(self, "Bootloader Warning", "Clicking 'YES' will enable bootloader mode. To disable this mode you " +
-                                              "must load new firmware, it will not be cleared by power cycling. If you have trouble see " +
-                                              "documentation, or ask at https://newae.com/forum.", QMessageBox.Yes | QMessageBox.No,
-                                              QMessageBox.No)
-
-            if reply != QMessageBox.Yes:
-                return
-
-        self.cwLiteUSB.enterBootloader(True)
-
-    def runSamba(self):
+    def program(self, port, fw_path):
         sam = Samba()
-
-        if self.rbExternal.isChecked():
-            fw_data = open(self.firmwareLocation.text(), 'rb').read()
-        else:
-            fw_data = cwlite_getsome("SAM3U_CW1173.bin", filelike=False)
-
-        self.programStatus.setText("Attempting to connect to %s\n"%self.serlist.currentText())
-        sam.con(self.serlist.currentText())
-        self.programStatus.append("Erasing...\n")
+        print("Opening firmware...")
+        fw_data = open(fw_path, "rb").read()
+        print("Opened!\nConnecting...")
+        sam.con(port)
+        print("Connected!\nErasing...")
         sam.erase()
-        if self.rbExternal.isChecked():
-            self.programStatus.append("Programming %s\n"%(self.firmwareLocation.text()))
-        else:
-            self.programStatus.append("Using built-in firmware file")
+        print("Erased!\nProgramming file {}...".format(fw_path))
         sam.write(fw_data)
+        print("Programmed!\nVerifying...")
         if sam.verify(fw_data):
-            self.programStatus.append("Program OK (Verify Passed!)\n")
+            print("Verify OK!")
             sam.flash.setBootFlash(True)
+            print("Bootloader disabled. Please power cycle device.")
         else:
-            self.programStatus.append("Verify FAILED\n")
+            print("Verify FAILED!")
+
         sam.ser.close()
 
-    def serialRefresh(self):
-        serialnames = scan.scan()
-        self.serlist.clear()
-        for s in serialnames:
-            self.serlist.addItem(s)
