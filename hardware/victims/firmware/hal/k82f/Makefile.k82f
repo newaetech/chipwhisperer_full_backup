@@ -23,6 +23,19 @@ CFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-
 CPPFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -MMD -MP -static 
 CPPFLAGS += -Os -g -DDEBUG -DCPU_MK82FN256VLL15 -DFRDM_K64F -DFREEDOM -w -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin 
 
+ifeq ($(CRYPTO_TARGET),HWAES)
+  ifeq ($(CRYPTO_OPTIONS),LTC)
+    $(info Using hardware masked Trusted Crypto engine)
+    CFLAGS += -DUSE_TRUSTED_CRYPTO=1
+    CPPFLAGS += -DUSE_TRUSTED_CRYPTO=1
+  else ifeq ($(CRYPTO_OPTIONS),MMCAU)
+    $(info Using normal hardware crypto engine)
+    CFLAGS += -DUSE_TRUSTED_CRYPTO=0
+    CPPFLAGS += -DUSE_TRUSTED_CRYPTO=0
+  else
+    $(error Unsupported crypto engine. Set CRYPTO_OPTIONS to either MMCAU or LTC)
+  endif
+endif
 
 ASFLAGS += -g -DDEBUG -D__STARTUP_CLEAR_BSS -g -Wall -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin
 ASFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16

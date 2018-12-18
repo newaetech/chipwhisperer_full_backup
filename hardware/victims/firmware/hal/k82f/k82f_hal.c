@@ -8,15 +8,36 @@
 #include "clock_config.h"
 #include "fsl_lpuart.h"
 #include "fsl_mmcau.h"
+#include "fsl_ltc.h"
+#include "fsl_trng.h"
 
 #include <stdint.h>
 
+#define ROUNDS_BEFORE_RESEED 50000
+#define AES_KEY_SIZE 16
 
 static uint32_t AES_KEY_SCH[44];
+static char ltcAesKey[AES_KEY_SIZE];
+static uint32_t maskSeed;
+static uint32_t nbAesBlocks;
 
 void platform_init(void)
 {
+     trng_config_t trngConfig;
+
      BOARD_BootClockRUN();
+
+#if USE_TRUSTED_CRYPTO
+     // Start TRNG
+     TRNG_GetDefaultConfig(&trngConfig);
+     TRNG_Init(TRNG0, &trngConfig);
+     TRNG_GetRandomData(TRNG0, maskSeed, sizeof(maskSeed));
+
+     // Start Trusted Crypto module
+     LTC_Init(LTC0);
+     LTC_SetDpaMaskSeed(LTC0, maskSeed);
+     nbAesBlocks = 0;
+#endif
 }
 
 void init_uart(void)
@@ -77,13 +98,39 @@ void HW_AES128_Init(void)
 }
 void HW_AES128_LoadKey(uint8_t* key)
 {
-     MMCAU_AES_SetKey(key, 16, AES_KEY_SCH);
+#if USE_TRUSTED_CRYPTO
+     memcpy(ltcAesKey, key, AES_KEY_SIZE);
+#else
+     MMCAU_AES_SetKey(key, AES_KEY_SIZE, AES_KEY_SCH);
+#endif
 }
 void HW_AES128_Enc(uint8_t* pt)
 {
+#if USE_TRUSTED_CRYPTO
+     LTC_AES_EncryptEcb(LTC0, pt, pt, LTC_AES_BLOCK_SIZE, ltcAesKey,
+                        AES_KEY_SIZE);
+     nbAesBlocks++;
+     if (nbAesBlocks >= ROUNDS_BEFORE_RESEED) {
+       nbAesBlocks = 0;
+       TRNG_GetRandomData(TRNG0, maskSeed, sizeof(maskSeed));
+       LTC_SetDpaMaskSeed(LTC0, maskSeed);
+     }
+#else
      MMCAU_AES_EncryptEcb(pt, AES_KEY_SCH, 10, pt);
+#endif
 }
 void HW_AES128_Dec(uint8_t *pt)
 {
+#if USE_TRUSTED_CRYPTO
+     LTC_AES_DecryptEcb(LTC0, pt, pt, LTC_AES_BLOCK_SIZE, ltcAesKey,
+                        AES_KEY_SIZE, kLTC_DecryptKey);
+     nbAesBlocks++;
+     if (nbAesBlocks >= ROUNDS_BEFORE_RESEED) {
+       nbAesBlocks = 0;
+       TRNG_GetRandomData(TRNG0, maskSeed, sizeof(maskSeed));
+       LTC_SetDpaMaskSeed(LTC0, maskSeed);
+     }
+#else
      MMCAU_AES_DecryptEcb(pt, AES_KEY_SCH, 10, pt);
+#endif
 }
