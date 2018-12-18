@@ -549,7 +549,19 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
         return self
 
     def _con(self, sn=None):
-        self._cwusb.con(idProduct=[0xACE0])
+        try:
+            possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
+            serial_numbers = []
+            if len(possible_sn) > 1:
+                if sn is None:
+                    for d in possible_sn:
+                        serial_numbers.append(f"sn = {str(d['sn'])} ({str(d['product'])})")
+                    raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
+            else:
+                sn = None
+            found_id = self._cwusb.con(idProduct=[0xACE0], serial_number=sn)
+        except (IOError, ValueError):
+            raise Warning("Could not connect to cwnano. It may have been disconnected, is in an error state, or is being used by another tool.")
         self.disable_newattr()
         self._is_connected = True
         return True
