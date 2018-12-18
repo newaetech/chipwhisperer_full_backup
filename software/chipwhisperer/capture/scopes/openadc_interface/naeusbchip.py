@@ -65,7 +65,7 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             }
             self.scope = oadcInstance
 
-    def con(self):
+    def con(self, sn=None):
         if self.ser is None:
             self.dev = CWL.CWLiteUSB()
             self.getParams().append(self.dev.getParams())
@@ -73,13 +73,16 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             try:
                 nae_products = [0xACE2, 0xACE3]
                 possible_sn = self.dev.get_possible_devices(nae_products)
+                serial_numbers = []
                 if len(possible_sn) > 1:
                     #Update list...
-                    snlist = DictType({'Select Device to Connect':None})
-                    for d in possible_sn:
-                        snlist[str(d.serial_number) + " (" + str(d.product) + ")"] = d.serial_number
-
-                    #TODO3: What to do with snlist?
+                    if sn is None:
+                        snlist = DictType({'Select Device to Connect':None})
+                        for d in possible_sn:
+                            snlist[str(d['sn']) + " (" + str(d['product']) + ")"] = d['sn']
+                            serial_numbers.append(f"sn = {str(d['sn'])} ({str(d['product'])})")
+                            pass
+                        raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
                 else:
                     sn = None
                 found_id = self.dev.con(idProduct=nae_products, serial_number=sn)

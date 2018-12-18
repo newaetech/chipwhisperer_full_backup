@@ -109,15 +109,18 @@ def createProject(filename, overwrite=False):
     return proj
 
 
-def scope(type = scopes.OpenADC):
+def scope(type = scopes.OpenADC, sn=None):
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the scope
     is a ChipWhisperer OpenADC object, but this can be set to any valid scope
     class.
+
+    If multiple chipwhisperers are connected, the serial number of the one you
+    want to connect to can be specified by passing sn=<SERIAL_NUMBER>
     """
     scope = type()
-    scope.con()
+    scope.con(sn)
     return scope
 
 def target(scope, type = targets.SimpleSerial, **kwargs):
@@ -141,7 +144,7 @@ try:
     current_trace_iteration = 0
     import pandas as pd
     from IPython.display import clear_output
-    def _defaultJupyterCallback(attack, head = 6):
+    def _defaultJupyterCallback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
         global current_trace_iteration
         attack_results = attack.getStatistics()
         key = attack.knownKey()
@@ -149,7 +152,7 @@ try:
         def format_stat(stat):
             if type(stat) is int:
                 return str(stat)
-            return str("{:02X}<br>{:.3f}".format(stat[0], stat[2]))
+            return str(fmt.format(stat[0], stat[2]))
 
         def color_corr_key(row):
             ret = [""] * 16
@@ -177,10 +180,10 @@ try:
         current_trace_iteration += 1
         display(df.head(head).style.format(format_stat).apply(color_corr_key, axis=1).set_caption("Finished traces {} to {}".format(tstart, tend)))
 
-    def getJupyterCallback(attack, head = 6):
+    def getJupyterCallback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
         """Get callback for use in Jupyter"""
         current_trace_iteration = 0
-        return lambda : _defaultJupyterCallback(attack, head)
+        return lambda : _defaultJupyterCallback(attack, head, fmt)
 except ImportError:
     def getJupyterCallback(attack, head = 6):
         raise UserWarning("This function is only available in Jupyter with pandas installed")

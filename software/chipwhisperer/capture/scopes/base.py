@@ -56,13 +56,13 @@ class ScopeTemplate(Parameterized):
     def getStatus(self):
         return self.connectStatus.value()
 
-    def con(self):
+    def con(self, sn=None):
         for channel in self.channels:
             channel.register()
-        if self._con():
+        if self._con(sn):
             self.connectStatus.setValue(True)
 
-    def _con(self):
+    def _con(self, sn=None):
         raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def dis(self):

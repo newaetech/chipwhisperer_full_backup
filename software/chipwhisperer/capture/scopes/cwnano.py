@@ -548,7 +548,7 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
     def getCurrentScope(self):
         return self
 
-    def _con(self):
+    def _con(self, sn=None):
         self._cwusb.con(idProduct=[0xACE0])
         self.disable_newattr()
         self._is_connected = True

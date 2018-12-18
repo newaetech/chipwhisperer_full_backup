@@ -122,9 +122,9 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
                 return "cwrev2"
         return ""
 
-    def _con(self):
+    def _con(self, sn=None):
         if self.scopetype is not None:
-            self.scopetype.con()
+            self.scopetype.con(sn)
 
             # TODO Fix this hack
             if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):

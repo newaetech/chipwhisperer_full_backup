@@ -552,7 +552,7 @@ class NAEUSB(object):
         elif serial_number:
             dev = None
             for d in devlist:
-                if d["serial_number"] == serial_number:
+                if d["sn"] == serial_number:
                     dev = d
                     break
 
