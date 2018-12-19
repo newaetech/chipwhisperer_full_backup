@@ -32,7 +32,7 @@ uint8_t tmp[BUFLEN];
 char asciibuf[BUFLEN];
 uint8_t pt[16];
 
-static void delay_200_ms(void);
+static void delay_2_ms(void);
 
 
 void my_puts(char *c)
@@ -43,9 +43,9 @@ void my_puts(char *c)
   } while (*++c);
 }
 
-static void delay_200_ms()
+static void delay_2_ms()
 {
-  for (volatile unsigned int i=0; i < 0xffff; i++ ){
+  for (volatile unsigned int i=0; i < 0xff; i++ ){
     ;
   }
 }
@@ -78,13 +78,13 @@ int main(void)
         //Print some fancy-sounding stuff so that attackers
         //will get scared and leave us alone
         my_puts("Aligning bits........[DONE]\n");
-        delay_200_ms();
+        delay_2_ms();
         my_puts("Checking Cesium RNG..[DONE]\n");
-        delay_200_ms();
+        delay_2_ms();
         my_puts("Masquerading flash...[DONE]\n");
-        delay_200_ms();
+        delay_2_ms();
         my_puts("Decrypting database..[DONE]\n");
-        delay_200_ms();
+        delay_2_ms();
         my_puts("\n\n");
 
         //Give them one last warning
@@ -113,8 +113,8 @@ int main(void)
             for(volatile int i = 0; i < wait; i++){
                 ;
             }
-            delay_200_ms();
-            delay_200_ms();
+            delay_2_ms();
+            delay_2_ms();
             my_puts("PASSWORD FAIL\n");
             led_error(1);
         } else {
