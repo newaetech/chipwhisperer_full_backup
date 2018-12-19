@@ -42,7 +42,12 @@ class ChipWhispererDecodeTrigger(Parameterized):
     _name = 'I/O Decoder Trigger Module'
     def __init__(self, oa):
         self.oa = oa
-
+        
+        #init baud to avoid weird baud being reported (-91.4)
+        breg = (38400 * 8 * 512 + self.systemClk() / 255) / (self.systemClk() / 128)
+        breg = int(round(breg))
+        self.setRxBaudReg(breg)
+        
         self.getParams().addChildren([
 
             {'name': 'Decode Type', 'type': 'list', 'values': {'USART': 1, 'SPI': 2, 'Unknown':0}, 'get':self.get_decodetype, 'set':self.set_decodetype},
@@ -161,8 +166,8 @@ class ChipWhispererDecodeTrigger(Parameterized):
 
     def get_rxbaud(self):
         breg = self.rxBaudReg()
-        baud = ((breg * (self.systemClk() / 128)) - (self.systemClk() / 255)) / 512
-        baud = baud / 8
+        tmp =((breg * (self.systemClk() / 128)) - (self.systemClk() / 255)) / 512
+        baud = tmp / 8
         return baud
 
     def setRxBaudReg(self, breg):
