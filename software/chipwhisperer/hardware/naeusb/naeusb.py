@@ -30,7 +30,7 @@ import struct
 import pickle
 import traceback
 
-import usb.backend.libusb0 as libusb0
+from usb.backend import libusb0
 import usb.core
 import usb.util
 
@@ -386,40 +386,31 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
 
         if idProduct is None:
             idProduct = [None]
-
-        for id in idProduct:
+        
+        
+        libusb_backend = libusb0.get_backend()
+        for _ in range(2): #1 try for each backend
             try:
-                # Connect to device (attempt #1)
-                if id:
-                    dev = list(
-                        usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, backend=libusb0.get_backend()))
-                else:
-                    dev = list(
-                        usb.core.find(find_all=True, idVendor=0x2B3E, backend=libusb0.get_backend()))
-            except usb.core.NoBackendError:
-                try:
-                    # An error in the previous one is often caused by Windows 64-bit not detecting the correct library, attempt to force this with paths
-                    # that often work so user isn't aware
-                    # Connect to device (attempt #1)
+                for id in idProduct:
                     if id:
-                        dev = list(
-                            usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, backend=libusb0.get_backend(
-                                find_library=lambda x: r"c:\Windows\System32\libusb0.dll")))
+                        dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, backend=libusb_backend))
                     else:
-                        ddev = list(
-                            usb.core.find(find_all=True, idVendor=0x2B3E, backend=libusb0.get_backend(
-                                find_library=lambda x: r"c:\Windows\System32\libusb0.dll")))
-                except usb.core.NoBackendError:
-                    raise IOError(
-                        "Failed to find USB backend. Check libusb drivers installed, check for path issues on library, and check for 32 vs 64-bit issues.")
-            # Found something
-            if len(dev) > 0:
-                devlist.extend(dev)
-
-        if dictonly:
-            devlist = [{'sn': d.serial_number, 'product': d.product, 'pid': d.idProduct, 'vid': d.idVendor} for d in devlist]
-
-        return devlist
+                        dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, backend=libusb_backend))
+                    if len(dev) > 0:
+                        devlist.extend(dev)
+                if dictonly:
+                    devlist = [{'sn': d.serial_number, 'product': d.product, 'pid': d.idProduct, 'vid': d.idVendor} for d in devlist]
+                    
+                return devlist
+            except (usb.core.NoBackendError, ValueError):
+                # An error in the previous find is often caused by Windows 64-bit not detecting the correct library, attempt to force this with paths
+                # that often work so user isn't aware
+                #from usb.backend import libusb0
+                libusb_backend = libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll")
+                devlist = []
+                continue
+                
+        raise IOError("Failed to find USB backend. Check libusb drivers installed, check for path issues on library, and check for 32 vs 64-bit issues.")
 
     def sendCtrl(self, cmd, value=0, data=[]):
         """
