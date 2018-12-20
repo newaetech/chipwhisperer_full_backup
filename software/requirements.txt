@@ -10,6 +10,7 @@ jupyter_contrib_nbextensions==0.5.0
 matplotlib>=2.1.2
 numpy>=1.14.0
 pandas==0.23.4
+pycryptodome>=3.7.0
 pyparsing==2.2.0
 python-dateutil==2.6.1
 pytz==2017.3
