@@ -68,7 +68,7 @@ class TraceContainerNative(TraceContainer):
         if self.config.configFilename():
             if directory is None:
                 directory = os.path.split(self.config.configFilename())[0]
-            if prefix is None:
+            if prefix is None or prefix == '':
                 prefix = self.config.attr("prefix")
 
         self.traces = np.load(directory + "/%straces.npy" % prefix, mmap_mode='r')
