@@ -39,10 +39,11 @@ void platform_init(void);
 #define CW308_CC2538   19
 #define CW308_K24F     20
 #define CW308_NRF52840 21
-#define CW308_AURIX     22
-#define CW308_SAML11     23
-#define CW308_EFM32TG11B     24
+#define CW308_AURIX    22
+#define CW308_SAML11   23
+#define CW308_EFM32TG11B 24
 #define CW308_K82F     25
+#define CW308_LPC55S6X 26
 
 //HAL_TYPE Define Types
 #define HAL_avr     1
@@ -62,6 +63,7 @@ void platform_init(void);
 #define HAL_saml11 15
 #define HAL_efm32tg11b 16
 #define HAL_k82f    17
+#define HAL_lpc55s6x 18
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
@@ -107,6 +109,8 @@ void platform_init(void);
      #include "saml11/saml11_hal.h"
 #elif HAL_TYPE == HAL_efm32tg11b
      #include "efm32tg11b/efm32tg11b_hal.h"
+#elif HAL_TYPE == HAL_lpc55s6x
+     #include "lpc55s6x/lpc55s6x_hal.h"
 #else
     #error "Unsupported HAL Type"
 #endif

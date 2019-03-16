@@ -154,6 +154,9 @@ else ifeq ($(PLATFORM),CW308_SAML11)
 else ifeq ($(PLATFORM),CW308_EFM32TG11B)
  HAL = efm32tg11b
  PLTNAME = EFM32TG11B
+else ifeq ($(PLATFORM),CW308_LPC55S6X)
+ HAL = lpc55s6x
+ PLTNAME = LPC55S6X
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
 endif
