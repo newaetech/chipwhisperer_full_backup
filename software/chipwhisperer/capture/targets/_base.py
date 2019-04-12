@@ -26,7 +26,6 @@
 from chipwhisperer.capture.api.programmers import Programmer
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 try:
     from Crypto.Cipher import AES
@@ -34,13 +33,12 @@ except ImportError:
     AES = None
 
 
-class TargetTemplate(Parameterized, Plugin):
+class TargetTemplate(Plugin):
     _name = 'Target Connection'
 
     def __init__(self):
         self.newInputData = util.Signal()
         self.connectStatus = util.Observable(False)
-        #self.getParams().register()
 
     def setSomething(self):
         """Here you would send value to the reader hardware"""

@@ -27,20 +27,25 @@ import time
 
 class PLLCDCE906(object):
 
-    def __init__(self, usb, ref_freq, parent=None):
+    def __init__(self, usb, ref_freq):
         self._usb = usb
         self.reffreq = ref_freq
-        self.parent = parent
+        self._pll0source = 'PLL0'
+        self._pll0slew = '+0nS'
+        self._pll1slew = '+0nS'
+        self._pll2slew = '+0nS'
 
     def pll_outfreq_set(self, freq, outnum):
         """
-        Set the PLL Output Frequency
-
-        Args:
+        Set the PLL Output Frequency. Args:
             freq (int): Frequency in Hz
+                minimum: 630 KHz
+                maximum: 167 MHz
             outnum (int): PLL Number (0,1,2)
         """
-        if freq is None or freq is 0: return
+        if freq is None or (freq < 630E3) or (freq > 167E6):
+            raise ValueError("Illegal clock frequency = %d" % freq)
+            return
         best = self.calcMulDiv(freq, self.reffreq)
         self.pllwrite(outnum, N=best[0], M=best[1], outdiv=best[2])
         self.outputUpdateOutputs(outnum)
@@ -62,7 +67,7 @@ class PLLCDCE906(object):
         if outnum == 0:
             outpin = 0
             if pllsrc_new is None:
-                src = self.parent.findParam(['pll', 'pll0', 'pll0source']).getValue()
+                src = self._pll0source
             else:
                 src = pllsrc_new
 
@@ -80,12 +85,14 @@ class PLLCDCE906(object):
             divsrc = 2
 
         if pllenabled_new is None:
-            pll_enabled = self.parent.findParam(['pll', 'pll%d' % outnum, 'pll%denabled' % outnum]).getValue()
+            pll_enabled = self.pll_outenable_get(outnum)
         else:
             pll_enabled = pllenabled_new
 
         if pllslewrate_new is None:
-            pll_slewrate = self.parent.findParam(['pll', 'pll%d' % outnum, 'pll%dslew' % outnum]).getValue()
+            if   (outnum == 0): pll_slewrate = self._pll0slew
+            elif (outnum == 1): pll_slewrate = self._pll1slew
+            elif (outnum == 2): pll_slewrate = self._pll2slew
         else:
             pll_slewrate = pllslewrate_new
 
@@ -108,8 +115,21 @@ class PLLCDCE906(object):
         return bool(data & (1 << 3))
 
     def pll_outslew_set(self, slew, outnum):
-        """Updates slew rates from GUI settings"""
-        self.outputUpdateOutputs(outnum, pllslewrate_new=slew)
+        """ Set clock slew rate for the selected clock output.
+            - outnum=0: specifies CLK-SMA X6 output.
+            - outnum=1: specifies FPGA pin N13 output.
+            - outnum=2: specifies FPGA pin E12 output.
+        Allowed values: '+3nS', '+2nS', '+1nS', '+0nS'.
+        """
+        if slew in ['+3nS', '+2nS', '+1nS', '+0nS']:
+            if   outnum == 0: self._pll0slew = slew
+            elif outnum == 1: self._pll1slew = slew
+            elif outnum == 2: self._pll2slew = slew
+            else:
+                raise ValueError("Invalid clock number: %d" % outnum)
+            self.outputUpdateOutputs(outnum, pllslewrate_new=slew)
+        else:
+            raise ValueError("Invalid slew value: %s" % slew)
 
     def pll_outslew_get(self, outnum):
         """Get slew rate of PLL output"""
@@ -127,8 +147,18 @@ class PLLCDCE906(object):
             return "+0nS"
 
     def pll_outsource_set(self, source, outnum):
-        """Updates sources from GUI settings"""
-        self.outputUpdateOutputs(outnum, pllsrc_new=source)
+        """Update clock source for the selected clock output.
+            - outnum=0: specifies CLK-SMA X6 source; allowed source values: 'PLL0', 'PLL1', 'PLL2'.
+            - outnum=1: specifies FPGA pin N13 source; allowed source values: 'PLL1'.
+            - outnum=2: specifies FPGA pin E12 source; allowed source values: 'PLL2'.
+        """
+        if outnum==0 and source in ['PLL0', 'PLL1', 'PLL2']:
+            self._pll0source = source
+            self.outputUpdateOutputs(outnum, pllsrc_new=source)
+        elif (outnum==1 and source == 'PLL1') or (outnum==2 and source == 'PLL2'):
+            self.outputUpdateOutputs(outnum, pllsrc_new=source)
+        else:
+            raise ValueError("Invalid source %s for clock %d" % (source, outnum))
 
     def pll_outsource_get(self, outnum):
         """Get output source settings"""
