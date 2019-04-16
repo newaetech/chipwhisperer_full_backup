@@ -73,7 +73,7 @@ class CW305(TargetTemplate):
 
         self._woffset = 0x400
 
-        self._clksleeptime = 50
+        self._clksleeptime = 1
         self._clkusbautooff = True
 
 
@@ -224,7 +224,7 @@ class CW305(TargetTemplate):
         #LED On
         self.fpga_write(0x10+self._woffset, [0x01])
 
-        time.sleep(0.01)
+        time.sleep(0.001)
         self.usb_trigger_toggle()
         # self.FPGAWrite(0x100, [1])
         # self.FPGAWrite(0x100, [0])
