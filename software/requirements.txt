@@ -11,7 +11,7 @@ PySide==1.2.2
 python-dateutil==2.6.1
 pytz==2017.3
 pyusb==1.0.2
-PyYAML==3.12
+PyYAML>=4.2b1
 scipy==1.0.0
 serial==0.0.38
 six==1.11.0
