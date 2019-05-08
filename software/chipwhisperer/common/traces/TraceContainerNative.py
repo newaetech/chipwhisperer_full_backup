@@ -71,18 +71,18 @@ class TraceContainerNative(TraceContainer):
             if prefix is None or prefix == '':
                 prefix = self.config.attr("prefix")
 
-        self.traces = np.load(directory + "/%straces.npy" % prefix, mmap_mode='r')
-        self.textins = np.load(directory + "/%stextin.npy" % prefix)
-        self.textouts = np.load(directory + "/%stextout.npy" % prefix)
+        self.traces = np.load(directory + "/%straces.npy" % prefix, mmap_mode='r', allow_pickle=True)
+        self.textins = np.load(directory + "/%stextin.npy" % prefix, allow_pickle=True)
+        self.textouts = np.load(directory + "/%stextout.npy" % prefix, allow_pickle=True)
 
         try:
-            self.knownkey = np.load(directory + "/%sknownkey.npy" % prefix)
+            self.knownkey = np.load(directory + "/%sknownkey.npy" % prefix, allow_pickle=True)
         except IOError:
             self.knownkey = None
 
         # OK if this fails
         try:
-            self.keylist = np.load(directory + "/%skeylist.npy" % prefix)
+            self.keylist = np.load(directory + "/%skeylist.npy" % prefix, allow_pickle=True)
         except IOError:
             self.keylist = None
 
