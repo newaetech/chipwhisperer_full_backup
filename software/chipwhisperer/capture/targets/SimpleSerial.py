@@ -568,7 +568,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         # If the protocol format is bin convert is back to hex for handling by CW
         if self.protformat == "bin":
-            response = binascii.hexlify(response)
+            response = binascii.hexlify(response.encode('latin1'))
 
         if len(response) < dataLen:
             logging.warning('Response length from target shorter than expected (%d<%d): "%s".' % (len(response), dataLen, response))
