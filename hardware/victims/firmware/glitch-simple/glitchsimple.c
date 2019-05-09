@@ -184,15 +184,7 @@ int main(void){
 		
         
     while(1){
-	#if defined(GLITCH1)
             glitch1();
-	#elif defined(GLITCH2)
-	    glitch2();
-	#elif defined(GLITCH3)
-	    glitch3();
-	#else
-	    glitch_infinite();
-	#endif
     }
         
 	return 1;
