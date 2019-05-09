@@ -1,3 +1,8 @@
+V5.0.1:
+-Fixed project loading
+-Initial CW305 Support
+-Various small fixes
+
 V5.0.0:
 -Replaced GUI with Jupyter
 -Moved to Python 3 (Python 2.7 no longer supported)
