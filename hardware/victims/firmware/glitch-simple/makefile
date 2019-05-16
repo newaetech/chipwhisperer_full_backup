@@ -38,6 +38,10 @@ SRC += glitchsimple.c
 
 # -----------------------------------------------------------------------------
 
+FUNC_SEL = GLITCH1
+
+CFLAGS += -D$(FUNC_SEL)
+
 ifeq ($(CRYPTO_TARGET),)
 CRYPTO_TARGET = AVRCRYPTOLIB
 endif
