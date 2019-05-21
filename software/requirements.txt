@@ -7,7 +7,7 @@ iso8601==0.1.12
 jupyter_client>=5.2.4
 jupyter==1.0.0
 jupyter_contrib_nbextensions==0.5.0
-matplotlib>=2.1.2
+matplotlib==3.0.3
 numpy>=1.14.0
 pandas==0.23.4
 pycryptodome>=3.7.0
