@@ -37,6 +37,8 @@ TARGET = simpleserial-aes
 SRC += simpleserial-aes.c 
 
 # -----------------------------------------------------------------------------
+EXTRA_OPTS = NO_EXTRA_OPTS
+CFLAGS += -D$(EXTRA_OPTS)
 
 ifeq ($(CRYPTO_TARGET),)
 CRYPTO_TARGET = AVRCRYPTOLIB

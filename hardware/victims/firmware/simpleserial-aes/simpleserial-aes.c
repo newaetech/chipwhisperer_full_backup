@@ -37,6 +37,11 @@ uint8_t get_key(uint8_t* k)
 uint8_t get_pt(uint8_t* pt)
 {
 	trigger_high();
+
+  #ifdef ADD_JITTER
+  for (volatile uint8_t k = 0; k < (*pt & 0x0F); k++);
+  #endif
+
 	aes_indep_enc(pt); /* encrypting the data block */
 	trigger_low();
 	simpleserial_put('r', 16, pt);
