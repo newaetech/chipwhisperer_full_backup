@@ -1,6 +1,7 @@
 #include <machine/intrinsics.h>
 #include <machine/wdtcon.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "IfxScu_reg.h"
 #include "IfxScu_bf.h"
@@ -9,6 +10,8 @@
 #include "IfxStm_reg.h"
 #include "IfxStm_bf.h"
 #include "IfxQspi_reg.h"
+#include "IfxStm_reg.h"
+#include "IfxStm_bf.h"
 
 # define BOARD_NAME				"TriBoard-TC233A"
 # define BOARD_TITLE			"TC233A TriBoard"
@@ -77,6 +80,14 @@ static Ifx_ASCLIN * const UART = (Ifx_ASCLIN *)&MODULE_ASCLIN0;
 
 void platform_init(void)
 {
+     unlock_wdtcon();
+     unlock_safety_wdtcon(); //EVR13CON is safety_endinit protected ("SE" in user manual)
+
+     SCU_EVR13CON.U |= 0b11 << 28; //shut off internal regulator
+
+     lock_wdtcon();
+     lock_safety_wdtcon();
+
      SYSTEM_Init();
      PORT11->IOCR8.U = (0b10000 << 19) | (0b10000 << 11); //P11.10 as GPO Push pull
      PORT11->OMR.U = (1 << 10) | (1 << 26); //P11.10 High
