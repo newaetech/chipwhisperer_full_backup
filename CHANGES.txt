@@ -1,3 +1,9 @@
+V5.0.2:
+-New tutorial (Fault_5-RSA_Fault_Attack)
+-New tutorial (Fault_2-Introduction_to_Vcc_Glitch_Attacks)
+-Changed tutorials to use C preprocessor to change firmware rather than via awk
+-CW308_AURIX clock and regulator fixes
+
 V5.0.1:
 -Fixed project loading
 -Initial CW305 Support
