@@ -1,6 +1,7 @@
 #include <machine/intrinsics.h>
 #include <machine/wdtcon.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "IfxScu_reg.h"
 #include "IfxScu_bf.h"
@@ -9,6 +10,8 @@
 #include "IfxStm_reg.h"
 #include "IfxStm_bf.h"
 #include "IfxQspi_reg.h"
+#include "IfxStm_reg.h"
+#include "IfxStm_bf.h"
 
 # define BOARD_NAME				"TriBoard-TC233A"
 # define BOARD_TITLE			"TC233A TriBoard"
@@ -77,6 +80,14 @@ static Ifx_ASCLIN * const UART = (Ifx_ASCLIN *)&MODULE_ASCLIN0;
 
 void platform_init(void)
 {
+     unlock_wdtcon();
+     unlock_safety_wdtcon(); //EVR13CON is safety_endinit protected ("SE" in user manual)
+
+     SCU_EVR13CON.U |= 0b11 << 28; //shut off internal regulator
+
+     lock_wdtcon();
+     lock_safety_wdtcon();
+
      SYSTEM_Init();
      PORT11->IOCR8.U = (0b10000 << 19) | (0b10000 << 11); //P11.10 as GPO Push pull
      PORT11->OMR.U = (1 << 10) | (1 << 26); //P11.10 High
@@ -126,17 +137,20 @@ void init_uart(void)
 	//HighTec UART assumes 100MHz clock and uses prescale of 9+1, so we have prescale of 1+1
 	//to keep things the same
 	//prescale 9+1, oversample 16, sample position 7,8,9, 3 samples per bit
-	UART->BITCON.U = (9) | (15 << 16) | (9 << 24) | (1 << 31);
+	UART->BITCON.U = (1) | (15 << 16) | (9 << 24) | (1 << 31);
 
 	//8n1 UART
 	UART->FRAMECON.U = (1 << 9) | (0 << 16) | (0 << 30);
 
 	UART->DATCON.U = 7; //8bit data length
 
-#define BAUD_NUM (48 * 40)
-#define BAUD_DEN (3125)
+/* #define BAUD_NUM (48 * 40) */
+/* #define BAUD_DEN (3125) */
+#define BAUD_NUM (1001)
+#define BAUD_DEN (3002)
 /* #define BAUD_NUM (200) */
 /* #define BAUD_DEN (120) */
+  //NOTE: DEN>NUM
 
 	/*
 	 * fosc * num / ((prescale + 1) * den * (oversample + 1))

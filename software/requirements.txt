@@ -7,7 +7,7 @@ iso8601==0.1.12
 jupyter_client>=5.2.4
 jupyter==1.0.0
 jupyter_contrib_nbextensions==0.5.0
-matplotlib>=2.1.2
+matplotlib==3.0.3
 numpy>=1.14.0
 pandas==0.23.4
 pycryptodome>=3.7.0
@@ -15,7 +15,7 @@ pyparsing==2.2.0
 python-dateutil==2.6.1
 pytz==2017.3
 pyusb==1.0.2
-PyYAML==3.12
+PyYAML>=4.2b1
 scipy==1.1.0
 serial==0.0.38
 six==1.11.0

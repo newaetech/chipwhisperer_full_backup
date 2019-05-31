@@ -39,7 +39,7 @@ int main(void)
     /* Load all the keys etc */
     rsa_init();
 
-	simpleserial_init();
+    simpleserial_init();
     simpleserial_addcmd('t', 0,  real_dec);
     //Perform encryption -  must set key via plaintext
     simpleserial_addcmd('p', 16, get_pt);
@@ -47,4 +47,4 @@ int main(void)
     while(1)
         simpleserial_get();
 }
-	
+

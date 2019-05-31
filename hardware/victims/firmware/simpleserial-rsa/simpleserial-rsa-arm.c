@@ -25,6 +25,25 @@
 #if defined(__arm__)
 
 #include "mbedtls/rsa.h"
+#include "mbedtls/sha256.h"
+#include "mbedtls/oid.h"
+uint8_t sig_chunk_1(uint8_t *pt);
+uint8_t sig_chunk_2(uint8_t *pt);
+#define mbedtls_calloc calloc
+#define mbedtls_free free
+
+static int myrand( void *rng_state, unsigned char *output, size_t len )
+{
+     size_t i;
+
+     if( rng_state != NULL )
+          rng_state  = NULL;
+
+     for( i = 0; i < len; ++i )
+          output[i] = rand();
+
+     return( 0 );
+}
 
 /*
  * Example RSA-1024 keypair, for test purposes
@@ -80,28 +99,206 @@
 #define RSA_PT  "\xAA\xBB\xCC\x03\x02\x01\x00\xFF\xFF\xFF\xFF\xFF" \
                 "\x11\x22\x33\x0A\x0B\x0C\xCC\xDD\xDD\xDD\xDD\xDD"
 
+const char MESSAGE[] =  "Hello World!";
+
 
 mbedtls_rsa_context rsa_ctx;
 unsigned char rsa_plaintext[PT_LEN];
 unsigned char rsa_decrypted[PT_LEN];
 unsigned char rsa_ciphertext[RSA_KEY_LEN];
 
-static int myrand( void *rng_state, unsigned char *output, size_t len )
+/*
+ * Do an RSA private key operation
+ */
+static int simpleserial_mbedtls_rsa_private( mbedtls_rsa_context *ctx,
+                 int (*f_rng)(void *, unsigned char *, size_t),
+                 void *p_rng,
+                 const unsigned char *input,
+                 unsigned char *output )
 {
-    size_t i;
+    int ret;
+    size_t olen;
+    mbedtls_mpi T, T1, T2;
+    mbedtls_mpi P1, Q1, R;
+    mbedtls_mpi *DP = &ctx->DP;
+    mbedtls_mpi *DQ = &ctx->DQ;
 
-    if( rng_state != NULL )
-        rng_state  = NULL;
+    /* Make sure we have private key info, prevent possible misuse */
+    if( ctx->P.p == NULL || ctx->Q.p == NULL || ctx->D.p == NULL )
+        return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
 
-    for( i = 0; i < len; ++i )
-        output[i] = rand();
+    mbedtls_mpi_init( &T ); mbedtls_mpi_init( &T1 ); mbedtls_mpi_init( &T2 );
+    mbedtls_mpi_init( &P1 ); mbedtls_mpi_init( &Q1 ); mbedtls_mpi_init( &R );
+
+    MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( &T, input, ctx->len ) );
+    if( mbedtls_mpi_cmp_mpi( &T, &ctx->N ) >= 0 )
+    {
+        ret = MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    /*
+     * Faster decryption using the CRT
+     *
+     * T1 = input ^ dP mod P
+     * T2 = input ^ dQ mod Q
+     */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &T1, &T, DP, &ctx->P, &ctx->RP ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &T2, &T, DQ, &ctx->Q, &ctx->RQ ) );
+
+    /*
+     * T = (T1 - T2) * (Q^-1 mod P) mod P
+     */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &T, &T1, &T2 ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &T1, &T, &ctx->QP ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( &T, &T1, &ctx->P ) );
+
+    /*
+     * T = T2 + T * Q
+     */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &T1, &T, &ctx->Q ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( &T, &T2, &T1 ) );
+
+    olen = ctx->len;
+    MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &T, output, olen ) );
+
+cleanup:
+    mbedtls_mpi_free( &T ); mbedtls_mpi_free( &T1 ); mbedtls_mpi_free( &T2 );
+    mbedtls_mpi_free( &P1 ); mbedtls_mpi_free( &Q1 ); mbedtls_mpi_free( &R );
+
+    if( ret != 0 )
+        return( MBEDTLS_ERR_RSA_PRIVATE_FAILED + ret );
 
     return( 0 );
 }
 
+static int simpleserial_mbedtls_rsa_rsassa_pkcs1_v15_sign( mbedtls_rsa_context *ctx,
+                               int (*f_rng)(void *, unsigned char *, size_t),
+                               void *p_rng,
+                               int mode,
+                               mbedtls_md_type_t md_alg,
+                               unsigned int hashlen,
+                               const unsigned char *hash,
+                               unsigned char *sig )
+{
+    size_t nb_pad, olen, oid_size = 0;
+    unsigned char *p = sig;
+    const char *oid = NULL;
+    unsigned char *sig_try = NULL, *verif = NULL;
+    size_t i;
+    unsigned char diff;
+    volatile unsigned char diff_no_optimize;
+    int ret;
+
+    if( mode == MBEDTLS_RSA_PRIVATE && ctx->padding != MBEDTLS_RSA_PKCS_V15 )
+        return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+
+    olen = ctx->len;
+    nb_pad = olen - 3;
+
+    if( md_alg != MBEDTLS_MD_NONE )
+    {
+        const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type( md_alg );
+        if( md_info == NULL )
+            return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+
+        if( mbedtls_oid_get_oid_by_md( md_alg, &oid, &oid_size ) != 0 )
+            return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+
+        nb_pad -= 10 + oid_size;
+
+        hashlen = mbedtls_md_get_size( md_info );
+    }
+
+    nb_pad -= hashlen;
+
+    if( ( nb_pad < 8 ) || ( nb_pad > olen ) )
+        return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+
+    *p++ = 0;
+    *p++ = MBEDTLS_RSA_SIGN;
+    memset( p, 0xFF, nb_pad );
+    p += nb_pad;
+    *p++ = 0;
+
+    if( md_alg == MBEDTLS_MD_NONE )
+    {
+        memcpy( p, hash, hashlen );
+    }
+    else
+    {
+        /*
+         * DigestInfo ::= SEQUENCE {
+         *   digestAlgorithm DigestAlgorithmIdentifier,
+         *   digest Digest }
+         *
+         * DigestAlgorithmIdentifier ::= AlgorithmIdentifier
+         *
+         * Digest ::= OCTET STRING
+         */
+        *p++ = MBEDTLS_ASN1_SEQUENCE | MBEDTLS_ASN1_CONSTRUCTED;
+        *p++ = (unsigned char) ( 0x08 + oid_size + hashlen );
+        *p++ = MBEDTLS_ASN1_SEQUENCE | MBEDTLS_ASN1_CONSTRUCTED;
+        *p++ = (unsigned char) ( 0x04 + oid_size );
+        *p++ = MBEDTLS_ASN1_OID;
+        *p++ = oid_size & 0xFF;
+        memcpy( p, oid, oid_size );
+        p += oid_size;
+        *p++ = MBEDTLS_ASN1_NULL;
+        *p++ = 0x00;
+        *p++ = MBEDTLS_ASN1_OCTET_STRING;
+        *p++ = hashlen;
+        memcpy( p, hash, hashlen );
+    }
+
+    if( mode == MBEDTLS_RSA_PUBLIC )
+        return( mbedtls_rsa_public(  ctx, sig, sig ) );
+
+    /*
+     * In order to prevent Lenstra's attack, make the signature in a
+     * temporary buffer and check it before returning it.
+     */
+    sig_try = mbedtls_calloc( 1, ctx->len );
+    if( sig_try == NULL )
+        return( MBEDTLS_ERR_MPI_ALLOC_FAILED );
+
+    verif   = mbedtls_calloc( 1, ctx->len );
+    if( verif == NULL )
+    {
+        mbedtls_free( sig_try );
+        return( MBEDTLS_ERR_MPI_ALLOC_FAILED );
+    }
+
+    MBEDTLS_MPI_CHK( simpleserial_mbedtls_rsa_private( ctx, f_rng, p_rng, sig, sig_try ) );
+    //make things easier
+    MBEDTLS_MPI_CHK( mbedtls_rsa_public( ctx, sig_try, verif ) );
+
+    /* Compare in constant time just in case */
+    /* for( diff = 0, i = 0; i < ctx->len; i++ ) */
+    /*     diff |= verif[i] ^ sig[i]; */
+    /* diff_no_optimize = diff; */
+
+    /* if( diff_no_optimize != 0 ) */
+    /* { */
+    /*     ret = MBEDTLS_ERR_RSA_PRIVATE_FAILED; */
+    /*     goto cleanup; */
+    /* } */
+
+    memcpy( sig, sig_try, ctx->len );
+
+cleanup:
+    mbedtls_free( sig_try );
+    mbedtls_free( verif );
+
+    return( ret );
+}
+
+
 void rsa_init(void)
 {
     mbedtls_rsa_init( &rsa_ctx, MBEDTLS_RSA_PKCS_V15, 0 );
+    simpleserial_addcmd('1', 0, sig_chunk_1);
+    simpleserial_addcmd('2', 0, sig_chunk_2);
 
     rsa_ctx.len = RSA_KEY_LEN;
     mbedtls_mpi_read_string( &rsa_ctx.N , 16, RSA_N  ) ;
@@ -112,142 +309,64 @@ void rsa_init(void)
     mbedtls_mpi_read_string( &rsa_ctx.DP, 16, RSA_DP ) ;
     mbedtls_mpi_read_string( &rsa_ctx.DQ, 16, RSA_DQ ) ;
     mbedtls_mpi_read_string( &rsa_ctx.QP, 16, RSA_QP ) ;
-    
+
     //Make valid data first, otherwise system barfs
     memcpy( rsa_plaintext, RSA_PT, PT_LEN );
     mbedtls_rsa_pkcs1_encrypt( &rsa_ctx, myrand, NULL, MBEDTLS_RSA_PUBLIC, PT_LEN,
                            rsa_plaintext, rsa_ciphertext );
-    
+
 }
 
 
-/* Perform a real RSA decryption, be aware this is very slow (~5 seconds). Takes 30124165 cycles on STM32F3. */
-uint8_t real_dec(uint8_t * pt)
+
+
+/*
+  Performs an RSA-CRT PKCS1 signing. This can be broken by injecting a fault into one of the two parts of the
+  signature calulation, at which point the secrets q and p can be recovered from the received faulty signature.
+
+  int mbedtls_rsa_pkcs1_sign( mbedtls_rsa_context *ctx,
+                              int (*f_rng)(void *, unsigned char *, size_t),
+                              void *p_rng,
+                              int mode,
+                              mbedtls_md_type_t md_alg,
+                              unsigned int hashlen,
+                              const unsigned char *hash,
+                              unsigned char *sig );
+ */
+uint8_t buf[128];
+uint8_t hash[32];
+uint8_t real_dec(uint8_t *pt)
 {
-    int ret;
-    size_t len;
+     int ret = 0;
 
-    trigger_high();
-    //Second 'NULL' can be set to 'myrand' which causes blinding to happen. This slows down the algorithm even more.
-    ret = mbedtls_rsa_pkcs1_decrypt( &rsa_ctx, NULL, NULL, MBEDTLS_RSA_PRIVATE, &len,
-                           rsa_ciphertext, rsa_decrypted, sizeof(rsa_decrypted) );
-    trigger_low();
-    
-    switch(ret){
-        case MBEDTLS_ERR_RSA_BAD_INPUT_DATA:
-            return 0x10;
-        case MBEDTLS_ERR_RSA_INVALID_PADDING:
-            return 0x11;
-        case MBEDTLS_ERR_RSA_KEY_GEN_FAILED:
-            return 0x12;
-        case MBEDTLS_ERR_RSA_KEY_CHECK_FAILED:
-            return 0x13;
-        case MBEDTLS_ERR_RSA_PUBLIC_FAILED:
-            return 0x14;
-        case MBEDTLS_ERR_RSA_PRIVATE_FAILED:
-            return 0x15;
-        case MBEDTLS_ERR_RSA_VERIFY_FAILED:
-            return 0x16;
-        case MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE:
-            return 0x17;
-        case MBEDTLS_ERR_RSA_RNG_FAILED:
-            return 0x18;
-    }
-    
-    return ret;
+     //first need to hash our message
+     memset(buf, 0, 128);
+     mbedtls_sha256(MESSAGE, 12, hash, 0);
+
+     trigger_high();
+     ret = simpleserial_mbedtls_rsa_rsassa_pkcs1_v15_sign(&rsa_ctx, NULL, NULL, MBEDTLS_RSA_PRIVATE, MBEDTLS_MD_SHA256, 32, hash, buf);
+     trigger_low();
+
+     //send back first 48 bytes
+     simpleserial_put('r', 48, buf);
+     return ret;
 }
 
-/* Performs PART of a RSA decryption using only 16 bytes of keying material, where the "key" is
-   actually the 16-byte input plaintext (sent with 'p' command). or previously sent key with 'k' 
-   command. This is used to give you an easier
-   target to perform SPA on rather than the full (very slow) RSA algorithm. */
-uint8_t get_pt(uint8_t * pt)
+uint8_t sig_chunk_1(uint8_t *pt)
 {
-    //Part of function mbedtls_rsa_private()
-    int ret = 0;
-    mbedtls_mpi T, T1, T2;
-    mbedtls_mpi P1, Q1, R;
-    mbedtls_mpi *DP = &rsa_ctx.DP;
-    mbedtls_mpi *DQ = &rsa_ctx.DQ;
-    
-    mbedtls_mpi fake_DP;
-    mbedtls_mpi_init( &fake_DP );
-    uint8_t fake_key[64];
-    
-    mbedtls_mpi_init( &T ); mbedtls_mpi_init( &T1 ); mbedtls_mpi_init( &T2 );
-    mbedtls_mpi_init( &P1 ); mbedtls_mpi_init( &Q1 ); mbedtls_mpi_init( &R );
-    
-    MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( &T, rsa_ciphertext, rsa_ctx.len ) );
-    if( mbedtls_mpi_cmp_mpi( &T, &rsa_ctx.N ) >= 0 )
-    {
-        ret = MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
-        goto cleanup;
-    }
-
-
-    //mbedtls_mpi_set_bit( mbedtls_mpi *X, size_t pos, unsigned char val )
-    memset(fake_key, 0, sizeof(fake_key));
-    memcpy(fake_key, pt, 16);
-    mbedtls_mpi_read_binary(&fake_DP, fake_key, sizeof(fake_key));
-
-    /*
-     * Faster decryption using the CRT
-     *
-     * T1 = input ^ dP mod P
-     * T2 = input ^ dQ mod Q
-     */
-    trigger_high();
-    MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &T1, &T, &fake_DP, &rsa_ctx.P, &rsa_ctx.RP ) );
-    trigger_low();
-    
-    //The full CRT is below - no need to run it since we are just trying to demo an example, which is above
-    /*
-    // T1 = T^DP mod P
-    MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &T1, &T, DP, &rsa_ctx.P, &rsa_ctx.RP ) );
-    
-    // T2 = T^DQ mod Q
-    MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &T2, &T, DQ, &rsa_ctx.Q, &rsa_ctx.RQ ) );
-
-    //T = (T1 - T2) * (Q^-1 mod P) mod P
-    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &T, &T1, &T2 ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &T1, &T, &rsa_ctx.QP ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( &T, &T1, &rsa_ctx.P ) );
-
-    //T = T2 + T * Q
-    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &T1, &T, &rsa_ctx.Q ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( &T, &T2, &T1 ) );
-
-    */
-    
-
-cleanup:
-    mbedtls_mpi_free( &T ); mbedtls_mpi_free( &T1 ); mbedtls_mpi_free( &T2 );
-    mbedtls_mpi_free( &P1 ); mbedtls_mpi_free( &Q1 ); mbedtls_mpi_free( &R );
-    mbedtls_mpi_free( &fake_DP );
-
-    switch(ret){
-        case MBEDTLS_ERR_RSA_BAD_INPUT_DATA:
-            return 0x10;
-        case MBEDTLS_ERR_RSA_INVALID_PADDING:
-            return 0x11;
-        case MBEDTLS_ERR_RSA_KEY_GEN_FAILED:
-            return 0x12;
-        case MBEDTLS_ERR_RSA_KEY_CHECK_FAILED:
-            return 0x13;
-        case MBEDTLS_ERR_RSA_PUBLIC_FAILED:
-            return 0x14;
-        case MBEDTLS_ERR_RSA_PRIVATE_FAILED:
-            return 0x15;
-        case MBEDTLS_ERR_RSA_VERIFY_FAILED:
-            return 0x16;
-        case MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE:
-            return 0x17;
-        case MBEDTLS_ERR_RSA_RNG_FAILED:
-            return 0x18;
-    }
-    
-    return ret;
+     simpleserial_put('r', 48, buf + 48);
+     return 0x00;
 }
-	
+
+uint8_t sig_chunk_2(uint8_t *pt)
+{
+     simpleserial_put('r', 128 - 48 * 2, buf + 48*2);
+     return 0x00;
+}
+
+
+uint8_t get_pt(uint8_t *pt)
+{
+}
+
 #endif
-    

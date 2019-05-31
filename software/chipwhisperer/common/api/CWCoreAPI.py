@@ -49,7 +49,7 @@ class CWCoreAPI(Parameterized):
 
     __name__ = "ChipWhisperer"
     __organization__ = "NewAE Technology Inc."
-    __version__ = "V5.0.0"
+    __version__ = "V5.0.1"
     _name = 'Generic Settings'
     instance = None
 

@@ -1,3 +1,15 @@
+V5.0.2:
+-New tutorial (Fault_5-RSA_Fault_Attack)
+-New tutorial (Fault_2-Introduction_to_Vcc_Glitch_Attacks)
+-Changed tutorials to use C preprocessor to change firmware rather than via awk
+-CW308_AURIX clock and regulator fixes
+-Fixed generate_firmware_files.py for python3
+
+V5.0.1:
+-Fixed project loading
+-Initial CW305 Support
+-Various small fixes
+
 V5.0.0:
 -Replaced GUI with Jupyter
 -Moved to Python 3 (Python 2.7 no longer supported)

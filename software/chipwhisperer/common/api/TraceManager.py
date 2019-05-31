@@ -72,8 +72,7 @@ class TraceManager(TraceSource):
             config[self.name]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
             config[self.name]['enabled%d' % indx] = str(t.enabled)
 
-            # did that actually save anything? ^^^
-            t.saveAllTraces(os.path.dirname(t.config.configFilename())) #actually saving stuff now?
+            t.saveAllTraces(os.path.dirname(t.config.configFilename()), prefix) 
         self.dirty.setValue(False)
         self.saved = True
 
