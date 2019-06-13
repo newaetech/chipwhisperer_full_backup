@@ -29,6 +29,7 @@ from threading import Condition, Thread
 import struct
 import pickle
 import traceback
+import os
 
 from usb.backend import libusb0
 import usb.core
@@ -381,36 +382,32 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         """
         Get a list of matching devices being based a list of PIDs. Returns list of usbdev that match (or empty if none)
         """
-
-        devlist = []
-
         if idProduct is None:
             idProduct = [None]
-        
-        
-        libusb_backend = libusb0.get_backend()
-        for _ in range(2): #1 try for each backend
-            try:
-                for id in idProduct:
-                    if id:
-                        dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, backend=libusb_backend))
-                    else:
-                        dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, backend=libusb_backend))
-                    if len(dev) > 0:
-                        devlist.extend(dev)
-                if dictonly:
-                    devlist = [{'sn': d.serial_number, 'product': d.product, 'pid': d.idProduct, 'vid': d.idVendor} for d in devlist]
-                    
-                return devlist
-            except (usb.core.NoBackendError, ValueError):
-                # An error in the previous find is often caused by Windows 64-bit not detecting the correct library, attempt to force this with paths
-                # that often work so user isn't aware
-                #from usb.backend import libusb0
-                libusb_backend = libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll")
-                devlist = []
-                continue
-                
-        raise IOError("Failed to find USB backend. Check libusb drivers installed, check for path issues on library, and check for 32 vs 64-bit issues.")
+
+        if os.name == "nt":
+            #on windows, need to manually load libusb because of 64bit python loading the wrong one
+            libusb_backend = libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll")
+        devlist = []
+        try:
+            for id in idProduct:
+                if id:
+                    dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, backend=libusb_backend))
+                else:
+                    dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, backend=libusb_backend))
+                if len(dev) > 0:
+                    devlist.extend(dev)
+            if dictonly:
+                devlist = [{'sn': d.serial_number, 'product': d.product, 'pid': d.idProduct, 'vid': d.idVendor} for d in devlist]
+
+            return devlist
+        except ValueError as e:
+            if "langid" not in str(e):
+                raise
+            raise IOError("'This device has no langid' detected. This is usually caused by us trying to read the serial number of the chipwhisperer, but it failing. The device is here and we can see it, but we can't access it. This has a number of root causes, including:\n" +
+                        "-Not having permission to access the ChipWhisperer (this still crops up if you have permission for one ChipWhisperer, but another ChipWhisperer is connected that you don't have access to)\n" +
+                        "-Not having the correct libusb backend loaded (common on Windows with 64bit Python). We try to handle this by loading the correct backend on Windows"
+                        )
 
     def sendCtrl(self, cmd, value=0, data=[]):
         """
