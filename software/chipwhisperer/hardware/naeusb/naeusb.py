@@ -23,6 +23,7 @@
 # United States of America, the European Union, and other jurisdictions.
 # ==========================================================================
 import logging
+import warnings
 import time
 import math
 from threading import Condition, Thread
@@ -397,7 +398,24 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
                 else:
                     dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, backend=libusb_backend))
                 if len(dev) > 0:
-                    devlist.extend(dev)
+                    if len(dev) == 1:
+                        devlist.extend(dev)
+                    else:
+                        # Deals with the multiple chipwhisperers attached but user only
+                        # has permission to access a subset. The langid error is usually
+                        # raised when there are improper permissions, so it is used to
+                        # skip the those devices. However, the user is warned when this
+                        # happens because the langid error is occasionally raised when
+                        # there are backend errors.
+                        for d in dev:
+                            try:
+                                d.serial_number
+                                devlist.append(d)
+                            except ValueError as e:
+                                if "langid" in str(e):
+                                    warnings.warn('A device raised the "no langid" error, it is being skipped')
+                                else:
+                                    raise
             if dictonly:
                 devlist = [{'sn': d.serial_number, 'product': d.product, 'pid': d.idProduct, 'vid': d.idVendor} for d in devlist]
 
