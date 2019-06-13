@@ -385,6 +385,7 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         if idProduct is None:
             idProduct = [None]
 
+        libusb_backend = libusb0.get_backend()
         if os.name == "nt":
             #on windows, need to manually load libusb because of 64bit python loading the wrong one
             libusb_backend = libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll")
