@@ -413,7 +413,7 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
                                 devlist.append(d)
                             except ValueError as e:
                                 if "langid" in str(e):
-                                    warnings.warn('A device raised the "no langid" error, it is being skipped')
+                                    logging.info('A device raised the "no langid" error, it is being skipped')
                                 else:
                                     raise
             if dictonly:
