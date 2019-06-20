@@ -80,7 +80,7 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
                         snlist = DictType({'Select Device to Connect':None})
                         for d in possible_sn:
                             snlist[str(d['sn']) + " (" + str(d['product']) + ")"] = d['sn']
-                            serial_numbers.append(f"sn = {str(d['sn'])} ({str(d['product'])})")
+                            serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
                             pass
                         raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
                 else:

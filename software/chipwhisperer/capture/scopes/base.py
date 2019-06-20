@@ -66,7 +66,7 @@ class ScopeTemplate(Parameterized):
             self.connectStatus.setValue(True)
 
     def _con(self, sn=None):
-        raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
+        raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def dis(self):
         if self._dis():
@@ -75,7 +75,7 @@ class ScopeTemplate(Parameterized):
         self.connectStatus.setValue(False)
 
     def _dis(self):
-        raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".dis()")
+        raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".dis()")
 
     def arm(self):
         """Prepare the scope for capturing"""

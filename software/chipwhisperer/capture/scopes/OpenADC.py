@@ -198,8 +198,18 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         return True
 
     def arm(self):
+        """Setup scope to begin capture/glitching when triggered.
+
+        The scope must be armed before capture or glitching (when set to
+        'ext_single') can begin.
+
+        Raises:
+           OSError: Scope isn't connected.
+           Exception: Error when arming. This method catches these and
+               disconnects before reraising them.
+        """
         if self.connectStatus.value() is False:
-            raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
+            raise OSError("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
 
         try:
             if self.advancedSettings:
@@ -216,12 +226,22 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
             raise
 
     def capture(self):
-        """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
+        """Captures trace. Scope must be armed before capturing.
+
+        Returns:
+           True if capture timed out, false if it didn't.
+
+        Raises:
+           IOError: Unknown failure.
+        """
         ret = self.qtadc.capture()
         return ret
 
     def getLastTrace(self):
         """Return the last trace captured with this scope.
+
+        Returns:
+           List of ADC datapoints
         """
         return self.qtadc.datapoints
 

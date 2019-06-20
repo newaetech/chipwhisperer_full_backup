@@ -108,6 +108,14 @@ class GlitchSettings(util.DisableNewAttr):
         - phase2: The phase shift of DCM2
         - lock1: Whether DCM1 is locked
         - lock2: Whether DCM2 is locked
+
+        Returns:
+           A tuple with 4 elements::
+
+             (phase1: Phase shift of DCM1,
+              phase2: Phase shift of DCM2,
+              lock1: Whether DCM1 is locked,
+              lock2: Whether DCM2 is locked)
         """
         return self.cwg.getDCMStatus()
 
@@ -127,10 +135,14 @@ class GlitchSettings(util.DisableNewAttr):
         - "target": The HS1 clock from the target device
         - "clkgen": The CLKGEN DCM output
 
-        Getter: Return the clock signal currently in use
+        Getter:
+           Return the clock signal currently in use
 
-        Setter: Change the glitch clock source
-            Raises: ValueError if new value not one of "target" or "clkgen"
+        Setter:
+           Change the glitch clock source
+
+        Raises:
+           ValueError: New value not one of "target" or "clkgen"
         """
         clk_val = self.cwg.glitchClkSource()
         if clk_val == self.cwg.CLKSOURCE0_BIT:
@@ -163,6 +175,10 @@ class GlitchSettings(util.DisableNewAttr):
 
         Setter: Update the glitch pulse width. The value will be adjusted to
         the closest possible glitch width.
+
+        Raises:
+           UserWarning: Width outside of [-49.8, 49.8]. The value is rounded
+               to one of these
         """
         return self.cwg.getGlitchWidth()
 
@@ -182,9 +198,10 @@ class GlitchSettings(util.DisableNewAttr):
         Getter: Return the current glitch fine width
 
         Setter: Update the glitch fine width
-            Raises:
-                TypeError if offset not an integer
-                ValueError if offset is outside of [-255, 255]
+
+        Raises:
+           TypeError: offset not an integer
+           ValueError: offset is outside of [-255, 255]
         """
         return self.cwg.getGlitchWidthFine()
 
@@ -211,9 +228,10 @@ class GlitchSettings(util.DisableNewAttr):
 
         Setter: Set the glitch offset. The new value is rounded to the nearest
         possible offset.
-            Raises:
-                TypeError if offset not an integer
-                UserWarning if value outside range [-50, 50] (value is rounded)
+
+        Raises:
+           TypeError: offset not an integer
+           UserWarning: value outside range [-50, 50] (value is rounded)
         """
         return self.cwg.getGlitchOffset()
 
@@ -233,9 +251,10 @@ class GlitchSettings(util.DisableNewAttr):
         Getter: Return the current glitch fine offset
 
         Setter: Update the glitch fine offset
-            Raises:
-                TypeError if offset not an integer
-                ValueError if offset is outside of [-255, 255]
+
+        Raises:
+           TypeError: if offset not an integer
+           ValueError: if offset is outside of [-255, 255]
         """
         return self.cwg.getGlitchOffsetFine()
 
@@ -263,7 +282,9 @@ class GlitchSettings(util.DisableNewAttr):
         Getter: Return the current trigger source.
 
         Setter: Change the trigger source.
-            Raises: ValueError if value not listed above
+
+        Raises:
+           ValueError: value not listed above.
         """
         trig_src = self.cwg.glitchTrigger()
         return self._glitch_triggers[trig_src]
@@ -294,7 +315,9 @@ class GlitchSettings(util.DisableNewAttr):
         Getter: Return the current arm timing ("before_scope" or "after_scope")
 
         Setter: Change the arm timing
-            Raises: ValueError if value not listed above
+
+        Raises:
+           ValueError: if value not listed above
         """
         timing = self.cwg.getArmTiming()
         if timing == 1:
@@ -332,9 +355,10 @@ class GlitchSettings(util.DisableNewAttr):
         Getter: Return the current external trigger offset.
 
         Setter: Set the external trigger offset.
-            Raises:
-                TypeError if offset not an integer
-                ValueError if offset outside of range [0, 2**32)
+
+        Raises:
+           TypeError: if offset not an integer
+           ValueError: if offset outside of range [0, 2**32)
         """
         return self.cwg.triggerOffset()
 
@@ -364,9 +388,10 @@ class GlitchSettings(util.DisableNewAttr):
         Getter: Return the current repeat value (integer)
 
         Setter: Set the repeat counter
-            Raises:
-                TypeError if value not an integer
-                ValueError if value outside [1, 255]
+
+        Raises:
+           TypeError: if value not an integer
+           ValueError: if value outside [1, 255]
         """
         return self.cwg.numGlitches()
 
@@ -401,7 +426,9 @@ class GlitchSettings(util.DisableNewAttr):
         Getter: Return the current glitch output mode (one of above strings)
 
         Setter: Change the glitch output mode.
-            Raises: ValueError if value not in above strings
+
+        Raises:
+           ValueError: if value not in above strings
         """
         output_mode = self.cwg.glitchType()
         return self._output_modes[output_mode]

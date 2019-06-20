@@ -524,11 +524,19 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             self.outstanding_ack = True
 
     def loadEncryptionKey(self, key):
+        """ Updates encryption key on target.
+
+        The key is updated in this object and sent to the target over serial.
+        """
         self.key = key
         if self.key:
             self.runCommand(self._key_cmd)
 
     def loadInput(self, inputtext):
+        """ Sends plaintext to target
+
+        Also updates the internal plaintext
+        """
         self.input = inputtext
         self.runCommand(self._input_cmd)
 
@@ -580,7 +588,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         #Is a beginning part
         if len(expected[0]) > 0:
             if response[0:len(expected[0])] != expected[0]:
-                logging.warning("Sync Error: %s"%response)
+                logging.warning("Response start doesn't match what was expected:")
+                logging.warning("Got {}, Expected {} + data".format(response, expected[0]))
                 logging.warning("Hex Version: %s" % (" ".join(["%02x" % ord(t) for t in response])))
 
                 return None
@@ -602,7 +611,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         #Is end part?
         if len(expected[1]) > 0:
             if response[startindx:startindx+len(expected[1])] != expected[1]:
-                logging.warning("Sync Error: %s"%response)
+                logging.warning("Unexpected end to response:")
+                logging.warning("Got: {}, Expected {}".format(response, expected[1]))
                 return None
 
         return data

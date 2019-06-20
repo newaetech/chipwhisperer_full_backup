@@ -179,7 +179,9 @@ class GPIOSettings(util.DisableNewAttr):
         Getter: Return one of the above strings
 
         Setter: Set the Target IO1 mode.
-            Raises: ValueError if new value is not one of the above modes
+
+        Raises:
+           ValueError: if new value is not one of the above modes
         """
         return self._tioInternalToApi(self._getTio(0), self._getGpio(0))
 
@@ -205,7 +207,9 @@ class GPIOSettings(util.DisableNewAttr):
         Getter: Return one of the above strings
 
         Setter: Set the Target IO2 mode.
-            Raises: ValueError if new value is not one of the above modes
+
+        Raises:
+           ValueError: if new value is not one of the above modes
         """
         return self._tioInternalToApi(self._getTio(1), self._getGpio(1))
 
@@ -232,7 +236,9 @@ class GPIOSettings(util.DisableNewAttr):
         Getter: Return one of the above strings
 
         Setter: Set the Target IO3 mode.
-            Raises: ValueError if new value is not one of the above modes
+
+        Raises:
+           ValueError: if new value is not one of the above modes
         """
         return self._tioInternalToApi(self._getTio(2), self._getGpio(2))
 
@@ -258,7 +264,9 @@ class GPIOSettings(util.DisableNewAttr):
         Getter: Return one of the above strings
 
         Setter: Set the Target IO4 mode
-            Raises: ValueError if new value is not one of the above modes
+
+        Raises:
+           ValueError: if new value is not one of the above modes
         """
         return self._tioInternalToApi(self._getTio(3), self._getGpio(3))
 
@@ -311,7 +319,9 @@ class GPIOSettings(util.DisableNewAttr):
         Getter: Return one of "high", "low", or "high_z"
 
         Setter: Set the pin's state
-            Raises: ValueError if new state not listed above
+
+        Raises:
+        ValueError: if new state not listed above
         """
         return self._getGpio(102)
 
@@ -385,7 +395,9 @@ class GPIOSettings(util.DisableNewAttr):
         Getter: Return one of "clkgen", "glitch", or "disabled"
 
         Setter: Set the clock to be output on HS2.
-            Raises: ValueError if new value not listed above
+
+        Raises:
+        ValueError: if new value not listed above
         """
         mode = self.cwe.targetClkOut()
         for k, v in self.HS2_VALID.items():
@@ -546,7 +558,9 @@ class TriggerSettings(util.DisableNewAttr):
         Getter: Return a string describing the trigger mode (see examples)
 
         Setter: Set the trigger mode using a string like the ones above
-            Raises: ValueError if string cannot be converted to a legal mode
+
+        Raises:
+           ValueError: if string cannot be converted to a legal mode
         """
         #Get pin logic + combo mode
         pins, mode = self.cwe.getPins()

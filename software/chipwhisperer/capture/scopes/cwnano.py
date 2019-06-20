@@ -558,7 +558,7 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
             if len(possible_sn) > 1:
                 if sn is None:
                     for d in possible_sn:
-                        serial_numbers.append(f"sn = {str(d['sn'])} ({str(d['product'])})")
+                        serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
                     raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
             else:
                 sn = None

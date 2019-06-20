@@ -195,7 +195,9 @@ class GainSettings(Parameterized, util.DisableNewAttr):
         Getter: Return the current gain in dB (float)
 
         Setter: Set the gain level in dB
-            Raises: ValueError if new gain is outside of [-6.5, 56]
+
+        Raises:
+           ValueError: if new gain is outside of [-6.5, 56]
 
         Examples:
         >>> gain_db = scope.gain.db
@@ -209,7 +211,18 @@ class GainSettings(Parameterized, util.DisableNewAttr):
 
     @setupSetParam("Mode")
     def setMode(self, gainmode):
-        '''Set the gain Mode'''
+        """Sets the ChipWhisperer's gain to either 'low' or 'high' mode.
+
+        This setting is applied after the gain property, resulting in the value
+        of the db property. May be necessary for reaching gains higher than
+
+
+        Args:
+           gainmode (str): Either 'low' or 'high'. 
+
+        Raises:
+           ValueError: gainmode not 'low' or 'high'
+        """
         if gainmode == "high":
             self.oa.setSettings(self.oa.settings() | SETTINGS_GAIN_HIGH)
             self.gainlow_cached = False
@@ -237,7 +250,9 @@ class GainSettings(Parameterized, util.DisableNewAttr):
         Getter: Return the current gain mode ("low" or "high")
 
         Setter: Set the gain mode
-            Raises: ValueError if mode not one of "low" or "high"
+
+        Raises:
+           ValueError: if mode not one of "low" or "high"
         """
         return self.getMode()
 
@@ -469,7 +484,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         Getter: Return an integer with the current decimation factor
 
         Setter: Set the decimation factor
-            Raises: ValueError if the new factor is not positive
+
+        Raises:
+           ValueError: if the new factor is not positive
         """
         return self._get_decimate()
 
@@ -488,7 +505,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         Getter: Return the current number of total samples (integer)
 
         Setter: Set the number of samples to capture
-            Raises: ValueError if number of samples is negative
+
+        Raises:
+           ValueError: if number of samples is negative
         """
         return self._get_num_samples()
 
@@ -528,7 +547,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         Getter: Return the current offset (integer)
 
         Setter: Set a new offset
-            Raises: ValueError if offset outside of range [0, 2**32)
+
+        Raises:
+           ValueError: if offset outside of range [0, 2**32)
         """
         return self._get_offset()
 
@@ -547,7 +568,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         Getter: Return the current number of presamples
 
         Setter: Set the number of presamples.
-            Raises: ValueError if presamples is outside of range [0, samples]
+
+        Raises:
+           ValueError: if presamples is outside of range [0, samples]
         """
         return self._get_presamples()
 
@@ -571,7 +594,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         Getter: Return the current trigger mode (one of the 4 above strings)
 
         Setter: Set the trigger mode
-            Raises: ValueError if value is not one of the allowed strings
+
+        Raises:
+           ValueError: if value is not one of the allowed strings
         """
         param_alias = {
             "rising edge": "rising_edge",
@@ -943,7 +968,9 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         Getter: Return the current ADC clock source (one of five strings above)
 
         Setter: Set the ADC clock source and reset the ADC DCM to lock it.
-            Raises: ValueError if string not in valid settings
+
+        Raises:
+           ValueError: if string not in valid settings
         """
         (adc_input, dcm_mul, dcm_input) = self._getAdcSource()
         if adc_input == "extclk":
@@ -986,9 +1013,10 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
             NOTE: This getter is currently broken due to an FPGA bug.
 
         Setter: Set a new phase offset
-            Raises:
-                ValueError if offset not in [-255, 255]
-                TypeError if offset not integer
+
+        Raises:
+           ValueError: if offset not in [-255, 255]
+           TypeError: if offset not integer
         """
         return self._get_phase()
 
@@ -1051,7 +1079,9 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         Getter: Return the frequency counter input (one of the above strings)
 
         Setter: Set the frequency counter source
-            Raises: ValueError if source is not "clkgen" or "extclk"
+
+        Raises:
+           ValueError: if source is not "clkgen" or "extclk"
         """
         src = self._get_freqcounter_src()
         if src == 1:
@@ -1082,7 +1112,9 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         Getter: Return the current CLKGEN input (either "extclk" or "system")
 
         Setter: Change the CLKGEN source and reset all the DCMs.
-            Raises: ValueError if source is not one of three strings above
+
+        Raises:
+           ValueError: if source is not one of three strings above
         """
         return self._get_clkgen_src()
 

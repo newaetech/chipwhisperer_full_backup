@@ -26,12 +26,20 @@ from chipwhisperer.capture import acq_patterns as key_text_patterns
 from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 ktp = key_text_patterns #alias
 
-def programTarget(scope, type, fw_path):
+def programTarget(scope, prog_type, fw_path):
     """Program the target using the programmer <type>
 
     Programmers can be found in the programmers submodule
+
+    Args:
+       scope (ScopeTemplate): Connected scope object to use for programming
+       prog_type (Programmer): Programmer to use. See chipwhisperer.programmers
+           for available programmers
+       fw_path (str): Path to hex file to program
     """
-    prog = type()
+    if type is None: #makes automating notebooks much easier
+        return
+    prog = prog_type()
     prog.scope = scope
     prog._logging = None
     prog.open()
@@ -53,18 +61,20 @@ def cpa(trace_source, leak_model = None, algorithm=cpa_algorithms.Progressive):
     * Attack all keys
     * Full point range
 
-    leak_model must be set either by this function or by attack.setLeakModel() before running attack.
+    leak_model must be set either by this function or by attack.setLeakModel()
+    before running attack.
 
     Args:
-
-       trace_source (TraceManager): TraceManager or preprocessing object that holds traces, plaintext, etc.
-
-       leak_model (AESLeakageHelper): Model describing information leaked from target. Must be set before running attack.
-
-       algorithm (AlgorithmsBase): Algorithm to perform CPA loop. Default is almost always the right choice
+       trace_source (TraceManager): TraceManager or preprocessing object that
+           holds traces, plaintext, etc.
+       leak_model (AESLeakageHelper, optional): Model describing information
+           leaked from target. Must be set before running attack. Defaults to
+           None.
+       algorithm (AlgorithmsBase, optional): Algorithm to perform CPA loop.
+           Default is almost always the right choice. Defaults to
+           cpa_algorithms.Progressive.
 
     Returns:
-
        A CPA object. For more information, see documentation for CPA.
     """
     from chipwhisperer.analyzer.attacks.cpa import CPA
@@ -81,16 +91,25 @@ def cpa(trace_source, leak_model = None, algorithm=cpa_algorithms.Progressive):
 
 def profiling(trace_source):
     """Not yet implemented, create/import manually"""
-    pass
+    raise NotImplementedError
 
 def openProject(filename):
     """Load an existing project from disk.
 
-    Raise an IOError if no such project exists.
+    Raise an OSError if no such project exists.
+
+    Args:
+       filename (str): Path to project file.
+
+    Returns:
+       A chipwhisperer project object.
+
+    Raises:
+       OSError: filename does not exist.
     """
     from chipwhisperer.common.api import ProjectFormat as project
     if not os.path.isfile(filename):
-        raise IOError("File " + filename + " does not exist or is not a file")
+        raise OSError("File " + filename + " does not exist or is not a file")
     proj = project.ProjectFormat()
     proj.load(filename)
     return proj
@@ -98,11 +117,23 @@ def openProject(filename):
 def createProject(filename, overwrite=False):
     """Create a new project with the path <filename>.
 
-    If <overwrite> is False, raise an IOError if this path already exists.
+    If <overwrite> is False, raise an OSError if this path already exists.
+
+    Args:
+       filename (str): File path to create project file at. Must end with .cwp
+       overwrite (bool, optional): Whether or not to overwrite an existing
+           project with <filename>. Raises an OSError if path already exists
+           and this is false. Defaults to false.
+
+    Returns:
+       A chipwhisperer project object.
+
+    Raises:
+       OSError: filename exists and overwrite is False.
     """
     from chipwhisperer.common.api import ProjectFormat as project
     if os.path.isfile(filename) and (overwrite == False):
-        raise IOError("File " + filename + " already exists")
+        raise OSError("File " + filename + " already exists")
 
     proj = project.ProjectFormat()
     proj.setFilename(filename)
@@ -110,7 +141,7 @@ def createProject(filename, overwrite=False):
     return proj
 
 
-def scope(type = scopes.OpenADC, sn=None):
+def scope(scope_type = scopes.OpenADC, sn=None):
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the scope
@@ -119,17 +150,45 @@ def scope(type = scopes.OpenADC, sn=None):
 
     If multiple chipwhisperers are connected, the serial number of the one you
     want to connect to can be specified by passing sn=<SERIAL_NUMBER>
+
+    Args:
+       scope_type (ScopeTemplate, optional): Scope type to connect to. Types
+           can be found in chipwhisperer.scopes. Defaults to scopes.OpenADC
+           (correct for CWLite and CWPro).
+       sn (str, optional): Serial number of ChipWhisperer that you want to
+           connect to. Required if more than one ChipWhisperer
+           of the same type is connected (i.e. two CWNano's or a CWLite and
+           CWPro). Defaults to None.
+
+    Returns:
+       Connected scope object specified by scope_type
+
+    Raises:
+       OSError: Can be raised for issues connecting to the chipwhisperer, such
+           as not having permission to access the USB device or no ChipWhisperer
+           being connected.
+       Warning: Multiple ChipWhisperers connected, but serial number not
+           specified
     """
-    scope = type()
+    scope = scope_type()
     scope.con(sn)
     return scope
 
-def target(scope, type = targets.SimpleSerial, **kwargs):
+def target(scope, target_type = targets.SimpleSerial, **kwargs):
     """Create a target object and connect to it.
 
-    This is SimpleSerial by default, but others are available in the targets subpackage
+    Args:
+       scope (ScopeTemplate): Scope object that we're connecting to the target
+           through.
+       target_type (TargetTemplate, optional): Target type to connect to.
+           Defaults to targets.SimpleSerial. Types can be found in
+           chipwhisperer.targets.
+       **kwargs: Additional keyword arguments to pass to target setup. Rarely
+           needed.
+
+    Returns:
     """
-    target = type()
+    target = target_type()
     target.con(scope, **kwargs)
     return target
 
@@ -187,6 +246,5 @@ try:
         return lambda : _defaultJupyterCallback(attack, head, fmt)
 except ImportError:
     def getJupyterCallback(attack, head = 6):
-        raise UserWarning("This function is only available in Jupyter with pandas installed")
-        return None
+        raise NotImplementedError("This function is only available in Jupyter with pandas installed")
 
