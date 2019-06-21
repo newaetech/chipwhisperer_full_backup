@@ -49,6 +49,10 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
     >>> import chipwhisperer as cw
     >>> scope = cw.scope()
 
+    Some sane default settings are available via:
+
+    >>> scope.defaultSetup()
+
     This code will automatically detect an attached ChipWhisperer device and
     connect to it.
 
@@ -82,6 +86,29 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
 
     def _getNAEUSB(self):
         return self.scopetype.dev._cwusb
+
+    def defaultSetup(self):
+        """ Sets up sane capture defaults for this scope
+
+        * 45dB gain
+        * 5000 capture samples
+        * 0 sample offset
+        * rising edge trigger
+        * 7.37MHz clock output on hs2
+        * 4*7.37MHz ADC clock
+        * tio1 = serial rx
+        * tio2 = serial tx
+        """
+        self.gain.db = 25
+        self.adc.samples = 5000
+        self.adc.offset = 0
+        self.adc.basic_mode = "rising_edge"
+        self.clock.clkgen_freq = 7.37E6
+        self.clock.adc_src = "clkgen_x4"
+        self.trigger.triggers = "tio4"
+        self.io.tio1 = "serial_rx"
+        self.io.tio2 = "serial_tx"
+        self.io.hs2 = "clkgen"
 
     def dcmTimeout(self):
         if self.connectStatus.value():

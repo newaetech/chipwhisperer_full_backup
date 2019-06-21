@@ -70,6 +70,23 @@ class ADCSettings(util.DisableNewAttr):
     def __str__(self):
         return self.__repr__()
 
+    def defaultSetup(self):
+        """ Sets up sane capture defaults for this scope
+
+        7.5MHz ADC clock
+        7.5MHz output clock
+        5000 capture samples
+        tio1 = serial rx
+        tio2 = serial tx
+        glitch module off
+        """
+        self.adc.clk_freq = 7.5E6
+        self.io.clkout = 7.5E6
+        self.adc.samples = 5000
+        self.io.tio1 = "serial_rx"
+        self.io.tio2 = "serial_tx"
+        self.glitch.repeat = 0
+
     @property
     def samples(self):
         """Number of samples to store"""
