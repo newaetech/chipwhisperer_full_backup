@@ -5,5 +5,5 @@
 	path = hardware/victims/firmware/crypto/secAES-ATmega8515
 	url = https://github.com/jmichelp/secAES-ATmega8515.git
 [submodule "chipwhisperer-jupyter"]
-	path = chipwhisperer-jupyter
+	path = jupyter
 	url = git@github.com:newaetech/chipwhisperer-jupyter.git
