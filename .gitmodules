@@ -6,4 +6,4 @@
 	url = https://github.com/jmichelp/secAES-ATmega8515.git
 [submodule "chipwhisperer-jupyter"]
 	path = jupyter
-	url = git@github.com:newaetech/chipwhisperer-jupyter.git
+	url = https://github.com:newaetech/chipwhisperer-jupyter.git
