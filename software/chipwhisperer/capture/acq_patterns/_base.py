@@ -77,9 +77,10 @@ class AcqKeyTextPattern_Base(Parameterized, Plugin):
         """Called before a capture run, does not return anything"""
         raise AttributeError("This needs to be reimplemented")
 
-    def newPair(self):
+    def new_pair(self):
         """Called when a new encryption pair is requested"""
         raise AttributeError("This needs to be reimplemented")
+    newPair = new_pair
 
     def __str__(self):
         return self.getName()

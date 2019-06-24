@@ -97,13 +97,15 @@ class TraceContainer(Parameterized, Plugin):
             self._numTraces = max(cfint, self._numTraces)
         return self._numTraces
 
-    def addTrace(self, trace, textin, textout, key, dtype=np.double, channelNum=0):
+    def add_trace(self, trace, textin, textout, key, dtype=np.double, channelNum=0):
         if channelNum!=0:
             raise NotImplementedError
         self.addWave(trace, dtype)
         self.addTextin(textin)
         self.addTextout(textout)
         self.addKey(key)
+
+    addTrace = add_trace
 
     def writeDataToConfig(self):
         self.config.setAttr("numTraces", self._numTraces)

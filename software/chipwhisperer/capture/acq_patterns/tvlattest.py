@@ -76,7 +76,7 @@ class AcqKeyTextPattern_TVLATTest(AcqKeyTextPattern_Base):
         self.num_group1 = int(maxtraces/2)
         self.num_group2 = int(maxtraces - self.num_group1)
 
-    def newPair(self):
+    def new_pair(self):
         rand = random.random()
         num_tot = self.num_group1 + self.num_group2
         if num_tot == 0:
@@ -106,3 +106,5 @@ class AcqKeyTextPattern_TVLATTest(AcqKeyTextPattern_Base):
         self.validateKey()
 
         return self._key, self._textin
+
+    newPair = new_pair

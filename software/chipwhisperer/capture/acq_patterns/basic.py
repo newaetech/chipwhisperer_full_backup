@@ -102,7 +102,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     def initPair(self, maxtraces):
         pass
 
-    def newPair(self):
+    def new_pair(self):
         if self._fixedKey is False:
             self._key = bytearray(self.keyLen())
             for i in range(0, self.keyLen()):
@@ -118,6 +118,8 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self.validateText()
 
         return self._key, self._textin
+
+    newPair = new_pair
 
     def __str__(self):
         key = "Key=" + self.findParam("Key").getValueKey()

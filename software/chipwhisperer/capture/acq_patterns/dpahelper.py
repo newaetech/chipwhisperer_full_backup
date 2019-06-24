@@ -82,7 +82,7 @@ class AcqKeyTextPattern_DPA(AcqKeyTextPattern_Base):
     def initPair(self, maxtraces):
         pass
 
-    def newPair(self):
+    def new_pair(self):
         randDPA = random.randint(0, 1)
         if randDPA == 0:
             DPAByte = 0
@@ -98,3 +98,5 @@ class AcqKeyTextPattern_DPA(AcqKeyTextPattern_Base):
         self.validateText()
 
         return self._key, self._textin
+
+    newPair = new_pair

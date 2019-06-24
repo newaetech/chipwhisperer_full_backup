@@ -147,8 +147,8 @@ class ResyncSAD(PreprocessingBase):
 
     def setOutputSad(self, enabled):
         self._debugReturnSad = enabled
-   
-    def getTrace(self, n):
+
+    def get_trace(self, n):
         if self.enabled:
             if self._init_not_done:
                 self._calculateRef()
@@ -158,21 +158,21 @@ class ResyncSAD(PreprocessingBase):
             if trace is None:
                 return None
             sad = self._findSAD(trace)
-            
+
             if self._debugReturnSad:
                 return sad
-            
+
             if len(sad) == 0:
-                return None            
-            
+                return None
+
             newmaxloc = np.argmin(sad)
             maxval = min(sad)
             #if (maxval > self.refmaxsize * 1.01) | (maxval < self.refmaxsize * 0.99):
             #    return None
-            
+
             if maxval > self.maxthreshold:
                 return None
-            
+
             diff = newmaxloc-self.refmaxloc
             if diff < 0:
                 trace = np.append(np.zeros(-diff), trace[:diff])
@@ -181,7 +181,9 @@ class ResyncSAD(PreprocessingBase):
             return trace
         else:
             return self._traceSource.getTrace(n)
-   
+
+    getTrace = get_trace
+
     def _calculateRef(self):
         try:
             self.calcRefTrace(self._rtrace)
@@ -189,7 +191,7 @@ class ResyncSAD(PreprocessingBase):
         #before trace management setup
         except ValueError:
             pass
-        
+
     def _findSAD(self, inputtrace):
         sadlen = self._maxshift * 2
         sadarray = np.ones(sadlen)*1E6
@@ -212,11 +214,11 @@ class ResyncSAD(PreprocessingBase):
             abs_data = np.abs(diff_data)
             sadarray[ptoffset + self._maxshift] = np.sum(abs_data)
         return sadarray
-        
+
     def calcRefTrace(self, tnum):
         if self.enabled == False:
             return
-        
+
         self.reftrace = self._traceSource.getTrace(tnum)[self._wdStart:self._wdEnd]
         sad = self._findSAD(self._traceSource.getTrace(tnum))
         self.refmaxloc = np.argmin(sad)
