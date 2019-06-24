@@ -28,6 +28,10 @@ from datetime import datetime
 from ._base import TraceContainer
 
 class TraceContainerNative(TraceContainer):
+    """ Most common TraceContainer for CW Projects
+
+    Stick to add_trace(). Trust me.
+    """
     _name = "ChipWhisperer/Native"
     
     def default_config_setup(self, project):

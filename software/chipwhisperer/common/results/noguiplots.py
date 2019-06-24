@@ -31,10 +31,29 @@ class NoGUIPlots(object):
     def __init__(self, attack_results=None):
         self._results = attack_results
 
-    def setResults(self, attack_results):
+    def set_results(self, attack_results):
+        """ sets results to attack_results
+        """
         self._results = attack_results
 
-    def corrVsTrace(self, bnum):
+    setResults = set_results
+
+    def corr_vs_trace(self, bnum):
+        """ Gets plot data of correlation for each possible value of subkey
+        vs. trace number for a given subkey
+
+        Args:
+            bnum (int): Subkey byte to get plot for.
+
+        Returns:
+            List of ::
+                [
+                    xrange
+                    [
+                        correlation for each possible subkey
+                    ]
+                ]
+        """
         attack_results = self._results
         data = attack_results.maxes_list
         maxdata = data[bnum]
@@ -48,7 +67,22 @@ class NoGUIPlots(object):
 
         return [tlist, maxlist]
 
-    def pgeVsTrace(self, bnum):
+    corrVsTrace = corr_vs_trace
+
+    def pge_vs_trace(self, bnum):
+        """ Gets plot data of partial guessing entropy vs. trace number for a
+        given subkey.
+
+        Args:
+            bnum (int): Subkey byte to get plot for
+
+        Returns:
+            List of ::
+                [
+                    xrange,
+                    pge
+                ]
+        """
         attack_results = self._results
         pge = attack_results.pge_total
         allpge = DictType()
@@ -78,7 +112,23 @@ class NoGUIPlots(object):
 
         return [trace, pge]
 
-    def outputVsTime(self, bnum):
+    pgeVsTrace = pge_vs_trace
+
+    def output_vs_time(self, bnum):
+        """ Gets plot data of output vs. time (time data is the adc samples)
+
+        Args:
+            bnum (int): Subkey byte to get plot for
+
+        Returns:
+            List of ::
+                [
+                    xrange,
+                    correlation of correct byte,
+                    largest +ve correlation,
+                    largest -ve correlation
+                ]
+        """
         if self._results is None:
             return None
 
@@ -93,3 +143,5 @@ class NoGUIPlots(object):
         mins = [np.amin(data[0:key-1], 0), np.amin(data[key+1:-1], 0)]
 
         return [xrangelist, data[key], np.amax(maxes, 0), np.amin(mins, 0)]
+
+    outputVsTime = output_vs_time

@@ -33,7 +33,21 @@ from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
 
 class CPA(AttackBaseClass):
-    """Correlation Power Analysis Attack"""
+    """Correlation Power Analysis Attack
+
+    Before running attack, set a leak model (set_leak_model()). By default
+    attacks all keys using all traces.
+    Basic usage:
+
+    .. code:: python
+        >>> import chipwhisperer as cw
+        >>> import chipwhisperer.analyzer as cwa
+        >>> project = cw.open_project("project.cwp")
+        >>> attack = cwa.cpa(project.trace_manager())
+        >>> leak_model = cwa.AES128(cw.aes128leakage.SBox_output)
+        >>> attack.set_leak_model(leak_model)
+        >>> attack.process_traces()
+    """
     _name = "CPA"
 
     def __init__(self):

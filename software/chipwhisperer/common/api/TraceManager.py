@@ -37,9 +37,12 @@ import copy
 
 class TraceManager(TraceSource):
     """
-    When using traces in ChipWhisperer, you may have remapped a bunch of trace files into one
-    segment of traces. This class is used to handle the remapping and provide methods to save,
-    load and manage the traces.
+    When using traces in ChipWhisperer, you may have remapped a bunch of trace
+    files into one segment of traces. This class is used to handle the
+    remapping and provide methods to save, load and manage the traces.
+
+    Don't use anything that modifies the trace manager -> stick to stuff
+    that gives you information about it instead (i.e. get_trace, get_known_key)
     """
 
     def __init__(self, name = "Trace Management"):
@@ -54,13 +57,15 @@ class TraceManager(TraceSource):
         self.saved = False
         if __debug__: logging.debug('Created: ' + str(self))
 
-    def newProject(self):
+    def new_project(self):
         """Create a new empty set of traces."""
         self.traceSegments = []
         self.dirty.setValue(False)
         self.sigTracesChanged.emit()
 
-    def saveProject(self, config, configfilename):
+    newProject = new_project
+
+    def save_project(self, config, configfilename):
         """Save the trace segments information to a project file."""
         config[self.name].clear()
         for indx, t in enumerate(self.traceSegments):
@@ -75,6 +80,8 @@ class TraceManager(TraceSource):
             t.saveAllTraces(os.path.dirname(t.config.configFilename()), prefix) 
         self.dirty.setValue(False)
         self.saved = True
+
+    saveProject = save_project
 
     def loadProject(self, configfilename):
         """Load the trace segments information from a project file."""
@@ -134,7 +141,7 @@ class TraceManager(TraceSource):
 
         return dataDict
 
-    def getSegment(self, traceIndex):
+    def get_segment(self, traceIndex):
         """Return the trace segment with the specified trace in the list with all enabled segments."""
         if self.lastUsedSegment is not None:
             if self.lastUsedSegment.mappedRange is not None and self.lastUsedSegment.mappedRange[0] <= traceIndex <= \
@@ -156,6 +163,8 @@ class TraceManager(TraceSource):
 
         raise ValueError("Error: Trace %d is not in mapped range." % traceIndex)
 
+    getSegment = get_segment
+
     def getAuxData(self, n, auxDic):
         """Return data about a segment"""
         t = self.getSegment(n)
@@ -167,28 +176,36 @@ class TraceManager(TraceSource):
 
         return {'cfgdata':cfg, 'filedata':filedata}
 
-    def getTrace(self, n):
+    def get_trace(self, n):
         """Return the trace with index n in the list of enabled segments"""
         t = self.getSegment(n)
         return t.getTrace(n - t.mappedRange[0])
 
-    def getTextin(self, n):
+    getTrace = get_trace
+
+    def get_textin(self, n):
         """Return the input text of trace with index n in the list of enabled segments"""
         t = self.getSegment(n)
         return t.getTextin(n - t.mappedRange[0])
 
-    def getTextout(self, n):
+    getTextin = get_textin
+
+    def get_textout(self, n):
         """Return the output text of trace with index n in the list of enabled segments"""
         t = self.getSegment(n)
         return t.getTextout(n - t.mappedRange[0])
 
-    def getKnownKey(self, n):
+    getTextout = get_textout
+
+    def get_known_key(self, n):
         """Return the known encryption key."""
         try:
             t = self.getSegment(n)
             return t.getKnownKey(n - t.mappedRange[0])
         except ValueError:
             return []
+
+    getKnownKey = get_known_key
 
     def _updateRanges(self):
         """Update the trace range for each segments."""
@@ -218,13 +235,16 @@ class TraceManager(TraceSource):
                 t.mappedRange = None
         self._numTraces = startTrace
 
-    def numPoints(self):
+    def num_points(self):
         """Return the number of points in traces of the selected segments."""
         return self._numPoints
+    numPoints = num_points
 
-    def numTraces(self):
+    def num_traces(self):
         """Return the number of traces in the current list of enabled segments."""
         return self._numTraces
+
+    numTraces = num_traces
 
     def appendSegment(self, ti, enabled=True):
         """Append a new segment to the list of trace segments."""

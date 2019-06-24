@@ -64,9 +64,10 @@ class AlgorithmsBase(Parameterized, AutoScript):
     def processKnownKey(self, inpkey):
         return self.model.processKnownKey(inpkey)
 
-    def getStatistics(self):
+    def get_statistics(self):
         return self.stats
 
+    getStatistics = get_statistics
     def setStatsReadyCallback(self, sr):
         self.sr = sr
 

@@ -105,63 +105,71 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         if hasattr(self._analysisAlgorithm, 'runScriptFunction'):
             self._analysisAlgorithm.runScriptFunction.connect(self.runScriptFunction.emit)
 
-    def setLeakModel(self, leakage_object):
+    def set_leak_model(self, leakage_object):
         """Set the leak model to leakage_object"""
         self.attackModel = leakage_object
 
-    def leakModel(self):
+    setLeakModel = set_leak_model
+
+    def leak_model(self):
         """Get the leak model for the attack"""
         return self.attackModel
 
-    def setAnalysisAlgorithm(self, analysisAlgorithm, leakage_object=None):
-        """Called from the script to setup the attack"""
-        self.attack = analysisAlgorithm()
+    leakModel = leak_model
+
+    def set_analysis_algorithm(self, analysis_algorithm, leakage_object=None):
+        """Sets the algorithm used for analyzing the trace data
+
+        You probably want cpa_algorithms.Progressive
+
+        Args:
+            analysis_algorithm (AlgorithmsBase): Algorithm used for analyzing
+                trace data. Only use cpa_algorithms.Progressive for now.
+            leakage_object (ModelsBase, optional): Model used to get the
+                leakage of the target (i.e. the sbox output). Needs to be set
+                before the attack can happen
+        """
+        self.attack = analysis_algorithm()
         self.attack.setProject(self._project)
         self.attackModel = leakage_object
 
+    setAnalysisAlgorithm = set_analysis_algorithm
     def processKnownKey(self, inpkey):
+
         """
         Passes known first-round key (if available, may pass None).
         Returns key under attack which should be highlighted in graph
         """
         return inpkey
 
-    def processTraces(self, callback=None, show_progress_bar=False):
+    def process_traces(self, callback=None):
+        """ Run the attack!
 
-        if show_progress_bar:
-            progressBar = ProgressBarTqdm("Analysis in Progress", "Attacking with " + self.getName())
+        Args:
+            callback (function(), optional): Function called every reporting
+                interval. Not called if None. Defaults to None.
 
-            with progressBar:
-                self.attack.setModel(self.attackModel)
-                self.attack.getStatistics().clear()
-                self.attack.setReportingInterval(self.getReportingInterval())
-                self.attack.setTargetSubkeys(self.getTargetSubkeys())
-                self.attack.setStatsReadyCallback(callback)
+        Returns:
+            Statistics object for the attack
+        """
+        progressBar = None
 
-                for itNum in range(self.getIterations()):
-                    startingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
-                    endingTrace = startingTrace + self.getTracesPerAttack() - 1
+        self.attack.setModel(self.attackModel)
+        self.attack.getStatistics().clear()
+        self.attack.setReportingInterval(self.getReportingInterval())
+        self.attack.setTargetSubkeys(self.getTargetSubkeys())
+        self.attack.setStatsReadyCallback(callback)
 
-                    # TODO:support start/end point different per byte
-                    self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange(None))
+        for itNum in range(self.getIterations()):
+            startingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
+            endingTrace = startingTrace + self.getTracesPerAttack() - 1
 
-        else:
-            progressBar = None
+            # TODO:support start/end point different per byte
+            self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange(None))
 
-            self.attack.setModel(self.attackModel)
-            self.attack.getStatistics().clear()
-            self.attack.setReportingInterval(self.getReportingInterval())
-            self.attack.setTargetSubkeys(self.getTargetSubkeys())
-            self.attack.setStatsReadyCallback(callback)
-
-            for itNum in range(self.getIterations()):
-                startingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
-                endingTrace = startingTrace + self.getTracesPerAttack() - 1
-
-                # TODO:support start/end point different per byte
-                self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange(None))
-            
         return self.attack.getStatistics()
+
+    processTraces = process_traces
 
     # for backwards compatability
     def processTracesNoGUI(self, callback=None, show_progress_bar=False):
@@ -173,25 +181,30 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
     def project(self):
         return self._project
 
-    def getTraceStart(self):
+    def get_trace_start(self):
         return self._traceStart
 
+    getTraceStart = get_trace_start
     @setupSetParam("Starting Trace")
-    def setTraceStart(self, tnum):
+    def set_trace_start(self, tnum):
         self._traceStart = tnum
 
-    def getIterations(self):
+    setTraceStart = set_trace_start
+    def get_iterations(self):
         return self._iterations
 
+    getIterations = get_iterations
     @setupSetParam("Iterations")
-    def setIterations(self, its):
+    def set_iterations(self, its):
         self._iterations = its
 
-    def getTracesPerAttack(self):
+    setIterations = set_iterations
+    def get_traces_per_attack(self):
         return self._tracePerAttack
 
+    getTracesPerAttack = get_traces_per_attack
     @setupSetParam("Traces per Attack")
-    def setTracesPerAttack(self, trace):
+    def set_traces_per_attack(self, trace):
         if trace < 0:
             #Get maximum traces from source
             ts = self.getTraceSource()
@@ -200,37 +213,45 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
             trace = self.getTraceSource().numTraces()
         self._tracePerAttack = trace
 
-    def getReportingInterval(self):
+    setTracesPerAttack = set_traces_per_attack
+    def get_reporting_interval(self):
         return self._reportingInterval
 
+    getReportingInterval = get_reporting_interval
     @setupSetParam("Reporting Interval")
-    def setReportingInterval(self, ri):
+    def set_reporting_interval(self, ri):
         self._reportingInterval = ri
 
-    def getPointRange(self, bnum=None):
+    setReportingInterval = set_reporting_interval
+    def get_point_range(self, bnum=None):
         return self._pointRange
 
+    getPointRange = get_point_range
     @setupSetParam("Points Range")
-    def setPointRange(self, rng):
+    def set_point_range(self, rng):
         if rng[1] < 0:
             ts = self.getTraceSource()
             if ts is None:
                 raise ValueError("traceSource not yet set in attack - set TraceSource first to use automatic setPointRange")
             rng = (rng[0], ts.numPoints())
         self._pointRange = rng
-
-    def knownKey(self):
+    setPointRange = set_point_range 
+    def known_key(self):
         """Get the known key via attack"""
         key = self.processKnownKey(self.getTraceSource().getKnownKey(self.getTraceStart()))
         if key is None:
             key = [None] * len(self.getStatistics().diffs)
         return key
 
-    def setTargetSubkeys(self, blist):
+    knownKey = known_key
+    def set_target_subkeys(self, blist):
         self._targetSubkeys = blist
 
-    def getTargetSubkeys(self):
+    setTargetSubkeys = set_target_subkeys
+    def get_target_subkeys(self):
         return self._targetSubkeys
+
+    getTargetSubkeys = get_target_subkeys
 
     def __del__(self):
         if __debug__: logging.debug('Deleted: ' + str(self))
@@ -259,9 +280,10 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
             pass
         return blist
 
-    def getStatistics(self):
+    def get_statistics(self):
         return self.attack.getStatistics()
 
+    getStatistics = get_statistics
     def updateScript(self, _=None):
         self.importsAppend("import chipwhisperer")
         if self._traceSource is None:

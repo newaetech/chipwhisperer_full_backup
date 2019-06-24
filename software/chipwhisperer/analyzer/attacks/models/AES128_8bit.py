@@ -270,9 +270,15 @@ enc_list = [SBox_output, PtKey_XOR, SBoxInputSuccessive, SBoxInOutDiff, Lastroun
 dec_list = [InvSBox_output]
 
 class AES128_8bit(ModelsBase, Plugin):
+    """Leakage model for AES128 attacks.
+
+    Make sure to set the actual leakage model (i.e. SBox_Output)
+    """
     _name = 'AES 128'
 
     hwModels = OrderedDict((mod.name, mod) for mod in (enc_list+dec_list) )
+
+    hw_models = OrderedDict((mod.__name__, mod) for mod in (enc_list+dec_list))
 
     def __init__(self, model=SBox_output, bitmask=0xFF):
         ModelsBase.__init__(self, 16, 256, model=model)

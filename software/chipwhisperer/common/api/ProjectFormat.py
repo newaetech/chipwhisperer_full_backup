@@ -35,7 +35,7 @@ from chipwhisperer.common.api.settings import Settings
 from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
 from chipwhisperer.common.utils import util, pluginmanager
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
-from copy import copy
+import copy
 
 try:
     from configobj import ConfigObj  # import the module
@@ -70,7 +70,30 @@ class ConfigObjProj(ConfigObj):
 class ProjectFormat(Parameterized):
     """Class describing an open ChipWhisperer project.
 
+    Only use methods that have documentation.
 
+    Basic capture usage:
+
+    .. code:: python
+        >>> import chipwhisperer as cw
+        >>> proj = cw.create_project("project.cwp")
+        >>> segment = proj.get_new_trace_segment()
+        >>> # capture a trace
+        >>> segment.add_trace(trace_data, plaintext, ciphertext, key)
+        >>> proj.save() #closes the project, make sure you're done with it
+
+    Basic analyzer usage:
+
+    .. code:: python
+        >>> import chipwhisperer as cw
+        >>> import chipwhisperer.analyzer as cwa
+        >>> proj = cw.open_project("project.cwp")
+        >>> tm = project.trace_manager()
+        >>> attack = cwa.cpa(tm)
+        >>> #run attack
+
+    Use a trace_manager when analyzing traces, since that allows analyzer to
+    work with multiple trace segments
     """
     untitledFileName = os.path.normpath(os.path.join(Settings().value("project-home-dir"), "tmp/default.cwp"))
 
@@ -105,17 +128,48 @@ class ProjectFormat(Parameterized):
         if __debug__:
             logging.debug('Created: ' + str(self))
 
-    def appendSegment(self, segment):
-        self._traceManager.appendSegment(copy(segment))
+    def append_segment(self, segment):
+        """ Adds a new trace segment to the project
 
-    def newSegment(self):
+        Args:
+            segment (TraceContainer): Trace segment to add to project
+        """
+        self._traceManager.appendSegment(copy.copy(segment))
+
+    appendSegment = append_segment
+
+    def new_segment(self):
+        """ Returns the __class__() of the trace container used to store traces
+        in the project
+
+        You probably want get_new_trace_segment()
+
+        Returns:
+            __class()__ of the current trace container
+        """
         return self._trace_format.__class__()
 
-    def getTraceFormat(self):
+    newSegment = new_segment
+
+    def get_trace_format(self):
+        """ Gets the TraceContainer used to store traces
+
+        Returns:
+            The trace container used in the project
+        """
         return self._trace_format
-    
-    def getNewTraceSegment(self):
-        """Return a new trace object for the specified format."""
+
+    getTraceFormat = get_trace_format
+
+    def get_new_trace_segment(self):
+        """Return a new TraceContainer object for the specified format.
+
+        Once you're done working with this segment, you can readd it to the
+        project with append_segment()
+
+        Returns:
+            a new TraceContainer object
+        """
         tmp = copy.copy(self._trace_format)
         tmp.clear()
         starttime = datetime.now()
@@ -125,9 +179,13 @@ class ProjectFormat(Parameterized):
         tmp.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
         return tmp
 
+    getNewTraceSegment = get_new_trace_segment
+
     @setupSetParam("Trace Format")
-    def setTraceFormat(self, trace_format):
+    def set_trace_format(self, trace_format):
         self._trace_format = trace_format
+
+    setTraceFormat = set_trace_format
 
     def __dirtyCallback(self):
         self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value())
@@ -138,35 +196,49 @@ class ProjectFormat(Parameterized):
     def isUntitled(self):
         return self.filename == ProjectFormat.untitledFileName
 
-    def traceManager(self):
+    def trace_manager(self):
+        """ Gets the trace manager for the project
+
+        Returns:
+            The trace manager for the project
+        """
         return self._traceManager
+
+    traceManager = trace_manager
 
     def setProgramName(self, name):
         self.settingsDict['Program Name']=name
-    
+
     def setProgramVersion(self, ver):
         self.settingsDict['Program Version']=ver
-        
+
     def setAuthor(self, author):
         self.settingsDict['Project Author']=author
-    
+
     def setProjectName(self, name):
         self.settingsDict['Project Name']=name
-    
+
     def setFileVersion(self, ver):
         self.settingsDict['Project File Version']=ver
-        
-        
-    def getFilename(self):
+
+
+    def get_filename(self):
+        """ Gets the filename associated with the project
+
+        Returns:
+            Filename of project
+        """
         return self.filename
+
+    getFilename = get_filename
 
     def setFilename(self, f):
         self.filename = f
-        self.config.filename = f        
+        self.config.filename = f
         self.datadirectory = os.path.splitext(self.filename)[0] + "_data/"
         self.createDataDirectory()
         self.sigStatusChanged.emit()
-        
+
     def createDataDirectory(self):
         # Check if data-directory exists?
         if not os.path.isdir(self.datadirectory):
@@ -207,13 +279,13 @@ class ProjectFormat(Parameterized):
         return os.path.join(os.path.split(self.filename)[0], relativepath)
 
     def checkDataConfig(self, config, requiredSettings):
-        """Check a configuration section for various settings"""
+        """Check a configuration section for various settings. Don't use."""
         requiredSettings = util.convert_to_str(requiredSettings)
         config = util.convert_to_str(config)
         return set(requiredSettings.items()).issubset(set(config.items()))
 
     def getDataConfig(self, sectionName="Aux Data", subsectionName=None, requiredSettings=None):
-        """
+        """ Don't use.
         Get all configuration sections of data type given in
         __init__() call, and also matching the given sectionName.
         e.g. if dataName='Aux Data' and sectionName='Frequency',
@@ -239,7 +311,7 @@ class ProjectFormat(Parameterized):
         return sections
 
     def addDataConfig(self, settings=None, sectionName="Aux Data", subsectionName=None):
-        # Check configuration file to find incrementing number
+        # Check configuration file to find incrementing number. Don't use
         maxNumber = 0
         for sname in list(self.config.keys()):
             # Find if starts with 'Aux Data'
@@ -260,30 +332,32 @@ class ProjectFormat(Parameterized):
         return self.config[cfgSectionName]
 
     def saveAllSettings(self, fname=None, onlyVisibles=False):
-        """ Save registered parameters to a file, so it can be loaded again latter."""
+        """ Save registered parameters to a file, so it can be loaded again latter. Don't use."""
         if fname is None:
             fname = os.path.join(self.datadirectory, 'settings.cwset')
             logging.info('Saving settings to file: ' + fname)
         Parameter.saveRegistered(fname, onlyVisibles)
 
     def saveTraceManager(self):
-        #Waveform list is Universal across ALL types
+        #Waveform list is Universal across ALL types. Don't use.
         if 'Trace Management' not in self.config:
             self.config['Trace Management'] = {}
-            
+
         self._traceManager.saveProject(self.config, self.filename)
 
     def save(self):
+        """ Saves and closes the project
+        """
         if self.filename is None:
             return
 
         self.saveTraceManager()
-            
+
         #self.config['Waveform List'] = self.config['Waveform List'] + self.waveList
 
         #Program-Specific Options
         pn = self.settingsDict['Program Name']
-       
+
         self.config[pn] = {}
         self.config[pn]['General Settings'] =  self.settingsDict
 
@@ -292,7 +366,7 @@ class ProjectFormat(Parameterized):
         self.dirty.setValue(False)
 
     def checkDiff(self):
-        """
+        """ Don't use.
         Check if there is a difference - returns True if so, and False
         if no changes present. Also updates widget with overview of the
         differences if requested with updateGUI

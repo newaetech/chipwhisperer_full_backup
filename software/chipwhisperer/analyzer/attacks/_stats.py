@@ -64,10 +64,12 @@ class DataTypeDiffs(object):
             return 1
         return self.pge[bnum]
 
-    def setKnownkey(self, knownkey):
+    def set_known_key(self, knownkey):
         self.knownkey = knownkey
 
-    def updateSubkey(self, bnum, data, copy=True, forceUpdate=False, tnum=None):
+    setKnownkey = set_known_key
+
+    def update_subkey(self, bnum, data, copy=True, forceUpdate=False, tnum=None):
         if (id(data) != id(self.diffs[bnum])) or forceUpdate:
             self.maxValid[bnum] = False
 
@@ -78,7 +80,8 @@ class DataTypeDiffs(object):
                 self.diffs[bnum] = data
                 self.diffs_tnum[bnum] = tnum
 
-    def findMaximums(self, bytelist=None, useAbsolute=True, useSingle=False):
+    updateSubkey = update_subkey
+    def find_maximums(self, bytelist=None, useAbsolute=True, useSingle=False):
         if bytelist is None:
             bytelist = list(range(0, self.numSubkeys))
 
@@ -132,8 +135,9 @@ class DataTypeDiffs(object):
 
             tnum = self.diffs_tnum[i]
             self.pge_total.append({'trace':tnum, 'subkey':i, 'pge':self.pge[i]})
-            
+
             if len(self.maxes_list[i]) == 0 or self.maxes_list[i][-1]['trace'] != tnum:
                 self.maxes_list[i].append({'trace':tnum, 'maxes':np.array(self.maxes[i])})
 
         return self.maxes
+    findMaximums = find_maximums
