@@ -167,8 +167,8 @@ class GlitchSettings(util.DisableNewAttr):
         """The width of a single glitch pulse, as a percentage of one period.
 
         One pulse can range from -49.8% to roughly 49.8% of a period. The
-        system may not be reliable at 0%. Note that negative widths are allowed
-         - these act as if they are positive widths on the other half of the
+        system may not be reliable at 0%. Note that negative widths are allowed;
+        these act as if they are positive widths on the other half of the
         clock cycle.
 
         Getter: Return a float with the current glitch width.

@@ -57,13 +57,16 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
     connect to it.
 
     For more help about scope settings, try help() on each of the ChipWhisperer
-    scope submodules:
-        scope.gain
-        scope.adc
-        scope.clock
-        scope.io
-        scope.trigger
-        scope.glitch
+    scope submodules (scope.gain, scope.adc, scope.clock, scope.io,
+    scope.trigger, and scope.glitch):
+
+    Documentation Links:
+     * :attr:`scope.gain <.gain>`
+     * :attr:`scope.adc <.adc>`
+     * :attr:`scope.clock <.clock>`
+     * :attr:`scope.io <.io>`
+     * :attr:`scope.trigger <.trigger>`
+     * :attr:`scope.glitch <.glitch>`
     """
 
     _name = "ChipWhisperer/OpenADC"

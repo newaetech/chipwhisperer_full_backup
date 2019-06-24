@@ -93,12 +93,24 @@ def create_project(filename, overwrite=False):
 createProject = create_project
 
 
-def scope(scope_type = scopes.OpenADC, sn=None):
+def scope(scope_type=scopes.OpenADC, sn=None):
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the scope
     is a ChipWhisperer OpenADC object, but this can be set to any valid scope
     class.
+
+     * :class:`scopes.OpenADC` (Pro and Lite)
+        - :attr:`gain <chipwhisperer.scopes.OpenADC.gain>`
+        - :attr:`adc <chipwhisperer.scopes.OpenADC.adc>`
+        - :attr:`clock <chipwhisperer.scopes.OpenADC.clock>`
+        - :attr:`io <chipwhisperer.scopes.OpenADC.io>`
+        - :attr:`trigger <chipwhisperer.scopes.OpenADC.trigger>`
+        - :attr:`glitch <chipwhisperer.scopes.OpenADC.glitch>`
+     * :class:`scopes.CWNano` (Nano)
+        - :attr:`adc <chipwhisperer.scopes.CWNano.adc>`
+        - :attr:`io <chipwhisperer.scopes.CWNano.io>`
+        - :attr:`glitch <chipwhisperer.scopes.CWNano.glitch>`
 
     If multiple chipwhisperers are connected, the serial number of the one you
     want to connect to can be specified by passing sn=<SERIAL_NUMBER>

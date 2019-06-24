@@ -89,7 +89,7 @@ class ADCSettings(util.DisableNewAttr):
 
     @property
     def samples(self):
-        """Number of samples to store"""
+        """Number of samples to store."""
 
         resp = self.usb.readCtrl(self.USB_SAMPLES, 0, 4)
         return unpackuint32(resp)
@@ -103,7 +103,13 @@ class ADCSettings(util.DisableNewAttr):
 
     @property
     def clk_src(self):
-        """ADC Clock source: 'int' or 'ext' """
+        """ADC Clock source.
+
+        Getter: Returns 'int' or 'ext' based on the clock source.
+
+        Setter: (str) Set the ADC clock source to either internal or external:
+            ('int' or 'ext')
+        """
 
         resp = self.usb.readCtrl(self.USB_ADCLK_SET, 0, 5)
         if resp[3] == 0:
@@ -131,8 +137,13 @@ class ADCSettings(util.DisableNewAttr):
 
     @property
     def clk_freq(self):
-        """"Set the frequency for CLKOUT. Will be rounded to nearest possible values, check results to see
-        programmed value. Set to 'None' for disabling (High-Z) output."""
+        """Set the frequency for CLKOUT. Will be rounded to nearest possible values, check results to see
+        programmed value. Set to 'None' for disabling (High-Z) output.
+
+        Getter: Returns the actual frequency for CLKOUT
+
+        Setter: Sets CLKOUT to the nearest possible value.
+        """
 
         resp = self.usb.readCtrl(self.USB_ADCLK_SET, 0, 5)
         if resp[0] == 0:
@@ -514,16 +525,21 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
     This class contains the public API for the CWNano hardware. It includes
     specific settings for each of these devices.
 
-    To connect to one of these devices, the easiest method is
+    To connect to one of these devices, the easiest method is::
+    
+        import chipwhisperer as cw
+        scope = cw.scope(type=scopes.CWNano) 
 
     This code will automatically detect an attached ChipWhisperer device and
     connect to it.
 
     For more help about scope settings, try help() on each of the ChipWhisperer
-    scope submodules:
-        scope.adc
-        scope.io
-        scope.glitch
+    scope submodules (scope.adc, scope.io, scope.glitch):
+
+    Documentation Links:
+     * :attr:`scope.adc <.adc>`
+     * :attr:`scope.io <.io>`
+     * :attr:`scope.glitch <.glitch>`
     """
 
     _name = "ChipWhisperer Nano"

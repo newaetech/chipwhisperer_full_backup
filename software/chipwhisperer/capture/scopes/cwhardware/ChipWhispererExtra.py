@@ -182,6 +182,7 @@ class GPIOSettings(util.DisableNewAttr):
 
         Raises:
            ValueError: if new value is not one of the above modes
+
         """
         return self._tioInternalToApi(self._getTio(0), self._getGpio(0))
 
@@ -480,7 +481,8 @@ class GPIOSettings(util.DisableNewAttr):
     def reset_target(self, initial_state=1, reset_state=0, reset_delay=0.01, postreset_delay=0.01):
         raise NotImplementedError()
 
-    # TODO: implement SCK/MOSI/MISO/CS?
+    # .. todo:: implement SCK/MOSI/MISO/CS?
+
     def sck(self):
         raise NotImplementedError()
 
