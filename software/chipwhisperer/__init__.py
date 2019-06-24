@@ -39,7 +39,7 @@ def program_target(scope, prog_type, fw_path):
     prog.program(fw_path, memtype="flash", verify=True)
     prog.close()
 
-programTrace = program_trace
+programTarget = program_target
 
 def open_project(filename):
     """Load an existing project from disk.
