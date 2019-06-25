@@ -267,14 +267,15 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         ret = self.qtadc.capture()
         return ret
 
-    def getLastTrace(self):
+    def get_last_trace(self):
         """Return the last trace captured with this scope.
 
         Returns:
-           List of ADC datapoints
+           Numpy array of the last capture trace.
         """
         return self.qtadc.datapoints
 
+    getLastTrace = util.camel_case_deprecated(get_last_trace)
 
     def _dict_repr(self):
         dict = OrderedDict()

@@ -16,6 +16,7 @@ from chipwhisperer.capture.api import programmers
 from chipwhisperer.capture import acq_patterns as key_text_patterns
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 ktp = key_text_patterns #alias
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 def program_target(scope, prog_type, fw_path):
     """Program the target using the programmer <type>
@@ -39,7 +40,9 @@ def program_target(scope, prog_type, fw_path):
     prog.program(fw_path, memtype="flash", verify=True)
     prog.close()
 
-programTarget = program_target
+
+programTarget = camel_case_deprecated(program_target)
+
 
 def open_project(filename):
     """Load an existing project from disk.
@@ -62,7 +65,9 @@ def open_project(filename):
     proj.load(filename)
     return proj
 
-openProject = open_project
+
+openProject = camel_case_deprecated(open_project)
+
 
 def create_project(filename, overwrite=False):
     """Create a new project with the path <filename>.
@@ -90,7 +95,8 @@ def create_project(filename, overwrite=False):
 
     return proj
 
-createProject = create_project
+
+createProject = camel_case_deprecated(create_project)
 
 
 def scope(scope_type=scopes.OpenADC, sn=None):
@@ -212,4 +218,5 @@ def capture_trace(scope, target, plaintext, key=None):
 
     return trace, response
 
-captureTrace = capture_trace
+
+captureTrace = camel_case_deprecated(capture_trace)
