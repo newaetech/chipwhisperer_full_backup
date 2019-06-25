@@ -54,6 +54,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         self.initmask = '1F 70 D6 3C 23 EB 1A B8 6A D5 E2 0D 5F D9 58 A3 CA 9D'
         self._mask = util.hexStrToByteArray(self.initmask)
         self.protformat = 'hex'
+        self.last_key = bytearray(16)
 
         # Preset lists are in the form
         # {'Dropdown Name':['Init Command', 'Load Key Command', 'Load Input Command', 'Go Command', 'Output Format']}
@@ -858,9 +859,11 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         .. versionadded:: 5.1
             Made reading/writing to target simpler
         """
-        self.simpleserial_write('k', key)
-        if ack:
-            self.simpleserial_wait_ack(timeout)
+        if self.last_key != key:
+            self.last_key = key
+            self.simpleserial_write('k', key)
+            if ack:
+                self.simpleserial_wait_ack(timeout)
 
 
 
