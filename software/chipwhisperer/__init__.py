@@ -158,7 +158,6 @@ def target(scope, target_type = targets.SimpleSerial, **kwargs):
     target.con(scope, **kwargs)
     return target
 
-
 def capture_trace(scope, target, plaintext, key=None):
     """Capture a trace, sending plaintext and key
 
@@ -168,10 +167,10 @@ def capture_trace(scope, target, plaintext, key=None):
     Args:
         scope (ScopeTemplate): Scope object to use for capture.
         target (TargetTemplate): Target object to read/write text from.
-       plaintext (bytearray): Plaintext to send to the target. Should be
+        plaintext (bytearray): Plaintext to send to the target. Should be
             unencoded ByteArray (will be converted to SimpleSerial when it's
             sent). If None, don't send plaintext.
-       key (bytearray, optional): Key to send to target. Should be unencoded
+        key (bytearray, optional): Key to send to target. Should be unencoded
             ByteArray. If None, don't send key. Defaults to None.
 
     Returns:
@@ -186,18 +185,17 @@ def capture_trace(scope, target, plaintext, key=None):
 
             import chipwhisperer as cw
             scope = cw.scope()
-            scope.defaultSetup()
+            scope.default_setup()
             target = cw.target()
             ktp = cw.ktp.Basic()
-            key, pt = ktp.newPair()
-            trace, response = cw.capture_trace(scope, target, plaintext, key)
+            key, pt = ktp.new_pair()
+            trace, response = cw.capture_trace(scope, target, pt, key)
 
     .. versionadded:: 5.1
         Added to simplify trace capture.
     """
     if key:
-        target.simpleserial_write('k', key)
-        target.simpleserial_wait_ack()
+        target.set_key(key)
 
     scope.arm()
 
@@ -213,7 +211,7 @@ def capture_trace(scope, target, plaintext, key=None):
         return None
 
     response = target.simpleserial_read('r', 16)
-    trace = scope.getLastTrace()
+    trace = scope.get_last_trace()
 
     return trace, response
 
