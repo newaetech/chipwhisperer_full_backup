@@ -29,6 +29,8 @@ import os.path
 import shutil
 import weakref
 import numpy as np
+from functools import wraps
+import warnings
 
 try:
     # OrderedDict is new in 2.7
@@ -417,3 +419,42 @@ class NoneTypeTarget(object):
     """
     def __getattr__(self, item):
         raise AttributeError('Target has not been connected')
+
+
+def camel_case_deprecated(func):
+    """Wrapper function to deprecate camel case functions.
+
+    This is not a decorator, do not use it that way. This way of deprecating
+    allows the changing of the function definition name and then using this
+    wrapper to define the camel case function, including a usage warning. To
+    use first refactor the camelCase function definition to snake case, then
+    use the wrapper on the snake_case function and assign it to the camelCase
+    function name. It is best shown with an example:
+    Before:
+    .. code::
+        def fooBar():
+            pass
+
+    After:
+    .. code::
+        def foo_bar():
+            pass
+
+        fooBar = camel_case_deprecated(foo_bar)
+
+    Advantages of this method include being able to change the camelCase function
+    to snake_case right away and keeping backwards compatibility, as well as
+    supporting arbitrary amount of arguments and keyword arguments and keeping
+    docstrings in tact.
+
+    Args:
+        func: The now snake_case function
+
+    Returns: The wrapped snake_case function which now raises a warning during
+        usage.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        warnings.warn(f"camelCase version of function is deprecated use {func.__name__} instead.")
+        return func(*args, *kwargs)
+    return wrapper
