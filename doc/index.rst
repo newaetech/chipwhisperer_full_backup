@@ -56,9 +56,13 @@ Advanced
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :glob:
 
-   installing/*
+   installing/virtual-machine
+   installing/windows-installer
+   installing/linux-manual
+   installing/windows-manual
+   installing/mac-manual
+   installing/repository-install
 
 
 .. _sec-api:
