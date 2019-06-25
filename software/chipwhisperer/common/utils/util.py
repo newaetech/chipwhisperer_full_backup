@@ -455,6 +455,6 @@ def camel_case_deprecated(func):
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
-        warnings.warn(f"camelCase version of function is deprecated use {func.__name__} instead.")
+        warnings.warn("camelCase version of function is deprecated use {} instead.".format(func.__name__))
         return func(*args, *kwargs)
     return wrapper
