@@ -1,3 +1,5 @@
+.. _sec-cwnano-scope:
+
 ************************
 ChipWhisperer Nano Scope
 ************************

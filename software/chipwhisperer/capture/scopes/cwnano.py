@@ -70,23 +70,6 @@ class ADCSettings(util.DisableNewAttr):
     def __str__(self):
         return self.__repr__()
 
-    def defaultSetup(self):
-        """ Sets up sane capture defaults for this scope
-
-        7.5MHz ADC clock
-        7.5MHz output clock
-        5000 capture samples
-        tio1 = serial rx
-        tio2 = serial tx
-        glitch module off
-        """
-        self.adc.clk_freq = 7.5E6
-        self.io.clkout = 7.5E6
-        self.adc.samples = 5000
-        self.io.tio1 = "serial_rx"
-        self.io.tio2 = "serial_tx"
-        self.glitch.repeat = 0
-
     @property
     def samples(self):
         """Number of samples to store."""
@@ -536,10 +519,16 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
     For more help about scope settings, try help() on each of the ChipWhisperer
     scope submodules (scope.adc, scope.io, scope.glitch):
 
-    Documentation Links:
+    Configuration:
      * :attr:`scope.adc <.adc>`
      * :attr:`scope.io <.io>`
      * :attr:`scope.glitch <.glitch>`
+
+    Functions:
+     * :meth:`scope.default_setup <.default_setup>`
+     * :meth:`scope.con <.con>`
+     * :meth:`scope.dis <.dis>`
+     * :meth:`scope.get_last_trace <.get_last_trace>`
     """
 
     _name = "ChipWhisperer Nano"
@@ -577,6 +566,25 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
         ])
 
         self.disable_newattr()
+
+    def default_setup(self):
+        """ Sets up sane capture defaults for this scope
+
+         * 7.5MHz ADC clock
+         * 7.5MHz output clock
+         * 5000 capture samples
+         * tio1 = serial rx
+         * tio2 = serial tx
+         * glitch module off
+
+        .. versionadded:: 5.1
+        """
+        self.adc.clk_freq = 7.5E6
+        self.io.clkout = 7.5E6
+        self.adc.samples = 5000
+        self.io.tio1 = "serial_rx"
+        self.io.tio2 = "serial_tx"
+        self.glitch.repeat = 0
 
     def getCurrentScope(self):
         return self

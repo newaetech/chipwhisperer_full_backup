@@ -2,10 +2,6 @@
 Welcome to ChipWhisperer's Documentation 
 ****************************************
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
 After installing ChipWhisperer and setting up your hardware run:
 
 .. code:: python

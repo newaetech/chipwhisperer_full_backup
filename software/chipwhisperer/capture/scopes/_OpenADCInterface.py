@@ -192,16 +192,20 @@ class GainSettings(Parameterized, util.DisableNewAttr):
         """The gain of the ChipWhisperer's low-noise amplifier in dB. Ranges
         from -6.5 dB to 56 dB, depending on the amplifier settings.
 
-        Getter: Return the current gain in dB (float)
+        :Getter: Return the current gain in dB (float)
 
-        Setter: Set the gain level in dB
+        :Setter: Set the gain level in dB
 
         Raises:
            ValueError: if new gain is outside of [-6.5, 56]
 
-        Examples:
-        >>> gain_db = scope.gain.db
-        >>> scope.gain.db = 20
+        Examples::
+
+            # reading and storing
+            gain_db = scope.gain.db
+
+            # setting
+            scope.gain.db = 20
         """
         return self._get_gain_db()
 
@@ -247,12 +251,12 @@ class GainSettings(Parameterized, util.DisableNewAttr):
         high-gain setting is better to use. Note that this value will be
         automatically updated if the dB gain is set.
 
-        Getter: Return the current gain mode ("low" or "high")
+        :Getter: Return the current gain mode ("low" or "high")
 
-        Setter: Set the gain mode
+        :Setter: Set the gain mode
 
         Raises:
-           ValueError: if mode not one of "low" or "high"
+            ValueError: if mode not one of "low" or "high"
         """
         return self.getMode()
 
@@ -288,10 +292,12 @@ class GainSettings(Parameterized, util.DisableNewAttr):
         Note that this function is unnecessary - the dB gain can be set
         directly. This property is only here to help convert old scripts.
 
-        Getter: Return the current gain setting (int)
+        :Getter: Return the current gain setting (int)
 
-        Setter: Set the gain
-            Raises: ValueError if gain outside [0, 78]
+        :Setter: Set the gain
+
+        Raises:
+            ValueError: if gain outside [0, 78]
         """
         return self.getGain()
 
@@ -460,9 +466,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         Note that no pre-trigger samples can be recorded when stream mode
         is enabled.
 
-        Getter: Return True if stream mode is enabled and False otherwise
+        :Getter: Return True if stream mode is enabled and False otherwise
 
-        Setter: Enable or disable stream mode
+        :Setter: Enable or disable stream mode
         """
         return self._get_stream_mode()
 
@@ -481,9 +487,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         This setting is helpful for recording very long operations or for
         reducing the sampling rate for streaming mode.
 
-        Getter: Return an integer with the current decimation factor
+        :Getter: Return an integer with the current decimation factor
 
-        Setter: Set the decimation factor
+        :Setter: Set the decimation factor
 
         Raises:
            ValueError: if the new factor is not positive
@@ -502,9 +508,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         - cwlite: 24400
         - cw1200: 96000
 
-        Getter: Return the current number of total samples (integer)
+        :Getter: Return the current number of total samples (integer)
 
-        Setter: Set the number of samples to capture
+        :Setter: Set the number of samples to capture
 
         Raises:
            ValueError: if number of samples is negative
@@ -522,9 +528,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         If no trigger event is detected before this time limit is up, the
         capture fails and no data is returned.
 
-        Getter: Return the number of seconds before a timeout (float)
+        :Getter: Return the number of seconds before a timeout (float)
 
-        Setter: Set the timeout in seconds
+        :Setter: Set the timeout in seconds
         """
         return self._get_timeout()
 
@@ -544,9 +550,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
 
         The offset must be a 32 bit unsigned integer.
 
-        Getter: Return the current offset (integer)
+        :Getter: Return the current offset (integer)
 
-        Setter: Set a new offset
+        :Setter: Set a new offset
 
         Raises:
            ValueError: if offset outside of range [0, 2**32)
@@ -565,9 +571,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         the number of samples. When streaming mode is enabled, this value is
         set to 0.
 
-        Getter: Return the current number of presamples
+        :Getter: Return the current number of presamples
 
-        Setter: Set the number of presamples.
+        :Setter: Set the number of presamples.
 
         Raises:
            ValueError: if presamples is outside of range [0, samples]
@@ -591,9 +597,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         This setting is only used if the trigger module in use is the "Basic
         Edge/Level" module - UART/SPI/SAD triggers ignore this value.
 
-        Getter: Return the current trigger mode (one of the 4 above strings)
+        :Getter: Return the current trigger mode (one of the 4 above strings)
 
-        Setter: Set the trigger mode
+        :Setter: Set the trigger mode
 
         Raises:
            ValueError: if value is not one of the allowed strings
@@ -630,7 +636,7 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
 
         This counter is not meaningful if the trigger is still active.
 
-        Getter: Return the last trigger duration (integer)
+        :Getter: Return the last trigger duration (integer)
         """
         return self._get_duration()
 
@@ -959,15 +965,15 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         """The clock source for the ADC module.
 
         The ADC can be clocked by one of five possible sources:
-        - "clkgen_x1": CLKGEN output via DCM
-        - "clkgen_x4": CLKGEN output via DCM with x4 clk multiplier
-        - "extclk_x1": External clock input via DCM
-        - "extclk_x4": External clock input via DCM with x4 clk multiplier
-        - "extclk_dir": External clock input with no DCM
+         * "clkgen_x1": CLKGEN output via DCM
+         * "clkgen_x4": CLKGEN output via DCM with x4 clk multiplier
+         * "extclk_x1": External clock input via DCM
+         * "extclk_x4": External clock input via DCM with x4 clk multiplier
+         * "extclk_dir": External clock input with no DCM
 
-        Getter: Return the current ADC clock source (one of five strings above)
+        :Getter: Return the current ADC clock source (one of five strings above)
 
-        Setter: Set the ADC clock source and reset the ADC DCM to lock it.
+        :Setter: Set the ADC clock source and reset the ADC DCM to lock it.
 
         Raises:
            ValueError: if string not in valid settings
@@ -1009,10 +1015,10 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         The value of this setting is dimensionless and has a non-linear
         effect on the phase adjustment.
 
-        Getter: Return the current phase setting (integer)
+        :Getter: Return the current phase setting (integer)
             NOTE: This getter is currently broken due to an FPGA bug.
 
-        Setter: Set a new phase offset
+        :Setter: Set a new phase offset
 
         Raises:
            ValueError: if offset not in [-255, 255]
@@ -1031,7 +1037,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         This clock frequency is derived from one of the ADC clock sources as
         described in adc_src.
 
-        Getter: Return the current frequency in MHz (float)
+        :Getter: Return the current frequency in MHz (float)
         """
         return self._getAdcFrequency()
 
@@ -1042,7 +1048,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         Note that the sampling rate may be less than the clock frequency if
         the downsampling factor is greater than 1.
 
-        Getter: Return the current sampling rate in MS/s (float)
+        :Getter: Return the current sampling rate in MS/s (float)
         """
         return self._adcSampleRate()
 
@@ -1052,7 +1058,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         To try re-locking the ADC, see resetAdc().
 
-        Getter: Return whether the ADC DCM is locked (True or False)
+        :Getter: Return whether the ADC DCM is locked (True or False)
         """
         return self._get_adcclk_locked()
 
@@ -1064,7 +1070,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         output or the EXTCLK input. This value shows the current frequency
         reading.
 
-        Getter: Return the current frequency in MHz (float)
+        :Getter: Return the current frequency in MHz (float)
         """
         return self._get_extfrequency()
 
@@ -1076,9 +1082,9 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         - "clkgen": The CLKGEN DCM output
         - "extclk": The external input clock signal
 
-        Getter: Return the frequency counter input (one of the above strings)
+        :Getter: Return the frequency counter input (one of the above strings)
 
-        Setter: Set the frequency counter source
+        :Setter: Set the frequency counter source
 
         Raises:
            ValueError: if source is not "clkgen" or "extclk"
@@ -1109,9 +1115,9 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         - "extclk": The external clock input
         - "system" or "internal": The system clock (96 MHz)
 
-        Getter: Return the current CLKGEN input (either "extclk" or "system")
+        :Getter: Return the current CLKGEN input (either "extclk" or "system")
 
-        Setter: Change the CLKGEN source and reset all the DCMs.
+        :Setter: Change the CLKGEN source and reset all the DCMs.
 
         Raises:
            ValueError: if source is not one of three strings above
@@ -1138,9 +1144,9 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         It is not a frequency counter - it is only helpful if the EXTCLK
         frequency is already known.
 
-        Getter: Return the last set EXTCLK frequency in MHz (int)
+        :Getter: Return the last set EXTCLK frequency in MHz (int)
 
-        Setter: Update the EXTCLK frequency
+        :Setter: Update the EXTCLK frequency
         """
         return int(self._get_extclk_freq())
 
@@ -1155,12 +1161,12 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         The CLKGEN module takes the input source and multiplies/divides it to
         get a faster or slower clock as desired.
 
-        Getter:
+        :Getter:
             Return the current calculated CLKGEN output frequency in Hz
             (float). Note that this is the theoretical frequency - use the
             freq counter to determine the actual output.
 
-        Setter:
+        :Setter:
             Attempt to set a new CLKGEN frequency in Hz. When this value is
             set, all possible DCM multiply/divide settings are tested to find
             which is closest to the desired output speed. If EXTCLK is the
@@ -1178,7 +1184,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
     def clkgen_locked(self):
         """The current status of the CLKGEN DCM. Read-only.
 
-        Getter: Return whether the CLKGEN DCM is locked (True or False)
+        :Getter: Return whether the CLKGEN DCM is locked (True or False)
         """
         return self._getClkgenLocked()
 
@@ -1248,9 +1254,9 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         This multiplier must be in the range [2, 256].
 
-        Getter: Return the current CLKGEN multiplier (integer)
+        :Getter: Return the current CLKGEN multiplier (integer)
 
-        Setter: Set a new CLKGEN multiplier.
+        :Setter: Set a new CLKGEN multiplier.
         """
         return self._getClkgenMul()
 
@@ -1300,9 +1306,9 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         This divider must be in the range [1, 256].
 
-        Getter: Return the current CLKGEN divider (integer)
+        :Getter: Return the current CLKGEN divider (integer)
 
-        Setter: Set a new CLKGEN divider.
+        :Setter: Set a new CLKGEN divider.
         """
         return self._getClkgenDiv()
 
