@@ -139,7 +139,7 @@ def scope(scope_type=scopes.OpenADC, sn=None):
     return scope
 
 
-def target(scope, target_type = targets.SimpleSerial, **kwargs):
+def target(scope, target_type=targets.SimpleSerial, **kwargs):
     """Create a target object and connect to it.
 
     Args:

@@ -50,15 +50,15 @@ Advanced
         * :ref:`sec-install-repo-git`
     
 .. toctree::
-   :maxdepth: 2
-   :hidden:
+    :maxdepth: 2
+    :hidden:
 
-   installing/virtual-machine
-   installing/windows-installer
-   installing/linux-manual
-   installing/windows-manual
-   installing/mac-manual
-   installing/repository-install
+    installing/virtual-machine
+    installing/windows-installer
+    installing/linux-manual
+    installing/windows-manual
+    installing/mac-manual
+    installing/repository-install
 
 
 .. _sec-api:
@@ -69,10 +69,11 @@ API
 Documentation specific to api functions, classes, and modules live here.
 
 .. toctree::
-   :maxdepth: 2
-   :glob:
+    :maxdepth: 2
+    :glob:
 
-   api/scope
+    api/scope
+    api/target
 
 
 Contributing
@@ -81,10 +82,10 @@ Contributing
 We welcome contributions. Here you can find all the information you need.
 
 .. toctree::
-   :maxdepth: 2
-   :glob:
+    :maxdepth: 2
+    :glob:
 
-   contributing/*
+    contributing/*
 
 
 Indices and tables

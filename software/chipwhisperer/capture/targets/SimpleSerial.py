@@ -677,7 +677,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Warning: Target not connected
 
         .. versionadded:: 5.1
-        Made reading/writing to target simpler
+            Made reading/writing to target simpler
         """
         if not self.connectStatus.value():
             raise Warning("Target not connected")
@@ -704,7 +704,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             String of received data.
 
         .. versionadded:: 5.1
-        Made reading/writing to target simpler
+            Made reading/writing to target simpler
         """
         if not self.connectStatus.value():
             raise Warning("Target not connected")
@@ -730,7 +730,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Warning: Target not connected.
 
         .. versionadded:: 5.1
-        Made reading/writing to target simpler
+            Made reading/writing to target simpler
         """
 
         data = self.read(4, timeout = timeout)
@@ -744,7 +744,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         return True
 
     def simpleserial_write(self, cmd, num, end='\n'):
-        """ Writes a simpleserial command to the target over serial.
+        r""" Writes a simpleserial command to the target over serial.
 
         Writes 'cmd' + ascii(num) + 'end' over serial. Flushes the read and
         write buffers before writing.
@@ -760,6 +760,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         Example:
             Sending a 'p' command::
+
                 key, pt = ktp.new_pair()
                 target.simpleserial_write('p', pt)
             
@@ -767,14 +768,14 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Warning: Write attempted while disconnected or error during write.
 
         .. versionadded:: 5.1
-        Made reading/writing to target simpler
+            Made reading/writing to target simpler
         """
         self.ser.flush()
         cmd += binascii.hexlify(num).decode() + end
         self.write(cmd)
 
     def simpleserial_read(self, cmd, pay_len, end='\n', timeout=250, ack=True):
-        """ Reads a simpleserial command from the target over serial.
+        r""" Reads a simpleserial command from the target over serial.
 
         Reads a command starting with <start> with an ASCII encoded bytearray
         payload of length exp_len*2 (i.e. exp_len=16 for an AES128 key) and
@@ -801,13 +802,14 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         Example:
             Reading ciphertext back from the target after a 'p' command::
+
                 ct = target.simpleserial_read('r', 16)
 
         Raises:
             Warning: Device did not ack or error during read.
 
         .. versionadded:: 5.1
-        Made reading/writing to target simpler
+            Made reading/writing to target simpler
         """
         cmd_len = len(cmd)
         ascii_len = pay_len * 2
@@ -854,7 +856,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Warning: Device did not ack or error during read.
 
         .. versionadded:: 5.1
-        Made reading/writing to target simpler
+            Made reading/writing to target simpler
         """
         self.simpleserial_write('k', key)
         if ack:
