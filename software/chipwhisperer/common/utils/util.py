@@ -453,8 +453,25 @@ def camel_case_deprecated(func):
     Returns: The wrapped snake_case function which now raises a warning during
         usage.
     """
+
+    def underscore_to_camelcase(value):
+        # .. function author:: Dave Webb: Stack overflow
+
+        def camelcase():
+            yield str.lower
+            while True:
+                yield str.capitalize
+
+        c = camelcase()
+        return ''.join(next(c)(x) if x else '_' for x in value.split('_'))
+
+    cc_func = underscore_to_camelcase(func.__name__)
+
     @wraps(func)
     def wrapper(*args, **kwargs):
-        warnings.warn("camelCase version of function is deprecated use {} instead.".format(func.__name__))
+        warnings.warn('{} function is deprecated use {} instead.'.format(cc_func, func.__name__))
         return func(*args, *kwargs)
+
+    wrapper.__name__ = underscore_to_camelcase(func.__name__)
+    wrapper.__doc__ = 'Deprecated: Use {} instead.'.format(func.__name__)
     return wrapper
