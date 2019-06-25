@@ -101,6 +101,9 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         * 4*7.37MHz ADC clock
         * tio1 = serial rx
         * tio2 = serial tx
+
+        .. versionadded:: 5.1
+        Made scope setup easier
         """
         self.gain.db = 25
         self.adc.samples = 5000

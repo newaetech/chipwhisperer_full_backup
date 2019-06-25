@@ -14,6 +14,7 @@ import warnings
 from chipwhisperer.capture import scopes, targets
 from chipwhisperer.capture.api import programmers
 from chipwhisperer.capture import acq_patterns as key_text_patterns
+from chipwhisperer.common.utils.util import camel_case_deprecated
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 ktp = key_text_patterns #alias
 
@@ -27,6 +28,9 @@ def program_target(scope, prog_type, fw_path):
        prog_type (Programmer): Programmer to use. See chipwhisperer.programmers
            for available programmers
        fw_path (str): Path to hex file to program
+
+    .. versionadded:: 5.0.1
+    Simplified programming target
     """
     if type is None: #makes automating notebooks much easier
         return
@@ -151,6 +155,7 @@ def target(scope, target_type = targets.SimpleSerial, **kwargs):
            needed.
 
     Returns:
+        Connected target object specified by target_type.
     """
     target = target_type()
     target.con(scope, **kwargs)
@@ -165,10 +170,10 @@ def capture_trace(scope, target, plaintext, key=None):
     Args:
        scope (ScopeTemplate): Scope object to use for capture.
        target (TargetTemplate): Target object to read/write text from.
-       plaintext (ByteArray): Plaintext to send to the target. Should be
+       plaintext (bytearray): Plaintext to send to the target. Should be
            unencoded ByteArray (will be converted to SimpleSerial when it's
            sent). If None, don't send plaintext.
-       key (ByteArray, optional): Key to send to target. Should be unencoded
+       key (bytearray, optional): Key to send to target. Should be unencoded
            ByteArray. If None, don't send key. Defaults to None.
 
     Returns:
@@ -188,16 +193,18 @@ def capture_trace(scope, target, plaintext, key=None):
        >>> ktp = cw.ktp.Basic()
        >>> key, pt = ktp.newPair()
        >>> trace, response = cw.capture_trace(scope, target, plaintext, key)
+
+    .. versionadded:: 5.1
+        Added to simplify trace capture.
     """
     if key:
-        target.loadEncryptionKey(key)
-    if plaintext:
-        target.loadInput(plaintext)
+        target.simpleserial_write('k', key)
+        target.simpleserial_wait_ack()
 
     scope.arm()
 
     if plaintext:
-        target.go()
+        target.simpleserial_write('p', plaintext)
 
     while not target.isDone():
         time.sleep(0.01)
@@ -207,7 +214,7 @@ def capture_trace(scope, target, plaintext, key=None):
         warnings.warn("Timeout happened during capture")
         return None
 
-    response = target.readOutput()
+    response = target.simpleserial_read('r', 16)
     trace = scope.getLastTrace()
 
     return trace, response

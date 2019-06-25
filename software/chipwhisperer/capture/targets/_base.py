@@ -81,7 +81,7 @@ class TargetTemplate(Plugin):
     def init(self):
         """Init Hardware"""
         pass
-    
+
     def reinit(self):
         pass
 
@@ -102,7 +102,7 @@ class TargetTemplate(Plugin):
         return text
 
     def loadEncryptionKey(self, key):
-        """Load desired encryption key"""        
+        """Load desired encryption key"""
         self.key = key
 
     def loadInput(self, inputtext):
@@ -113,7 +113,7 @@ class TargetTemplate(Plugin):
         """If encryption takes some time after 'go' called, lets user poll if done"""
         return True
 
-    def readOutput(self):        
+    def readOutput(self):
         """Read result"""
         raise NotImplementedError("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".readOutput()")
 
@@ -131,7 +131,7 @@ class TargetTemplate(Plugin):
 
     def getExpected(self):
         """Based on key & text get expected if known, otherwise returns None"""
-        
+
         # e.g. for AES we can do this:
         if AES and hasattr(self, 'key') and hasattr(self, 'input') and self.input and self.key:
             cipher = AES.new(bytes(self.key), AES.MODE_ECB)

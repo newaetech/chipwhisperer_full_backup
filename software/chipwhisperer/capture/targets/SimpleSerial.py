@@ -666,3 +666,178 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             return TargetTemplate.getExpected(self)
         else:
             return None
+
+    def write(self, data):
+        """ Writes data to the target over serial.
+
+        Args:
+            data (str): Data to write over serial.
+
+        Raises:
+            Warning: Target not connected
+
+        .. versionadded:: 5.1
+        Made reading/writing to target simpler
+        """
+        if not self.connectStatus.value():
+            raise Warning("Target not connected")
+
+        try:
+            self.ser.write(data)
+        except USBError:
+            self.dis()
+            raise Warning("Error in target. It may have been disconnected")
+        except Exception as e:
+            self.dis()
+            raise e
+
+    def read(self, num_char = 0, timeout = 250):
+        """ Reads data from the target over serial.
+
+        Args:
+            num_char (int, optional): Number of byte to read. If 0, read all
+                data available. Defaults to 0.
+            timeout (int, optional): How long in ms to wait before returning.
+                If 0, block until data received. Defaults to 250.
+
+        Returns:
+            String of received data.
+
+        .. versionadded:: 5.1
+        Made reading/writing to target simpler
+        """
+        if not self.connectStatus.value():
+            raise Warning("Target not connected")
+        try:
+            return self.ser.read(num_char, timeout)
+        except USBError:
+            self.dis()
+            raise Warning("Error in target. It may have been disconnected")
+        except Exception as e:
+            self.dis()
+            raise e
+            
+
+    def simpleserial_wait_ack(self, timeout=500):
+        """Waits for an ack from the target for timeout ms
+
+        Args:
+            timeout (int, optional): Time to wait for an ack in ms. If 0, block
+                until we get an ack. Defaults to 500.
+
+
+        Raises:
+            Warning: Target not connected.
+
+        .. versionadded:: 5.1
+        Made reading/writing to target simpler
+        """
+
+        data = self.read(4, timeout = timeout)
+        if len(data) > 1:
+            if data[0] != 'z':
+                logging.error("Ack error: {}".format(data))
+                return False
+        else:
+            raise logging.error("Target did not ack")
+            return False
+        return True
+
+    def simpleserial_write(self, cmd, num, end='\n'):
+        """ Writes a simpleserial command to the target over serial.
+
+        Writes 'cmd' + ascii(num) + 'end' over serial. Flushes the read and
+        write buffers before writing.
+
+        Args:
+            cmd (str): String to start the simpleserial command with. For
+                'p'.
+            num (bytearray): Number to write as part of command. For example,
+                the 16 byte plaintext for the 'p' command. Converted to ascii
+                before being sent.
+            end (str, optional): String to end the simpleserial command with.
+                Defaults to '\n'.
+
+        Example:
+            Sending a 'p' command::
+                key, pt = ktp.new_pair()
+                target.simpleserial_write('p', pt)
+            
+        Raises:
+            Warning: Write attempted while disconnected or error during write.
+
+        .. versionadded:: 5.1
+        Made reading/writing to target simpler
+        """
+        self.ser.flush()
+        cmd += binascii.hexlify(num).decode() + end
+        self.write(cmd)
+
+    def simpleserial_read(self, cmd, pay_len, end='\n', timeout=250, ack=True):
+        """ Reads a simpleserial command from the target over serial.
+
+        Reads a command starting with <start> with an ASCII encoded bytearray
+        payload of length exp_len*2 (i.e. exp_len=16 for an AES128 key) and
+        ending with <end>. Converts the payload to a bytearray. Will ignore
+        non-ASCII bytes in the payload, but warn the user of them.
+
+        Args:
+            cmd (str): Expected start of the command. Will warn the user if
+                the received command does not start with this string.
+            pay_len (int): Expected length of the returned bytearray in number
+                of bytes. Note that SimpleSerial commands send data as ASCII;
+                this is the length of the data that was encoded.
+            end (str, optional): Expected end of the command. Will warn the
+                user if the received command does not end with this string.
+                Defaults to '\n'
+            timeout (int, optional): Value to use for timeouts during reads in
+                ms. If 0, block until all expected data is returned. Defaults
+                to 250.
+            ack (bool, optional): Expect an ack at the end for SimpleSerial
+                >= 1.1. Defaults to True.
+
+        Returns:
+            The received payload as a bytearray or None if the read failed.
+
+        Example:
+            Reading ciphertext back from the target after a 'p' command::
+                ct = target.simpleserial_read('r', 16)
+
+        Raises:
+            Warning: Device did not ack or error during read.
+
+        .. versionadded:: 5.1
+        Made reading/writing to target simpler
+        """
+        cmd_len = len(cmd)
+        ascii_len = pay_len * 2
+        recv_len = cmd_len + ascii_len + len(end)
+        response = self.read(recv_len, timeout=timeout)
+
+        payload = bytearray(pay_len)
+        if cmd_len > 0:
+            if response[0:cmd_len] != cmd:
+                logging.warning("Unexpected start to command: {}".format(
+                    response[0:cmd_len]
+                ))
+                return None
+        idx = cmd_len
+        for i in range(0, pay_len):
+            try:
+                payload[i] = int(response[idx:(idx + 2)], 16)
+            except ValueError as e:
+                logging.warning("ValueError: {}".format(e))
+            idx += 2
+
+        if len(end) > 0:
+            if response[(idx):(idx + len(end))] != end:
+                logging.warning("Unexpected end to command: {}".format(
+                    response[(idx):(idx+len(end))]))
+                return None
+
+        if ack:
+            self.simpleserial_wait_ack(timeout)
+
+        return payload
+
+
