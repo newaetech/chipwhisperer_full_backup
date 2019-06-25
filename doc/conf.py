@@ -18,11 +18,11 @@ sys.path.insert(0, os.path.abspath('./../software'))
 # -- Project information -----------------------------------------------------
 
 project = 'ChipWhisperer'
-copyright = "2019, Colin O'Flynn"
-author = "Colin O'Flynn"
+copyright = "2019, NewAE Technology Inc."
+author = "NewAE Technology Inc."
 
 # The full version, including alpha/beta/rc tags
-release = '5.0.0'
+release = '5.1.0'
 
 
 # -- General configuration ---------------------------------------------------

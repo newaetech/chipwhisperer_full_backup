@@ -44,14 +44,14 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
     ChipWhisperer Lite/CW1200/Rev 2 boards. It includes specific settings for
     each of these devices.
 
-    To connect to one of these devices, the easiest method is
+    To connect to one of these devices, the easiest method is::
 
-    >>> import chipwhisperer as cw
-    >>> scope = cw.scope()
+        import chipwhisperer as cw
+        scope = cw.scope()
 
-    Some sane default settings are available via:
+    Some sane default settings are available via::
 
-    >>> scope.defaultSetup()
+        scope.default_setup()
 
     This code will automatically detect an attached ChipWhisperer device and
     connect to it.
@@ -60,13 +60,20 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
     scope submodules (scope.gain, scope.adc, scope.clock, scope.io,
     scope.trigger, and scope.glitch):
 
-    Documentation Links:
+    Configuration:
      * :attr:`scope.gain <.gain>`
      * :attr:`scope.adc <.adc>`
      * :attr:`scope.clock <.clock>`
      * :attr:`scope.io <.io>`
      * :attr:`scope.trigger <.trigger>`
      * :attr:`scope.glitch <.glitch>`
+
+    Functions:
+     * :meth:`scope.default_setup <.default_setup>`
+     * :meth:`scope.con <.con>`
+     * :meth:`scope.dis <.dis>`
+     * :meth:`scope.arm <.arm>`
+     * :meth:`scope.get_last_trace <.get_last_trace>`
     """
 
     _name = "ChipWhisperer/OpenADC"
@@ -90,7 +97,7 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
     def _getNAEUSB(self):
         return self.scopetype.dev._cwusb
 
-    def defaultSetup(self):
+    def default_setup(self):
         """ Sets up sane capture defaults for this scope
 
         * 45dB gain
@@ -270,14 +277,15 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         ret = self.qtadc.capture()
         return ret
 
-    def getLastTrace(self):
+    def get_last_trace(self):
         """Return the last trace captured with this scope.
 
         Returns:
-           List of ADC datapoints
+           Numpy array of the last capture trace.
         """
         return self.qtadc.datapoints
 
+    getLastTrace = util.camel_case_deprecated(get_last_trace)
 
     def _dict_repr(self):
         dict = OrderedDict()

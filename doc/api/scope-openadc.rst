@@ -1,8 +1,38 @@
+.. _sec-openadc-scope:
+
 *************
 OpenADC Scope
 *************
 
 .. autoclass:: chipwhisperer.scopes.OpenADC
+
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.default_setup
+
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.arm
+
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.capture
+
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.get_last_trace
+
+    .. method:: dis()
+
+        Disconnects the current scope object.
+
+        :return: A boolean of whether the disconnect was successful.
+
+    .. method:: con(sn=None)
+
+        Connects to attached chipwhisperer hardware (Lite or Pro)
+
+        :param sn: The serial number of the attached device. Does not need to be
+            specified unless there are multiple device attached.
+
+        :return: A boolean of whether the connection was successful.
+
+        :raises:
+            :OSError: Raised when there is issues connecting to the hardware, such as
+                user not having the correct device permissions to access the hardware.
+
 
     .. attribute:: gain
         :annotation: scope.gain
@@ -16,11 +46,37 @@ OpenADC Scope
         .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.GainSettings.gain
             :annotation: scope.gain.gain
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.GainSettings.db
-            :annotation: scope.gain.db
 
     .. attribute:: adc
         :annotation: scope.adc
+
+        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.state
+            :annotation: scope.trigger.state
+
+        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.stream_mode
+            :annotation: scope.trigger.stream_mode
+
+        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.decimate
+            :annotation: scope.trigger.decimate
+
+        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.samples
+            :annotation: scope.trigger.samples
+
+        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.timeout
+            :annotation: scope.trigger.timeout
+
+        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.offset
+            :annotation: scope.trigger.offset
+
+        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.presamples
+            :annotation: scope.trigger.presamples
+
+        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.basic_mode
+            :annotation: scope.trigger.basic_mode
+
+        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.trig_count
+            :annotation: scope.trigger.trig_count
+
 
     .. attribute:: clock
         :annotation: scope.clock
@@ -101,6 +157,7 @@ OpenADC Scope
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.target_pwr
             :annotation: scope.io.target_pwr
 
+
     .. attribute:: trigger
         :annotation: scope.trigger
 
@@ -110,34 +167,6 @@ OpenADC Scope
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.TriggerSettings.module
             :annotation: scope.trigger.module
 
-        .. # beginning of of the OpenADc Interface
-
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.state
-            :annotation: scope.trigger.state
-
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.stream_mode
-            :annotation: scope.trigger.stream_mode
-
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.decimate
-            :annotation: scope.trigger.decimate
-
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.samples
-            :annotation: scope.trigger.samples
-
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.timeout
-            :annotation: scope.trigger.timeout
-
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.offset
-            :annotation: scope.trigger.offset
-
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.presamples
-            :annotation: scope.trigger.presamples
-
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.basic_mode
-            :annotation: scope.trigger.basic_mode
-
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.trig_count
-            :annotation: scope.trigger.trig_count
 
     .. attribute:: glitch
         :annotation: scope.glitch

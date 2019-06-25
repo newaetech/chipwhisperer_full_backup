@@ -103,19 +103,13 @@ class GlitchSettings(util.DisableNewAttr):
     def readStatus(self):
         """Read the status of the two glitch DCMs.
 
-        Return a tuple with 4 elements:
-        - phase1: The phase shift of DCM1
-        - phase2: The phase shift of DCM2
-        - lock1: Whether DCM1 is locked
-        - lock2: Whether DCM2 is locked
-
         Returns:
-           A tuple with 4 elements::
+            A tuple with 4 elements::
 
-             (phase1: Phase shift of DCM1,
-              phase2: Phase shift of DCM2,
-              lock1: Whether DCM1 is locked,
-              lock2: Whether DCM2 is locked)
+             * phase1: Phase shift of DCM1,
+             * phase2: Phase shift of DCM2,
+             * lock1: Whether DCM1 is locked,
+             * lock2: Whether DCM2 is locked
         """
         return self.cwg.getDCMStatus()
 
@@ -132,13 +126,13 @@ class GlitchSettings(util.DisableNewAttr):
         """The clock signal that the glitch DCM is using as input.
 
         This DCM can be clocked from two different sources:
-        - "target": The HS1 clock from the target device
-        - "clkgen": The CLKGEN DCM output
+         * "target": The HS1 clock from the target device
+         * "clkgen": The CLKGEN DCM output
 
-        Getter:
+        :Getter:
            Return the clock signal currently in use
 
-        Setter:
+        :Setter:
            Change the glitch clock source
 
         Raises:
@@ -171,10 +165,10 @@ class GlitchSettings(util.DisableNewAttr):
         these act as if they are positive widths on the other half of the
         clock cycle.
 
-        Getter: Return a float with the current glitch width.
+        :Getter: Return a float with the current glitch width.
 
-        Setter: Update the glitch pulse width. The value will be adjusted to
-        the closest possible glitch width.
+        :Setter: Update the glitch pulse width. The value will be adjusted to
+            the closest possible glitch width.
 
         Raises:
            UserWarning: Width outside of [-49.8, 49.8]. The value is rounded
@@ -195,9 +189,9 @@ class GlitchSettings(util.DisableNewAttr):
         This is a dimensionless number that makes small adjustments to the
         glitch pulses' width. Valid range is [-255, 255].
 
-        Getter: Return the current glitch fine width
+        :Getter: Return the current glitch fine width
 
-        Setter: Update the glitch fine width
+        :Setter: Update the glitch fine width
 
         Raises:
            TypeError: offset not an integer
@@ -224,10 +218,10 @@ class GlitchSettings(util.DisableNewAttr):
         A pulse may begin anywhere from -49.8% to 49.8% away from a rising
         edge, allowing glitches to be swept over the entire clock cycle.
 
-        Getter: Return a float with the current glitch offset.
+        :Getter: Return a float with the current glitch offset.
 
-        Setter: Set the glitch offset. The new value is rounded to the nearest
-        possible offset.
+        :Setter: Set the glitch offset. The new value is rounded to the nearest
+            possible offset.
 
         Raises:
            TypeError: offset not an integer
@@ -248,9 +242,9 @@ class GlitchSettings(util.DisableNewAttr):
         This is a dimensionless number that makes small adjustments to the
         glitch pulses' offset. Valid range is [-255, 255].
 
-        Getter: Return the current glitch fine offset
+        :Getter: Return the current glitch fine offset
 
-        Setter: Update the glitch fine offset
+        :Setter: Update the glitch fine offset
 
         Raises:
            TypeError: if offset not an integer
@@ -274,14 +268,14 @@ class GlitchSettings(util.DisableNewAttr):
         """The trigger signal for the glitch pulses.
 
         The glitch module can use four different types of triggers:
-        - "continuous": Constantly trigger glitches
-        - "manual": Only trigger glitches through API calls/GUI actions
-        - "ext_single": Use the trigger module. One glitch per scope arm.
-        - "ext_continuous": Use the trigger module. Many glitches per arm.
+         * "continuous": Constantly trigger glitches
+         * "manual": Only trigger glitches through API calls/GUI actions
+         * "ext_single": Use the trigger module. One glitch per scope arm.
+         * "ext_continuous": Use the trigger module. Many glitches per arm.
 
-        Getter: Return the current trigger source.
+        :Getter: Return the current trigger source.
 
-        Setter: Change the trigger source.
+        :Setter: Change the trigger source.
 
         Raises:
            ValueError: value not listed above.
@@ -304,17 +298,18 @@ class GlitchSettings(util.DisableNewAttr):
 
         If the glitch module is in "ext_single" trigger mode, it must be armed
         when the scope is armed. There are two timings for this event:
-        - "before_scope": The glitch module is armed first.
-        - "after_scope": The scope is armed first. This is the default.
+
+         * "before_scope": The glitch module is armed first.
+         * "after_scope": The scope is armed first. This is the default.
 
         This setting may be helpful if trigger events are happening very early.
 
         If the glitch module is not in external trigger single-shot mode, this
         setting has no effect.
 
-        Getter: Return the current arm timing ("before_scope" or "after_scope")
+        :Getter: Return the current arm timing ("before_scope" or "after_scope")
 
-        Setter: Change the arm timing
+        :Setter: Change the arm timing
 
         Raises:
            ValueError: if value not listed above
@@ -347,14 +342,15 @@ class GlitchSettings(util.DisableNewAttr):
         be inserted at a precise moment during the target's execution to glitch
         specific instructions.
 
-        Tip: it is possible to get more precise offsets by clocking the glitch
-        module faster than the target board.
+        .. note::
+            It is possible to get more precise offsets by clocking the
+            glitch module faster than the target board.
 
         This offset must be in the range [0, 2**32).
 
-        Getter: Return the current external trigger offset.
+        :Getter: Return the current external trigger offset.
 
-        Setter: Set the external trigger offset.
+        :Setter: Set the external trigger offset.
 
         Raises:
            TypeError: if offset not an integer
@@ -385,9 +381,9 @@ class GlitchSettings(util.DisableNewAttr):
 
         Repeat counter must be in the range [1, 255].
 
-        Getter: Return the current repeat value (integer)
+        :Getter: Return the current repeat value (integer)
 
-        Setter: Set the repeat counter
+        :Setter: Set the repeat counter
 
         Raises:
            TypeError: if value not an integer
@@ -413,19 +409,20 @@ class GlitchSettings(util.DisableNewAttr):
 
         There are 5 ways that the glitch module can combine the clock with its
         glitch pulses:
-        - "clock_only": Output only the original input clock.
-        - "glitch_only": Output only the glitch pulses - do not use the clock.
-        - "clock_or": Output is high if either the clock or glitch are high.
-        - "clock_xor": Output is high if clock and glitch are different.
-        - "enable_only": Output is high for glitch.repeat cycles.
+
+         * "clock_only": Output only the original input clock.
+         * "glitch_only": Output only the glitch pulses - do not use the clock.
+         * "clock_or": Output is high if either the clock or glitch are high.
+         * "clock_xor": Output is high if clock and glitch are different.
+         * "enable_only": Output is high for glitch.repeat cycles.
 
         Some of these settings are only useful in certain scenarios:
-        - Clock glitching: "clock_or" or "clock_xor"
-        - Voltage glitching: "glitch_only" or "enable_only"
+         * Clock glitching: "clock_or" or "clock_xor"
+         * Voltage glitching: "glitch_only" or "enable_only"
 
-        Getter: Return the current glitch output mode (one of above strings)
+        :Getter: Return the current glitch output mode (one of above strings)
 
-        Setter: Change the glitch output mode.
+        :Setter: Change the glitch output mode.
 
         Raises:
            ValueError: if value not in above strings

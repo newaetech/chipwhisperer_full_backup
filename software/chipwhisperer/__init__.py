@@ -17,6 +17,7 @@ from chipwhisperer.capture import acq_patterns as key_text_patterns
 from chipwhisperer.common.utils.util import camel_case_deprecated
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 ktp = key_text_patterns #alias
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 def program_target(scope, prog_type, fw_path):
     """Program the target using the programmer <type>
@@ -43,7 +44,9 @@ def program_target(scope, prog_type, fw_path):
     prog.program(fw_path, memtype="flash", verify=True)
     prog.close()
 
-programTarget = program_target
+
+programTarget = camel_case_deprecated(program_target)
+
 
 def open_project(filename):
     """Load an existing project from disk.
@@ -66,7 +69,9 @@ def open_project(filename):
     proj.load(filename)
     return proj
 
-openProject = open_project
+
+openProject = camel_case_deprecated(open_project)
+
 
 def create_project(filename, overwrite=False):
     """Create a new project with the path <filename>.
@@ -94,7 +99,8 @@ def create_project(filename, overwrite=False):
 
     return proj
 
-createProject = create_project
+
+createProject = camel_case_deprecated(create_project)
 
 
 def scope(scope_type=scopes.OpenADC, sn=None):
@@ -104,17 +110,9 @@ def scope(scope_type=scopes.OpenADC, sn=None):
     is a ChipWhisperer OpenADC object, but this can be set to any valid scope
     class.
 
+    Scope Types:
      * :class:`scopes.OpenADC` (Pro and Lite)
-        - :attr:`gain <chipwhisperer.scopes.OpenADC.gain>`
-        - :attr:`adc <chipwhisperer.scopes.OpenADC.adc>`
-        - :attr:`clock <chipwhisperer.scopes.OpenADC.clock>`
-        - :attr:`io <chipwhisperer.scopes.OpenADC.io>`
-        - :attr:`trigger <chipwhisperer.scopes.OpenADC.trigger>`
-        - :attr:`glitch <chipwhisperer.scopes.OpenADC.glitch>`
      * :class:`scopes.CWNano` (Nano)
-        - :attr:`adc <chipwhisperer.scopes.CWNano.adc>`
-        - :attr:`io <chipwhisperer.scopes.CWNano.io>`
-        - :attr:`glitch <chipwhisperer.scopes.CWNano.glitch>`
 
     If multiple chipwhisperers are connected, the serial number of the one you
     want to connect to can be specified by passing sn=<SERIAL_NUMBER>
@@ -135,12 +133,11 @@ def scope(scope_type=scopes.OpenADC, sn=None):
        OSError: Can be raised for issues connecting to the chipwhisperer, such
            as not having permission to access the USB device or no ChipWhisperer
            being connected.
-       Warning: Multiple ChipWhisperers connected, but serial number not
-           specified
     """
     scope = scope_type()
     scope.con(sn)
     return scope
+
 
 def target(scope, target_type = targets.SimpleSerial, **kwargs):
     """Create a target object and connect to it.
@@ -161,6 +158,7 @@ def target(scope, target_type = targets.SimpleSerial, **kwargs):
     target.con(scope, **kwargs)
     return target
 
+
 def capture_trace(scope, target, plaintext, key=None):
     """Capture a trace, sending plaintext and key
 
@@ -168,31 +166,31 @@ def capture_trace(scope, target, plaintext, key=None):
     sending the key/plaintext, getting the trace data back, etc.)
 
     Args:
-       scope (ScopeTemplate): Scope object to use for capture.
-       target (TargetTemplate): Target object to read/write text from.
+        scope (ScopeTemplate): Scope object to use for capture.
+        target (TargetTemplate): Target object to read/write text from.
        plaintext (bytearray): Plaintext to send to the target. Should be
-           unencoded ByteArray (will be converted to SimpleSerial when it's
-           sent). If None, don't send plaintext.
+            unencoded ByteArray (will be converted to SimpleSerial when it's
+            sent). If None, don't send plaintext.
        key (bytearray, optional): Key to send to target. Should be unencoded
-           ByteArray. If None, don't send key. Defaults to None.
+            ByteArray. If None, don't send key. Defaults to None.
 
     Returns:
-       Tuple of scope_data (numpy.ndarray) and response (ByteArray) or None
-       if capture timed out.
+        Tuple of scope_data (numpy.ndarray) and response (ByteArray) or None
+        if capture timed out.
 
     Raises:
-       Warning or OSError: Error during capture.
+        Warning or OSError: Error during capture.
 
     Example:
-       Capturing a trace:
+        Capturing a trace::
 
-       >>> import chipwhisperer as cw
-       >>> scope = cw.scope()
-       >>> scope.defaultSetup()
-       >>> target = cw.target()
-       >>> ktp = cw.ktp.Basic()
-       >>> key, pt = ktp.newPair()
-       >>> trace, response = cw.capture_trace(scope, target, plaintext, key)
+            import chipwhisperer as cw
+            scope = cw.scope()
+            scope.defaultSetup()
+            target = cw.target()
+            ktp = cw.ktp.Basic()
+            key, pt = ktp.newPair()
+            trace, response = cw.capture_trace(scope, target, plaintext, key)
 
     .. versionadded:: 5.1
         Added to simplify trace capture.
@@ -219,4 +217,5 @@ def capture_trace(scope, target, plaintext, key=None):
 
     return trace, response
 
-captureTrace = capture_trace
+
+captureTrace = camel_case_deprecated(capture_trace)

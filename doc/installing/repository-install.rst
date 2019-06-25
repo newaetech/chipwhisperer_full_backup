@@ -4,6 +4,9 @@
 Installing ChipWhisperer
 ************************
 
+.. note:: You must have the pre-requisites for your system installed
+	before continuing with the installation of the repository.
+
 After satisfying prerequisites for your system, install the ChipWhisperer 
 repository/package using one of:
 

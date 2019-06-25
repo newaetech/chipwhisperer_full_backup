@@ -2,10 +2,6 @@
 Welcome to ChipWhisperer's Documentation 
 ****************************************
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
 After installing ChipWhisperer and setting up your hardware run:
 
 .. code:: python
@@ -56,9 +52,13 @@ Advanced
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :glob:
 
-   installing/*
+   installing/virtual-machine
+   installing/windows-installer
+   installing/linux-manual
+   installing/windows-manual
+   installing/mac-manual
+   installing/repository-install
 
 
 .. _sec-api:

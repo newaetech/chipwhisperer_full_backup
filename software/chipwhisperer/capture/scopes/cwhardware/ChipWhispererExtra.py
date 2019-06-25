@@ -123,8 +123,8 @@ class GPIOSettings(util.DisableNewAttr):
         """Convert an API TIO string to a (TIO, GPIO) parameter tuple
 
         Ex:
-        - "serial_tx" -> ("Serial TXD", None)
-        - "gpio_high" -> ("GPIO", "High")
+         * "serial_tx" -> ("Serial TXD", None)
+         * "gpio_high" -> ("GPIO", "High")
         """
 
         # Accept None in place of "high-z"
@@ -152,8 +152,8 @@ class GPIOSettings(util.DisableNewAttr):
         """Convert TIO and GPIO parameter settings to an API string.
 
         Ex:
-        - ("Serial TXD", None) -> "serial_tx"
-        - ("GPIO", "High") -> "gpio_high"
+         * ("Serial TXD", None) -> "serial_tx"
+         * ("GPIO", "High") -> "gpio_high"
         """
         try:
             if tio_setting == "GPIO":
@@ -168,17 +168,18 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO1 pin.
 
         TIO1 can be used for the following functions:
-        - "serial_rx": UART input
-        - "serial_tx": UART output
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+         * "serial_rx": UART input
+         * "serial_tx": UART output
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
+
         Default value is "serial_rx".
 
-        Getter: Return one of the above strings
+        :Getter:  Return one of the above strings
 
-        Setter: Set the Target IO1 mode.
+        :Setter: Set the Target IO1 mode.
 
         Raises:
            ValueError: if new value is not one of the above modes
@@ -197,17 +198,18 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO2 pin.
 
         TIO2 can be used for the following functions:
-        - "serial_rx": UART input
-        - "serial_tx": UART output
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+         * "serial_rx": UART input
+         * "serial_tx": UART output
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
+
         Default value is "serial_tx".
 
-        Getter: Return one of the above strings
+        :Getter:  Return one of the above strings
 
-        Setter: Set the Target IO2 mode.
+        :Setter: Set the Target IO2 mode.
 
         Raises:
            ValueError: if new value is not one of the above modes
@@ -225,18 +227,19 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO3 pin.
 
         TIO3 can be used for the following functions:
-        - "serial_rx": UART input
-        - "serial_tx": UART output
-        - "serial_tx_rx": UART 1-wire I/O (for smartcards)
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+         * "serial_rx": UART input
+         * "serial_tx": UART output
+         * "serial_tx_rx": UART 1-wire I/O (for smartcards)
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
+
         Default value is "high_z".
 
-        Getter: Return one of the above strings
+        :Getter:  Return one of the above strings
 
-        Setter: Set the Target IO3 mode.
+        :Setter: Set the Target IO3 mode.
 
         Raises:
            ValueError: if new value is not one of the above modes
@@ -254,17 +257,18 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO4 pin.
 
         TIO4 can be used for the following functions:
-        - "serial_tx": UART output
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+         * "serial_tx": UART output
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
+
         Default value is "high_z". Typically, this pin is used as a trigger
         input.
 
-        Getter: Return one of the above strings
+        :Getter:  Return one of the above strings
 
-        Setter: Set the Target IO4 mode
+        :Setter: Set the Target IO4 mode
 
         Raises:
            ValueError: if new value is not one of the above modes
@@ -313,13 +317,13 @@ class GPIOSettings(util.DisableNewAttr):
         """The state of the PDIC pin output pin.
 
         This is a GPIO pin. The following values are allowed:
-        - "high" / True: logic 1
-        - "low" / False: logic 0
-        - "disabled" / "default" / "high_z" / None: undriven
+         * "high" / True: logic 1
+         * "low" / False: logic 0
+         * "disabled" / "default" / "high_z" / None: undriven
 
-        Getter: Return one of "high", "low", or "high_z"
+        :Getter:  Return one of "high", "low", or "high_z"
 
-        Setter: Set the pin's state
+        :Setter: Set the pin's state
 
         Raises:
         ValueError: if new state not listed above
@@ -389,13 +393,13 @@ class GPIOSettings(util.DisableNewAttr):
         """The clock signal routed to the HS2 high speed output pin.
 
         Allowed clock signals are:
-        - "clkgen": The output from the CLKGEN module
-        - "glitch": The output from the glitch module
-        - "disabled" / None: No clock; output driven low
+         * "clkgen": The output from the CLKGEN module
+         * "glitch": The output from the glitch module
+         * "disabled" / None: No clock; output driven low
 
-        Getter: Return one of "clkgen", "glitch", or "disabled"
+        :Getter:  Return one of "clkgen", "glitch", or "disabled"
 
-        Setter: Set the clock to be output on HS2.
+        :Setter: Set the clock to be output on HS2.
 
         Raises:
         ValueError: if new value not listed above
@@ -432,9 +436,9 @@ class GPIOSettings(util.DisableNewAttr):
         If the target board is powered through an external supply, this setting
         may have no effect.
 
-        Getter: Return the current power state of the target (True or False)
+        :Getter:  Return the current power state of the target (True or False)
 
-        Setter: Turn the target power on or off.
+        :Setter: Turn the target power on or off.
         """
         return self.cwe.getTargetPowerState()
 
@@ -447,13 +451,13 @@ class GPIOSettings(util.DisableNewAttr):
         high-powered MOSFET shorts the power-rail to ground when the glitch
         module's output is active.
 
-        Use with caution - ensure that the glitch module is properly configured
-        before enabling this setting, as it is possible to permanently damage
-        hardware with this output.
+        .. warning:: Use with caution - ensure that the glitch module is properly
+            configured before enabling this setting, as it is possible to
+            permanently damage hardware with this output.
 
-        Getter: Return True if enabled or False if disabled
+        :Getter:  Return True if enabled or False if disabled
 
-        Setter: Turn the high-power MOSFET on or off
+        :Setter: Turn the high-power MOSFET on or off
         """
         return self.cwe.targetGlitchOut('A')
 
@@ -496,7 +500,7 @@ class GPIOSettings(util.DisableNewAttr):
         raise NotImplementedError()
 
 class TriggerSettings(util.DisableNewAttr):
-    # TODO: this module should include SAD/UART settings for CW1200
+    # .. todo:: this module should include SAD/UART settings for CW1200
 
     def __init__(self, cwextra):
         self.cwe = cwextra
@@ -536,30 +540,31 @@ class TriggerSettings(util.DisableNewAttr):
         different boolean operations.
 
         Pins:
-        - tio1-4: Target I/O pins 1-4. Note that these pins can be in any mode.
-        - sma: An auxiliary SMA input, if available (only on CW1200)
+         * tio1-4: Target I/O pins 1-4. Note that these pins can be in any mode.
+         * sma: An auxiliary SMA input, if available (only on CW1200)
 
         Boolean operations:
-        - OR: True if any inputs are True; False if none are
-        - AND: True if all inputs are True; False if any are not
-        - NAND: False if all inputs are True; True if any are not
+         * OR: True if any inputs are True; False if none are
+         * AND: True if all inputs are True; False if any are not
+         * NAND: False if all inputs are True; True if any are not
+
         Note that only one boolean operation can be used over all input pins.
 
         Examples of acceptable trigger inputs:
-        - "tio1"
-        - "tio3 OR tio4"
-        - "tio1 NAND tio2 NAND sma"
+         * "tio1"
+         * "tio3 OR tio4"
+         * "tio1 NAND tio2 NAND sma"
 
         Examples of unallowed trigger inputs:
-        - "tio1 tio2"
-        - "tio1 AND tio2 OR tio3"
-        - "tio1 OR tio1"
-        - "tio1 XOR tio2"
-        - "serial-tx"
+         * "tio1 tio2"
+         * "tio1 AND tio2 OR tio3"
+         * "tio1 OR tio1"
+         * "tio1 XOR tio2"
+         * "serial-tx"
 
-        Getter: Return a string describing the trigger mode (see examples)
+        :Getter:  Return a string describing the trigger mode (see examples)
 
-        Setter: Set the trigger mode using a string like the ones above
+        :Setter: Set the trigger mode using a string like the ones above
 
         Raises:
            ValueError: if string cannot be converted to a legal mode
@@ -660,11 +665,11 @@ class TriggerSettings(util.DisableNewAttr):
         data and SAD triggers are available too.
 
         Available trigger modules:
-        - "basic": Trigger on a logic level or edge
+         * "basic": Trigger on a logic level or edge
 
-        Getter: Return the active trigger module
+        :Getter:  Return the active trigger module
 
-        TODO: add support for CW1200 trigger modules; read-only for now
+        .. todo:: add support for CW1200 trigger modules; read-only for now
         """
         return "basic"
 
