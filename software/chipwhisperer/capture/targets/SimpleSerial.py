@@ -840,4 +840,25 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         return payload
 
+    def set_key(self, key, ack=True, timeout=250):
+        """Checks if key is different than the last one sent. If so, send it.
+
+        Args:
+            key (bytearray): key to send
+            ack (bool, optional): Wait for ack after sending key. Defaults to
+                True.
+            timeout (int, optional): How long in ms to wait for the ack.
+                Defaults to 250.
+
+        Raises:
+            Warning: Device did not ack or error during read.
+
+        .. versionadded:: 5.1
+        Made reading/writing to target simpler
+        """
+        self.simpleserial_write('k', key)
+        if ack:
+            self.simpleserial_wait_ack(timeout)
+
+
 
