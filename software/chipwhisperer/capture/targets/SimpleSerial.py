@@ -32,6 +32,7 @@ from ._base import TargetTemplate
 from .simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
 from chipwhisperer.common.utils import util
 from collections import OrderedDict
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 
 class SimpleSerial(TargetTemplate, util.DisableNewAttr):
@@ -323,14 +324,13 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     def baud(self):
         """The current baud rate of the serial connection.
 
-        This property is only compatible with the ChipWhisperer-Lite serial
-        connection - using it with a different connection raises an
-        AttributeError.
+        :Getter: Return the current baud rate.
 
-        Getter: Return the current baud rate.
-
-        Setter: Set a new baud rate. Valid baud rates are any integer in the
+        :Setter: Set a new baud rate. Valid baud rates are any integer in the
                 range [500, 2000000].
+
+        Raises:
+            AttributeError: Target doesn't allow baud to be changed.
         """
         if hasattr(self.ser, 'baud') and callable(self.ser.baud):
             return self.ser.baud()
@@ -710,6 +710,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         if not self.connectStatus.value():
             raise Warning("Target not connected")
         try:
+            if num_char == 0:
+                num_char = self.ser.inWaiting()
             return self.ser.read(num_char, timeout)
         except USBError:
             self.dis()
@@ -717,7 +719,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         except Exception as e:
             self.dis()
             raise e
-            
+
 
     def simpleserial_wait_ack(self, timeout=500):
         """Waits for an ack from the target for timeout ms
@@ -764,7 +766,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
                 key, pt = ktp.new_pair()
                 target.simpleserial_write('p', pt)
-            
+
         Raises:
             Warning: Write attempted while disconnected or error during write.
 
@@ -864,6 +866,27 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             self.simpleserial_write('k', key)
             if ack:
                 self.simpleserial_wait_ack(timeout)
+
+    def in_waiting(self):
+        """Returns the number of characters available from the serial buffer.
+
+        Returns:
+            The number of characters available via a target.read() call.
+
+        .. versionadded:: 5.1
+            Made reading/writing to target simpler
+        """
+        return self.ser.inWaiting()
+
+    inWaiting = camel_case_deprecated(in_waiting)
+
+    def flush(self):
+        """Removes all data from the serial buffer.
+
+        .. versionadded:: 5.1
+            Made reading/writing to target simpler
+        """
+        self.ser.flush()
 
 
 
