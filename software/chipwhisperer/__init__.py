@@ -17,7 +17,6 @@ from chipwhisperer.capture import acq_patterns as key_text_patterns
 from chipwhisperer.common.utils.util import camel_case_deprecated
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 ktp = key_text_patterns #alias
-from chipwhisperer.common.utils.util import camel_case_deprecated
 
 def program_target(scope, prog_type, fw_path):
     """Program the target using the programmer <type>
@@ -33,7 +32,7 @@ def program_target(scope, prog_type, fw_path):
     .. versionadded:: 5.0.1
     Simplified programming target
     """
-    if type is None: #makes automating notebooks much easier
+    if type is None: #[makes] automating notebooks much easier
         return
     prog = prog_type()
     prog.scope = scope

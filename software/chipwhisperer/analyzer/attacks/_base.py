@@ -32,6 +32,7 @@ from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
 from chipwhisperer.common.utils import pluginmanager
 from .models.AES128_8bit import AES128_8bit, SBox_output
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 def enforceLimits(value, limits):
     if value < limits[0]:
@@ -68,18 +69,18 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         models = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.models", True, False)
         self.getParams().addChildren([
             {'name':'Crypto Algorithm', 'type':'list', 'values':models, 'value':models['AES 128'], 'action':self.refreshByteList, 'childmode':'child'},
-            {'name':'Points Range', 'key':'prange', 'type':'range', 'get':self.getPointRange, 'set':self.setPointRange, 'action':self.updateScript},
+            {'name':'Points Range', 'key':'prange', 'type':'range', 'get':self.get_point_range, 'set':self.set_point_range, 'action':self.updateScript},
         ])
         for m in list(models.values()):
             m.sigParametersChanged.connect(self.updateScript)
 
         self.getParams().addChildren([
-            {'name':'Starting Trace', 'key':'strace', 'type':'int', 'get':self.getTraceStart, 'set':self.setTraceStart, 'action':self.updateScript},
-            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'get':self.getTracesPerAttack, 'set':self.setTracesPerAttack, 'action':self.updateScript},
-            {'name':'Iterations', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'get':self.getIterations, 'set':self.setIterations, 'action':self.updateScript},
-            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'get':self.getReportingInterval, 'set':self.setReportingInterval, 'action':self.updateScript},
+            {'name':'Starting Trace', 'key':'strace', 'type':'int', 'get':self.get_trace_start, 'set':self.set_trace_start, 'action':self.updateScript},
+            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'get':self.get_traces_per_attack, 'set':self.set_traces_per_attack, 'action':self.updateScript},
+            {'name':'Iterations', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'get':self.get_iterations, 'set':self.set_iterations, 'action':self.updateScript},
+            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'get':self.get_reporting_interval, 'set':self.set_reporting_interval, 'action':self.updateScript},
         ])
-        self.getParams().init()
+        # self.getParams().init()
 
         self.setAlgorithm(self._analysisAlgorithm)
         self.refreshByteList()
@@ -109,7 +110,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         """Set the leak model to leakage_object"""
         self.attackModel = leakage_object
 
-    setLeakModel = set_leak_model
+    setLeakModel = camel_case_deprecated(set_leak_model)
 
     def leak_model(self):
         """Get the leak model for the attack"""
@@ -133,14 +134,15 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         self.attack.setProject(self._project)
         self.attackModel = leakage_object
 
-    setAnalysisAlgorithm = set_analysis_algorithm
-    def processKnownKey(self, inpkey):
+    setAnalysisAlgorithm = camel_case_deprecated(set_analysis_algorithm)
+    def process_known_key(self, inpkey):
 
         """
         Passes known first-round key (if available, may pass None).
         Returns key under attack which should be highlighted in graph
         """
         return inpkey
+    processKnownKey = camel_case_deprecated(process_known_key)
 
     def process_traces(self, callback=None):
         """ Run the attack!
@@ -155,21 +157,21 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         progressBar = None
 
         self.attack.setModel(self.attackModel)
-        self.attack.getStatistics().clear()
-        self.attack.setReportingInterval(self.getReportingInterval())
-        self.attack.setTargetSubkeys(self.getTargetSubkeys())
+        self.attack.get_statistics().clear()
+        self.attack.setReportingInterval(self.get_reporting_interval())
+        self.attack.setTargetSubkeys(self.get_target_subkeys())
         self.attack.setStatsReadyCallback(callback)
 
-        for itNum in range(self.getIterations()):
-            startingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
-            endingTrace = startingTrace + self.getTracesPerAttack() - 1
+        for itNum in range(self.get_iterations()):
+            startingTrace = self.get_traces_per_attack() * itNum + self.get_trace_start()
+            endingTrace = startingTrace + self.get_traces_per_attack() - 1
 
             # TODO:support start/end point different per byte
-            self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange(None))
+            self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.get_point_range(None))
 
-        return self.attack.getStatistics()
+        return self.attack.get_statistics()
 
-    processTraces = process_traces
+    processTraces = camel_case_deprecated(process_traces)
 
     # for backwards compatability
     def processTracesNoGUI(self, callback=None, show_progress_bar=False):
@@ -184,25 +186,25 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
     def get_trace_start(self):
         return self._traceStart
 
-    getTraceStart = get_trace_start
+    getTraceStart = camel_case_deprecated(get_trace_start)
     @setupSetParam("Starting Trace")
     def set_trace_start(self, tnum):
         self._traceStart = tnum
 
-    setTraceStart = set_trace_start
+    setTraceStart = camel_case_deprecated(set_trace_start)
     def get_iterations(self):
         return self._iterations
 
-    getIterations = get_iterations
+    getIterations = camel_case_deprecated(get_iterations)
     @setupSetParam("Iterations")
     def set_iterations(self, its):
         self._iterations = its
 
-    setIterations = set_iterations
+    setIterations = camel_case_deprecated(set_iterations)
     def get_traces_per_attack(self):
         return self._tracePerAttack
 
-    getTracesPerAttack = get_traces_per_attack
+    getTracesPerAttack = camel_case_deprecated(get_traces_per_attack)
     @setupSetParam("Traces per Attack")
     def set_traces_per_attack(self, trace):
         if trace < 0:
@@ -213,20 +215,20 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
             trace = self.getTraceSource().numTraces()
         self._tracePerAttack = trace
 
-    setTracesPerAttack = set_traces_per_attack
+    setTracesPerAttack = camel_case_deprecated(set_traces_per_attack)
     def get_reporting_interval(self):
         return self._reportingInterval
 
-    getReportingInterval = get_reporting_interval
+    getReportingInterval = camel_case_deprecated(get_reporting_interval)
     @setupSetParam("Reporting Interval")
     def set_reporting_interval(self, ri):
         self._reportingInterval = ri
 
-    setReportingInterval = set_reporting_interval
+    setReportingInterval = camel_case_deprecated(set_reporting_interval)
     def get_point_range(self, bnum=None):
         return self._pointRange
 
-    getPointRange = get_point_range
+    getPointRange = camel_case_deprecated(get_point_range)
     @setupSetParam("Points Range")
     def set_point_range(self, rng):
         if rng[1] < 0:
@@ -235,23 +237,24 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
                 raise ValueError("traceSource not yet set in attack - set TraceSource first to use automatic setPointRange")
             rng = (rng[0], ts.numPoints())
         self._pointRange = rng
-    setPointRange = set_point_range 
+
+    setPointRange = camel_case_deprecated(set_point_range)
     def known_key(self):
         """Get the known key via attack"""
-        key = self.processKnownKey(self.getTraceSource().getKnownKey(self.getTraceStart()))
+        key = self.process_known_key(self.getTraceSource().getKnownKey(self.get_trace_start()))
         if key is None:
-            key = [None] * len(self.getStatistics().diffs)
+            key = [None] * len(self.get_statistics().diffs)
         return key
 
-    knownKey = known_key
+    knownKey = camel_case_deprecated(known_key)
     def set_target_subkeys(self, blist):
         self._targetSubkeys = blist
 
-    setTargetSubkeys = set_target_subkeys
+    setTargetSubkeys = camel_case_deprecated(set_target_subkeys)
     def get_target_subkeys(self):
         return self._targetSubkeys
 
-    getTargetSubkeys = get_target_subkeys
+    getTargetSubkeys = camel_case_deprecated(get_target_subkeys)
 
     def __del__(self):
         if __debug__: logging.debug('Deleted: ' + str(self))
@@ -283,7 +286,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
     def get_statistics(self):
         return self.attack.getStatistics()
 
-    getStatistics = get_statistics
+    getStatistics = camel_case_deprecated(get_statistics)
     def updateScript(self, _=None):
         self.importsAppend("import chipwhisperer")
         if self._traceSource is None:

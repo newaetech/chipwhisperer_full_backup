@@ -3,6 +3,7 @@ from chipwhisperer.analyzer.attacks import cpa_algorithms
 from chipwhisperer.analyzer import preprocessing
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES128
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128leakage
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 def cpa(trace_source, leak_model = None, algorithm=cpa_algorithms.Progressive):
     """Create a CPA attack object with sane defaults
@@ -35,14 +36,14 @@ def cpa(trace_source, leak_model = None, algorithm=cpa_algorithms.Progressive):
     """
     from chipwhisperer.analyzer.attacks.cpa import CPA
     attack = CPA()
-    attack.setAnalysisAlgorithm(algorithm, leak_model)
-    attack.setTraceSource(trace_source)
-    attack.setTraceStart(0)
-    attack.setTracesPerAttack(trace_source.numTraces())
-    attack.setIterations(1)
-    attack.setReportingInterval(10)
-    attack.setTargetSubkeys([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
-    attack.setPointRange((0, -1))
+    attack.set_analysis_algorithm(algorithm, leak_model)
+    attack.setTraceSource(trace_source) #impossible to change because of param
+    attack.set_trace_start(0)
+    attack.set_traces_per_attack(trace_source.num_traces())
+    attack.set_iterations(1)
+    attack.set_reporting_interval(10)
+    attack.set_target_subkeys([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+    attack.set_point_range((0, -1))
     return attack
 
 def profiling(trace_source):
@@ -64,8 +65,8 @@ def _default_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
     import pandas as pd
     from IPython.display import clear_output
     global current_trace_iteration
-    attack_results = attack.getStatistics()
-    key = attack.knownKey()
+    attack_results = attack.get_statistics()
+    key = attack.known_key()
 
     def format_stat(stat):
         if type(stat) is int:
@@ -74,7 +75,7 @@ def _default_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
 
     def color_corr_key(row):
         ret = [""] * 16
-        key = attack.knownKey()
+        key = attack.known_key()
         for i,bnum in enumerate(row):
             if type(bnum) is int:
                 continue
@@ -84,7 +85,7 @@ def _default_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
                 ret[i] = ""
         return ret
     attack_results.setKnownkey(key)
-    stat_data = attack_results.findMaximums()
+    stat_data = attack_results.find_maximums()
     df = pd.DataFrame(stat_data).transpose()
 
     #Add PGE row
@@ -92,7 +93,7 @@ def _default_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
     df = pd.concat([df_pge, df], ignore_index=False)
 
     clear_output(wait=True)
-    reporting_interval = attack.getReportingInterval()
+    reporting_interval = attack.get_reporting_interval()
     tstart = current_trace_iteration * reporting_interval
     tend = tstart + reporting_interval
     current_trace_iteration += 1
@@ -103,7 +104,7 @@ def get_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
     global current_trace_iteration
     current_trace_iteration = 0
     return lambda : _default_jupyter_callback(attack, head, fmt)
-getJupyterCallback = get_jupyter_callback
+getJupyterCallback = camel_case_deprecated(get_jupyter_callback)
 
 def reset_iteration():
     global current_trace_iteration

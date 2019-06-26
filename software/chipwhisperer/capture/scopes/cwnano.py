@@ -43,6 +43,7 @@ from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
 from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import STM32FSerial
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.utils.util import camel_case_deprecated
 import time
 import datetime
 
@@ -509,9 +510,9 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
     specific settings for each of these devices.
 
     To connect to one of these devices, the easiest method is::
-    
+
         import chipwhisperer as cw
-        scope = cw.scope(type=scopes.CWNano) 
+        scope = cw.scope(type=scopes.CWNano)
 
     This code will automatically detect an attached ChipWhisperer device and
     connect to it.
@@ -646,10 +647,12 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
         return False
 
 
-    def getLastTrace(self):
+    def get_last_trace(self):
         """Return the last trace captured with this scope.
         """
         return self._lasttrace
+
+    getLastTrace = camel_case_deprecated(get_last_trace)
 
 
     def _dict_repr(self):

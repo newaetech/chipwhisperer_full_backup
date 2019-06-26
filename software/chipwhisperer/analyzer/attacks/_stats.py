@@ -26,7 +26,7 @@
 #=================================================
 
 import numpy as np
-
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 class DataTypeDiffs(object):
     """
@@ -67,7 +67,7 @@ class DataTypeDiffs(object):
     def set_known_key(self, knownkey):
         self.knownkey = knownkey
 
-    setKnownkey = set_known_key
+    setKnownkey = camel_case_deprecated(set_known_key)
 
     def update_subkey(self, bnum, data, copy=True, forceUpdate=False, tnum=None):
         if (id(data) != id(self.diffs[bnum])) or forceUpdate:
@@ -80,7 +80,7 @@ class DataTypeDiffs(object):
                 self.diffs[bnum] = data
                 self.diffs_tnum[bnum] = tnum
 
-    updateSubkey = update_subkey
+    updateSubkey = camel_case_deprecated(update_subkey)
     def find_maximums(self, bytelist=None, useAbsolute=True, useSingle=False):
         if bytelist is None:
             bytelist = list(range(0, self.numSubkeys))
@@ -140,4 +140,4 @@ class DataTypeDiffs(object):
                 self.maxes_list[i].append({'trace':tnum, 'maxes':np.array(self.maxes[i])})
 
         return self.maxes
-    findMaximums = find_maximums
+    findMaximums = camel_case_deprecated(find_maximums)

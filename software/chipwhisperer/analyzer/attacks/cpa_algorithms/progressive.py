@@ -241,7 +241,7 @@ class CPAProgressive(AlgorithmsBase, Plugin):
                         else:
                             bptrange = pointRange
                         (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, knownkeys, progressBar, cpa[bnum].modelstate, pbcnt)
-                        self.stats.updateSubkey(bnum, data, tnum=tend)
+                        self.stats.update_subkey(bnum, data, tnum=tend)
                     else:
                         skip = True
 
