@@ -47,7 +47,13 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         scope = cw.scope()
         target = cw.target(scope)
 
-    The target is automatically connected to.
+    The target is automatically connected to if the default configuration
+    adequate.
+
+    For more help use the help() function with one of the submodules
+    (target.baud, target.write, target.read, ...).::
+
+        help(target.baud)
 
     Configuration:
      * :attr:`target.baud <.baud>`

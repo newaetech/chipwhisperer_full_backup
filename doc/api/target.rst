@@ -2,10 +2,13 @@
 Target
 ******
 
-One type of target is available:
+The target object provides the interface for configuring the target device
+under test (DUT). The default target and currently only supported target type:
 
  * :ref:`sec-simpleserial-target`
 
+The Simple Serial target type provides the target interface for all targets that use
+a simple serial connection.
 
 Initialization
 --------------
