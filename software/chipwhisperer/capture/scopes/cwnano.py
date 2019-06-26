@@ -285,6 +285,7 @@ class GPIOSettings(util.DisableNewAttr):
          * "gpio_low" / False: Driven output: logic 0
          * "gpio_high" / True: Driven output: logic 1
          * "gpio_disabled": Driven output: no effect
+
         Default value is "serial_rx".
 
         :Getter: Return one of the above strings
@@ -312,6 +313,7 @@ class GPIOSettings(util.DisableNewAttr):
          * "gpio_low" / False: Driven output: logic 0
          * "gpio_high" / True: Driven output: logic 1
          * "gpio_disabled": Driven output: no effect
+
         Default value is "serial_tx".
 
         :Getter: Return one of the above strings
@@ -338,6 +340,7 @@ class GPIOSettings(util.DisableNewAttr):
          * "gpio_low" / False: Driven output: logic 0
          * "gpio_high" / True: Driven output: logic 1
          * "gpio_disabled": Driven output: no effect
+
         Default value is "high_z".
 
         :Getter: Return one of the above strings
@@ -361,6 +364,7 @@ class GPIOSettings(util.DisableNewAttr):
          * "gpio_low" / False: Driven output: logic 0
          * "gpio_high" / True: Driven output: logic 1
          * "gpio_disabled": Driven output: no effect
+
         Default value is "high_z". Typically, this pin is used as a trigger
         input.
 
