@@ -31,7 +31,7 @@ from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObserver
 from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils import util
-
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     """
@@ -90,7 +90,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
             raise TypeError("Expected bool; got %s" % type(en), en)
         self._setEnabled(en)
 
-    def getTrace(self, n):
+    def get_trace(self, n):
         """Get trace number n"""
         if self.enabled:
             trace = self._traceSource.getTrace(n)
@@ -99,17 +99,24 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
         else:
             return self._traceSource.getTrace(n)
 
-    def getTextin(self, n):
+    getTrace = camel_case_deprecated(get_trace)
+    def get_textin(self, n):
         """Get text-in number n"""
         return self._traceSource.getTextin(n)
 
-    def getTextout(self, n):
+    getTextin = camel_case_deprecated(get_textin)
+
+    def get_textout(self, n):
         """Get text-out number n"""
         return self._traceSource.getTextout(n)
 
-    def getKnownKey(self, n=None):
+    getTextout = camel_case_deprecated(get_textout)
+
+    def get_known_key(self, n=None):
         """Get known-key number n"""
         return self._traceSource.getKnownKey(n)
+
+    getKnownKey = camel_case_deprecated(get_known_key)
 
     def getSampleRate(self):
         """Get the Sample Rate"""
@@ -125,15 +132,20 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     def getAuxData(self, n, auxDic):
         return self._traceSource.getAuxData(n, auxDic)
 
-    def getSegment(self, n):
+    def get_segment(self, n):
         return self._traceSource.getSegment(n)
 
-    def numTraces(self):
+    getSegment = camel_case_deprecated(get_segment)
+
+    def num_traces(self):
         return self._traceSource.numTraces()
 
-    def numPoints(self):
+    numTraces = camel_case_deprecated(num_traces)
+
+    def num_points(self):
         return self._traceSource.numPoints()
 
+    numPoints = camel_case_deprecated(num_points)
     def attrSettings(self):
         """Return user-added attributes, used in determining cache settings"""
 
