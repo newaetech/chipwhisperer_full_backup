@@ -168,13 +168,13 @@ def capture_trace(scope, target, plaintext, key=None):
         scope (ScopeTemplate): Scope object to use for capture.
         target (TargetTemplate): Target object to read/write text from.
         plaintext (bytearray): Plaintext to send to the target. Should be
-            unencoded ByteArray (will be converted to SimpleSerial when it's
+            unencoded bytearray (will be converted to SimpleSerial when it's
             sent). If None, don't send plaintext.
         key (bytearray, optional): Key to send to target. Should be unencoded
-            ByteArray. If None, don't send key. Defaults to None.
+            bytearray. If None, don't send key. Defaults to None.
 
     Returns:
-        Tuple of scope_data (numpy.ndarray) and response (ByteArray) or None
+        Tuple of scope_data (numpy.ndarray) and response (bytearray) or None
         if capture timed out.
 
     Raises:
@@ -201,9 +201,6 @@ def capture_trace(scope, target, plaintext, key=None):
 
     if plaintext:
         target.simpleserial_write('p', plaintext)
-
-    while not target.isDone():
-        time.sleep(0.01)
 
     ret = scope.capture()
     if ret:
