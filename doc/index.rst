@@ -74,6 +74,7 @@ Documentation specific to api functions, classes, and modules live here.
 
     api/scope
     api/target
+    api/project
 
 
 Contributing

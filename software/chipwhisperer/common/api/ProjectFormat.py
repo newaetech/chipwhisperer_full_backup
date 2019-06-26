@@ -72,25 +72,23 @@ class ProjectFormat(Parameterized):
 
     Only use methods that have documentation.
 
-    Basic capture usage:
+    Basic capture usage::
 
-    .. code:: python
-        >>> import chipwhisperer as cw
-        >>> proj = cw.create_project("project.cwp")
-        >>> segment = proj.get_new_trace_segment()
-        >>> # capture a trace
-        >>> segment.add_trace(trace_data, plaintext, ciphertext, key)
-        >>> proj.save() #closes the project, make sure you're done with it
+        import chipwhisperer as cw
+        proj = cw.create_project("project.cwp")
+        segment = proj.get_new_trace_segment()
+        # capture a trace
+        segment.add_trace(trace_data, plaintext, ciphertext, key)
+        proj.save() #closes the project, make sure you're done with it
 
-    Basic analyzer usage:
+    Basic analyzer usage::
 
-    .. code:: python
-        >>> import chipwhisperer as cw
-        >>> import chipwhisperer.analyzer as cwa
-        >>> proj = cw.open_project("project.cwp")
-        >>> tm = project.trace_manager()
-        >>> attack = cwa.cpa(tm)
-        >>> #run attack
+        import chipwhisperer as cw
+        import chipwhisperer.analyzer as cwa
+        proj = cw.open_project("project.cwp")
+        tm = project.trace_manager()
+        attack = cwa.cpa(tm)
+        #run attack
 
     Use a trace_manager when analyzing traces, since that allows analyzer to
     work with multiple trace segments

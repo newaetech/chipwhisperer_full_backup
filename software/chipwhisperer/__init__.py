@@ -4,7 +4,7 @@
    :platform: Unix, Windows
    :synopsis: Test
 
-.. moduleauthor:: NewAE
+.. moduleauthor:: NewAE Technology Inc.
 
 Main module for ChipWhisperer.
 """
