@@ -89,9 +89,9 @@ class ADCSettings(util.DisableNewAttr):
     def clk_src(self):
         """ADC Clock source.
 
-        Getter: Returns 'int' or 'ext' based on the clock source.
+        :Getter: Returns 'int' or 'ext' based on the clock source.
 
-        Setter: (str) Set the ADC clock source to either internal or external:
+        :Setter: (str) Set the ADC clock source to either internal or external:
             ('int' or 'ext')
         """
 
@@ -124,9 +124,9 @@ class ADCSettings(util.DisableNewAttr):
         """Set the frequency for CLKOUT. Will be rounded to nearest possible values, check results to see
         programmed value. Set to 'None' for disabling (High-Z) output.
 
-        Getter: Returns the actual frequency for CLKOUT
+        :Getter: Returns the actual frequency for CLKOUT
 
-        Setter: Sets CLKOUT to the nearest possible value.
+        :Setter: Sets CLKOUT to the nearest possible value.
         """
 
         resp = self.usb.readCtrl(self.USB_ADCLK_SET, 0, 5)
@@ -280,16 +280,16 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO1 pin.
 
         TIO1 can be used for the following functions:
-        - "serial_rx": UART input
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+         * "serial_rx": UART input
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
         Default value is "serial_rx".
 
-        Getter: Return one of the above strings
+        :Getter: Return one of the above strings
 
-        Setter: Set the Target IO1 mode.
+        :Setter: Set the Target IO1 mode.
             Raises: ValueError if new value is not one of the above modes
         """
         return None
@@ -307,16 +307,16 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO2 pin.
 
         TIO2 can be used for the following functions:
-        - "serial_tx": UART output
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+         * "serial_tx": UART output
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
         Default value is "serial_tx".
 
-        Getter: Return one of the above strings
+        :Getter: Return one of the above strings
 
-        Setter: Set the Target IO2 mode.
+        :Setter: Set the Target IO2 mode.
             Raises: ValueError if new value is not one of the above modes
         """
         return None
@@ -334,15 +334,15 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO3 pin.
 
         TIO3 can be used for the following functions:
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
         Default value is "high_z".
 
-        Getter: Return one of the above strings
+        :Getter: Return one of the above strings
 
-        Setter: Set the Target IO3 mode.
+        :Setter: Set the Target IO3 mode.
             Raises: ValueError if new value is not one of the above modes
         """
         return None
@@ -357,16 +357,16 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO4 pin.
 
         TIO4 can be used for the following functions:
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
         Default value is "high_z". Typically, this pin is used as a trigger
         input.
 
-        Getter: Return one of the above strings
+        :Getter: Return one of the above strings
 
-        Setter: Set the Target IO4 mode
+        :Setter: Set the Target IO4 mode
             Raises: ValueError if new value is not one of the above modes
         """
         return None
@@ -381,13 +381,13 @@ class GPIOSettings(util.DisableNewAttr):
         """The state of the PDIC pin output pin.
 
         This is a GPIO pin. The following values are allowed:
-        - "high" / True: logic 1
-        - "low" / False: logic 0
-        - "disabled" / "default" / "high_z" / None: undriven
+         * "high" / True: logic 1
+         * "low" / False: logic 0
+         * "disabled" / "default" / "high_z" / None: undriven
 
-        Getter: Return one of "high", "low", or "high_z"
+        :Getter: Return one of "high", "low", or "high_z"
 
-        Setter: Set the pin's state
+        :Setter: Set the pin's state
             Raises: ValueError if new state not listed above
         """
         return False
