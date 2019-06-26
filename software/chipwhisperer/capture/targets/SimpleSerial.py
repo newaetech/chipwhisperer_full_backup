@@ -36,6 +36,32 @@ from chipwhisperer.common.utils.util import camel_case_deprecated
 
 
 class SimpleSerial(TargetTemplate, util.DisableNewAttr):
+    """SimpleSerial target object.
+
+    This class contains the public API for a target that uses serial
+    communication.
+
+    The easiest way to connect to the target is::
+
+        import chipwhisperer as cw
+        scope = cw.scope()
+        target = cw.target(scope)
+
+    The target is automatically connected to.
+
+    Configuration:
+     * :attr:`target.baud <.baud>`
+
+    Functions:
+     * :meth:`target.write() <.write>`
+     * :meth:`target.read() <.read>`
+     * :meth:`target.simpleserial_wait_ack() <.simpleserial_wait_ack>`
+     * :meth:`target.simpleserial_write() <.simpleserial_write>`
+     * :meth:`target.simpleserial_read() <.simpleserial_read>`
+     * :meth:`target.set_key() <.set_key>`
+     * :meth:`target.close() <.close>`
+     * :meth:`target.con() <.con>`
+    """
     _name = "Simple Serial"
 
     def __init__(self):
