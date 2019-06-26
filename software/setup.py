@@ -42,7 +42,7 @@ setup(
                 'chipwhisperer.hardware',
                 'chipwhisperer.hardware.firmware',
                 'chipwhisperer.hardware.naeusb',
-                'chipwhisperer.tests',
+                #'chipwhisperer.tests',
                 ],
     install_requires = [
         'configobj',
