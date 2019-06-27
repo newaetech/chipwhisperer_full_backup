@@ -21,7 +21,7 @@ created new. There are two functions that provide this functionality.
 Usage
 -----
 
-The :func:`oen_project <chipwhisperer.open_project>` and the
+The :func:`open_project <chipwhisperer.open_project>` and the
 :func:`create_project <chipwhisperer.create_project>` return a
 :class:`Project <chipwhisperer.common.api.ProjectFormat.Project>` instance.
 
@@ -36,3 +36,5 @@ The :func:`oen_project <chipwhisperer.open_project>` and the
     .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.get_filename
 
     .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.trace_manager
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.location

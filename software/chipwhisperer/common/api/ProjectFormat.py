@@ -408,3 +408,12 @@ class Project(Parameterized):
 
     def __del__(self):
         if __debug__: logging.debug('Deleted: ' + str(self))
+
+    @property
+    def location(self):
+        """The directory in which the project is located.
+
+        :Getter:
+            (str) Returns the file path of the projects parent directory.
+        """
+        return os.path.dirname(os.path.abspath(self.get_filename()))
