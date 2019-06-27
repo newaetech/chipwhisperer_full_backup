@@ -45,7 +45,7 @@ void my_puts(char *c)
 
 static void delay_2_ms()
 {
-  for (volatile unsigned int i=0; i < 0xff; i++ ){
+  for (volatile unsigned int i=0; i < 0xfff; i++ ){
     ;
   }
 }
