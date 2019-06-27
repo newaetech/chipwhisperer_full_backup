@@ -120,13 +120,15 @@ class PassiveTraceObserver(Parameterized):
         ])
 
     @setupSetParam('Input')
-    def setTraceSource(self, traceSource):
+    def set_trace_source(self, traceSource):
         if self._traceSource:
             self._traceSource.sigTracesChanged.disconnect(self.tracesUpdated)
         if traceSource:
             traceSource.sigTracesChanged.connect(self.tracesUpdated)
         self._traceSource = traceSource
         self.tracesUpdated()
+
+    setTraceSource = util.camel_case_deprecated(set_trace_source)
 
     def getTraceSource(self):
         return self._traceSource

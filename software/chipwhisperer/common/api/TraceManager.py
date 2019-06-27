@@ -81,7 +81,7 @@ class TraceManager(TraceSource):
         self.dirty.setValue(False)
         self.saved = True
 
-    saveProject = save_project
+    saveProject = util.camel_case_deprecated(save_project)
 
     def loadProject(self, configfilename):
         """Load the trace segments information from a project file."""
@@ -163,7 +163,7 @@ class TraceManager(TraceSource):
 
         raise ValueError("Error: Trace %d is not in mapped range." % traceIndex)
 
-    getSegment = get_segment
+    getSegment = util.camel_case_deprecated(get_segment)
 
     def getAuxData(self, n, auxDic):
         """Return data about a segment"""
@@ -181,21 +181,21 @@ class TraceManager(TraceSource):
         t = self.getSegment(n)
         return t.getTrace(n - t.mappedRange[0])
 
-    getTrace = get_trace
+    getTrace = util.camel_case_deprecated(get_trace)
 
     def get_textin(self, n):
         """Return the input text of trace with index n in the list of enabled segments"""
         t = self.getSegment(n)
         return t.getTextin(n - t.mappedRange[0])
 
-    getTextin = get_textin
+    getTextin = util.camel_case_deprecated(get_textin)
 
     def get_textout(self, n):
         """Return the output text of trace with index n in the list of enabled segments"""
         t = self.getSegment(n)
         return t.getTextout(n - t.mappedRange[0])
 
-    getTextout = get_textout
+    getTextout = util.camel_case_deprecated(get_textout)
 
     def get_known_key(self, n):
         """Return the known encryption key."""
@@ -205,7 +205,7 @@ class TraceManager(TraceSource):
         except ValueError:
             return []
 
-    getKnownKey = get_known_key
+    getKnownKey = util.camel_case_deprecated(get_known_key)
 
     def _updateRanges(self):
         """Update the trace range for each segments."""
@@ -238,13 +238,14 @@ class TraceManager(TraceSource):
     def num_points(self):
         """Return the number of points in traces of the selected segments."""
         return self._numPoints
-    numPoints = num_points
+
+    numPoints = util.camel_case_deprecated(num_points)
 
     def num_traces(self):
         """Return the number of traces in the current list of enabled segments."""
         return self._numTraces
 
-    numTraces = num_traces
+    numTraces = util.camel_case_deprecated(num_traces)
 
     def appendSegment(self, ti, enabled=True):
         """Append a new segment to the list of trace segments."""
