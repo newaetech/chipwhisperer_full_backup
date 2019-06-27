@@ -64,7 +64,7 @@ def open_project(filename):
     from chipwhisperer.common.api import ProjectFormat as project
     if not os.path.isfile(filename):
         raise OSError("File " + filename + " does not exist or is not a file")
-    proj = project.ProjectFormat()
+    proj = project.Project()
     proj.load(filename)
     return proj
 
@@ -93,7 +93,7 @@ def create_project(filename, overwrite=False):
     if os.path.isfile(filename) and (overwrite == False):
         raise OSError("File " + filename + " already exists")
 
-    proj = project.ProjectFormat()
+    proj = project.Project()
     proj.setFilename(filename)
 
     return proj

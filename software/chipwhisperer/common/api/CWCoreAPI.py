@@ -31,7 +31,7 @@ import logging
 from chipwhisperer.capture.api.acquisition_controller import AcquisitionController
 from chipwhisperer.capture.api.programmers import Programmer
 from chipwhisperer.capture.api.aux_list import AuxList
-from chipwhisperer.common.api.ProjectFormat import ProjectFormat
+from chipwhisperer.common.api.ProjectFormat import Project
 from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.common.utils import util, pluginmanager
@@ -243,7 +243,7 @@ class CWCoreAPI(Parameterized):
 
     def newProject(self):
         """Create a new project"""
-        self.setProject(ProjectFormat(self.__name__, self.__version__))
+        self.setProject(Project(self.__name__, self.__version__))
 
     def openProject(self, fname):
         """Open project file"""

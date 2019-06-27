@@ -67,7 +67,7 @@ class ConfigObjProj(ConfigObj):
             self._callback(key)
 
 
-class ProjectFormat(Parameterized):
+class Project(Parameterized):
     """Class describing an open ChipWhisperer project.
 
     Only use methods that have documentation.
@@ -101,7 +101,7 @@ class ProjectFormat(Parameterized):
 
         self.params = Parameter(name="Project Settings", type="group")
         self.params.addChildren([
-            {'name': 'Trace Format', 'type': 'list', 'values': self.valid_traces, 'get': self.getTraceFormat, 'set': self.setTraceFormat},
+            {'name': 'Trace Format', 'type': 'list', 'values': self.valid_traces, 'get': self.get_trace_format, 'set': self.set_trace_format},
         ])
 
         self.findParam("Trace Format").setValue(TraceContainerNative(), addToList=True)
@@ -118,7 +118,7 @@ class ProjectFormat(Parameterized):
         self.config = ConfigObjProj(callback=self.configObjChanged)
         self._traceManager = TraceManager().register()
         self._traceManager.dirty.connect(self.__dirtyCallback)
-        self.setFilename(ProjectFormat.untitledFileName)
+        self.setFilename(Project.untitledFileName)
 
         self.setProgramName(prog_name)
         self.setProgramVersion(prog_ver)
@@ -183,7 +183,7 @@ class ProjectFormat(Parameterized):
     def set_trace_format(self, trace_format):
         self._trace_format = trace_format
 
-    setTraceFormat = set_trace_format
+    setTraceFormat = util.camel_case_deprecated(set_trace_format)
 
     def __dirtyCallback(self):
         self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value())
@@ -192,7 +192,7 @@ class ProjectFormat(Parameterized):
         self.dirty.setValue(True)
 
     def isUntitled(self):
-        return self.filename == ProjectFormat.untitledFileName
+        return self.filename == Project.untitledFileName
 
     def trace_manager(self):
         """ Gets the trace manager for the project
@@ -202,7 +202,7 @@ class ProjectFormat(Parameterized):
         """
         return self._traceManager
 
-    traceManager = trace_manager
+    traceManager = util.camel_case_deprecated(trace_manager)
 
     def setProgramName(self, name):
         self.settingsDict['Program Name']=name
@@ -228,7 +228,7 @@ class ProjectFormat(Parameterized):
         """
         return self.filename
 
-    getFilename = get_filename
+    getFilename = util.camel_case_deprecated(get_filename)
 
     def setFilename(self, f):
         self.filename = f
