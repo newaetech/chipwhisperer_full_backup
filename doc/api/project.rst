@@ -37,4 +37,8 @@ The :func:`open_project <chipwhisperer.open_project>` and the
 
     .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.trace_manager
 
+    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.export
+
     .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.location
+
+

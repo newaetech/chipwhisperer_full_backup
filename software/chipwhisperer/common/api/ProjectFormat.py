@@ -27,6 +27,7 @@ import re
 import sys
 from datetime import datetime
 import copy
+import zipfile
 
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.dictdiffer import DictDiffer
@@ -413,7 +414,46 @@ class Project(Parameterized):
     def location(self):
         """The directory in which the project is located.
 
+        Example::
+
+            print(project.location)
+            'C:\\Users\\User\\path\\to\\projects'
+
+
         :Getter:
             (str) Returns the file path of the projects parent directory.
         """
         return os.path.dirname(os.path.abspath(self.get_filename()))
+
+    def export(self, file_path, file_type='zip'):
+        """Export a chipwhisperer project.
+
+        Supported export types:
+         * zip (default)
+
+        Returns:
+            (str) Path to the exported file.
+        """
+        _, cwp_file = os.path.split(self.get_filename())
+        name, ext = os.path.splitext(cwp_file)
+        data_folder = os.path.join(self.location, '_'.join([name, 'data']))
+
+        file_paths = list()
+        file_paths.append(os.path.join(self.location, cwp_file))
+
+        for root, directories, files in os.walk(data_folder):
+            for filename in files:
+                file_paths.append(os.path.join(root, filename))
+
+        if file_type == 'zip':
+            file_path = os.path.abspath(file_path)
+            with zipfile.ZipFile(file_path, 'w') as zip:
+                for file in file_paths:
+                    print(file)
+                    zip.write(file)
+                    export_file_path = os.path.abspath(zip.filename)
+        else:
+            raise ValueError('{} not supported'.format(file_type))
+
+        return export_file_path
+
