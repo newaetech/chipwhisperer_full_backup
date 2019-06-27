@@ -438,7 +438,6 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
     def _con(self, scope = None):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
-        scope.scope_disconnected_signal.connect(self.dis)
         self.outstanding_ack = False
 
         self.ser.con(scope)
@@ -774,7 +773,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
                 logging.error("Ack error: {}".format(data))
                 return False
         else:
-            raise logging.error("Target did not ack")
+            logging.error("Target did not ack")
             return False
         return True
 

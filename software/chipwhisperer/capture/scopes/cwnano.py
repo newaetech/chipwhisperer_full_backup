@@ -30,13 +30,10 @@ import numpy as np
 from usb import USBError
 from .base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.utils import util, timer, pluginmanager
-from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
-from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils import util, timer
 from chipwhisperer.common.utils.util import dict_to_str
 from collections import OrderedDict
 
-from chipwhisperer.common.utils.parameter import Parameterized
 from chipwhisperer.hardware.naeusb.serial import USART
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, packuint32, unpackuint32
 from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
@@ -507,7 +504,7 @@ class GPIOSettings(util.DisableNewAttr):
         return state
 
 
-class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
+class CWNano(ScopeTemplate, util.DisableNewAttr):
     """CWNano scope object.
 
     This class contains the public API for the CWNano hardware. It includes
@@ -545,7 +542,6 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
         ScopeTemplate.__init__(self)
         self._is_connected = False
 
-        self.params.init()
 
         self._cwusb = NAEUSB()
         self.ser = self._cwusb
@@ -563,12 +559,6 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
         self._timeout = 2
 
         self._lasttrace = None
-
-        self.getParams().addChildren([
-            {'name':"CW-Lite XMEGA Programmer", 'tip':"Open XMEGA Programmer (ChipWhisperer-Lite Only)", 'type':"menu", "action":lambda _:self.getCwliteXMEGA().show()},
-            {'name':"CW-Lite AVR Programmer", 'tip':"Open AVR Programmer (ChipWhisperer-Lite Only)", 'type':"menu", "action":lambda _:self.getCwliteAVR().show()},
-            {'name':'Serial STM32F Programmer', 'tip':"Open STM32F Programmer (Serial/ChipWhisperer)", 'type':"menu", "action":lambda _:self.getSerialSTM32F().show()}
-        ])
 
         self.disable_newattr()
 
@@ -622,7 +612,7 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
 
     def arm(self):
         """Arm the ADC, the trigger will be GPIO4 rising edge (fixed trigger)."""
-        if self.connectStatus.value() is False:
+        if self.connectStatus is False:
             raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
 
         self._cwusb.sendCtrl(self.REQ_ARM, 1)
@@ -646,7 +636,7 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
 
         self._lasttrace = np.array(self._lasttrace) / 256.0 - 0.5
 
-        self.newDataReceived(0, self._lasttrace, 0, self.adc.clk_freq)
+        #self.newDataReceived(0, self._lasttrace, 0, self.adc.clk_freq)
 
         return False
 

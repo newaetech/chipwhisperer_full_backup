@@ -31,13 +31,11 @@ from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern,
 from . import _qt as openadc_qt
 from .base import ScopeTemplate
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.utils import util, timer, pluginmanager
-from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
-from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import dict_to_str
 from collections import OrderedDict
 
-class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
+class OpenADC(ScopeTemplate, util.DisableNewAttr):
     """OpenADC scope object.
 
     This class contains the public API for the OpenADC hardware, including the
@@ -91,8 +89,6 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         self._is_connected = False
 
         self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
-        self.params.init()
-        self.params.append(self.qtadc.getParams())
 
     def _getNAEUSB(self):
         return self.scopetype.dev._cwusb
@@ -124,16 +120,11 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         self.io.hs2 = "clkgen"
 
     def dcmTimeout(self):
-        if self.connectStatus.value():
+        if self.connectStatus:
             try:
                 self.qtadc.sc.getStatus()
-                # The following happen with signals, so a failure will likely occur outside of the try...except
-                # For this reason we do the call to .getStatus() to verify USB connection first
-                Parameter.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None], blockSignal=True)
-                Parameter.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
             except USBError:
                 self.dis()
-                self.scope_disconnected_signal.emit()
                 raise Warning("Error in the scope. It may have been disconnected.")
             except Exception as e:
                 self.dis()
@@ -175,29 +166,18 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
 
             cwtype = self._getCWType()
             if cwtype != "":
-
-                #For OpenADC: If we have CW Stuff, add that now
-                #TODO FIXME - this shouldn't be needed, but if you connect/disconnect you can no longer
-                #             use self.api.setParameter(...) with CWExtra-specific settings. The OpenADC
-                #             settings will work, but not CWExtra ones? For now this works, but doesn't let
-                #             you change the OpenADC type.
-                #if self.advancedSettings is None:
                 self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.qtadc.sc)
-                self.params.append(self.advancedSettings.getParams())
 
                 util.chipwhisperer_extra = self.advancedSettings
 
                 if cwtype == "cwrev2" or cwtype == "cw1200":
                     self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.qtadc.sc)
-                    self.params.append(self.advancedSAD.getParams())
 
                 if cwtype == "cw1200":
                     self.decodeIO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.qtadc.sc)
-                    self.params.append(self.decodeIO.getParams())
 
                 if cwtype == "cwcrev2":
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
-                    self.params.append(self.digitalPattern.getParams())
 
             self.adc = self.qtadc.parm_trigger
             self.gain = self.qtadc.parm_gain
@@ -217,16 +197,13 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         if self.scopetype is not None:
             self.scopetype.dis()
             if self.advancedSettings is not None:
-                self.advancedSettings.getParams().remove()
                 self.advancedSettings = None
                 util.chipwhisperer_extra = None
 
             if self.advancedSAD is not None:
-                self.advancedSAD.getParams().remove()
                 self.advancedSAD = None
 
             if self.digitalPattern is not None:
-                self.digitalPattern.getParams().remove()
                 self.digitalPattern = None
 
         # TODO Fix this hack
@@ -248,7 +225,7 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
            Exception: Error when arming. This method catches these and
                disconnects before reraising them.
         """
-        if self.connectStatus.value() is False:
+        if self.connectStatus is False:
             raise OSError("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
 
         try:

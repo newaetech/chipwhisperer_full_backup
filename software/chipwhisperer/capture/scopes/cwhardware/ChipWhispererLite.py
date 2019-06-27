@@ -22,7 +22,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils.parameter import Parameterized
 from chipwhisperer.hardware.naeusb.fpga import FPGA
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
@@ -31,7 +30,7 @@ from chipwhisperer.hardware.naeusb.programmer_stm32fserial import STM32FSerial
 from chipwhisperer.hardware.naeusb.serial import USART
 
 
-class CWLiteUSB(Parameterized):
+class CWLiteUSB(object):
     _name = "ChipWisperer-Lite USB"
 
     def __init__(self):
@@ -51,9 +50,7 @@ class CWLiteUSB(Parameterized):
         return self._cwusb.con(*args, **kwargs)
 
     def dis(self):
-        if self.params is not None:
-            self.getParams().delete()
-        self.params = None
+        pass
 
     def usbdev(self):
         return self._cwusb

@@ -11,7 +11,6 @@ import sys
 import time
 import datetime
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
 import array
 import numpy as np
 from collections import OrderedDict
@@ -65,20 +64,13 @@ def SIGNEXT(x, b):
     return (x ^ m) - m
 
 
-class HWInformation(Parameterized, util.DisableNewAttr):
+class HWInformation(util.DisableNewAttr):
     _name = 'HW Information'
 
     def __init__(self, oaiface):
         self.oa = oaiface
         self.oa.hwInfo = self
         self.sysFreq = 0
-        self.params = Parameter(name=self.getName(), type='group')
-        self.params.addChildren([
-            {'name': 'Version', 'type': 'str', 'get':self.versions, 'readonly':True},
-            {'name': 'Synth Date', 'type': 'str', 'get':self.synthDate, 'readonly':True},
-            {'name': 'System Freq', 'type': 'int', 'siPrefix':True, 'suffix': 'Hz', 'get':self.sysFrequency, 'readonly':True},
-            {'name': 'Max Samples', 'type': 'int', 'get':self.maxSamples, 'readonly':True}
-        ])
 
         self.vers = None
         self.disable_newattr()
@@ -149,29 +141,13 @@ class HWInformation(Parameterized, util.DisableNewAttr):
         self.oa.hwInfo = None
 
 
-class GainSettings(Parameterized, util.DisableNewAttr):
+class GainSettings(util.DisableNewAttr):
     _name = 'Gain Setting'
 
     def __init__(self, oaiface):
         self.oa = oaiface
         self.gainlow_cached = False
         self.gain_cached = 0
-        self.params = Parameter(name=self.getName(), type='group')
-        self.params.addChildren([
-            {'name': 'Mode', 'type': 'list', 'values': {"high", "low"}, 'default': 'low', 'set':self.setMode, 'get':self.getMode, 'linked':['Result'],
-                     'help': '%namehdr%'+
-                             'Sets the AD8331 Low Noise Amplifier into to "High" or "Low" gain mode. Low mode ranges from ' +
-                             '-4.5dB to +43.5dB, and High mode ranges from +7.5dB to +55.5dB. Better performance is found ' +
-                             'using the "High" gain mode typically.'},
-            {'name': 'Setting', 'type': 'int', 'limits': (0, 78), 'default': 0, 'set':self.setGain, 'get':self.getGain, 'linked':['Result'],
-                     'help':'%namehdr%'+
-                            'Sets the AD8331 gain value. This is a unitless number which ranges from 0 (minimum) to 78 (maximum).' +
-                            ' The resulting gain in dB is given in the "calculated" output.'},
-            {'name': 'Result', 'type': 'float', 'suffix':'dB', 'readonly':True, 'get':self._get_gain_db,
-                     'help':'%namehdr%'+
-                            'Gives the gain the AD8331 should have, based on the "High/Low" setting and the "gain setting".'},
-        ])
-
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -213,7 +189,6 @@ class GainSettings(Parameterized, util.DisableNewAttr):
     def db(self, val):
         return self._set_gain_db(val)
 
-    @setupSetParam("Mode")
     def setMode(self, gainmode):
         """Sets the ChipWhisperer's gain to either 'low' or 'high' mode.
 
@@ -222,7 +197,7 @@ class GainSettings(Parameterized, util.DisableNewAttr):
 
 
         Args:
-           gainmode (str): Either 'low' or 'high'. 
+           gainmode (str): Either 'low' or 'high'.
 
         Raises:
            ValueError: gainmode not 'low' or 'high'
@@ -264,7 +239,6 @@ class GainSettings(Parameterized, util.DisableNewAttr):
     def mode(self, val):
         return self.setMode(val)
 
-    @setupSetParam("Setting")
     def setGain(self, gain):
         '''Set the Gain range 0-78'''
         if (gain < 0) | (gain > 78):
@@ -345,7 +319,7 @@ class GainSettings(Parameterized, util.DisableNewAttr):
             self.setMode("high")
         self.setGain(g)
 
-class TriggerSettings(Parameterized,util.DisableNewAttr):
+class TriggerSettings(util.DisableNewAttr):
     _name = 'Trigger Setup'
 
     def __init__(self, oaiface):
@@ -359,57 +333,6 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         self._stream_mode = False
         self._support_get_duration = True
 
-        self.params = Parameter(name=self.getName(), type='group')
-        child_list = [
-            {'name': 'Refresh Status', 'type':'action', 'linked':['Trigger Pin State', 'Trigger Active Count'], 'visible':False,
-                     'help':'%namehdr%'+
-                            'Refreshes the "Trigger Pin State" status.'},
-            #{'name': 'Source', 'type': 'list', 'values':["digital", "analog"], 'set':self.setSource, 'get':self.source,
-            #         'help':'%namehdr%'+
-            #                'Selects if trigger system is based on digital signal (including internally generated), or an ADC level.'},
-            {'name': 'Trigger Pin State', 'type':'bool', 'readonly':True, 'get':self.extTriggerPin,
-                     'help':'%namehdr%'+
-                            'Gives the status of the digital signal being used as the trigger signal, either high or low.'},
-            {'name': 'Mode', 'type':'list', 'values':["rising edge", "falling edge", "low", "high"], 'default':"low", 'set':self._set_mode, 'get':self._get_mode,
-                     'help':'%namehdr%'+
-                            'When using a digital system, sets the trigger mode:\n\n'
-                            '  =============== ==============================\n' +
-                            '  Mode            Description\n' +
-                            '  =============== ==============================\n' +
-                            '  Rising Edge     Trigger on rising edge only.\n' +
-                            '  Falling Edge    Trigger on falling edge only.\n' +
-                            '  Low             Trigger when line is "low".\n' +
-                            '  High            Trigger when line is "high".\n' +
-                            '  =============== ==============================\n\n' +
-                            'Note the "Trigger Mode" should be set to "Rising Edge" if using either the "SAD Trigger" or "IO Trigger" modes.\n\n'+
-                            'If using STREAM mode (CW-Pro only), the trigger should use a rising or falling edge. Using a constant level is possible, but ' +
-                            'normally requires additional delay added via "offset" (see stream mode help for details).'
-            },
-            {'name': 'Timeout (secs)', 'type':'float', 'step':1, 'limits':(0, 1E99), 'set':self._set_timeout, 'get':self._get_timeout,
-                     'help':'%namehdr%'+
-                            'If no trigger occurs in this many seconds, force the trigger.'},
-            {'name': 'Offset', 'type':'int', 'limits':(0, 4294967294), 'set':self._set_offset, 'get':self._get_offset,
-                     'help':'%namehdr%'+
-                            'Delays this many samples after the trigger event before recording samples. Based on the ADC clock cycles. ' +
-                            'If using a 4x mode for example, an offset of "1000" would mean we skip 250 cycles of the target device.'},
-            {'name': 'Pre-Trigger Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self._set_presamples, 'get':self._get_presamples,
-                     'help':'%namehdr%'+
-                            'Record a certain number of samples before the main samples are captured. If "offset" is set to 0, this means ' +
-                            'recording samples BEFORE the trigger event.'},
-            {'name': 'Total Samples', 'type':'int', 'limits':(129, self.oa.hwMaxSamples), 'set':self._set_num_samples, 'get':self._get_num_samples,
-                     'help':'%namehdr%'+
-                            'Total number of samples to record. Note the capture system has an upper limit. Older FPGA bitstreams had a lower limit of about 256 samples. '+
-                            'For the CW-Lite/Pro, the current lower limit is 128 samples due to interactions with the SAD trigger module. '},
-            {'name':'Downsample Factor', 'type':'int', 'limits':(1, 8192), 'set':self._set_decimate, 'get':self._get_decimate,
-                    'help':'%namehdr%'+
-                            'Downsamples incomming ADC data by throwing away the specified number of samples between captures. Synchronous to the trigger so presample '+
-                            'mode is DISABLED when this value is greater than 1.'},
-            {'name':'Trigger Active Count', 'type':'int', 'readonly': True, 'limits':(0, 4294967294), 'get':self._get_duration,
-                   'help':'%namehdr$'+
-                            'Measures number of ADC clock cycles during which the trigger was active. If trigger toggles more than once' +
-                            'this may not be valid.'
-             },
-        ]
 
         if self.oa.hwInfo and self.oa.hwInfo.is_cw1200():
             child_list.append(
@@ -420,7 +343,6 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
                      'sample rate is unknown since it depends on how fast your computer can read from the buffer).'
                      ' A slow sampling rate (ADC Freq < 10 MHz) may be required.\n\n' +
                      'This feature is currently in BETA.'})
-        self.params.addChildren(child_list)
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -640,17 +562,8 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         """
         return self._get_duration()
 
-    @setupSetParam("Stream Mode")
     def _set_stream_mode(self, enabled):
         self._stream_mode = enabled
-
-        if enabled:
-            self.findParam('Pre-Trigger Samples').setValue(0, ignoreReadonly=True)
-            self.findParam('Pre-Trigger Samples').setReadonly(True)
-            self.findParam('Total Samples').setLimits((0, 100E6))
-        else:
-            self.findParam('Pre-Trigger Samples').setReadonly(False)
-            self.findParam('Total Samples').setLimits((0, self.oa.hwMaxSamples))
 
         #Write to FPGA
         base = self.oa.sendMessage(CODE_READ, ADDR_SETTINGS)[0]
@@ -669,14 +582,12 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
     def fifoOverflow(self):
         return self.oa.getStatus() & STATUS_OVERFLOW_MASK
 
-    @setupSetParam("Downsample Factor")
     def _set_decimate(self, decsamples):
         self.oa.setDecimate(decsamples)
 
     def _get_decimate(self):
         return self.oa.decimate()
 
-    @setupSetParam("Total Samples")
     def _set_num_samples(self, samples):
         if samples < 0:
             raise ValueError("Can't use negative number of samples")
@@ -694,7 +605,6 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         else:
             return self.oa.numSamples()
 
-    @setupSetParam("Timeout (secs)")
     def _set_timeout(self, timeout):
         self._timeout = timeout
         if self.oa:
@@ -703,7 +613,6 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
     def _get_timeout(self):
         return self._timeout
 
-    @setupSetParam("Offset")
     def _set_offset(self,  offset):
         if offset < 0:
             raise ValueError("Offset must be a non-negative integer")
@@ -728,7 +637,6 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         offset |= cmd[3] << 24
         return offset
 
-    @setupSetParam("Pre-Trigger Samples")
     def _set_presamples(self, samples):
         if samples < 0:
             raise ValueError("Number of pre-trigger samples must be non-negative")
@@ -795,7 +703,6 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
 
         return self.presamples_actual
 
-    @setupSetParam("Mode")
     def _set_mode(self,  mode):
         """ Input to trigger module options: 'rising edge', 'falling edge', 'high', 'low' """
         if mode == 'rising edge':
@@ -867,7 +774,7 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
 
             return -1
 
-class ClockSettings(Parameterized, util.DisableNewAttr):
+class ClockSettings(util.DisableNewAttr):
     _name = 'Clock Setup'
     _readMask = [0x1f, 0xff, 0xff, 0xfd]
 
@@ -875,63 +782,6 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         self.oa = oaiface
         self._hwinfo = hwinfo
         self._freqExt = 10e6
-        self.params = Parameter(name=self.getName(), type='group')
-        self.params.addChildren([
-            {'name':'Refresh Status', 'type':'action', 'linked':[('ADC Clock', 'DCM Locked'), ('ADC Clock', 'ADC Freq'), ('ADC Clock', 'ADC Sample Rate'), ('CLKGEN Settings', 'DCM Locked'), 'Freq Counter'],
-                     'help':'%namehdr%' +
-                            'Update if the Digital Clock Manager (DCM) are "locked" and their operating frequency.'},
-            {'name':'Reset DCMs', 'type':'action', 'action':self._reset_dcms, 'linked':[('CLKGEN Settings', 'Multiply'), ('CLKGEN Settings', 'Divide')],
-                      'help':'%namehdr%' +
-                            'When the input frequency to the DCM blocks changes, it can cause them to become "unlocked". When they are "unlocked" they are NOT ' +
-                            'generating a reliable output frequency. You must press the "Reset" button to cause them to re-lock. This is currently not automatically ' +
-                            'done as during regular operation they shouldn\'t become unlocked.\n\nHowever every time you change the DCM block source, it will cause ' +
-                            'the blocks to lose lock.'},
-
-            {'name': 'ADC Clock', 'type':'group', 'children': [
-                {'name': 'Source', 'type':'list', 'values':{"EXTCLK Direct":("extclk", 4, "clkgen"),
-                                                            "EXTCLK x4 via DCM":("dcm", 4, "extclk"),
-                                                            "EXTCLK x1 via DCM":("dcm", 1, "extclk"),
-                                                            "CLKGEN x4 via DCM":("dcm", 4, "clkgen"),
-                                                            "CLKGEN x1 via DCM":("dcm", 1, "clkgen")},
-                          'set':self._setAdcSource, 'get':self._getAdcSource,
-                          'help':'%namehdr%' +
-                                'The ADC sample clock is generated from this source. Options are either an external input (which input set elsewhere) or an internal clock generator. Details of each option:\n\n' +
-                                '=================== ====================== =================== ===============\n' +
-                                ' Name                Description            Input Freq Range   Fine Phase Adj.\n' +
-                                '=================== ====================== =================== ===============\n' +
-                                ' EXCLK Direct       Connects sample clock     1-105 MHz            NO\n' +
-                                '                    external pin directly.\n' +
-                                ' EXTCLK xN via DCM  Takes external pin,       5-105 MHz (x1)       YES\n\n' +
-                                '                    multiplies frequency      5-26.25 MHz (x4)        \n\n' +
-                                '                    xN and feeds to ADC.  \n' + 
-                                ' CLKGEN xN via DCM  Multiples CLKGEN by       5-105 MHz (x1)       YES\n\n' +
-                                '                    xN and feeds to ADC.      5-26.25 MHz (x4)        \n\n' +
-                                '=================== ====================== =================== ===============\n'},
-                {'name': 'Phase Adjust', 'type':'int', 'limits':(-255, 255), 'set':self._set_phase, 'get':self._get_phase, 'help': '%namehdr%' +
-                         'Makes small amount of adjustment to sampling point compared to the clock source. This can be used to improve the stability ' +
-                         'of the measurement. Total phase adjustment range is < 5nS regardless of input frequency.'},
-                {'name': 'ADC Freq', 'type': 'int', 'siPrefix':True, 'suffix': 'Hz', 'readonly':True, 'get':self._getAdcFrequency, 'decimals': 5},
-                {'name': 'ADC Sample Rate', 'type': 'int', 'siPrefix': True, 'suffix': 'S/s', 'readonly': True, 'get': self._adcSampleRate, 'decimals': 5},
-                {'name': 'DCM Locked', 'type':'bool', 'get':self._get_adcclk_locked, 'readonly':True},
-                {'name':'Reset ADC DCM', 'type':'action', 'action':lambda _ : self._reset_dcms(True, False), 'linked':['Phase Adjust']},
-            ]},
-            {'name': 'Freq Counter', 'type': 'float', 'readonly':True, 'get':self._get_extfrequency, 'siPrefix':True, 'suffix': 'Hz'},
-            {'name': 'Freq Counter Src', 'type':'list', 'values':{'EXTCLK Input':0, 'CLKGEN Output':1}, 'set':self._set_freqcounter_src, 'get':self._get_freqcounter_src},
-            {'name': 'CLKGEN Settings', 'type':'group', 'children': [
-                {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self._set_clkgen_src, 'get':self._get_clkgen_src, 'linked':['Desired Frequency', 'Current Frequency']},
-                {'name':'Input Frequency', 'type':'float', 'limits':(1E6,105E6), 'default':10E6, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
-                    'set':self._set_extclk_freq, 'get':self._get_extclk_freq, 'linked':['Desired Frequency', 'Current Frequency'], 'visible': True},
-                {'name':'Multiply', 'type':'int', 'limits':(2, 256), "default":2, 'set':self._setClkgenMulWrapper, 'get':self._getClkgenMul, 'linked':['Current Frequency']},
-                {'name':'Divide', 'type':'int', 'limits':(1, 256), 'set':self._setClkgenDivWrapper, 'get':self._getClkgenDiv, 'linked':['Current Frequency']},
-                {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 300E6), 'default':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
-                                            'set':self._autoMulDiv, 'get':self._get_clkgen_freq, 'linked':['Multiply', 'Divide']},
-                {'name':'Current Frequency', 'type':'float', 'default':0, 'readonly':True, 'siPrefix':True, 'suffix':'Hz', 
-                                            'get':self._get_clkgen_freq},
-                {'name':'DCM Locked', 'type':'bool', 'default':False, 'get':self._getClkgenLocked, 'readonly':True},
-                {'name':'Reset CLKGEN DCM', 'type':'action', 'action':lambda _ : self._reset_dcms(False, True), 'linked':['Multiply', 'Divide']},
-            ]}
-        ])
-        self.params.refreshAllParameters()
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -1188,7 +1038,6 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         """
         return self._getClkgenLocked()
 
-    @setupSetParam("Freq Counter Src")
     def _set_freqcounter_src(self, src):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         result[3] &= ~0x08
@@ -1212,7 +1061,6 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
             inpfreq = self._hwinfo.sysFrequency()
         return (inpfreq * self._getClkgenMul()) / self._getClkgenDiv()
 
-    @setupSetParam(['CLKGEN Settings', 'Desired Frequency'])
     def _autoMulDiv(self, freq):
         if self._get_clkgen_src() == "extclk":
             inpfreq = self._get_extclk_freq()
@@ -1284,7 +1132,6 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
     def clkgen_mul(self, mul):
         self._setClkgenMulWrapper(mul)
 
-    @setupSetParam(['CLKGEN Settings', 'Multiply'])
     def _setClkgenMulWrapper(self, mul):
         # TODO: raise ValueError?
         if mul < 2:
@@ -1337,7 +1184,6 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
     def clkgen_div(self, div):
         self._setClkgenDivWrapper(div)
 
-    @setupSetParam(['CLKGEN Settings', 'Divide'])
     def _setClkgenDivWrapper(self, div):
         # TODO: valueerror
         if div < 1:
@@ -1413,7 +1259,6 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         return (source, dcmout, dcminput)
 
-    @setupSetParam(['ADC Clock', 'Source'])
     def _setAdcSource(self, source="dcm", dcmout=4, dcminput="clkgen"):
 
         #Deal with being passed tuple with all 3 arguments
@@ -1449,7 +1294,6 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
 
-    @setupSetParam(['CLKGEN Settings', 'Input Source'])
     def _set_clkgen_src(self, source="system"):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
 
@@ -1463,28 +1307,19 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
             raise ValueError("source must be 'system' or 'extclk'")
 
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
-        
-        par = self.findParam(['CLKGEN Settings', 'EXTCLK Frequency'])
-        if par is not None:
-            if source == "extclk":
-                par.show()
-            else:
-                par.hide()
 
     def _get_clkgen_src(self):
         if self.oa is not None and self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)[0] & 0x08:
             return "extclk"
         else:
             return "system"
-            
-    @setupSetParam(['CLKGEN Settings', 'Input Frequency'])
+
     def _set_extclk_freq(self, freq):
         self._freqExt = freq
-    
+
     def _get_extclk_freq(self):
         return self._freqExt
 
-    @setupSetParam(['ADC Clock', 'Phase Adjust'])
     def _set_phase(self, phase):
         '''Set the phase adjust, range -255 to 255'''
         try:
@@ -1637,6 +1472,12 @@ class OpenADCInterface(object):
         self.settings()
         self._support_decimate = True
         self._nosampletimeout = 100
+        self._timeout = 2
+        self.presamples_desired = 0
+        self.presamples_actual = 0
+        self.presampleTempMargin = 24
+        self._stream_mode = False
+        self._support_get_duration = True
 
         # Send clearing function if using streaming mode
         if hasattr(self.serial, "stream") and self.serial.stream == False:
@@ -1693,7 +1534,7 @@ class OpenADCInterface(object):
 
         #Flip payload around
         pba = bytearray(payload)
-        
+
         #Check if stream or newaechip mode expected
         if hasattr(self.serial, "stream") and self.serial.stream is False:
             #The serial interface is actually special USB Chip
@@ -1707,11 +1548,11 @@ class OpenADCInterface(object):
 
                 data = bytearray(self.serial.cmdReadMem(address, datalen))
                 return data
-            
+
             else:
                 # Write output to memory
                 self.serial.cmdWriteMem(address, pba)
-                
+
                 # Check write was successful if validation requested
                 if Validate:
                     check =  bytearray(self.serial.cmdReadMem(address, len(pba)))
@@ -2305,4 +2146,3 @@ if __name__ == "__main__":
 
     adc_settings = OpenADCSettings()
     adc_settings.setInterface(adc)
-    adc_settings.parameters()

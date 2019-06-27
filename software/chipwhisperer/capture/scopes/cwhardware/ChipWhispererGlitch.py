@@ -30,7 +30,6 @@ import io
 import base64
 from collections import OrderedDict
 from chipwhisperer.capture.scopes.cwhardware import PartialReconfiguration as pr
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 from chipwhisperer.common.utils import util
 
 glitchaddr = 51
@@ -438,7 +437,7 @@ class GlitchSettings(util.DisableNewAttr):
             raise ValueError("Can't set glitch mode to %s; valid values: %s" % (value, self._output_modes), value)
         self.cwg.setGlitchType(output_idx)
 
-class ChipWhispererGlitch(Parameterized):
+class ChipWhispererGlitch(object):
     """
     Drives the Glitch Module inside the ChipWhisperer Capture Hardware Rev2, or can be used to drive this FPGA
      module inserted into other systems.
@@ -469,23 +468,6 @@ class ChipWhispererGlitch(Parameterized):
 
         # Single-shot arm timing
         self._ssarm = 2
-
-        self.params = Parameter(name=self.getName(), type='group').register()
-        self.params.addChildren([
-            {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT},'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
-            {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(self._min_width, self._max_width), 'step':0.39062, 'readonly':True, 'set':self.setGlitchWidth, 'get':self.getGlitchWidth},
-            {'name':'Glitch Width (fine adjust)', 'key':'widthfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchWidthFine, 'get':self.getGlitchWidthFine},
-            {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(self._min_offset, self._max_offset), 'step':0.39062, 'readonly':True, 'set':self.setGlitchOffset, 'get':self.getGlitchOffset},
-            {'name':'Glitch Offset (fine adjust)', 'key':'offsetfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchOffsetFine, 'get':self.getGlitchOffsetFine},
-            {'name':'Glitch Trigger', 'type':'list', 'values':{'Ext Trigger:Continous':1, 'Manual':0, 'Continuous':2, 'Ext Trigger:Single-Shot':3}, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},
-            {'name':'Single-Shot Arm', 'type':'list', 'key':'ssarm', 'values':{'Before Scope Arm':1, 'After Scope Arm':2}, 'set':self.setArmTiming, 'get':self.getArmTiming},
-            {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'set':self.setTriggerOffset, 'get':self.triggerOffset},
-            {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
-            {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action': self.glitchManual},
-            {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3, 'Enable Only':4}, 'set':self.setGlitchType, 'get':self.glitchType},
-            {'name':'Read Status', 'type':'action', 'action':self.checkLocked},
-            {'name':'Reset DCM', 'type':'action', 'action':self.actionResetDCMs},
-        ])
 
         # Check if we've got partial reconfiguration stuff for this scope
         try:
@@ -543,15 +525,10 @@ class ChipWhispererGlitch(Parameterized):
 
         if self.prEnabled:
             # Enable glitch width, check what we've got access to
-            self.findParam('width').setReadonly(False)
             self._min_width = self.glitchPR.limitList[0][0] / 2.55
             self._max_width = self.glitchPR.limitList[0][1] / 2.55
-            self.findParam('width').setLimits((self._min_width, self._max_width))
-
-            self.findParam('offset').setReadonly(False)
             self._min_offset = self.glitchPR.limitList[1][0] / 2.55
             self._max_offset = self.glitchPR.limitList[1][1] / 2.55
-            self.findParam('offset').setLimits((self._min_offset, self._max_offset))
 
         self.setOpenADC(oa)
         self.glitchSettings = GlitchSettings(self)
@@ -570,11 +547,6 @@ class ChipWhispererGlitch(Parameterized):
             # Reset FPGA back to defaults in case previous bitstreams loaded
             self.updatePartialReconfig()
         self.oa = oa
-
-        try:
-            self.params.refreshAllParameters()
-        except TypeError:
-            return
 
     def updatePartialReconfig(self, _=None):
         """
@@ -628,7 +600,6 @@ class ChipWhispererGlitch(Parameterized):
 
         self.oa.sendMessage(CODE_WRITE, glitchreadbackaddr, cmd, Validate=False)
 
-    @setupSetParam("Glitch Width (as % of period)")
     def setGlitchWidth(self, width):
         if width > self._max_width:
             width = self._max_width
@@ -641,7 +612,6 @@ class ChipWhispererGlitch(Parameterized):
     def getGlitchWidth(self):
         return self._width * 100. / 256.
 
-    @setupSetParam("Glitch Offset (as % of period)")
     def setGlitchOffset(self, offset):
         if offset > self._max_offset:
             offset = self._max_offset
@@ -654,7 +624,6 @@ class ChipWhispererGlitch(Parameterized):
     def getGlitchOffset(self):
         return self._offset * 100. / 256.
 
-    @setupSetParam("Ext Trigger Offset")
     def setTriggerOffset(self, offset):
         offset = int(offset)
         """Set offset between trigger event and glitch in clock cycles"""
@@ -674,7 +643,6 @@ class ChipWhispererGlitch(Parameterized):
         offset |= cmd[3] << 24
         return offset
 
-    @setupSetParam("Glitch Offset (fine adjust)")
     def setGlitchOffsetFine(self, fine):
         """Set the fine glitch offset adjust, range -255 to 255"""
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -699,7 +667,6 @@ class ChipWhispererGlitch(Parameterized):
     def getGlitchWidthFine(self):
         return self.getDCMStatus()[1]
 
-    @setupSetParam("Glitch Width (fine adjust)")
     def setGlitchWidthFine(self, fine):
         """Set the fine glitch width adjust, range -255 to 255"""
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -746,7 +713,9 @@ class ChipWhispererGlitch(Parameterized):
         return (glitch_offset_fine_loaded, glitch_width_fine_loaded, dcm1Lock, dcm2Lock)
 
     def actionResetDCMs(self, _=None):
-        """Action for parameter class"""
+        """Action for parameter class
+            ..todo:: See if this method is still needed of if it's GUI only
+        """
         self.resetDCMs()
 
     def resetDCMs(self, keepPhase=False):
@@ -758,14 +727,6 @@ class ChipWhispererGlitch(Parameterized):
         reset[5] &= ~(1<<1)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, reset, Validate=False)
 
-        # Reload any special phase offset
-        if keepPhase:
-            self.setGlitchWidthFine(self.findParam('widthfine').getValue())
-            self.setGlitchOffsetFine(self.findParam('offsetfine').getValue())
-        else:
-            self.findParam('widthfine').setValue(0)
-            self.findParam('offsetfine').setValue(0)
-
     def checkLocked(self, _=None):
         """Check if the DCMs are locked and print results """
 
@@ -773,7 +734,6 @@ class ChipWhispererGlitch(Parameterized):
         logging.info('DCM1: Phase %d, Locked %r' % (stat[0], stat[2]))
         logging.info('DCM2: Phase %d, Locked %r' % (stat[1], stat[3]))
 
-    @setupSetParam("Repeat")
     def setNumGlitches(self, num):
         """Set number of glitches to occur after a trigger"""
         num = int(num)
@@ -793,7 +753,6 @@ class ChipWhispererGlitch(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return resp[6]+1
 
-    @setupSetParam("Glitch Trigger")
     def setGlitchTrigger(self, trigger):
         """Set glitch trigger type (manual, continous, adc-trigger)"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -805,7 +764,6 @@ class ChipWhispererGlitch(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return (resp[5] & 0x0C) >> 2
 
-    @setupSetParam("Output Mode")
     def setGlitchType(self, t):
         """Set glitch output type (ORd with clock, XORd with clock, clock only, glitch only)"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -831,7 +789,6 @@ class ChipWhispererGlitch(Parameterized):
         """If trigger is set to single-shot mode, this must be called before the selected trigger occurs"""
         self.glitchManual()
 
-    @setupSetParam("Clock Source")
     def setGlitchClkSource(self, source):
         """Set the source of the glitched clock, either the HS1-In or the CLKGEN Module"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -845,7 +802,6 @@ class ChipWhispererGlitch(Parameterized):
     def getArmTiming(self):
         return self._ssarm
 
-    @setupSetParam("Single-Shot Arm")
     def setArmTiming(self, val):
         self._ssarm = val
 

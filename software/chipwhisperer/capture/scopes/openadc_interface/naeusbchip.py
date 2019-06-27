@@ -25,8 +25,6 @@ import traceback
 from .. import _qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
-from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 from chipwhisperer.common.utils.util import DictType
 
 try:
@@ -42,7 +40,7 @@ except ImportError:
     logging.error("Could not import USB\n" + traceback.format_exc())
 
 
-class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
+class OpenADCInterface_NAEUSBChip(object):
     _name = "NewAE USB (CWLite/CW1200)"
 
     def __init__(self, oadcInstance):
@@ -68,7 +66,6 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
     def con(self, sn=None):
         if self.ser is None:
             self.dev = CWL.CWLiteUSB()
-            self.getParams().append(self.dev.getParams())
 
             try:
                 nae_products = [0xACE2, 0xACE3]
