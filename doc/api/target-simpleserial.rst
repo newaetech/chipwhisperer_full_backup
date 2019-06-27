@@ -18,6 +18,10 @@ Simple Serial Target
 
     .. automethod:: chipwhisperer.capture.targets.SimpleSerial.set_key
 
+    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.in_waiting
+
+    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.flush
+
     .. automethod:: chipwhisperer.capture.targets.SimpleSerial.close
 
     .. automethod:: chipwhisperer.capture.targets.SimpleSerial.con
