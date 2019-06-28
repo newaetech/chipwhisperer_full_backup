@@ -10,6 +10,7 @@ Main module for ChipWhisperer.
 """
 import os, os.path, time
 import warnings
+from zipfile import ZipFile
 
 from chipwhisperer.capture import scopes, targets
 from chipwhisperer.capture.api import programmers
@@ -100,6 +101,64 @@ def create_project(filename, overwrite=False):
 
 
 createProject = camel_case_deprecated(create_project)
+
+
+def import_project(filename, file_type='zip', overwrite=False):
+    r"""Import and open a project.
+
+    Will import the **filename** by extracting to the project
+    directory, defined as '~/chipwhisperer/projects'. On Unix based
+    systems '~' expands to '/home/user/' directory. On Windows it
+    expands to 'C:\Users\User'.
+
+    Currently support file types:
+     * zip
+
+    Args:
+        filename (str): The file name to import.
+        file_type (str): The type of file that is being imported.
+            Default is zip.
+        overwrite (bool): Whether or not to overwrite the project given as
+            the **import_as** project.
+
+    .. versionadded:: 5.1
+        Add **import_project** function.
+    """
+    from chipwhisperer.common.api import ProjectFormat as project
+    from chipwhisperer.common.api.ProjectFormat import PROJECT_DIR
+
+    # extract name from input file
+    input_dir, input_file = os.path.split(filename)
+    input_file_root, input_file_ext = os.path.splitext(input_file)
+    input_abs_path = os.path.abspath(filename)
+
+    # use the appropriate type of import
+    if file_type == 'zip':
+        with ZipFile(input_abs_path, 'r') as project_zip:
+            output_path = None
+            for path in project_zip.namelist():
+                root, ext = os.path.splitext(path)
+                if ext == '.cwp':
+                    directory, project_name = os.path.split(root)
+                    output_path = os.path.join(PROJECT_DIR, ''.join([project_name, '.cwp']))
+
+                    # check if name already exists in projects
+                    if os.path.isfile(output_path) and (overwrite == False):
+                        raise OSError("File " + output_path + " already exists")
+
+                    # extract the project.cwp file and project_data directory to
+                    # the PROJECT_DIR
+                    project_zip.extractall(path=PROJECT_DIR)
+
+            if output_path is None:
+                raise ValueError('Zipfile does not contain a .cwp file, so it cannot be imported')
+    else:
+        raise ValueError('Import from file type not supported: {}'.format(file_type))
+
+    proj = project.Project()
+    proj.load(output_path)
+
+    return proj
 
 
 def scope(scope_type=scopes.OpenADC, sn=None):

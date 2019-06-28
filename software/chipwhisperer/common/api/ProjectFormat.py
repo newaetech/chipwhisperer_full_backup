@@ -47,6 +47,8 @@ except ImportError:
 __author__ = "Colin O'Flynn"
 
 
+PROJECT_DIR = os.path.join(os.path.expanduser('~'), 'chipwhisperer', 'projects')
+
 
 class ConfigObjProj(ConfigObj):
     """
@@ -433,6 +435,9 @@ class Project(Parameterized):
 
         Returns:
             (str) Path to the exported file.
+
+        .. versionadded: 5.1
+            Add **export** method to active project.
         """
         _, cwp_file = os.path.split(self.get_filename())
         name, ext = os.path.splitext(cwp_file)
@@ -448,12 +453,12 @@ class Project(Parameterized):
         if file_type == 'zip':
             file_path = os.path.abspath(file_path)
             with zipfile.ZipFile(file_path, 'w') as zip:
+                common_path = os.path.commonpath(file_paths)
                 for file in file_paths:
-                    print(file)
-                    zip.write(file)
+                    relative_path = os.path.relpath(file, common_path)
+                    zip.write(file, arcname=relative_path)
                     export_file_path = os.path.abspath(zip.filename)
         else:
             raise ValueError('{} not supported'.format(file_type))
 
         return export_file_path
-
