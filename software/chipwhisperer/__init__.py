@@ -51,8 +51,6 @@ programTarget = camel_case_deprecated(program_target)
 def open_project(filename):
     """Load an existing project from disk.
 
-    Raise an OSError if no such project exists.
-
     Args:
        filename (str): Path to project file.
 
