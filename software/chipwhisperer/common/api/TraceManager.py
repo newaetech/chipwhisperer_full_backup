@@ -77,7 +77,7 @@ class TraceManager(TraceSource):
             config[self.name]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
             config[self.name]['enabled%d' % indx] = str(t.enabled)
 
-            t.saveAllTraces(os.path.dirname(t.config.configFilename()), prefix) 
+            t.saveAllTraces(os.path.dirname(t.config.configFilename()), prefix)
         self.dirty.setValue(False)
         self.saved = True
 
@@ -178,7 +178,7 @@ class TraceManager(TraceSource):
 
     def get_trace(self, n):
         """Return the trace with index n in the list of enabled segments"""
-        t = self.getSegment(n)
+        t = self.get_segment(n)
         return t.getTrace(n - t.mappedRange[0])
 
     getTrace = util.camel_case_deprecated(get_trace)

@@ -1,4 +1,4 @@
-from chipwhisperer.analyzer.attacks.snr import calculate_snr as calculateSNR
+from chipwhisperer.analyzer.attacks.snr import calculate_snr
 from chipwhisperer.analyzer.attacks import cpa_algorithms
 from chipwhisperer.analyzer import preprocessing
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES128

@@ -29,23 +29,23 @@ import numpy as np
 
 def calculate_snr(trace_manager, leak_model, bnum=0, db=True, trace_data=None, textin_data=None, textout_data=None, key_data=None):
     """Calculate the SNR based on the leakage model. Uses same leakage model as the CPA attack."""
-    
+
     textin = None
     textout = None
     key = None
     trace = None
-    
+
     hwarray = []
-    
-    if trace_manager:        
-        ntrace = trace_manager.numTraces()
-        npoints = trace_manager.numPoints()
+
+    if trace_manager:
+        ntrace = trace_manager.num_traces()
+        npoints = trace_manager.num_points()
     else:
         ntrace = len(trace_data)
         npoints = len(trace_data[0])
-    
+
     for tnum in range(0, ntrace):
-    
+
         if trace_manager is None:
             if trace_data:
                 trace = trace_data[tnum]
@@ -56,25 +56,25 @@ def calculate_snr(trace_manager, leak_model, bnum=0, db=True, trace_data=None, t
             if key_data:
                 key = key_data[tnum]
         else:
-            trace = trace_manager.getTrace(tnum)
-            textin = trace_manager.getTextin(tnum)
-            textout = trace_manager.getTextout(tnum)
-            key = trace_manager.getKnownKey(tnum)
-    
+            trace = trace_manager.get_trace(tnum)
+            textin = trace_manager.get_textin(tnum)
+            textout = trace_manager.get_textout(tnum)
+            key = trace_manager.get_known_key(tnum)
+
         state = {'knownkey':key}
-    
+
         leakage = leak_model.leakage(textin, textout, None, bnum, state)
-        
+
         while leakage >= len(hwarray):
             hwarray.append([])
-            
+
         hwarray[leakage].append(trace)
-        
+
     hwmean = np.zeros((len(hwarray), npoints))
-    
+
     for i in range(0, len(hwarray)):
         hwmean[i] = np.mean(hwarray[i], axis=0)
-        
+
     inc_list = []
     best_choice = -1
     best_choice_len = 0
@@ -86,7 +86,7 @@ def calculate_snr(trace_manager, leak_model, bnum=0, db=True, trace_data=None, t
             if num_elements > best_choice_len:
                 best_choice = i
                 best_choice_len = num_elements
-            
+
 
     hwmean_valid = hwmean[inc_list]
 
@@ -94,9 +94,8 @@ def calculate_snr(trace_manager, leak_model, bnum=0, db=True, trace_data=None, t
     noise_var_onehw = np.var(hwarray[best_choice], axis=0)
 
     snr = signal_var / noise_var_onehw
-    
+
     if db:
         return 20*np.log(snr)
-    
+
     return snr
-    
