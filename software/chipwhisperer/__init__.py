@@ -16,8 +16,11 @@ from chipwhisperer.capture import scopes, targets
 from chipwhisperer.capture.api import programmers
 from chipwhisperer.capture import acq_patterns as key_text_patterns
 from chipwhisperer.common.utils.util import camel_case_deprecated
+from chipwhisperer.common.api import ProjectFormat as project
+from chipwhisperer.common.api.ProjectFormat import PROJECT_DIR
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 ktp = key_text_patterns #alias
+
 
 def program_target(scope, prog_type, fw_path):
     """Program the target using the programmer <type>
@@ -88,7 +91,7 @@ def create_project(filename, overwrite=False):
     Raises:
        OSError: filename exists and overwrite is False.
     """
-    from chipwhisperer.common.api import ProjectFormat as project
+    filename = project.ensure_cwp_extension(filename)
     if os.path.isfile(filename) and (overwrite == False):
         raise OSError("File " + filename + " already exists")
 
@@ -122,9 +125,6 @@ def import_project(filename, file_type='zip', overwrite=False):
     .. versionadded:: 5.1
         Add **import_project** function.
     """
-    from chipwhisperer.common.api import ProjectFormat as project
-    from chipwhisperer.common.api.ProjectFormat import PROJECT_DIR
-
     # extract name from input file
     input_dir, input_file = os.path.split(filename)
     input_file_root, input_file_ext = os.path.splitext(input_file)
