@@ -485,3 +485,110 @@ class Project(Parameterized):
             raise ValueError('{} not supported'.format(file_type))
 
         return export_file_path
+
+    @property
+    def traces(self):
+        return Traces(self)
+
+    @property
+    def segments(self):
+        return Segments(self)
+
+
+class Traces:
+
+    def __init__(self, project):
+        self.tm = project._traceManager
+        self.max = self.tm.num_traces() - 1
+
+    def __len__(self):
+        return self.tm.num_traces()
+
+    def __iter__(self):
+        self.n = 0
+        return self
+
+    def __next__(self):
+        if self.n > self.max:
+            raise StopIteration
+
+        result = (
+            self.tm.get_trace(self.n),
+            self.tm.get_textin(self.n),
+            self.tm.get_textout(self.n),
+            self.tm.get_known_key(self.n),
+        )
+
+        self.n += 1
+        return result
+
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            ind = item
+            if ind < 0:
+                ind = self.max + ind + 1
+
+            if not (0 <= ind <= self.max):
+                raise IndexError('Index outside of range ({}, {})'.format(0, self.max))
+
+        elif isinstance(item, slice):
+            indices = item.indices(self.tm.num_traces())
+            result = []
+            for i in range(*indices):
+                result.append(
+                    (
+                        self.tm.get_trace(i),
+                        self.tm.get_textin(i),
+                        self.tm.get_textout(i),
+                        self.tm.get_known_key(i)
+                    )
+                )
+            return result
+        else:
+            raise TypeError('Indexing by integer or slice only')
+
+
+class Segments:
+
+    def __init__(self, project):
+        self.tm = project._traceManager
+        self.trace_container = project._trace_format
+        self.data_directory = project.datadirectory
+
+    def __len__(self):
+        return len(self.tm.getSegmentList())
+
+    def append_new(self):
+        seg = copy.copy(self.trace_container)
+        seg.clear()
+        start_time = datetime.now()
+        prefix = start_time.strftime('%Y.%m.%d-%H.%M.%S') + "_"
+        seg.config.setConfigFilename(self.data_directory + "traces/config_" + prefix + ".cfg")
+        seg.config.setAttr("prefix", prefix)
+        seg.config.setAttr("date", start_time.strftime('%Y-%m-%d %H:%M:%S'))
+        self.tm.appendSegment(seg)
+
+    def __iter__(self):
+        self.n = 0
+        return self
+
+    def __next__(self):
+        if self.n > self.__len__():
+            raise StopIteration
+        result = self.tm.get_segment(self.n)
+        self.n += 1
+        return result
+
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            if item < 0:
+                raise IndexError('Negative indexing not supported.')
+            return self.tm.get_segment(item)
+
+        elif isinstance(item, slice):
+            indices = item.indices(self.__len__())
+
+            if item.step is not None:
+                raise TypeError('Step is not supported for slicing.')
+
+            return self.tm.getSegmentList(start=indices[0], end=indices[1])
