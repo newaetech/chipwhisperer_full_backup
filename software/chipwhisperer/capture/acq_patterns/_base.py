@@ -23,45 +23,76 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 
-class AcqKeyTextPattern_Base(Parameterized, Plugin):
+class AcqKeyTextPattern_Base(object):
     _name = "Key/Text Pattern"
 
     def __init__(self):
-        self.getParams()
+        self._key_len = 16
+        self._text_len = 16
 
     def setTarget(self, target):
-        self._target = target
-        self._initPattern()
+        pass
+
+    @property
+    def key_len(self):
+        return self._key_len
+
+    @key_len.setter
+    def key_len(self, n):
+        self._key_len = n
+
+    @property
+    def text_len(self):
+        return self._text_len
+
+    @text_len.setter
+    def text_len(self, n):
+        self._text_len = n
+
+    @property
+    def fixed_key(self):
+        """Generate fixed key (True) or not (False).
+
+        :Getter: Return True if using fixed key or False if not.
+
+        :Setter: Set whether to use fixed key (True) or not (False).
+        """
+        raise NotImplementedError("Target does not allow key to be changed to fixed/unfixed")
+
+    @fixed_key.setter
+    def fixed_key(self, enabled):
+        raise NotImplementedError("Target does not allow key to be changed to fixed/unfixed")
+
+    @property
+    def fixed_text(self):
+        """Generate fixed plaintext (True) or not (False).
+
+        :Getter: Return True if using fixed plaintext or False if not.
+
+        :Setter: Set whether to use fixed plaintext (True) or not (False).
+        """
+        raise NotImplementedError("Target does not allow plaintext to be changed to fixed/unfixed")
+
+    @fixed_text.setter
+    def fixed_text(self, enabled):
+        raise NotImplementedError("Target does not allow plaintext to be changed to fixed/unfixed")
 
     def keyLen(self):
-        if self._target:
-            return self._target.keyLen()
-        else:
-            return 16
+        return self._key_len
 
     def textLen(self):
-        if self._target:
-            return self._target.textLen()
-        else:
-            return 16
+        return self._text_len
 
     def validateKey(self):
-        if self._target:
-            if len(self._key) != self._target.keyLen():
-                raise IOError("Key Length Wrong for Given Target, %d != %d" % (self._target.keyLen(), len(self.key)))
-
-            self._key = self._target.checkEncryptionKey(self._key)
+        if len(self._key) != self.key_len:
+            raise IOError("Key Length Wrong for Given Target, %d != %d" % (self.key_len, len(self.key)))
 
     def validateText(self):
-        if self._target:
-            if len(self._textin) != self._target.textLen():
-                raise IOError("Plaintext Length Wrong for Given Target, %d != %d" % (self._target.textLen(), len(self.textin)))
-
-            self._textin = self._target.checkPlaintext(self._textin)
+        if len(self._textin) != self.text_len:
+            raise IOError("Plaintext Length Wrong for Given Target, %d != %d" % (self.text_len, len(self.textin)))
 
     def _initPattern(self):
         """Perform any extra init stuff required. Called at the end of main init() & when target changed."""
@@ -73,14 +104,24 @@ class AcqKeyTextPattern_Base(Parameterized, Plugin):
     def setInitialText(self, initialText, binaryText=False):
         pass
 
-    def initPair(self, maxtraces):
-        """Called before a capture run, does not return anything"""
-        raise AttributeError("This needs to be reimplemented")
+    def init(self, maxtraces):
+        """Initialize ktp for trace runs
+
+        Not required for all targets (i.e. a basic key text pair)
+        """
+        raise NotImplementedError("This target does not implement init")
+
+    init_pair = init
+
+    initPair = camel_case_deprecated(init_pair)
 
     def new_pair(self):
         """Called when a new encryption pair is requested"""
-        raise AttributeError("This needs to be reimplemented")
-    newPair = new_pair
+        raise NotImplementedError("This needs to be reimplemented")
+    newPair = camel_case_deprecated(new_pair)
 
     def __str__(self):
         return self.getName()
+
+    def next(self):
+        self.new_pair()

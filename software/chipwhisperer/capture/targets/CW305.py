@@ -32,6 +32,7 @@ from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
 from chipwhisperer.hardware.naeusb.fpga import FPGA
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 
 class CW305_USB(object):
@@ -84,7 +85,7 @@ class CW305(TargetTemplate):
             raise IOError("Write to read-only location: 0x%04x"%addr)
 
         return self._naeusb.cmdWriteMem(addr, data)
-        
+
     def fpga_read(self, addr, readlen):
         """ Read from address """
 
@@ -104,7 +105,7 @@ class CW305(TargetTemplate):
     def usb_trigger_toggle(self, _=None):
         """ Toggle the trigger line high then low """
         self._naeusb.sendCtrl(CW305_USB.REQ_SYSCFG, CW305_USB.SYSCFG_TOGGLE)
-        
+
     def vccint_set(self, vccint=1.0):
         """ Set the VCC-INT for the FPGA """
 
@@ -112,7 +113,7 @@ class CW305(TargetTemplate):
 
         if (vccint < 0.6) or (vccint > 1.15):
             raise ValueError("VCC-Int out of range 0.6V-1.1V")
-        
+
         # Convert to mV
         vccint = int(vccint * 1000)
         vccsetting = [vccint & 0xff, (vccint >> 8) & 0xff, 0]
@@ -160,7 +161,7 @@ class CW305(TargetTemplate):
 
     def checkEncryptionKey(self, key):
         """Validate encryption key"""
-        return key 
+        return key
 
     def loadEncryptionKey(self, key):
         """Write encryption key to FPGA"""
@@ -174,7 +175,7 @@ class CW305(TargetTemplate):
         text = inputtext[::-1]
         self.fpga_write(0x200+self._woffset, text)
 
-    def isDone(self):
+    def is_done(self):
         """Check if FPGA is done"""
         result = self.fpga_read(0x50, 1)[0]
 
@@ -186,7 +187,9 @@ class CW305(TargetTemplate):
             # LED Off
             self.fpga_write(0x10+self._woffset, [0])
             return True
-        
+
+    isDone = camel_case_deprecated(is_done)
+
     def readOutput(self):
         """"Read output from FPGA"""
         data = self.fpga_read(0x200, 16)
@@ -220,7 +223,7 @@ class CW305(TargetTemplate):
         """Disable USB clock (if requested), perform encryption, re-enable clock"""
         if self.clkusbautooff:
             self.usb_clk_setenabled(False)
-            
+
         #LED On
         self.fpga_write(0x10+self._woffset, [0x01])
 
