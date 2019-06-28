@@ -573,6 +573,7 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
          * glitch module off
 
         .. versionadded:: 5.1
+        Added default setup for CWNano
         """
         self.adc.clk_freq = 7.5E6
         self.io.clkout = 7.5E6

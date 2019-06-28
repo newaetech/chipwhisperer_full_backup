@@ -116,7 +116,7 @@ class SimpleSerialTemplate(object):
         This is the interface for target modules - it places the received bytes in a terminal buffer.
 
         Args:
-            num: The number of bytes to be read. If 0, read all data available.
+            num: The number of bytes to be read. If 0, read no data.
             timeout: How long to wait before returning, in ms. If 0, block until data received.
 
         Returns:

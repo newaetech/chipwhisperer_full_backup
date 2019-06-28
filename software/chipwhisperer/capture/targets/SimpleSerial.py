@@ -709,7 +709,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Warning: Target not connected
 
         .. versionadded:: 5.1
-            Made reading/writing to target simpler
+            Added target.write()
         """
         if not self.connectStatus.value():
             raise Warning("Target not connected")
@@ -736,7 +736,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             String of received data.
 
         .. versionadded:: 5.1
-            Made reading/writing to target simpler
+            Added target.read()
         """
         if not self.connectStatus.value():
             raise Warning("Target not connected")
@@ -764,7 +764,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Warning: Target not connected.
 
         .. versionadded:: 5.1
-            Made reading/writing to target simpler
+            Added target.simpleserial_wait_ack
         """
 
         data = self.read(4, timeout = timeout)
@@ -778,7 +778,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         return True
 
     def simpleserial_write(self, cmd, num, end='\n'):
-        r""" Writes a simpleserial command to the target over serial.
+        """ Writes a simpleserial command to the target over serial.
 
         Writes 'cmd' + ascii(num) + 'end' over serial. Flushes the read and
         write buffers before writing.
@@ -790,7 +790,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
                 the 16 byte plaintext for the 'p' command. Converted to ascii
                 before being sent.
             end (str, optional): String to end the simpleserial command with.
-                Defaults to '\n'.
+                Defaults to '\\n'.
 
         Example:
             Sending a 'p' command::
@@ -802,7 +802,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Warning: Write attempted while disconnected or error during write.
 
         .. versionadded:: 5.1
-            Made reading/writing to target simpler
+            Added target.simpleserial_write()
         """
         self.ser.flush()
         cmd += binascii.hexlify(num).decode() + end
@@ -843,7 +843,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Warning: Device did not ack or error during read.
 
         .. versionadded:: 5.1
-            Made reading/writing to target simpler
+            Added target.simpleserial_read()
         """
         cmd_len = len(cmd)
         ascii_len = pay_len * 2
@@ -879,6 +879,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     def set_key(self, key, ack=True, timeout=250):
         """Checks if key is different than the last one sent. If so, send it.
 
+        Uses simpleserial_write('k')
         Args:
             key (bytearray): key to send
             ack (bool, optional): Wait for ack after sending key. Defaults to
@@ -890,7 +891,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Warning: Device did not ack or error during read.
 
         .. versionadded:: 5.1
-            Made reading/writing to target simpler
+            Added target.set_key()
         """
         if self.last_key != key:
             self.last_key = key
@@ -905,7 +906,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             The number of characters available via a target.read() call.
 
         .. versionadded:: 5.1
-            Made reading/writing to target simpler
+            Added target.in_waiting()
         """
         return self.ser.inWaiting()
 
@@ -915,7 +916,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         """Removes all data from the serial buffer.
 
         .. versionadded:: 5.1
-            Made reading/writing to target simpler
+            Added target.flush()
         """
         self.ser.flush()
 
