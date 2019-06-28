@@ -128,7 +128,7 @@ class PassiveTraceObserver(Parameterized):
         self._traceSource = traceSource
         self.tracesUpdated()
 
-    setTraceSource = util.camel_case_deprecated(set_trace_source)
+    setTraceSource = set_trace_source
 
     def getTraceSource(self):
         return self._traceSource
