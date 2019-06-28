@@ -50,6 +50,29 @@ __author__ = "Colin O'Flynn"
 PROJECT_DIR = os.path.join(os.path.expanduser('~'), 'chipwhisperer', 'projects')
 
 
+def ensure_cwp_extension(path):
+    """Ensures that a file path has the '.cwp' extension.
+
+    This can be used to allow specifying project names without
+    having to include the '.cwp' extension needed for some of
+    the project functionality to work.
+
+    If the file already has the right extension another one
+    is not appended.
+
+    Args:
+        path (str): A path like string.
+
+    Returns:
+        (str) A path that ends with '.cwp'.
+    """
+    root, ext = os.path.splitext(path)
+    if ext != '.cwp':
+        return ''.join([root, ext, '.cwp'])
+    else:
+        return path
+
+
 class ConfigObjProj(ConfigObj):
     """
     Extends ConfigObj to add a callback feature when something is written, used
