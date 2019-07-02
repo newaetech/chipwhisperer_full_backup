@@ -50,6 +50,7 @@ class TraceContainer(Parameterized, Plugin):
                 {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},
         ])
         self.clear()
+        self.project = project
         
         #If we have a project file, do specific setup related to project
         if project and default_setup:
@@ -104,6 +105,7 @@ class TraceContainer(Parameterized, Plugin):
         self.addTextin(textin)
         self.addTextout(textout)
         self.addKey(key)
+        self.project.trace_manager()._updateRanges()
 
     addTrace = add_trace
 

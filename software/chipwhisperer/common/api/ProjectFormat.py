@@ -130,7 +130,7 @@ class Project(Parameterized):
             {'name': 'Trace Format', 'type': 'list', 'values': self.valid_traces, 'get': self.get_trace_format, 'set': self.set_trace_format},
         ])
 
-        self.findParam("Trace Format").setValue(TraceContainerNative(), addToList=True)
+        self.findParam("Trace Format").setValue(TraceContainerNative(project=self), addToList=True)
 
         #self.traceParam = Parameter(name="Trace Settings", type='group', addLoadSave=True).register()
         #self.params.getChild('Trace Format').stealDynamicParameters(self.traceParam)
@@ -488,16 +488,57 @@ class Project(Parameterized):
 
     @property
     def traces(self):
+        """Contains the trace interface for the project.
+
+        To iterate through all enabled traces use::
+            for trace, textin, textout, knownkey in my_project.traces:
+                # Something amazing...
+
+        Indexing is supported::
+            trace_of_interest = my_project.traces[99]
+
+        So is slicing::
+            interesting_traces = my_project.traces[20:35:2]
+
+        Returns:
+            (iterable) of traces in the project if the traces belongs
+             to a segment that is enabled. The iterable contains tuples
+             of length four containing the trace, plain text in,
+             encrypted text out, and known key.
+
+        Raises:
+            IndexError: When the index used for indexing is out of range.
+            TypeError: When key used to get item is not a slice or integer.
+                """
         return Traces(self)
 
     @property
     def segments(self):
+        """Contains the segment interface for a project.
+
+        Segments are used to group traces together. Each segment can be
+        enabled/disabled to be included in the traces returned by
+        :attr:`.traces`
+
+        Returns:
+            (iterable) of segments
+        """
+
         return Segments(self)
 
 
 class Traces:
+    """Class to provide an interface for project traces.
+
+    The class adds support for indexing, slicing and iterating
+    of project traces.
+
+    .. versionadded:: 5.1
+        Added **Traces** class to project interface.
+    """
 
     def __init__(self, project):
+        self.project = project
         self.tm = project._traceManager
         self.max = self.tm.num_traces() - 1
 
@@ -547,8 +588,24 @@ class Traces:
         else:
             raise TypeError('Indexing by integer or slice only')
 
+    def __repr__(self):
+        _, project_filename = os.path.split(self.project.get_filename())
+        abs_path = os.path.join(self.project.location, project_filename)
+        return 'Traces(project={}) for project at {}'.format(self.project, abs_path)
+
 
 class Segments:
+    """Class that provides the project interface to trace segments.
+
+    Trace segments allow grouping of captured traces. Each segment
+    can be disabled or enabled to be included when iterating through
+    :attr:`.ProjectFormat.traces`.
+
+    The class adds support for indexing, slicing, and iterating.
+
+    .. versionadded:: 5.1
+        Add **Segments** class to project interface.
+    """
 
     def __init__(self, project):
         self.tm = project._traceManager
@@ -556,9 +613,9 @@ class Segments:
         self.data_directory = project.datadirectory
 
     def __len__(self):
-        return len(self.tm.getSegmentList())
+        return len(self.tm.traceSegments)
 
-    def append_new(self):
+    def new(self):
         seg = copy.copy(self.trace_container)
         seg.clear()
         start_time = datetime.now()
@@ -566,6 +623,9 @@ class Segments:
         seg.config.setConfigFilename(self.data_directory + "traces/config_" + prefix + ".cfg")
         seg.config.setAttr("prefix", prefix)
         seg.config.setAttr("date", start_time.strftime('%Y-%m-%d %H:%M:%S'))
+        return seg
+
+    def append(self, seg):
         self.tm.appendSegment(seg)
 
     def __iter__(self):
@@ -575,20 +635,9 @@ class Segments:
     def __next__(self):
         if self.n > len(self):
             raise StopIteration
-        result = self.tm.get_segment(self.n)
+        result = self.tm.traceSegments[self.n]
         self.n += 1
         return result
 
     def __getitem__(self, item):
-        if isinstance(item, int):
-            if item < 0:
-                item = len(self) + item
-            return self.tm.getSegmentList()[item]
-
-        elif isinstance(item, slice):
-            indices = item.indices(len(self))
-
-            if item.step is not None:
-                raise TypeError('Step is not supported for slicing.')
-
-            return self.tm.getSegmentList(start=indices[0], end=indices[1])
+        return self.tm.traceSegments[item]
