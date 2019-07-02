@@ -288,6 +288,9 @@ class TraceContainer(Parameterized, Plugin):
     def isLoaded(self):
         """Returns true if you can use getTrace, getTextin, etc methods"""
         return self._isloaded
+
+    def __repr__(self):
+        return 'TraceContainerNative(number_of_traces={}, trace_length={})'.format(self.numTraces(), self.numPoints())
         
         
 if __name__ == "__main__":
