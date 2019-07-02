@@ -28,6 +28,7 @@ import sys
 from datetime import datetime
 import copy
 import zipfile
+import numpy as np
 
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.dictdiffer import DictDiffer
@@ -148,6 +149,9 @@ class Project(Parameterized):
 
         self.setProgramName(prog_name)
         self.setProgramVersion(prog_ver)
+
+        self.segments = Segments(self)
+        self.traces = Traces(self)
 
         if __debug__:
             logging.debug('Created: ' + str(self))
@@ -488,61 +492,71 @@ class Project(Parameterized):
 
         return export_file_path
 
-    @property
-    def traces(self):
-        """Contains the trace interface for the project.
-
-        To iterate through all enabled traces use::
-            for trace, textin, textout, knownkey in my_project.traces:
-                # Something amazing...
-
-        Indexing is supported::
-            trace_of_interest = my_project.traces[99]
-
-        So is slicing::
-            interesting_traces = my_project.traces[20:35:2]
-
-        Returns:
-            (iterable) of traces in the project if the traces belongs
-             to a segment that is enabled. The iterable contains tuples
-             of length four containing the trace, plain text in,
-             encrypted text out, and known key.
-
-        Raises:
-            IndexError: When the index used for indexing is out of range.
-            TypeError: When key used to get item is not a slice or integer.
-                """
-        return Traces(self)
-
-    @property
-    def segments(self):
-        """Contains the segment interface for a project.
-
-        Segments are used to group traces together. Each segment can be
-        enabled/disabled to be included in the traces returned by
-        :attr:`.traces`
-
-        Returns:
-            (iterable) of segments
-        """
-
-        return Segments(self)
-
 
 class Traces:
-    """Class to provide an interface for project traces.
+    """Contains the trace interface for the project.
 
     The class adds support for indexing, slicing and iterating
     of project traces.
+
+    To iterate through all enabled traces use::
+        for trace, textin, textout, knownkey in my_project.traces:
+            # Something amazing...
+
+    Indexing is supported::
+        trace_of_interest = my_project.traces[99]
+
+    So is slicing::
+        interesting_traces = my_project.traces[20:35:2]
+
+    Args:
+        project: The project class where traces will be stored.
+        segment_length (int): The number of traces stored in one file
+            before another file is created. This is used for unloading
+            and loading traces from disk to keep memory usage reasonable.
+
+    Returns:
+        (iterable) of traces in the project if the traces belongs
+         to a segment that is enabled. The iterable contains tuples
+         of length four containing the trace, plain text in,
+         encrypted text out, and known key.
+
+    Raises:
+        IndexError: When the index used for indexing is out of range.
+        TypeError: When key used to get item is not a slice or integer.
 
     .. versionadded:: 5.1
         Added **Traces** class to project interface.
     """
 
-    def __init__(self, project):
+    def __init__(self, project, segment_length=10000):
         self.project = project
         self.tm = project._traceManager
-        self.max = self.tm.num_traces() - 1
+
+        # segment management
+        self.cur_seg = self.project.segments.new()
+        self.project.segments.append(self.cur_seg)
+        self.cur_trace_num = 0
+        self.seg_len = segment_length
+        self.seg_ind_max = self.seg_len - 1
+
+    @property
+    def max(self):
+        """Max index during iteration."""
+        return self.tm.num_traces() - 1
+
+    def append(self, trace):
+        """Append a tuple containing the trace and related operation information.
+
+        Args:
+            trace: A tuple of length four (the trace, text in, text out, key).
+        """
+        if self.cur_trace_num > self.seg_ind_max:
+            self.cur_seg = self.project.segments.new()
+            self.project.segments.append(self.cur_seg)
+            self.cur_trace_num = 0
+        self.cur_seg.add_trace(*trace)
+        self.cur_trace_num += 1
 
     def __len__(self):
         return self.tm.num_traces()
@@ -574,6 +588,14 @@ class Traces:
             if not (0 <= ind <= self.max):
                 raise IndexError('Index outside of range ({}, {})'.format(0, self.max))
 
+            result = (
+                self.tm.get_trace(item),
+                self.tm.get_textin(item),
+                self.tm.get_textout(item),
+                self.tm.get_known_key(item)
+            )
+            return result
+
         elif isinstance(item, slice):
             indices = item.indices(self.tm.num_traces())
             result = []
@@ -593,20 +615,34 @@ class Traces:
     def __repr__(self):
         _, project_filename = os.path.split(self.project.get_filename())
         abs_path = os.path.join(self.project.location, project_filename)
-        return 'Traces(project={}) for project at {}'.format(self.project, abs_path)
+        return 'Traces(number={}, project={}) for project at {}'.format(len(self), self.project, abs_path)
+
+    def __str__(self):
+        result = []
+        i = 0
+        while i < 10:
+            try:
+                result.append(self[i])
+            except IndexError:
+                break
+            i += 1
+        return '{} \n Result truncated at maximum 10 lines...'.format(str(np.array(result)))
 
 
 class Segments:
-    """Class that provides the project interface to trace segments.
+    """Contains the segment interface for a project.
 
-    Trace segments allow grouping of captured traces. Each segment
-    can be disabled or enabled to be included when iterating through
-    :attr:`.ProjectFormat.traces`.
+    Segments are used to group traces together. Each segment can be
+    enabled/disabled to be included in the traces returned by
+    :attr:`.traces`
 
-    The class adds support for indexing, slicing, and iterating.
+    .. warning:: For internal use only. This api is not guaranteed to exist
+        if our project switches to a different way of storing project
+        files.
 
-    .. versionadded:: 5.1
-        Add **Segments** class to project interface.
+    Returns:
+        (iterable) of segments, usually some sort of trace container.
+
     """
 
     def __init__(self, project):
