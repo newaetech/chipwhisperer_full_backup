@@ -190,6 +190,9 @@ def scope(scope_type=None, sn=None):
             being connected.
         Warning: Raised if multiple chipwhisperers are connected, but the type
             and/or the serial numbers are not specified
+
+    .. versionchanged:: 5.1
+    Added autodetection of scope_type
     """
     from chipwhisperer.common.utils.util import get_cw_type
     if scope_type is None:

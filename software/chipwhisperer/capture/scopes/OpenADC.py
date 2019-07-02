@@ -157,7 +157,16 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         return ""
 
     def get_name(self):
-        return self.qtadc.sc.hwInfo.versions()[2]
+        """ Gets the name of the attached scope
+
+        Returns:
+            'ChipWhisperer Lite' if a Lite, 'ChipWhisperer Pro' if a Pro
+        """
+        name = self._getCWType()
+        if name == "cwlite":
+            return "ChipWhisperer Lite"
+        elif name == "cw1200":
+            return "ChipWhisperer Pro"
 
     def _con(self, sn=None):
         if self.scopetype is not None:
