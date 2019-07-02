@@ -599,20 +599,37 @@ class STM32FSerial(object):
             data += self.cmdReadMemory(addr, lng)
         return data
 
-    def writeMemory(self, addr, data):
+    def writeMemory(self, addr, data, smallblocks=False):
+        """Write to the memory on the chip. If smallblocks is true, it uses a smaller
+           block size, which can be more reliable as sometimes the full block size
+           causes weird timeouts"""
+
         lng = len(data)
         data = list(data)
 
+        if smallblocks:
+            block_size = 64
+        else:
+            block_size = 256
+
         offs = 0
-        while lng > 256:
-            logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': 256})
-            self.cmdWriteMemory(addr, data[offs:offs + 256])
+        while lng > block_size:
+            logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
+
+            try:
+                self.cmdWriteMemory(addr, data[offs:offs + block_size])
+            except CmdException:
+                # Try shrinking the block size for the writes
+                block_size = 64
+                self.cmdWriteMemory(addr, data[offs:offs + block_size])
+
             updateUI()
             if self.slow_speed:
                 self.delay_func(1)
-            offs += 256
-            addr += 256
-            lng -= 256
+            offs += block_size
+            addr += block_size
+            lng -= block_size
+
         if lng:
             logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
             self.cmdWriteMemory(addr, data[offs:])
