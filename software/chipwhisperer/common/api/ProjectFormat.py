@@ -573,7 +573,7 @@ class Segments:
         return self
 
     def __next__(self):
-        if self.n > self.__len__():
+        if self.n > len(self):
             raise StopIteration
         result = self.tm.get_segment(self.n)
         self.n += 1
@@ -582,11 +582,11 @@ class Segments:
     def __getitem__(self, item):
         if isinstance(item, int):
             if item < 0:
-                raise IndexError('Negative indexing not supported.')
-            return self.tm.get_segment(item)
+                item = len(self) + item
+            return self.tm.getSegmentList()[item]
 
         elif isinstance(item, slice):
-            indices = item.indices(self.__len__())
+            indices = item.indices(len(self))
 
             if item.step is not None:
                 raise TypeError('Step is not supported for slicing.')
