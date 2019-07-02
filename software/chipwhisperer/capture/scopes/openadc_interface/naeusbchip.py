@@ -81,7 +81,9 @@ class OpenADCInterface_NAEUSBChip(object):
                             pass
                         raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
                 else:
-                    sn = None
+                    pass
+                    #if possible_sn[0]['sn'] !=
+                    #sn = None
                 found_id = self.dev.con(idProduct=nae_products, serial_number=sn)
             except (IOError, ValueError):
                 raise Warning('Could not connect to "%s". It may have been disconnected, is in an error state, or is being used by another tool.' % self.getName())

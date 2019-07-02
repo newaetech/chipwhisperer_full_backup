@@ -156,6 +156,9 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
                 return "cwrev2"
         return ""
 
+    def get_name(self):
+        return self.qtadc.sc.hwInfo.versions()[2]
+
     def _con(self, sn=None):
         if self.scopetype is not None:
             self.scopetype.con(sn)

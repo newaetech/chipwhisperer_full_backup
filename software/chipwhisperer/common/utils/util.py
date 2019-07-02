@@ -475,3 +475,33 @@ def camel_case_deprecated(func):
     wrapper.__name__ = underscore_to_camelcase(func.__name__)
     wrapper.__doc__ = 'Deprecated: Use {} instead.'.format(func.__name__)
     return wrapper
+
+
+def get_cw_type(sn=None):
+    """ Gets the scope type of the connected ChipWhisperer
+
+    If multiple connected, sn must be specified
+    """
+    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
+    from chipwhisperer.capture import scopes
+
+    cwusb = NAEUSB()
+    possible_sn = cwusb.get_possible_devices(idProduct=None)
+    name = ""
+
+    if (len(possible_sn) > 1):
+        if sn is None:
+            serial_numbers = []
+            for d in possible_sn:
+                serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
+            raise Warning("Multiple chipwhisperers connected, but device and/or serial number not specified.\nDevices:\n{}".format(serial_numbers))
+        else:
+            for d in possible_sn:
+                if d['sn'] == sn:
+                    name = d['product']
+    else:
+        name = possible_sn[0]['product']
+    if name == "ChipWhisperer Lite":
+        return scopes.OpenADC
+    elif name == "ChipWhisperer Nano":
+        return scopes.CWNano

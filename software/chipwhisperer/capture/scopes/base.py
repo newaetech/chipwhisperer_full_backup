@@ -87,3 +87,8 @@ class ScopeTemplate(object):
         #     time.sleep(0.05)
         #     util.updateUI()
         pass
+
+    def get_name(self):
+        return self._name
+
+    getName = util.camel_case_deprecated(get_name)

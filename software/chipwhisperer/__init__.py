@@ -21,8 +21,7 @@ from chipwhisperer.common.api.ProjectFormat import PROJECT_DIR
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 ktp = key_text_patterns #alias
 
-
-def program_target(scope, prog_type, fw_path):
+def program_target(scope, prog_type, fw_path, **kwargs):
     """Program the target using the programmer <type>
 
     Programmers can be found in the programmers submodule
@@ -38,7 +37,7 @@ def program_target(scope, prog_type, fw_path):
     """
     if type is None: #[makes] automating notebooks much easier
         return
-    prog = prog_type()
+    prog = prog_type(**kwargs)
     prog.scope = scope
     prog._logging = None
     prog.open()
@@ -159,7 +158,7 @@ def import_project(filename, file_type='zip', overwrite=False):
     return proj
 
 
-def scope(scope_type=scopes.OpenADC, sn=None):
+def scope(scope_type=None, sn=None):
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the scope
@@ -175,21 +174,26 @@ def scope(scope_type=scopes.OpenADC, sn=None):
 
     Args:
        scope_type (ScopeTemplate, optional): Scope type to connect to. Types
-           can be found in chipwhisperer.scopes. Defaults to scopes.OpenADC
-           (correct for CWLite and CWPro).
+           can be found in chipwhisperer.scopes. If None, will try to detect
+           the type of ChipWhisperer connected. Defaults to None.
        sn (str, optional): Serial number of ChipWhisperer that you want to
            connect to. Required if more than one ChipWhisperer
            of the same type is connected (i.e. two CWNano's or a CWLite and
            CWPro). Defaults to None.
 
     Returns:
-       Connected scope object specified by scope_type
+        Connected scope object
 
     Raises:
-       OSError: Can be raised for issues connecting to the chipwhisperer, such
-           as not having permission to access the USB device or no ChipWhisperer
-           being connected.
+        OSError: Can be raised for issues connecting to the chipwhisperer, such
+            as not having permission to access the USB device or no ChipWhisperer
+            being connected.
+        Warning: Raised if multiple chipwhisperers are connected, but the type
+            and/or the serial numbers are not specified
     """
+    from chipwhisperer.common.utils.util import get_cw_type
+    if scope_type is None:
+        scope_type = get_cw_type(sn)
     scope = scope_type()
     scope.con(sn)
     return scope
