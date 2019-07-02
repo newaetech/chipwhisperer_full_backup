@@ -177,7 +177,7 @@ class STM32FSerial(object):
         fdata = f.tobinarray(start=f.minaddr())
         startaddr = f.minaddr()
 
-        logfunc("Attempting to programming %d bytes at 0x%x"% (fsize, startaddr))
+        logfunc("Attempting to program %d bytes at 0x%x"% (fsize, startaddr))
 
         logfunc("STM32F Programming %s..." % memtype)
         if waitfunc: waitfunc()
@@ -186,7 +186,11 @@ class STM32FSerial(object):
         logfunc("STM32F Reading %s..." % memtype)
         if waitfunc: waitfunc()
 
-        self.verifyMemory(startaddr, fdata, self.small_blocks)
+        try:
+            self.verifyMemory(startaddr, fdata, self.small_blocks)
+        except CmdException:
+            logfunc("Error during verify. Retrying with small blocks...")
+            self.verifyMemory(startaddr, fdata, True)
 
         logfunc("Verified %s OK, %d bytes" % (memtype, fsize))
 
@@ -282,7 +286,7 @@ class STM32FSerial(object):
         try:
             ask = self.sp.read(1)[0]
         except:
-            raise CmdException("Can't read port or timeout (%s)" % traceback.format_exc())
+            raise CmdException("Can't read port or timeout (%s). Target didn't respond when an ack was expected." % traceback.format_exc())
         else:
             if ask == 0x79:
                 # ACK
@@ -575,12 +579,12 @@ class STM32FSerial(object):
         """Read from flash using bootloader. If smallblocks is true uses a smaller
            block size, which can be more reliable as sometimes the full block size
            causes weird timeouts"""
-        
+
         if smallblocks:
             block_size = 64
         else:
             block_size = 256
-        
+
         data = []
         while lng > block_size:
             logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
