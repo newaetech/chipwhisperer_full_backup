@@ -444,9 +444,11 @@ class Project(Parameterized):
             print(project.location)
             'C:\\Users\\User\\path\\to\\projects'
 
-
         :Getter:
             (str) Returns the file path of the projects parent directory.
+
+        .. versionadded:: 5.1
+            Added **location** attribute to project.
         """
         return os.path.dirname(os.path.abspath(self.get_filename()))
 
@@ -459,7 +461,7 @@ class Project(Parameterized):
         Returns:
             (str) Path to the exported file.
 
-        .. versionadded: 5.1
+        .. versionadded:: 5.1
             Add **export** method to active project.
         """
         _, cwp_file = os.path.split(self.get_filename())

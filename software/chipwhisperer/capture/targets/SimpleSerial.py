@@ -880,6 +880,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         """Checks if key is different than the last one sent. If so, send it.
 
         Uses simpleserial_write('k')
+
         Args:
             key (bytearray): key to send
             ack (bool, optional): Wait for ack after sending key. Defaults to
