@@ -18,12 +18,12 @@ Classes:
 from .add_noise_jitter import AddNoiseJitter
 from .add_noise_random import AddNoiseRandom
 from .cache_traces import CacheTraces
-from .decimation_clock_recovery import DecimationClockRecovery
+#from .decimation_clock_recovery import DecimationClockRecovery broken without matplotlib/cycler
 from .decimation_fixed import DecimationFixed
 from .digital_filter import Filter as DigitalFilter
 from .pass_through import PassThrough
 from .resync_cross_correlation import ResyncCrossCorrelation
 from .resync_dtw import ResyncDTW
 from .resync_peak_detect import ResyncPeakDetect
-from .resync_resample_zc import ResyncResampleZC
+#from .resync_resample_zc import ResyncResampleZC broken without matplotlib/cycler
 from .resync_sad import ResyncSAD
