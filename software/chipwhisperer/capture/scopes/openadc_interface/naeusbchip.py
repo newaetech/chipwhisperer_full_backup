@@ -25,7 +25,7 @@ import traceback
 from .. import _qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
-from chipwhisperer.common.utils.util import DictType
+from chipwhisperer.common.utils.util import DictType, camel_case_deprecated
 
 try:
     from chipwhisperer.capture.scopes.cwhardware import ChipWhispererLite as CWL
@@ -127,3 +127,8 @@ class OpenADCInterface_NAEUSBChip(object):
             return self.cwFirmwareConfig[self.last_id]
         except KeyError as e:
             return FWLoaderConfig(CWLite_Loader())
+
+    def get_name(self):
+        return self._name
+
+    getName = camel_case_deprecated(get_name)

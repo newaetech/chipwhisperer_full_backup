@@ -334,15 +334,6 @@ class TriggerSettings(util.DisableNewAttr):
         self._support_get_duration = True
 
 
-        if self.oa.hwInfo and self.oa.hwInfo.is_cw1200():
-            child_list.append(
-            {'name': 'Stream Mode', 'type': 'bool', 'default': self._stream_mode, 'set': self._set_stream_mode,
-             'get': self._get_stream_mode,
-             'help': '%namehdr%' +
-                     'Streams data over high-speed USB allowing to capture more samples (the exact max sample value and '
-                     'sample rate is unknown since it depends on how fast your computer can read from the buffer).'
-                     ' A slow sampling rate (ADC Freq < 10 MHz) may be required.\n\n' +
-                     'This feature is currently in BETA.'})
         self.disable_newattr()
 
     def _dict_repr(self):
