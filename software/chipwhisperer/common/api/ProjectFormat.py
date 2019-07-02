@@ -589,10 +589,10 @@ class Traces:
                 raise IndexError('Index outside of range ({}, {})'.format(0, self.max))
 
             result = (
-                self.tm.get_trace(item),
-                self.tm.get_textin(item),
-                self.tm.get_textout(item),
-                self.tm.get_known_key(item)
+                self.tm.get_trace(ind),
+                self.tm.get_textin(ind),
+                self.tm.get_textout(ind),
+                self.tm.get_known_key(ind)
             )
             return result
 
@@ -646,6 +646,7 @@ class Segments:
     """
 
     def __init__(self, project):
+        self.project = project
         self.tm = project._traceManager
         self.trace_container = project._trace_format
         self.data_directory = project.datadirectory
@@ -680,3 +681,8 @@ class Segments:
 
     def __getitem__(self, item):
         return self.tm.traceSegments[item]
+
+    def __repr__(self):
+        _, project_filename = os.path.split(self.project.get_filename())
+        abs_path = os.path.join(self.project.location, project_filename)
+        return 'Segments(num={}, project={}) for project at {}'.format(len(self), self.project, abs_path)
