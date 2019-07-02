@@ -630,10 +630,11 @@ class Segments:
 
     def __iter__(self):
         self.n = 0
+        self.max = len(self) - 1
         return self
 
     def __next__(self):
-        if self.n > len(self):
+        if self.n > self.max:
             raise StopIteration
         result = self.tm.traceSegments[self.n]
         self.n += 1
