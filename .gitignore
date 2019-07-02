@@ -24,10 +24,22 @@ default-data-dir/
 *.d
 *.lst
 *.npy
-hardware/victims/firmware/simpleserial-aes/simpleserial-aes-CW*
+hardware/victims/firmware/simpleserial-*/simpleserial-*-CW*
 hardware/victims/firmware/basic-passwdcheck/basic-passwdcheck-CW*
-hardware/victims/firmware/simpleserial-aes-auth/simpleserial-aes-auth-CW*
 *.csv
 *py.bak
 doc/_build
 doc/make.bat
+
+# Explicit listing of the build artifacts so that they are not included in
+# commits
+hardware/victims/firmware/*/*.elf
+hardware/victims/firmware/*/*.eep
+hardware/victims/firmware/*/*.hex
+hardware/victims/firmware/*/*.lss
+hardware/victims/firmware/*/*.map
+hardware/victims/firmware/*/*.sym
+!hardware/victims/firmware/hal/**
+!hardware/victims/firmware/87c51/**
+
+__pycache__/
