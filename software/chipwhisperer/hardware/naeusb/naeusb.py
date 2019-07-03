@@ -299,6 +299,9 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
                 self.cmdWriteBulk(payload)
             elif cmd == self.FLUSH_INPUT:
                 self.flushInput()
+            elif cmd == self.READ:
+                dlen = payload[0]
+                response = self.read(dlen)
             else:
                 raise ValueError("Unknown Command: %02x"%cmd)
         except Exception as e:
@@ -517,6 +520,9 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         except:
             pass
 
+    def read(self, dbuf, timeout):
+        return self.usbdev().read(self.rep, dbuf, timeout)
+
 class NAEUSB(object):
     """
     USB Interface for NewAE Products with Custom USB Firmware. This function allows use of a daemon backend, as it is
@@ -723,10 +729,11 @@ class NAEUSB(object):
 
         # Flush input buffers in case anything was left
         try:
-            self.usbdev().read(self.rep, 4096, timeout=10)
-            self.usbdev().read(self.rep, 4096, timeout=10)
-            self.usbdev().read(self.rep, 4096, timeout=10)
-            self.usbdev().read(self.rep, 4096, timeout=10)
+            #self.cmdReadMem(self.rep)
+            self.usbtx.read(4096, timeout=10)
+            self.usbtx.read(4096, timeout=10)
+            self.usbtx.read(4096, timeout=10)
+            self.usbtx.read(4096, timeout=10)
         except IOError:
             pass
 
@@ -740,6 +747,9 @@ class NAEUSB(object):
 
         if forreal:
             self.sendCtrl(0x22, 3)
+
+    def read(self, dlen, timeout=2000):
+        self.usbserializer.read(dlen, timeout)
 
     class StreamModeCaptureThread(Thread):
         def __init__(self, serial, dlen, dbuf_temp, timeout_ms=2000):
@@ -766,7 +776,7 @@ class NAEUSB(object):
             logging.debug("Streaming: starting USB read")
             start = time.time()
             try:
-                self.drx = self.serial.usbdev().read(self.serial.rep, self.dbuf_temp, timeout=self.timeout_ms)
+                self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
             except IOError as e:
                 logging.warning('Streaming: USB stream read timed out')
             diff = time.time() - start

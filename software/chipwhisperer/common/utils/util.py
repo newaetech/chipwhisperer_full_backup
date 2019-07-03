@@ -455,7 +455,7 @@ def camel_case_deprecated(func):
     """
 
     def underscore_to_camelcase(value):
-        # .. function author:: Dave Webb: Stack overflow
+    # .. function author:: Dave Webb: Stack overflow
 
         def camelcase():
             yield str.lower
@@ -501,7 +501,9 @@ def get_cw_type(sn=None):
                     name = d['product']
     else:
         name = possible_sn[0]['product']
-    if name == "ChipWhisperer Lite":
+
+    #print(name)
+    if (name == "ChipWhisperer Lite") or (name == "ChipWhisperer CW1200"):
         return scopes.OpenADC
     elif name == "ChipWhisperer Nano":
         return scopes.CWNano

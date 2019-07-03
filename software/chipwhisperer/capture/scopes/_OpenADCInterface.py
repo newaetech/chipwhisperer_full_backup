@@ -332,6 +332,7 @@ class TriggerSettings(util.DisableNewAttr):
         self._timeout = 2
         self._stream_mode = False
         self._support_get_duration = True
+        self._is_pro = False
 
 
         self.disable_newattr()
@@ -346,6 +347,10 @@ class TriggerSettings(util.DisableNewAttr):
         dict['samples']    = self.samples
         dict['decimate']   = self.decimate
         dict['trig_count'] = self.trig_count
+        if self._is_pro:
+            dict['stream_mode'] = self.stream_mode
+
+
 
         return dict
 
@@ -1831,11 +1836,8 @@ class OpenADCInterface(object):
                     logging.warning('Timeout in OpenADC capture(), trigger FORCED')
                     timeout = True
                     self.triggerNow()
-                    util.updateUI()
                     break
 
-                # Give the UI a chance to update (does nothing if not using UI)
-                util.updateUI()
 
             self._stream_rx_bytes, stream_timeout = self.serial.cmdReadStream()
             timeout |= stream_timeout

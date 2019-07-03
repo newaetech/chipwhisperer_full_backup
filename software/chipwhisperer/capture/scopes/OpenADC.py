@@ -187,6 +187,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
 
                 if cwtype == "cw1200":
                     self.decodeIO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.qtadc.sc)
+                    #self.advancedSettings.cwEXTRA.triggermux._set_is_pro(True)
 
                 if cwtype == "cwcrev2":
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
@@ -195,10 +196,13 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
             self.gain = self.qtadc.parm_gain
             self.clock = self.qtadc.parm_clock
 
+            if cwtype == "cw1200":
+                self.adc._is_pro = True
             if self.advancedSettings:
                 self.io = self.advancedSettings.cwEXTRA.gpiomux
                 self.trigger = self.advancedSettings.cwEXTRA.triggermux
                 self.glitch = self.advancedSettings.glitch.glitchSettings
+
 
             self.disable_newattr()
             self._is_connected = True
