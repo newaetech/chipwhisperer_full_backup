@@ -1,6 +1,9 @@
 import unittest
 import chipwhisperer as cw
 import numpy as np
+import os
+from chipwhisperer.common.api.ProjectFormat import ensure_cwp_extension
+import shutil
 
 
 class TestTraces(unittest.TestCase):
@@ -39,6 +42,26 @@ class TestTraces(unittest.TestCase):
 
         # do allow slice without step
         self.assertEqual('hello', traces[-2:][-1][3])
+
+
+class TestProjectFormat(unittest.TestCase):
+
+    def setUp(self):
+        self.project_name = 'test_project'
+        print('hello')
+
+    def tearDown(self):
+        try:
+            os.remove(os.path.join(cw.PROJECT_DIR, ensure_cwp_extension(self.project_name)))
+            shutil.rmtree(os.path.join(cw.PROJECT_DIR, self.project_name + '_data'))
+        except FileNotFoundError:
+            pass
+
+    def test_create_project(self):
+        project = cw.create_project(self.project_name, overwrite=True)
+        self.assertTrue(os.path.isdir(os.path.join(cw.PROJECT_DIR, self.project_name + '_data')))
+        project.save()
+        self.assertTrue(os.path.exists(os.path.join(cw.PROJECT_DIR, ensure_cwp_extension(self.project_name))))
 
 
 if __name__ == '__main__':

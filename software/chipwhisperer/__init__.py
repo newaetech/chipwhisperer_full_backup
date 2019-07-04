@@ -94,6 +94,9 @@ def create_project(filename, overwrite=False):
     if os.path.isfile(filename) and (overwrite == False):
         raise OSError("File " + filename + " already exists")
 
+    if not os.path.isabs(filename):
+        filename = os.path.join(PROJECT_DIR, filename)
+
     proj = project.Project()
     proj.setFilename(filename)
 
