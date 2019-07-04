@@ -44,13 +44,11 @@ class ChipWhispererSAD(object):
 
     Example::
 
-        scope = cw.scope()
-        ...
         trace, ret = cw.capture_trace(scope, data, text, key)
-        cw.SAD.threshold = 5000
         cw.SAD.reference = trace[400:528]
-        cw.trigger
+        cw.SAD.threshold = 1000
         cw.SAD.start()
+        cw.trigger.module = 'SAD'
 
         #SAD trigger active
         trace, ret = cw.capture_trace(scope, data, text, key)
