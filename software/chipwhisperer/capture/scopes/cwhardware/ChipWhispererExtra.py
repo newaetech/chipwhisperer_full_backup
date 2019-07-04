@@ -500,8 +500,6 @@ class GPIOSettings(util.DisableNewAttr):
         raise NotImplementedError()
 
 class TriggerSettings(util.DisableNewAttr):
-    # .. todo:: this module should include SAD/UART settings for CW1200
-
     def __init__(self, cwextra):
         self.cwe = cwextra
 
@@ -512,6 +510,7 @@ class TriggerSettings(util.DisableNewAttr):
             'tio4': self.cwe.PIN_RTIO4,
         }
 
+        self.last_module = "basic"
         if self.cwe.hasAux:
             self.supported_tpins['sma'] = self.cwe.PIN_FPA
 
@@ -665,11 +664,9 @@ class TriggerSettings(util.DisableNewAttr):
         data and SAD triggers are available too.
 
         Available trigger modules:
-         * "basic": Trigger on a logic level or edge
+         * 'basic': Trigger on a logic level or edge
 
-        :Getter:  Return the active trigger module
-
-        .. todo:: add support for CW1200 trigger modules; read-only for now
+        :Getter: Returns 'basic'
         """
         return "basic"
 
@@ -682,6 +679,71 @@ class TriggerSettings(util.DisableNewAttr):
         self.triggers("tio1 NAND tio3")
         self.triggers("tio1 NAND tio2 NAND")
         self.triggers("tio1 AND tio1")
+
+class ProTrigger(TriggerSettings):
+    def _dict_repr(self):
+        dict = super()._dict_repr()
+        dict['module'] = self.module
+        return dict
+
+    @property
+    def module(self):
+        """The trigger module in use.
+
+        The trigger modules available depend on the hardware. On the CWLite,
+        only the basic trigger module can be used; on the CW1200, the serial
+        data and SAD triggers are available too.
+
+        Available trigger modules:
+         * 'basic': Trigger on a logic level or edge
+         * 'SAD':   Trigger from SAD module
+
+
+        :Getter: Return the active trigger module
+
+        :Setter: Sets the active trigger module
+
+        .. todo:: add support for CW1200 serial data trigger
+        .. todo:: Fix getter so that we don't have to store the module anymore
+
+        Raises:
+            ValueError: module isn't one of the available strings
+        """
+        '''
+        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
+                                       Validate=False, maxResp=1)
+        module = resp[0] & 0xF8
+        if module == self.cwe.MODULE_BASIC:
+            return "basic"
+        elif module == self.cwe.MODULE_SADPATTERN:
+            return "SAD"
+        elif module == self.cwe.MODULE_DECODEIO:
+            return "DECODEIO"
+        else:
+            return "Unknown"
+        '''
+        return self.last_module
+
+    @module.setter
+    def module(self, mode):
+        if mode == "basic":
+            module = self.cwe.MODULE_BASIC
+        elif mode == "SAD":
+            module = self.cwe.MODULE_SADPATTERN
+        elif mode == "DECODEIO":
+            module = self.cwe.MODULE_DECODEIO
+            raise NotImplementedError("Serial decode module not yet available")
+        else:
+            raise ValueError("Invalid mode {}. Must be 'basic' or 'SAD'")
+
+        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
+                                       Validate=False, maxResp=1)
+        resp[0] &= 0xF8
+        resp[0] |= module
+        resp = self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD,
+                                       resp)
+        self.last_module = mode
+
 
 
 class SADTrigger(util.DisableNewAttr):
@@ -782,6 +844,7 @@ class CWExtraSettings(object):
         #Add special single-class items used as higher-level API
         self.gpiomux = GPIOSettings(self)
         self.triggermux = TriggerSettings(self)
+        self.protrigger = ProTrigger(self)
 
 
     def _setGPIOState(self, state, IONumber):

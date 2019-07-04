@@ -27,10 +27,11 @@
 import logging
 import struct
 import base64
+import copy
 
 import numpy as np
-from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
-from chipwhisperer.common.results.base import ResultsBase
+from collections import OrderedDict
+from chipwhisperer.common.utils import util
 
 sadcfgaddr  = 53
 saddataaddr = 54
@@ -38,16 +39,28 @@ CODE_READ   = 0x80
 CODE_WRITE  = 0xC0
 
 
-class ChipWhispererSAD(Parameterized):
-    """
-    Communicates and drives with the Sum of Absolute Differences (SAD) Module inside the ChipWhisperer System. You
-    need to configure the trigger module as active & set the trigger polarity to "high" for this to work.    
+class ChipWhispererSAD(object):
+    """Communicates with the SAD module inside the CW Pro
+
+    Example::
+
+        scope = cw.scope()
+        ...
+        trace, ret = cw.capture_trace(scope, data, text, key)
+        cw.SAD.threshold = 5000
+        cw.SAD.reference = trace[400:528]
+        cw.trigger
+        cw.SAD.start()
+
+        #SAD trigger active
+        trace, ret = cw.capture_trace(scope, data, text, key)
+
     """
     _name = 'SAD Trigger Module'
     STATUS_RUNNING_MASK = 1 << 3
     STATUS_RESET_MASK = 1 << 0
     STATUS_START_MASK = 1 << 1
-             
+
     def __init__(self, oa):
 
         self.oldlow = None
@@ -55,107 +68,70 @@ class ChipWhispererSAD(Parameterized):
         self.oa = oa
         self.sadref = [0]
 
-        try:
-            # Update SAD calculation when data changes
-            ResultsBase.registeredObjects["Trace Output Plot"].dataChanged.connect(self.dataChanged)
-            outwid = ResultsBase.registeredObjects["Trace Output Plot"]
-            rangewidget = {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'default':(0, 0),
-                                       'graphwidget':outwid, 'action':self.updateSADTraceRef, 'fixedsize':128}
-        except KeyError:
-            rangewidget = {'name':'Point Range', 'key':'pointrng', 'type':'range', 'limits':(0, 0), 'value':(0, 0), 'default':(0, 0),
-                                       'action':self.updateSADTraceRef, 'fixedsize':128}
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['threshold'] = self.threshold
+        dict['reference'] = self.reference
+        return dict
 
-        self.params = Parameter(name=self.getName(), type='group')
-        self.params.addChildren([
-            # {'name':'Open SAD Viewer', 'type':'action'},
-            {'name':'SAD Ref From Captured', 'key':'sad', 'type':'group', 'children':[
-                rangewidget,
-                {'name':'Set SAD Reference from Current Trace', 'key':'docopyfromcapture', 'type':'action', 'action':self.copyFromCaptureTrace},
-                {'name':'SAD Reference Trace', 'key':'sadref', 'type':'str', 'value':'', 'visible':False, 'action':self.setTrace},
-                {'name':'SAD Reference vs. Cursor', 'key':'sadrefcur', 'type':'int', 'value':0, 'limits':(-1, 100E6), 'readonly':True},
-            ]},
-            {'name':'SAD Threshold', 'type':'int', 'limits':(0, 100000), 'default':0, 'set':self.setThreshold, 'get':self.getThreshold}
-        ])
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
 
-    def dataChanged(self, data, offset):
-        """Called when data in the trace window has changed. Used to update the limits for the point selection dialog."""
+    def __str__(self):
+        return self.__repr__()
 
-        low = offset
-        up = offset + len(data) - 1
+    @property
+    def threshold(self):
+        """ The threshold for the SAD trigger.
 
-        if self.oldlow != low or self.oldup != up:
-            self.oldlow = low
-            self.oldup = up
-            self.findParam(['sad', 'pointrng']).setLimits((low, up))
-            self.findParam(['sad', 'pointrng']).setValue((low, min(up, low + 128)))
+        The threshold has a maximum value of 100 000.
 
-        self.updateSADTraceRef()
+        :Getter: Return the current threshold
 
-    def getCaptueTraceRef(self):
-        """ Get the reference data for SAD algorithm from the api trace window """
+        :Setter: Set the current threshold
 
-        try:
-            waveformWidget = ResultsBase.registeredObjects["Trace Output Plot"]
-        except KeyError:
-            logging.warning('SAD Trigger: Trace Output Plot not running, no data source')
-            return [0.0]*128
-        pstart = self.findParam(['sad', 'pointrng']).getValue()[0] - waveformWidget.lastStartOffset
-        pend = self.findParam(['sad', 'pointrng']).getValue()[1] - waveformWidget.lastStartOffset
-        data = waveformWidget.lastTraceData[pstart:pend]
+        Raises:
+            ValueError: The user attempted to set a threshold above 100 000
+            IOError: User attempted to set the threshold before the reference
+                waveform.
+        """
+        return self.getThreshold()
+
+    @threshold.setter
+    def threshold(self, value):
+        self.setThreshold(value)
+
+    @property
+    def reference(self):
+        """Set the reference data for the SAD Trigger.
+
+        The reference must be 128 samples long. Through this interface,
+        it is represented as a numpy array of floats (the same as
+        trace data).
+
+        On the hardware end, it is a 1024 bit unsigned integer.
+
+        :Getter: Gets the currently set SAD reference
+
+        :Setter: Sets the SAD reference
+
+        Raises:
+            ValueError: Data not 128 samples long
+        """
+        return np.array(self.sadref)
+
+
+    @reference.setter
+    def reference(self, data):
+        self.set_reference(data)
+
+    def set_reference(self, data):
         data = np.array(data)
         data = (data + 0.5) * 1024
-        return data
-
-    def packTrace(self, data):
-        # Pack a reference trace into a struct
-        # Returns a base64 string
-        if(len(data) != 128):
-            logging.error("SAD trigger: expected length 128 reference; got %d"%len(data))
-            return None
-
-        packed = base64.b64encode(struct.pack("f"*128, *data))
-        return packed
-
-    def unpackTrace(self, savedData):
-        # Unpack a base64-encoded trace
-        try:
-            data = struct.unpack("f"*128, base64.b64decode(savedData))
-        except struct.error:
-            logging.error("SAD trigger: could not unpack saved trace")
-            return None
-        return np.array(data)
-
-    def setTrace(self, param=None):
-        # Update the trace with a new base64-encoded value
-        # Unpack the trace
-        packedData = param.getValue()
-        data = self.unpackTrace(packedData)
-
-        # Use the unpacked trace as the new waveform
-        self.sadref = data.copy()
+        self.sadref = data
         self.setRefWaveform(data)
 
 
-    def copyFromCaptureTrace(self, _=None):
-        """ Send reference data to hardware from the trace window """
-        ds_param = Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Downsample Factor'])
-        if ds_param is not None and ds_param.getValue() != 1:
-            logging.warning("OpenADC downsampling is enabled - SAD trigger will not work")
-
-        data = self.getCaptueTraceRef()
-
-        if len(data) != 128:
-            logging.warning('Reference IS NOT 128 samples long, got %d' % len(data))
-
-        self.findParam(['sad', 'sadref']).setValue(self.packTrace(data))
-        
-    def updateSADTraceRef(self, ignored=None):
-        """ Update the calculated SAD value parameter """
-
-        data = self.getCaptueTraceRef()
-        diff = data - self.sadref
-        diff = sum(abs(diff))
-        self.findParam(['sad','sadrefcur']).setValue(diff, ignoreReadonly=True)
 
     def reset(self):
         """ Reset the SAD hardware block. The ADC clock must be running! """
@@ -164,7 +140,7 @@ class ChipWhispererSAD(Parameterized):
         data[0] = 0x01
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data)
 
-        if self.checkStatus():
+        if self.check_status():
             raise IOError("SAD Reset in progress, but SAD reports still running. Is ADC Clock stopped?")
 
         data[0] = 0x00
@@ -179,7 +155,7 @@ class ChipWhispererSAD(Parameterized):
         data[0] = 0x00
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data, Validate=False)
 
-    def checkStatus(self):
+    def check_status(self):
         """ Check if the SAD module is running & outputting valid data """
 
         data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
@@ -187,6 +163,8 @@ class ChipWhispererSAD(Parameterized):
             return False
         else:
             return True
+
+    checkStatus = util.camel_case_deprecated(check_status)
 
     def getThreshold(self):
         """ Get the threshold. When the SAD output falls below this threshold the system triggers """
@@ -197,17 +175,18 @@ class ChipWhispererSAD(Parameterized):
         threshold |= data[3] << 16
         return threshold
 
-    @setupSetParam("SAD Threshold")
     def setThreshold(self, threshold):
         """ Set the threshold. When the SAD output falls below this threshold the system triggers """
 
+        if (threshold > 100000) or (threshold < 0):
+            raise ValueError("Invalid threshold {}. Must be in range (0, 100000)".format(threshold))
         data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
         data[1] = threshold & 0xff
         data[2] = (threshold >> 8) & 0xff
         data[3] = (threshold >> 16) & 0xff
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data, Validate=False)
 
-        if self.checkStatus() == False:
+        if self.check_status() == False:
             raise IOError("SAD Threshold set, but SAD compare not running. No valid trigger will be present. Did you load a reference waveform?")
 
     def setRefWaveform(self, dataRef):

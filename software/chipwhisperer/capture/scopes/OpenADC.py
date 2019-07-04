@@ -183,7 +183,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
                 util.chipwhisperer_extra = self.advancedSettings
 
                 if cwtype == "cwrev2" or cwtype == "cw1200":
-                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.qtadc.sc)
+                    self.SAD = ChipWhispererSAD.ChipWhispererSAD(self.qtadc.sc)
 
                 if cwtype == "cw1200":
                     self.decodeIO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.qtadc.sc)
@@ -202,6 +202,8 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
                 self.io = self.advancedSettings.cwEXTRA.gpiomux
                 self.trigger = self.advancedSettings.cwEXTRA.triggermux
                 self.glitch = self.advancedSettings.glitch.glitchSettings
+                if cwtype == "cw1200":
+                    self.trigger = self.advancedSettings.cwEXTRA.protrigger
 
 
             self.disable_newattr()
@@ -288,6 +290,8 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         dict['trigger'] = self.trigger._dict_repr()
         dict['io']      = self.io._dict_repr()
         dict['glitch']  = self.glitch._dict_repr()
+        if self._getCWType() == "cw1200":
+            dict['SAD'] = self.SAD._dict_repr()
 
         return dict
 
