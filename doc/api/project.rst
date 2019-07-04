@@ -10,12 +10,14 @@ new session.
 Initialization
 --------------
 
-A project can be accessed one of two ways. It can either be loaded from a disk or
-created new. There are two functions that provide this functionality.
+A project can be accessed one of two ways. It can either be loaded from storage,
+created new, or imported.
 
 .. autofunction:: chipwhisperer.open_project
 
 .. autofunction:: chipwhisperer.create_project
+
+.. autofunction:: chipwhisperer.import_project
 
 
 Usage
@@ -27,11 +29,7 @@ The :func:`open_project <chipwhisperer.open_project>` and the
 
 .. autoclass:: chipwhisperer.common.api.ProjectFormat.Project
 
-    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.new_segment
-
     .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.get_trace_format
-
-    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.get_new_trace_segment
 
     .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.get_filename
 
@@ -40,5 +38,12 @@ The :func:`open_project <chipwhisperer.open_project>` and the
     .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.export
 
     .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.location
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.traces
+
+.. autoclass:: chipwhisperer.common.api.ProjectFormat.Traces
+
+    .. automethod:: chipwhisperer.common.api.ProjectFormat.Traces.
+
 
 
