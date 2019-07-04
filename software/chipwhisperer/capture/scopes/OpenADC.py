@@ -107,7 +107,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         * tio2 = serial tx
 
         .. versionadded:: 5.1
-        Added default setup for OpenADC
+            Added default setup for OpenADC
         """
         self.gain.db = 25
         self.adc.samples = 5000
