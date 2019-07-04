@@ -697,6 +697,7 @@ class ProTrigger(TriggerSettings):
         Available trigger modules:
          * 'basic': Trigger on a logic level or edge
          * 'SAD':   Trigger from SAD module
+         * 'DECODEIO': Trigger from decode_IO module
 
 
         :Getter: Return the active trigger module
@@ -732,9 +733,8 @@ class ProTrigger(TriggerSettings):
             module = self.cwe.MODULE_SADPATTERN
         elif mode == "DECODEIO":
             module = self.cwe.MODULE_DECODEIO
-            raise NotImplementedError("Serial decode module not yet available")
         else:
-            raise ValueError("Invalid mode {}. Must be 'basic' or 'SAD'")
+            raise ValueError("Invalid mode {}. Must be 'basic', 'SAD', or 'DECODEIO'")
 
         resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
                                        Validate=False, maxResp=1)
