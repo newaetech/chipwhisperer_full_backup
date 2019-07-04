@@ -34,6 +34,7 @@ from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import dict_to_str
 from collections import OrderedDict
+import time
 
 class OpenADC(ScopeTemplate, util.DisableNewAttr):
     """OpenADC scope object.
@@ -112,13 +113,16 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         self.adc.samples = 5000
         self.adc.offset = 0
         self.adc.basic_mode = "rising_edge"
-        self.clock.clkgen_freq = 7.37E6
-        self.clock.adc_src = "clkgen_x4"
+        self.clock.clkgen_freq = 7.37e6
         self.trigger.triggers = "tio4"
         self.io.tio1 = "serial_rx"
         self.io.tio2 = "serial_tx"
         self.io.hs2 = "clkgen"
 
+        self.clock.adc_src = "clkgen_x4"
+        while not self.clock.clkgen_locked:
+            time.sleep(0.05)
+            self.clock.resetDcms()
     def dcmTimeout(self):
         if self.connectStatus:
             try:
@@ -172,9 +176,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         if self.scopetype is not None:
             self.scopetype.con(sn)
 
-            # TODO Fix this hack
-            if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
-                self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
+            self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
 
             cwtype = self._getCWType()
             if cwtype != "":
