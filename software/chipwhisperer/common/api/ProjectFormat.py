@@ -97,15 +97,12 @@ class ConfigObjProj(ConfigObj):
 class Project(Parameterized):
     """Class describing an open ChipWhisperer project.
 
-    Only use methods that have documentation.
-
     Basic capture usage::
 
         import chipwhisperer as cw
-        proj = cw.create_project("project.cwp")
-        segment = proj.get_new_trace_segment()
-        # capture a trace
-        segment.add_trace(trace_data, plaintext, ciphertext, key)
+        proj = cw.create_project("project")
+        trace = (trace_data, plaintext, ciphertext, key)
+        proj.traces.append(trace)
         proj.save() #closes the project, make sure you're done with it
 
     Basic analyzer usage::
@@ -118,7 +115,19 @@ class Project(Parameterized):
         #run attack
 
     Use a trace_manager when analyzing traces, since that allows analyzer to
-    work with multiple trace segments
+    work with multiple trace segments.
+
+    Project api:
+     * :attr:`project.traces <Traces>`
+     * :attr:`project.location <.Project.location>`
+     * :attr:`project.waves <.Project.waves>`
+     * :attr:`project.textins <.Project.textins>`
+     * :attr:`project.textouts <.Project.textouts>`
+     * :attr:`project.keys <.Project.keys>`
+     * :meth:`project.get_filename() <.Project.get_filename>`
+     * :meth:`project.trace_manager() <.Project.trace_manager>`
+     * :meth:`project.save() <.Project.save>`
+     * :meth:`project.export() <.Project.export>`
     """
     untitledFileName = os.path.normpath(os.path.join(Settings().value("project-home-dir"), "tmp/default.cwp"))
 
@@ -150,8 +159,12 @@ class Project(Parameterized):
         self.setProgramName(prog_name)
         self.setProgramVersion(prog_ver)
 
-        self.segments = Segments(self)
-        self.traces = Traces(self)
+        self._segments = Segments(self)
+        self._traces = Traces(self)
+        self._keys = IndividualIterable(self._traceManager.get_known_key, self._traceManager.num_traces)
+        self._textins = IndividualIterable(self._traceManager.get_textin, self._traceManager.num_traces)
+        self._textouts = IndividualIterable(self._traceManager.get_textout, self._traceManager.num_traces)
+        self._waves = IndividualIterable(self._traceManager.get_trace, self._traceManager.num_traces)
 
         if __debug__:
             logging.debug('Created: ' + str(self))
@@ -251,10 +264,10 @@ class Project(Parameterized):
 
 
     def get_filename(self):
-        """ Gets the filename associated with the project
+        """Gets the filename associated with the project.
 
         Returns:
-            Filename of project
+            Filename of the project config file ending with ".cwp".
         """
         return self.filename
 
@@ -374,7 +387,10 @@ class Project(Parameterized):
         self._traceManager.saveProject(self.config, self.filename)
 
     def save(self):
-        """ Saves and closes the project
+        """Saves the project.
+
+        Writes the project to the disk. Before this is called your data
+        is not saved.
         """
         if self.filename is None:
             return
@@ -446,7 +462,7 @@ class Project(Parameterized):
         Example::
 
             print(project.location)
-            'C:\\Users\\User\\path\\to\\projects'
+            '/path/to/the/directory/containing/this/project'
 
         :Getter:
             (str) Returns the file path of the projects parent directory.
@@ -492,22 +508,97 @@ class Project(Parameterized):
 
         return export_file_path
 
+    @property
+    def traces(self):
+        """The interface to all traces contained in the project.
+
+        Instance of :class:`.Traces`.
+        """
+        return self._traces
+
+    @property
+    def segments(self):
+        """The interface to all segments contained in the project.
+
+        Instance of :class:`.Segments`.
+        """
+        return self._segments
+
+    @property
+    def keys(self):
+        """Iterable for working with only the known keys.
+
+        Each item in the iterable is a byte array.
+
+        Supports iterating, indexing, and slicing::
+
+            for key in my_project.keys:
+                # do something
+        """
+        return self._keys
+
+    @property
+    def textins(self):
+        """Iterable for working with only the text in.
+
+        Each item in the iterable is a byte array.
+
+        Supports iterating, indexing, and slicing::
+
+            for textin in my_project.textins:
+                # do something
+        """
+        return self._textins
+
+    @property
+    def textouts(self):
+        """Iterable for working with only the text out.
+
+        Each item in the iterable is a byte array.
+
+        Supports iterating, indexing, and slicing::
+
+            for textout in my_project.textouts:
+                # do something
+        """
+        return self._textouts
+
+    @property
+    def waves(self):
+        """Iterable for working with only the trace data.
+
+        Each item in the iterable is a numpy array.
+
+        Supports iterating, indexing, and slicing::
+
+            for wave in my_project.waves:
+                # do something
+        """
+        return self._waves
+
 
 class Traces:
     """Contains the trace interface for the project.
 
     The class adds support for indexing, slicing and iterating
-    of project traces.
+    of project traces. To add traces to the project use
+    :meth:`append <.Traces.append>`. ::
 
-    To iterate through all enabled traces use::
+        for trace in my_traces:
+            my_project.traces.append(trace)
+
+    To iterate through all traces use::
+
         for trace, textin, textout, knownkey in my_project.traces:
             # Something amazing...
 
     Indexing is supported::
+
         trace_of_interest = my_project.traces[99]
 
-    So is slicing::
-        interesting_traces = my_project.traces[20:35:2]
+    So is slicing, however, a step is not supported::
+
+        interesting_traces = my_project.traces[20:35]
 
     Args:
         project: The project class where traces will be stored.
@@ -544,12 +635,16 @@ class Traces:
     def max(self):
         """Max index during iteration."""
         return self.tm.num_traces() - 1
+    
+    @property
+    def keys(self):
+        return self._keys
 
     def append(self, trace):
         """Append a tuple containing the trace and related operation information.
 
         Args:
-            trace: A tuple of length four (the trace, text in, text out, key).
+            trace: A tuple of length four (trace data, text in, text out, and key).
         """
         if self.cur_trace_num > self.seg_ind_max:
             self.cur_seg = self.project.segments.new()
@@ -655,6 +750,11 @@ class Segments:
         return len(self.tm.traceSegments)
 
     def new(self):
+        """Used to get a new empty trace container (segment).
+        
+        Returns:
+            (TraceContainer) A new empty instance of a trace container.
+        """
         seg = copy.copy(self.trace_container)
         seg.clear()
         start_time = datetime.now()
@@ -686,3 +786,46 @@ class Segments:
         _, project_filename = os.path.split(self.project.get_filename())
         abs_path = os.path.join(self.project.location, project_filename)
         return 'Segments(num={}, project={}) for project at {}'.format(len(self), self.project, abs_path)
+
+
+class IndividualIterable:
+    
+    def __init__(self, getter_func, trace_num_func):
+        self.getter = getter_func
+        self.trace_num_func = trace_num_func
+
+    @property
+    def max(self):
+        return self.trace_num_func() - 1
+
+    def __iter__(self):
+        self.n = 0
+        return self
+
+    def __next__(self):
+        if self.n > self.max:
+            raise StopIteration
+
+        self.n += 1
+        return self.getter(self.n)
+
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            ind = item
+            if ind < 0:
+                ind = self.max + ind + 1
+
+            if not (0 <= ind <= self.max):
+                raise IndexError('Index outside of range ({}, {})'.format(0, self.max))
+
+            return self.getter(ind)
+
+        elif isinstance(item, slice):
+            indices = item.indices(self.max+1)
+            result = []
+            for i in range(*indices):
+                result.append(self.getter(i))
+            return result
+        else:
+            raise TypeError('Indexing by integer or slice only')
+

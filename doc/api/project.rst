@@ -10,7 +10,7 @@ new session.
 Initialization
 --------------
 
-A project can be accessed one of two ways. It can either be loaded from storage,
+A project can be accessed a few different ways. It can either be loaded from storage,
 created new, or imported.
 
 .. autofunction:: chipwhisperer.open_project
@@ -29,7 +29,17 @@ The :func:`open_project <chipwhisperer.open_project>` and the
 
 .. autoclass:: chipwhisperer.common.api.ProjectFormat.Project
 
-    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.get_trace_format
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.location
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.traces
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.waves
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.textins
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.textouts
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.keys
 
     .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.get_filename
 
@@ -37,13 +47,11 @@ The :func:`open_project <chipwhisperer.open_project>` and the
 
     .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.export
 
-    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.location
-
-    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.traces
+    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.save
 
 .. autoclass:: chipwhisperer.common.api.ProjectFormat.Traces
 
-    .. automethod:: chipwhisperer.common.api.ProjectFormat.Traces.
+    .. automethod:: chipwhisperer.common.api.ProjectFormat.Traces.append
 
 
 
