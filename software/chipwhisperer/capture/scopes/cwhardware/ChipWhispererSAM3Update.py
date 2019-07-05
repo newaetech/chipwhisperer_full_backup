@@ -77,6 +77,7 @@ class SAMFWLoader(object):
         Raises:
             Warning: really_enter=False and user hasn't seen this warning
                 before
+
         """
         if not really_enter and not self._warning_seen:
             self._warning_seen = True
@@ -103,6 +104,8 @@ class SAMFWLoader(object):
         Args:
             port (str): Serial port that the ChipWhisperer bootloader is on
             fw_path (str): Path to firmware.
+
+        ..todo:: Add fw_path=None and get firmware from python zip
         """
         sam = Samba()
         print("Opening firmware...")
