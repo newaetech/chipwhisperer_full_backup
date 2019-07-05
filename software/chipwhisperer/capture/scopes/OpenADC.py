@@ -120,9 +120,15 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         self.io.hs2 = "clkgen"
 
         self.clock.adc_src = "clkgen_x4"
+
+        count = 0
         while not self.clock.clkgen_locked:
-            time.sleep(0.05)
+            time.sleep(0.1)
             self.clock.resetDcms()
+            count += 1
+
+            if count > 100:
+                raise OSError("Could not lock DCM: {}".format(self))
     def dcmTimeout(self):
         if self.connectStatus:
             try:

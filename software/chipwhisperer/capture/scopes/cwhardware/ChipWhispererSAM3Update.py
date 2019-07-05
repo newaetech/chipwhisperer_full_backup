@@ -38,14 +38,46 @@ from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
 #The firmware files, may still be useful
 from chipwhisperer.hardware.firmware.cwlite import getsome as cwlite_getsome
 
+from chipwhisperer.common.utlis.util import camel_case_deprecated
+
 class SAMFWLoader(object):
+    """ Object for easy reprogramming of ChipWhisperers
+
+    Despite the name of the file, this will work with the Lite, the Pro, and
+    the Nano. If the ChipWhisperer has already been erased, pass None instead
+    of the scope object and skip the enter_bootloader() call.
+
+    Example:: python
+
+        from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update
+            import SAMFWLoader
+        prog = SAMFWLoader(scope)
+        prog.enter_bootloader(really_enter=True)
+        # Bossa appears on COM29
+        prog.program('COM29', "/path/to/firmware")
+    """
     def __init__(self, scope=None):
-        # other class gets NAEUSB object, so we need to get it as well
         if scope:
             self.usb = scope._getNAEUSB()
         self._warning_seen = False
 
-    def enterBootloader(self, really_enter=False):
+    def enter_bootloader(self, really_enter=False):
+        """ Enters the bootloader of the ChipWhisperer by erasing the flash
+
+        Only use this if you want to erase the scope's firmware (i.e. the
+        ChipWhisperer Lite). This does NOT erase the firmware of a target (
+        i.e. an STM32 target). Will raise a Warning the first time an erase
+        is attempted and really_enter=False.
+
+        Args:
+            really_enter (bool, optional): If True, enter the bootloader
+                without ever raising a warning. If False, raise a warning
+                if this is the user's first time calling it.
+
+        Raises:
+            Warning: really_enter=False and user hasn't seen this warning
+                before
+        """
         if not really_enter and not self._warning_seen:
             self._warning_seen = True
             raise Warning("""This method puts the SAM3U into bootloader mode
@@ -66,6 +98,12 @@ class SAMFWLoader(object):
             self.usb.enterBootloader(True)
 
     def program(self, port, fw_path):
+        """ Program the ChipWhisperer with new firmware.
+
+        Args:
+            port (str): Serial port that the ChipWhisperer bootloader is on
+            fw_path (str): Path to firmware.
+        """
         sam = Samba()
         print("Opening firmware...")
         fw_data = open(fw_path, "rb").read()

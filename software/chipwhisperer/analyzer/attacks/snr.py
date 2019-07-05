@@ -26,6 +26,7 @@
 #=================================================
 
 import numpy as np
+from chipwhisperer.common.api.ProjectFormat import Project
 
 def calculate_snr(trace_manager, leak_model, bnum=0, db=True, trace_data=None, textin_data=None, textout_data=None, key_data=None):
     """Calculate the SNR based on the leakage model. Uses same leakage model as the CPA attack."""
@@ -38,6 +39,9 @@ def calculate_snr(trace_manager, leak_model, bnum=0, db=True, trace_data=None, t
     hwarray = []
 
     if trace_manager:
+
+        if isinstance(trace_manager, Project):
+            trace_manager = trace_manager.trace_manager()
         ntrace = trace_manager.num_traces()
         npoints = trace_manager.num_points()
     else:
