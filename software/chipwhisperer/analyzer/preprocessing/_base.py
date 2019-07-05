@@ -32,6 +32,7 @@ from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObser
 from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import camel_case_deprecated
+from chipwhisperer.common.api.ProjectFormat import Project
 
 class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     """
@@ -50,8 +51,12 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
         else:
             TraceSource.__init__(self, name=name)
         AutoScript.__init__(self)
+        if isinstance(traceSource, Project):
+            traceSource = traceSource.trace_manager()
         self.setTraceSource(traceSource, blockSignal=True)
         if traceSource:
+            #until new analyzer is implemented
+
             traceSource.sigTracesChanged.connect(self.sigTracesChanged.emit)  # Forwards the traceChanged signal to the next observer in the chain
         self.getParams().addChildren([
                  {'name':'Enabled', 'key':'enabled', 'type':'bool', 'default':self._getEnabled(), 'get':self._getEnabled, 'set':self._setEnabled}
