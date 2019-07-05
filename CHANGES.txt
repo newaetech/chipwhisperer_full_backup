@@ -1,9 +1,28 @@
-V5.0.2:
--New tutorial (Fault_5-RSA_Fault_Attack)
--New tutorial (Fault_2-Introduction_to_Vcc_Glitch_Attacks)
+V5.1.0:
+-New tutorials:
+    -(Fault_5-RSA_Fault_Attack)
+    -(Fault_2-Introduction_to_Vcc_Glitch_Attacks)
+    -(PA_DPA_3-AES_DPA_Attack)
+-Scope updates:
+    -Added default_setup() method
+    -cw.scope() can now autodetect scope type
+    -CWPro only features updated to work with API
+-Project updates:
+    -Major project API updates
+    -New project format
+-Key text pair interface updated
+-Added cw.capture_trace()
+-Moved Jupyter to Submodule in top of project
+-Separated requirements.txt into Jupyter (in Jupyter submodule) and non Jupyter files
+-Changed to snake_case instead of camelCase
+-Added Sphinx documentation
+-API now documented with Google Style Guide
+-Many tutorial changes to reflect API changes
 -Changed tutorials to use C preprocessor to change firmware rather than via awk
+-C firmware CRYPTO_TARGET no longer defaults to AVRCRYPTOLIB
 -CW308_AURIX clock and regulator fixes
 -Fixed generate_firmware_files.py for python3
+
 
 V5.0.1:
 -Fixed project loading
