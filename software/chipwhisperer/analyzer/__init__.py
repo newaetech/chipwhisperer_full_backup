@@ -4,6 +4,7 @@ from chipwhisperer.analyzer import preprocessing
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES128
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128leakage
 from chipwhisperer.common.utils.util import camel_case_deprecated
+from chipwhisperer.common.api.ProjectFormat import Project
 
 def cpa(trace_source, leak_model = None, algorithm=cpa_algorithms.Progressive):
     """Create a CPA attack object with sane defaults
@@ -37,7 +38,12 @@ def cpa(trace_source, leak_model = None, algorithm=cpa_algorithms.Progressive):
     from chipwhisperer.analyzer.attacks.cpa import CPA
     attack = CPA()
     attack.set_analysis_algorithm(algorithm, leak_model)
-    attack.setTraceSource(trace_source) #impossible to change because of param
+
+    #until new analyzer is implemented
+    if isinstance(trace_source, Project):
+        trace_source = trace_source.trace_manager()
+
+    attack.setTraceSource(trace_source)
     attack.set_trace_start(0)
     attack.set_traces_per_attack(trace_source.num_traces())
     attack.set_iterations(1)
