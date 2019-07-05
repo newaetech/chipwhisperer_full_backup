@@ -1,6 +1,6 @@
-*****************************
-ChipWhisperer's Documentation
-*****************************
+*************
+ChipWhisperer
+*************
 
 After installing ChipWhisperer and setting up your hardware run:
 

@@ -1,8 +1,8 @@
 .. _sec-installing:
 
-**********
+##########
 Installing
-**********
+##########
 
 You get your choice of installing ChipWhisperer and its prerequisites: the easy way
 or the hard way.
@@ -25,10 +25,6 @@ Advanced
 .. toctree::
     :maxdepth: 2
     :hidden:
+    :glob:
 
-    installing/virtual-machine
-    installing/windows-installer
-    installing/linux-manual
-    installing/windows-manual
-    installing/mac-manual
-    installing/repository-install
+    installing/*
