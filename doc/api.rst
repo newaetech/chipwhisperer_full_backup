@@ -1,8 +1,46 @@
+.. _sec-api:
+
+***
+API
+***
+
+This is where the documentation for the public API functions, and classes lives.
+
+
+.. _sec-scope:
+
+Scope
+=====
+
+The :func:`chipwhisperer.scope` API function creates and returns a scope object
+based on the supplied *type* argument. The are two currently supported classes for the
+type argument:
+
+ * :ref:`sec-scope-openadc`
+ * :ref:`sec-scope-cwnano`
+
+The **OpenADC** scope provides support for the *ChipWhisperer Lite* and the
+*ChipWhisperer Pro*, and the **CWNano** scope provides support for the
+*ChipWhisperer Nano*.
+
+The **scope** object provides the API for configuring the capture side of the
+hardware (the scope). To create an instance of a connected scope use::
+
+    import chipwhisperer as cw
+    scope = cw.scope()
+
+This will return a connected instance of one of the scope types or raise an
+exception. If no scope type is given the function will try to determine the scope
+type automatically.
+
+.. autodata:: chipwhisperer.scope
+    :annotation: chipwhisperer.scope(type=None, sn=None)
+
+
 .. _sec-scope-openadc:
 
-*************
 OpenADC Scope
-*************
+-------------
 
 .. autoclass:: chipwhisperer.scopes.OpenADC
 
@@ -199,5 +237,191 @@ OpenADC Scope
         :raises:
             :OSError: Raised when there is issues connecting to the hardware, such as
                 user not having the correct device permissions to access the hardware.
+
+
+.. _sec-scope-cwnano:
+
+ChipWhisperer Nano Scope
+------------------------
+
+.. autoclass:: chipwhisperer.scopes.CWNano
+
+    .. attribute:: adc
+        :annotation: scope.adc
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.ADCSettings.samples
+            :annotation: scope.adc.samples
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.ADCSettings.clk_src
+            :annotation: scope.adc.clk_src
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.ADCSettings.clk_freq
+            :annotation: scope.adc.clk_freq
+
+    .. attribute:: io
+        :annotation: scope.io
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.tio1
+            :annotation: scope.io.tio1
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.tio2
+            :annotation: scope.io.tio2
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.tio3
+            :annotation: scope.io.tio3
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.tio4
+            :annotation: scope.io.tio4
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.pdid
+            :annotation: scope.io.pdid
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.pdic
+            :annotation: scope.io.pdic
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.nrst
+            :annotation: scope.io.nrst
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.clkout
+            :annotation: scope.io.clkout
+
+    .. attribute:: glitch
+        :annotation: scope.glitch
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.GlitchSettings.ext_offset
+            :annotation: scope.glitch.ext_offset
+
+        .. autodata:: chipwhisperer.capture.scopes.cwnano.GlitchSettings.repeat
+            :annotation: scope.glitch.repeat
+
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.default_setup
+
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.arm
+
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.capture
+
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.get_last_trace
+
+    .. method:: dis()
+
+        Disconnects the current scope object.
+
+        :return: A boolean of whether the disconnect was successful.
+
+    .. method:: con(sn=None)
+
+        Connects to attached chipwhisperer hardware (ChipWhisperer Nano)
+
+        :param sn: The serial number of the attached device. Does not need to be
+            specified unless there are multiple device attached.
+
+        :return: A boolean of whether the connection was successful.
+
+        :raises:
+            :OSError: Raised when there is issues connecting to the hardware, such as
+                user not having the correct device permissions to access the hardware.
+
+
+.. _sec-target:
+
+Target
+======
+
+The target object provides the interface for configuring the target device
+under test (DUT). The default target and currently only supported target type:
+
+ * :ref:`sec-target-simpleserial`
+
+The Simple Serial target type provides the target interface for all targets that use
+a simple serial connection. A object can be created using::
+
+    import chipwhisperer as cw
+    scope = cw.scope()
+    target = cw.target(scope)
+
+You now have access to the target configuration using the *target* variable.
+
+.. autodata:: chipwhisperer.target
+    :annotation: chipwhisperer.target(scope, target_type=targets.SimpleSerial, **kwargs)
+
+
+.. _sec-target-simpleserial:
+
+Simple Serial Target
+--------------------
+
+.. autoclass:: chipwhisperer.targets.SimpleSerial
+
+    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.write
+
+    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.read
+
+    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.simpleserial_wait_ack
+
+    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.simpleserial_write
+
+    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.simpleserial_read
+
+    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.set_key
+
+    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.in_waiting
+
+    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.flush
+
+    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.close
+
+    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.con
+
+    .. autoattribute:: chipwhisperer.capture.targets.SimpleSerial.baud
+
+
+.. _sec-project:
+
+Project
+=======
+
+The project is a way of storing a traces, and other project data together
+using a bag-of-files. These projects can be exported and imported to a
+new session.
+
+A project can be accessed a few different ways. It can either be loaded from storage,
+created new, or imported. Importing currently only supports zip files.
+
+.. autofunction:: chipwhisperer.open_project
+
+.. autofunction:: chipwhisperer.create_project
+
+.. autofunction:: chipwhisperer.import_project
+
+The :func:`open_project <chipwhisperer.open_project>` and the
+:func:`create_project <chipwhisperer.create_project>` return a
+:class:`Project <chipwhisperer.common.api.ProjectFormat.Project>` instance.
+
+.. autoclass:: chipwhisperer.common.api.ProjectFormat.Project
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.location
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.traces
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.waves
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.textins
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.textouts
+
+    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.keys
+
+    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.get_filename
+
+    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.trace_manager
+
+    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.export
+
+    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.save
+
+.. autoclass:: chipwhisperer.common.api.ProjectFormat.Traces
+
+    .. automethod:: chipwhisperer.common.api.ProjectFormat.Traces.append
+
 
 

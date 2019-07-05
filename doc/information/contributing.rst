@@ -1,6 +1,8 @@
-*********************************
-Contributing to the Documentation
-*********************************
+.. _sec-contributing:
+
+************
+Contributing
+************
 
 The ChipWhisperer `software`_ is documented using sphinx and lives on
 ReadTheDocs. However, NewAE Technology Inc. also develops hardware for
@@ -13,9 +15,13 @@ which do not need to be included in the GitHub repository.
 .. _software: https://github.com/newaetech/chipwhisperer
 .. _MediaWiki site: https://wiki.newae.com
 
-Building
-========
 
+.. _sec-contributing-software_docs:
+
+Software Documentation
+======================
+
+The software documentation is written using Sphinx.
 Building the documentation requires sphinx. This can be installed using::
 
     python -m pip install sphinx
@@ -27,9 +33,6 @@ You can then navigate to the *chipwhisperer/docs* folder and run::
 This will build the documentation in html form. You can then navigate to
 the *_build* directory and open *index.html*. This should open the website
 in your browser.
-
-Contributing
-============
 
 Contribution to the documentation is always welcome. To see the effect of
 changes to the documentation it needs to be rebuilt after each change. This
@@ -65,3 +68,29 @@ here are some rough guidelines to follow:
    structure.
 
 .. _google style guide: https://www.sphinx-doc.org/en/1.5/ext/example_google.html
+
+
+.. _sec-contributing-hardware_docs:
+
+Hardware Documentation
+======================
+
+Found on the mediawiki.
+
+.. _sec-contributing-code_base:
+
+Code Base
+=========
+
+Found on the media wiki
+
+
+.. _sec-todo:
+
+Todos
+=====
+
+Here is a list of all the project todos (Non-exhaustive). Feel free to
+choose one and contribute.
+
+.. todolist::
