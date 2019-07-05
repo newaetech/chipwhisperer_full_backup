@@ -107,12 +107,12 @@ createProject = camel_case_deprecated(create_project)
 
 
 def import_project(filename, file_type='zip', overwrite=False):
-    r"""Import and open a project.
+    """Import and open a project.
 
     Will import the **filename** by extracting to the project
     directory, defined as '~/chipwhisperer/projects'. On Unix based
     systems '~' expands to '/home/user/' directory. On Windows it
-    expands to 'C:\Users\User'.
+    expands to 'C:\\Users\\User'.
 
     Currently support file types:
      * zip
@@ -185,7 +185,7 @@ def scope(scope_type=None, sn=None):
            CWPro). Defaults to None.
 
     Returns:
-        Connected scope object
+        Connected scope object. Currently supported scope include:
 
     Raises:
         OSError: Can be raised for issues connecting to the chipwhisperer, such
@@ -195,7 +195,7 @@ def scope(scope_type=None, sn=None):
             and/or the serial numbers are not specified
 
     .. versionchanged:: 5.1
-    Added autodetection of scope_type
+        Added autodetection of scope_type
     """
     from chipwhisperer.common.utils.util import get_cw_type
     if scope_type is None:

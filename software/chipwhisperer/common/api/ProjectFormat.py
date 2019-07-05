@@ -103,31 +103,28 @@ class Project(Parameterized):
         proj = cw.create_project("project")
         trace = (trace_data, plaintext, ciphertext, key)
         proj.traces.append(trace)
-        proj.save() #closes the project, make sure you're done with it
+        proj.save()
 
     Basic analyzer usage::
 
         import chipwhisperer as cw
         import chipwhisperer.analyzer as cwa
-        proj = cw.open_project("project.cwp")
-        tm = project.trace_manager()
-        attack = cwa.cpa(tm)
+        proj = cw.open_project("project")
+        attack = cwa.cpa(proj)
         #run attack
 
     Use a trace_manager when analyzing traces, since that allows analyzer to
     work with multiple trace segments.
 
-    Project api:
-     * :attr:`project.traces <Traces>`
      * :attr:`project.location <.Project.location>`
      * :attr:`project.waves <.Project.waves>`
      * :attr:`project.textins <.Project.textins>`
      * :attr:`project.textouts <.Project.textouts>`
      * :attr:`project.keys <.Project.keys>`
-     * :meth:`project.get_filename() <.Project.get_filename>`
-     * :meth:`project.trace_manager() <.Project.trace_manager>`
-     * :meth:`project.save() <.Project.save>`
-     * :meth:`project.export() <.Project.export>`
+     * :meth:`project.get_filename <.Project.get_filename>`
+     * :meth:`project.trace_manager <.Project.trace_manager>`
+     * :meth:`project.save <.Project.save>`
+     * :meth:`project.export <.Project.export>`
     """
     untitledFileName = os.path.normpath(os.path.join(Settings().value("project-home-dir"), "tmp/default.cwp"))
 

@@ -1,4 +1,4 @@
-.. _sec-simpleserial-target:
+.. _sec-target-simpleserial:
 
 ********************
 Simple Serial Target

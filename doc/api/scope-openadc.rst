@@ -1,38 +1,10 @@
-.. _sec-openadc-scope:
+.. _sec-scope-openadc:
 
 *************
 OpenADC Scope
 *************
 
 .. autoclass:: chipwhisperer.scopes.OpenADC
-
-    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.default_setup
-
-    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.arm
-
-    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.capture
-
-    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.get_last_trace
-
-    .. method:: dis()
-
-        Disconnects the current scope object.
-
-        :return: A boolean of whether the disconnect was successful.
-
-    .. method:: con(sn=None)
-
-        Connects to attached chipwhisperer hardware (Lite or Pro)
-
-        :param sn: The serial number of the attached device. Does not need to be
-            specified unless there are multiple device attached.
-
-        :return: A boolean of whether the connection was successful.
-
-        :raises:
-            :OSError: Raised when there is issues connecting to the hardware, such as
-                user not having the correct device permissions to access the hardware.
-
 
     .. attribute:: gain
         :annotation: scope.gain
@@ -200,3 +172,32 @@ OpenADC Scope
 
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.output
             :annotation: scope.glitch.output
+
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.default_setup
+
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.arm
+
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.capture
+
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.get_last_trace
+
+    .. method:: dis()
+
+        Disconnects the current scope object.
+
+        :return: A boolean of whether the disconnect was successful.
+
+    .. method:: con(sn=None)
+
+        Connects to attached chipwhisperer hardware (Lite or Pro)
+
+        :param sn: The serial number of the attached device. Does not need to be
+            specified unless there are multiple device attached.
+
+        :return: A boolean of whether the connection was successful.
+
+        :raises:
+            :OSError: Raised when there is issues connecting to the hardware, such as
+                user not having the correct device permissions to access the hardware.
+
+

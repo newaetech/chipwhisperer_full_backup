@@ -1,3 +1,5 @@
+.. _sec-project:
+
 *******
 Project
 *******
@@ -6,22 +8,14 @@ The project is a way of storing a traces, and other project data together
 using a bag-of-files. These projects can be exported and imported to a
 new session.
 
-
-Initialization
---------------
-
 A project can be accessed a few different ways. It can either be loaded from storage,
-created new, or imported.
+created new, or imported. Importing currently only supports zip files.
 
 .. autofunction:: chipwhisperer.open_project
 
 .. autofunction:: chipwhisperer.create_project
 
 .. autofunction:: chipwhisperer.import_project
-
-
-Usage
------
 
 The :func:`open_project <chipwhisperer.open_project>` and the
 :func:`create_project <chipwhisperer.create_project>` return a

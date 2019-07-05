@@ -515,22 +515,22 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
         import chipwhisperer as cw
         scope = cw.scope(type=scopes.CWNano)
 
-    This code will automatically detect an attached ChipWhisperer device and
-    connect to it.
+    Some sane default settings can be set using::
+
+        scope.default_setup()
 
     For more help about scope settings, try help() on each of the ChipWhisperer
     scope submodules (scope.adc, scope.io, scope.glitch):
 
-    Configuration:
-     * :attr:`scope.adc <.adc>`
-     * :attr:`scope.io <.io>`
-     * :attr:`scope.glitch <.glitch>`
-
-    Functions:
-     * :meth:`scope.default_setup <.default_setup>`
-     * :meth:`scope.con <.con>`
-     * :meth:`scope.dis <.dis>`
-     * :meth:`scope.get_last_trace <.get_last_trace>`
+     * :attr:`scope.adc <.CWNano.adc>`
+     * :attr:`scope.io <.CWNano.io>`
+     * :attr:`scope.glitch <.CWNano.glitch>`
+     * :meth:`scope.default_setup <.CWNano.default_setup>`
+     * :meth:`scope.con <.CWNano.con>`
+     * :meth:`scope.dis <.CWNano.dis>`
+     * :meth:`scope.get_last_trace <.CWNano.get_last_trace>`
+     * :meth:`scope.arm <.CWNano.arm>`
+     * :meth:`scope.capture <.CWNano.capture>`
     """
 
     _name = "ChipWhisperer Nano"
@@ -573,7 +573,7 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
          * glitch module off
 
         .. versionadded:: 5.1
-        Added default setup for CWNano
+            Added default setup for CWNano
         """
         self.adc.clk_freq = 7.5E6
         self.io.clkout = 7.5E6

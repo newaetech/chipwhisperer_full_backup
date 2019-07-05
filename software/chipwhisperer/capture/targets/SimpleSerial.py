@@ -55,18 +55,15 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         help(target.baud)
 
-    Configuration:
      * :attr:`target.baud <.baud>`
-
-    Functions:
-     * :meth:`target.write() <.write>`
-     * :meth:`target.read() <.read>`
-     * :meth:`target.simpleserial_wait_ack() <.simpleserial_wait_ack>`
-     * :meth:`target.simpleserial_write() <.simpleserial_write>`
-     * :meth:`target.simpleserial_read() <.simpleserial_read>`
-     * :meth:`target.set_key() <.set_key>`
-     * :meth:`target.close() <.close>`
-     * :meth:`target.con() <.con>`
+     * :meth:`target.write <.SimpleSerial.write>`
+     * :meth:`target.read <.SimpleSerial.read>`
+     * :meth:`target.simpleserial_wait_ack <.SimpleSerial.simpleserial_wait_ack>`
+     * :meth:`target.simpleserial_write <.SimpleSerial.simpleserial_write>`
+     * :meth:`target.simpleserial_read <.SimpleSerial.simpleserial_read>`
+     * :meth:`target.set_key <.SimpleSerial.set_key>`
+     * :meth:`target.close <.SimpleSerial.close>`
+     * :meth:`target.con <.SimpleSerial.con>`
     """
     _name = "Simple Serial"
 

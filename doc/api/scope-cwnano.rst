@@ -1,4 +1,4 @@
-.. _sec-cwnano-scope:
+.. _sec-scope-cwnano:
 
 ************************
 ChipWhisperer Nano Scope
@@ -53,3 +53,30 @@ ChipWhisperer Nano Scope
 
         .. autodata:: chipwhisperer.capture.scopes.cwnano.GlitchSettings.repeat
             :annotation: scope.glitch.repeat
+
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.default_setup
+
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.arm
+
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.capture
+
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.get_last_trace
+
+    .. method:: dis()
+
+        Disconnects the current scope object.
+
+        :return: A boolean of whether the disconnect was successful.
+
+    .. method:: con(sn=None)
+
+        Connects to attached chipwhisperer hardware (ChipWhisperer Nano)
+
+        :param sn: The serial number of the attached device. Does not need to be
+            specified unless there are multiple device attached.
+
+        :return: A boolean of whether the connection was successful.
+
+        :raises:
+            :OSError: Raised when there is issues connecting to the hardware, such as
+                user not having the correct device permissions to access the hardware.

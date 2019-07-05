@@ -40,13 +40,13 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
     """OpenADC scope object.
 
     This class contains the public API for the OpenADC hardware, including the
-    ChipWhisperer Lite/CW1200/Rev 2 boards. It includes specific settings for
+    ChipWhisperer Lite/ CW1200 Pro boards. It includes specific settings for
     each of these devices.
 
     To connect to one of these devices, the easiest method is::
 
         import chipwhisperer as cw
-        scope = cw.scope()
+        scope = cw.scope(type=scopes.OpenADC)
 
     Some sane default settings are available via::
 
@@ -59,20 +59,17 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
     scope submodules (scope.gain, scope.adc, scope.clock, scope.io,
     scope.trigger, and scope.glitch):
 
-    Configuration:
-     * :attr:`scope.gain <.gain>`
-     * :attr:`scope.adc <.adc>`
-     * :attr:`scope.clock <.clock>`
-     * :attr:`scope.io <.io>`
-     * :attr:`scope.trigger <.trigger>`
-     * :attr:`scope.glitch <.glitch>`
-
-    Functions:
-     * :meth:`scope.default_setup <.default_setup>`
-     * :meth:`scope.con <.con>`
-     * :meth:`scope.dis <.dis>`
-     * :meth:`scope.arm <.arm>`
-     * :meth:`scope.get_last_trace <.get_last_trace>`
+     * :attr:`scope.gain <.OpenADC.gain>`
+     * :attr:`scope.adc <.OpenADC.adc>`
+     * :attr:`scope.clock <.OpenADC.clock>`
+     * :attr:`scope.io <.OpenADC.io>`
+     * :attr:`scope.trigger <.OpenADC.trigger>`
+     * :attr:`scope.glitch <.OpenADC.glitch>`
+     * :meth:`scope.default_setup <.OpenADC.default_setup>`
+     * :meth:`scope.con <.OpenADC.con>`
+     * :meth:`scope.dis <.OpenADC.dis>`
+     * :meth:`scope.arm <.OpenADC.arm>`
+     * :meth:`scope.get_last_trace <.OpenADC.get_last_trace>`
     """
 
     _name = "ChipWhisperer/OpenADC"

@@ -60,7 +60,14 @@ html_static_path = ['_static']
 html_logo = '_static/logo.png'
 
 # configuration for todo extension
-todo_include_todos=True
+todo_include_todos = True
 
 # remove module names
 add_module_names = False
+
+# side bar customization
+html_sidebars = {
+	'index': ["project.html", "localtoc.html", "searchbox.html"],
+	'**': ['localtoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html']
+}
+html_use_index = False
