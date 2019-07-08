@@ -67,6 +67,15 @@ here are some rough guidelines to follow:
  * When adding section links, try to make them intuitive with the toctree
    structure.
 
+ * Use this header structure for documentation:
+     - # with overline, for parts
+     - * with overline, for chapters
+     - =, for sections
+     - -, for subsections
+     - ^, for subsubsections
+     - “, for paragraphs
+
+
 .. _google style guide: https://www.sphinx-doc.org/en/1.5/ext/example_google.html
 
 

@@ -28,8 +28,8 @@ hardware/victims/firmware/simpleserial-*/simpleserial-*-CW*
 hardware/victims/firmware/basic-passwdcheck/basic-passwdcheck-CW*
 *.csv
 *py.bak
-doc/_build
-doc/make.bat
+docs/_build
+docs/make.bat
 
 # Explicit listing of the build artifacts so that they are not included in
 # commits
