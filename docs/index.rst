@@ -56,5 +56,6 @@ contribution.
     :maxdepth: 2
     :glob:
 
-    information/contributing
-    Change Log <information/changes.rst>
+    contributing
+    Change Log <changes.rst>
+
