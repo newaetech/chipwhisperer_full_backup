@@ -164,9 +164,9 @@ def import_project(filename, file_type='zip', overwrite=False):
 def scope(scope_type=None, sn=None):
     """Create a scope object and connect to it.
 
-    This function allows any type of scope to be created. By default, the scope
-    is a ChipWhisperer OpenADC object, but this can be set to any valid scope
-    class.
+    This function allows any type of scope to be created. By default, the
+    object created is based on the attached hardware (OpenADC for
+    CWLite/CW1200, CWNano for CWNano).
 
     Scope Types:
      * :class:`scopes.OpenADC` (Pro and Lite)
@@ -185,7 +185,7 @@ def scope(scope_type=None, sn=None):
            CWPro). Defaults to None.
 
     Returns:
-        Connected scope object. Currently supported scope include:
+        Connected scope object.
 
     Raises:
         OSError: Can be raised for issues connecting to the chipwhisperer, such
