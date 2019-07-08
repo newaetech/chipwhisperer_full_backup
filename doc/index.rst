@@ -31,6 +31,7 @@ Documentation
 .. toctree::
     :maxdepth: 2
 
+    prerequisites
     installing
 
 
@@ -56,3 +57,4 @@ contribution.
     :glob:
 
     information/*
+    Change Log <../CHANGES.txt>

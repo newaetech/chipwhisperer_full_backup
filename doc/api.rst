@@ -1,16 +1,17 @@
 .. _sec-api:
 
-***
+###
 API
-***
+###
 
 This is where the documentation for the public API functions, and classes lives.
 
 
 .. _sec-scope:
 
+*****
 Scope
-=====
+*****
 
 The :func:`chipwhisperer.scope` API function creates and returns a scope object
 based on the supplied *type* argument. The are two currently supported classes for the
@@ -40,7 +41,7 @@ type automatically.
 .. _sec-scope-openadc:
 
 OpenADC Scope
--------------
+=============
 
 .. autoclass:: chipwhisperer.scopes.OpenADC
 
@@ -242,7 +243,7 @@ OpenADC Scope
 .. _sec-scope-cwnano:
 
 ChipWhisperer Nano Scope
-------------------------
+========================
 
 .. autoclass:: chipwhisperer.scopes.CWNano
 
@@ -324,8 +325,9 @@ ChipWhisperer Nano Scope
 
 .. _sec-target:
 
+******
 Target
-======
+******
 
 The target object provides the interface for configuring the target device
 under test (DUT). The default target and currently only supported target type:
@@ -348,7 +350,7 @@ You now have access to the target configuration using the *target* variable.
 .. _sec-target-simpleserial:
 
 Simple Serial Target
---------------------
+====================
 
 .. autoclass:: chipwhisperer.targets.SimpleSerial
 
@@ -377,8 +379,9 @@ Simple Serial Target
 
 .. _sec-project:
 
+*******
 Project
-=======
+*******
 
 The project is a way of storing a traces, and other project data together
 using a bag-of-files. These projects can be exported and imported to a
