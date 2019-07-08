@@ -1,8 +1,8 @@
 .. _install:
 
-##########
+############
 Installation
-##########
+############
 
 You get your choice of installing ChipWhisperer and its prerequisites: the easy way
 or the hard way.
