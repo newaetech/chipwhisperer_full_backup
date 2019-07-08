@@ -5,52 +5,28 @@ from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128leakage
 from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api.ProjectFormat import Project
-from chipwhisperer.analyzer.attacks.cpa_new import CPA as CPANew
 
-def cpa(trace_source, leak_model=None, algorithm=cpa_algorithms.Progressive):
-    """Create a CPA attack object with sane defaults
-
-    Create a CPA attack object with:
-
-    * trace source = trace_source
-    * traces start at beginning
-    * uses all traces for attack
-    * 1 iteration
-    * Reporting Interval = 10
-    * Attack all keys
-    * Full point range
-
-    leak_model must be set either by this function or by attack.setLeakModel()
-    before running attack.
+def cpa(proj, leak_model, algorithm=cpa_algorithms.Progressive):
+    """Create a CPA object to attack proj using leak_model and algorithm
 
     Args:
-       trace_source (TraceManager): TraceManager or preprocessing object that
+       proj (Project): TraceManager or preprocessing object that
            holds traces, plaintext, etc.
-       leak_model (AESLeakageHelper, optional): Model describing information
-           leaked from target. Must be set before running attack. Defaults to
-           None.
+       leak_model (AESLeakageHelper): Model describing information
+           leaked from target.
        algorithm (AlgorithmsBase, optional): Algorithm to perform CPA loop.
            Default is almost always the right choice. Defaults to
            cpa_algorithms.Progressive.
 
     Returns:
        A CPA object. For more information, see documentation for CPA.
+
+    ..versionchanged:: 5.1
+        Now uses new CPA attack object
     """
-    from chipwhisperer.analyzer.attacks.cpa import CPA
-    attack = CPA()
-    attack.set_analysis_algorithm(algorithm, leak_model)
+    from chipwhisperer.analyzer.attacks.cpa_new import CPA
+    attack = CPA(proj, leak_model, algorithm)
 
-    #until new analyzer is implemented
-    if isinstance(trace_source, Project):
-        trace_source = trace_source.trace_manager()
-
-    attack.setTraceSource(trace_source)
-    attack.set_trace_start(0)
-    attack.set_traces_per_attack(trace_source.num_traces())
-    attack.set_iterations(1)
-    attack.set_reporting_interval(10)
-    attack.set_target_subkeys([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
-    attack.set_point_range((0, -1))
     return attack
 
 def profiling(trace_source):
@@ -59,6 +35,13 @@ def profiling(trace_source):
 
 def analyzer_plots(attack_results=None):
     """Create an object to get plot data for analyzer results
+
+    Args:
+        attack_results(DataTypeDiffs, optional): Results from attack to use
+            to generate plots
+
+    Returns:
+        Object to generate plots
     """
     from chipwhisperer.common.results.noguiplots import NoGUIPlots
     return NoGUIPlots(attack_results)
