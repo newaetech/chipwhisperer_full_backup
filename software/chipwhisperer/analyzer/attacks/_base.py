@@ -62,6 +62,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         self._project = None
         self.useAbs = True
         self.attack = None
+        self.attackModel = None
 
         self.getParams().addChildren([
             {'name':'Attack Algorithm', 'type':'list',  'values':self._algos, 'get':self.getAlgorithm, 'set':self.setAlgorithm, 'action':self.updateScript, 'childmode': 'parent'}
@@ -112,11 +113,11 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
 
     setLeakModel = camel_case_deprecated(set_leak_model)
 
-    def leak_model(self):
+    def get_leak_model(self):
         """Get the leak model for the attack"""
         return self.attackModel
 
-    leakModel = leak_model
+    leakModel = get_leak_model
 
     def set_analysis_algorithm(self, analysis_algorithm, leakage_object=None):
         """Sets the algorithm used for analyzing the trace data
@@ -212,7 +213,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
             ts = self.getTraceSource()
             if ts is None:
                 raise ValueError("traceSource not yet set in attack - set TraceSource first to use automatic getTracesPerAttack")
-            trace = self.getTraceSource().numTraces()
+            trace = self.getTraceSource().num_traces()
         self._tracePerAttack = trace
 
     setTracesPerAttack = camel_case_deprecated(set_traces_per_attack)
@@ -235,7 +236,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
             ts = self.getTraceSource()
             if ts is None:
                 raise ValueError("traceSource not yet set in attack - set TraceSource first to use automatic setPointRange")
-            rng = (rng[0], ts.numPoints())
+            rng = (rng[0], ts.num_points())
         self._pointRange = rng
 
     setPointRange = camel_case_deprecated(set_point_range)
@@ -307,14 +308,14 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
 
         #print "runs = %d\natraces= %d\nstrace = %d\n"%(runs.value(), atraces.value(), strace.value())
 
-        if (runs.getValue() * atraces.getValue() + strace.getValue()) > self._traceSource.numTraces() or atraces.getValue()<=0:
-            solv = (self._traceSource.numTraces() - strace.getValue()) / runs.getValue()
+        if (runs.getValue() * atraces.getValue() + strace.getValue()) > self._traceSource.num_traces() or atraces.getValue()<=0:
+            solv = (self._traceSource.num_traces() - strace.getValue()) / runs.getValue()
             solv = int(solv)
             atraces.setValue(1, blockAction = True)
             atraces.setLimits((1, solv))
             atraces.setValue(solv, blockAction = True)
         else:
-            atraces.setLimits((1, self._traceSource.numTraces()))
+            atraces.setLimits((1, self._traceSource.num_traces()))
 
         pointrng = self.findParam('prange').getValue()
 
@@ -331,19 +332,19 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         if self._traceSource is None:
             return
 
-        self.findParam('prange').setLimits((0, self._traceSource.numPoints()-1))
-        self.findParam('prange').setValue((0, self._traceSource.numPoints()-1))
+        self.findParam('prange').setLimits((0, self._traceSource.num_points()-1))
+        self.findParam('prange').setValue((0, self._traceSource.num_points()-1))
 
-        self.addFunction("init", "setPointRange", "(%d,%d)" % (0, self._traceSource.numPoints()))
+        self.addFunction("init", "setPointRange", "(%d,%d)" % (0, self._traceSource.num_points()))
 
         strace = self.findParam('strace')
         self.findParam('runs').setValue(1)
         atrace = self.findParam('atraces')
 
-        strace.setLimits((0, self._traceSource.numTraces()-1))
+        strace.setLimits((0, self._traceSource.num_traces()-1))
         atrace.setValue(1, blockAction=True)
-        atrace.setLimits((1, self._traceSource.numTraces()))
-        atrace.setValue(self._traceSource.numTraces(), blockAction=True)
+        atrace.setLimits((1, self._traceSource.num_traces()))
+        atrace.setValue(self._traceSource.num_traces(), blockAction=True)
 
 
 class AttackObserver(AnalysisObserver):

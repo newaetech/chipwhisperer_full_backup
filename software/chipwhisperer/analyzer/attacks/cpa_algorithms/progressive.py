@@ -214,10 +214,10 @@ class CPAProgressive(AlgorithmsBase, Plugin):
                     tnum = i + tracerange[0]
 
                     try:
-                        data.append(traceSource.getTrace(tnum))
-                        textins.append(traceSource.getTextin(tnum))
-                        textouts.append(traceSource.getTextout(tnum))
-                        knownkeys.append(traceSource.getKnownKey(tnum))
+                        data.append(traceSource.get_trace(tnum))
+                        textins.append(traceSource.get_textin(tnum))
+                        textouts.append(traceSource.get_textout(tnum))
+                        knownkeys.append(traceSource.get_known_key(tnum))
                     except Exception as e:
                         if progressBar:
                             progressBar.abort(e.message)
@@ -235,11 +235,8 @@ class CPAProgressive(AlgorithmsBase, Plugin):
                         bnum = bnum_df
 
                     skip = False
-                    if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):
-                        if isinstance(pointRange, list):
-                            bptrange = pointRange[bnum]
-                        else:
-                            bptrange = pointRange
+                    if (self.stats.simple_PGE(bnum) != 0) or (skipPGE == False):
+                        bptrange = pointRange
                         (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, knownkeys, progressBar, cpa[bnum].modelstate, pbcnt)
                         self.stats.update_subkey(bnum, data, tnum=tend)
                     else:

@@ -5,8 +5,9 @@ from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128leakage
 from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api.ProjectFormat import Project
+from chipwhisperer.analyzer.attacks.cpa_new import CPA as CPANew
 
-def cpa(trace_source, leak_model = None, algorithm=cpa_algorithms.Progressive):
+def cpa(trace_source, leak_model=None, algorithm=cpa_algorithms.Progressive):
     """Create a CPA attack object with sane defaults
 
     Create a CPA attack object with:

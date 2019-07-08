@@ -27,6 +27,7 @@
 
 import numpy as np
 from chipwhisperer.common.utils.util import camel_case_deprecated
+from collections import OrderedDict
 
 class DataTypeDiffs(object):
     """
@@ -38,7 +39,33 @@ class DataTypeDiffs(object):
         self.numSubkeys = numSubkeys
         self.numPerms = numPerms
         self.knownkey = None
+        self.results = None
         self.clear()
+
+    def best_guesses(self):
+        """ Gets best subkey guesses from attack results
+
+        Returns:
+            List of OrderedDicts with keys 'guess', 'correlation' and 'pge'.
+        """
+        guess_list = []
+        stats = self.find_maximums()
+        for i, subkey in enumerate(stats):
+            dict = OrderedDict()
+            dict['guess'] = subkey[0][0]
+            dict['correlation'] = subkey[0][2]
+            dict['pge'] = self.simple_PGE(i)
+            guess_list.append(dict)
+
+        return guess_list
+
+    def __str__(self):
+        ret = ""
+        ret += "Subkey KGuess Correlation\n"
+        guesses = self.best_guesses()
+        for i,subkey in enumerate(guesses):
+            ret += "  {:02d}    0x{:02X}    {:7.5f}\n".format(i, subkey['guess'], subkey['correlation'])
+        return ret
 
     def clear(self):
         #Diffs from CPA/DPA Attack
@@ -58,11 +85,13 @@ class DataTypeDiffs(object):
 
         #TODO: Ensure this gets called by attack algorithms when rerunning
 
-    def simplePGE(self, bnum):
+    def simple_PGE(self, bnum):
         if self.maxValid[bnum] == False:
             #TODO: should sort
             return 1
         return self.pge[bnum]
+
+    simplePGE = camel_case_deprecated(simple_PGE)
 
     def set_known_key(self, knownkey):
         self.knownkey = knownkey
@@ -139,5 +168,6 @@ class DataTypeDiffs(object):
             if len(self.maxes_list[i]) == 0 or self.maxes_list[i][-1]['trace'] != tnum:
                 self.maxes_list[i].append({'trace':tnum, 'maxes':np.array(self.maxes[i])})
 
+        self.results = self.maxes
         return self.maxes
     findMaximums = camel_case_deprecated(find_maximums)

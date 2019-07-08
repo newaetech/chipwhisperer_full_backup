@@ -50,11 +50,15 @@ class AlgorithmsBase(Parameterized, AutoScript):
     def updateScript(self, ignored=None):
         pass
 
-    def setTargetSubkeys(self, brange):
+    def set_target_subkeys(self, brange):
         self.brange = brange
 
-    def setReportingInterval(self, ri):
+    setTargetSubkeys = set_target_subkeys
+
+    def set_reporting_interval(self, ri):
         self._reportingInterval = ri
+
+    setReportingInterval = set_reporting_interval
 
     def setModel(self, model):
         self.model = model

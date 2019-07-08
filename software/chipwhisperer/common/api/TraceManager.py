@@ -134,7 +134,7 @@ class TraceManager(TraceSource):
         dataDict = {'offsetList':[], 'lengthList':[]}
 
         while(tnum < end):
-            t = self.getSegment(tnum)
+            t = self.get_segment(tnum)
             dataDict['offsetList'].append(t.mappedRange[0])
             dataDict['lengthList'].append(t.mappedRange[1] - t.mappedRange[0] + 1)
             tnum = t.mappedRange[1] + 1
@@ -167,7 +167,7 @@ class TraceManager(TraceSource):
 
     def getAuxData(self, n, auxDic):
         """Return data about a segment"""
-        t = self.getSegment(n)
+        t = self.get_segment(n)
         cfg = t.getAuxDataConfig(auxDic)
         if cfg is not None:
             filedata = t.loadAuxData(cfg["filename"])
@@ -185,14 +185,14 @@ class TraceManager(TraceSource):
 
     def get_textin(self, n):
         """Return the input text of trace with index n in the list of enabled segments"""
-        t = self.getSegment(n)
+        t = self.get_segment(n)
         return t.getTextin(n - t.mappedRange[0])
 
     getTextin = util.camel_case_deprecated(get_textin)
 
     def get_textout(self, n):
         """Return the output text of trace with index n in the list of enabled segments"""
-        t = self.getSegment(n)
+        t = self.get_segment(n)
         return t.getTextout(n - t.mappedRange[0])
 
     getTextout = util.camel_case_deprecated(get_textout)
@@ -200,7 +200,7 @@ class TraceManager(TraceSource):
     def get_known_key(self, n):
         """Return the known encryption key."""
         try:
-            t = self.getSegment(n)
+            t = self.get_segment(n)
             return t.getKnownKey(n - t.mappedRange[0])
         except ValueError:
             return []

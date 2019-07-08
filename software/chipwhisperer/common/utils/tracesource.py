@@ -130,8 +130,10 @@ class PassiveTraceObserver(Parameterized):
 
     setTraceSource = set_trace_source
 
-    def getTraceSource(self):
+    def get_trace_source(self):
         return self._traceSource
+
+    getTraceSource = get_trace_source
 
     def tracesUpdated(self):
         """Trace source was updated. Time to do something about"""
