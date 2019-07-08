@@ -59,17 +59,17 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
     scope submodules (scope.gain, scope.adc, scope.clock, scope.io,
     scope.trigger, and scope.glitch):
 
-     * :attr:`scope.gain <.OpenADC.gain>`
-     * :attr:`scope.adc <.OpenADC.adc>`
-     * :attr:`scope.clock <.OpenADC.clock>`
-     * :attr:`scope.io <.OpenADC.io>`
-     * :attr:`scope.trigger <.OpenADC.trigger>`
-     * :attr:`scope.glitch <.OpenADC.glitch>`
-     * :meth:`scope.default_setup <.OpenADC.default_setup>`
-     * :meth:`scope.con <.OpenADC.con>`
-     * :meth:`scope.dis <.OpenADC.dis>`
-     * :meth:`scope.arm <.OpenADC.arm>`
-     * :meth:`scope.get_last_trace <.OpenADC.get_last_trace>`
+     *  :attr:`scope.gain <.OpenADC.gain>`
+     *  :attr:`scope.adc <.OpenADC.adc>`
+     *  :attr:`scope.clock <.OpenADC.clock>`
+     *  :attr:`scope.io <.OpenADC.io>`
+     *  :attr:`scope.trigger <.OpenADC.trigger>`
+     *  :attr:`scope.glitch <.OpenADC.glitch>`
+     *  :meth:`scope.default_setup <.OpenADC.default_setup>`
+     *  :meth:`scope.con <.OpenADC.con>`
+     *  :meth:`scope.dis <.OpenADC.dis>`
+     *  :meth:`scope.arm <.OpenADC.arm>`
+     *  :meth:`scope.get_last_trace <.OpenADC.get_last_trace>`
     """
 
     _name = "ChipWhisperer/OpenADC"
@@ -92,16 +92,16 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         return self.scopetype.dev._cwusb
 
     def default_setup(self):
-        """ Sets up sane capture defaults for this scope
+        """Sets up sane capture defaults for this scope
 
-        * 45dB gain
-        * 5000 capture samples
-        * 0 sample offset
-        * rising edge trigger
-        * 7.37MHz clock output on hs2
-        * 4*7.37MHz ADC clock
-        * tio1 = serial rx
-        * tio2 = serial tx
+         *  45dB gain
+         *  5000 capture samples
+         *  0 sample offset
+         *  rising edge trigger
+         *  7.37MHz clock output on hs2
+         *  4*7.37MHz ADC clock
+         *  tio1 = serial rx
+         *  tio2 = serial tx
 
         .. versionadded:: 5.1
             Added default setup for OpenADC
@@ -148,10 +148,10 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
 
         Returns:
             One of the following:
-            - ""
-            - "cwlite"
-            - "cw1200"
-            - "cwrev2"
+             -  ""
+             -  "cwlite"
+             -  "cw1200"
+             -  "cwrev2"
         """
         hwInfoVer = self.qtadc.sc.hwInfo.versions()[2]
         if "ChipWhisperer" in hwInfoVer:

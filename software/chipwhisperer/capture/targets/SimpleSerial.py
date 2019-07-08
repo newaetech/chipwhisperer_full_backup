@@ -51,19 +51,18 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     adequate.
 
     For more help use the help() function with one of the submodules
-    (target.baud, target.write, target.read, ...).::
+    (target.baud, target.write, target.read, ...).
 
-        help(target.baud)
+      * :attr:`target.baud <.SimpleSerial.baud>`
+      * :meth:`target.write <.SimpleSerial.write>`
+      * :meth:`target.read <.SimpleSerial.read>`
+      * :meth:`target.simpleserial_wait_ack <.SimpleSerial.simpleserial_wait_ack>`
+      * :meth:`target.simpleserial_write <.SimpleSerial.simpleserial_write>`
+      * :meth:`target.simpleserial_read <.SimpleSerial.simpleserial_read>`
+      * :meth:`target.set_key <.SimpleSerial.set_key>`
+      * :meth:`target.close <.SimpleSerial.close>`
+      * :meth:`target.con <.SimpleSerial.con>`
 
-     * :attr:`target.baud <.baud>`
-     * :meth:`target.write <.SimpleSerial.write>`
-     * :meth:`target.read <.SimpleSerial.read>`
-     * :meth:`target.simpleserial_wait_ack <.SimpleSerial.simpleserial_wait_ack>`
-     * :meth:`target.simpleserial_write <.SimpleSerial.simpleserial_write>`
-     * :meth:`target.simpleserial_read <.SimpleSerial.simpleserial_read>`
-     * :meth:`target.set_key <.SimpleSerial.set_key>`
-     * :meth:`target.close <.SimpleSerial.close>`
-     * :meth:`target.con <.SimpleSerial.con>`
     """
     _name = "Simple Serial"
 
@@ -293,12 +292,12 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         capturing a trace. If the format doesn't match, an error is logged.
 
         This format string can contain two special strings:
-        - "$RESPONSE$": If the format contains $RESPONSE$, then this part of
-          the received text is converted to the output text (ciphertext or
-          similar). The length of this response string is given in outputLen()
-          and set by setOutputLen().
-        - "$GLITCH$": If the format starts with $GLITCH$, then all output is
-          redirected to the glitch explorer.
+          * "$RESPONSE$": If the format contains $RESPONSE$, then this part of
+            the received text is converted to the output text (ciphertext or
+            similar). The length of this response string is given in outputLen()
+            and set by setOutputLen().
+          * "$GLITCH$": If the format starts with $GLITCH$, then all output is
+            redirected to the glitch explorer.
 
         Getter: Return the current output format
 
@@ -356,7 +355,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         :Getter: Return the current baud rate.
 
         :Setter: Set a new baud rate. Valid baud rates are any integer in the
-                range [500, 2000000].
+            range [500, 2000000].
 
         Raises:
             AttributeError: Target doesn't allow baud to be changed.

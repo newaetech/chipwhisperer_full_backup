@@ -39,7 +39,7 @@ changes to the documentation it needs to be rebuilt after each change. This
 is done using the sphinx-build command. When contributing to the documentation
 here are some rough guidelines to follow:
 
- *  All directive blocks are indented by four spaces. This makes life easier
+  * All directive blocks are indented by four spaces. This makes life easier
     when the text editor you are using is already set for four spaces because
     of python. For example:
 
@@ -48,13 +48,13 @@ here are some rough guidelines to follow:
         |.. note::
         |    A note to the user.
 
- *  Indent unnumbered lists with two spaces and a space after the symbol.
+  * Indent unnumbered lists with two spaces and a space after the symbol.
     So that the text block starts at column five. Example::
 
-    | *  list item 1
-    | *  list item 2
+    |  * list item 1
+    |  * list item 2
 
- *  Indent numbered lists with one space, then a period and a space.
+  * Indent numbered lists with one space, then a period and a space.
     Example:
 
     .. code:: ReST
@@ -63,35 +63,35 @@ here are some rough guidelines to follow:
         | #. numbered list item 2
         |    Continuation of code block.
 
- *  We use **autodocs** for our API documentation, however to get the
+  * We use **autodocs** for our API documentation, however to get the
     documentation of the api to look clean a lot of the module and class
     paths have to be manually specified.
 
- *  Refrain from adding new functions or classes to the API as we would
+  * Refrain from adding new functions or classes to the API as we would
     like to keep the API as consistent as possible.
 
- *  Follow the `google style guide`_ for docstrings this makes the
+  * Follow the `google style guide`_ for docstrings this makes the
     documentation easier to read while looking at the source code.
 
- *  Keep in mind that people will be reading both the generated
+  * Keep in mind that people will be reading both the generated
     documentation and the source code. Don't make either one too painful
     to read. This happens a lot with links to other functions. Links help
     readers of the generated documentation but look quite verbose in the source
     code. Find a balance.
 
- *  When adding section links, try to make them intuitive with the header and
+  * When adding section links, try to make them intuitive with the header and
     toctree hierarchy. For example: if a file named **info.rst** has a header
     **Additional Information** a good section link would be:
 
     .. code:: ReST
 
-        .. info-additional-information:
+        .. info-additional_information:
 
         **********************
         Additional Information
         **********************
 
- *  Use this header structure for documentation:
+  * Use this header structure for documentation:
       - # with overline, for parts
       - \* with overline, for chapters
       - =, for sections

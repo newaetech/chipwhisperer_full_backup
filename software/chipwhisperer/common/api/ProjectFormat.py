@@ -116,15 +116,15 @@ class Project(Parameterized):
     Use a trace_manager when analyzing traces, since that allows analyzer to
     work with multiple trace segments.
 
-     * :attr:`project.location <.Project.location>`
-     * :attr:`project.waves <.Project.waves>`
-     * :attr:`project.textins <.Project.textins>`
-     * :attr:`project.textouts <.Project.textouts>`
-     * :attr:`project.keys <.Project.keys>`
-     * :meth:`project.get_filename <.Project.get_filename>`
-     * :meth:`project.trace_manager <.Project.trace_manager>`
-     * :meth:`project.save <.Project.save>`
-     * :meth:`project.export <.Project.export>`
+      *  :attr:`project.location <.Project.location>`
+      *  :attr:`project.waves <.Project.waves>`
+      *  :attr:`project.textins <.Project.textins>`
+      *  :attr:`project.textouts <.Project.textouts>`
+      *  :attr:`project.keys <.Project.keys>`
+      *  :meth:`project.get_filename <.Project.get_filename>`
+      *  :meth:`project.trace_manager <.Project.trace_manager>`
+      *  :meth:`project.save <.Project.save>`
+      *  :meth:`project.export <.Project.export>`
     """
     untitledFileName = os.path.normpath(os.path.join(Settings().value("project-home-dir"), "tmp/default.cwp"))
 
@@ -473,7 +473,7 @@ class Project(Parameterized):
         """Export a chipwhisperer project.
 
         Supported export types:
-         * zip (default)
+          *  zip (default)
 
         Returns:
             (str) Path to the exported file.

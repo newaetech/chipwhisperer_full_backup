@@ -277,11 +277,11 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO1 pin.
 
         TIO1 can be used for the following functions:
-         * "serial_rx": UART input
-         * "high_z" / None: High impedance input
-         * "gpio_low" / False: Driven output: logic 0
-         * "gpio_high" / True: Driven output: logic 1
-         * "gpio_disabled": Driven output: no effect
+          * "serial_rx": UART input
+          * "high_z" / None: High impedance input
+          * "gpio_low" / False: Driven output: logic 0
+          * "gpio_high" / True: Driven output: logic 1
+          * "gpio_disabled": Driven output: no effect
 
         Default value is "serial_rx".
 
@@ -305,11 +305,11 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO2 pin.
 
         TIO2 can be used for the following functions:
-         * "serial_tx": UART output
-         * "high_z" / None: High impedance input
-         * "gpio_low" / False: Driven output: logic 0
-         * "gpio_high" / True: Driven output: logic 1
-         * "gpio_disabled": Driven output: no effect
+          * "serial_tx": UART output
+          * "high_z" / None: High impedance input
+          * "gpio_low" / False: Driven output: logic 0
+          * "gpio_high" / True: Driven output: logic 1
+          * "gpio_disabled": Driven output: no effect
 
         Default value is "serial_tx".
 
@@ -333,10 +333,10 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO3 pin.
 
         TIO3 can be used for the following functions:
-         * "high_z" / None: High impedance input
-         * "gpio_low" / False: Driven output: logic 0
-         * "gpio_high" / True: Driven output: logic 1
-         * "gpio_disabled": Driven output: no effect
+          * "high_z" / None: High impedance input
+          * "gpio_low" / False: Driven output: logic 0
+          * "gpio_high" / True: Driven output: logic 1
+          * "gpio_disabled": Driven output: no effect
 
         Default value is "high_z".
 
@@ -357,10 +357,10 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO4 pin.
 
         TIO4 can be used for the following functions:
-         * "high_z" / None: High impedance input
-         * "gpio_low" / False: Driven output: logic 0
-         * "gpio_high" / True: Driven output: logic 1
-         * "gpio_disabled": Driven output: no effect
+          * "high_z" / None: High impedance input
+          * "gpio_low" / False: Driven output: logic 0
+          * "gpio_high" / True: Driven output: logic 1
+          * "gpio_disabled": Driven output: no effect
 
         Default value is "high_z". Typically, this pin is used as a trigger
         input.
@@ -382,9 +382,9 @@ class GPIOSettings(util.DisableNewAttr):
         """The state of the PDIC pin output pin.
 
         This is a GPIO pin. The following values are allowed:
-         * "high" / True: logic 1
-         * "low" / False: logic 0
-         * "disabled" / "default" / "high_z" / None: undriven
+          * "high" / True: logic 1
+          * "low" / False: logic 0
+          * "disabled" / "default" / "high_z" / None: undriven
 
         :Getter: Return one of "high", "low", or "high_z"
 
@@ -522,15 +522,15 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
     For more help about scope settings, try help() on each of the ChipWhisperer
     scope submodules (scope.adc, scope.io, scope.glitch):
 
-     * :attr:`scope.adc <.CWNano.adc>`
-     * :attr:`scope.io <.CWNano.io>`
-     * :attr:`scope.glitch <.CWNano.glitch>`
-     * :meth:`scope.default_setup <.CWNano.default_setup>`
-     * :meth:`scope.con <.CWNano.con>`
-     * :meth:`scope.dis <.CWNano.dis>`
-     * :meth:`scope.get_last_trace <.CWNano.get_last_trace>`
-     * :meth:`scope.arm <.CWNano.arm>`
-     * :meth:`scope.capture <.CWNano.capture>`
+      * :attr:`scope.adc <.CWNano.adc>`
+      * :attr:`scope.io <.CWNano.io>`
+      * :attr:`scope.glitch <.CWNano.glitch>`
+      * :meth:`scope.default_setup <.CWNano.default_setup>`
+      * :meth:`scope.con <.CWNano.con>`
+      * :meth:`scope.dis <.CWNano.dis>`
+      * :meth:`scope.get_last_trace <.CWNano.get_last_trace>`
+      * :meth:`scope.arm <.CWNano.arm>`
+      * :meth:`scope.capture <.CWNano.capture>`
     """
 
     _name = "ChipWhisperer Nano"
@@ -565,12 +565,12 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
     def default_setup(self):
         """ Sets up sane capture defaults for this scope
 
-         * 7.5MHz ADC clock
-         * 7.5MHz output clock
-         * 5000 capture samples
-         * tio1 = serial rx
-         * tio2 = serial tx
-         * glitch module off
+          * 7.5MHz ADC clock
+          * 7.5MHz output clock
+          * 5000 capture samples
+          * tio1 = serial rx
+          * tio2 = serial tx
+          * glitch module off
 
         .. versionadded:: 5.1
             Added default setup for CWNano
