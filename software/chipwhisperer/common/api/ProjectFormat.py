@@ -381,7 +381,7 @@ class Project(Parameterized):
         if 'Trace Management' not in self.config:
             self.config['Trace Management'] = {}
 
-        self._traceManager.saveProject(self.config, self.filename)
+        self._traceManager.save_project(self.config, self.filename)
 
     def save(self):
         """Saves the project.
