@@ -42,7 +42,6 @@ setup(
                 'chipwhisperer.hardware',
                 'chipwhisperer.hardware.firmware',
                 'chipwhisperer.hardware.naeusb',
-                #'chipwhisperer.tests',
                 ],
     package_dir = {'': 'software'},
     install_requires = [

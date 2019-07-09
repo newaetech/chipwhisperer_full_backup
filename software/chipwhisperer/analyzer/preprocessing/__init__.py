@@ -17,7 +17,6 @@ Classes:
 
 from .add_noise_jitter import AddNoiseJitter
 from .add_noise_random import AddNoiseRandom
-from .cache_traces import CacheTraces
 #from .decimation_clock_recovery import DecimationClockRecovery broken without matplotlib/cycler
 from .decimation_fixed import DecimationFixed
 from .digital_filter import Filter as DigitalFilter
