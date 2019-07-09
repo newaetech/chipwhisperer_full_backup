@@ -39,7 +39,6 @@ from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, packuint32, unpackuint3
 from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
 from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import STM32FSerial
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.utils.util import camel_case_deprecated
 import time
 import datetime

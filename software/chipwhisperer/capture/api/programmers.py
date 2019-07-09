@@ -95,17 +95,10 @@ class Programmer(object):
 
     @property
     def scope(self):
-        import chipwhisperer.common.api.CWCoreAPI
-
         if self._scope:
             return self._scope
 
-        api = chipwhisperer.common.api.CWCoreAPI.CWCoreAPI.getInstance()
-        if api:
-            return api.getScope()
-        else:
-            #No scope object so we won't toggle pins
-            return None
+        return None
 
     @scope.setter
     def scope(self, value):
