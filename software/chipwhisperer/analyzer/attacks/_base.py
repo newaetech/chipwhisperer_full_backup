@@ -24,7 +24,6 @@
 #=================================================
 import logging
 
-from chipwhisperer.common.ui.ProgressBar import ProgressBar, ProgressBarTqdm
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver, TraceSource
 from chipwhisperer.common.utils.analysissource import AnalysisSource, AnalysisObserver

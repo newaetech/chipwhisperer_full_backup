@@ -37,7 +37,6 @@ setup(
                 'chipwhisperer.common.results',
                 'chipwhisperer.common.scripts',
                 'chipwhisperer.common.traces',
-                'chipwhisperer.common.ui',
                 'chipwhisperer.common.utils',
                 'chipwhisperer.hardware',
                 'chipwhisperer.hardware.firmware',

@@ -26,12 +26,9 @@ import os
 import re
 import sys
 from datetime import datetime
-import copy
 import zipfile
 import numpy as np
 
-from chipwhisperer.common.utils import util
-from chipwhisperer.common.api.dictdiffer import DictDiffer
 from chipwhisperer.common.api.TraceManager import TraceManager
 from chipwhisperer.common.api.settings import Settings
 from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
@@ -416,18 +413,11 @@ class Project(Parameterized):
 
         disk = util.convert_to_str(ConfigObjProj(infile=self.filename))
         ram = util.convert_to_str(self.config)
-        diff = DictDiffer(ram, disk)
-
-        added = diff.added()
-        removed = diff.removed()
-        changed = diff.changed() #TODO: bug when comparing projects with template sections. It is returning changes when there is not.
-
-        return added, removed, changed
 
     def hasDiffs(self):
         if self.dirty.value(): return True
 
-        added, removed, changed = self.checkDiff()
+        #added, removed, changed = self.checkDiff()
         if (len(added) + len(removed) + len(changed)) == 0:
             return False
         return True

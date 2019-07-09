@@ -29,7 +29,6 @@ import sys
 from chipwhisperer.common.utils import pluginmanager
 from chipwhisperer.common.utils.parameter import setupSetParam
 from ._base import AttackBaseClass
-from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
 
 class CPA(AttackBaseClass):
