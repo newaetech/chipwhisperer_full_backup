@@ -18,7 +18,6 @@ setup(
                 'chipwhisperer.capture.scopes',
                 'chipwhisperer.capture.scopes.cwhardware',
                 'chipwhisperer.capture.scopes.openadc_interface',
-                'chipwhisperer.capture.scopes.visascope_interface',
                 'chipwhisperer.capture.targets',
                 'chipwhisperer.capture.targets.simpleserial_readers',
                 'chipwhisperer.capture.targets.smartcard_readers',
