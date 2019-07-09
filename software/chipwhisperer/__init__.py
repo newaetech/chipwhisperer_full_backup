@@ -35,7 +35,7 @@ def program_target(scope, prog_type, fw_path, **kwargs):
     .. versionadded:: 5.0.1
     Simplified programming target
     """
-    if type is None: #[makes] automating notebooks much easier
+    if prog_type is None: #[makes] automating notebooks much easier
         return
     prog = prog_type(**kwargs)
     prog.scope = scope
