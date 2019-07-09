@@ -25,7 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from ._stats import DataTypeDiffs
+from ._stats import Results
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.parameter import Parameterized
 
@@ -63,7 +63,7 @@ class AlgorithmsBase(Parameterized, AutoScript):
     def setModel(self, model):
         self.model = model
         if model:
-            self.stats = DataTypeDiffs(model.getNumSubKeys(), model.getPermPerSubkey())
+            self.stats = Results(model.getNumSubKeys(), model.getPermPerSubkey())
 
     def processKnownKey(self, inpkey):
         return self.model.processKnownKey(inpkey)

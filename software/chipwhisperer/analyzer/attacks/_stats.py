@@ -29,17 +29,16 @@ import numpy as np
 from chipwhisperer.common.utils.util import camel_case_deprecated
 from collections import OrderedDict
 
-class DataTypeDiffs(object):
+class Results(object):
     """
-    Data type used for attacks generating peaks indicating the 'best' success. Examples include
+    Results type used for attacks generating peaks indicating the 'best' success. Examples include
     standard DPA & CPA attacks.
     """
 
     def __init__(self, numSubkeys=16, numPerms=256):
         self.numSubkeys = numSubkeys
         self.numPerms = numPerms
-        self.knownkey = None
-        self.results = None
+        self.known_key = None
         self.clear()
 
     def best_guesses(self):
@@ -93,8 +92,8 @@ class DataTypeDiffs(object):
 
     simplePGE = camel_case_deprecated(simple_PGE)
 
-    def set_known_key(self, knownkey):
-        self.knownkey = knownkey
+    def set_known_key(self, known_key):
+        self.known_key = known_key
 
     setKnownkey = camel_case_deprecated(set_known_key)
 
@@ -110,6 +109,7 @@ class DataTypeDiffs(object):
                 self.diffs_tnum[bnum] = tnum
 
     updateSubkey = camel_case_deprecated(update_subkey)
+
     def find_maximums(self, bytelist=None, useAbsolute=True, useSingle=False):
         if bytelist is None:
             bytelist = list(range(0, self.numSubkeys))
@@ -154,9 +154,9 @@ class DataTypeDiffs(object):
                 self.maxes[i][::-1].sort(order='value') # sorts nunpy array in place and in reverse order
                 self.maxValid[i] = True
 
-                if self.knownkey is not None:
+                if self.known_key is not None:
                     try:
-                        self.pge[i] = np.where(self.maxes[i]['hyp'] == self.knownkey[i])[0][0] - numnans
+                        self.pge[i] = np.where(self.maxes[i]['hyp'] == self.known_key[i])[0][0] - numnans
                         if self.pge[i] < 0:
                             self.pge[i] = self.numPerms/2
                     except IndexError:
@@ -168,6 +168,6 @@ class DataTypeDiffs(object):
             if len(self.maxes_list[i]) == 0 or self.maxes_list[i][-1]['trace'] != tnum:
                 self.maxes_list[i].append({'trace':tnum, 'maxes':np.array(self.maxes[i])})
 
-        self.results = self.maxes
         return self.maxes
+
     findMaximums = camel_case_deprecated(find_maximums)
