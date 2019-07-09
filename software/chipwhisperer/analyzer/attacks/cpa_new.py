@@ -4,26 +4,41 @@ from collections import OrderedDict
 from chipwhisperer.common.utils.util import dict_to_str
 
 class CPA(CPA_Old):
-    """ CPA Class utilizing the new project interface
+    """Correlation Power Analysis (CPA).
+
+    Provides all the needed functionality for taking a project and performing
+    a CPA attack with a specific type of leakage model.
+
+    Args:
+        proj (Project): An open project instance.
+        algorithm: The algorithm used for the analysis. Default is Progressive
+            which allows a callback to be given. The callback is called at
+            increments of a specific interval. This is useful for auto-updating
+            tables and equivalent.
+        leak_model: The leakage model used when analysing the captured traces.
+
 
     Attributes:
-        project: Project to pull waves, textin, etc. from
+        project: Project to pull waves, textin, etc. from.
         algorithm: Analysis algorithm to use for attack. Should be Progressive
         leak_model: Leakage model to use during analysis. Should be of
-            type AESLeakageHelper
+            type AESLeakageHelper.
         trace_range: Start and end trace number. Should be a list of length 2
-            (i.e. [start_num, end_num])
+            (i.e. [start_num, end_num]).
         point_range: Range of points to use from waves in project. Should be
-            a list of length 2 ([start_point, end_point])
+            a list of length 2 ([start_point, end_point]).
         subkey_list: List of subkeys to attack (subkey_list = [0, 1, 3] will
             attack subkeys 0, 1, and 3).
 
-    Example:: python
+    The easiest way to use this class is through the API function provided by
+    the :mod:`chipwhisperer.analyzer` module.
+
+    Example::
 
         import chipwhisperer.analyzer as cwa
         import chipwhisperer as cw
         proj = cw.open_project('/path/to/project')
-        attack = cwa.cpa(proj, cwa.hw_models.SBoxOutput)
+        attack = cwa.cpa(proj, cwa.hammingweight_models.SBoxOutput)
         results = attack.run()
     """
     trace_range = None
@@ -62,12 +77,6 @@ class CPA(CPA_Old):
 
     @property
     def algorithm(self):
-        """Algorithm to use for the attack (i.e. Progressive)
-
-        :getter: Gets the algorithm used for the attack
-
-        :setter: Sets the algorithm used for the attack
-        """
         return self.attack
 
     @algorithm.setter
@@ -138,8 +147,8 @@ class CPA(CPA_Old):
                 before updating the results of the attack.
 
         Returns:
-            DataTypeDiffs, the results of the attack. See documentation
-                for DataTypeDiffs for more details.
+            Results, the results of the attack. See documentation
+            for Results for more details.
         """
         self.algorithm.setModel(self.leak_model)
         self.algorithm.get_statistics().clear()

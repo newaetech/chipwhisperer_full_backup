@@ -434,15 +434,16 @@ Analyzer
 ********
 
 You may want to use the your captured traces to perform an attack based on a type
-of analysis, in comes the analyzer. One of the ways to analyze your traces is using
-correlation power analysis (CPA). To use this attack on your captured traces::
+of analysis, in comes the analyzer. The analyzer related API can be found in
+:mod:`chipwhisperer.analyzer` module.
 
-    # do something
+One of the ways to analyze your traces is using
+correlation power analysis (CPA). The :func:`chipwhisperer.analyzer.cpa` function
+returns a :class:`CPA attack object <chipwhisperer.analyzer.attacks.cpa_new.CPA>`
+that can be used to run the attack.
 
-The :func:`chipwhisperer.analyzer.cpa` function returns a CPA attack object that can be
-used to run the attack.
-
-.. autofunction:: chipwhisperer.analyzer.cpa
+.. autodata:: chipwhisperer.analyzer.cpa
+    :annotation: chipwhisperer.analyzer.cpa(proj, leak_model, algorithm=cpa_algorithms.Progressive)
 
 
 .. _api-analyzer-cpa_attack:
@@ -450,7 +451,22 @@ used to run the attack.
 CPA Attack
 ==========
 
-something cool about CPA attack ...
+.. autoclass:: chipwhisperer.analyzer.attacks.cpa_new.CPA
+
+    .. automethod:: chipwhisperer.analyzer.attacks.cpa_new.CPA.change_project
+
+    .. automethod:: chipwhisperer.analyzer.attacks.cpa_new.CPA.run
+
+
+Results
+-------
+
+The :meth:`cpa.run <chipwhisperer.analyzer.attacks.cpa_new.CPA.run> function will
+return a results object. There are a few methods for interacting with the results
+object.
+
+.. autoclass:: chipwhisperer.analyzer.attacks._stats.Results
+
 
 
 .. _api-program_target:
@@ -461,6 +477,14 @@ Program Target
 
 When testing out different firmware on the target it is useful to be able
 to reprogram the target. This can be done using the
-:func:`chipwhisperer.program_target` function. The function creates a
-programmer instance for the specified target. The programmer
+:func:`chipwhisperer.program_target` function. There are multiple
+programmer types available:
+
+  * :class:`programmers.STM32FProgrammer <chipwhisperer.capture.api.programmers.STM32FProgrammer>`
+  * :class:`programmers.XMEGAProgrammer <chipwhisperer.capture.api.programmers.XMEGAProgrammer>`
+  * :class:`programmers.AVRProgrammer <chipwhisperer.capture.api.programmers.AVRProgrammer>`
+
+.. autofunction:: chipwhisperer.program_target
+
+
 

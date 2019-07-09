@@ -22,11 +22,11 @@ def cpa(proj, leak_model, algorithm=cpa_algorithms.Progressive):
     Returns:
        A CPA object. For more information, see documentation for CPA.
 
-    ..versionchanged:: 5.1
+    .. versionchanged:: 5.1
         Now uses new CPA attack object
     """
     from chipwhisperer.analyzer.attacks.cpa_new import CPA
-    attack = CPA(proj, leak_model, algorithm)
+    attack = CPA(project, leak_model, algorithm)
 
     return attack
 
@@ -38,11 +38,11 @@ def analyzer_plots(attack_results=None):
     """Create an object to get plot data for analyzer results
 
     Args:
-        attack_results(DataTypeDiffs, optional): Results from attack to use
-            to generate plots
+        attack_results(Results, optional): Results from attack to use
+            to generate plots.
 
     Returns:
-        Object to generate plots
+        Object to generate plots.
     """
     from chipwhisperer.common.results.noguiplots import NoGUIPlots
     return NoGUIPlots(attack_results)

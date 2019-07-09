@@ -1,8 +1,8 @@
 V5.1.0:
   * New tutorials:
-      - (Fault_5-RSA_Fault_Attack)
-      - (Fault_2-Introduction_to_Vcc_Glitch_Attacks)
-      - (PA_DPA_3-AES_DPA_Attack)
+      - Fault_5-RSA_Fault_Attack
+      - Fault_2-Introduction_to_Vcc_Glitch_Attacks
+      - PA_DPA_3-AES_DPA_Attack
   * Scope updates:
       - Added default_setup() method
       - cw.scope() can now autodetect scope type
