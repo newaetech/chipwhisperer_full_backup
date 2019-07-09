@@ -1,4 +1,4 @@
-.. _sec-api:
+.. _api:
 
 ###
 API
@@ -7,7 +7,7 @@ API
 This is where the documentation for the public API functions, and classes lives.
 
 
-.. _sec-scope:
+.. _api-scope:
 
 *****
 Scope
@@ -17,8 +17,8 @@ The :func:`chipwhisperer.scope` API function creates and returns a scope object
 based on the supplied *type* argument. The are two currently supported classes for the
 type argument:
 
- * :ref:`sec-scope-openadc`
- * :ref:`sec-scope-cwnano`
+ * :ref:`api-scope-openadc`
+ * :ref:`api-scope-cwnano`
 
 The **OpenADC** scope provides support for the *ChipWhisperer Lite* and the
 *ChipWhisperer Pro*, and the **CWNano** scope provides support for the
@@ -38,7 +38,7 @@ type automatically.
     :annotation: chipwhisperer.scope(type=None, sn=None)
 
 
-.. _sec-scope-openadc:
+.. _api-scope-openadc:
 
 OpenADC Scope
 =============
@@ -240,7 +240,7 @@ OpenADC Scope
                 user not having the correct device permissions to access the hardware.
 
 
-.. _sec-scope-cwnano:
+.. _api-scope-cwnano:
 
 ChipWhisperer Nano Scope
 ========================
@@ -323,7 +323,7 @@ ChipWhisperer Nano Scope
                 user not having the correct device permissions to access the hardware.
 
 
-.. _sec-target:
+.. _api-target:
 
 ******
 Target
@@ -332,7 +332,7 @@ Target
 The target object provides the interface for configuring the target device
 under test (DUT). The default target and currently only supported target type:
 
- * :ref:`sec-target-simpleserial`
+ * :ref:`api-target-simpleserial`
 
 The Simple Serial target type provides the target interface for all targets that use
 a simple serial connection. A object can be created using::
@@ -347,7 +347,7 @@ You now have access to the target configuration using the *target* variable.
     :annotation: chipwhisperer.target(scope, target_type=targets.SimpleSerial, **kwargs)
 
 
-.. _sec-target-simpleserial:
+.. _api-target-simpleserial:
 
 Simple Serial Target
 ====================
@@ -377,7 +377,7 @@ Simple Serial Target
     .. autoattribute:: chipwhisperer.capture.targets.SimpleSerial.baud
 
 
-.. _sec-project:
+.. _api-project:
 
 *******
 Project
@@ -427,4 +427,40 @@ The :func:`open_project <chipwhisperer.open_project>` and the
     .. automethod:: chipwhisperer.common.api.ProjectFormat.Traces.append
 
 
+.. _api-analyzer:
+
+********
+Analyzer
+********
+
+You may want to use the your captured traces to perform an attack based on a type
+of analysis, in comes the analyzer. One of the ways to analyze your traces is using
+correlation power analysis (CPA). To use this attack on your captured traces::
+
+    # do something
+
+The :func:`chipwhisperer.analyzer.cpa` function returns a CPA attack object that can be
+used to run the attack.
+
+.. autofunction:: chipwhisperer.analyzer.cpa
+
+
+.. _api-analyzer-cpa_attack:
+
+CPA Attack
+==========
+
+something cool about CPA attack ...
+
+
+.. _api-program_target:
+
+**************
+Program Target
+**************
+
+When testing out different firmware on the target it is useful to be able
+to reprogram the target. This can be done using the
+:func:`chipwhisperer.program_target` function. The function creates a
+programmer instance for the specified target. The programmer
 
