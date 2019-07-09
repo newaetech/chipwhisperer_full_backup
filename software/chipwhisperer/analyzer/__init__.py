@@ -5,6 +5,7 @@ from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128leakage
 from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api.ProjectFormat import Project
+from chipwhisperer.analyzer.utils import aes_funcs as aes_funcs
 
 def cpa(proj, leak_model, algorithm=cpa_algorithms.Progressive):
     """Create a CPA object to attack proj using leak_model and algorithm

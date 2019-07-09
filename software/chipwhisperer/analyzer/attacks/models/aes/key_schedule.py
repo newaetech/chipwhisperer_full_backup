@@ -31,6 +31,7 @@
 #
 # Currently only support AES-128 and AES-256
 #
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 
 def sbox(inp):
@@ -139,7 +140,7 @@ def xor(l1, l2):
     return [l1[i] ^ l2[i] for i in range(0, len(l1))]
 
 
-def keyScheduleRounds(inputkey, inputround, desiredround):
+def key_schedule_rounds(inputkey, inputround, desiredround):
     """
     inputkey = starting key, 16/32 bytes
     inputround = starting round number (i.e. 0 = first)
@@ -229,6 +230,7 @@ def keyScheduleRounds(inputkey, inputround, desiredround):
     #Return answer
     return state
 
+keyScheduleRounds = camel_case_deprecated(key_schedule_rounds)
 
 def test():
     #Manual tests right now - need to automate this.
