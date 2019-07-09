@@ -13,4 +13,4 @@ python:
   install:
     - requirements: software/requirements.txt
     - method: setuptools
-      path: chipwhisperer/software
+      path: software

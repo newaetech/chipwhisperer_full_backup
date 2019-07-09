@@ -36,6 +36,9 @@ extensions = [
 	'sphinx.ext.todo',
 ]
 
+# explicitly set the master document to index.rst
+master_doc = 'index'
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
