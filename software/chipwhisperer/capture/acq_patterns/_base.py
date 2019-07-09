@@ -25,13 +25,14 @@
 
 from chipwhisperer.common.utils.util import camel_case_deprecated
 
-
 class AcqKeyTextPattern_Base(object):
     _name = "Key/Text Pattern"
 
     def __init__(self):
         self._key_len = 16
         self._text_len = 16
+        self._key = None
+        self._textin = None
 
     def setTarget(self, target):
         pass
@@ -121,7 +122,7 @@ class AcqKeyTextPattern_Base(object):
     newPair = camel_case_deprecated(new_pair)
 
     def __str__(self):
-        return self.getName()
+        return "key: {}\ntext: {}".format(list(hex(b) for b in self._key), list(hex(b) for b in self._textin))
 
     def next(self):
         self.new_pair()
