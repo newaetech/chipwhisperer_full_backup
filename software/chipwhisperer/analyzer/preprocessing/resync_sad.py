@@ -54,16 +54,8 @@ class ResyncSAD(PreprocessingBase):
         else:
             traceplot = None
 
-        self.params.addChildren([
-            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'get':self._getRefTrace, 'set':self._setRefTrace},
-            {'name':'Max Shift +/-', 'key':'maxshift', 'type':'int', 'get':self._getMaxShift, 'set':self._setMaxShift},
-            {'name':'Target Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':traceplot, 'get':self._getWindow, 'set':self._setWindow},
-        ])
-        self.updateLimits()
-        self.sigTracesChanged.connect(self.updateLimits)
         self._init_not_done = True
 
-    @setupSetParam("Ref Trace")
     def _setRefTrace(self, num):
         self._rtrace = num
         self._calculateRef()
@@ -71,7 +63,6 @@ class ResyncSAD(PreprocessingBase):
     def _getRefTrace(self):
         return self._rtrace
 
-    @setupSetParam("Max Shift +/-")
     def _setMaxShift(self, shift):
         self._maxshift = shift
 
@@ -103,7 +94,6 @@ class ResyncSAD(PreprocessingBase):
             raise TypeError("Expected int; got %s" % type(m), m)
         self._setMaxShift(m)
 
-    @setupSetParam("Target Window")
     def _setWindow(self, window):
         self._wdStart, self._wdEnd = window
         self._calculateRef()
@@ -154,7 +144,7 @@ class ResyncSAD(PreprocessingBase):
                 self._calculateRef()
                 self._init_not_done = False
 
-            trace = self._traceSource.getTrace(n)
+            trace = self._traceSource.get_trace(n)
             if trace is None:
                 return None
             sad = self._findSAD(trace)
@@ -180,7 +170,8 @@ class ResyncSAD(PreprocessingBase):
                 trace = np.append(trace[diff:], np.zeros(diff))
             return trace
         else:
-            return self._traceSource.getTrace(n)
+            print("Not enabled")
+            return self._traceSource.get_trace(n)
 
     getTrace = get_trace
 
@@ -219,8 +210,8 @@ class ResyncSAD(PreprocessingBase):
         if self.enabled == False:
             return
 
-        self.reftrace = self._traceSource.getTrace(tnum)[self._wdStart:self._wdEnd]
-        sad = self._findSAD(self._traceSource.getTrace(tnum))
+        self.reftrace = self._traceSource.get_trace(tnum)[self._wdStart:self._wdEnd]
+        sad = self._findSAD(self._traceSource.get_trace(tnum))
         self.refmaxloc = np.argmin(sad)
         self.refmaxsize = min(sad)
         self.maxthreshold = np.mean(sad)

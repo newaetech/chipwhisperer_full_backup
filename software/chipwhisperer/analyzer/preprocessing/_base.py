@@ -32,7 +32,7 @@ from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObser
 from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import camel_case_deprecated
-from chipwhisperer.common.api.ProjectFormat import Project
+from chipwhisperer.common.api.ProjectFormat import Project, IndividualIterable
 
 class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     """
@@ -68,6 +68,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
 
         #Old attribute dict
         self._attrdict = None
+        self.enabled = True
 
     def _getEnabled(self):
         """Return if it is enable or not"""
@@ -98,28 +99,28 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     def get_trace(self, n):
         """Get trace number n"""
         if self.enabled:
-            trace = self._traceSource.getTrace(n)
+            trace = self._traceSource.get_trace(n)
             # Do your preprocessing here
             return trace
         else:
-            return self._traceSource.getTrace(n)
+            return self._traceSource.get_trace(n)
 
     getTrace = camel_case_deprecated(get_trace)
     def get_textin(self, n):
         """Get text-in number n"""
-        return self._traceSource.getTextin(n)
+        return self._traceSource.get_textin(n)
 
     getTextin = camel_case_deprecated(get_textin)
 
     def get_textout(self, n):
         """Get text-out number n"""
-        return self._traceSource.getTextout(n)
+        return self._traceSource.get_textout(n)
 
     getTextout = camel_case_deprecated(get_textout)
 
     def get_known_key(self, n=None):
         """Get known-key number n"""
-        return self._traceSource.getKnownKey(n)
+        return self._traceSource.get_known_key(n)
 
     getKnownKey = camel_case_deprecated(get_known_key)
 
@@ -132,7 +133,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
         pass
 
     def getSegmentList(self):
-        return self._traceSource.getSegmentList()
+        return self._traceSource.get_segment_list()
 
     def getAuxData(self, n, auxDic):
         return self._traceSource.getAuxData(n, auxDic)
@@ -143,7 +144,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     getSegment = camel_case_deprecated(get_segment)
 
     def num_traces(self):
-        return self._traceSource.numTraces()
+        return self._traceSource.num_traces()
 
     numTraces = camel_case_deprecated(num_traces)
 
@@ -185,3 +186,13 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
 
     def __str__(self):
         return self.__repr__()
+
+    def preprocess(self):
+        """ Note: Currently just puts the data from this class into a project
+        """
+        proj = Project()
+
+        for i in range(self.num_traces()):
+            proj.traces.append((self.get_trace(i), self.get_textin(i),
+                                self.get_textout(i), self.get_known_key(i)))
+        return proj

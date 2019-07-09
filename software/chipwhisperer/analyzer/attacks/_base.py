@@ -242,7 +242,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
     setPointRange = camel_case_deprecated(set_point_range)
     def known_key(self):
         """Get the known key via attack"""
-        key = self.process_known_key(self.getTraceSource().getKnownKey(self.get_trace_start()))
+        key = self.process_known_key(self.getTraceSource().get_known_key(self.get_trace_start()))
         if key is None:
             key = [None] * len(self.get_statistics().diffs)
         return key

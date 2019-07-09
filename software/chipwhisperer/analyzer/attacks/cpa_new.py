@@ -8,9 +8,9 @@ class CPA(CPA_Old):
 
     Attributes:
         project: Project to pull waves, textin, etc. from
+        algorithm: Analysis algorithm to use for attack. Should be Progressive
         leak_model: Leakage model to use during analysis. Should be of
             type AESLeakageHelper
-        algorithm: Analysis algorithm to use for attack. Should be Progressive
         trace_range: Start and end trace number. Should be a list of length 2
             (i.e. [start_num, end_num])
         point_range: Range of points to use from waves in project. Should be
@@ -29,7 +29,15 @@ class CPA(CPA_Old):
     trace_range = None
     _project = None
 
-    def __init__(self, proj, algorithm, leak_model):
+    def __init__(self, proj, leak_model, algorithm):
+        """
+
+        Args:
+            proj (Project): c
+            leak_model (AESLeakageHelper): Leakage model to use for getting
+                hamming weight
+            algorithm (AlgorithmsBase: Algorithm to use for attack
+        """
         super().__init__()
         self.set_analysis_algorithm(algorithm, leak_model)
         self.set_trace_source(proj.trace_manager())
@@ -120,14 +128,14 @@ class CPA(CPA_Old):
     def results(self):
         return self.get_statistics()
 
-    def run(self, update_interval=25, callback=None):
+    def run(self, callback=None, update_interval=25):
         """ Runs the attack
 
         Args:
-            update_interval (int, optional):  Number of traces to process
-                before updating the results of the attack.
             callback (function(), optional): Callback to call every update
                 interval. No arguments are passed to callback. Defaults to None.
+            update_interval (int, optional):  Number of traces to process
+                before updating the results of the attack.
 
         Returns:
             DataTypeDiffs, the results of the attack. See documentation

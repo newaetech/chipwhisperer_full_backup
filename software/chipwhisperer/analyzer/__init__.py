@@ -55,8 +55,8 @@ def _default_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
     import pandas as pd
     from IPython.display import clear_output
     global current_trace_iteration
-    attack_results = attack.get_statistics()
-    key = attack.known_key()
+    attack_results = attack.results
+    key = attack.project.keys[0]
 
     def format_stat(stat):
         if type(stat) is int:
@@ -74,7 +74,7 @@ def _default_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
             else:
                 ret[i] = ""
         return ret
-    attack_results.setKnownkey(key)
+    attack_results.set_known_key(key)
     stat_data = attack_results.find_maximums()
     df = pd.DataFrame(stat_data).transpose()
 
