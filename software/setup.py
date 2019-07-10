@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name = 'chipwhisperer',
@@ -11,36 +11,7 @@ setup(
     license = 'GPLv3',
     url = 'http://www.ChipWhisperer.com',
     download_url='https://github.com/newaetech/chipwhisperer/archive/4.0.2.tar.gz',
-    packages = ['chipwhisperer',
-                'chipwhisperer.capture',
-                'chipwhisperer.capture.acq_patterns',
-                'chipwhisperer.capture.api',
-                'chipwhisperer.capture.scopes',
-                'chipwhisperer.capture.scopes.cwhardware',
-                'chipwhisperer.capture.scopes.openadc_interface',
-                'chipwhisperer.capture.targets',
-                'chipwhisperer.capture.targets.simpleserial_readers',
-                'chipwhisperer.capture.targets.smartcard_readers',
-                'chipwhisperer.capture.targets.smartcard_protocols',
-                'chipwhisperer.capture.utils',
-                'chipwhisperer.analyzer',
-                'chipwhisperer.analyzer.attacks',
-                'chipwhisperer.analyzer.attacks.cpa_algorithms',
-                'chipwhisperer.analyzer.attacks.profiling_algorithms',
-                'chipwhisperer.analyzer.attacks.models',
-                'chipwhisperer.analyzer.attacks.models.aes',
-                'chipwhisperer.analyzer.preprocessing',
-                'chipwhisperer.analyzer.utils',
-                'chipwhisperer.common',
-                'chipwhisperer.common.api',
-                'chipwhisperer.common.results',
-                'chipwhisperer.common.scripts',
-                'chipwhisperer.common.traces',
-                'chipwhisperer.common.utils',
-                'chipwhisperer.hardware',
-                'chipwhisperer.hardware.firmware',
-                'chipwhisperer.hardware.naeusb',
-                ],
+    packages = find_packages(),
     package_dir = {'': 'software'},
     install_requires = [
         'configobj',
