@@ -400,31 +400,33 @@ The :func:`open_project <chipwhisperer.open_project>` and the
 :func:`create_project <chipwhisperer.create_project>` return a
 :class:`Project <chipwhisperer.common.api.ProjectFormat.Project>` instance.
 
-.. autoclass:: chipwhisperer.common.api.ProjectFormat.Project
+.. automodule:: chipwhisperer.common.api.ProjectFormat
 
-    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.location
+    .. autoclass:: chipwhisperer.common.api.ProjectFormat.Project
 
-    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.traces
+        .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.location
 
-    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.waves
+        .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.traces
 
-    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.textins
+        .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.waves
 
-    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.textouts
+        .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.textins
 
-    .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.keys
+        .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.textouts
 
-    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.get_filename
+        .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.keys
 
-    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.trace_manager
+        .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.get_filename
 
-    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.export
+        .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.trace_manager
 
-    .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.save
+        .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.export
 
-.. autoclass:: chipwhisperer.common.api.ProjectFormat.Traces
+        .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.save
 
-    .. automethod:: chipwhisperer.common.api.ProjectFormat.Traces.append
+    .. autoclass:: chipwhisperer.common.api.ProjectFormat.Traces
+
+        .. automethod:: chipwhisperer.common.api.ProjectFormat.Traces.append
 
 
 .. _api-analyzer:
@@ -433,17 +435,54 @@ The :func:`open_project <chipwhisperer.open_project>` and the
 Analyzer
 ********
 
-You may want to use the your captured traces to perform an attack based on a type
-of analysis, in comes the analyzer. The analyzer related API can be found in
-:mod:`chipwhisperer.analyzer` module.
+You may want to use your captured traces to perform an attack based on a type
+of side-channel analysis, in comes the analyzer. You can import the analyzer API
+using::
 
-One of the ways to analyze your traces is using
-correlation power analysis (CPA). The :func:`chipwhisperer.analyzer.cpa` function
-returns a :class:`CPA attack object <chipwhisperer.analyzer.attacks.cpa_new.CPA>`
-that can be used to run the attack.
+    import chipwhisperer.analyzer as cwa
 
-.. autodata:: chipwhisperer.analyzer.cpa
-    :annotation: chipwhisperer.analyzer.cpa(proj, leak_model, algorithm=cpa_algorithms.Progressive)
+One of the ways to analyze your traces is using correlation power analysis (CPA).
+The :func:`cpa <chipwhisperer.analyzer.cpa>` function returns a
+:class:`CPA <chipwhisperer.analyzer.attacks.cpa_new.CPA>` object that can be used to
+run the attack.
+
+.. automodule:: chipwhisperer.analyzer
+
+    .. autodata:: chipwhisperer.analyzer.cpa
+        :annotation: cpa(proj, leak_model, algorithm=cpa_algorithms.Progressive)
+
+    .. data:: leakage_models
+
+        Contains all available leakage models that can be passed to the
+        :func:`cpa <chipwhisperer.analyzer.cpa>` function as the **leak_model** parameter.
+
+        Instance of the
+        :class:`EightBitAES128LeakageModels <chipwhisperer.analyzer.attacks.models.EightBitAES128LeakageModels>`
+        class.
+
+
+.. _api-analyzer-leakage_models:
+
+Leakage Models
+==============
+
+The analyzer includes various leakage models that can be passed to
+the :func:`cpa <chipwhisperer.analyzer.cpa>` as the **leak_model**
+argument. The
+:data:`leakage_models <chipwhisperer.analyzer.leakage_models>`
+variable provides a convenient way to list and access all the available
+leakage models::
+
+    import chipwhisperer.analyzer as cwa
+    print(cwa.leakage_models)
+
+Any attribute can be chosen from this list and accessed with the dot
+syntax.
+
+.. automodule:: chipwhisperer.analyzer.attacks.models
+
+    .. autoclass:: chipwhisperer.analyzer.attacks.models.EightBitAES128LeakageModels
+        :members:
 
 
 .. _api-analyzer-cpa_attack:
@@ -451,22 +490,71 @@ that can be used to run the attack.
 CPA Attack
 ==========
 
-.. autoclass:: chipwhisperer.analyzer.attacks.cpa_new.CPA
+The interface class to carry out a correlation power analysis attack on the
+previously captured traces. The easiest way to create a default CPA instance
+that is ready to perform an attack is to use the
+:func:`cpa <chipwhisperer.analyzer.cpa>` function.
 
-    .. automethod:: chipwhisperer.analyzer.attacks.cpa_new.CPA.change_project
+.. automodule:: chipwhisperer.analyzer.attacks.cpa_new
 
-    .. automethod:: chipwhisperer.analyzer.attacks.cpa_new.CPA.run
+    .. autoclass:: chipwhisperer.analyzer.attacks.cpa_new.CPA
+
+        .. automethod:: chipwhisperer.analyzer.attacks.cpa_new.CPA.change_project
+
+        .. automethod:: chipwhisperer.analyzer.attacks.cpa_new.CPA.run
 
 
 Results
 -------
 
-The :meth:`cpa.run <chipwhisperer.analyzer.attacks.cpa_new.CPA.run> function will
+The :meth:`cpa.run <chipwhisperer.analyzer.attacks.cpa_new.CPA.run>` function will
 return a results object. There are a few methods for interacting with the results
 object.
 
 .. autoclass:: chipwhisperer.analyzer.attacks._stats.Results
+    :members: best_guesses, simple_PGE, set_known_key, find_maximums
 
+
+.. _api-analyzer-utilities:
+
+AES Functions
+=============
+
+You may want to perform certain parts of AES on some plain text. For this
+there is the AES helper functions. They are accessible using::
+
+    from chipwhisperer.analyzer import aes_funcs
+
+Available functions:
+  * :func:`aes_funcs.sbox <chipwhisperer.analyzer.utils.aes_funcs>`
+  * :func:`aes_funcs.inv_sbox <chipwhisperer.analyzer.attacks.models.aes.funcs.inv_sbox>`
+  * :func:`aes_funcs.subbytes <chipwhisperer.analyzer.attacks.models.aes.funcs.subbytes>`
+  * :func:`aes_funcs.inv_subbytes <chipwhisperer.analyzer.attacks.models.aes.funcs.inv_subbytes>`
+  * :func:`aes_funcs.shiftrows <chipwhisperer.analyzer.attacks.models.aes.funcs.shiftrows>`
+  * :func:`aes_funcs.inv_shiftrows <chipwhisperer.analyzer.attacks.models.aes.funcs.inv_shiftrows>`
+  * :func:`aes_funcs.mixcolumns <chipwhisperer.analyzer.attacks.models.aes.funcs.mixcolumns>`
+  * :func:`aes_funcs.inv_mixcolumns <chipwhisperer.analyzer.attacks.models.aes.funcs.inv_mixcolumns>`
+  * :func:`aes_funcs.key_schedule_rounds<chipwhisperer.analyzer.attacks.models.aes.key_schedule.key_schedule_rounds>`
+
+.. automodule:: chipwhisperer.analyzer.utils.aes_funcs
+
+    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.sbox
+
+    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.inv_sbox
+
+    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.subbytes
+
+    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.inv_subbytes
+
+    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.shiftrows
+
+    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.inv_shiftrows
+
+    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.mixcolumns
+
+    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.inv_mixcolumns
+
+    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.key_schedule.key_schedule_rounds
 
 
 .. _api-program_target:
@@ -477,8 +565,8 @@ Program Target
 
 When testing out different firmware on the target it is useful to be able
 to reprogram the target. This can be done using the
-:func:`chipwhisperer.program_target` function. There are multiple
-programmer types available:
+:func:`chipwhisperer.program_target` function. There are multiple programmer
+types available:
 
   * :class:`programmers.STM32FProgrammer <chipwhisperer.capture.api.programmers.STM32FProgrammer>`
   * :class:`programmers.XMEGAProgrammer <chipwhisperer.capture.api.programmers.XMEGAProgrammer>`
