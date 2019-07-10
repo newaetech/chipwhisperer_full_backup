@@ -26,7 +26,6 @@ import logging
 
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
-from chipwhisperer.common.utils.analysissource import AnalysisObserver
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
 from chipwhisperer.common.utils import pluginmanager
@@ -40,14 +39,13 @@ def enforceLimits(value, limits):
     return value
 
 
-class AttackBaseClass(PassiveTraceObserver, AnalysisObserver, Parameterized, AutoScript, Plugin):
+class AttackBaseClass(PassiveTraceObserver, Parameterized, AutoScript, Plugin):
     """Generic Attack Interface"""
     _name= 'Attack Settings'
     _algos = {}
 
     def __init__(self):
         AutoScript.__init__(self)
-        AnalysisObserver.__init__(self)
         PassiveTraceObserver.__init__(self)
         self._itNum = 0
         self.getParams().getChild("Input").hide()
@@ -343,36 +341,3 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisObserver, Parameterized, Aut
         atrace.setValue(1, blockAction=True)
         atrace.setLimits((1, self._traceSource.num_traces()))
         atrace.setValue(self._traceSource.num_traces(), blockAction=True)
-
-
-class AttackObserver(AnalysisObserver):
-    """"It is an AnalysisObserver with methods to get information from attacks"""
-    highlightedKeyColor = 255, 0, 0
-    traceColor = 0, 255, 0
-
-    def setAnalysisSource(self, analysisSource):
-        if issubclass(analysisSource.__class__, AttackBaseClass):
-            AnalysisObserver.setAnalysisSource(self, analysisSource)
-        else:
-            AnalysisObserver.setAnalysisSource(self, None)
-
-    def _highlightedKeys(self):
-        return self._analysisSource.knownKey()
-
-    def _numPerms(self, key):
-        try:
-            return len(self._analysisSource.getStatistics().diffs[key])
-        except Exception:
-            return 0
-
-    def _maxNumPerms(self):
-        try:
-            return self._analysisSource.getStatistics().numPerms
-        except Exception:
-            return 0
-
-    def _numKeys(self):
-        try:
-            return len(self._analysisSource.getStatistics().diffs)
-        except Exception:
-            return 0
