@@ -461,6 +461,28 @@ run the attack.
         class.
 
 
+.. _api-analyzer-preprocessing:
+
+Preprocessing
+==============
+
+Before performing an attack you may want to apply some pre-processing to the
+captured traces. There is currently one pre-processing class that has been
+moved to the latest ChipWhisperer API.
+
+.. automodule:: chipwhisperer.analyzer.preprocessing.resync_sad
+
+    .. autoclass:: ResyncSAD
+
+        .. autoattribute:: max_shift
+
+        .. autoattribute:: ref_trace
+
+        .. autoattribute:: target_window
+
+        .. automethod:: preprocess
+
+
 .. _api-analyzer-leakage_models:
 
 Leakage Models
