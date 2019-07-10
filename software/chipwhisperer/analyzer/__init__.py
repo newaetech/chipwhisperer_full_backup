@@ -1,17 +1,20 @@
 from chipwhisperer.analyzer.attacks.snr import calculate_snr
 from chipwhisperer.analyzer.attacks import cpa_algorithms
 from chipwhisperer.analyzer import preprocessing
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES128
-from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128leakage
 from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api.ProjectFormat import Project
 from chipwhisperer.analyzer.utils import aes_funcs as aes_funcs
+from chipwhisperer.analyzer.attacks.models import EightBitAES128LeakageModels
 
-def cpa(proj, leak_model, algorithm=cpa_algorithms.Progressive):
-    """Create a CPA object to attack proj using leak_model and algorithm
+
+leakage_models = EightBitAES128LeakageModels()
+
+
+def cpa(project, leak_model, algorithm=cpa_algorithms.Progressive):
+    """Create a CPA object to attack traces in project using leak_model and algorithm.
 
     Args:
-       proj (Project): TraceManager or preprocessing object that
+       project (Project): TraceManager or preprocessing object that
            holds traces, plaintext, etc.
        leak_model (AESLeakageHelper): Model describing information
            leaked from target.
