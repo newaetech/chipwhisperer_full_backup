@@ -11,7 +11,7 @@ setup(
     license = 'GPLv3',
     url = 'http://www.ChipWhisperer.com',
     download_url='https://github.com/newaetech/chipwhisperer/archive/4.0.2.tar.gz',
-    packages = find_packages(),
+    packages = find_packages('software'),
     package_dir = {'': 'software'},
     install_requires = [
         'configobj',
