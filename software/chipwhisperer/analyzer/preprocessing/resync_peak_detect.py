@@ -27,7 +27,6 @@
 
 import numpy as np
 
-from chipwhisperer.common.results.base import ResultsBase
 from ._base import PreprocessingBase
 from chipwhisperer.common.utils.parameter import setupSetParam
 
@@ -53,7 +52,7 @@ class ResyncPeakDetect(PreprocessingBase):
         self.params.addChildren([
             {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'get':self._getRefTrace, 'set':self._setRefTrace},
             {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'values':['max', 'min'], 'get':self._getType, 'set':self._setType},
-            {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'get':self._getWindow, 'set':self._setWindow},
+            {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph',  'get':self._getWindow, 'set':self._setWindow},
             {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'step':0.1, 'limits':(0, 10), 'set':self._setLimit, 'get':self._getLimit},
         ])
         self._calculateRef()

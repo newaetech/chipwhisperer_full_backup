@@ -27,9 +27,7 @@
 
 import numpy as np
 
-from chipwhisperer.common.results.base import ResultsBase
 from ._base import PreprocessingBase
-from chipwhisperer.common.utils.parameter import setupSetParam
 from collections import OrderedDict
 
 class ResyncSAD(PreprocessingBase):
@@ -50,7 +48,7 @@ class ResyncSAD(PreprocessingBase):
         self._maxshift = 1
 
         if connectTracePlot:
-            traceplot = ResultsBase.registeredObjects["Trace Output Plot"]
+            traceplot = None
         else:
             traceplot = None
 
