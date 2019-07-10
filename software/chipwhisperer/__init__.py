@@ -63,8 +63,6 @@ def open_project(filename):
        OSError: filename does not exist.
     """
     from chipwhisperer.common.api import ProjectFormat as project
-    if not os.path.isfile(filename):
-        raise OSError("File " + filename + " does not exist or is not a file")
     proj = project.Project()
     proj.load(filename)
     return proj
