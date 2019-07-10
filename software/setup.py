@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'chipwhisperer',
-    version = '5.0.0',
+    version = '5.0.1',
     description = "ChipWhisperer Side-Channel Analysis Tool",
     author = "Colin O'Flynn",
     author_email = 'coflynn@newae.com',
