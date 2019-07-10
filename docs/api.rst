@@ -354,27 +354,27 @@ Simple Serial Target
 
 .. autoclass:: chipwhisperer.targets.SimpleSerial
 
-    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.write
+    .. automethod:: write
 
-    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.read
+    .. automethod:: read
 
-    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.simpleserial_wait_ack
+    .. automethod:: simpleserial_wait_ack
 
-    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.simpleserial_write
+    .. automethod:: simpleserial_write
 
-    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.simpleserial_read
+    .. automethod:: simpleserial_read
 
-    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.set_key
+    .. automethod:: set_key
 
-    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.in_waiting
+    .. automethod:: in_waiting
 
-    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.flush
+    .. automethod:: flush
 
-    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.close
+    .. automethod:: close
 
-    .. automethod:: chipwhisperer.capture.targets.SimpleSerial.con
+    .. automethod:: con
 
-    .. autoattribute:: chipwhisperer.capture.targets.SimpleSerial.baud
+    .. autoattribute:: baud
 
 
 .. _api-project:
@@ -402,31 +402,31 @@ The :func:`open_project <chipwhisperer.open_project>` and the
 
 .. automodule:: chipwhisperer.common.api.ProjectFormat
 
-    .. autoclass:: chipwhisperer.common.api.ProjectFormat.Project
+    .. autoclass:: Project
 
-        .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.location
+        .. autoattribute:: location
 
-        .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.traces
+        .. autoattribute:: traces
 
-        .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.waves
+        .. autoattribute:: waves
 
-        .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.textins
+        .. autoattribute:: textins
 
-        .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.textouts
+        .. autoattribute:: textouts
 
-        .. autoattribute:: chipwhisperer.common.api.ProjectFormat.Project.keys
+        .. autoattribute:: keys
 
-        .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.get_filename
+        .. automethod:: get_filename
 
-        .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.trace_manager
+        .. automethod:: trace_manager
 
-        .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.export
+        .. automethod:: export
 
-        .. automethod:: chipwhisperer.common.api.ProjectFormat.Project.save
+        .. automethod:: save
 
     .. autoclass:: chipwhisperer.common.api.ProjectFormat.Traces
 
-        .. automethod:: chipwhisperer.common.api.ProjectFormat.Traces.append
+        .. automethod:: append
 
 
 .. _api-analyzer:
@@ -503,8 +503,37 @@ syntax.
 
 .. automodule:: chipwhisperer.analyzer.attacks.models
 
-    .. autoclass:: chipwhisperer.analyzer.attacks.models.EightBitAES128LeakageModels
-        :members:
+    .. autoclass:: EightBitAES128LeakageModels
+
+        .. autoattribute:: after_key_mix
+
+        .. autoattribute:: inverse_sbox_output
+
+        .. autoattribute:: last_round_state
+
+        .. autoattribute:: last_round_state_diff
+
+        .. autoattribute:: last_round_state_diff_alternate
+
+        .. autoattribute:: mix_columns_output
+
+        .. autoattribute:: plaintext_key_xor
+
+        .. autoattribute:: round_1_2_state_diff_key_mix
+
+        .. autoattribute:: round_1_2_state_diff_sbox
+
+        .. autoattribute:: round_1_2_state_diff_text
+
+        .. autoattribute:: sbox_in_out_diff
+
+        .. autoattribute:: sbox_input_successive
+
+        .. autoattribute:: sbox_output
+
+        .. autoattribute:: sbox_output_successive
+
+        .. autoattribute:: shift_columns_output
 
 
 .. _api-analyzer-cpa_attack:
@@ -519,11 +548,11 @@ that is ready to perform an attack is to use the
 
 .. automodule:: chipwhisperer.analyzer.attacks.cpa_new
 
-    .. autoclass:: chipwhisperer.analyzer.attacks.cpa_new.CPA
+    .. autoclass:: CPA
 
-        .. automethod:: chipwhisperer.analyzer.attacks.cpa_new.CPA.change_project
+        .. automethod:: change_project
 
-        .. automethod:: chipwhisperer.analyzer.attacks.cpa_new.CPA.run
+        .. automethod:: run
 
 
 Results
@@ -542,8 +571,8 @@ object.
 AES Functions
 =============
 
-You may want to perform certain parts of AES on some plain text. For this
-there is the AES helper functions. They are accessible using::
+You may want to perform certain AES operations seperately. For this there is the AES
+helper functions. They are accessible using::
 
     from chipwhisperer.analyzer import aes_funcs
 
