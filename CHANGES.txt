@@ -23,6 +23,7 @@ V5.1.0:
   * C firmware CRYPTO_TARGET no longer defaults to AVRCRYPTOLIB
   * CW308_AURIX clock and regulator fixes
   * Fixed generate_firmware_files.py for python3
+  * Removed some unused files
 
 
 V5.0.1:
