@@ -2,6 +2,9 @@
 ChipWhisperer
 *************
 
+.. note:: This documentation is currently under construction for version
+    5.1.0 of the ChipWhisperer software. And currently is only partially complete.
+
 After installing ChipWhisperer and setting up your hardware run:
 
 .. code:: python
