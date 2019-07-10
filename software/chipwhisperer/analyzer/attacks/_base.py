@@ -25,12 +25,11 @@
 import logging
 
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.tracesource import PassiveTraceObserver, TraceSource
-from chipwhisperer.common.utils.analysissource import AnalysisSource, AnalysisObserver
+from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
+from chipwhisperer.common.utils.analysissource import AnalysisObserver
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
 from chipwhisperer.common.utils import pluginmanager
-from .models.AES128_8bit import AES128_8bit, SBox_output
 from chipwhisperer.common.utils.util import camel_case_deprecated
 
 def enforceLimits(value, limits):
@@ -41,14 +40,14 @@ def enforceLimits(value, limits):
     return value
 
 
-class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoScript, Plugin):
+class AttackBaseClass(PassiveTraceObserver, AnalysisObserver, Parameterized, AutoScript, Plugin):
     """Generic Attack Interface"""
     _name= 'Attack Settings'
     _algos = {}
 
     def __init__(self):
         AutoScript.__init__(self)
-        AnalysisSource.__init__(self)
+        AnalysisObserver.__init__(self)
         PassiveTraceObserver.__init__(self)
         self._itNum = 0
         self.getParams().getChild("Input").hide()

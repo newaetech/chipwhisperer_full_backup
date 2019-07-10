@@ -25,18 +25,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import util
-
-
-class AnalysisSource(object):
-    """ It produces an analysis report as output """
-
-    def __init__(self):
-        self.sigAnalysisStarted = util.Signal()
-        self.sigAnalysisUpdated = util.Signal()
-        self.sigAnalysisDone = util.Signal()
-
-
 class AnalysisObserver(object):
     """ It processes the data from an AnalysisSource when requested """
     
