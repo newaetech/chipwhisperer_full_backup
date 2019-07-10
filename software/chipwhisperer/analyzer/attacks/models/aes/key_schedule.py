@@ -140,49 +140,52 @@ def xor(l1, l2):
     return [l1[i] ^ l2[i] for i in range(0, len(l1))]
 
 
-def key_schedule_rounds(inputkey, inputround, desiredround):
-    """
-    inputkey = starting key, 16/32 bytes
-    inputround = starting round number (i.e. 0 = first)
-    desiredround = desired round number (i.e. 10 = last for 16-byte)
-
-    returns desired round number. Can go forward or backwards.
+def key_schedule_rounds(input_key, input_round, desired_round):
+    """Use key schedule to determine key for different round.
 
     When dealing with AES-256, inputkey is 16 bytes and inputround
     indicates round that bytes 0...15 are from.
+
+    Args:
+        input_key (list): List of bytes of starting key, 16/32 bytes
+        input_round (int): Starting round number (i.e. 0 = first)
+        desired_round (int): Desired round number (i.e. 10 = last for 16-byte)
+
+    Returns:
+         list: Key at desired round number. Can go forward or backwards.
     """
 
     #Some constants
-    n = len(inputkey)
+    n = len(input_key)
     if n == 16:
         pass
     elif n == 32:
-        desiredfull = desiredround
-        desiredround = int(desiredround / 2)
+        desiredfull = desired_round
+        desired_round = int(desired_round / 2)
 
         #Special case for inputround of 13, needed for 'final' round...
-        if inputround != 13:
-            if inputround % 2 == 1:
+        if input_round != 13:
+            if input_round % 2 == 1:
                 raise ValueError("Input round must be divisible by 2")
-            inputround = int(inputround / 2)
+            input_round = int(input_round / 2)
         else:
-            if inputround <= desiredfull:
+            if input_round <= desiredfull:
                 if desiredfull < 13:
                     raise ValueError("Round = 13 only permissible for reverse")
 
                 if desiredfull == 13:
-                    return inputkey[0:16]
+                    return input_key[0:16]
                 else:
-                    return inputkey[16:32]
+                    return input_key[16:32]
 
     else:
         raise ValueError("Invalid keylength: %d"%n)
 
-    rnd = inputround
-    state = list(inputkey)
+    rnd = input_round
+    state = list(input_key)
 
     #Check if we are going forward or backwards
-    while rnd < desiredround:
+    while rnd < desired_round:
         rnd += 1
 
         #Forward algorithm, thus need at least one round
@@ -194,7 +197,7 @@ def key_schedule_rounds(inputkey, inputround, desiredround):
                 inp = state[(i - 4):i]
             state[i:(i+4)] = xor(state[i:(i+4)], inp)
 
-    while rnd > desiredround:
+    while rnd > desired_round:
         #For AES-256 final-round is 13 as that includes 32 bytes
         #of key. Convert to round 12 then continue as usual...
         if n == 32 and rnd == 13:
@@ -207,7 +210,7 @@ def key_schedule_rounds(inputkey, inputround, desiredround):
                 state[i:(i+4)] = xor(oldstate[i:(i+4)], oldstate[(i-4):i])
             state[0:4] = xor(oldstate[0:4], g_func(state[(n - 4):n], rcon[7]))
 
-        if rnd == desiredround:
+        if rnd == desired_round:
             break
 
         # Reverse algorithm, thus need at least one round

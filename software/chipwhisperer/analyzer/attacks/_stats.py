@@ -85,6 +85,7 @@ class Results(object):
         #TODO: Ensure this gets called by attack algorithms when rerunning
 
     def simple_PGE(self, bnum):
+        """Returns the partial guessing entropy of subkey."""
         if self.maxValid[bnum] == False:
             #TODO: should sort
             return 1
@@ -93,12 +94,20 @@ class Results(object):
     simplePGE = camel_case_deprecated(simple_PGE)
 
     def set_known_key(self, known_key):
+        """Sets the known encryption key."""
         self.known_key = known_key
 
     setKnownkey = camel_case_deprecated(set_known_key)
 
-    def update_subkey(self, bnum, data, copy=True, forceUpdate=False, tnum=None):
-        if (id(data) != id(self.diffs[bnum])) or forceUpdate:
+    def update_subkey(self, bnum, data, copy=True, force_update=False, tnum=None):
+        """Update the specific subkey.
+
+        Args:
+            bnum (int): The index of the subkey.
+            data (int): The new subkey byte.
+            copy (int):
+        """
+        if (id(data) != id(self.diffs[bnum])) or force_update:
             self.maxValid[bnum] = False
 
             if data is not None and copy:
@@ -110,7 +119,40 @@ class Results(object):
 
     updateSubkey = camel_case_deprecated(update_subkey)
 
-    def find_maximums(self, bytelist=None, useAbsolute=True, useSingle=False):
+    def find_maximums(self, bytelist=None, use_absolute=True, use_single=False):
+        """Information from the attack:
+
+        Args:
+            bytelist (list): Iterable of subkeys to compute and organize results
+                for.
+            use_absolute (bool): Use absolute value of correlation to find highest
+                correlation.
+            use_single (bool): All table values are taken from the same point the
+                maximum is taken from.
+
+
+        Returns:
+            list: Ordered by subkey index::
+
+                [subkey0_data, subkey1_data, subkey2_data, ...]
+
+            *subkey0_data* is another list containing guesses ordered by strength
+            of correlation::
+
+                [guess0, guess1, guess2, ...]
+
+            *guess0* is a tuple containing::
+
+                (key_guess, location_of_max, correlation)
+
+        For example, if you want to print the correlation of the third best guess
+        of the 4th subkey, you would run::
+
+            print(attack_results.find_maximums()[4][3][2])
+
+        Note the "point location of the max" is normally not calculated/tracked,
+        and thus returns as a 0.
+        """
         if bytelist is None:
             bytelist = list(range(0, self.numSubkeys))
 
@@ -123,7 +165,7 @@ class Results(object):
 
             if self.maxValid[i] == False:
                 for hyp in range(0, self.numPerms):
-                    if useAbsolute:
+                    if use_absolute:
                         v = np.nanmax(np.fabs(self.diffs[i][hyp]))
                     else:
                         v = np.nanmax(self.diffs[i][hyp])
@@ -144,7 +186,7 @@ class Results(object):
                 #TODO: workaround for PGE, as NaN's get ranked first
                 numnans = np.isnan(self.maxes[i]['value']).sum()
 
-                if useSingle:
+                if use_single:
                     #All table values are taken from same point MAX is taken from
                     where = self.maxes[i][0]['point']
                     for j in range(0, self.numPerms):
