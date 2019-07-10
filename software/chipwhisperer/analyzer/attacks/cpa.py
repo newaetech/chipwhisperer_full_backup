@@ -55,15 +55,12 @@ class CPA(AttackBaseClass):
 
     def updateScript(self, _=None):
         AttackBaseClass.updateScript(self)
-        self.importsAppend("from chipwhisperer.analyzer.attacks.cpa import CPA")
 
         analysAlgoStr = sys.modules[self._analysisAlgorithm.__class__.__module__].__name__ + '.' + self._analysisAlgorithm.__class__.__name__
         model_path = None
         cryptoalg = None
         hwmodel = None
 
-        self.addVariable("init", "leakage_object", "%s(%s)"%(cryptoalg, hwmodel))
-        self.addFunction("init", "setAnalysisAlgorithm", "%s,leakage_object" % (analysAlgoStr), loc=1)
 
     def processKnownKey(self, inpkey):
         if inpkey is None:

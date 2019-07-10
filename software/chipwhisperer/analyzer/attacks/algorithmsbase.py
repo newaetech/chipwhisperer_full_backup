@@ -26,14 +26,12 @@
 #=================================================
 
 from ._stats import Results
-from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.parameter import Parameterized
 
 
-class AlgorithmsBase(Parameterized, AutoScript):
+class AlgorithmsBase(Parameterized):
 
     def __init__(self):
-        AutoScript.__init__(self)
         self.sr = None
         self.stats = None
         self._project = None

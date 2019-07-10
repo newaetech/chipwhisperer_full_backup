@@ -44,7 +44,6 @@ class Filter(PreprocessingBase):
 
     def __init__(self, traceSource=None, name=None):
         PreprocessingBase.__init__(self, traceSource, name=name)
-        self.importsAppend("import scipy as sp")
 
         self._type = "low"
         self._freq1 = 0.1

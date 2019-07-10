@@ -26,14 +26,13 @@
 #=================================================
 import logging
 
-from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.tracesource import TraceSource, PassiveTraceObserver
 from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api.ProjectFormat import Project
 
-class PreprocessingBase(TraceSource, PassiveTraceObserver, AutoScript):
+class PreprocessingBase(TraceSource, PassiveTraceObserver):
     """
     Base Class for all preprocessing modules
     Derivable Classes work like this:
@@ -49,7 +48,6 @@ class PreprocessingBase(TraceSource, PassiveTraceObserver, AutoScript):
             TraceSource.__init__(self, self.getName())
         else:
             TraceSource.__init__(self, name=name)
-        AutoScript.__init__(self)
         if isinstance(traceSource, Project):
             traceSource = traceSource.trace_manager()
         self.setTraceSource(traceSource, blockSignal=True)

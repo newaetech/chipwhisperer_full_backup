@@ -25,7 +25,6 @@
 import logging
 
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
-from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils.util import camel_case_deprecated
 
@@ -37,13 +36,12 @@ def enforceLimits(value, limits):
     return value
 
 
-class AttackBaseClass(PassiveTraceObserver, AutoScript):
+class AttackBaseClass(PassiveTraceObserver):
     """Generic Attack Interface"""
     _name= 'Attack Settings'
     _algos = {}
 
     def __init__(self):
-        AutoScript.__init__(self)
         PassiveTraceObserver.__init__(self)
         self._itNum = 0
         self.getParams().getChild("Input").hide()
@@ -266,18 +264,10 @@ class AttackBaseClass(PassiveTraceObserver, AutoScript):
 
     getStatistics = camel_case_deprecated(get_statistics)
     def updateScript(self, _=None):
-        self.importsAppend("import chipwhisperer")
         if self._traceSource is None:
             return
 
         # Add attack 'other' functions such as template generators etc
-        if hasattr(self._analysisAlgorithm, '_smartstatements'):
-            for k in self._analysisAlgorithm._smartstatements:
-                self.mergeGroups(k, self._analysisAlgorithm, prefix='attack')
-
-            for k in self._analysisAlgorithm.getImportStatements():
-                self.importsAppend(k)
-
         runs = self.findParam('runs')
         atraces = self.findParam('atraces')
         strace = self.findParam('strace')
@@ -296,14 +286,6 @@ class AttackBaseClass(PassiveTraceObserver, AutoScript):
 
         pointrng = self.findParam('prange').getValue()
 
-        self.addFunction("init", "setTraceSource", "UserScript.traces, blockSignal=True", loc=0)
-        self.addFunction("init", "setProject", "UserScript.api.project()", loc=0)
-        self.addFunction("init", "setTargetSubkeys", "%s" % str(self.getEnabledSubkeys()))
-        self.addFunction("init", "setTraceStart", "%d" % strace.getValue())
-        self.addFunction("init", "setTracesPerAttack", "%d" % atraces.getValue())
-        self.addFunction("init", "setIterations", "%d" % runs.getValue())
-        self.addFunction("init", "setReportingInterval", "%d" % ri.getValue())
-        self.addFunction("init", "setPointRange", "(%d,%d)" % (pointrng[0], pointrng[1]))
 
     def updateTraceLimits(self):
         if self._traceSource is None:
@@ -312,7 +294,6 @@ class AttackBaseClass(PassiveTraceObserver, AutoScript):
         self.findParam('prange').setLimits((0, self._traceSource.num_points()-1))
         self.findParam('prange').setValue((0, self._traceSource.num_points()-1))
 
-        self.addFunction("init", "setPointRange", "(%d,%d)" % (0, self._traceSource.num_points()))
 
         strace = self.findParam('strace')
         self.findParam('runs').setValue(1)
