@@ -17,6 +17,18 @@ class CPA(CPA_Old):
             tables and equivalent.
         leak_model: The leakage model used when analysing the captured traces.
 
+    The easiest way to use this class is through the
+    :func:`cpa <chipwhisperer.analyzer.cpa>` API function provided by the
+    :mod:`chipwhisperer.analyzer` module.
+
+    Example::
+
+        import chipwhisperer.analyzer as cwa
+        import chipwhisperer as cw
+        proj = cw.open_project('/path/to/project')
+        attack = cwa.cpa(proj, cwa.leakage_models.sbox_output)
+        results = attack.run()
+        print(results)
 
     Attributes:
         project: Project to pull waves, textin, etc. from.
@@ -29,17 +41,6 @@ class CPA(CPA_Old):
             a list of length 2 ([start_point, end_point]).
         subkey_list: List of subkeys to attack (subkey_list = [0, 1, 3] will
             attack subkeys 0, 1, and 3).
-
-    The easiest way to use this class is through the API function provided by
-    the :mod:`chipwhisperer.analyzer` module.
-
-    Example::
-
-        import chipwhisperer.analyzer as cwa
-        import chipwhisperer as cw
-        proj = cw.open_project('/path/to/project')
-        attack = cwa.cpa(proj, cwa.hammingweight_models.SBoxOutput)
-        results = attack.run()
     """
     trace_range = None
     _project = None
