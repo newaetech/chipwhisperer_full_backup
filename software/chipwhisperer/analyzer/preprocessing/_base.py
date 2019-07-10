@@ -185,7 +185,10 @@ class PreprocessingBase(TraceSource, PassiveTraceObserver):
         return self.__repr__()
 
     def preprocess(self):
-        """ Note: Currently just puts the data from this class into a project
+        """Process all traces.
+
+        Returns:
+            Project: A new project containing the processed traces.
         """
         proj = Project()
 
