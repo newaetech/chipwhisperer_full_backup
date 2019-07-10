@@ -26,7 +26,7 @@ def cpa(proj, leak_model, algorithm=cpa_algorithms.Progressive):
         Now uses new CPA attack object
     """
     from chipwhisperer.analyzer.attacks.cpa_new import CPA
-    attack = CPA(project, leak_model, algorithm)
+    attack = CPA(proj, leak_model, algorithm)
 
     return attack
 

@@ -153,20 +153,3 @@ class PassiveTraceObserver(Parameterized):
         if par.getValue() not in list(TraceSource.registeredObjects.values()):
             par.setValue(None)
 
-
-class ActiveTraceObserver(PassiveTraceObserver):
-    """Observes a TraceSource for state changes and process the Traces actively """
-
-    @setupSetParam('Input')
-    def setTraceSource(self, traceSource):
-        #Avoid doing processing when set to same value
-        if self._traceSource == traceSource:
-            return
-
-        if self._traceSource:
-            self._traceSource.sigTracesChanged.disconnect(self.processTraces)
-        if traceSource:
-            traceSource.sigTracesChanged.connect(self.processTraces)
-        self._traceSource = traceSource
-
-        self.processTraces()

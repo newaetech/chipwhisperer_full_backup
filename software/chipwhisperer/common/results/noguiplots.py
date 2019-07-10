@@ -134,7 +134,7 @@ class NoGUIPlots(object):
 
         attack_results = self._results
 
-        key = attack_results.knownkey[bnum]
+        key = attack_results.known_key[bnum]
         data = attack_results.diffs[bnum]
 
         xrangelist = range(0, len(data[0]))

@@ -28,13 +28,13 @@ import logging
 
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObserver
+from chipwhisperer.common.utils.tracesource import TraceSource, PassiveTraceObserver
 from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api.ProjectFormat import Project, IndividualIterable
 
-class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
+class PreprocessingBase(TraceSource, PassiveTraceObserver, AutoScript, Plugin):
     """
     Base Class for all preprocessing modules
     Derivable Classes work like this:
@@ -45,7 +45,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
 
     def __init__(self, traceSource=None, name=None):
         self._enabled = False
-        ActiveTraceObserver.__init__(self)
+        PassiveTraceObserver.__init__(self)
         if name is None:
             TraceSource.__init__(self, self.getName())
         else:
