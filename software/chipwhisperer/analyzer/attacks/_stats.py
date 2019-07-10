@@ -29,6 +29,7 @@ import numpy as np
 from chipwhisperer.common.utils.util import camel_case_deprecated
 from collections import OrderedDict
 
+
 class Results(object):
     """
     Results type used for attacks generating peaks indicating the 'best' success. Examples include

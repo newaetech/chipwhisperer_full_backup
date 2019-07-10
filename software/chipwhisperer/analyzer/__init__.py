@@ -33,9 +33,11 @@ def cpa(project, leak_model, algorithm=cpa_algorithms.Progressive):
 
     return attack
 
+
 def profiling(trace_source):
     """Not yet implemented, create/import manually"""
     raise NotImplementedError
+
 
 def analyzer_plots(attack_results=None):
     """Create an object to get plot data for analyzer results
@@ -93,6 +95,7 @@ def _default_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
     current_trace_iteration += 1
     display(df.head(head).style.format(format_stat).apply(color_corr_key, axis=1).set_caption("Finished traces {} to {}".format(tstart, tend)))
 
+
 def get_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
     """Get callback for use in Jupyter"""
     global current_trace_iteration
@@ -100,6 +103,11 @@ def get_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
     return lambda : _default_jupyter_callback(attack, head, fmt)
 getJupyterCallback = camel_case_deprecated(get_jupyter_callback)
 
+
 def reset_iteration():
     global current_trace_iteration
     current_trace_iteration = 0
+
+
+
+
