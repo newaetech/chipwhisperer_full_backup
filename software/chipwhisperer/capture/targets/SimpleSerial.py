@@ -427,9 +427,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
     def setConnection(self, con):
         self.ser = con
-
-        self.ser.connectStatus.setValue(False)
-        self.ser.connectStatus.connect(self.connectStatus.emit)
+        self.ser.connectStatus = self.connectStatus
         self.ser.selectionChanged()
 
     def _con(self, scope = None):
@@ -501,7 +499,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         return s
 
     def runCommand(self, cmdstr, flushInputBefore=True):
-        if self.connectStatus.value()==False:
+        if self.connectStatus==False:
             raise Warning("Can't write to the target while disconected. Connect to it first.")
 
         if cmdstr is None or len(cmdstr) == 0:
@@ -707,7 +705,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         .. versionadded:: 5.1
             Added target.write()
         """
-        if not self.connectStatus.value():
+        if not self.connectStatus:
             raise Warning("Target not connected")
 
         try:
@@ -734,7 +732,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         .. versionadded:: 5.1
             Added target.read()
         """
-        if not self.connectStatus.value():
+        if not self.connectStatus:
             raise Warning("Target not connected")
         try:
             if num_char == 0:

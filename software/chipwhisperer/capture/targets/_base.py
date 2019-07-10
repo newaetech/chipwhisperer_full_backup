@@ -33,12 +33,12 @@ except ImportError:
     AES = None
 
 
-class TargetTemplate(Plugin):
+class TargetTemplate:
     _name = 'Target Connection'
+    connectStatus=False
 
     def __init__(self):
-        self.newInputData = util.Signal()
-        self.connectStatus = util.Observable(False)
+        pass
 
     def setSomething(self):
         """Here you would send value to the reader hardware"""
@@ -49,18 +49,19 @@ class TargetTemplate(Plugin):
         self.close()
 
     def getStatus(self):
-        return self.connectStatus.value()
+        return self.connectStatus
 
     def dis(self):
         """Disconnect from target"""
         self.close()
-        self.connectStatus.setValue(False)
+        self.connectStatus = False
+
 
     def con(self, scope=None, **kwargs):
         """Connect to target"""
         Programmer.lastFlashedFile = "unknown"
         try:
-            self.connectStatus.setValue(True)
+            self.connectStatus = True
             self._con(scope, **kwargs)
         except:
             self.dis()

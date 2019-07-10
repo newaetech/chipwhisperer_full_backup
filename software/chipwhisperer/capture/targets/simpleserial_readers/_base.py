@@ -29,7 +29,7 @@ from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 import collections
 import logging
 
-class SimpleSerialTemplate(object):
+class SimpleSerialTemplate:
 
     """
     SimpleSerial serial reader base class.
@@ -49,7 +49,7 @@ class SimpleSerialTemplate(object):
     _name= 'Simple Serial Reader'
 
     def __init__(self):
-        self.connectStatus = util.Observable(False)
+        self.connectStatus = False
 
         self.target_queue = collections.deque()
         self.target_count = 0
@@ -67,12 +67,12 @@ class SimpleSerialTemplate(object):
 
     def con(self, scope=None):
         """Connect to target"""
-        self.connectStatus.setValue(True)
+        self.connectStatus = True
 
     def dis(self):
         """Disconnect from target"""
         self.close()
-        self.connectStatus.setValue(False)
+        self.connectStatus = False
 
     def flushInput(self):
         self.flush()
