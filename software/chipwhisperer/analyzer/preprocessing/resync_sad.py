@@ -30,8 +30,18 @@ import numpy as np
 from ._base import PreprocessingBase
 from collections import OrderedDict
 
+
 class ResyncSAD(PreprocessingBase):
     """Resynchronize traces by shifting them to match in a certain window.
+
+    This method of pre-processing uses the Sum of Absolute Difference
+    (SAD) algorithm, also known as the Sum of Absolute Error. Uses a portion
+    of one of the traces as a reference. This reference is then slid over the
+    input "window" of each trace, and the amount of the shift resulting in the
+    minimum SAD criteria is used as the shift amount for each trace.
+
+    Args:
+        trace_source (Project): A project containing the traces to preprocess.
     """
     _name = "Resync: Sum-of-Difference"
     _description = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
@@ -39,19 +49,13 @@ class ResyncSAD(PreprocessingBase):
                   "window' for each trace, and the amount of shift resulting in the minimum SAD criteria is selected "\
                   "as the shift amount for that trace."
 
-    def __init__(self, traceSource=None, connectTracePlot=True, name=None):
-        PreprocessingBase.__init__(self, traceSource, name=name)
+    def __init__(self, trace_source=None):
+        PreprocessingBase.__init__(self, trace_source, name=None)
         self._rtrace = None
         self._debugReturnSad = False
         self._wdStart = 0
         self._wdEnd = 1
         self._maxshift = 1
-
-        if connectTracePlot:
-            traceplot = None
-        else:
-            traceplot = None
-
         self._init_not_done = True
 
     def _setRefTrace(self, num):
@@ -71,7 +75,9 @@ class ResyncSAD(PreprocessingBase):
     def ref_trace(self):
         """The trace being used as a reference.
 
-        Setter raises TypeError unless value is an integer."""
+        Raises:
+            TypeError: If attempting to set to non integer value.
+        """
         return self._getRefTrace()
 
     @ref_trace.setter
@@ -101,12 +107,13 @@ class ResyncSAD(PreprocessingBase):
 
     @property
     def target_window(self):
-        """Section of the trace we are trying to mimimize SAD for.
+        """Section of the trace we are trying to minimize SAD for.
 
         This must be a tuple of (first point, last point).
 
-        Setter raises TypeError if value is not a tuple or if points are not
-        integers.
+        Raises:
+            TypeError: If attempting to set to a non tuple or if points are not
+                integers.
         """
         return self._getWindow()
 
