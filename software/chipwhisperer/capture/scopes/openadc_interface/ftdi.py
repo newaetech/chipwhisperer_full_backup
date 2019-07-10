@@ -21,9 +21,7 @@
 #=================================================
 import logging
 import sys
-# import chipwhisperer.capture.scopes._qt as openadc_qt
 from .. import _qt as openadc_qt
-from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 try:
     import ftd2xx as ft
@@ -31,7 +29,7 @@ except:
     ft = None
 
 
-class OpenADCInterface_FTDI(Parameterized, Plugin):
+class OpenADCInterface_FTDI(Parameterized):
     _name = "FTDI (SASEBO-W/SAKURA-G)"
 
     def __init__(self, oadcInstance):

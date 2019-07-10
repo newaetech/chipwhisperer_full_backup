@@ -28,7 +28,6 @@
 import numpy as np
 
 from ..algorithmsbase import AlgorithmsBase
-from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
 class AttackCPA_Bayesian(AlgorithmsBase):

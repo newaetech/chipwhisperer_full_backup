@@ -24,13 +24,9 @@
 #=================================================
 
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
-import collections
-import logging
-import time
+from chipwhisperer.common.utils.parameter import Parameterized
 
-class SPIFlashTemplate(Parameterized, Plugin):
+class SPIFlashTemplate(Parameterized):
 
 
     _name= 'SPI Flash Programmer'

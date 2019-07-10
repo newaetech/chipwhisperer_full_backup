@@ -31,7 +31,6 @@ from chipwhisperer.analyzer.attacks.models.aes.funcs import sbox, inv_sbox, subb
 
 from .base import ModelsBase
 from chipwhisperer.analyzer.attacks.models.aes.key_schedule import key_schedule_rounds
-from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.util import camel_case_deprecated
 
 class AESLeakageHelper(object):
@@ -270,7 +269,7 @@ class Round1Round2StateDiff_SBox(AESLeakageHelper):
 enc_list = [SBox_output, PtKey_XOR, SBoxInputSuccessive, SBoxInOutDiff, LastroundStateDiff, LastroundStateDiffAlternate, SBoxOutputSuccessive, ShiftColumns_output, Mixcolumns_output, Round1Round2StateDiff_Text, Round1Round2StateDiff_KeyMix, Round1Round2StateDiff_SBox]
 dec_list = [InvSBox_output]
 
-class AES128_8bit(ModelsBase, Plugin):
+class AES128_8bit(ModelsBase):
     """Leakage model for AES128 attacks.
 
     Make sure to set the actual leakage model (i.e. SBox_Output)

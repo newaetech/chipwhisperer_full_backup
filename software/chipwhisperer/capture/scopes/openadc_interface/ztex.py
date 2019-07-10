@@ -29,7 +29,6 @@ from .. import _qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWCRev2_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
-from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized
 
 try:
@@ -38,7 +37,7 @@ except ImportError:
     usb = None
 
 
-class OpenADCInterface_ZTEX(Parameterized, Plugin):
+class OpenADCInterface_ZTEX(Parameterized):
     _name = "ChipWhisperer Rev2"
 
     def __init__(self, oadcInstance):

@@ -29,7 +29,6 @@ import numpy as np
 import math
 
 from ..algorithmsbase import AlgorithmsBase
-from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
 class CPAProgressiveOneSubkey(object):
@@ -148,7 +147,7 @@ class CPAProgressiveOneSubkey(object):
         return (diffs, pbcnt)
 
 
-class CPAProgressive(AlgorithmsBase, Plugin):
+class CPAProgressive(AlgorithmsBase):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """

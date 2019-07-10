@@ -21,7 +21,6 @@
 #=================================================
 import logging
 import sys
-from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
 import serial
@@ -29,7 +28,7 @@ import serial
 from chipwhisperer.common.utils import serialport as scan
 
 
-class OpenADCInterface_Serial(Parameterized, Plugin):
+class OpenADCInterface_Serial(Parameterized):
     _name = "Serial Port (LX9)"
 
     def __init__(self, oadcInstance):

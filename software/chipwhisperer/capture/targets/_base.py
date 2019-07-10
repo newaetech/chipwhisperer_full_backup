@@ -25,7 +25,6 @@
 
 from chipwhisperer.capture.api.programmers import Programmer
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.pluginmanager import Plugin
 
 try:
     from Crypto.Cipher import AES

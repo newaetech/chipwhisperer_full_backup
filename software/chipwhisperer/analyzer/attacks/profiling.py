@@ -28,7 +28,6 @@
 #===========================================================
 
 import sys
-from chipwhisperer.common.utils import pluginmanager
 from ._base import AttackBaseClass
 
 
@@ -37,7 +36,7 @@ class Profiling(AttackBaseClass):
     _name = "Profiling"
 
     def __init__(self):
-        self._algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", True, False)
+        self._algos = None
         self._analysisAlgorithm = self._algos["Template Attack"]
         AttackBaseClass.__init__(self)
         self.useAbs = False # Do not use absolute

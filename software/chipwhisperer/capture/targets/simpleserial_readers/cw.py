@@ -23,6 +23,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+# USED BY SMARTCARD, if we want to keep that
+
 from ._base import SimpleSerialTemplate
 import time
 from chipwhisperer.common.utils.parameter import setupSetParam

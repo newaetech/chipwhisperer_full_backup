@@ -32,7 +32,7 @@ import numpy as np
 from chipwhisperer.common.api.TraceManager import TraceManager
 from chipwhisperer.common.api.settings import Settings
 from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
-from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils import util
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 import copy
 
@@ -126,7 +126,7 @@ class Project(Parameterized):
     untitledFileName = os.path.normpath(os.path.join(Settings().value("project-home-dir"), "tmp/default.cwp"))
 
     def __init__(self, prog_name="ChipWhisperer", prog_ver=""):
-        self.valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
+        self.valid_traces = None
         self._trace_format = None
 
         self.params = Parameter(name="Project Settings", type="group")
@@ -134,7 +134,8 @@ class Project(Parameterized):
             {'name': 'Trace Format', 'type': 'list', 'values': self.valid_traces, 'get': self.get_trace_format, 'set': self.set_trace_format},
         ])
 
-        self.findParam("Trace Format").setValue(TraceContainerNative(project=self), addToList=True)
+        #self.findParam("Trace Format").setValue(TraceContainerNative(project=self), addToList=True)
+        self._trace_format = TraceContainerNative(project=self)
 
         #self.traceParam = Parameter(name="Trace Settings", type='group', addLoadSave=True).register()
         #self.params.getChild('Trace Format').stealDynamicParameters(self.traceParam)

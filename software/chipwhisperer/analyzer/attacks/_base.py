@@ -24,11 +24,9 @@
 #=================================================
 import logging
 
-from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils.util import camel_case_deprecated
 
 def enforceLimits(value, limits):
@@ -39,7 +37,7 @@ def enforceLimits(value, limits):
     return value
 
 
-class AttackBaseClass(PassiveTraceObserver, Parameterized, AutoScript, Plugin):
+class AttackBaseClass(PassiveTraceObserver, AutoScript):
     """Generic Attack Interface"""
     _name= 'Attack Settings'
     _algos = {}
@@ -63,13 +61,11 @@ class AttackBaseClass(PassiveTraceObserver, Parameterized, AutoScript, Plugin):
         self.getParams().addChildren([
             {'name':'Attack Algorithm', 'type':'list',  'values':self._algos, 'get':self.getAlgorithm, 'set':self.setAlgorithm, 'action':self.updateScript, 'childmode': 'parent'}
         ])
-        models = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.models", True, False)
+        models = None
         self.getParams().addChildren([
-            {'name':'Crypto Algorithm', 'type':'list', 'values':models, 'value':models['AES 128'], 'action':self.refreshByteList, 'childmode':'child'},
+            {'name':'Crypto Algorithm', 'type':'list', 'values':models, 'action':self.refreshByteList, 'childmode':'child'},
             {'name':'Points Range', 'key':'prange', 'type':'range', 'get':self.get_point_range, 'set':self.set_point_range, 'action':self.updateScript},
         ])
-        for m in list(models.values()):
-            m.sigParametersChanged.connect(self.updateScript)
 
         self.getParams().addChildren([
             {'name':'Starting Trace', 'key':'strace', 'type':'int', 'get':self.get_trace_start, 'set':self.set_trace_start, 'action':self.updateScript},
@@ -260,25 +256,10 @@ class AttackBaseClass(PassiveTraceObserver, Parameterized, AutoScript, Plugin):
         return self.useAbs
 
     def refreshByteList(self, _=None):
-        try:
-            self.getParams().addChildren([
-                {'name':'Attacked Subkeys', 'type':'group', 'children': [
-                    dict(name='Subkey %d' % bnum, type='bool', key='bnumenabled%d' % bnum, value=True,
-                         action=self.updateScript) for bnum in range(0, self.findParam('Crypto Algorithm').getValue().getNumSubKeys())
-                ]}])
-            self.updateScript()
-        except KeyError:
-            pass
+        pass
 
     def getEnabledSubkeys(self):
-        blist = []
-        try:
-            for bnum in range(self.findParam('Crypto Algorithm').getValue().getNumSubKeys()):
-                if self.findParam(['Attacked Subkeys', ('Subkey %d' % bnum)]).getValue():
-                    blist.append(bnum)
-        except KeyError:
-            pass
-        return blist
+        return None
 
     def get_statistics(self):
         return self.attack.getStatistics()

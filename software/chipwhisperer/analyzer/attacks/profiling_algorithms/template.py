@@ -29,9 +29,7 @@ import numpy as np
 import scipy
 import sys
 
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
 from ..algorithmsbase import AlgorithmsBase
 
@@ -108,7 +106,7 @@ class TemplateUsingMVS(object):
         return template
 
 
-class ProfilingTemplate(AlgorithmsBase, Plugin):
+class ProfilingTemplate(AlgorithmsBase):
     """
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """

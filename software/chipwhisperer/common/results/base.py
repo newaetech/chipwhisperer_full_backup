@@ -26,7 +26,6 @@
 
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
-from chipwhisperer.common.utils.pluginmanager import getPluginsInDictFromPackage
 
 
 class ResultsBase(Parameterized):
@@ -50,7 +49,7 @@ class ResultsBase(Parameterized):
     @classmethod
     def getClasses(cls):
         if not cls.__classes:
-            cls.__classes = getPluginsInDictFromPackage("chipwhisperer.common.results", False, False)
+            pass
         return cls.__classes
 
     @classmethod

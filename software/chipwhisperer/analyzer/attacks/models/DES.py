@@ -17,7 +17,6 @@ from collections import OrderedDict
 import inspect
 from .base import ModelsBase
 import numpy as np
-from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.util import binarylist2bytearray, bytearray2binarylist
 
 class DESLeakageHelper(object):
@@ -248,7 +247,7 @@ class SBox_input(DESLeakageHelper):
 enc_list = [SBox_output, SBox_input]
 dec_list = []
 
-class DES(ModelsBase, Plugin):
+class DES(ModelsBase):
     _name = 'DES'
 
     hwModels = OrderedDict((mod.name, mod) for mod in (enc_list + dec_list))

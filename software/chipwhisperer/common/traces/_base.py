@@ -27,11 +27,10 @@ import logging
 import re
 import numpy as np
 from . import _cfgfile
-from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.common.utils.parameter import Parameterized
 
 
-class TraceContainer(Parameterized, Plugin):
+class TraceContainer(Parameterized):
     """
     TraceContainer holds traces for the system to operate on. This can include both reading in traces for analysis, and
     writing traces to disk.
