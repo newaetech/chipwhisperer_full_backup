@@ -1,4 +1,4 @@
-import chipwhisperer.analyzer.attacks.models.AES128_8bit as aes128_leakage
+from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128_leakage
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES128_8bit
 import textwrap
 
