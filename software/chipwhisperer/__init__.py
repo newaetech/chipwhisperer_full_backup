@@ -94,6 +94,9 @@ def create_project(filename, overwrite=False):
     if os.path.isfile(filename) and (overwrite == False):
         raise OSError("File " + filename + " already exists")
 
+    # If the user gives a relative path including ~, expand to the absolute path
+    filename = os.path.expanduser(filename)
+
     if not os.path.isabs(filename):
         filename = os.path.join(PROJECT_DIR, filename)
 
