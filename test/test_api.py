@@ -33,14 +33,7 @@ class TestTraces(unittest.TestCase):
         self.project.traces.append(self.fake_trace_2)
 
     def tearDown(self):
-        try:
-            os.remove(os.path.join(cw.PROJECT_DIR, ensure_cwp_extension(self.project_name)))
-        except FileNotFoundError:
-            pass
-        try:
-            shutil.rmtree(os.path.join(cw.PROJECT_DIR, self.project_name + '_data'))
-        except FileNotFoundError:
-            pass
+        self.project.remove(i_am_sure=True)
 
     def test_traces_len(self):
         traces = self.project.traces
@@ -89,38 +82,31 @@ class TestProject(unittest.TestCase):
         self.project_name = 'test_project'
 
     def tearDown(self):
-        try:
-            os.remove(os.path.join(cw.PROJECT_DIR, ensure_cwp_extension(self.project_name)))
-        except FileNotFoundError:
-            pass
-        try:
-            shutil.rmtree(os.path.join(cw.PROJECT_DIR, self.project_name + '_data'))
-        except FileNotFoundError:
-            pass
+        self.project.remove(i_am_sure=True)
 
     def test_create_and_save_project(self):
-        project = cw.create_project(self.project_name, overwrite=True)
+        self.project = cw.create_project(self.project_name, overwrite=True)
         self.assertTrue(os.path.isdir(os.path.join(cw.PROJECT_DIR, self.project_name + '_data')))
 
         trace = (np.array([i for i in range(100)]), 'text in', 'text out', 'key')
         for i in range(500):
-            project.traces.append(trace)
+            self.project.traces.append(trace)
 
-        project.save()
+        self.project.save()
         self.assertTrue(os.path.exists(os.path.join(cw.PROJECT_DIR, ensure_cwp_extension(self.project_name))))
 
         # calling it again should not cause issues.
-        project.save()
+        self.project.save()
 
     def test_remove_project(self):
-        project = cw.create_project(self.project_name, overwrite=True)
+        self.project = cw.create_project(self.project_name, overwrite=True)
 
         # must supply i_am_sure argument.
-        self.assertRaises(RuntimeWarning, project.remove)
-        self.assertTrue(os.path.exists(project.datadirectory))
+        self.assertRaises(RuntimeWarning, self.project.remove)
+        self.assertTrue(os.path.exists(self.project.datadirectory))
 
-        project.remove(i_am_sure=True)
-        self.assertFalse(os.path.exists(project.datadirectory))
+        self.project.remove(i_am_sure=True)
+        self.assertFalse(os.path.exists(self.project.datadirectory))
 
 
 class TestSNR(unittest.TestCase):
@@ -132,7 +118,7 @@ class TestSNR(unittest.TestCase):
             self.project.traces.append(trace)
 
     def tearDown(self):
-        self.project.remove()
+        self.project.remove(i_am_sure=True)
 
     def test_calculate_snr_with_project(self):
         snr = cwa.calculate_snr(self.project, cwa.leakage_models.sbox_output)
