@@ -27,9 +27,22 @@
 
 import numpy as np
 from chipwhisperer.common.api.ProjectFormat import Project
+from chipwhisperer.common.traces import Trace
 
-def calculate_snr(trace_manager, leak_model, bnum=0, db=True, trace_data=None, textin_data=None, textout_data=None, key_data=None):
-    """Calculate the SNR based on the leakage model. Uses same leakage model as the CPA attack."""
+
+def calculate_snr(input, leak_model, bnum=0, db=True):
+    """Calculate the SNR based on the leakage model.
+
+    Uses same leakage model as the CPA attack.
+
+    Args:
+        input (Project or Iterable of Traces): A open chipwhisperer project
+            containing traces, or an iterable of :class:Traces
+        leak_model (ModelsBase): A leakage model selected from
+            :data:`leakage_models <chipwhisperer.analyzer.leakage_models>`.
+        bnum (int): Byte number used for leakage model.
+        bd (bool): Return signal-to-noise ratio in decibals.
+    """
 
     textin = None
     textout = None
@@ -38,32 +51,27 @@ def calculate_snr(trace_manager, leak_model, bnum=0, db=True, trace_data=None, t
 
     hwarray = []
 
-    if trace_manager:
+    tm = None
 
-        if isinstance(trace_manager, Project):
-            trace_manager = trace_manager.trace_manager()
-        ntrace = trace_manager.num_traces()
-        npoints = trace_manager.num_points()
+    if isinstance(input, Project):
+        tm = input.trace_manager()
+        ntrace = tm.num_traces()
+        npoints = tm.num_points()
     else:
-        ntrace = len(trace_data)
-        npoints = len(trace_data[0])
+        ntrace = len(input)
+        npoints = len(input[0].wave)
 
     for tnum in range(0, ntrace):
-
-        if trace_manager is None:
-            if trace_data:
-                trace = trace_data[tnum]
-            if textin_data:
-                textin = textin_data[tnum]
-            if textout_data:
-                textout = textout_data[tnum]
-            if key_data:
-                key = key_data[tnum]
+        if tm:
+            trace = tm.get_trace(tnum)
+            textin = tm.get_textin(tnum)
+            textout = tm.get_textout(tnum)
+            key = tm.get_known_key(tnum)
         else:
-            trace = trace_manager.get_trace(tnum)
-            textin = trace_manager.get_textin(tnum)
-            textout = trace_manager.get_textout(tnum)
-            key = trace_manager.get_known_key(tnum)
+            trace = input[tnum].wave
+            textin = input[tnum].textin
+            textout = input[tnum].textout
+            key = input[tnum].key
 
         state = {'knownkey':key}
 

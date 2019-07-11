@@ -18,6 +18,7 @@ from chipwhisperer.capture import acq_patterns as key_text_patterns
 from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api import ProjectFormat as project
 from chipwhisperer.common.api.ProjectFormat import PROJECT_DIR
+from chipwhisperer.common.traces import Trace
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 ktp = key_text_patterns #alias
 
@@ -275,9 +276,11 @@ def capture_trace(scope, target, plaintext, key=None):
         return None
 
     response = target.simpleserial_read('r', 16)
-    trace = scope.get_last_trace()
+    wave = scope.get_last_trace()
 
-    return trace, response
+    return Trace(wave, plaintext, response, key)
 
 
 captureTrace = camel_case_deprecated(capture_trace)
+
+

@@ -35,6 +35,8 @@ from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setup
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 import copy
+from chipwhisperer.common.traces import Trace
+import shutil
 
 try:
     from configobj import ConfigObj  # import the module
@@ -98,7 +100,7 @@ class Project(Parameterized):
 
         import chipwhisperer as cw
         proj = cw.create_project("project")
-        trace = (trace_data, plaintext, ciphertext, key)
+        trace = cw.Trace(trace_data, plaintext, ciphertext, key)
         proj.traces.append(trace)
         proj.save()
 
@@ -580,14 +582,14 @@ class Traces:
 
     To iterate through all traces use::
 
-        for trace, textin, textout, knownkey in my_project.traces:
-            # Something amazing...
+        for trace in my_project.traces:
+            print(trace.wave, trace.textin, trace.textout, trace.key)
 
     Indexing is supported::
 
         trace_of_interest = my_project.traces[99]
 
-    So is slicing, however, a step is not supported::
+    So is slicing::
 
         interesting_traces = my_project.traces[20:35]
 
@@ -655,7 +657,7 @@ class Traces:
         if self.n > self.max:
             raise StopIteration
 
-        result = (
+        result = Trace(
             self.tm.get_trace(self.n),
             self.tm.get_textin(self.n),
             self.tm.get_textout(self.n),
@@ -674,7 +676,7 @@ class Traces:
             if not (0 <= ind <= self.max):
                 raise IndexError('Index outside of range ({}, {})'.format(0, self.max))
 
-            result = (
+            result = Trace(
                 self.tm.get_trace(ind),
                 self.tm.get_textin(ind),
                 self.tm.get_textout(ind),
@@ -687,7 +689,7 @@ class Traces:
             result = []
             for i in range(*indices):
                 result.append(
-                    (
+                    Trace(
                         self.tm.get_trace(i),
                         self.tm.get_textin(i),
                         self.tm.get_textout(i),
