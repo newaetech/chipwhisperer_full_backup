@@ -41,6 +41,9 @@ class CPA(CPA_Old):
             a list of length 2 ([start_point, end_point]).
         subkey_list: List of subkeys to attack (subkey_list = [0, 1, 3] will
             attack subkeys 0, 1, and 3).
+
+    .. versionadded:: 5.1
+        Added CPA in cpa_new.py to wrap old CPA object
     """
     trace_range = None
     _project = None

@@ -10,7 +10,7 @@ from chipwhisperer.analyzer.attacks.models import EightBitAES128LeakageModels
 leakage_models = EightBitAES128LeakageModels()
 
 
-def cpa(project, leak_model, algorithm=cpa_algorithms.Progressive):
+def cpa(proj, leak_model, algorithm=cpa_algorithms.Progressive):
     """Create a CPA object to attack traces in project using leak_model and algorithm.
 
     Args:

@@ -13,6 +13,9 @@ class EightBitAES128LeakageModels:
     this class.
     """
 
+    def new_model(self, model):
+        return AES128_8bit(model)
+
     @property
     def plaintext_key_xor(self):
         """Plain text key XOR."""
