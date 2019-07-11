@@ -56,21 +56,21 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'alabaster'
 
 html_theme_options = {
-	'description': 'Side-Channel analysis tool-chain.',
-	'fixed_sidebar': 'true',
-	'logo': 'logo.png',
-	'logo_name': 'true',
-	'github_user': 'newaetech',
-	'github_repo': 'chipwhisperer',
-	'github_banner': 'true',
-	'github_button': 'true',
-	'github_type': 'star',
-	'extra_nav_links': {
-		'Tutorials': 'https://wiki.newae.com/Main_Page#Sample_Projects_and_Tutorials',
-		'Hardware Docs': 'https://wiki.newae.com/Main_Page#Hardware_Documentation',
-	},
-	'sidebar_width': '18em',
-	'page_width': '60em',
+    'description': 'Side-Channel analysis tool-chain.',
+    'fixed_sidebar': 'true',
+    'logo': 'logo.png',
+    'logo_name': 'true',
+    'github_user': 'newaetech',
+    'github_repo': 'chipwhisperer',
+    'github_banner': 'true',
+    'github_button': 'true',
+    'github_type': 'watch',
+    'extra_nav_links': {
+        'Tutorials': 'https://wiki.newae.com/Main_Page#Sample_Projects_and_Tutorials',
+        'Hardware Docs': 'https://wiki.newae.com/Main_Page#Hardware_Documentation',
+    },
+    'sidebar_width': '19em',
+    'page_width': '60em',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -86,6 +86,6 @@ add_module_names = False
 
 # side bar customization
 html_sidebars = {
-	'index': ['about.html', 'navigation.html', 'searchbox.html'],
-	'**': ['localtoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html']
+    'index': ['about.html', 'navigation.html', 'searchbox.html'],
+    '**': ['about.html', 'localtoc.html', 'searchbox.html']
 }
