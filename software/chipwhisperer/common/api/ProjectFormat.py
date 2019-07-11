@@ -294,7 +294,10 @@ class Project(Parameterized):
 
     def load(self, f = None):
         if f is not None:
-            self.setFilename(f)
+            self.setFilename(os.path.expanduser(f))
+
+        if not os.path.isabs(self.filename):
+            self.setFilename(os.path.join(PROJECT_DIR, self.filename))
 
         if not os.path.isfile(self.filename):
             raise IOError("File " + self.filename + " does not exist or is not a file")

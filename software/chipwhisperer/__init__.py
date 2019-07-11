@@ -63,8 +63,6 @@ def open_project(filename):
        OSError: filename does not exist.
     """
     from chipwhisperer.common.api import ProjectFormat as project
-    if not os.path.isfile(filename):
-        raise OSError("File " + filename + " does not exist or is not a file")
     proj = project.Project()
     proj.load(filename)
     return proj
@@ -93,6 +91,9 @@ def create_project(filename, overwrite=False):
     filename = project.ensure_cwp_extension(filename)
     if os.path.isfile(filename) and (overwrite == False):
         raise OSError("File " + filename + " already exists")
+
+    # If the user gives a relative path including ~, expand to the absolute path
+    filename = os.path.expanduser(filename)
 
     if not os.path.isabs(filename):
         filename = os.path.join(PROJECT_DIR, filename)
