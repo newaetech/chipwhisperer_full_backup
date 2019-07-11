@@ -17,12 +17,15 @@ class EightBitAES128LeakageModels:
     def new_model(self, model):
         """Makes a new leakage model for use with analyzer
 
-        Usage:: python
+        Usage::
 
             class AES256_Round13_Model(cwa.AESLeakageHelper):
                 def leakage(self, pt, ct, guess, bnum):
-                    #You must put YOUR recovered 14th round key here - this example may not be accurate!
-                    calc_round_key = [0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb]
+                    # You must put YOUR recovered 14th round key here.
+                    # This example may not be accurate!
+                    calc_round_key = [0xea, 0x79, 0x79, 0x20, 0xc8, 0x71,
+                                      0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51,
+                                      0x85, 0xc1, 0x3b, 0xcb]
                     xored = [calc_round_key[i] ^ pt[i] for i in range(0, 16)]
                     block = xored
                     block = self.inv_shiftrows(block)
