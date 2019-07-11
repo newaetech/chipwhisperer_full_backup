@@ -501,6 +501,25 @@ class Project(Parameterized):
 
         return export_file_path
 
+    def remove(self, i_am_sure=False):
+        """Remove a project from disk.
+
+        Args:
+            i_am_sure (bool): Are you sure you want to remove the project?
+        """
+        if not i_am_sure:
+            raise RuntimeWarning('Project not removed... i_am_sure not set to True.')
+        try:
+            shutil.rmtree(self.datadirectory)
+        except FileNotFoundError:
+            pass
+
+        _, cwp_file = os.path.split(self.get_filename())
+        try:
+            os.remove(os.path.join(self.location, cwp_file))
+        except FileNotFoundError:
+            pass
+
     @property
     def traces(self):
         """The interface to all traces contained in the project.
