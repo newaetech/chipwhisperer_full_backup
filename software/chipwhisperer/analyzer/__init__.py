@@ -5,6 +5,7 @@ from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api.ProjectFormat import Project
 from chipwhisperer.analyzer.utils import aes_funcs as aes_funcs
 from chipwhisperer.analyzer.attacks.models import EightBitAES128LeakageModels
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import AESLeakageHelper
 
 
 leakage_models = EightBitAES128LeakageModels()
