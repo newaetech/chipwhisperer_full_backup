@@ -535,6 +535,7 @@ syntax.
 
         .. autoattribute:: shift_columns_output
 
+        .. automethod:: new_model
 
 .. _api-analyzer-cpa_attack:
 
@@ -568,8 +569,16 @@ object.
 
 .. _api-analyzer-utilities:
 
+Utilities
+=========
+
+This section contains relatively independent functions that are useful for
+working with AES, and traces.
+
+.. _api-analyzer-utilities-aes_functions:
+
 AES Functions
-=============
+-------------
 
 You may want to perform certain AES operations seperately. For this there is the AES
 helper functions. They are accessible using::
@@ -587,25 +596,39 @@ Available functions:
   * :func:`aes_funcs.inv_mixcolumns <chipwhisperer.analyzer.attacks.models.aes.funcs.inv_mixcolumns>`
   * :func:`aes_funcs.key_schedule_rounds<chipwhisperer.analyzer.attacks.models.aes.key_schedule.key_schedule_rounds>`
 
-.. automodule:: chipwhisperer.analyzer.utils.aes_funcs
+.. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.sbox
 
-    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.sbox
+.. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.inv_sbox
 
-    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.inv_sbox
+.. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.subbytes
 
-    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.subbytes
+.. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.inv_subbytes
 
-    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.inv_subbytes
+.. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.shiftrows
 
-    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.shiftrows
+.. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.inv_shiftrows
 
-    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.inv_shiftrows
+.. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.mixcolumns
 
-    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.mixcolumns
+.. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.inv_mixcolumns
 
-    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.funcs.inv_mixcolumns
+.. autofunction:: chipwhisperer.analyzer.attacks.models.aes.key_schedule.key_schedule_rounds
 
-    .. autofunction:: chipwhisperer.analyzer.attacks.models.aes.key_schedule.key_schedule_rounds
+
+.. _api-analyzer-utilities-snr:
+
+Signal to Noise Ratio
+---------------------
+
+Calculate the signal-to-noise ratio of your captured traces::
+
+    import chipwhisperer.analyzer as cwa
+    import chipwhisperer as cw
+
+    project = cw.open_project('my_project')
+    cwa.calculate_snr(project, cwa.leakage_models.sbox_output)
+
+.. autofunction:: chipwhisperer.analyzer.calculate_snr
 
 
 .. _api-program_target:
