@@ -39,7 +39,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     """
     _name = "Basic"
 
-    def __init__(self, target=None):
+    def __init__(self):
         AcqKeyTextPattern_Base.__init__(self)
         self._fixedKey = True
         self._fixedPlain = False
@@ -48,8 +48,6 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self._key = util.hexStrToByteArray(self.initkey)
         self._textin = util.hexStrToByteArray(self.inittext)
         self.types = {'Random': False, 'Fixed': True}
-
-        self.setTarget(target)
 
     @property
     def fixed_key(self):
