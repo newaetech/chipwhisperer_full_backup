@@ -35,14 +35,14 @@ except ImportError:
 
 
 class AcqKeyTextPattern_TVLATTest(AcqKeyTextPattern_Base):
-    """ Class for getting key and text for TVLA T-Tests
+    """Class for getting key and text for TVLA T-Tests.
 
     Basic usage::
 
         import chipwhisperer as cw
         ktp = cw.ktp.TVLATTest()
         ktp.init(num_traces) # init with the number of traces you plan to
-                                capture
+                             # capture
         key, text = ktp.next()
 
     """
@@ -61,10 +61,10 @@ class AcqKeyTextPattern_TVLATTest(AcqKeyTextPattern_Base):
         pass
 
     def init(self, maxtraces):
-        """ Initialize ktp for maxtraces traces
+        """Initialize key text pattern for a specific number of traces.
 
         Args:
-            maxtraces (int): Number of traces to initialize for
+            maxtraces (int): Number of traces to initialize for.
 
         Raises:
             ValueError: Invalid key length
@@ -128,7 +128,7 @@ class AcqKeyTextPattern_TVLATTest(AcqKeyTextPattern_Base):
         Returns:
             (key (bytearray), text (bytearray))
 
-        ..versionadded:: 5.1
-        Added next
+        .. versionadded:: 5.1
+            Added next
         """
         return self.new_pair()

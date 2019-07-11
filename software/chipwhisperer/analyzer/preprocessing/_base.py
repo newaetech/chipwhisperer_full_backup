@@ -189,6 +189,9 @@ class PreprocessingBase(TraceSource, PassiveTraceObserver):
 
         Returns:
             Project: A new project containing the processed traces.
+
+        .. versionadded: 5.1
+            Add preprocess method to Preprocessing module.
         """
         proj = Project()
 

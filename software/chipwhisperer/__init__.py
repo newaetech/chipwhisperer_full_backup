@@ -257,7 +257,7 @@ def capture_trace(scope, target, plaintext, key=None):
             target = cw.target()
             ktp = cw.ktp.Basic()
             key, pt = ktp.new_pair()
-            trace, response = cw.capture_trace(scope, target, pt, key)
+            trace = cw.capture_trace(scope, target, pt, key)
 
     .. versionadded:: 5.1
         Added to simplify trace capture.
