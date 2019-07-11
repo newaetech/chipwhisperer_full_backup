@@ -1,6 +1,7 @@
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128_leakage
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES128_8bit
 import textwrap
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import AESLeakageHelper
 
 
 class EightBitAES128LeakageModels:
@@ -14,6 +15,32 @@ class EightBitAES128LeakageModels:
     """
 
     def new_model(self, model):
+        """Makes a new leakage model for use with analyzer
+
+        Usage:: python
+
+            class AES256_Round13_Model(cwa.AESLeakageHelper):
+                def leakage(self, pt, ct, guess, bnum):
+                    #You must put YOUR recovered 14th round key here - this example may not be accurate!
+                    calc_round_key = [0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb]
+                    xored = [calc_round_key[i] ^ pt[i] for i in range(0, 16)]
+                    block = xored
+                    block = self.inv_shiftrows(block)
+                    block = self.inv_subbytes(block)
+                    block = self.inv_mixcolumns(block)
+                    block = self.inv_shiftrows(block)
+                    result = block
+                    return self.inv_sbox((result[bnum] ^ guess[bnum]))
+
+            leak_model = cwa.leakage_models.new_model(AES256_Round13_Model)
+
+        Args:
+            model (AESLeakageHelper): New leakage model to create
+
+        Returns:
+            Leakage model made from model
+
+        """
         return AES128_8bit(model)
 
     @property
