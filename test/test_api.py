@@ -162,6 +162,24 @@ class TestSNR(unittest.TestCase):
         self.assertEqual(len(snr), 5000)
 
 
+class TestPreprocessing(unittest.TestCase):
+
+    def setUp(self):
+        self.project = cw.create_project('test_project')
+        traces = create_random_traces(100, 3000)
+        self.project.traces.extend(traces)
+
+    def tearDown(self):
+        self.project.remove(i_am_sure=True)
+
+    def test_resync(self):
+        resync_traces = cwa.preprocessing.ResyncSAD(self.project)
+        resync_traces.ref_trace = 0
+        resync_traces.target_window = (1000, 1400)
+        resync_traces.max_shift = 1000
+        new_project = resync_traces.preprocess()
+
+
 class TestUtils(unittest.TestCase):
 
     def test_bytearray(self):

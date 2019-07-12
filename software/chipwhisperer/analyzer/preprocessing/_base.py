@@ -31,6 +31,7 @@ from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api.ProjectFormat import Project
+from chipwhisperer.common.traces import Trace
 
 class PreprocessingBase(TraceSource, PassiveTraceObserver):
     """
@@ -196,6 +197,6 @@ class PreprocessingBase(TraceSource, PassiveTraceObserver):
         proj = Project()
 
         for i in range(self.num_traces()):
-            proj.traces.append((self.get_trace(i), self.get_textin(i),
+            proj.traces.append(Trace(self.get_trace(i), self.get_textin(i),
                                 self.get_textout(i), self.get_known_key(i)))
         return proj
