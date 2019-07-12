@@ -121,7 +121,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         count = 0
         while not self.clock.clkgen_locked:
             time.sleep(0.1)
-            self.clock.resetDcms()
+            self.clock.reset_dcms()
             count += 1
 
             if count > 100:

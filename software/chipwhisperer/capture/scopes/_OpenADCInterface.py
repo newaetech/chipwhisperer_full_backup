@@ -848,7 +848,7 @@ class ClockSettings(util.DisableNewAttr):
         else:
             raise ValueError("Invalid ADC source (possible values: 'clkgen_x4', 'clkgen_x1', 'extclk_x4', 'extclk_x1', 'extclk_dir'")
 
-        self.resetAdc()
+        self.reset_adc()
 
     @property
     def adc_phase(self):
@@ -902,7 +902,7 @@ class ClockSettings(util.DisableNewAttr):
     def adc_locked(self):
         """The current status of the ADC DCM. Read-only.
 
-        To try re-locking the ADC, see resetAdc().
+        To try re-locking the ADC, see reset_adc().
 
         :Getter: Return whether the ADC DCM is locked (True or False)
         """
@@ -979,7 +979,7 @@ class ClockSettings(util.DisableNewAttr):
         else:
             raise ValueError("Invalid setting for CLKGEN source (valid values: 'system', 'extclk')")
 
-        self.resetDcms()
+        self.reset_dcms()
 
     @property
     def extclk_freq(self):
@@ -1024,7 +1024,7 @@ class ClockSettings(util.DisableNewAttr):
     @clkgen_freq.setter
     def clkgen_freq(self, freq):
         self._autoMulDiv(freq)
-        self.resetDcms()
+        self.reset_dcms()
 
     @property
     def clkgen_locked(self):
@@ -1193,7 +1193,7 @@ class ClockSettings(util.DisableNewAttr):
         result[3] &= ~(0x01)
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
 
-    def resetAdc(self):
+    def reset_adc(self):
         """Reset the ADC DCM.
 
         After changing frequencies, the ADC DCM may become unlocked from its
@@ -1204,7 +1204,9 @@ class ClockSettings(util.DisableNewAttr):
         """
         self._reset_dcms(True, False)
 
-    def resetClkgen(self):
+    resetAdc = util.camel_case_deprecated(reset_adc)
+
+    def reset_clkgen(self):
         """Reset the CLKGEN DCM.
 
         After changing frequencies or input sources, the CLKGEN DCM may not
@@ -1215,14 +1217,18 @@ class ClockSettings(util.DisableNewAttr):
         """
         self._reset_dcms(False, True)
 
-    def resetDcms(self):
+    resetClkgen = util.camel_case_deprecated(reset_clkgen)
+
+    def reset_dcms(self):
         """Reset the CLKGEN DCM, then the ADC DCM.
 
         This order is necessary because the ADC may depend on having a locked
         clock from the CLKGEN output.
         """
-        self.resetClkgen()
-        self.resetAdc()
+        self.reset_clkgen()
+        self.reset_adc()
+
+    resetDcms = util.camel_case_deprecated(reset_dcms)
 
     def _clkgenLoad(self):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)

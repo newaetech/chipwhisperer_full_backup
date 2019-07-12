@@ -58,7 +58,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         :Setter: Set whether to use fixed key (True) or not (False).
 
         .. versionadded:: 5.1
-            Added fixed_property
+            Added fixed_key property
         """
         return self._fixedKey
 
