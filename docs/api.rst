@@ -685,7 +685,7 @@ helper functions. They are accessible using::
     from chipwhisperer.analyzer import aes_funcs
 
 Available functions:
-  * :func:`aes_funcs.sbox <chipwhisperer.analyzer.utils.aes_funcs>`
+  * :func:`aes_funcs.sbox <chipwhisperer.analyzer.attacks.models.aes.funcs.sbox>`
   * :func:`aes_funcs.inv_sbox <chipwhisperer.analyzer.attacks.models.aes.funcs.inv_sbox>`
   * :func:`aes_funcs.subbytes <chipwhisperer.analyzer.attacks.models.aes.funcs.subbytes>`
   * :func:`aes_funcs.inv_subbytes <chipwhisperer.analyzer.attacks.models.aes.funcs.inv_subbytes>`
