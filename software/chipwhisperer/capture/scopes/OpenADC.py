@@ -249,7 +249,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
                disconnects before reraising them.
         """
         if self.connectStatus is False:
-            raise OSError("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
+            raise OSError("Scope is not connected. Connect it first...")
 
         try:
             if self.advancedSettings:
