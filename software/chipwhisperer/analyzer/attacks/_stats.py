@@ -146,10 +146,10 @@ class Results(object):
 
                 (key_guess, location_of_max, correlation)
 
-        For example, if you want to print the correlation of the third best guess
+        For example, if you want to print the correlation of the best guess
         of the 4th subkey, you would run::
 
-            print(attack_results.find_maximums()[4][3][2])
+            print(attack_results.find_maximums()[4][0][2])
 
         Note the "point location of the max" is normally not calculated/tracked,
         and thus returns as a 0.

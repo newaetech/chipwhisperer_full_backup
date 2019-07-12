@@ -15,7 +15,7 @@ def cpa(proj, leak_model, algorithm=cpa_algorithms.Progressive):
     """Create a CPA object to attack traces in project using leak_model and algorithm.
 
     Args:
-       project (Project): TraceManager or preprocessing object that
+       proj (Project): TraceManager or preprocessing object that
            holds traces, plaintext, etc.
        leak_model (AESLeakageHelper): Model describing information
            leaked from target.
