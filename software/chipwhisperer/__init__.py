@@ -242,8 +242,8 @@ def capture_trace(scope, target, plaintext, key=None):
             bytearray. If None, don't send key. Defaults to None.
 
     Returns:
-        Tuple of scope_data (numpy.ndarray) and response (bytearray) or None
-        if capture timed out.
+        :class:`Trace <chipwhisperer.common.traces.Trace>` or None if capture
+        timed out.
 
     Raises:
         Warning or OSError: Error during capture.
