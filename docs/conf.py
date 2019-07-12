@@ -87,5 +87,5 @@ add_module_names = False
 # side bar customization
 html_sidebars = {
     'index': ['about.html', 'navigation.html', 'searchbox.html'],
-    '**': ['about.html', 'localtoc.html', 'searchbox.html']
+    '**': ['about_short.html', 'localtoc.html', 'searchbox.html']
 }
