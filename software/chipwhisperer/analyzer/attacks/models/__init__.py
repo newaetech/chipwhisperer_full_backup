@@ -131,18 +131,35 @@ class EightBitAES128LeakageModels:
         The glossary includes the name of the leakage model and the
         description (doc string).
         """
-        non_callables = [x for x in dir(self) if not(callable(x)) and not x.startswith('__')]
-        doc_strings = [getattr(self.__class__, x).__doc__ for x in non_callables]
+        include = [
+            'plaintext_key_xor',
+            'sbox_output',
+            'inverse_sbox_output',
+            'last_round_state',
+            'after_key_mix',
+            'mix_columns_output',
+            'shift_columns_output',
+            'last_round_state_diff',
+            'last_round_state_diff_alternate',
+            'sbox_in_out_diff',
+            'sbox_input_successive',
+            'sbox_output_successive',
+            'round_1_2_state_diff_text',
+            'round_1_2_state_diff_key_mix',
+            'round_1_2_state_diff_sbox'
+        ]
+        models = [x for x in dir(self) if x in include]
+        doc_strings = [getattr(self.__class__, x).__doc__ for x in models]
 
         items = []
-        for non_callable, doc_string in zip(non_callables, doc_strings):
+        for model, doc_string in zip(models, doc_strings):
             if doc_string is None:
-                items.append(non_callable + ':')
+                items.append(model + ':')
             else:
                 dedented_string = textwrap.dedent(doc_string)
                 wrapped_string = '\n'.join(textwrap.wrap(dedented_string, 70))
                 indented_doc_string = textwrap.indent(wrapped_string, ' ' * 2)
-                items.append(':\n'.join([non_callable, indented_doc_string]))
+                items.append(':\n'.join([model, indented_doc_string]))
 
         return '\n\n'.join(items)
 
