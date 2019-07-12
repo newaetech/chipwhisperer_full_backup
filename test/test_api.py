@@ -23,7 +23,7 @@ class TestTraces(unittest.TestCase):
 
     def setUp(self):
         self.project_name = 'testing'
-        self.project = cw.create_project(self.project_name, overwrite=True)
+        self.project = cw.create_project(self.project_name)
         self.fake_trace = cw.Trace(np.array([i for i in range(35)]), 'asdf', 'sdaf', 'sdf')
         self.project.traces.seg_ind_max = 4
         self.trace_num = 13
@@ -85,7 +85,7 @@ class TestProject(unittest.TestCase):
         self.project.remove(i_am_sure=True)
 
     def test_create_and_save_project(self):
-        self.project = cw.create_project(self.project_name, overwrite=True)
+        self.project = cw.create_project(self.project_name)
         self.assertTrue(os.path.isdir(os.path.join(cw.PROJECT_DIR, self.project_name + '_data')))
 
         trace = cw.Trace(np.array([i for i in range(100)]), 'text in', 'text out', 'key')
@@ -99,7 +99,7 @@ class TestProject(unittest.TestCase):
         self.project.save()
 
     def test_remove_project(self):
-        self.project = cw.create_project(self.project_name, overwrite=True)
+        self.project = cw.create_project(self.project_name)
 
         # must supply i_am_sure argument.
         self.assertRaises(RuntimeWarning, self.project.remove)
@@ -133,11 +133,20 @@ class TestProject(unittest.TestCase):
         # check the key matches
         self.assertEqual(traces[index].key, self.project.traces[index].key)
 
+    def test_project_openable(self):
+        self.project = cw.create_project(self.project_name)
+        traces = create_random_traces(100, 5000)
+        self.project.traces.extend(traces)
+        self.project.save()
+
+        # make sure you can open the project with open_project
+        self.project = cw.open_project(self.project_name)
+
 
 class TestSNR(unittest.TestCase):
 
     def setUp(self):
-        self.project = cw.create_project('test_project', overwrite=True)
+        self.project = cw.create_project('test_project')
         self.traces = create_random_traces(1000, 5000)
         for trace in self.traces:
             self.project.traces.append(trace)
