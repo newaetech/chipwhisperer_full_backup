@@ -3,6 +3,7 @@ V5.1.0:
       - Fault_5-RSA_Fault_Attack
       - Fault_2-Introduction_to_Vcc_Glitch_Attacks
       - PA_DPA_3-AES_DPA_Attack
+      - PA_DPA_4 updated for new API
   * Scope updates:
       - Added default_setup() method
       - cw.scope() can now autodetect scope type
