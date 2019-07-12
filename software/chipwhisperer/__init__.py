@@ -71,7 +71,8 @@ def open_project(filename):
     Raises:
        OSError: filename does not exist.
     """
-    from chipwhisperer.common.api import ProjectFormat as project
+    filename = project.ensure_cwp_extension(filename)
+
     proj = project.Project()
     proj.load(filename)
     return proj
