@@ -654,7 +654,7 @@ class Traces:
         return self._keys
 
     def append(self, trace):
-        """Append a tuple containing the trace and related operation information.
+        """Append a Trace containing the trace and related operation information.
 
         Args:
             trace (:class:`Trace <chipwhisperer.common.trace.Trace>`): A captured or created trace.
@@ -671,6 +671,18 @@ class Traces:
             self.cur_trace_num = 0
         self.cur_seg.add_trace(*trace)
         self.cur_trace_num += 1
+
+    def extend(self, iterable):
+        """Add all traces in an iterable to the project.
+
+        Args:
+            iterable: Any iterable of :class:`Trace <chipwhisperer.common.trace.Trace>` objects.
+
+        Raises:
+            TypeError: If any of the object in the iterable are not a trace.
+        """
+        for item in iterable:
+            self.append(item)
 
     def __len__(self):
         return self.tm.num_traces()

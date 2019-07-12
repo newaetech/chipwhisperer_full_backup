@@ -428,6 +428,8 @@ The :func:`open_project <chipwhisperer.open_project>` and the
 
         .. automethod:: append
 
+        .. automethod:: extend
+
 
 .. _api-capture:
 
