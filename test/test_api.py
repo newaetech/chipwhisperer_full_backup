@@ -134,7 +134,6 @@ class TestProject(unittest.TestCase):
         self.assertEqual(traces[index].key, self.project.traces[index].key)
 
 
-
 class TestSNR(unittest.TestCase):
 
     def setUp(self):
@@ -152,6 +151,16 @@ class TestSNR(unittest.TestCase):
     def test_calculate_snr_with_traces(self):
         snr = cwa.calculate_snr(self.traces, cwa.leakage_models.sbox_output)
         self.assertEqual(len(snr), 5000)
+
+
+class TestUtils(unittest.TestCase):
+
+    def test_bytearray(self):
+        arr = bytearray([1, 2, 3])
+        self.assertEqual(str(arr), "CWbytearray(b'01 02 03')")
+
+        arr = bytearray([14, 10, 2])
+        self.assertEqual(str(arr), "CWbytearray(b'0e 0a 02')")
 
 
 if __name__ == '__main__':

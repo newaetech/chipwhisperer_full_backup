@@ -19,8 +19,16 @@ from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api import ProjectFormat as project
 from chipwhisperer.common.api.ProjectFormat import PROJECT_DIR
 from chipwhisperer.common.traces import Trace
+from chipwhisperer.common.utils import util
+
+# replace bytearray with inherited class with better repr and str.
+import builtins
+builtins.bytearray = util.bytearray
+
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
+
 ktp = key_text_patterns #alias
+
 
 def program_target(scope, prog_type, fw_path, **kwargs):
     """Program the target using the programmer <type>
