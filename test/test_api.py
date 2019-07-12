@@ -24,12 +24,12 @@ class TestTraces(unittest.TestCase):
     def setUp(self):
         self.project_name = 'testing'
         self.project = cw.create_project(self.project_name, overwrite=True)
-        self.fake_trace = (np.array([i for i in range(35)]), 'asdf', 'sdaf', 'sdf')
+        self.fake_trace = cw.Trace(np.array([i for i in range(35)]), 'asdf', 'sdaf', 'sdf')
         self.project.traces.seg_ind_max = 4
         self.trace_num = 13
         for i in range(self.trace_num-1):
             self.project.traces.append(self.fake_trace)
-        self.fake_trace_2 = (np.array([i for i in range(35)]), 'asdf', 'sdaf', 'hello')
+        self.fake_trace_2 = cw.Trace(np.array([i for i in range(35)]), 'asdf', 'sdaf', 'hello')
         self.project.traces.append(self.fake_trace_2)
 
     def tearDown(self):
@@ -88,7 +88,7 @@ class TestProject(unittest.TestCase):
         self.project = cw.create_project(self.project_name, overwrite=True)
         self.assertTrue(os.path.isdir(os.path.join(cw.PROJECT_DIR, self.project_name + '_data')))
 
-        trace = (np.array([i for i in range(100)]), 'text in', 'text out', 'key')
+        trace = cw.Trace(np.array([i for i in range(100)]), 'text in', 'text out', 'key')
         for i in range(500):
             self.project.traces.append(trace)
 
@@ -108,6 +108,32 @@ class TestProject(unittest.TestCase):
         self.project.remove(i_am_sure=True)
         self.assertFalse(os.path.exists(self.project.datadirectory))
 
+    def test_traces_are_retrievable(self):
+        self.project = cw.create_project(self.project_name)
+
+        # make sure textin is still textin and not key, etc.
+        traces = create_random_traces(100, 1000)
+        for trace in traces:
+            self.project.traces.append(trace)
+
+        # retrieve a random trace
+        index = random.randrange(0, len(traces))
+        # retrieve a random part of the power trace
+        index_wave = random.randrange(0, len(traces[0].wave))
+
+        # check that the power trace matches
+        self.assertEqual(traces[index].wave[index_wave], self.project.traces[index].wave[index_wave])
+
+        # check the plaintext matches
+        self.assertEqual(traces[index].textin, self.project.traces[index].textin)
+
+        # check the textout matches
+        self.assertEqual(traces[index].textout, self.project.traces[index].textout)
+
+        # check the key matches
+        self.assertEqual(traces[index].key, self.project.traces[index].key)
+
+
 
 class TestSNR(unittest.TestCase):
 
@@ -121,8 +147,7 @@ class TestSNR(unittest.TestCase):
         self.project.remove(i_am_sure=True)
 
     def test_calculate_snr_with_project(self):
-        snr = cwa.calculate_snr(self.project, cwa.leakage_models.sbox_output)
-        self.assertEqual(len(snr), 5000)
+        self.assertRaises(TypeError, cwa.calculate_snr, self.project, cwa.leakage_models.sbox_output)
 
     def test_calculate_snr_with_traces(self):
         snr = cwa.calculate_snr(self.traces, cwa.leakage_models.sbox_output)

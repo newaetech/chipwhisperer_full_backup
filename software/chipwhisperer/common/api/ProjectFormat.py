@@ -619,10 +619,11 @@ class Traces:
             and loading traces from disk to keep memory usage reasonable.
 
     Returns:
-        (iterable) of traces in the project if the traces belongs
-         to a segment that is enabled. The iterable contains tuples
-         of length four containing the trace, plain text in,
-         encrypted text out, and known key.
+        (iterable) of :class:`traces <chipwhisperer.common.traces.Trace>`
+        in the project if the traces belongs
+        to a segment that is enabled. The iterable contains tuples
+        of length four containing the trace, plain text in,
+        encrypted text out, and known key.
 
     Raises:
         IndexError: When the index used for indexing is out of range.
@@ -656,8 +657,14 @@ class Traces:
         """Append a tuple containing the trace and related operation information.
 
         Args:
-            trace: A tuple of length four (trace data, text in, text out, and key).
+            trace (:class:`Trace <chipwhisperer.common.trace.Trace>`): A captured or created trace.
+
+        Raises:
+            TypeError: When trying to append something other than a trace.
         """
+        if not isinstance(trace, Trace):
+            raise TypeError("Expected Trace object, got {}.".format(trace))
+
         if self.cur_trace_num > self.seg_ind_max:
             self.cur_seg = self.project.segments.new()
             self.project.segments.append(self.cur_seg)

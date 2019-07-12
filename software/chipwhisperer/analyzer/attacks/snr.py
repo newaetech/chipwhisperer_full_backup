@@ -36,8 +36,7 @@ def calculate_snr(input, leak_model, bnum=0, db=True):
     Uses same leakage model as the CPA attack.
 
     Args:
-        input (Project or Iterable of Traces): A open chipwhisperer project
-            containing traces, or an iterable of :class:Traces
+        input (Iterable of :class:`Traces <chipwhisperer.common.traces.Trace>`): An iterable of traces.
         leak_model (ModelsBase): A leakage model selected from
             :data:`leakage_models <chipwhisperer.analyzer.leakage_models>`.
         bnum (int): Byte number used for leakage model.
@@ -53,25 +52,14 @@ def calculate_snr(input, leak_model, bnum=0, db=True):
 
     tm = None
 
-    if isinstance(input, Project):
-        tm = input.trace_manager()
-        ntrace = tm.num_traces()
-        npoints = tm.num_points()
-    else:
-        ntrace = len(input)
-        npoints = len(input[0].wave)
+    ntrace = len(input)
+    npoints = len(input[0].wave)
 
     for tnum in range(0, ntrace):
-        if tm:
-            trace = tm.get_trace(tnum)
-            textin = tm.get_textin(tnum)
-            textout = tm.get_textout(tnum)
-            key = tm.get_known_key(tnum)
-        else:
-            trace = input[tnum].wave
-            textin = input[tnum].textin
-            textout = input[tnum].textout
-            key = input[tnum].key
+        trace = input[tnum].wave
+        textin = input[tnum].textin
+        textout = input[tnum].textout
+        key = input[tnum].key
 
         state = {'knownkey':key}
 
