@@ -397,6 +397,32 @@ Simple Serial Target
     .. autoattribute:: baud
 
 
+.. _api-target-cw305:
+
+CW305 FPGA Target
+=================
+
+.. autoclass:: chipwhisperer.targets.CW305
+    :members:
+
+
+.. _api-target-program:
+
+Program
+=======
+
+When testing out different firmware on the target it is useful to be able
+to reprogram the target. This can be done using the
+:func:`chipwhisperer.program_target` function. There are multiple programmer
+types available:
+
+  * :class:`programmers.STM32FProgrammer <chipwhisperer.capture.api.programmers.STM32FProgrammer>`
+  * :class:`programmers.XMEGAProgrammer <chipwhisperer.capture.api.programmers.XMEGAProgrammer>`
+  * :class:`programmers.AVRProgrammer <chipwhisperer.capture.api.programmers.AVRProgrammer>`
+
+.. autofunction:: chipwhisperer.program_target
+
+
 .. _api-project:
 
 *******
@@ -463,7 +489,7 @@ Before capturing a trace make sure:
  #. The :ref:`scope <api-scope>` is configured.
  #. The :ref:`target <api-target>` has been connected.
  #. The :ref:`target <api-target>` is configured.
- #. The :ref:`target <api-target>` has been :ref:`programmed <api-program_target>`
+ #. The :ref:`target <api-target>` has been :ref:`programmed <api-target-program>`
     with the correct firmware.
 
 Once you completed these steps you can use the
@@ -750,24 +776,6 @@ Calculate the signal-to-noise ratio of your captured traces::
     cwa.calculate_snr(project, cwa.leakage_models.sbox_output)
 
 .. autofunction:: chipwhisperer.analyzer.calculate_snr
-
-
-.. _api-program_target:
-
-**************
-Program Target
-**************
-
-When testing out different firmware on the target it is useful to be able
-to reprogram the target. This can be done using the
-:func:`chipwhisperer.program_target` function. There are multiple programmer
-types available:
-
-  * :class:`programmers.STM32FProgrammer <chipwhisperer.capture.api.programmers.STM32FProgrammer>`
-  * :class:`programmers.XMEGAProgrammer <chipwhisperer.capture.api.programmers.XMEGAProgrammer>`
-  * :class:`programmers.AVRProgrammer <chipwhisperer.capture.api.programmers.AVRProgrammer>`
-
-.. autofunction:: chipwhisperer.program_target
 
 
 
