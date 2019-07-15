@@ -49,15 +49,15 @@ class CW305(TargetTemplate):
     """CW305 target object.
 
     This class contains the public API for the CW305 hardware.
-    To connect to the CW305, the easiest method is:
+    To connect to the CW305, the easiest method is::
 
-    >>> from chipwhisperer.capture.targets.CW305 import CW305
-    >>> target = CW305()
-    >>> target.con(bsfile=<valid FPGA bitstream file>
+        from chipwhisperer.capture.targets.CW305 import CW305
+        target = CW305()
+        target.con(bsfile=<valid FPGA bitstream file>
 
     Note that connecting to the CW305 includes programming the CW305 FPGA.
     For more help about CW305 settings, try help() on this CW305 submodule:
-        target.pll
+      * target.pll
     """
 
 
@@ -135,7 +135,17 @@ class CW305(TargetTemplate):
         return float(resp[1] | (resp[2] << 8)) / 1000.0
 
     def _con(self, scope=None, bsfile=None, force=False):
-        """Connect to CW305 board, download bitstream"""
+        """Connect to CW305 board, and download bitstream.
+
+        If the target has already been programmed it skips reprogramming
+        unless forced.
+
+        Args:
+            scope (ScopeTemplate): An instance of a scope object.
+            bsfile (path): The path to the bitstream file to program the FPGA with.
+            force (bool): Whether or not to force reprogramming.
+            force (bool): Whether or not to force reprogramming.
+        """
 
         self._naeusb.con(idProduct=[0xC305])
         if self.fpga.isFPGAProgrammed() == False or force:

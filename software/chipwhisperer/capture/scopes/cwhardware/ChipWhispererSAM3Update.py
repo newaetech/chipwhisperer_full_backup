@@ -38,7 +38,7 @@ from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
 #The firmware files, may still be useful
 from chipwhisperer.hardware.firmware.cwlite import getsome as cwlite_getsome
 
-from chipwhisperer.common.utlis.util import camel_case_deprecated
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 class SAMFWLoader(object):
     """ Object for easy reprogramming of ChipWhisperers
@@ -47,11 +47,10 @@ class SAMFWLoader(object):
     the Nano. If the ChipWhisperer has already been erased, pass None instead
     of the scope object and skip the enter_bootloader() call.
 
-    Example:: python
+    Example::
 
-        from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update
-            import SAMFWLoader
-        prog = SAMFWLoader(scope)
+        import chipwhisperer as cw
+        prog = cw.SAMFWLoader(scope)
         prog.enter_bootloader(really_enter=True)
         # Bossa appears on COM29
         prog.program('COM29', "/path/to/firmware")
@@ -85,7 +84,7 @@ class SAMFWLoader(object):
 
             If you enter the bootloader mode, you must upload new firmware to exit this mode.
             Power cycling will not exit bootloader mode. If you really want to enter bootloader
-            mode, recall this method or call as enterBootloader(really_enter=True).
+            mode, recall this method or call as enter_bootloader(really_enter=True).
 
             See documentation or ask at https://forum.newae.com/ for more information """)
 
@@ -105,7 +104,7 @@ class SAMFWLoader(object):
             port (str): Serial port that the ChipWhisperer bootloader is on
             fw_path (str): Path to firmware.
 
-        ..todo:: Add fw_path=None and get firmware from python zip
+        .. todo:: Add fw_path=None and get firmware from python zip.
         """
         sam = Samba()
         print("Opening firmware...")

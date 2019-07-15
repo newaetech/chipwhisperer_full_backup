@@ -323,6 +323,26 @@ ChipWhisperer Nano Scope
                 user not having the correct device permissions to access the hardware.
 
 
+.. _api-scope-update:
+
+Firmware Update
+===============
+
+On some occasions it is necessary to reprogram the scope of the ChipWhisperer Nano, Lite
+or Pro.
+
+.. warning::
+    This is not necessary most of the time. It should be only done if you know exactly
+    what you are doing. This process will erase the firmware on the scope and make it
+    unusable until reprogrammed.
+
+.. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update.SAMFWLoader
+
+    .. automethod:: enter_bootloader
+
+    .. automethod:: program
+
+
 .. _api-target:
 
 ******
