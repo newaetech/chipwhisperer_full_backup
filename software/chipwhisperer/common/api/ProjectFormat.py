@@ -125,7 +125,7 @@ class Project(Parameterized):
       *  :meth:`project.save <.Project.save>`
       *  :meth:`project.export <.Project.export>`
     """
-    untitledFileName = os.path.normpath(os.path.join(Settings().value("project-home-dir"), "tmp/default.cwp"))
+    untitledFileName = os.path.normpath(os.path.join(Settings().value("project-home-dir"), "tmp", "default.cwp"))
 
     def __init__(self, prog_name="ChipWhisperer", prog_ver=""):
         self.valid_traces = None
@@ -212,7 +212,7 @@ class Project(Parameterized):
         tmp.clear()
         starttime = datetime.now()
         prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S') + "_"
-        tmp.config.setConfigFilename(self.datadirectory + "traces/config_" + prefix + ".cfg")
+        tmp.config.setConfigFilename(os.path.join(self.datadirectory, "traces", "config_" + prefix + ".cfg"))
         tmp.config.setAttr("prefix", prefix)
         tmp.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
         return tmp
@@ -273,7 +273,7 @@ class Project(Parameterized):
     def setFilename(self, f):
         self.filename = f
         self.config.filename = f
-        self.datadirectory = os.path.splitext(self.filename)[0] + "_data/"
+        self.datadirectory = os.path.splitext(self.filename)[0] + "_data"
         self.createDataDirectory()
         self.sigStatusChanged.emit()
 
@@ -296,10 +296,7 @@ class Project(Parameterized):
 
     def load(self, f = None):
         if f is not None:
-            self.setFilename(os.path.expanduser(f))
-
-        if not os.path.isabs(self.filename):
-            self.setFilename(os.path.join(PROJECT_DIR, self.filename))
+            self.setFilename(os.path.abspath(os.path.expanduser(f)))
 
         if not os.path.isfile(self.filename):
             raise IOError("File " + self.filename + " does not exist or is not a file")
@@ -430,7 +427,7 @@ class Project(Parameterized):
 
     def consolidate(self, keepOriginals = True):
         for indx, t in enumerate(self._traceManager.traceSegments):
-            destinationDir = os.path.normpath(self.datadirectory + "traces/")
+            destinationDir = os.path.normpath(os.path.join(self.datadirectory, "traces"))
             config = ConfigObj(t.config.configFilename())
             prefix = config['Trace Config']['prefix']
             tracePath = os.path.normpath(os.path.split(t.config.configFilename())[0])
@@ -439,10 +436,10 @@ class Project(Parameterized):
 
             for traceFile in os.listdir(tracePath):
                 if traceFile.startswith(prefix):
-                    util.copyFile(os.path.normpath(tracePath + "/" + traceFile), destinationDir, keepOriginals)
+                    util.copyFile(os.path.normpath(os.path.join(tracePath, traceFile)), destinationDir, keepOriginals)
 
             util.copyFile(t.config.configFilename(), destinationDir, keepOriginals)
-            t.config.setConfigFilename(os.path.normpath(destinationDir + "/" + os.path.split(t.config.configFilename())[1]))
+            t.config.setConfigFilename(os.path.normpath(os.path.join(destinationDir, os.path.split(t.config.configFilename())[1])))
         self.sigStatusChanged.emit()
 
     def __del__(self):
@@ -468,6 +465,8 @@ class Project(Parameterized):
     def export(self, file_path, file_type='zip'):
         """Export a chipwhisperer project.
 
+        Saves project before exporting.
+
         Supported export types:
           *  zip (default)
 
@@ -477,6 +476,8 @@ class Project(Parameterized):
         .. versionadded:: 5.1
             Add **export** method to active project.
         """
+        self.save()
+
         _, cwp_file = os.path.split(self.get_filename())
         name, ext = os.path.splitext(cwp_file)
         data_folder = os.path.join(self.location, '_'.join([name, 'data']))
@@ -501,6 +502,20 @@ class Project(Parameterized):
 
         return export_file_path
 
+    def close(self, save=True):
+        """Closes the project cleanly.
+
+        Saves by default. Then closes all claimed files.
+
+        Args:
+            save (bool): Saves the project before closing.
+        """
+        if save:
+            self.save()
+
+        for seg in self.segments:
+            seg.unloadAllTraces()
+
     def remove(self, i_am_sure=False):
         """Remove a project from disk.
 
@@ -509,6 +524,9 @@ class Project(Parameterized):
         """
         if not i_am_sure:
             raise RuntimeWarning('Project not removed... i_am_sure not set to True.')
+
+        self.close(save=False)
+
         try:
             shutil.rmtree(self.datadirectory)
         except FileNotFoundError:

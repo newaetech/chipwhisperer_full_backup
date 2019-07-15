@@ -6,6 +6,8 @@ import os
 from chipwhisperer.common.api.ProjectFormat import ensure_cwp_extension
 import shutil
 import random
+from zipfile import ZipFile
+import pathlib
 
 
 def create_random_traces(num, wave_length):
@@ -79,21 +81,21 @@ class TestTraces(unittest.TestCase):
 class TestProject(unittest.TestCase):
 
     def setUp(self):
-        self.project_name = 'test_project'
+        self.project_name = 'projects/test_project'
 
     def tearDown(self):
         self.project.remove(i_am_sure=True)
 
     def test_create_and_save_project(self):
         self.project = cw.create_project(self.project_name)
-        self.assertTrue(os.path.isdir(os.path.join(cw.PROJECT_DIR, self.project_name + '_data')))
+        self.assertTrue(os.path.isdir(self.project_name + '_data'))
 
         trace = cw.Trace(np.array([i for i in range(100)]), 'text in', 'text out', 'key')
         for i in range(500):
             self.project.traces.append(trace)
 
         self.project.save()
-        self.assertTrue(os.path.exists(os.path.join(cw.PROJECT_DIR, ensure_cwp_extension(self.project_name))))
+        self.assertTrue(os.path.exists(ensure_cwp_extension(self.project_name)))
 
         # calling it again should not cause issues.
         self.project.save()
@@ -113,8 +115,7 @@ class TestProject(unittest.TestCase):
 
         # make sure textin is still textin and not key, etc.
         traces = create_random_traces(100, 1000)
-        for trace in traces:
-            self.project.traces.append(trace)
+        self.project.traces.extend(traces)
 
         # retrieve a random trace
         index = random.randrange(0, len(traces))
@@ -124,14 +125,15 @@ class TestProject(unittest.TestCase):
         # check that the power trace matches
         self.assertEqual(traces[index].wave[index_wave], self.project.traces[index].wave[index_wave])
 
-        # check the plaintext matches
-        self.assertEqual(traces[index].textin, self.project.traces[index].textin)
+        for i in range(16):
+            # check the plaintext matches
+            self.assertEqual(traces[index].textin[i], self.project.traces[index].textin[i])
 
-        # check the textout matches
-        self.assertEqual(traces[index].textout, self.project.traces[index].textout)
+            # check the textout matches
+            self.assertEqual(traces[index].textout[i], self.project.traces[index].textout[i])
 
-        # check the key matches
-        self.assertEqual(traces[index].key, self.project.traces[index].key)
+            # check the key matches
+            self.assertEqual(traces[index].key[i], self.project.traces[index].key[i])
 
     def test_project_openable(self):
         self.project = cw.create_project(self.project_name)
@@ -141,6 +143,74 @@ class TestProject(unittest.TestCase):
 
         # make sure you can open the project with open_project
         self.project = cw.open_project(self.project_name)
+
+
+class TestProjectExportImport(unittest.TestCase):
+
+    def setUp(self):
+        self.project_name = 'projects/test_project'
+        self.project = cw.create_project(self.project_name)
+        self.traces = create_random_traces(100, 5000)
+        self.project.traces.extend(self.traces)
+        self.zipfile_path = 'exported_test_project.zip'
+
+        file_paths = list()
+        file_paths.append(os.path.join(ensure_cwp_extension(os.path.split(self.project_name)[1])))
+        dir_containing_project = os.path.abspath(os.path.join(self.project.datadirectory, '..'))
+        for root, dirs, files in os.walk(self.project.datadirectory):
+            for file in files:
+                file_paths.append(os.path.relpath(os.path.join(root, file), dir_containing_project))
+
+        self.file_paths = [pathlib.Path(x).as_posix() for x in file_paths]
+
+    def tearDown(self):
+        self.project.remove(i_am_sure=True)
+        os.remove(self.zipfile_path)
+
+    def test_project_exportable(self):
+        self.project.export(self.zipfile_path, 'zip')
+
+        # check the zipfile was created
+        self.assertTrue(os.path.isfile(self.zipfile_path))
+
+        # check that all paths remain the same
+        with ZipFile(self.zipfile_path, 'r') as zippy:
+            archive_files = zippy.namelist()
+            for file_path in self.file_paths:
+                self.assertIn(file_path, archive_files)
+
+    def test_project_importable(self):
+        self.project.export(self.zipfile_path, 'zip')
+        self.project.remove(i_am_sure=True)
+        self.project = cw.import_project(self.zipfile_path)
+
+        # verify that the data is the same
+        for path in self.file_paths:
+            self.assertTrue(os.path.exists(path))
+
+    def test_import_export_data_integrity(self):
+        self.project.export(self.zipfile_path, 'zip')
+        self.project.remove(i_am_sure=True)
+        self.project = cw.import_project(self.zipfile_path)
+
+        # retrieve a random trace
+        index = random.randrange(0, len(self.traces))
+
+        # retrieve a random part of the power trace
+        index_wave = random.randrange(0, len(self.traces[0].wave))
+
+        # check that the power trace matches
+        self.assertEqual(self.traces[index].wave[index_wave], self.project.traces[index].wave[index_wave])
+
+        for i in range(16):
+            # check the plaintext matches
+            self.assertEqual(self.traces[index].textin[i], self.project.traces[index].textin[i])
+
+            # check the textout matches
+            self.assertEqual(self.traces[index].textout[i], self.project.traces[index].textout[i])
+
+            # check the key matches
+            self.assertEqual(self.traces[index].key[i], self.project.traces[index].key[i])
 
 
 class TestSNR(unittest.TestCase):

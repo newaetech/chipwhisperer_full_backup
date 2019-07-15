@@ -90,11 +90,11 @@ class TraceManager(TraceSource):
         alltraces = config.items(self.name)
         self.newProject()
 
-        fdir = os.path.split(configfilename)[0] + "/"
+        path, name = os.path.split(configfilename)
 
         for t in alltraces:
             if t[0].startswith("tracefile"):
-                fname = fdir + t[1]
+                fname = os.path.join(path, t[1])
                 fname = os.path.normpath(fname.replace("\\", "/"))
                 # print "Opening %s"%fname
                 ti = TraceContainerNative()
@@ -102,7 +102,7 @@ class TraceManager(TraceSource):
                     ti.config.loadTrace(fname)
                     ti.loadAllTraces()
                 except Exception as e:
-                    logging.error(e.message)
+                    logging.error(str(e))
                 self.traceSegments.append(ti)
             if t[0].startswith("enabled"):
                 tnum = re.findall(r'[0-9]+', t[0])
