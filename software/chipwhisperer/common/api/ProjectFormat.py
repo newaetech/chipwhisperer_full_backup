@@ -47,9 +47,6 @@ except ImportError:
 __author__ = "Colin O'Flynn"
 
 
-PROJECT_DIR = os.path.join(os.path.expanduser('~'), 'chipwhisperer', 'projects')
-
-
 def ensure_cwp_extension(path):
     """Ensures that a file path has the '.cwp' extension.
 

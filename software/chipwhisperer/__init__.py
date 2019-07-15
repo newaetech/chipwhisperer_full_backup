@@ -17,7 +17,6 @@ from chipwhisperer.capture.api import programmers
 from chipwhisperer.capture import acq_patterns as key_text_patterns
 from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api import ProjectFormat as project
-from chipwhisperer.common.api.ProjectFormat import PROJECT_DIR
 from chipwhisperer.common.traces import Trace
 from chipwhisperer.common.utils import util
 
@@ -99,14 +98,12 @@ def create_project(filename, overwrite=False):
        OSError: filename exists and overwrite is False.
     """
     filename = project.ensure_cwp_extension(filename)
+
     if os.path.isfile(filename) and (overwrite == False):
         raise OSError("File " + filename + " already exists")
 
     # If the user gives a relative path including ~, expand to the absolute path
-    filename = os.path.expanduser(filename)
-
-    if not os.path.isabs(filename):
-        filename = os.path.join(PROJECT_DIR, filename)
+    filename = os.path.abspath(os.path.expanduser(filename))
 
     proj = project.Project()
     proj.setFilename(filename)
@@ -120,10 +117,8 @@ createProject = camel_case_deprecated(create_project)
 def import_project(filename, file_type='zip', overwrite=False):
     """Import and open a project.
 
-    Will import the **filename** by extracting to the project
-    directory, defined as '~/chipwhisperer/projects'. On Unix based
-    systems '~' expands to '/home/user/' directory. On Windows it
-    expands to 'C:\\Users\\User'.
+    Will import the **filename** by extracting to the current working
+    directory.
 
     Currently support file types:
      * zip
@@ -151,7 +146,7 @@ def import_project(filename, file_type='zip', overwrite=False):
                 root, ext = os.path.splitext(path)
                 if ext == '.cwp':
                     directory, project_name = os.path.split(root)
-                    output_path = os.path.join(PROJECT_DIR, ''.join([project_name, '.cwp']))
+                    output_path = ''.join([project_name, '.cwp'])
 
                     # check if name already exists in projects
                     if os.path.isfile(output_path) and (overwrite == False):
@@ -159,7 +154,7 @@ def import_project(filename, file_type='zip', overwrite=False):
 
                     # extract the project.cwp file and project_data directory to
                     # the PROJECT_DIR
-                    project_zip.extractall(path=PROJECT_DIR)
+                    project_zip.extractall(path=os.getcwd())
 
             if output_path is None:
                 raise ValueError('Zipfile does not contain a .cwp file, so it cannot be imported')
