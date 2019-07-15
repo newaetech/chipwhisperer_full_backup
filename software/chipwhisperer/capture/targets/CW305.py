@@ -236,3 +236,29 @@ class CW305(TargetTemplate):
             time.sleep(self.clksleeptime/1000.0)
             self.usb_clk_setenabled(True)
 
+    def simpleserial_read(self, cmd, pay_len, end='\n', timeout=250, ack=True):
+        if cmd == "r":
+            return self.readOutput()
+        else:
+            raise ValueError("Unknown command {}".format(cmd))
+
+    def simpleserial_write(self, cmd, data, end=None):
+        """Write data to target.
+
+        Mimics simpleserial protocol of serial based targets.
+
+        Args:
+            cmd (str): Command to use. Target supports 'p' (write plaintext),
+                and 'k' (write key).
+            data (bytearray): Data to write to target
+            end: Unused
+
+        Raises:
+            ValueError: Unknown command
+        """
+        if cmd == 'p':
+            self.loadInput(data)
+        elif cmd == 'k':
+            self.loadEncryptionKey(data)
+        else:
+            raise ValueError("Unknown command {}".format(cmd))

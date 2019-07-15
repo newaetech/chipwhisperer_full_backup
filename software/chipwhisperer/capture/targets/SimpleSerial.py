@@ -570,7 +570,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         self.mask = mask
         self.runCommand(self._mask_cmd)
 
-    def isDone(self):
+    def is_done(self):
         return True
 
     def readOutput(self):
