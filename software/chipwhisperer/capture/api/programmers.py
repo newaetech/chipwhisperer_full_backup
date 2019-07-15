@@ -237,7 +237,7 @@ class XMEGAProgrammer(Programmer):
         try:
             xmega.erase(memtype)
         except IOError:
-            logging.warn("Full chip erase timed out. Reinitializing programmer and erasing only application memory")
+            logging.info("Full chip erase timed out. Reinitializing programmer and erasing only application memory")
             self.open()
             self.find()
             xmega.enablePDI(False)
