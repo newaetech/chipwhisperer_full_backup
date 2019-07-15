@@ -336,7 +336,7 @@ class Parameter(object):
                     value = limits[value]
                 else:
                     #raise ValueError("Value %s out of limits (%s) in parameter \"%s\"" % (str(value), str(limits), self.getName()))
-                    logging.error("Value %s out of limits (%s) in parameter \"%s\"" % (str(value), str(limits), self.getName()))
+                    logging.info("Value %s out of limits (%s) in parameter \"%s\"" % (str(value), str(limits), self.getName()))
 
         try:
             if blockSignal is not None:
