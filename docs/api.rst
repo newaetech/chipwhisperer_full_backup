@@ -470,6 +470,8 @@ The :func:`open_project <chipwhisperer.open_project>` and the
 
         .. automethod:: save
 
+        .. automethod:: close
+
     .. autoclass:: chipwhisperer.common.api.ProjectFormat.Traces
 
         .. automethod:: append
