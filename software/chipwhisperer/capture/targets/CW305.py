@@ -53,11 +53,12 @@ class CW305(TargetTemplate):
 
         from chipwhisperer.capture.targets.CW305 import CW305
         target = CW305()
-        target.con(bsfile=<valid FPGA bitstream file>
+        target.con(bsfile=<valid FPGA bitstream file>)
 
     Note that connecting to the CW305 includes programming the CW305 FPGA.
     For more help about CW305 settings, try help() on this CW305 submodule:
-      * target.pll
+
+       * target.pll
     """
 
 
