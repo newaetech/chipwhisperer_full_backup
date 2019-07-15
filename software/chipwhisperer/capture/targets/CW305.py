@@ -76,6 +76,7 @@ class CW305(TargetTemplate):
 
         self._clksleeptime = 1
         self._clkusbautooff = True
+        self.last_key = bytearray([0]*16)
 
 
     def fpga_write(self, addr, data):
@@ -194,7 +195,7 @@ class CW305(TargetTemplate):
         """"Read output from FPGA"""
         data = self.fpga_read(0x200, 16)
         data = data[::-1]
-        self.newInputData.emit(util.list2hexstr(data))
+        #self.newInputData.emit(util.list2hexstr(data))
         return data
 
     @property
@@ -237,6 +238,22 @@ class CW305(TargetTemplate):
             self.usb_clk_setenabled(True)
 
     def simpleserial_read(self, cmd, pay_len, end='\n', timeout=250, ack=True):
+        """Read data from target
+
+        Mimics simpleserial protocol of serial based targets
+
+        Args:
+            cmd (str): Command to ues. Only accepts 'r' for now.
+            pay_len: Unused
+            end: Unused
+            timeout: Unused
+            ack: Unused
+
+        Returns: Value from Crypto output register
+
+        .. versionadded:: 5.1
+            Added simpleserial_read to CW305
+        """
         if cmd == "r":
             return self.readOutput()
         else:
@@ -255,10 +272,29 @@ class CW305(TargetTemplate):
 
         Raises:
             ValueError: Unknown command
+
+        .. versionadded:: 5.1
+            Added simpleserial_write to CW305
         """
         if cmd == 'p':
             self.loadInput(data)
+            self.go()
         elif cmd == 'k':
             self.loadEncryptionKey(data)
         else:
             raise ValueError("Unknown command {}".format(cmd))
+
+    def set_key(self, key, ack=False, timeout=250):
+        """Checks if key is different from the last one sent. If so, send it.
+
+        Args:
+            key (bytearray):  key to send
+            ack: Unused
+            timeout: Unused
+
+        .. versionadded:: 5.1
+            Added set_key to CW305
+        """
+        if self.last_key != key:
+            self.last_key = key
+            self.simpleserial_write('k', key)

@@ -280,6 +280,15 @@ def capture_trace(scope, target, plaintext, key=None):
         target.simpleserial_write('p', plaintext)
 
     ret = scope.capture()
+
+    i = 0
+    while not target.is_done():
+        i += 1
+        time.sleep(0.05)
+        if i > 100:
+            warnings.warn("Target did not finish operation")
+            return None
+
     if ret:
         warnings.warn("Timeout happened during capture")
         return None
