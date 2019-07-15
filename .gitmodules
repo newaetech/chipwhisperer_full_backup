@@ -7,3 +7,6 @@
 [submodule "chipwhisperer-jupyter"]
 	path = jupyter
 	url = https://github.com/newaetech/chipwhisperer-jupyter.git
+[submodule "tutorials"]
+	path = tutorials
+	url = https://github.com/newaetech/chipwhisperer-tutorials.git
