@@ -171,7 +171,7 @@ class XMEGAPDI(object):
 
 #### HIGH LEVEL FUNCTIONS
     def find(self):
-        self.setParamTimeout(400)
+        self.setParamTimeout(100)
         self.enablePDI(True)
 
         # Read signature bytes
