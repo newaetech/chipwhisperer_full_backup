@@ -486,9 +486,10 @@ def get_cw_type(sn=None):
     """
     from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
     from chipwhisperer.capture import scopes
+    possible_ids = [0xace0, 0xace2, 0xace3]
 
     cwusb = NAEUSB()
-    possible_sn = cwusb.get_possible_devices(idProduct=None)
+    possible_sn = cwusb.get_possible_devices(idProduct=possible_ids)
     name = ""
 
     if (len(possible_sn) > 1):
