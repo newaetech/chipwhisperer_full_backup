@@ -24,6 +24,7 @@
 
 
 import time
+import os
 from .naeusb import packuint32
 
 class USART(object):
@@ -50,6 +51,11 @@ class USART(object):
         self._baud = 38400
         self._stopbits = 1
         self._parity = "none"
+
+    def delay(self, s):
+        if os.name == "nt":
+            return
+        time.sleep(s)
 
     def init(self, baud=115200, stopbits=1, parity="none"):
         """
@@ -90,7 +96,7 @@ class USART(object):
         self._usartTxCmd(self.USART_CMD_INIT, cmdbuf)
         self._usartTxCmd(self.USART_CMD_ENABLE)
 
-    def write(self, data):
+    def write(self, data, slow=False):
         """
         Send data to serial port.
         """
@@ -113,7 +119,7 @@ class USART(object):
             self._usb.sendCtrl(self.CMD_USART0_DATA, 0, data[datasent:(datasent + datatosend)])
             datasent += datatosend
 
-        time.sleep(0.0000001)
+        self.delay(0.0000001)
 
     def flush(self):
         """
@@ -157,7 +163,7 @@ class USART(object):
                 dlen -= len(newdata)
             waiting = self.inWaiting()
             timeout -= 1
-            #time.sleep(0.0001)
+            self.delay(0.0000001)
 
         return resp
 
