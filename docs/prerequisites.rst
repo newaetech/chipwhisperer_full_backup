@@ -67,7 +67,7 @@ The Arm Toolchain can be installed using:
 Hardware Drivers
 ================
 
-The driver for Linux is built in, however you need to allow your user account to access the peripheral. To do so, you'll have to make a file called /etc/udev/rules.d/99-newae.rules . The contents of this file should be:
+The driver for Linux is built in; however, you need to allow your user account to access the peripheral. To do so, you'll have to make a file called /etc/udev/rules.d/99-newae.rules . The contents of this file should be:
 
 .. code::
 
