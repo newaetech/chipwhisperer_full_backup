@@ -119,9 +119,9 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         self.clock.adc_src = "clkgen_x4"
 
         count = 0
-        while not self.clock.clkgen_locked:
-            time.sleep(0.5)
+        while not self.clock.clkgen_locked:            
             self.clock.reset_dcms()
+            time.sleep(0.05)
             count += 1
 
             if count == 5:
