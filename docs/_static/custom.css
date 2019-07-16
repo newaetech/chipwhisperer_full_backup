@@ -1,0 +1,4 @@
+div.sphinxsidebar {
+    max-height: 93%;
+    overflow-y: auto;
+}

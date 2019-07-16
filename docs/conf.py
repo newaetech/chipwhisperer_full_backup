@@ -69,8 +69,8 @@ html_theme_options = {
         'Tutorials': 'https://wiki.newae.com/Main_Page#Sample_Projects_and_Tutorials',
         'Hardware Docs': 'https://wiki.newae.com/Main_Page#Hardware_Documentation',
     },
-    'sidebar_width': '19em',
-    'page_width': '60em',
+    'sidebar_width': '265px',
+    'page_width': '1000px',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
