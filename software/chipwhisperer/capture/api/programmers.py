@@ -262,24 +262,24 @@ class XMEGAProgrammer(Programmer):
 
 class STM32FProgrammer(Programmer):
 
-    def __init__(self):
+    def __init__(self, small_blocks=False, slow_prog=False):
         super(STM32FProgrammer, self).__init__()
         self.supported_chips = supported_stm32f
-        
-        self.slow_speed = False
-        self.small_blocks = False
+
+        self.slow_speed = slow_prog
+        self.small_blocks = small_blocks
         self.stm = None
-        
+
     def stm32prog(self):
 
         if self.stm is None:
             stm = self.scope.scopetype.dev.serialstm32f
         else:
             stm = self.stm
-        
+
         stm.slow_speed = self.slow_speed
         stm.small_blocks = self.small_blocks
-        
+
         return stm
 
     @save_and_restore_pins

@@ -120,6 +120,19 @@ class Results(object):
 
     updateSubkey = camel_case_deprecated(update_subkey)
 
+    def find_key(self, use_absolute=True):
+        """ Find the best guess for the key from the attack.
+
+        Args:
+            use_absolute (bool, optional): Use the absolute value of the
+                correlation during analysis.
+
+        Returns:
+            The best guess for a key from the attack as a list.
+        """
+        res = self.find_maximums(use_absolute=use_absolute)
+        return [subkey[0][0] for subkey in res]
+
     def find_maximums(self, bytelist=None, use_absolute=True, use_single=False):
         """Information from the attack:
 

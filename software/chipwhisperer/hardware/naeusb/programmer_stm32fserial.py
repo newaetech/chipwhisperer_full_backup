@@ -29,7 +29,6 @@ import traceback
 from datetime import datetime
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 from chipwhisperer.common.utils.timer import nonBlockingDelay
-from chipwhisperer.common.utils.util import updateUI
 from functools import reduce
 
 #From ST AN2606, See Section 50 (Device-dependent bootloader parameters), Page 244/268 on Rev 30 of document
@@ -118,7 +117,7 @@ class STM32FSerial(object):
             self._old_stopbits = self._cwserial._stopbits
             self._old_timeout = self._cwserial.timeout
             self._cwserial.init(baud=38400, stopbits=1, parity="even")
-            self._cwserial.timeout = 1000
+            self._cwserial.timeout = self._timeout
 
             self.sp = self._cwserial
         else:
@@ -623,7 +622,6 @@ class STM32FSerial(object):
                 block_size = 64
                 self.cmdWriteMemory(addr, data[offs:offs + block_size])
 
-            updateUI()
             if self.slow_speed:
                 self.delay_func(1)
             offs += block_size
