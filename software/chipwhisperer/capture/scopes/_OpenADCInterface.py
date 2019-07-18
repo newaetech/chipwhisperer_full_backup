@@ -1668,7 +1668,7 @@ class OpenADCInterface(object):
     def triggerNow(self):
         initial = self.settings()
         self.setSettings(initial | SETTINGS_TRIG_NOW)
-        # time.sleep(0.001)
+        time.sleep(0.001)
         self.setSettings(initial & ~SETTINGS_TRIG_NOW)
 
     def getStatus(self):
@@ -1834,7 +1834,7 @@ class OpenADCInterface(object):
             starttime = datetime.datetime.now()
             while self.serial.cmdReadStream_isDone() == False:
                 # Wait for a moment before re-running the loop
-                # time.sleep(0.05)
+                time.sleep(0.05)
                 diff = datetime.datetime.now() - starttime
 
                 # If we've timed out, don't wait any longer for a trigger
@@ -1867,7 +1867,7 @@ class OpenADCInterface(object):
                 status = self.getStatus()
 
                 # Wait for a moment before re-running the loop
-                # time.sleep(0.01)
+                #time.sleep(0.01) ## <-- This causes the capture slowdown
                 diff = datetime.datetime.now() - starttime
 
                 # If we've timed out, don't wait any longer for a trigger
@@ -1884,7 +1884,7 @@ class OpenADCInterface(object):
             # If using large offsets, system doesn't know we are delaying api
             nosampletimeout = self._nosampletimeout * 10
             while (self.getBytesInFifo() == 0) and nosampletimeout:
-                # time.sleep(0.005)
+                time.sleep(0.005)
                 nosampletimeout -= 1
 
             if nosampletimeout == 0:

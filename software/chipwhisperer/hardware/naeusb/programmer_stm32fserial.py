@@ -620,6 +620,7 @@ class STM32FSerial(object):
             except CmdException:
                 # Try shrinking the block size for the writes
                 block_size = 64
+                logging.debug("Write with block size 256 failed, retrying with block size of 64")
                 self.cmdWriteMemory(addr, data[offs:offs + block_size])
 
             if self.slow_speed:
