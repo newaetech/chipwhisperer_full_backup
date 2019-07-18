@@ -12,6 +12,10 @@
 #
 import os
 import sys
+from glob import glob
+import shutil
+import re
+from pathlib import Path
 sys.path.insert(0, os.path.abspath('./../software'))
 
 
@@ -89,3 +93,64 @@ html_sidebars = {
     'index': ['about.html', 'navigation.html', 'searchbox.html'],
     '**': ['about_short.html', 'localtoc.html', 'searchbox.html']
 }
+
+
+def create_tutorial_files(app, env, added, changed, removed):
+    """Callback that creates stub ReST files for the tutorials.
+
+    These files will contain the correct links and will always be
+    rebuilt.
+    """
+    print('Generating tutorial stubs with links...')
+    tutorials_src_dir = os.path.abspath(os.path.join(app.srcdir, '..', 'tutorials'))
+    tutorials_output_dir = os.path.abspath(os.path.join(app.srcdir, 'tutorials'))
+
+    p1 = re.compile(r'.*-(.*)-(.*)\.rst')  # for scope and target
+    p2 = re.compile(r'\\([A-Za-z_\d*]*)-')  # for tutorial identifier (pa_cpa_1)
+
+    generated_files = []
+
+    # move images over for linking
+    input_image_dir = os.path.join(tutorials_src_dir, 'img')
+    output_image_dir = os.path.join(tutorials_output_dir, 'img')
+
+    if not os.path.isdir(output_image_dir):
+        os.mkdir(output_image_dir)
+
+    for image_file in glob(os.path.join(input_image_dir, '*')):
+        _, image_name = os.path.split(image_file)
+        shutil.copyfile(image_file, os.path.join(output_image_dir, image_name))
+
+    for file in glob(os.path.join(tutorials_src_dir, "*.rst")):
+        scope, target = p1.findall(file)[0]
+        tutorial_id = p2.findall(file)[0].lower()
+
+        tutorial_input_path = os.path.join(tutorials_src_dir, file)
+
+        tutorial_id = tutorial_id.lower() + '-' + scope.lower() + '-' + target.lower()
+
+        tutorial_output_name = tutorial_id + '.rst'
+        tutorial_output_path = os.path.join(tutorials_output_dir, tutorial_output_name)
+
+        with open(tutorial_input_path, 'r', encoding='utf-8') as in_rstfile:
+            with open(tutorial_output_path, 'w', encoding='utf-8') as out_rstfile:
+                tutorial_link = 'tutorial-' + tutorial_id
+                out_rstfile.write('.. role:: raw-latex(raw)\n    :format: latex\n\n')
+                out_rstfile.write('.. _{}:\n\n'.format(tutorial_link))
+                out_rstfile.write('.. include:: {}'.format(tutorial_input_path))
+                # out_rstfile.write(in_rstfile.read())
+
+        generated_files.append(tutorial_output_path)
+
+    print('Generated {} tutorial stub files.'.format(len(generated_files)))
+
+    # invalidate the tutorials.rst file
+    tutorials_overview_file = os.path.join(app.srcdir, 'tutorials.rst')
+    Path(tutorials_overview_file).touch()
+    generated_files.append(tutorials_overview_file)
+
+    return generated_files
+
+
+def setup(app):
+    app.connect('env-get-outdated', create_tutorial_files)
