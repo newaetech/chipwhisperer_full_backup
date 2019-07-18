@@ -510,3 +510,9 @@ def get_cw_type(sn=None):
         return scopes.OpenADC
     elif name == "ChipWhisperer Nano":
         return scopes.CWNano
+
+import time
+def better_delay(ms):
+    t = time.perf_counter() + ms / 1000
+    while time.perf_counter() < t:
+        pass

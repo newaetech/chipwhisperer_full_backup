@@ -291,7 +291,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         Raises:
            IOError: Unknown failure.
         """
-        ret = self.qtadc.capture()
+        ret = self.qtadc.capture(self.adc.offset)
         return ret
 
     def get_last_trace(self):

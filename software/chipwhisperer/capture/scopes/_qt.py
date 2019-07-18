@@ -103,8 +103,8 @@ class OpenADCQt(object):
     def trigger_duration(self):
         return self.parm_trigger.duration()
 
-    def capture(self):
-        timeout = self.sc.capture()
+    def capture(self, offset=None):
+        timeout = self.sc.capture(offset)
         timeout2 = self.read()
 
         return timeout or timeout2

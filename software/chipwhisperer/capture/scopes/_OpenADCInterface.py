@@ -14,6 +14,7 @@ from chipwhisperer.common.utils import util
 import array
 import numpy as np
 from collections import OrderedDict
+import copy
 
 ADDR_GAIN       = 0
 ADDR_SETTINGS   = 1
@@ -1825,16 +1826,18 @@ class OpenADCInterface(object):
             # Stream mode adds 500mS of extra timeout on USB traffic itself...
             self.serial.initStreamModeCapture(self._stream_len, self._sbuf, timeout_ms=int(self._timeout * 1000) + 500)
 
-    def capture(self):
+    def capture(self, offset=None):
         timeout = False
-
+        sleeptime = 0
+        if offset:
+            sleeptime = 4*offset/100000 #rougly 4ms per 100k offset
         if self._streammode:
 
             # Wait for a trigger, letting the UI run when it can
             starttime = datetime.datetime.now()
             while self.serial.cmdReadStream_isDone() == False:
                 # Wait for a moment before re-running the loop
-                time.sleep(0.05)
+                #time.sleep(0.05)
                 diff = datetime.datetime.now() - starttime
 
                 # If we've timed out, don't wait any longer for a trigger
@@ -1868,6 +1871,7 @@ class OpenADCInterface(object):
 
                 # Wait for a moment before re-running the loop
                 #time.sleep(0.01) ## <-- This causes the capture slowdown
+                util.better_delay(sleeptime) ## faster sleep method
                 diff = datetime.datetime.now() - starttime
 
                 # If we've timed out, don't wait any longer for a trigger
@@ -1884,6 +1888,7 @@ class OpenADCInterface(object):
             # If using large offsets, system doesn't know we are delaying api
             nosampletimeout = self._nosampletimeout * 10
             while (self.getBytesInFifo() == 0) and nosampletimeout:
+                logging.debug("Bytes in Fifo: {}".format(self.getBytesInFifo()))
                 time.sleep(0.005)
                 nosampletimeout -= 1
 
@@ -2029,6 +2034,7 @@ class OpenADCInterface(object):
             logging.warning('Unexpected sync byte in processData(): 0x%x' % data[0])
             return None
 
+        orig_data = copy.copy(data)
         if debug:
             fpData = []
             # Slow, verbose processing method
@@ -2089,6 +2095,7 @@ class OpenADCInterface(object):
             fpData = np.reshape(data[:, [0, 1, 2]], (-1))
             trigger = data[:, 3] % 4
             fpData = fpData / 1024.0 - self.offset
+            logging.debug("Trigger_data: {} len={}".format(trigger, len(trigger)))
 
             # Search for the trigger signal
             trigfound = False
@@ -2097,7 +2104,7 @@ class OpenADCInterface(object):
                 if(t != 3):
                     trigfound = True
                     trigsamp = trigsamp + (t & 0x3)
-                    #print "Trigger found at %d"%trigsamp
+                    logging.debug("Trigger found at %d"%trigsamp)
                     break
                 else:
                     trigsamp += 3
@@ -2108,6 +2115,7 @@ class OpenADCInterface(object):
             logging.warning('Trigger not found in ADC data. No data reported!')
             logging.debug('Trigger not found typically caused by the actual \
             capture starting too late after the trigger event happens')
+            logging.debug('Data: {}'.format(orig_data))
 
 
         #Ensure that the trigger point matches the requested by padding/chopping
