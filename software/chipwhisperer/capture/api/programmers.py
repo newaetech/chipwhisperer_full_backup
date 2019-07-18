@@ -262,9 +262,10 @@ class XMEGAProgrammer(Programmer):
 
 class STM32FProgrammer(Programmer):
 
-    def __init__(self, small_blocks=False, slow_prog=False):
+    def __init__(self, small_blocks=False, slow_prog=False, baud=115200):
         super(STM32FProgrammer, self).__init__()
         self.supported_chips = supported_stm32f
+        self._baud = baud
 
         self.slow_speed = slow_prog
         self.small_blocks = small_blocks
@@ -293,7 +294,7 @@ class STM32FProgrammer(Programmer):
     @save_and_restore_pins
     def open(self):
         stm32f = self.stm32prog()
-        stm32f.open_port()
+        stm32f.open_port(self._baud)
 
     @save_and_restore_pins
     def find(self):

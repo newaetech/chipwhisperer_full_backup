@@ -109,7 +109,7 @@ class STM32FSerial(object):
 
         self._old_baud = None
 
-    def open_port(self):
+    def open_port(self, baud=115200):
 
         if self._cwserial:
             self._old_baud = self._cwserial._baud
