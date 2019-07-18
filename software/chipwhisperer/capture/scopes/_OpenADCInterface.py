@@ -2106,6 +2106,9 @@ class OpenADCInterface(object):
 
         if trigfound == False:
             logging.warning('Trigger not found in ADC data. No data reported!')
+            logging.debug('Trigger not found typically caused by the actual \
+            capture starting too late after the trigger event happens')
+
 
         #Ensure that the trigger point matches the requested by padding/chopping
         diff = self.presamples_desired - trigsamp

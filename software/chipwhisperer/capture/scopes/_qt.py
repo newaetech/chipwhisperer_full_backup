@@ -91,10 +91,13 @@ class OpenADCQt(object):
 
         try:
             self.datapoints = self.sc.readData(numberPoints)
+            if self.datapoints is None or len(self.datapoints) == 0:
+                return True #effectively a timeout for now
         except IndexError as e:
             raise IOError("Error reading data: %s" % str(e))
 
         self.dataUpdated.emit(channelNr, self.datapoints, -self.parm_trigger._get_presamples(True), self.parm_clock._adcSampleRate())
+        return False
 
 
     def trigger_duration(self):
@@ -102,8 +105,9 @@ class OpenADCQt(object):
 
     def capture(self):
         timeout = self.sc.capture()
-        self.read()
-        return timeout
+        timeout2 = self.read()
+
+        return timeout or timeout2
 
     def reset(self):
         self.sc.setReset(True)
