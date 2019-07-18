@@ -36,6 +36,7 @@ Documentation
 
     prerequisites
     installing
+    tutorials
 
 
 API
