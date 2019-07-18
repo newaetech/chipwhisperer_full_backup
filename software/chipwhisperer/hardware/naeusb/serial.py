@@ -119,8 +119,6 @@ class USART(object):
             self._usb.sendCtrl(self.CMD_USART0_DATA, 0, data[datasent:(datasent + datatosend)])
             datasent += datatosend
 
-        self.delay(0.0000001)
-
     def flush(self):
         """
         Flush all input buffers
