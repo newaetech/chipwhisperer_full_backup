@@ -70,7 +70,6 @@ html_theme_options = {
     'github_button': 'true',
     'github_type': 'watch',
     'extra_nav_links': {
-        'Tutorials': 'https://wiki.newae.com/Main_Page#Sample_Projects_and_Tutorials',
         'Hardware Docs': 'https://wiki.newae.com/Main_Page#Hardware_Documentation',
     },
     'sidebar_width': '265px',
