@@ -70,7 +70,6 @@ html_theme_options = {
     'github_button': 'true',
     'github_type': 'watch',
     'extra_nav_links': {
-        'Tutorials': 'https://wiki.newae.com/Main_Page#Sample_Projects_and_Tutorials',
         'Hardware Docs': 'https://wiki.newae.com/Main_Page#Hardware_Documentation',
     },
     'sidebar_width': '265px',
@@ -138,7 +137,6 @@ def create_tutorial_files(app, env, added, changed, removed):
                 out_rstfile.write('.. role:: raw-latex(raw)\n    :format: latex\n\n')
                 out_rstfile.write('.. _{}:\n\n'.format(tutorial_link))
                 out_rstfile.write('.. include:: {}'.format(tutorial_input_path))
-                # out_rstfile.write(in_rstfile.read())
 
         generated_files.append(tutorial_output_path)
 
