@@ -128,7 +128,11 @@ def create_tutorial_files(app, config):
 
     for file in glob(os.path.join(tutorials_src_dir, "*.rst")):
         scope, target = p1.findall(file)[0]
-        tutorial_id = p2.findall(file)[0].lower()
+        try:
+            tutorial_id = p2.findall(file)[0].lower()
+        except IndexError:
+            print('Error when using regex on file:', file)
+            continue
 
         tutorial_input_path = os.path.join(tutorials_src_dir, file)
 
