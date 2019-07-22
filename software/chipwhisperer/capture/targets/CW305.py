@@ -52,8 +52,8 @@ class CW305(TargetTemplate):
     To connect to the CW305, the easiest method is::
 
         from chipwhisperer.capture.targets.CW305 import CW305
-        target = CW305()
-        target.con(bsfile=<valid FPGA bitstream file>)
+        target = cw.target(scope,
+                targets.CW305, bsfile=<valid FPGA bitstream file>)
 
     Note that connecting to the CW305 includes programming the CW305 FPGA.
     For more help about CW305 settings, try help() on this CW305 submodule:
@@ -81,16 +81,30 @@ class CW305(TargetTemplate):
 
 
     def fpga_write(self, addr, data):
-        """ Write to specified address """
+        """Write to an address on the FPGA
 
+        Args:
+            addr (int): Address to write to
+            data (list): Data to write to addr
+
+        Raises:
+            IOError: User attempted to write to a read-only location
+        """
         if addr < self._woffset:
             raise IOError("Write to read-only location: 0x%04x"%addr)
 
         return self._naeusb.cmdWriteMem(addr, data)
 
     def fpga_read(self, addr, readlen):
-        """ Read from address """
+        """Read from an address on the FPGA
 
+        Args:
+            addr (int): Address to read from
+            readlen (int): Length of data to read
+
+        Returns:
+            Requested data as a list
+        """
         if addr > self._woffset:
             logging.info('Read from write address, confirm this is not an error')
 
@@ -212,7 +226,12 @@ class CW305(TargetTemplate):
     @property
     def clkusbautooff(self):
         """ If set, the USB clock is automatically disabled on capture.
+
         The USB clock is re-enabled after self.clksleeptime milliseconds.
+
+        :Getter: Gets whether to turn off the USB clock on capture
+
+        :Setter: Sets whether to turn off the USB clock on capture
         """
         return self._clkusbautooff
 

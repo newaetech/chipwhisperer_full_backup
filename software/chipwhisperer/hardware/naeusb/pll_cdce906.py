@@ -36,12 +36,16 @@ class PLLCDCE906(object):
         self._pll2slew = '+0nS'
 
     def pll_outfreq_set(self, freq, outnum):
-        """
-        Set the PLL Output Frequency. Args:
-            freq (int): Frequency in Hz
-                minimum: 630 KHz
-                maximum: 167 MHz
-            outnum (int): PLL Number (0,1,2)
+        """Set the output frequency of a PLL
+
+        Args:
+            freq (int): The desired output frequency of the PLL. Must be in
+                range [630kHz, 167MHz]
+            outnum (int): The PLL to set the output frequency of
+
+        Raises:
+            ValueError: Desired frequency is bigger than 167MHz or smaller than
+                630kHz
         """
         if freq is None or (freq < 630E3) or (freq > 167E6):
             raise ValueError("Illegal clock frequency = %d" % freq)
@@ -99,17 +103,37 @@ class PLLCDCE906(object):
         self.cdce906setoutput(outpin, divsrc, slewrate=pll_slewrate, enabled=pll_enabled)
 
     def pll_outfreq_get(self, outnum):
-        """Read the programmed output frequency from a PLL"""
+        """Read the programmed output frequency from a PLL on the CW305
+
+        Args:
+            outnum (int): PLL to read from (i.e. for PLL 0, use outnum=0)
+
+        Returns:
+            The output frequency of the specified PLL
+        """
         settings = self.pllread(outnum)
         freq = ((self.reffreq * float(settings[0])) / float(settings[1])) / float(settings[2])
         return freq
 
     def pll_outenable_set(self, enabled, outnum):
-        """Enable or disable one of the PLLs"""
+        """Enable or disable a PLL
+
+        Args:
+            enabled (bool): Whether to enable (True) or disable (False) the
+                specified PLL.
+            outnum (int): The PLL to enable or disable
+        """
         self.outputUpdateOutputs(outnum, pllenabled_new=enabled)
 
     def pll_outenable_get(self, outnum):
-        """Get if an output is enabled or not"""
+        """Get whether a PLL is enabled or not
+
+        Args:
+            outnum (int): The PLL to get the enable status of
+
+        Returns:
+            True if the PLL is enabled, False if it isn't
+        """
         outpin = self.outnumToPin(outnum)
         data = self.cdce906read(19 + outpin)
         return bool(data & (1 << 3))

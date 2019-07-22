@@ -350,9 +350,10 @@ Target
 ******
 
 The target object provides the interface for configuring the target device
-under test (DUT). The default target and currently only supported target type:
+under test (DUT). Supported targets:
 
- * :ref:`api-target-simpleserial`
+ * :ref:`api-target-simpleserial` (default)
+ * :ref:`api-target-cw305`
 
 The Simple Serial target type provides the target interface for all targets that use
 a simple serial connection. A object can be created using::
@@ -403,8 +404,29 @@ CW305 FPGA Target
 =================
 
 .. autoclass:: chipwhisperer.targets.CW305
-    :members:
 
+    .. automethod:: simpleserial_read
+
+    .. automethod:: simpleserial_write
+
+    .. autoproperty:: clksleeptime
+
+    .. autoproperty:: clkusbautooff
+
+    .. attribute:: pll
+        :annotation: target.pll
+
+        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outenable_set
+            :annotation: target.pll.pll_outenable_set
+
+        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outenable_get
+            :annotation: target.pll.pll_outenable_get
+
+        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outfreq_set
+            :annotation: target.pll.pll_outfreq_set
+
+        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outfreq_get
+            :annotation: target.pll.pll_outfreq_get
 
 .. _api-target-program:
 
