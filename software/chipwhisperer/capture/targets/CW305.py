@@ -51,7 +51,8 @@ class CW305(TargetTemplate):
     This class contains the public API for the CW305 hardware.
     To connect to the CW305, the easiest method is::
 
-        from chipwhisperer.capture.targets.CW305 import CW305
+        import chipwhisperer as cw
+        scope = cw.scope()
         target = cw.target(scope,
                 targets.CW305, bsfile=<valid FPGA bitstream file>)
 

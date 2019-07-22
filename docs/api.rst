@@ -409,9 +409,9 @@ CW305 FPGA Target
 
     .. automethod:: simpleserial_write
 
-    .. autoproperty:: clksleeptime
+    .. autoattribute:: clksleeptime
 
-    .. autoproperty:: clkusbautooff
+    .. autoattribute:: clkusbautooff
 
     .. attribute:: pll
         :annotation: target.pll
