@@ -113,12 +113,8 @@ def create_tutorial_files(app, config):
         os.remove(old_file)
 
     p1 = re.compile(r'.*-(.*)-(.*)\.rst')  # for scope and target
-    if os.sep == '/':
-        p2 = re.compile(r'/([A-Za-z_\d*]*)-')  # for tutorial identifier (pa_cpa_1)
-    elif os.sep == '\\':
-        p2 = re.compile(r'\\([A-Za-z_\d*]*)-')  # for tutorial identifier (pa_cpa_1)
-    else:
-        raise TypeError('Help...')
+    # repr and strip are to get around string escaping craziness
+    p2 = re.compile(r'{}([A-Za-z_\d*]*)-'.format(repr(os.sep).strip("'")))  # for tutorial identifier (pa_cpa_1)
 
     generated_files = []
 
