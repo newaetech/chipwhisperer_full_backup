@@ -113,7 +113,12 @@ def create_tutorial_files(app, config):
         os.remove(old_file)
 
     p1 = re.compile(r'.*-(.*)-(.*)\.rst')  # for scope and target
-    p2 = re.compile(r'\\([A-Za-z_\d*]*)-')  # for tutorial identifier (pa_cpa_1)
+    if os.sep == '/':
+        p2 = re.compile(r'/([A-Za-z_\d*]*)-')  # for tutorial identifier (pa_cpa_1)
+    elif os.sep == '\\':
+        p2 = re.compile(r'\\([A-Za-z_\d*]*)-')  # for tutorial identifier (pa_cpa_1)
+    else:
+        raise TypeError('Help...')
 
     generated_files = []
 
