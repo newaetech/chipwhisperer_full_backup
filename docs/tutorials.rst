@@ -153,7 +153,8 @@ Supported Targets:
 
   * :ref:`XMEGA <tutorial-pa_spa_1-openadc-cwlitexmega>`
   * :ref:`ARM (STM32F3) <tutorial-pa_spa_1-openadc-cwlitearm>`
-  * :ref:`ChipWhisperer Nano <tutorial-pa_spa_1-cwnano-cwnano>`
+
+..  * :ref:`ChipWhisperer Nano <tutorial-pa_spa_1-cwnano-cwnano>`
 
 
 .. _tutorials-pa-dpa:
@@ -173,7 +174,8 @@ Supported Targets:
 
   * :ref:`XMEGA <tutorial-pa_dpa_1-openadc-cwlitexmega>`
   * :ref:`ARM (STM32F3) <tutorial-pa_dpa_1-openadc-cwlitearm>`
-  * :ref:`ChipWhisperer Nano <tutorial-pa_dpa_1-cwnano-cwnano>`
+
+..  * :ref:`ChipWhisperer Nano <tutorial-pa_dpa_1-cwnano-cwnano>`
 
 
 .. _tutorials-pa-dpa-hw_swings:
@@ -197,9 +199,11 @@ Use a Differential Power Analysis (DPA) attack to break AES.
 
 Supported Targets:
 
-  * :ref:`XMEGA <tutorial-pa_dpa_3-openadc-cwlitexmega>`
+..  * :ref:`XMEGA <tutorial-pa_dpa_3-openadc-cwlitexmega>`
+
   * :ref:`ARM (STM32F3) <tutorial-pa_dpa_3-openadc-cwlitearm>`
-  * :ref:`ChipWhisperer Nano <tutorial-pa_dpa_3-cwnano-cwnano>`
+
+..  * :ref:`ChipWhisperer Nano <tutorial-pa_dpa_3-cwnano-cwnano>`
 
 
 Correlation Power Analysis
@@ -236,7 +240,8 @@ disrupt a side channel attack.
 
 Supported Targets:
 
-  * :ref:`XMEGA <tutorial-pa_cpa_3-openadc-cwlitexmega>`
+..  * :ref:`XMEGA <tutorial-pa_cpa_3-openadc-cwlitexmega>`
+
   * :ref:`ARM (STM32F3) <tutorial-pa_cpa_3-openadc-cwlitearm>`
   * :ref:`ChipWhisperer Nano <tutorial-pa_cpa_3-cwnano-cwnano>`
 
@@ -249,8 +254,9 @@ about how 32 bit AES differs from 8 bit AES.
 
 Supported Targets:
 
-  * :ref:`ARM (STM32F3) <tutorial-pa_cpa_4-openadc-cwlitearm>`
-  * :ref:`ChipWhisperer Nano <tutorial-pa_cpa_4-cwnano-cwnano>`
+..  * :ref:`ARM (STM32F3) <tutorial-pa_cpa_4-openadc-cwlitearm>`
+
+..  * :ref:`ChipWhisperer Nano <tutorial-pa_cpa_4-cwnano-cwnano>`
 
 
 Multiple Analysis Tutorials
@@ -264,7 +270,8 @@ bootloader.
 
 Supported Targets:
 
-  * :ref:`XMEGA <tutorial-pa_multi_1-openadc-cwlitexmega>`
+..  * :ref:`XMEGA <tutorial-pa_multi_1-openadc-cwlitexmega>`
+
   * :ref:`ARM (STM32F3) <tutorial-pa_multi_1-openadc-cwlitearm>`
 
 
@@ -343,7 +350,8 @@ key.
 
 Supported Targets:
 
-  * :ref:`XMEGA <tutorial-fault_4-openadc-cwlitexmega>`
+..  * :ref:`XMEGA <tutorial-fault_4-openadc-cwlitexmega>`
+
   * :ref:`ARM (STM32F3) <tutorial-fault_4-openadc-cwlitearm>`
 
 
