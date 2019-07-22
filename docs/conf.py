@@ -94,7 +94,7 @@ html_sidebars = {
 }
 
 
-def create_tutorial_files(app, env, added, changed, removed):
+def create_tutorial_files(app, config):
     """Callback that creates stub ReST files for the tutorials.
 
     These files will contain the correct links and will always be
@@ -106,8 +106,6 @@ def create_tutorial_files(app, env, added, changed, removed):
 
     p1 = re.compile(r'.*-(.*)-(.*)\.rst')  # for scope and target
     p2 = re.compile(r'\\([A-Za-z_\d*]*)-')  # for tutorial identifier (pa_cpa_1)
-
-    generated_files = []
 
     # move images over for linking
     input_image_dir = os.path.join(tutorials_src_dir, 'img')
@@ -138,17 +136,12 @@ def create_tutorial_files(app, env, added, changed, removed):
                 out_rstfile.write('.. _{}:\n\n'.format(tutorial_link))
                 out_rstfile.write('.. include:: {}'.format(tutorial_input_path))
 
-        generated_files.append(tutorial_output_path)
-
     print('Generated {} tutorial stub files.'.format(len(generated_files)))
 
     # invalidate the tutorials.rst file
     tutorials_overview_file = os.path.join(app.srcdir, 'tutorials.rst')
     Path(tutorials_overview_file).touch()
-    generated_files.append(tutorials_overview_file)
-
-    return generated_files
 
 
 def setup(app):
-    app.connect('env-get-outdated', create_tutorial_files)
+    app.connect('config-inited', create_tutorial_files)
