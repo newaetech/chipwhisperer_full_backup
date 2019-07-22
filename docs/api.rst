@@ -336,6 +336,9 @@ or Pro.
     what you are doing. This process will erase the firmware on the scope and make it
     unusable until reprogrammed.
 
+.. seealso:: The manual way of updating the SAM3U Firmware can be found on the
+    `wiki <https://wiki.newae.com/Manual_SAM3U_Firmware_Update>`_.
+
 .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update.SAMFWLoader
 
     .. automethod:: enter_bootloader
