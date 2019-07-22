@@ -19,6 +19,7 @@ from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api import ProjectFormat as project
 from chipwhisperer.common.traces import Trace
 from chipwhisperer.common.utils import util
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 
 # replace bytearray with inherited class with better repr and str.
 import builtins
