@@ -147,7 +147,9 @@ def create_tutorial_files(app, config):
                 tutorial_link = 'tutorial-' + tutorial_id
                 out_rstfile.write('.. role:: raw-latex(raw)\n    :format: latex\n\n')
                 out_rstfile.write('.. _{}:\n\n'.format(tutorial_link))
-                out_rstfile.write('.. include:: {}'.format(tutorial_input_path))
+                # ..todo:: get linking to work instead of copying.
+                #out_rstfile.write('.. include:: {}'.format(tutorial_input_path))
+                out_rstfile.write(in_rstfile.read())
 
         generated_files.append(tutorial_output_path)
 

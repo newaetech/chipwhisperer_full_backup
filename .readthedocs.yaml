@@ -12,10 +12,12 @@ python:
   version: 3.6
   install:
     - requirements: software/requirements.txt
+    - requirements: jupyter/requirements.txt
     - method: setuptools
       path: software
 
 submodules:
   include:
     - tutorials
+    - jupyter
   recursive: true
