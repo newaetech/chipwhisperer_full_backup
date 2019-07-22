@@ -4,6 +4,7 @@ V5.1.0:
       - Fault_2-Introduction_to_Vcc_Glitch_Attacks
       - PA_DPA_3-AES_DPA_Attack
       - Fault_4 updated for new API
+      - PA_HW_Pro_1 added
   * Scope updates:
       - Added default_setup() method
       - cw.scope() can now autodetect scope type
@@ -11,6 +12,7 @@ V5.1.0:
   * Project updates:
       - Major project API updates
       - New project format
+  * CW1200 Pro only features added to API
   * Completed tutorials now available via documentation
   * Added tutorials submodule for completed tutorial .rst files
   * Key text pair interface updated
@@ -26,8 +28,10 @@ V5.1.0:
   * CW308_AURIX clock and regulator fixes
   * Fixed generate_firmware_files.py for python3
   * Removed some unused files
+  * Expose baud for STM32 programmer
   * Fixed XMEGA and STM32 programming issues
   * Fixed "Trigger not found in ADC data" issue
+  * Improved CW305 support
 
 
 V5.0.1:
