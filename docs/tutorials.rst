@@ -30,22 +30,26 @@ the tutorials.
 The tutorials have been grouped into a few different sections each providing
 examples of different types of side channel analysis on a target or device
 under test. The sidebar is convenient for quickly navigating to the tutorial of
-interest and it also the grouping of the tutorials a bit better with indents.
+interest and it also shows the grouping of the tutorials a bit better with indents.
 
 There are two main groups:
 
 :ref:`tutorials-pa`
 
     This group contains all the tutorials related to power analysis. Recorded
-    power consumption of a target during specific operations will allow
-    capturing of the secret. This group also contains tutorials serving as
-    material used to supplement your understanding of power analysis.
+    power consumption of a target can be used to determine information leaked
+    by the device. This leaked information can often be used to recover the
+    encryption key during encryption or other sensitive information during
+    used during the targets operation. This group also contains tutorials
+    serving as material used to supplement your understanding of power
+    analysis.
 
 :ref:`tutorials-fault`
 
     This group contains all the tutorials related to glitching the target. Using
     voltage, and clock glitching to cause the target to perform unintended operations
-    or skip operations, potentially exposing the secret or bypassing authentication.
+    or skip operations, potentially exposing the secret, bypassing authentication or
+    bypassing the ends of buffers to dump SRAM.
 
 Each tutorial section on this page has links for the jupyter notebook tutorial with
 the output for your target. Your hardware will not have exactly the same output when
@@ -88,9 +92,34 @@ learn how use statistics on a collection of power traces to gain insights into t
 targets internal operations and use this to determine the secret.
 
   * :ref:`Explore the relationship between the hamming weight of a AES output and the power trace <tutorials-pa-dpa-hw_measurement>`
-  * :ref:`See how large change in hamming weight change the power trace <tutorials-pa-dpa-hw_swings>`.
+  * :ref:`See how large changes in hamming weight change the power trace <tutorials-pa-dpa-hw_swings>`
+  * :ref:`Break the Advanced Encryption Standard using Differential Power Analysis <tutorials-pa-dpa-AES_attack>`
 
-.. _cpa https: https://wiki.newae.com/Correlation_Power_Analysis
+Next up, Correlation Power Analysis (CPA). A more in depth explanation of CPA
+can be found on the `NewAE Wiki page for CPA`_.
+
+  * :ref:`Get introduced to the ChipWhisperer Analyzer with a CPA attack on AES <tutorials-pa-cpa-analyzer_cpa>`
+  * :ref:`Learn how the Analyzer carries out the attack by doing it yourself <tutorials-pa-cpa-manual_cpa>`
+  * :ref:`Defeat attack countermeasures that add jitter by resynchronising captured traces <tutorials-pa-cpa-resynchronization>`
+  * :ref:`Carry out an attack on 32-bit AES and learn about the differences between 8 and 32-bit AES <tutorials-pa-cpa-32bit_AES>`
+
+Once you are a bit more comfortable with side-channel-analysis, there is
+a tutorial that uses CPA, DPA and SPA.
+
+  * :ref:`Use multiple side-channel-analysis methods to break an AES256 Bootloader <tutorials-pa-multi-bootloader>`.
+
+Profiling attacks use many traces of a target to build a profile and use it to
+break another similar target with only a few traces.
+
+  * :ref:`Generate a template of a targets power traces and use it to break another similar target <tutorials-pa-profiling>`
+
+Test Vector Leakage Assessment (TVLA) can be used to identify parts of the power
+trace that are leaking internal device information.
+
+  * :ref:`Use TVLA to points of interest in a targets power traces <tutorials-pa-tvla>`
+
+.. _NewAE Wiki page for CPA: https://wiki.newae.com/Correlation_Power_Analysis
+
 
 .. _tutorials-pa-intro:
 
@@ -206,8 +235,16 @@ Supported Targets:
 ..  * :ref:`ChipWhisperer Nano <tutorial-pa_dpa_3-cwnano-cwnano>`
 
 
+.. _tutorials-pa-cpa:
+
 Correlation Power Analysis
 ===========================
+
+Next up, Correlation Power Analysis (CPA). A more in depth explanation of CPA
+can be found on the `NewAE Wiki page for CPA`_.
+
+
+.. _tutorials-pa-cpa-analyzer_cpa:
 
 Using ChipWhisperer Analyzer for Correlation Power Analysis Attack
 ------------------------------------------------------------------
@@ -221,6 +258,8 @@ Supported Targets:
   * :ref:`ChipWhisperer Nano <tutorial-pa_cpa_1-cwnano-cwnano>`
 
 
+.. _tutorials-pa-cpa-manual_cpa:
+
 Manual Correlation Power Analysis Attack
 ----------------------------------------
 Repeat the attack of PA_CPA_1 without using ChipWhisperer Analyzer, learning in
@@ -232,6 +271,8 @@ Supported Targets:
   * :ref:`ARM (STM32F3) <tutorial-pa_cpa_2-openadc-cwlitearm>`
   * :ref:`ChipWhisperer Nano <tutorial-pa_cpa_2-cwnano-cwnano>`
 
+
+.. _tutorials-pa-cpa-resynchronization:
 
 Resynchronizing Data Traces
 ---------------------------
@@ -246,6 +287,8 @@ Supported Targets:
   * :ref:`ChipWhisperer Nano <tutorial-pa_cpa_3-cwnano-cwnano>`
 
 
+.. _tutorials-pa-cpa-32bit_AES:
+
 Attacking 32-bit Advanced Encryption Standard
 ---------------------------------------------
 Break an AES implementation that uses 32 bit operations instead of 8 bit
@@ -259,9 +302,12 @@ Supported Targets:
 ..  * :ref:`ChipWhisperer Nano <tutorial-pa_cpa_4-cwnano-cwnano>`
 
 
+.. _tutorials-pa-multi:
+
 Multiple Analysis Tutorials
 ===========================
 
+.. _tutorials-pa-multi-bootloader:
 
 Breaking AES-256 Bootloader
 ---------------------------
@@ -274,6 +320,8 @@ Supported Targets:
 
   * :ref:`ARM (STM32F3) <tutorial-pa_multi_1-openadc-cwlitearm>`
 
+
+.. _tutorials-pa-profiling:
 
 Profiling Attacks
 =================
@@ -288,6 +336,8 @@ Supported Targets:
   * :ref:`XMEGA <tutorial-pa_profiling_1-openadc-cwlitexmega>`
   * :ref:`ARM (STM32F3) <tutorial-pa_profiling_1-openadc-cwlitearm>`
 
+
+.. _tutorials-pa-tvla:
 
 Test Vector Leakage Assessment
 ==============================
@@ -311,6 +361,23 @@ Supported Targets:
 Fault
 *****
 
+There are multiple ways to cause a device under test or target to perform
+unintended operations, or skip operations. These unintended side effects
+(faults) can be used to skip operations, corrupt the target, perform unintended
+operations, etc.. The ChipWhisperer platform supports generating faults using
+the target's clock, and supplied voltage; referred to as clock glitching, and
+voltage glitching, respectively.
+
+The tutorials in this section explore using these features of the ChipWhisperer
+hardware to learn about the effect of these types of faults on target devices.
+
+  * :ref:`Introduction to creating faults by manipulating the targets clock <tutorials-fault-intro_clock>`
+  * :ref:`Introduction to creating faults by manipulating the targets voltage supply <tutorials-fault-intro_vcc>`
+  * :ref:`Use clock glitching to skip past the end of a buffer and dump parts of SRAM <tutorials-fault-glitch_buffer>`
+  * :ref:`Use clock glitching to introduce faults in AES calculations to recover an AES key. <tutorials-fault-aes_dfa>`
+  * :ref:`Use clock glitching to fault RSA calculations and recover a device's RSA key. <tutorials-fault-rsa>`
+
+.. _tutorials-fault-intro_clock:
 
 Introduction to Clock Glitch Attacks
 ====================================
@@ -321,6 +388,8 @@ Supported Targets:
   * :ref:`XMEGA <tutorial-fault_1-openadc-cwlitexmega>`
   * :ref:`ARM (STM32F3) <tutorial-fault_1-openadc-cwlitearm>`
 
+
+.. _tutorials-fault-intro_vcc:
 
 Introduction to Vcc Glitching Attacks
 =====================================
@@ -333,6 +402,8 @@ Supported Targets:
 .. * :ref:`ChipWhisperer Nano <tutorial-fault_2-cwnano-cwnano>`
 
 
+.. _tutorials-fault-glitch_buffer:
+
 Glitch Buffer Attacks
 =====================
 Use clock glitching to skip past the end of a buffer and dump parts of SRAM.
@@ -342,6 +413,8 @@ Supported Targets:
   * :ref:`XMEGA <tutorial-fault_3-openadc-cwlitexmega>`
   * :ref:`ARM (STM32F3) <tutorial-fault_3-openadc-cwlitearm>`
 
+
+.. _tutorials-fault-aes_dfa:
 
 AES Differential Fault Analysis Attack
 ======================================
@@ -354,6 +427,8 @@ Supported Targets:
 
   * :ref:`ARM (STM32F3) <tutorial-fault_4-openadc-cwlitearm>`
 
+
+.. _tutorials-fault-rsa:
 
 RSA Fault Attack
 ================
