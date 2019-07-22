@@ -182,8 +182,7 @@ Supported Targets:
 
   * :ref:`XMEGA <tutorial-pa_spa_1-openadc-cwlitexmega>`
   * :ref:`ARM (STM32F3) <tutorial-pa_spa_1-openadc-cwlitearm>`
-
-..  * :ref:`ChipWhisperer Nano <tutorial-pa_spa_1-cwnano-cwnano>`
+  * :ref:`ChipWhisperer Nano <tutorial-pa_spa_1-cwnano-cwnano>`
 
 
 .. _tutorials-pa-dpa:
@@ -230,8 +229,7 @@ Supported Targets:
 
   * :ref:`XMEGA <tutorial-pa_dpa_3-openadc-cwlitexmega>`
   * :ref:`ARM (STM32F3) <tutorial-pa_dpa_3-openadc-cwlitearm>`
-
-..  * :ref:`ChipWhisperer Nano <tutorial-pa_dpa_3-cwnano-cwnano>`
+  * :ref:`ChipWhisperer Nano <tutorial-pa_dpa_3-cwnano-cwnano>`
 
 
 .. _tutorials-pa-cpa:
