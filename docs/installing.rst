@@ -110,9 +110,9 @@ Files (x86)\\* isn't.
    `ARM toolchain`_ or the `AVR-GCC standalone`_) and place it on your *PATH*.
 
 You are now ready to run ChipWhisperer. You can run it by navigating to the
-chosen install directory and double clicking on the ChipWhisperer executable.
-This should open a command terminal that will start the Jupyter server and
-connect to it in your browser.
+chosen install directory and double clicking on the ChipWhisperer executable
+(the .exe file). This should open a command terminal that will start the Jupyter
+server and connect to it in your browser.
 
 .. _ARM toolchain: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
 .. _AVR-GCC standalone: https://www.microchip.com/mymicrochip/filehandler.aspx?ddocname=en607654
@@ -150,11 +150,19 @@ GitHub Releases
 
 Once you have a working Python 3 installation, you're ready to install and run ChipWhisperer.
 
-First, download a ChipWhisperer release. You can get these from the `releases`_ page. Generally, the latest release is a good choice, but you might need an older version for various reasons. You want the source code in .zip or .tar.gz format - not a VBox image.
+First, download a ChipWhisperer release. You can get these from the `releases`_ page.
+Generally, the latest release is a good choice, but you might need an older version
+for various reasons. You want the source code in .zip or .tar.gz format - not a VBox
+image.
 
-Next, uncompress your downloaded source code somewhere. Generally, 'somewhere' will become your ChipWhisperer working directory. For example, on Windows, you might want to use *C:\\chipwhisperer\\*.
+Next, uncompress your downloaded source code somewhere. Generally, 'somewhere' will
+become your ChipWhisperer working directory. For example, on Windows, you might
+want to use *C:\\chipwhisperer\\*.
 
-Once you've got the file, install the python dependencies and run the Python install procedure (setup.py). Use the develop command to indicate that the files will probably be changing frequently. to do this, open a terminal and run the following, adjusting paths as needed:
+Once you've got the file, install the python dependencies and run the Python
+install procedure (setup.py). Use the develop command to indicate that the files
+will probably be changing frequently. to do this, open a terminal and run the
+following, adjusting paths as needed:
 
 .. code:: bash
 
@@ -169,15 +177,8 @@ To test, run python and try importing the chipwhisperer module:
 
     >>> import chipwhisperer as cw
 
-If you want to run the tutorial notebooks, run:
-
-.. code::
-
-    jupyter notebook
-
-A new window should be opened in your browser.
-
-.. _releases: https://github.com/newaetech/chipwhisperer/releases
+If you want to run the tutorials you can now start the
+:ref:`Jupyter Notebook server <starting>`.
 
 
 .. _install-repo-pypi:
@@ -226,11 +227,4 @@ you need it:
     cd openadc/controlsw/python
     python setup.py develop --user
 
-Once ChipWhisperer is installed, you can run it through Jupyter by typing
-
-.. code::
-
-    jupyter notebook
-
-into the command prompt, which should open a new tab in your browser.
-Navigate to *jupyter/* to get started with the new Jupyter tutorials.
+Once ChipWhisperer is installed, you can :ref:`run chipwhisperer <starting>`.

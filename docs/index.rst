@@ -34,14 +34,15 @@ You now have access to an object-oriented interface to configure the attached
 hardware. To see what is possible with this interface check out the
 :ref:`scope section <api-scope>` of the API documentation.
 
-To see longer, more in-depth examples of what the tool-chain can do take a look
-at some of the :ref:`tutorials <tutorials>` to see what is possible. The
+To see longer, more in-depth examples of what the tool-chain can do, take a look
+at the `Using the ChipWhisperer Analyzer for a Correlation Power Analysis Attack <tutorial-pa_cpa_1-openadc-cwlitearm>`_
+tutorial. Check out all the other :ref:`tutorials <tutorials>` to see what is possible. The
 content is generated from Jupyter notebooks included with the project. It
 includes interactive plots.
 
 If you are new to the latest major changes and other websites and resources
 related to side-channel analysis and the ChipWhisperer tool-chain, here is an
-:ref:`orientation <getting_started>` page for you.
+:ref:`overview <getting_started>` page for you.
 
 .. _hardware: https://wiki.newae.com/Main_Page#Hardware_Documentation
 
@@ -55,6 +56,7 @@ Documentation
     getting-started
     prerequisites
     installing
+    starting
 
 
 Jupyter Notebook Tutorials

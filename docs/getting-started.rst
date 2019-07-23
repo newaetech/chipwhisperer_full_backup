@@ -1,16 +1,16 @@
 .. _getting_started:
 
-###########
-Orientation
-###########
+########
+Overview
+########
 
 Welcome to the home of the installation guide, software documentation,
 and tutorials for the ChipWhisperer tool-chain (this site)! This page
 is meant to give you an overview of the most recent
 :ref:`major changes <getting_started-major_changes>`, and the provide
-a road map to get you :ref:`oriented <getting_started-overview>`. Consider
+a overview to get you :ref:`oriented <getting_started-overview>`. Consider
 this page the answer to "Help, I'm confused... there are two many websites
-that have resources related to ChipWhisperer"; your orientation.
+that have resources related to ChipWhisperer".
 
 .. _getting_started-major_changes:
 
@@ -82,13 +82,33 @@ tool-chain:
     side-channel attacks (Ex. `CPA theory`_) excluding what theory is
     included in the :ref:`tutorials` on this readthedocs site.
 
-ChipWhisperer ReadTheDocs:
+`ChipWhisperer ReadTheDocs`_:
 
     This site. It contains the software
     :ref:`installation procedure <install>`, software
     :ref:`API documentation <api>`, and the :ref:`tutorials <tutorials>` for
     the ChipWhisperer tool-chain. This is newly introduced since
     ChipWhisperer 5.1.0.
+
+`newaetech/chipwhisperer Github Repository`_:
+
+    The ChipWhisperer software is open-source, and can be found on our
+    GitHub repository. If you are a fan of having the latest and greatest,
+    with the latest and greatest bugs you can also check out the **develop**
+    branch. **master** is where the stable releases go. If you want to
+    contribute to the project this is the place for you. Fork the branch
+    with the most up to date changes, make your changes, and then take out
+    a pull request. We will review and discuss the changes then. Also,
+    here is a link to our :ref:`contributing page <contributing>`.
+
+`Issue Tracker`_:
+
+    The issue tracker for the GitHub repository. If you have any issues with
+    the ChipWhisperer software that you suspect may be bugs, let us know
+    there. Also, if you have any suggestions for future improvements this
+    is also place to suggest them. All ideas/suggestions, and issues are
+    welcome. Enhancements will be considered, and discussed there before
+    the decision is made.
 
 `NewAE Forum`_:
 
@@ -123,6 +143,9 @@ ChipWhisperer ReadTheDocs:
 .. _Jupyter Notebook: https://jupyter.org/
 .. _readthedocs: http://readthedocs.org/
 .. _NewAE Wiki: https://wiki.newae.com/Main_Page
+.. _ChipWhisperer ReadTheDocs: https://chipwhisperer.readthedocs.io
+.. _newaetech/chipwhisperer Github Repository: https://github.com/newaetech/chipwhisperer
+.. _Issue Tracker: https://github.com/newaetech/chipwhisperer/issues
 .. _CPA theory: https://wiki.newae.com/Correlation_Power_Analysis
 .. _ChipWhisperer GitHub repository: https://github.com/newaetech/chipwhisperer
 .. _NewAE Forum: https://forum.newae.com/
