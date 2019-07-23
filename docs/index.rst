@@ -6,8 +6,7 @@ ChipWhisperer
     5.1.0 of the ChipWhisperer software. And currently is only partially complete.
     It is getting close :)
 
-Welcome to the home of the installation procedure, Python API documentation,
-and the side-channel analysis tutorials for the ChipWhisperer tool-chain.
+Welcome to the home of the documentation for the ChipWhisperer software.
 
 After :ref:`installing <install>` ChipWhisperer and setting up your
 `hardware`_ run:

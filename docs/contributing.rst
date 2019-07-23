@@ -1,4 +1,4 @@
-.. _sec-contributing:
+.. _contributing:
 
 ************
 Contributing
@@ -16,7 +16,7 @@ which do not need to be included in the GitHub repository.
 .. _MediaWiki site: https://wiki.newae.com
 
 
-.. _sec-contributing-software_docs:
+.. _contributing-software_docs:
 
 Software Documentation
 ======================
@@ -108,27 +108,23 @@ A few useful resources:
 .. _google style guide: https://www.sphinx-doc.org/en/1.5/ext/example_google.html
 
 
-.. _sec-contributing-hardware_docs:
+.. _contributing-hardware_docs:
 
 Hardware Documentation
 ======================
 
-Found on the mediawiki.
+Found on the `NewAE Wiki`_ under the Hardware Documentation section. To
+contribute or make changes to the wiki contact **wiki@newae.com**.
 
-.. _sec-contributing-code_base:
+.. _NewAE Wiki: https://wiki.newae.com/Main_Page
+
+
+.. _contributing-code_base:
 
 Code Base
 =========
 
-Found on the media wiki
+Our source code can be found on the `github repository`_. All issues
 
 
-.. _sec-todo:
-
-Todos
-=====
-
-Here is a list of all the project todos (Non-exhaustive). Feel free to
-choose one and contribute.
-
-.. todolist::
+.. _github repository: https://github.com/newaetech/chipwhisperer
