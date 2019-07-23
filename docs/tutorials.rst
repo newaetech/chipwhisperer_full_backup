@@ -109,7 +109,8 @@ a tutorial that uses CPA, DPA and SPA.
   * :ref:`Use multiple side-channel-analysis methods to break an AES256 Bootloader <tutorials-pa-multi-bootloader>`.
 
 Profiling attacks use many traces of a target to build a profile and use it to
-break another similar target with only a few traces.
+break another similar target with only a few traces. You can find a more in depth
+explanation of template attacks at the `NewAE Wiki page for Template Attacks`_.
 
   * :ref:`Generate a template of a targets power traces and use it to break another similar target <tutorials-pa-profiling>`
 
@@ -119,12 +120,13 @@ trace that are leaking internal device information.
   * :ref:`Use TVLA to points of interest in a targets power traces <tutorials-pa-tvla>`
 
 .. _NewAE Wiki page for CPA: https://wiki.newae.com/Correlation_Power_Analysis
+.. _NewAE Wiki page for Template Attacks: https://wiki.newae.com/Template_Attacks
 
 
 .. _tutorials-pa-intro:
 
-Introduction Tutorials
-======================
+Introduction
+============
 
 
 .. _tutorials-pa-intro-firmware_build_setup:
@@ -299,8 +301,8 @@ Supported Targets:
 
 .. _tutorials-pa-multi:
 
-Multiple Analysis Tutorials
-===========================
+Multiple Analysis
+=================
 
 .. _tutorials-pa-multi-bootloader:
 

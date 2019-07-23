@@ -71,6 +71,7 @@ html_theme_options = {
     'github_type': 'watch',
     'extra_nav_links': {
         'Hardware Docs': 'https://wiki.newae.com/Main_Page#Hardware_Documentation',
+        'Our Source Code': 'https://github.com/newaetech/chipwhisperer',
     },
     'sidebar_width': '265px',
     'page_width': '1000px',
