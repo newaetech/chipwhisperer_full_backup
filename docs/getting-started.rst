@@ -29,7 +29,7 @@ Here are some of the major changes we are most excited about:
     meant bugs stayed around much too long. Also the change gave us a
     chance to make our :ref:`Python API <api>` much more usable. Our
     project is open-source, and you are free to modify the software
-    to meat your needs, however before the change this was sometimes
+    to meet your needs, however before the change this was sometimes
     quite difficult. We have not completely fixed the internals of
     the software but the new, documented API should make customization
     to your needs a whole lot easier.
