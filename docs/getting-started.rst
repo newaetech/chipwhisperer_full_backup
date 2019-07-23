@@ -41,6 +41,10 @@ Here are some of the major changes we are most excited about:
     freedom to make improvements to the internals while you have a usable
     API.
 
+  * We switched to Python 3, finally. This completely breaks all backwards
+    compatibility with previous versions (less than 5.0.0), if we had
+    not already done that will all of our changes.
+
   * We have this site now. The installation procedure, the software
     documentation, and the tutorials are on this site. All other resources
     stay on the `NewAE Wiki`_. This site will be version based on releases
