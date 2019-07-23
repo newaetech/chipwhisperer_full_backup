@@ -70,6 +70,12 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
      *  :meth:`scope.dis <.OpenADC.dis>`
      *  :meth:`scope.arm <.OpenADC.arm>`
      *  :meth:`scope.get_last_trace <.OpenADC.get_last_trace>`
+
+    If you have a CW1200 ChipWhisperer Pro, you have access to some additional features:
+
+     * :attr:`scope.SAD <.OpenADC.SAD>`
+     * :attr:`scope.DecodeIO <.OpenADC.DecodeIO>`
+     * :attr:`scope.adc.stream_mode (see scope.adc for more information)`
     """
 
     _name = "ChipWhisperer/OpenADC"

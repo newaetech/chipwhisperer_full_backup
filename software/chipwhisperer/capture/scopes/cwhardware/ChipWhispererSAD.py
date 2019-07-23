@@ -42,6 +42,8 @@ CODE_WRITE  = 0xC0
 class ChipWhispererSAD(object):
     """Communicates with the SAD module inside the CW Pro
 
+    This submodule is only available on the ChipWhisperer1200 Pro
+
     Example::
 
         trace, ret = cw.capture_trace(scope, data, text, key)
@@ -52,7 +54,6 @@ class ChipWhispererSAD(object):
 
         #SAD trigger active
         trace, ret = cw.capture_trace(scope, data, text, key)
-
     """
     _name = 'SAD Trigger Module'
     STATUS_RUNNING_MASK = 1 << 3
@@ -82,7 +83,8 @@ class ChipWhispererSAD(object):
     def threshold(self):
         """ The threshold for the SAD trigger.
 
-        The threshold has a maximum value of 100 000.
+        The threshold has a maximum value of 100 000. You should set the
+        reference waveform via SAD.reference before setting this value.
 
         :Getter: Return the current threshold
 
@@ -104,10 +106,8 @@ class ChipWhispererSAD(object):
         """Set the reference data for the SAD Trigger.
 
         The reference must be 128 samples long. Through this interface,
-        it is represented as a numpy array of floats (the same as
-        trace data).
-
-        On the hardware end, it is a 1024 bit unsigned integer.
+        it is represented as a numpy array of floats between -0.5 and 0.5
+        (the same as trace data).
 
         :Getter: Gets the currently set SAD reference
 

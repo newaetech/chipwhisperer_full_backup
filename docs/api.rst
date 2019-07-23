@@ -212,6 +212,53 @@ OpenADC Scope
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.output
             :annotation: scope.glitch.output
 
+    .. attribute:: SAD
+        :annotation: scope.SAD - CW1200 Pro Only
+
+        Communicates with and drives the Sum of Absolute Differences module on the ChipWhisperer Pro.
+
+        Example for triggering off of some previously collected scope data::
+
+            scope.SAD.reference = trace.wave[1000:1000+128]
+            scope.SAD.threshold = 5000
+            scope.SAD.start()
+            scope.trigger.module = "SAD"
+            scope.adc.basic_mode = "rising_edge"
+
+            #can now capture as normal
+            trace = cw.capture_trace(scope, target, text, key)
+
+        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.ChipWhispererSAD.threshold
+            :annotation: scope.SAD.threshold
+
+        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.ChipWhispererSAD.reference
+            :annotation: scope.SAD.reference
+
+        .. method:: SAD.start()
+
+            Starts the SAD module. Must be done each time after changing the
+            reference waveform.
+
+    .. attribute:: DecodeIO
+        :annotation: scope.DecodeIO - CW1200 Pro Only
+
+        Communicates with and drives the Digital Pattern Match module on the ChipWhisperer Pro.
+
+        Basic usage for triggering on 'r\\n'::
+
+            # assuming setup scope
+            scope.trigger.triggers = 'tio1'
+            scope.trigger.module = 'DECODEIO'
+            scope.decode_IO.baud = 38400
+            scope.decode_IO.decode_type = 'USART'
+            scope.decode_IO.trigger_pattern = ['r', '\n']
+
+        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger.trigger_pattern
+            :annotation: scope.DecodeIO.trigger_pattern
+
+        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger.rx_baud
+            :annotation: scope.DecodeIO.rx_baud
+
     .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.default_setup
 
     .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.arm

@@ -42,7 +42,7 @@ ADDR_DECODEDATA = 58
 
 class ChipWhispererDecodeTrigger(object):
     """
-    Communicates and drives with the Digital Pattern Match module inside the FPGA.
+    Communicates and drives the Digital Pattern Match module inside the FPGA.
 
     Basic Usage for triggering on 'r'::
 
@@ -78,19 +78,22 @@ class ChipWhispererDecodeTrigger(object):
 
     @property
     def trigger_pattern(self):
-        """ The pattern to trigger off of.
+        r""" The pattern to trigger off of.
 
         :Getter: Get the currently set trigger pattern
 
-        :Setter: Sets the trigger pattern. Expects a list of characters/ints,
-            or a string of a list of characters/ints. Warns the user if they
-            try to set an incorrect pattern.
+        :Setter: Sets the trigger pattern. Expects a list of ASCII
+            characters/ints. ints in this list are equivalent to their
+            corresponding ASCII representation. For example, [0x10] is the same
+            as ['\\n'].
+
+        Warns the user if they try to set an incorrect pattern.
 
         Example to trigger off of 'r\\n'::
 
             scope.decode_IO.trigger_pattern = ['r', 0x10]
+
         """
-        #return self.get_triggerpattern()
         return self.pattern
 
     @trigger_pattern.setter

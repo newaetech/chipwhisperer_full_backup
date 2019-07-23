@@ -508,13 +508,14 @@ class TriggerSettings(util.DisableNewAttr):
         """The type of event to use as a trigger.
 
         There are four possible types of trigger events:
-        - "low": triggers when line is low (logic 0)
-        - "high": triggers when line is high (logic 1)
-        - "rising_edge": triggers when line transitions from low to high
-        - "falling_edge:" triggers when line transitions from high to low
+         * "low": triggers when line is low (logic 0)
+         * "high": triggers when line is high (logic 1)
+         * "rising_edge": triggers when line transitions from low to high
+         * "falling_edge:" triggers when line transitions from high to low
 
-        This setting is only used if the trigger module in use is the "Basic
-        Edge/Level" module - UART/SPI/SAD triggers ignore this value.
+        .. warning:: This must be set to "rising_edge" if a trigger other than
+            "basic" is used. The SAD/DecodeIO triggers will not work with any
+            other setting!
 
         :Getter: Return the current trigger mode (one of the 4 above strings)
 
