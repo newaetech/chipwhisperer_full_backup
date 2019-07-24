@@ -1,4 +1,4 @@
-# configobj required for project stuff, date stuff for projects
+# configobj required for project stuff, date stuff for projects, sphinx_rtd_theme for proper syntax highlighting
 configobj==5.0.6
 iso8601==0.1.12
 numpy>=1.14.0
@@ -8,4 +8,5 @@ python-dateutil==2.6.1
 pytz==2017.3
 pyusb==1.0.2
 scipy==1.1.0
+sphinx_rtd_theme>=0.3.1
 pyserial==3.4
