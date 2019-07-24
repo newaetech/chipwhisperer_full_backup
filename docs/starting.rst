@@ -5,7 +5,7 @@ Starting
 ########
 
 After finishing the installation process, there are two different ways of
-using the **chipwhisperer**. You will most likely be using a Jupyter
+using the **chipwhisperer** software. You will most likely be using a Jupyter
 server to run a Jupyter notebook inside of your browser. This will make
 following the :ref:`tutorials <tutorials>` easier.
 
