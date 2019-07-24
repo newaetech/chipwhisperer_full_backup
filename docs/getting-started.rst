@@ -9,7 +9,7 @@ and tutorials for the ChipWhisperer tool-chain (this site)! This page
 is meant to give you an overview of the most recent
 :ref:`major changes <getting_started-major_changes>`, and the provide
 a overview to get you :ref:`oriented <getting_started-overview>`. Consider
-this page the answer to "Help, I'm confused... there are two many websites
+this page the answer to "Help, I'm confused... there are too many websites
 that have resources related to ChipWhisperer".
 
 .. _getting_started-major_changes:
@@ -75,9 +75,11 @@ tool-chain:
 
     The home of all the documentation for ChipWhisperer hardware, and extra
     wiki stuff from NewAE, including usage of ChipWhisperer in academics
-    papers, side-channel analysis theory and . If you
-    need to find out how to set up a board you have this is a great place
-    to start. Ever since the release of ChipWhisperer software 5.0.0 this
+    papers, side-channel analysis theory and upcoming events. If you
+    need to find out how to set up the board you have, this is a great place
+    to start. This is also where upcoming conferences are listed.
+
+    Ever since the release of ChipWhisperer software 5.0.0 this
     site does **not** hold the most up to date tutorials for using the
     ChipWhisperer software with your board, however, it holds the tutorials
     for all previous version of the ChipWhisperer software.
@@ -131,9 +133,10 @@ tool-chain:
     The is the website for NewAE Technolgy Inc. the maintainers of the
     ChipWhisperer software and the creators the of the ChipWhisperer
     platform. Here you can find out about the company, and find links
-    to things like the store. Here you can you also find some other
-    the other products NewAE Technology Inc. sells like the
-    electromagnetic fault injection platform, the ChipSHOUTER.
+    to things like the store, and upcoming training sessions.
+    Here you can you also find some other the other products NewAE
+    Technology Inc. sells like the electromagnetic fault injection platform,
+    the ChipSHOUTER.
 
 `NewAE Store`_:
 
