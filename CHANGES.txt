@@ -1,10 +1,15 @@
 V5.1.0:
-  * New tutorials:
-      - Fault_5-RSA_Fault_Attack
-      - Fault_2-Introduction_to_Vcc_Glitch_Attacks
-      - PA_DPA_3-AES_DPA_Attack
+  * Tutorial Updates:
+      - New tutorial: Fault_5-RSA_Fault_Attack
+      - New tutorial: Fault_2-Introduction_to_Vcc_Glitch_Attacks
+      - New tutorial: PA_DPA_3-AES_DPA_Attack
+      - New tutorial: PA_HW_Pro_1 added
+      - New tutorial: !!Introduction_to_Jupyter!!
       - Fault_4 updated for new API
-      - PA_HW_Pro_1 added
+      - Tutorials now list supported hardware at the top of the tutorial
+      - Improved support for non-CWLITEARM targets
+      - Tutorial tests now output .rst files for Read the Docs
+      - Change Setup.ipynb to Setup_Generic.ipynb
   * Scope updates:
       - Added default_setup() method
       - cw.scope() can now autodetect scope type
@@ -13,7 +18,7 @@ V5.1.0:
       - Major project API updates
       - New project format
   * CW1200 Pro only features added to API
-  * Completed tutorials now available via documentation
+  * Completed tutorials now available on Read the Docs
   * Added tutorials submodule for completed tutorial .rst files
   * Key text pair interface updated
   * Added cw.capture_trace()
