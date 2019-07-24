@@ -203,11 +203,15 @@ repository.
 
 If you have Git already set up, this is easy to do:
 
-.. code::
+.. code:: bash
 
     git clone https://github.com/newaetech/chipwhisperer.git
     cd chipwhisperer
     git checkout cw5dev
+
+    # To get the jupyter notebook tutorials
+    git submodule update --init jupyter
+
     cd software
     pip install -r requirements.txt
     python setup.py develop --user
@@ -222,8 +226,7 @@ you need it:
 .. code::
 
     cd ..
-    git submodule init
-    git submodule update
+    git submodule update --init openadc
     cd openadc/controlsw/python
     python setup.py develop --user
 
