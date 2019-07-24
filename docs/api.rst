@@ -589,7 +589,13 @@ a :class:`Trace <chipwhisperer.common.traces.Trace>`. This trace is *namedtuple*
 pieces of data (wave, textin, textout, key), where *wave* is the actually
 numpy array of the power trace captured during the target's operation. The
 individual pieces of data can be accessed as a one would with a tuple or
-by using the provided attributes.
+by using the provided attributes. Example::
+
+    import chipwhisperer as cw
+    trace = cw.Trace(wave, textin, textout, key)
+
+This trace groups together the power trace (wave), and the process information
+that resulted in that trace such as textin, textout, and key.
 
 .. autoclass:: chipwhisperer.common.traces.Trace
 
