@@ -167,7 +167,6 @@ following, adjusting paths as needed:
 .. code:: bash
 
 	cd chipwhisperer
-	pip install -r software/requirements.txt
 	python setup.py develop
 
     # to be able to run jupyter and the tutorials
