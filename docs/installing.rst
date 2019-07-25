@@ -221,12 +221,13 @@ If you have Git already set up, this is easy to do:
     git clone https://github.com/newaetech/chipwhisperer.git
     cd chipwhisperer
 
-    cd software
-    python setup.py develop --user
-
     # To get the jupyter notebook tutorials
     git submodule update --init jupyter
     pip install -r jupyter/requirements.txt
+
+    # note the setup.py used to be in software, it was moved
+    # in version 5.1.0
+    python setup.py develop --user
 
 The user flag installs ChipWhisperer in the user's local python
 site-packages directory.
