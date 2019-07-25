@@ -20,6 +20,7 @@ The biggest (and most breaking) change is here. ChipWhisperer 5.0 uses Python 3 
 * 5x improved capture speed
 * Tutorials all include output with three different targets (Nano, Lite (XMEGA), Lite (STM32F)), making it easier to compare your output to the tutorials output when you are following along.
 * Fully usable as a standalone python package
+* Project API supports import and export to zip file to move projects around.
 
 An overview of the major changes can be found on the new ReadtheDocs [Overview Page](https://chipwhisperer.readthedocs.io/en/stable/getting-started.html).
 
