@@ -1,3 +1,8 @@
+V5.1.1:
+  * Fix STM32F baud setting
+  * Update Jupyter requirements to have everything needed to run all tutorials
+  * Fix chipwhisperer autodetect when nothing attached
+
 V5.1.0:
   * Tutorial Updates:
       - New tutorial: Fault_5-RSA_Fault_Attack
