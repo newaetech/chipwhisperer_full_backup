@@ -186,6 +186,19 @@ If you want to run the tutorials you can now start the
 PyPi
 ====
 
+If you want to use **chipwhisperer** as a standalone python package and are not
+interested in having all the tutorials and extra jupyter notebook stuff, this
+installation method is for you::
+
+    pip install chipwhisperer
+
+Will install the *chipwhisperer/software/chipwhisperer* python package in your
+site packages. Now you can go play around with the :ref:`Python API <api>`, or
+take a look at some example :ref:`tutorials <tutorials>` The tutorials are all
+written in jupyter notebook, which you don't have using this installation
+method. However, you can still take a look at the procedure and the code, and
+use it as an example of what can be accomplished using **chipwhisperer**.
+
 
 .. _install-repo-git:
 
@@ -207,14 +220,13 @@ If you have Git already set up, this is easy to do:
 
     git clone https://github.com/newaetech/chipwhisperer.git
     cd chipwhisperer
-    git checkout cw5dev
+
+    cd software
+    python setup.py develop --user
 
     # To get the jupyter notebook tutorials
     git submodule update --init jupyter
-
-    cd software
-    pip install -r requirements.txt
-    python setup.py develop --user
+    pip install -r jupyter/requirements.txt
 
 The user flag installs ChipWhisperer in the user's local python
 site-packages directory.
