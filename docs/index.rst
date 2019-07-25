@@ -2,11 +2,8 @@
 ChipWhisperer
 *************
 
-.. note:: This documentation is currently under construction for version
-    5.1.0 of the ChipWhisperer software. And currently is only partially complete.
-    It is getting close :)
-
-Welcome to the home of the documentation for the ChipWhisperer software.
+Welcome to the new home of the documentation for the ChipWhisperer software,
+following the release of ChipWhisperer 5.1.0.
 
 After :ref:`installing <install>` ChipWhisperer and setting up your
 `hardware`_ run:
