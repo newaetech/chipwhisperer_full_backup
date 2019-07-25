@@ -11,7 +11,7 @@ setup(
     author="Colin O'Flynn",
     author_email='coflynn@newae.com',
     license='GPLv3',
-    url='www.chipwhisperer.com',
+    url='https://www.chipwhisperer.com',
     packages=find_packages('software'),
     package_dir={'': 'software'},
     install_requires=[
