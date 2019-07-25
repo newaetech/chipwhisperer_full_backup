@@ -70,6 +70,28 @@ You can then navigate to the *chipwhisperer/docs* folder and run::
 
     sphinx-build -b html . _build
 
+This command does a few things:
+
+  * Loads the sphinx configuration file.
+
+  * Runs a build hook called *create_tutorial_files* it can be found
+    in the *conf.py* file in the *docs/* folder. The function
+    copies over the *img* directory from the *tutorials/* directory
+    into the *docs/tutorials* folder. It then creates auto-linked
+    tutorial files in the *docs/tutorials* for every tutorials in the
+    *tutorials* submodule, based on the tutorial id, scope and target.
+
+    .. warning::
+        This function also deletes the *docs/tutorials/img*, and removes
+        all *.rst* files in the *docs/tutorials* folder. It is better
+        not to put anything in these folders unless it is auto-generated
+        each time the build is run.
+
+    You should see the **Generating tutorial stubs with links...** message
+    from the build hook as part of the build.
+
+  * Carries out the rest of the normal sphinx build process.
+
 This will build the documentation in html form. You can then navigate to
 the *_build* directory and open *index.html*. This should open the website
 in your browser.
@@ -109,8 +131,9 @@ here are some rough guidelines to follow:
     documentation of the api to look clean a lot of the module and class
     paths have to be manually specified.
 
-  * Refrain from adding new functions or classes to the API as we would
-    like to keep the API as consistent as possible.
+  * When using **autodoc** do not use the **autoproperty** directive for
+    properties. Just use **autoattribute**. **autoproperty** causes errors
+    on ReadtheDocs.
 
   * Follow the `google style guide`_ for docstrings this makes the
     documentation easier to read while looking at the source code.
