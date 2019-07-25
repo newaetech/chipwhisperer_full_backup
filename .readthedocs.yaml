@@ -14,7 +14,7 @@ python:
     - requirements: software/requirements.txt
     - requirements: jupyter/requirements.txt
     - method: setuptools
-      path: software
+      path: .
 
 submodules:
   include:

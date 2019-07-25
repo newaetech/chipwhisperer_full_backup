@@ -49,3 +49,7 @@ docs/tutorials/*.rst
 docs/tutorials/img/*
 
 __pycache__/
+
+# for building the project as a sdist and wheel for pypi
+build/
+dist/
