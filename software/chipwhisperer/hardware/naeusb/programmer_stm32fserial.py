@@ -116,7 +116,7 @@ class STM32FSerial(object):
             self._old_parity  = self._cwserial._parity
             self._old_stopbits = self._cwserial._stopbits
             self._old_timeout = self._cwserial.timeout
-            self._cwserial.init(baud=38400, stopbits=1, parity="even")
+            self._cwserial.init(baud, stopbits=1, parity="even")
             self._cwserial.timeout = self._timeout
 
             self.sp = self._cwserial
@@ -243,7 +243,8 @@ class STM32FSerial(object):
 
     def delay_func(self, ms_delay):
         """If using outside of GUI, can override this function"""
-        nonBlockingDelay(ms_delay)
+        return
+        #nonBlockingDelay(ms_delay)
 
     def setChip(self, chiptype):
         self._chip = chiptype
