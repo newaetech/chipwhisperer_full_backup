@@ -1,6 +1,6 @@
 # ChipWhisperer
 
-[Wiki](https://wiki.newae.com/Main_Page) |[Documentation](https://chipwhisperer.readthedocs.io) |[Knowledge Base](https://wiki.newae.com/Category:Knowledge_Base) | [Forum](http://www.newae.com/forum) | [Store](https://store.newae.com) | [NewAE](http://newae.com)
+[Wiki](https://wiki.newae.com/V5:Main_Page) |[Documentation](https://chipwhisperer.readthedocs.io) |[Knowledge Base](https://wiki.newae.com/Category:Knowledge_Base) | [Forum](http://www.newae.com/forum) | [Store](https://store.newae.com) | [NewAE](http://newae.com)
 
 ChipWhisperer is an open source toolchain dedicated to hardware security research. This toolchain consists of several layers of open source components:
 * __Hardware__: The ChipWhisperer uses a _capture_ board and a _target_ board. Schematics and PCB layouts for the ChipWhisperer-Lite capture board and a number of target boards are freely available.
@@ -9,13 +9,25 @@ ChipWhisperer is an open source toolchain dedicated to hardware security researc
 
 ---
 
-## ChipWhisperer 5.0 Is Coming
+## ChipWhisperer 5.0 Is Here
 
-The biggest (and most breaking) change is coming. ChipWhisperer 5.0 uses Python 3 & Juypter Notebooks. Check out the [GITHub issue](https://github.com/newaetech/chipwhisperer/issues/177) to track this, which is in a new branch on the git repo. No major changes to the current branch will be done as all new features will be going into 5.0.
+The biggest (and most breaking) change is here. ChipWhisperer 5.0 uses Python 3 & Juypter Notebooks. Here is a brief summary of improvements:
+
+* Uses Jupyter Notebooks
+* Python 3 
+* Fully documented API (finally)
+* 19 Jupyter notebook tutorials for side-channel analysis with ChipWhisperer
+* 5x improved capture speed
+* Tutorials all include output with three different targets (Nano, Lite (XMEGA), Lite (STM32F)), making it easier to compare your output to the tutorials output when you are following along.
+* Fully usable as a standalone python package
+
+An overview of the major changes can be found on the new ReadtheDocs [Overview Page](https://chipwhisperer.readthedocs.io/en/stable/getting-started.html).
+
+We highly recommend you switch to CW5 as all development since last year has been for CW5, and will continue this way. The final tagged version of CW4 is 4.0.5, it can be found in the **develop** branch if you insist. 
 
 ## Getting Started
-First time using ChipWhisperer? This is the v5 development branch, which hasn't been officially released yet. If you're sure you want to try this branch out, check out these links:
-* [Getting Started](https://wiki.newae.com/Getting_Started) if you have no idea where to start
+First time using ChipWhisperer? Check out these links:
+* [Getting Started](https://wiki.newae.com/V5:Getting_Started) if you have no idea where to start
 * [CW5 Information](https://wiki.newae.com/CW5) for information about ChipWhisperer 5 and Jupyter.
 * [Installing ChipWhisperer](https://chipwhisperer.readthedocs.io/en/latest/installing.html) if you're trying to set up this software package
 
