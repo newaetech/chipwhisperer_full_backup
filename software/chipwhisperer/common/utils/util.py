@@ -491,7 +491,7 @@ def get_cw_type(sn=None):
     cwusb = NAEUSB()
     possible_sn = cwusb.get_possible_devices(idProduct=possible_ids)
     name = ""
-    if len(possible_sn == 0):
+    if len(possible_sn) == 0:
         raise OSError("USB Device not found. Did you connect it first?")
 
     if (len(possible_sn) > 1):
