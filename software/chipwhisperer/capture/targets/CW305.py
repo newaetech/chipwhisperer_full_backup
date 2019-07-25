@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2015-2016, NewAE Technology Inc
+# Copyright (c) 2015-2019, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -26,14 +26,13 @@
 import logging
 import time
 from datetime import datetime
-from functools import partial
 import os.path
-from _base import TargetTemplate
+from ._base import TargetTemplate
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
 from chipwhisperer.hardware.naeusb.fpga import FPGA
-from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 
 class CW305_USB(object):
@@ -46,76 +45,72 @@ class CW305_USB(object):
 
 
 class CW305(TargetTemplate):
+
+    """CW305 target object.
+
+    This class contains the public API for the CW305 hardware.
+    To connect to the CW305, the easiest method is::
+
+        import chipwhisperer as cw
+        scope = cw.scope()
+        target = cw.target(scope,
+                targets.CW305, bsfile=<valid FPGA bitstream file>)
+
+    Note that connecting to the CW305 includes programming the CW305 FPGA.
+    For more help about CW305 settings, try help() on this CW305 submodule:
+
+       * target.pll
+    """
+
+
     _name = "ChipWhisperer CW305 (Artix-7)"
 
     def __init__(self):
         TargetTemplate.__init__(self)
         self._naeusb = NAEUSB()
-        self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, parent=self)
+        self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6)
         self.fpga = FPGA(self._naeusb)
 
         self.hw = None
-        # self._fpgabs = QSettings().value("cw305-bitstream", '')
         self.oa = None
 
         self._woffset = 0x400
 
-        self.params.addChildren([
-            {'name':'PLL Settings', 'key':'pll', 'type':'group', 'children':[
-                {'name':'Enabled', 'key':'pllenabled', 'type':'bool', 'default':False, 'set':self.pll.pll_enable_set, 'get':self.pll.pll_enable_get, 'psync':False},
-                {'name':'CLK-SMA (X6)', 'key':'pll0', 'type':'group', 'children':[
-                    {'name':'CLK-SMA Enabled', 'key':'pll0enabled', 'type':'bool', 'default':False, 'set':partial(self.pll.pll_outenable_set, outnum=0), 'get':partial(self.pll.pll_outenable_get, outnum=0), 'psync':False},
-                    {'name':'CLK-SMA Source', 'key':'pll0source', 'type':'list', 'values':['PLL0', 'PLL1', 'PLL2'], 'default':'PLL0', 'set':partial(self.pll.pll_outsource_set, outnum=0), 'get':partial(self.pll.pll_outsource_get, outnum=0), 'psync':False},
-                    {'name':'CLK-SMA Slew Rate', 'key':'pll0slew', 'type':'list', 'values':['+3nS', '+2nS', '+1nS', '+0nS'], 'default':'+0nS', 'set':partial(self.pll.pll_outslew_set, outnum=0), 'get':partial(self.pll.pll_outslew_get, outnum=0), 'psync':False},
-                    {'name':'PLL0 Frequency', 'key':'pll0freq', 'type':'float', 'limits':(0.625E6, 167E6), 'default':0, 'step':1E6,
-                        'siPrefix':True, 'suffix':'Hz', 'set':partial(self.pll.pll_outfreq_set, outnum=0), 'get':partial(self.pll.pll_outfreq_get, outnum=0), 'psync':False},
-                ]},
-                {'name':'CLK-N13 (FGPA Pin N13)', 'key':'pll1', 'type':'group', 'children':[
-                    {'name':'CLK-N13 Enabled', 'key':'pll1enabled', 'type':'bool', 'default':False, 'set':partial(self.pll.pll_outenable_set, outnum=1), 'get':partial(self.pll.pll_outenable_get, outnum=1), 'psync':False},
-                    {'name':'CLK-N13 Source', 'key':'pll1source', 'type':'list', 'values':['PLL1'], 'value':'PLL1'},
-                    {'name':'CLK-N13 Slew Rate', 'key':'pll1slew', 'type':'list', 'values':['+3nS', '+2nS', '+1nS', '+0nS'], 'default':'+0nS', 'set':partial(self.pll.pll_outslew_set, outnum=1), 'get':partial(self.pll.pll_outslew_get, outnum=1), 'psync':False},
-                    {'name':'PLL1 Frequency', 'key':'pll1freq', 'type':'float', 'limits':(0.625E6, 167E6), 'default':0, 'step':1E6,
-                        'siPrefix':True, 'suffix':'Hz', 'set':partial(self.pll.pll_outfreq_set, outnum=1), 'get':partial(self.pll.pll_outfreq_get, outnum=1), 'psync':False},
-                ]},
-                {'name':'CLK-E12 (FGPA Pin E12)', 'key':'pll2', 'type':'group', 'children':[
-                    {'name':'CLK-E12 Enabled', 'key':'pll2enabled', 'type':'bool', 'default':False, 'set':partial(self.pll.pll_outenable_set, outnum=2), 'get':partial(self.pll.pll_outenable_get, outnum=2), 'psync':False},
-                    {'name':'CLK-E12 Source', 'key':'pll2source', 'type':'list', 'values':['PLL2'], 'value':'PLL2'},
-                    {'name':'CLK-E12 Slew Rate', 'key':'pll2slew', 'type':'list', 'values':['+0nS', '+1nS', '+2nS', '+3nS'], 'default':'+0nS', 'set':partial(self.pll.pll_outslew_set, outnum=2), 'get':partial(self.pll.pll_outslew_get, outnum=2), 'psync':False},
-                    {'name':'PLL2 Frequency', 'key':'pll2freq', 'type':'float', 'limits':(0.625E6, 167E6), 'default':0, 'step':1E6,
-                        'siPrefix':True, 'suffix':'Hz', 'set':partial(self.pll.pll_outfreq_set, outnum=2), 'get':partial(self.pll.pll_outfreq_get, outnum=2), 'psync':False},
-                ]},
-                {'name':'Save as Default (stored in EEPROM)', 'type':'action', 'action':lambda _ : self.pll.pll_writedefaults()},
-            ]},
-            {'name':'Disable CLKUSB For Capture', 'key':'clkusbautooff', 'type':'bool', 'value':True},
-            {'name':'Time CLKUSB Disabled for', 'key':'clksleeptime', 'type':'int', 'range':(1, 50000), 'value':50, 'suffix':'mS'},
-            {'name':'CLKUSB Manual Setting', 'key':'clkusboff', 'type':'bool', 'value':True, 'action':self.usb_clk_setenabled_action},
-            {'name':'Send Trigger', 'type':'action', 'action':self.usb_trigger_toggle},
-            {'name':'VCC-INT', 'key':'vccint', 'type':'float', 'default':1.00, 'range':(0.6, 1.10), 'suffix':' V', 'decimals':3, 'set':self.vccint_set, 'get':self.vccint_get, 'step':0.01},
-            {'name':'FPGA Bitstream', 'type':'group', 'children':[
-                    {'name':'Bitstream File', 'key':'fpgabsfile', 'type':'file', 'value':"", "filter":'*.bit'},
-                    {'name':'Program FPGA', 'type':'action', 'action':self.gui_programfpga},
-            ]},
-        ])
+        self._clksleeptime = 1
+        self._clkusbautooff = True
+        self.last_key = bytearray([0]*16)
+
 
     def fpga_write(self, addr, data):
-        """ Write to specified address """
+        """Write to an address on the FPGA
 
+        Args:
+            addr (int): Address to write to
+            data (list): Data to write to addr
+
+        Raises:
+            IOError: User attempted to write to a read-only location
+        """
         if addr < self._woffset:
             raise IOError("Write to read-only location: 0x%04x"%addr)
 
         return self._naeusb.cmdWriteMem(addr, data)
-        
-    def fpga_read(self, addr, readlen):
-        """ Read from address """
 
+    def fpga_read(self, addr, readlen):
+        """Read from an address on the FPGA
+
+        Args:
+            addr (int): Address to read from
+            readlen (int): Length of data to read
+
+        Returns:
+            Requested data as a list
+        """
         if addr > self._woffset:
             logging.info('Read from write address, confirm this is not an error')
 
         data = self._naeusb.cmdReadMem(addr, readlen)
         return data
-
-    def usb_clk_setenabled_action(self, p):
-        self.usb_clk_setenabled(p.getValue())
 
     def usb_clk_setenabled(self, status):
         """ Turn on or off the Data Clock to the FPGA """
@@ -127,8 +122,7 @@ class CW305(TargetTemplate):
     def usb_trigger_toggle(self, _=None):
         """ Toggle the trigger line high then low """
         self._naeusb.sendCtrl(CW305_USB.REQ_SYSCFG, CW305_USB.SYSCFG_TOGGLE)
-        
-    @setupSetParam("VCC-INT")
+
     def vccint_set(self, vccint=1.0):
         """ Set the VCC-INT for the FPGA """
 
@@ -136,7 +130,7 @@ class CW305(TargetTemplate):
 
         if (vccint < 0.6) or (vccint > 1.15):
             raise ValueError("VCC-Int out of range 0.6V-1.1V")
-        
+
         # Convert to mV
         vccint = int(vccint * 1000)
         vccsetting = [vccint & 0xff, (vccint >> 8) & 0xff, 0]
@@ -156,28 +150,25 @@ class CW305(TargetTemplate):
         resp = self._naeusb.readCtrl(CW305_USB.REQ_VCCINT, dlen=3)
         return float(resp[1] | (resp[2] << 8)) / 1000.0
 
-    def gui_programfpga(self, _=None):
-        bsfile = self.params.getChild(['FPGA Bitstream',"fpgabsfile"]).getValue()
-        if not os.path.isfile(bsfile):
-            raise Warning("FPGA Bitstream not configured or %s not a file." % str(bsfile))
-        starttime = datetime.now()
-        result = self.fpga.FPGAProgram(open(bsfile, "rb"), exceptOnDoneFailure=False)
-        stoptime = datetime.now()
-
-        if result:
-            logging.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
-        else:
-            logging.warning('FPGA Config failed: DONE pin did not go high. Check bitstream is for target device.')
-
     def _con(self, scope=None, bsfile=None, force=False):
-        """Connect to CW305 board, download bitstream"""
+        """Connect to CW305 board, and download bitstream.
+
+        If the target has already been programmed it skips reprogramming
+        unless forced.
+
+        Args:
+            scope (ScopeTemplate): An instance of a scope object.
+            bsfile (path): The path to the bitstream file to program the FPGA with.
+            force (bool): Whether or not to force reprogramming.
+            force (bool): Whether or not to force reprogramming.
+        """
 
         self._naeusb.con(idProduct=[0xC305])
         if self.fpga.isFPGAProgrammed() == False or force:
             if bsfile is None:
-                bsfile = self.params.getChild(['FPGA Bitstream',"fpgabsfile"]).getValue()
-            if not os.path.isfile(bsfile):
-                print("FPGA Bitstream not configured or '%s' not a file." % str(bsfile))
+                print("No FPGA Bitstream file specified.")
+            elif not os.path.isfile(bsfile):
+                print(("FPGA Bitstream not configured or '%s' not a file." % str(bsfile)))
             else:
                 from datetime import datetime
                 starttime = datetime.now()
@@ -189,7 +180,6 @@ class CW305(TargetTemplate):
                     logging.warning('FPGA Done pin failed to go high, check bitstream is for target device.')
         self.usb_clk_setenabled(True)
         self.fpga_write(0x100+self._woffset, [0])
-        self.params.refreshAllParameters()
         self.pll.cdce906init()
 
     def _dis(self):
@@ -198,7 +188,7 @@ class CW305(TargetTemplate):
 
     def checkEncryptionKey(self, key):
         """Validate encryption key"""
-        return key 
+        return key
 
     def loadEncryptionKey(self, key):
         """Write encryption key to FPGA"""
@@ -212,7 +202,7 @@ class CW305(TargetTemplate):
         text = inputtext[::-1]
         self.fpga_write(0x200+self._woffset, text)
 
-    def isDone(self):
+    def is_done(self):
         """Check if FPGA is done"""
         result = self.fpga_read(0x50, 1)[0]
 
@@ -224,27 +214,118 @@ class CW305(TargetTemplate):
             # LED Off
             self.fpga_write(0x10+self._woffset, [0])
             return True
-        
+
+    isDone = camel_case_deprecated(is_done)
+
     def readOutput(self):
         """"Read output from FPGA"""
         data = self.fpga_read(0x200, 16)
         data = data[::-1]
-        self.newInputData.emit(util.list2hexstr(data))
+        #self.newInputData.emit(util.list2hexstr(data))
         return data
+
+    @property
+    def clkusbautooff(self):
+        """ If set, the USB clock is automatically disabled on capture.
+
+        The USB clock is re-enabled after self.clksleeptime milliseconds.
+
+        :Getter: Gets whether to turn off the USB clock on capture
+
+        :Setter: Sets whether to turn off the USB clock on capture
+        """
+        return self._clkusbautooff
+
+    @clkusbautooff.setter
+    def clkusbautooff(self, state):
+        self._clkusbautooff = state
+
+    @property
+    def clksleeptime(self):
+        """ Time (in milliseconds) that the USB clock is disabled for upon
+        capture, if self.clkusbautooff is set.
+        """
+        return self._clksleeptime
+
+    @clksleeptime.setter
+    def clksleeptime(self, value):
+        self._clksleeptime = value
 
     def go(self):
         """Disable USB clock (if requested), perform encryption, re-enable clock"""
-        if self.findParam('clkusbautooff').getValue():
+        if self.clkusbautooff:
             self.usb_clk_setenabled(False)
-            
+
         #LED On
         self.fpga_write(0x10+self._woffset, [0x01])
 
-        time.sleep(0.01)
+        time.sleep(0.001)
         self.usb_trigger_toggle()
         # self.FPGAWrite(0x100, [1])
         # self.FPGAWrite(0x100, [0])
 
-        if self.findParam('clkusbautooff').getValue():
-            time.sleep(self.findParam('clksleeptime').getValue() / 1000.0)
+        if self.clkusbautooff:
+            time.sleep(self.clksleeptime/1000.0)
             self.usb_clk_setenabled(True)
+
+    def simpleserial_read(self, cmd, pay_len, end='\n', timeout=250, ack=True):
+        """Read data from target
+
+        Mimics simpleserial protocol of serial based targets
+
+        Args:
+            cmd (str): Command to ues. Only accepts 'r' for now.
+            pay_len: Unused
+            end: Unused
+            timeout: Unused
+            ack: Unused
+
+        Returns: Value from Crypto output register
+
+        .. versionadded:: 5.1
+            Added simpleserial_read to CW305
+        """
+        if cmd == "r":
+            return self.readOutput()
+        else:
+            raise ValueError("Unknown command {}".format(cmd))
+
+    def simpleserial_write(self, cmd, data, end=None):
+        """Write data to target.
+
+        Mimics simpleserial protocol of serial based targets.
+
+        Args:
+            cmd (str): Command to use. Target supports 'p' (write plaintext),
+                and 'k' (write key).
+            data (bytearray): Data to write to target
+            end: Unused
+
+        Raises:
+            ValueError: Unknown command
+
+        .. versionadded:: 5.1
+            Added simpleserial_write to CW305
+        """
+        if cmd == 'p':
+            self.loadInput(data)
+            self.go()
+        elif cmd == 'k':
+            self.loadEncryptionKey(data)
+        else:
+            raise ValueError("Unknown command {}".format(cmd))
+
+    def set_key(self, key, ack=False, timeout=250):
+        """Checks if key is different from the last one sent. If so, send it.
+
+        Args:
+            key (bytearray):  key to send
+            ack: Unused
+            timeout: Unused
+
+        .. versionadded:: 5.1
+            Added set_key to CW305
+        """
+        if self.last_key != key:
+            self.last_key = key
+            self.simpleserial_write('k', key)

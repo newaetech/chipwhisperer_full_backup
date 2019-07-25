@@ -50,7 +50,7 @@ class ChannelEstimateAttackOneSubkey(object):
         ntracestry = len(traces_test[:,0])
 
         if printData:
-            print " Key %d = %2x"%(bnum, key[bnum])
+            print(" Key %d = %2x"%(bnum, key[bnum]))
 
         start = 0
         end = 256
@@ -71,7 +71,7 @@ class ChannelEstimateAttackOneSubkey(object):
 
         for guess in range(start, end):
             if printData:
-                print "  %2x "%guess,
+                print("  %2x "%guess, end=' ')
                 
             hwlst = np.zeros( (ntracesfit, 1) )
 
@@ -99,12 +99,12 @@ class ChannelEstimateAttackOneSubkey(object):
             diffs[guess] = res
 
             if printData:
-                print "%E"%res
+                print("%E"%res)
                 result.append({'sse':res, 'guess':guess, 'csi':channel})
     
         if printData:        
             sortedresult = sorted(result, key=itemgetter('sse'))
-            print "answer @ rank %d"%map(itemgetter('guess'), sortedresult).index(key[bnum])
+            print("answer @ rank %d"%map(itemgetter('guess'), sortedresult).index(key[bnum]))
 
         return (diffs, pbcnt)
 
@@ -112,7 +112,7 @@ class ChannelEstimateAttackOneSubkey(object):
 #Hacks for main()
 sys.path.append('../../common')
 sys.path.append('../.')
-import models.AES128_8bit as AES128_8bit
+from .models import AES128_8bit as AES128_8bit
 
 def main(tracedir, fitrange, tryrange):    
     preflist = []
@@ -124,7 +124,7 @@ def main(tracedir, fitrange, tryrange):
             preflist.append(f)
 
     if len(preflist) == 0:
-        print "WARNING: No traces found. Check directory."
+        print("WARNING: No traces found. Check directory.")
 
     prefix = preflist[0]
 
@@ -145,10 +145,10 @@ def main(tracedir, fitrange, tryrange):
     cea = ChannelEstimateAttackOneSubkey()
 
     diffs = [0]*16
-    blist = range(0, 16)
+    blist = list(range(0, 16))
 
     for bnum in blist:
-        print "Attacking byte %d"%bnum
+        print("Attacking byte %d"%bnum)
         cea.clearStats()
 
         #Example running an attack, don't set 'aroundStartEnd' if you want
@@ -167,11 +167,11 @@ def main(tracedir, fitrange, tryrange):
 
     #Print most likely & PGE
     for bnum in blist:
-        print " %02x "%output[bnum][0]['hyp'],
-    print ""
+        print(" %02x "%output[bnum][0]['hyp'], end=' ')
+    print("")
     for bnum in blist:
-        print "%3d "%map(itemgetter('hyp'), output[bnum]).index(key[bnum]),
-    print ""
+        print("%3d "%map(itemgetter('hyp'), output[bnum]).index(key[bnum]), end=' ')
+    print("")
 
 
 if __name__ == "__main__":

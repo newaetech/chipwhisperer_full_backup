@@ -27,9 +27,7 @@
 from collections import OrderedDict
 import inspect
 
-from base import ModelsBase
-from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import setupSetParam
+from .base import ModelsBase
 
 class XORLeakageHelper(object):
 
@@ -60,7 +58,7 @@ class PtKey_XOR(XORLeakageHelper):
 enc_list = [PtKey_XOR]
 dec_list = []
 
-class XOR_8bit(ModelsBase, Plugin):
+class XOR_8bit(ModelsBase):
     _name = 'XOR'
 
     hwModels = OrderedDict((mod.name, mod) for mod in (enc_list+dec_list) )

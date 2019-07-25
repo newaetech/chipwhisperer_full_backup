@@ -24,8 +24,8 @@
 #=================================================
 import logging
 
-from _base import ReaderTemplate
-import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhispererTargets
+from ._base import ReaderTemplate
+from chipwhisperer.capture.scopes.cwhardware import ChipWhispererTargets
 
 
 class ReaderChipWhispererUSI(ReaderTemplate):
@@ -100,7 +100,7 @@ class ReaderChipWhispererUSI(ReaderTemplate):
         p = temprx
 
         if p[0] != ins:
-            print("ACK Error: %x != %x"%(ins, p[0]))
+            print(("ACK Error: %x != %x"%(ins, p[0])))
 
         #for t in p:
         #    print "%x "%t,

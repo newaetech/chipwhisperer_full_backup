@@ -27,7 +27,6 @@
 
 import numpy as np
 
-from chipwhisperer.common.results.base import ResultsBase
 from ._base import PreprocessingBase
 from chipwhisperer.common.utils.parameter import setupSetParam
 
@@ -53,7 +52,7 @@ class ResyncPeakDetect(PreprocessingBase):
         self.params.addChildren([
             {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'get':self._getRefTrace, 'set':self._setRefTrace},
             {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'values':['max', 'min'], 'get':self._getType, 'set':self._setType},
-            {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'get':self._getWindow, 'set':self._setWindow},
+            {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph',  'get':self._getWindow, 'set':self._setWindow},
             {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'step':0.1, 'limits':(0, 10), 'set':self._setLimit, 'get':self._getLimit},
         ])
         self._calculateRef()
@@ -75,7 +74,7 @@ class ResyncPeakDetect(PreprocessingBase):
 
     @ref_trace.setter
     def ref_trace(self, num):
-        if not isinstance(num, (int, long)):
+        if not isinstance(num, int):
             raise TypeError("Expected int; got %s" % type(num), num)
         self._setRefTrace(num)
 
@@ -126,9 +125,9 @@ class ResyncPeakDetect(PreprocessingBase):
     def range(self, win):
         if not isinstance(win, tuple):
             raise TypeError("Expected tuple; got %s" % type(win), win)
-        if not isinstance(win[0], (int, long)):
+        if not isinstance(win[0], int):
             raise TypeError("Expected int; got %s" % type(win[0]), win[0])
-        if not isinstance(win[1], (int, long)):
+        if not isinstance(win[1], int):
             raise TypeError("Expected int; got %s" % type(win[1]), win[1])
         self._setWindow(win)
 
@@ -164,16 +163,9 @@ class ResyncPeakDetect(PreprocessingBase):
             self.findParam('ptrange').setLimits((0, self._traceSource.numPoints()))
 
     def updateScript(self, _=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
 
         pt = self.findParam('ptrange').getValue()
 
-        self.addFunction("init", "setReference", "rtraceno=%d, peaktype='%s', refrange=(%d, %d), validlimit=%f" % (
-                            self.findParam('reftrace').getValue(),
-                            self.findParam('peaktype').getValue(),
-                            pt[0], pt[1],
-                            self.findParam('vlimit').getValue()
-        ))
         self.updateLimits()
 
     def setReference(self, rtraceno=0, peaktype='max', refrange=(0, 0), validlimit=0):

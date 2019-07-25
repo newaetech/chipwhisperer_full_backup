@@ -21,4 +21,4 @@ ASFLAGS += -mthumb
 CDEFS += -D__SAML11E16A__
 CPPDEFS += $(CDEFS)
 
-LDFLAGS += --specs=nano.specs -T $(HALPATH)/saml11/saml11e16a_flash.ld -Wl,--gc-sections -lm
+LDFLAGS += -specs=nano.specs -specs=nosys.specs -T $(HALPATH)/saml11/saml11e16a_flash.ld -Wl,--gc-sections -lm

@@ -52,21 +52,21 @@ void glitch1(void)
 {
     led_ok(1);
     led_error(0);
-    
+
     //Some fake variable
     volatile uint8_t a = 0;
-    
+
     putch('A');
-    
+
     //External trigger logic
     trigger_high();
     trigger_low();
-    
+
     //Should be an infinite loop
     while(a != 2){
     ;
-    }    
-    
+    }
+
     led_error(1);
     led_error(1);
     led_error(1);
@@ -76,9 +76,9 @@ void glitch1(void)
     led_error(1);
     led_error(1);
     led_error(1);
-    
+
     uart_puts("1234");
-    
+
     led_error(1);
     led_error(1);
     led_error(1);
@@ -103,21 +103,21 @@ void glitch1(void)
     }
     while(1){
     ;
-    }    
+    }
 }
 
 
 void glitch2(void)
 {
-    char c;  
-    
+    char c;
+
     putch('B');
-       
+
     c = getch();
-    
+
     trigger_high();
     trigger_low();
-    
+
     if (c != 'q'){
         putch('1');
     } else {
@@ -136,26 +136,26 @@ void glitch3(void)
     char c = 'A';
     unsigned char cnt = 0;
     uart_puts("Password:");
-    
+
     while((c != '\n') & (cnt < 16)){
         c = getch();
         inp[cnt] = c;
         cnt++;
     }
-    
+
     char passwd[] = "touch";
     char passok = 1;
-    
+
     trigger_high();
     trigger_low();
-    
+
     //Simple test - doesn't check for too-long password!
     for(cnt = 0; cnt < 5; cnt++){
         if (inp[cnt] != passwd[cnt]){
             passok = 0;
         }
     }
-    
+
     if (!passok){
         uart_puts("Denied\n");
     } else {
@@ -166,26 +166,35 @@ void glitch3(void)
 int main(void){
 
     platform_init();
-	init_uart();	
-	trigger_setup();
+  init_uart();
+  trigger_setup();
 
- 	/* Uncomment this to get a HELLO message for debug */
-	putch('h');
-	putch('e');
-	putch('l');
-	putch('l');
-	putch('o');
-	putch('\n');
-    
+  /* Uncomment this to get a HELLO message for debug */
+  putch('h');
+  putch('e');
+  putch('l');
+  putch('l');
+  putch('o');
+  putch('\n');
+
     //This is needed on XMEGA examples, but not normally on ARM. ARM doesn't have this macro normally anyway.
     #ifdef __AVR__
     _delay_ms(20);
     #endif
-		
-        
+
+
     while(1){
-        glitch_infinite();
+#if defined(GLITCH1)
+            glitch1();
+#elif defined(GLITCH2)
+            glitch2();
+#elif defined(GLITCH3)
+            glitch3();
+#elif defined(GLITCH_INF)
+            glitch_infinite();
+#endif
+
     }
-        
-	return 1;
+
+  return 1;
 }

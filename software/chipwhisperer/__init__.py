@@ -1,209 +1,300 @@
-from chipwhisperer.capture.api.acquisition_controller import AcquisitionController
-from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
-from chipwhisperer.common.utils.util import updateUI
+# -*- coding: utf-8 -*-
+"""
+.. module:: chipwhisperer
+   :platform: Unix, Windows
+   :synopsis: Test
 
-import os, os.path
-from chipwhisperer.common.traces import TraceContainerNative as trace_container_native
+.. moduleauthor:: NewAE Technology Inc.
+
+Main module for ChipWhisperer.
+"""
+import os, os.path, time
+import warnings
+from zipfile import ZipFile
+
+from chipwhisperer.capture import scopes, targets
+from chipwhisperer.capture.api import programmers
+from chipwhisperer.capture import acq_patterns as key_text_patterns
+from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api import ProjectFormat as project
+from chipwhisperer.common.traces import Trace
+from chipwhisperer.common.utils import util
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 
-from chipwhisperer.capture.scopes.OpenADC import OpenADC as cwhardware
-from chipwhisperer.capture.targets.SimpleSerial import SimpleSerial as cwtarget
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic as BasicKtp
-from chipwhisperer.common.utils.util import cw_bytearray
+# replace bytearray with inherited class with better repr and str.
+import builtins
+builtins.bytearray = util.bytearray
 
-from chipwhisperer.common.utils.parameter import Parameter
-import chipwhisperer.capture.ui.CWCaptureGUI as cwc
-import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.capture.scopes.base import ScopeTemplate
-from chipwhisperer.capture.targets._base import TargetTemplate
+# from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 
-from functools import wraps
+ktp = key_text_patterns #alias
 
-def gui_only(func):
-    """Decorator for the functions that can only be used in the gui
-    If it is called outside the gui, it will raise UserWarning
+
+def program_target(scope, prog_type, fw_path, **kwargs):
+    """Program the target using the programmer <type>
+
+    Programmers can be found in the programmers submodule
+
+    Args:
+       scope (ScopeTemplate): Connected scope object to use for programming
+       prog_type (Programmer): Programmer to use. See chipwhisperer.programmers
+           for available programmers
+       fw_path (str): Path to hex file to program
+
+    .. versionadded:: 5.0.1
+        Simplified programming target
     """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        gui_warning = "This api function is for use inside GUI Python Console"
-        try:
-            api = CWCoreAPI.getInstance()
-            if api is None:
-                raise Exception
-        except:
-            raise UserWarning(gui_warning)
-        return func(api, *args, **kwargs)
-    return wrapper
+    if prog_type is None: #[makes] automating notebooks much easier
+        return
+    prog = prog_type(**kwargs)
+    prog.scope = scope
+    prog._logging = None
+    prog.open()
+    prog.find()
+    prog.erase()
+    prog.program(fw_path, memtype="flash", verify=True)
+    prog.close()
 
 
-def capture_gui():
-    """Open the CWCapture GUI, blocking until it's closed.
+programTarget = camel_case_deprecated(program_target)
 
-    Note that opening the GUI does not use any existing scope/target/project objects that were made using the API.
 
-    Known issue: after finishing this function, many API calls don't work from the command line, as ChipWhisperer
-    then relies on PyQT for timers and other utilities.
-    """
-    from chipwhisperer.capture.ui.CWCaptureGUI import main
-    main()
-
-def analyzer_gui():
-    """Open the Analyzer GUI, blocking until it's closed.
-    """
-    from chipwhisperer.analyzer.ui.CWAnalyzerGUI import main
-    main()
-
-def openProject(filename):
+def open_project(filename):
     """Load an existing project from disk.
 
-    Raise an IOError if no such project exists.
+    Args:
+       filename (str): Path to project file.
+
+    Returns:
+       A chipwhisperer project object.
+
+    Raises:
+       OSError: filename does not exist.
     """
-    if not os.path.isfile(filename):
-        raise IOError("File " + filename + " does not exist or is not a file")
-    proj = project.ProjectFormat()
+    filename = project.ensure_cwp_extension(filename)
+
+    proj = project.Project()
     proj.load(filename)
     return proj
 
-def createProject(filename, overwrite=False):
+
+openProject = camel_case_deprecated(open_project)
+
+
+def create_project(filename, overwrite=False):
     """Create a new project with the path <filename>.
 
-    If <overwrite> is False, raise an IOError if this path already exists.
-    """
-    if os.path.isfile(filename) and (overwrite == False):
-        raise IOError("File " + filename + " already exists")
+    If <overwrite> is False, raise an OSError if this path already exists.
 
-    proj = project.ProjectFormat()
+    Args:
+       filename (str): File path to create project file at. Must end with .cwp
+       overwrite (bool, optional): Whether or not to overwrite an existing
+           project with <filename>. Raises an OSError if path already exists
+           and this is false. Defaults to false.
+
+    Returns:
+       A chipwhisperer project object.
+
+    Raises:
+       OSError: filename exists and overwrite is False.
+    """
+    filename = project.ensure_cwp_extension(filename)
+
+    if os.path.isfile(filename) and (overwrite == False):
+        raise OSError("File " + filename + " already exists")
+
+    # If the user gives a relative path including ~, expand to the absolute path
+    filename = os.path.abspath(os.path.expanduser(filename))
+
+    proj = project.Project()
     proj.setFilename(filename)
 
     return proj
 
 
-def scope(type = cwhardware):
+createProject = camel_case_deprecated(create_project)
+
+
+def import_project(filename, file_type='zip', overwrite=False):
+    """Import and open a project.
+
+    Will import the **filename** by extracting to the current working
+    directory.
+
+    Currently support file types:
+     * zip
+
+    Args:
+        filename (str): The file name to import.
+        file_type (str): The type of file that is being imported.
+            Default is zip.
+        overwrite (bool): Whether or not to overwrite the project given as
+            the **import_as** project.
+
+    .. versionadded:: 5.1
+        Add **import_project** function.
+    """
+    # extract name from input file
+    input_dir, input_file = os.path.split(filename)
+    input_file_root, input_file_ext = os.path.splitext(input_file)
+    input_abs_path = os.path.abspath(filename)
+
+    # use the appropriate type of import
+    if file_type == 'zip':
+        with ZipFile(input_abs_path, 'r') as project_zip:
+            output_path = None
+            for path in project_zip.namelist():
+                root, ext = os.path.splitext(path)
+                if ext == '.cwp':
+                    directory, project_name = os.path.split(root)
+                    output_path = ''.join([project_name, '.cwp'])
+
+                    # check if name already exists in projects
+                    if os.path.isfile(output_path) and (overwrite == False):
+                        raise OSError("File " + output_path + " already exists")
+
+                    # extract the project.cwp file and project_data directory to
+                    # the PROJECT_DIR
+                    project_zip.extractall(path=os.getcwd())
+
+            if output_path is None:
+                raise ValueError('Zipfile does not contain a .cwp file, so it cannot be imported')
+    else:
+        raise ValueError('Import from file type not supported: {}'.format(file_type))
+
+    proj = project.Project()
+    proj.load(output_path)
+
+    return proj
+
+
+def scope(scope_type=None, sn=None):
     """Create a scope object and connect to it.
 
-    This function allows any type of scope to be created. By default, the scope
-    is a ChipWhisperer OpenADC object, but this can be set to any valid scope
-    class.
+    This function allows any type of scope to be created. By default, the
+    object created is based on the attached hardware (OpenADC for
+    CWLite/CW1200, CWNano for CWNano).
+
+    Scope Types:
+     * :class:`scopes.OpenADC` (Pro and Lite)
+     * :class:`scopes.CWNano` (Nano)
+
+    If multiple chipwhisperers are connected, the serial number of the one you
+    want to connect to can be specified by passing sn=<SERIAL_NUMBER>
+
+    Args:
+       scope_type (ScopeTemplate, optional): Scope type to connect to. Types
+           can be found in chipwhisperer.scopes. If None, will try to detect
+           the type of ChipWhisperer connected. Defaults to None.
+       sn (str, optional): Serial number of ChipWhisperer that you want to
+           connect to. Required if more than one ChipWhisperer
+           of the same type is connected (i.e. two CWNano's or a CWLite and
+           CWPro). Defaults to None.
+
+    Returns:
+        Connected scope object.
+
+    Raises:
+        OSError: Can be raised for issues connecting to the chipwhisperer, such
+            as not having permission to access the USB device or no ChipWhisperer
+            being connected.
+        Warning: Raised if multiple chipwhisperers are connected, but the type
+            and/or the serial numbers are not specified
+
+    .. versionchanged:: 5.1
+        Added autodetection of scope_type
     """
-    scope = type()
-    scope.con()
+    from chipwhisperer.common.utils.util import get_cw_type
+    if scope_type is None:
+        scope_type = get_cw_type(sn)
+    scope = scope_type()
+    scope.con(sn)
     return scope
 
-def target(scope, type = cwtarget, **kwargs):
+
+def target(scope, target_type=targets.SimpleSerial, **kwargs):
     """Create a target object and connect to it.
+
+    Args:
+       scope (ScopeTemplate): Scope object that we're connecting to the target
+           through.
+       target_type (TargetTemplate, optional): Target type to connect to.
+           Defaults to targets.SimpleSerial. Types can be found in
+           chipwhisperer.targets.
+       **kwargs: Additional keyword arguments to pass to target setup. Rarely
+           needed.
+
+    Returns:
+        Connected target object specified by target_type.
     """
-    target = type()
+    target = target_type()
     target.con(scope, **kwargs)
     return target
 
-@gui_only
-def auxList(api):
-    # TODO: this should create a fresh aux list
-    # We can already access API one via self.aux_list
-    return api.getAuxList()
+def capture_trace(scope, target, plaintext, key=None):
+    """Capture a trace, sending plaintext and key
 
-@gui_only
-def captureN(api, scope=None, target=None, project=None, aux_list=None, ktp=None, N=1, seg_size=None):
-    """Capture a number of traces, saving power traces and input/output text
-    and keys to disk along the way.
+    Does all individual steps needed to capture a trace (arming the scope
+    sending the key/plaintext, getting the trace data back, etc.)
 
     Args:
-        scope: A connected scope object. If None, no power trace will be
-            recorded - possibly helpful for testing target setups
-        target: A connected target object. If None, no target commmands will be
-            sent - assumed that aux commands or external boards are controlling
-            target
-        project: A ChipWhisperer project object. If None, no data will be
-            saved - helpful when testing scope settings without saving
-        aux_list: An AuxList object with auxiliary functions registered. If
-            None, no auxiliary functions are run
-        ktp: A key/text input object. Produces pairs of encryption key/input
-            text for each capture. Can't be None as these values are required
-        N: The number of traces to capture.
-        seg_size: The number of traces to record in each segment. The data is
-            saved to disk in a number of segments to avoid making one enormous
-            data file. If None, a sane default is used.
+        scope (ScopeTemplate): Scope object to use for capture.
+        target (TargetTemplate): Target object to read/write text from.
+        plaintext (bytearray): Plaintext to send to the target. Should be
+            unencoded bytearray (will be converted to SimpleSerial when it's
+            sent). If None, don't send plaintext.
+        key (bytearray, optional): Key to send to target. Should be unencoded
+            bytearray. If None, don't send key. Defaults to None.
 
-    To emulate GUI capture:
-    >>> cw.captureN(self.scope, self.target, self.project, self.aux_list, self.ktp, 50)
+    Returns:
+        :class:`Trace <chipwhisperer.common.traces.Trace>` or None if capture
+        timed out.
+
+    Raises:
+        Warning or OSError: Error during capture.
+
+    Example:
+        Capturing a trace::
+
+            import chipwhisperer as cw
+            scope = cw.scope()
+            scope.default_setup()
+            target = cw.target()
+            ktp = cw.ktp.Basic()
+            key, pt = ktp.new_pair()
+            trace = cw.capture_trace(scope, target, pt, key)
+
+    .. versionadded:: 5.1
+        Added to simplify trace capture.
     """
-    api.captureM(scope=scope, target=target, project=project, aux_list=aux_list, ktp=ktp, N=N, seg_size=seg_size)
+    if key:
+        target.set_key(key)
 
-@gui_only
-def getLastKey(core_api):
-    """Return the last key used in captureN
-    """
-    key = core_api.getLastKey()
-    if key is None:
-        return key
-    else:
-        return cw_bytearray(key)
+    scope.arm()
 
-@gui_only
-def getLastTextin(core_api):
-    """Return the last input text used in captureN
-    """
-    lti = core_api.getLastTextin()
-    if lti is None:
-        return lti
-    else:
-        return cw_bytearray(lti)
+    if plaintext:
+        target.simpleserial_write('p', plaintext)
 
-@gui_only
-def getLastTextout(core_api):
-    """Return the last input text used in captureN
-    """
-    lto = core_api.getLastTextout()
-    if lto is None:
-        return lto
-    else:
-        return cw_bytearray(lto)
+    ret = scope.capture()
 
-@gui_only
-def getLastExpected(core_api):
-    """Return the last input text used in captureN
-    """
-    le = core_api.getLastExpected()
+    i = 0
+    while not target.is_done():
+        i += 1
+        time.sleep(0.05)
+        if i > 100:
+            warnings.warn("Target did not finish operation")
+            return None
 
-    if le is None:
-        return le
-    else:
-        return cw_bytearray(le)
+    if ret:
+        warnings.warn("Timeout happened during capture")
+        return None
+
+    response = target.simpleserial_read('r', 16)
+    wave = scope.get_last_trace()
+
+    return Trace(wave, plaintext, response, key)
 
 
-# TODO: decide whether to remove all of this
-class gui(object):
-    def __init__(self):
-        Parameter.usePyQtGraph = True
-        self.api = CWCoreAPI()
-
-    def register_scope(self, obj):
-        self.api.setScope(obj, addToList=True, blockSignal=True)
+captureTrace = camel_case_deprecated(capture_trace)
 
 
-    def register_target(self, obj):
-        self.api.setTarget(obj, addToList=True, blockSignal=True)
-
-    def register(self, obj):
-        #Figure out what we're registering here
-        if isinstance(obj, ScopeTemplate):
-            self.register_scope(obj)
-        elif isinstance(obj, TargetTemplate):
-            self.register_target(obj)
-        else:
-            raise ValueError("Unknown object type %s"%str(obj))
-
-    def capture(self):
-        self.app = cwc.makeApplication("Capture")
-        self.window = cwc.CWCaptureGUI(self.api)
-        self.window.show()
-        # Run the main Qt loop
-        self.app.exec_()
-
-
-def acquisition_controller(scope, target=None, writer=None, aux=None, key_text_pattern=None):
-    """Not required when running GUI"""
-    ac = AcquisitionController(scope=scope, target=target, keyTextPattern=key_text_pattern)
-    return ac

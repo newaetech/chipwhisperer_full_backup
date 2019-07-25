@@ -170,18 +170,52 @@ _galNI=_gal2,_gal3,_gal1,_gal1
 
 
 def sbox(inp):
+    """Perform an SBox lookup.
+
+    Args:
+        inp (int): Byte used for the Sbox lookup.
+
+    Returns:
+        int: The result of the SBox lookup.
+    """
     return _sbox[inp]
 
 
 def inv_sbox(inp):
+    """Perform an inverse SBox lookup.
+
+    Args:
+        inp (int): Byte used for the inverse Sbox lookup.
+
+    Returns:
+        int: The result of the inverse SBox lookup.
+    """
     return _i_sbox[inp]
 
 
 def subbytes(inp):
+    """Perform an Sbox lookup for multiple bytes.
+
+    Args:
+        inp (iterable): Bytes to perform Sbox lookup on.
+
+    Returns:
+        list: List of bytes resulting from the multiple
+            SBox lookups.
+    """
     return [sbox(i) for i in inp]
 
 
 def inv_subbytes(inp):
+    """Perform an inverse Sbox lookup for multiple bytes.
+
+    Args:
+        inp (iterable): Bytes to perform inverse Sbox lookup on.
+
+    Returns:
+        list: List of bytes resulting from the multiple
+            inverse SBox lookups.
+    """
     return [inv_sbox(i) for i in inp]
 
 
@@ -200,6 +234,14 @@ def _inv_shiftrow (row, shift):
 
 
 def shiftrows (state):
+    """AES shift rows operation.
+
+    Args:
+        state (iterable): Iterable of 16 bytes.
+
+    Returns:
+        list: List of 16 bytes after shift rows operation.
+    """
     #Extract rows as every 4th item starting at [1..3]
     #Replace row with shift_row operation
     for i in 1,2,3:
@@ -208,6 +250,14 @@ def shiftrows (state):
 
 
 def inv_shiftrows (state):
+    """Inverse AES shift rows operation.
+
+    Args:
+        state (iterable): Iterable of 16 bytes.
+
+    Returns:
+        list: List of 16 bytes after inverse shift rows operation.
+    """
     #Extract rows as every 4th item starting at [1..3]
     #Replace row with inverse shift_row operation
     for i in 1,2,3:
@@ -235,9 +285,25 @@ def _mixcolumns (state, inverse):
 
 
 def mixcolumns(state):
+    """AES mix columns operation.
+
+    Args:
+        state (iterable): Iterable of 16 bytes.
+
+    Returns:
+        list: List of 16 bytes after mix columns operation.
+    """
     return _mixcolumns(state, False)
 
 
 def inv_mixcolumns(state):
+    """AES inverse mix columns operation.
+
+    Args:
+        state (iterable): Iterable of 16 bytes.
+
+    Returns:
+        list: List of 16 bytes after inverse mix columns operation.
+    """
     return _mixcolumns(state, True)
 

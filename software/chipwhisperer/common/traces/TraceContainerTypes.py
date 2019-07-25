@@ -23,13 +23,13 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 __author__ = "Colin O'Flynn"
 
-import TraceContainerNative
+from . import TraceContainerNative
 try:
-    import TraceContainerMySQL
+    from . import TraceContainerMySQL
 except ImportError:
     TraceContainerMySQL = None
 
-import TraceContainerDPAv3
+from . import TraceContainerDPAv3
 
 TraceContainerFormatList = {"native":TraceContainerNative.TraceContainerNative, "dpav3":TraceContainerDPAv3.TraceContainerDPAv3 }
 if TraceContainerMySQL is not None:

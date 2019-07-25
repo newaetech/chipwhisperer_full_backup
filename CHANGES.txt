@@ -1,108 +1,163 @@
+V5.1.0:
+  * Tutorial Updates:
+      - New tutorial: Fault_5-RSA_Fault_Attack
+      - New tutorial: Fault_2-Introduction_to_Vcc_Glitch_Attacks
+      - New tutorial: PA_DPA_3-AES_DPA_Attack
+      - New tutorial: PA_HW_Pro_1 added
+      - New tutorial: !!Introduction_to_Jupyter!!
+      - Fault_4 updated for new API
+      - Tutorials now list supported hardware at the top of the tutorial
+      - Improved support for non-CWLITEARM targets
+      - Tutorial tests now output .rst files for Read the Docs
+      - Change Setup.ipynb to Setup_Generic.ipynb
+  * Scope updates:
+      - Added default_setup() method
+      - cw.scope() can now autodetect scope type
+      - CWPro only features updated to work with API
+  * Project updates:
+      - Major project API updates
+      - New project format
+  * CW1200 Pro only features added to API
+  * Completed tutorials now available on Read the Docs
+  * Added tutorials submodule for completed tutorial .rst files
+  * Key text pair interface updated
+  * Added cw.capture_trace()
+  * Moved Jupyter to Submodule in top of project
+  * Separated requirements.txt into Jupyter (in Jupyter submodule) and non Jupyter files
+  * Changed to snake_case instead of camelCase
+  * Added Sphinx documentation
+  * API now documented with Google Style Guide
+  * Many tutorial changes to reflect API changes
+  * Changed tutorials to use C preprocessor to change firmware rather than via awk
+  * C firmware CRYPTO_TARGET no longer defaults to AVRCRYPTOLIB
+  * CW308_AURIX clock and regulator fixes
+  * Fixed generate_firmware_files.py for python3
+  * Removed some unused files
+  * Expose baud for STM32 programmer
+  * Fixed XMEGA and STM32 programming issues
+  * Fixed "Trigger not found in ADC data" issue
+  * Improved CW305 support
+
+
+V5.0.1:
+  * Fixed project loading
+  * Initial CW305 Support
+  * Various small fixes
+
+V5.0.0:
+  * Replaced GUI with Jupyter
+  * Moved to Python 3 (Python 2.7 no longer supported)
+  * Improved API for Projects
+  * Added GUILess Analyzer support
+  * Added Jupyter Notebooks for most major tutorials
+  * Added Notebooks for new tutorials
+  * Small cleanups to API
+
 V4.0.2:
--Improve SAD logic
--Add RSA firmware build for ARM.
--Add new setup scripts (CEC1702, ESP32)
--Various small fixes
+  * Improve SAD logic
+  * Add RSA firmware build for ARM.
+  * Add new setup scripts (CEC1702, ESP32)
+  * Various small fixes
 
 V4.0.1:
--State for GUI Programmers is not held in between actions, allowing the programmers to be left open during captures/glitching without causing problems
--The GUI programmers now use the 4.0 api to set pins for programming, saving pin states before an action to restore them after.
--Most firmware files are now compatible with the ARM compiler
--Example scripts in chipwhisperer/software/scripting-examples have been updated for 4.0, providing an example of using the ChipWhisperer tool without the GUI for clock glitching, trace capture during encryption, and trace analysis.
+  * State for GUI Programmers is not held in between actions, allowing the programmers to be left open during captures/glitching without causing problems
+  * The GUI programmers now use the 4.0 api to set pins for programming, saving pin states before an action to restore them after.
+  * Most firmware files are now compatible with the ARM compiler
+  * Example scripts in chipwhisperer/software/scripting-examples have been updated for 4.0, providing an example of using the ChipWhisperer tool without the GUI for clock glitching, trace capture during encryption, and trace analysis.
 
 V4.0.0:
--Rewritten script interface, now almost all work is done via preconfigured scripts
--New API allows direct access to configuration (useful with new script architecture)
--New firmware examples (ESP32, Spartan 6 cheap FPGA board)
+  * Rewritten script interface, now almost all work is done via preconfigured scripts
+  * New API allows direct access to configuration (useful with new script architecture)
+  * New firmware examples (ESP32, Spartan 6 cheap FPGA board)
 
 
 V3.5.3:
--FW: Add RSA firmware example (see https://wiki.newae.com/Tutorial_B11_Breaking_RSA)
--FW: Add MBED TLS crypto library for ARM targets (see https://wiki.newae.com/Tutorial_A8_32bit_AES)
--SW: Add utility to copy traces to new project
--Capture: Add ability to measure "Trigger High" length in number of samples
--FW: Fix trigger GPIO pin in STM32F4 HAL
--FW: Fix AVR "sizeafter" target in makefile
--SW: Update testing scripts to use os.path and auto-program for XMEGA programming
--Capture: Fix timer bug in CW1173 Reset aux module
+  * FW: Add RSA firmware example (see https://wiki.newae.com/Tutorial_B11_Breaking_RSA)
+  * FW: Add MBED TLS crypto library for ARM targets (see https://wiki.newae.com/Tutorial_A8_32bit_AES)
+  * SW: Add utility to copy traces to new project
+  * Capture: Add ability to measure "Trigger High" length in number of samples
+  * FW: Fix trigger GPIO pin in STM32F4 HAL
+  * FW: Fix AVR "sizeafter" target in makefile
+  * SW: Update testing scripts to use os.path and auto-program for XMEGA programming
+  * Capture: Fix timer bug in CW1173 Reset aux module
 
 V3.5.0:
--SW: Allow each module to set a default error message severity
--Capture: Support connecting multiple CW-Lite/Pro scopes
--Capture: Add SPI flash programmer target
--Capture: Add STM32F programmer
--Capture: Add setup script for 87C51 target
--FW: Fix bug in SAM4L HAL that disabled crypto countermeasures
--FW: Improve Makefile output on Windows
--SW: Return script results when running Capture/Analyzer scripts via API
--Analyzer: Fix off-by-one error in C-accelerated CPA attack
--Capture: Properly randomize fixed/random plaintexts in CRI T-Test mode
--Capture: Fix float/int conversion bug in glitch explorer
+  * SW: Allow each module to set a default error message severity
+  * Capture: Support connecting multiple CW-Lite/Pro scopes
+  * Capture: Add SPI flash programmer target
+  * Capture: Add STM32F programmer
+  * Capture: Add setup script for 87C51 target
+  * FW: Fix bug in SAM4L HAL that disabled crypto countermeasures
+  * FW: Improve Makefile output on Windows
+  * SW: Return script results when running Capture/Analyzer scripts via API
+  * Analyzer: Fix off-by-one error in C-accelerated CPA attack
+  * Capture: Properly randomize fixed/random plaintexts in CRI T-Test mode
+  * Capture: Fix float/int conversion bug in glitch explorer
 
 V3.4.0:
--Addition of trace-cache in preprocessing module, useful with slow preprocessing module.
--Dynamic Time Warp (DTW) based trace resync preprocessing, based on the "Elastic Alignment" paper by Jasper
--SimpleSerial firmware V1.1 now supports ACK in messaage structure, useful in slow encryptions to avoid timeout
--STM32F firmware targets (including STM32F0, F1, F2, F3, F4)
--New trace plotting command allows plotting arbitrary traces (not just range), along with specific colours.
+  * Addition of trace-cache in preprocessing module, useful with slow preprocessing module.
+  * Dynamic Time Warp (DTW) based trace resync preprocessing, based on the "Elastic Alignment" paper by Jasper
+  * SimpleSerial firmware V1.1 now supports ACK in messaage structure, useful in slow encryptions to avoid timeout
+  * STM32F firmware targets (including STM32F0, F1, F2, F3, F4)
+  * New trace plotting command allows plotting arbitrary traces (not just range), along with specific colours.
 
 V3.3.0:
--CW1200 support added (bitstream built-in, various fixes for CW1200)
--New firmware build system supports targets beyond AVR/XMEGA (now can build for STM32F, etc)
--Add downsample mode for CWLite, CW1200 (make better use of sample buffer by downsampling ADC to get very slow sampler rates)
--New simple AES crypto library for firmware targets
--Huge speed-up to waveform data processing on capture
--Support automatic downsampling of waveform display (requires recent version of pyqtgraph)
+  * CW1200 support added (bitstream built-in, various fixes for CW1200)
+  * New firmware build system supports targets beyond AVR/XMEGA (now can build for STM32F, etc)
+  * Add downsample mode for CWLite, CW1200 (make better use of sample buffer by downsampling ADC to get very slow sampler rates)
+  * New simple AES crypto library for firmware targets
+  * Huge speed-up to waveform data processing on capture
+  * Support automatic downsampling of waveform display (requires recent version of pyqtgraph)
 
 V3.2.0:
--Updated HW model system, breaks some old APIs but makes it easier to add custom leakage models
--Fixed bug where unplugging CW-Lite with terminal open caused flood of close messages
--Fixes to CW305 interface
--AVR Programmer adds ATMegaRF2564RFR2 device support
+  * Updated HW model system, breaks some old APIs but makes it easier to add custom leakage models
+  * Fixed bug where unplugging CW-Lite with terminal open caused flood of close messages
+  * Fixes to CW305 interface
+  * AVR Programmer adds ATMegaRF2564RFR2 device support
 
 V3.1.11:
-- Added support to DES (recovers 48 of the 56 bits key)
-- Refactored attack classes
+  * Added support to DES (recovers 48 of the 56 bits key)
+  * Refactored attack classes
 
 V3.1.10:
-- Added basic support to multiple channels (doesn't save yet).
-- Trace Output Plot widget with new parameter: X Axis with time values.
-- New Streaming mode capture option.
+  * Added basic support to multiple channels (doesn't save yet).
+  * Trace Output Plot widget with new parameter: X Axis with time values.
+  * New Streaming mode capture option.
 
 V3.1.9:
-- Improved serial terminal.
-- Added stop capture button.
-- Fixed a lot of memory leaks.
-- New trace manager (supports deletion of multiple items).
-- Pip support.
-- Support to projects/plugins in user's home.
-- Test scripts.
-- Improved code documentation.
-- Code cleanups.
-- New Glitch Explorer widget.
-- Bandstop digital filter option (credits to Marc).
-- Removed parentParam argument from many classes (some older scripts may need to delete it to come back to live) :-/
-- Added buttons to load and save settings.
-- Project settings saved with the traces during capture.
-- Logging.
+  * Improved serial terminal.
+  * Added stop capture button.
+  * Fixed a lot of memory leaks.
+  * New trace manager (supports deletion of multiple items).
+  * Pip support.
+  * Support to projects/plugins in user's home.
+  * Test scripts.
+  * Improved code documentation.
+  * Code cleanups.
+  * New Glitch Explorer widget.
+  * Bandstop digital filter option (credits to Marc).
+  * Removed parentParam argument from many classes (some older scripts may need to delete it to come back to live) :-/
+  * Added buttons to load and save settings.
+  * Project settings saved with the traces during capture.
+  * Logging.
 
 V3.1.8:
-- Read/save buttons.
-- Trace recorder.
-- Graph widget: hairlines, grid, move, help, select trace, position.
-- Check for updates.
-- New Parameter class. API runs standalone now (especially the capture tool).
-- Customizable key/trace colors.
-- Results table with color gradient.
-- Faster graphs plotting, especially in fast mode.
-- Fixed a bug where highlighted traces for other keys would not show up.
-- Trace Explorer moved to the main window as a settings dock.
-- Bug fixes.
+  * Read/save buttons.
+  * Trace recorder.
+  * Graph widget: hairlines, grid, move, help, select trace, position.
+  * Check for updates.
+  * New Parameter class. API runs standalone now (especially the capture tool).
+  * Customizable key/trace colors.
+  * Results table with color gradient.
+  * Faster graphs plotting, especially in fast mode.
+  * Fixed a bug where highlighted traces for other keys would not show up.
+  * Trace Explorer moved to the main window as a settings dock.
+  * Bug fixes.
 
 V3.0:
-- Consolidate project (move traces to the project dir).
-- Improved trace manager.
-- Fixed GUI bugs with Mac OS X.
-- New plugin architecture (should be much easier to add new modules).
-- Bug fixes.
-- Large code refactoring.
+  * Consolidate project (move traces to the project dir).
+  * Improved trace manager.
+  * Fixed GUI bugs with Mac OS X.
+  * New plugin architecture (should be much easier to add new modules).
+  * Bug fixes.
+  * Large code refactoring.

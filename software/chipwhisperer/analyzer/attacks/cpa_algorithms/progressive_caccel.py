@@ -31,7 +31,6 @@ import sys
 from ctypes import *
 
 from ..algorithmsbase import AlgorithmsBase
-from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
 class aesmodel_setup_t(Structure):
@@ -180,7 +179,7 @@ class CPAProgressiveOneSubkey(object):
         return (guessdata, pbcnt)
 
 
-class CPAProgressive_CAccel(AlgorithmsBase, Plugin):
+class CPAProgressive_CAccel(AlgorithmsBase):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """

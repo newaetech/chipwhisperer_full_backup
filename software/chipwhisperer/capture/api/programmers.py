@@ -28,7 +28,6 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.naeusb.programmer_avr import supported_avr
 from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import supported_stm32f
-import chipwhisperer.common.api.CWCoreAPI
 
 from functools import wraps
 
@@ -91,17 +90,15 @@ class Programmer(object):
         self.newTextLog = util.Signal()
         self._scope = None
 
+    def open(self):
+        pass
+
     @property
     def scope(self):
         if self._scope:
             return self._scope
 
-        api = chipwhisperer.common.api.CWCoreAPI.CWCoreAPI.getInstance()
-        if api:
-            return api.getScope()
-        else:
-            #No scope object so we won't toggle pins
-            return None
+        return None
 
     @scope.setter
     def scope(self, value):
@@ -237,7 +234,15 @@ class XMEGAProgrammer(Programmer):
     def erase(self, memtype="chip"):
         self.log("Erasing Chip")
         xmega = self.xmegaprog()
-        xmega.erase(memtype)
+        try:
+            xmega.erase(memtype)
+        except IOError:
+            logging.info("Full chip erase timed out. Reinitializing programmer and erasing only application memory")
+            self.open()
+            self.find()
+            xmega.enablePDI(False)
+            xmega.enablePDI(True)
+            xmega.erase("app")
 
     @save_and_restore_pins
     def autoProgram(self, hexfile, erase, verify, logfunc, waitfunc):
@@ -257,24 +262,25 @@ class XMEGAProgrammer(Programmer):
 
 class STM32FProgrammer(Programmer):
 
-    def __init__(self):
+    def __init__(self, small_blocks=False, slow_prog=False, baud=115200):
         super(STM32FProgrammer, self).__init__()
         self.supported_chips = supported_stm32f
-        
-        self.slow_speed = False
-        self.small_blocks = False
+        self._baud = baud
+
+        self.slow_speed = slow_prog
+        self.small_blocks = small_blocks
         self.stm = None
-        
+
     def stm32prog(self):
 
         if self.stm is None:
             stm = self.scope.scopetype.dev.serialstm32f
         else:
             stm = self.stm
-        
+
         stm.slow_speed = self.slow_speed
         stm.small_blocks = self.small_blocks
-        
+
         return stm
 
     @save_and_restore_pins
@@ -288,7 +294,7 @@ class STM32FProgrammer(Programmer):
     @save_and_restore_pins
     def open(self):
         stm32f = self.stm32prog()
-        stm32f.open_port()
+        stm32f.open_port(self._baud)
 
     @save_and_restore_pins
     def find(self):

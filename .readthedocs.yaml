@@ -1,0 +1,23 @@
+version: 2
+
+sphinx:
+  builder: html
+  configuration: docs/conf.py
+  fail_on_warning: true
+
+build:
+  image: stable
+
+python:
+  version: 3.6
+  install:
+    - requirements: software/requirements.txt
+    - requirements: jupyter/requirements.txt
+    - method: setuptools
+      path: .
+
+submodules:
+  include:
+    - tutorials
+    - jupyter
+  recursive: true

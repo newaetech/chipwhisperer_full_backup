@@ -23,6 +23,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+# USED BY SMARTCARD, if we want to keep that
+
 from ._base import SimpleSerialTemplate
 import time
 from chipwhisperer.common.utils.parameter import setupSetParam
@@ -151,7 +153,7 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
 
     def hardware_write(self, string):
         for s in string:
-            if isinstance(string, basestring):
+            if isinstance(string, str):
                 d = bytearray(s, 'latin-1')
             else:
                 d = [s]
@@ -179,7 +181,7 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
                 if resp:
                     data.append(resp[0])
             else:
-                time.sleep(0.01)
+                time.sleep(0.001)
                 timeout = timeout - 1
             waiting = self.inWaiting()
 

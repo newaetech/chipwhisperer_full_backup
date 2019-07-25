@@ -1,3 +1,0 @@
-chipwhisperer.capture.scripts package
-=====================================
-

@@ -23,9 +23,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _smartcard_gui import SmartCardGUICard
-from _base import TargetTemplate
-from chipwhisperer.common.utils import pluginmanager
+from ._smartcard_gui import SmartCardGUICard
+from ._base import TargetTemplate
 from chipwhisperer.common.utils.parameter import setupSetParam
 
 
@@ -35,8 +34,6 @@ class SmartCard(TargetTemplate):
     def __init__(self):
         TargetTemplate.__init__(self)
 
-        readers = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_readers", True, True)
-        protocols = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_protocols", True, True)
         self.driver = None
         self.protocol = None
 

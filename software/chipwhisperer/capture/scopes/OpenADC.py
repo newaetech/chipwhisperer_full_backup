@@ -27,42 +27,55 @@
 #=================================================
 import logging
 from usb import USBError
-import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger as ChipWhispererDecodeTrigger
-import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
-import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
-import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
-import _qt as openadc_qt
-from base import ScopeTemplate
-from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.utils import util, timer, pluginmanager
-from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
-from chipwhisperer.common.utils.pluginmanager import Plugin
+from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD
+from . import _qt as openadc_qt
+from .base import ScopeTemplate
+from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
+from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import dict_to_str
 from collections import OrderedDict
+import time
 
-class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
+class OpenADC(ScopeTemplate, util.DisableNewAttr):
     """OpenADC scope object.
 
     This class contains the public API for the OpenADC hardware, including the
-    ChipWhisperer Lite/CW1200/Rev 2 boards. It includes specific settings for
+    ChipWhisperer Lite/ CW1200 Pro boards. It includes specific settings for
     each of these devices.
 
-    To connect to one of these devices, the easiest method is
+    To connect to one of these devices, the easiest method is::
 
-    >>> import chipwhisperer as cw
-    >>> scope = cw.scope()
+        import chipwhisperer as cw
+        scope = cw.scope(type=scopes.OpenADC)
+
+    Some sane default settings are available via::
+
+        scope.default_setup()
 
     This code will automatically detect an attached ChipWhisperer device and
     connect to it.
 
     For more help about scope settings, try help() on each of the ChipWhisperer
-    scope submodules:
-        scope.gain
-        scope.adc
-        scope.clock
-        scope.io
-        scope.trigger
-        scope.glitch
+    scope submodules (scope.gain, scope.adc, scope.clock, scope.io,
+    scope.trigger, and scope.glitch):
+
+     *  :attr:`scope.gain <.OpenADC.gain>`
+     *  :attr:`scope.adc <.OpenADC.adc>`
+     *  :attr:`scope.clock <.OpenADC.clock>`
+     *  :attr:`scope.io <.OpenADC.io>`
+     *  :attr:`scope.trigger <.OpenADC.trigger>`
+     *  :attr:`scope.glitch <.OpenADC.glitch>`
+     *  :meth:`scope.default_setup <.OpenADC.default_setup>`
+     *  :meth:`scope.con <.OpenADC.con>`
+     *  :meth:`scope.dis <.OpenADC.dis>`
+     *  :meth:`scope.arm <.OpenADC.arm>`
+     *  :meth:`scope.get_last_trace <.OpenADC.get_last_trace>`
+
+    If you have a CW1200 ChipWhisperer Pro, you have access to some additional features:
+
+     * :attr:`scope.SAD <.OpenADC.SAD>`
+     * :attr:`scope.DecodeIO <.OpenADC.DecodeIO>`
+     * :attr:`scope.adc.stream_mode (see scope.adc for more information)`
     """
 
     _name = "ChipWhisperer/OpenADC"
@@ -79,44 +92,77 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
 
         self._is_connected = False
 
-        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self.qtadc)
-        self.scopetype = scopes[OpenADCInterface_NAEUSBChip._name]
-        self.params.addChildren([
-            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'get':self.getCurrentScope, 'set':self.setCurrentScope, 'childmode':'parent'},
-            {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'action':self.setAutorefreshDCM, 'help':"Refresh status/info automatically every second."}
-        ])
-        self.params.init()
-        self.params.append(self.qtadc.getParams())
+        self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
 
-        self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
-        self.refreshTimer.start()
+    def _getNAEUSB(self):
+        return self.scopetype.dev._cwusb
 
+    def default_setup(self):
+        """Sets up sane capture defaults for this scope
+
+         *  45dB gain
+         *  5000 capture samples
+         *  0 sample offset
+         *  rising edge trigger
+         *  7.37MHz clock output on hs2
+         *  4*7.37MHz ADC clock
+         *  tio1 = serial rx
+         *  tio2 = serial tx
+
+        .. versionadded:: 5.1
+            Added default setup for OpenADC
+        """
+        self.gain.db = 25
+        self.adc.samples = 5000
+        self.adc.offset = 0
+        self.adc.basic_mode = "rising_edge"
+        self.clock.clkgen_freq = 7.37e6
+        self.trigger.triggers = "tio4"
+        self.io.tio1 = "serial_rx"
+        self.io.tio2 = "serial_tx"
+        self.io.hs2 = "clkgen"
+
+        self.clock.adc_src = "clkgen_x4"
+
+        count = 0
+        while not self.clock.clkgen_locked:            
+            self.clock.reset_dcms()
+            time.sleep(0.05)
+            count += 1
+
+            if count == 5:
+                logging.info("Could not lock clock for scope. This is typically safe to ignore. Reconnecting and retrying...")
+                self.dis()
+                time.sleep(0.25)
+                self.con()
+                time.sleep(0.25)
+                self.gain.db = 25
+                self.adc.samples = 5000
+                self.adc.offset = 0
+                self.adc.basic_mode = "rising_edge"
+                self.clock.clkgen_freq = 7.37e6
+                self.trigger.triggers = "tio4"
+                self.io.tio1 = "serial_rx"
+                self.io.tio2 = "serial_tx"
+                self.io.hs2 = "clkgen"
+                self.clock.adc_src = "clkgen_x4"
+
+            if count > 10:
+                raise OSError("Could not lock DCM. Try rerunning this function or calling scope.clock.reset_dcms(): {}".format(self))
     def dcmTimeout(self):
-        if self.connectStatus.value():
+        if self.connectStatus:
             try:
                 self.qtadc.sc.getStatus()
-                # The following happen with signals, so a failure will likely occur outside of the try...except
-                # For this reason we do the call to .getStatus() to verify USB connection first
-                Parameter.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None], blockSignal=True)
-                Parameter.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
             except USBError:
                 self.dis()
-                self.scope_disconnected_signal.emit()
                 raise Warning("Error in the scope. It may have been disconnected.")
             except Exception as e:
                 self.dis()
                 raise e
 
-    def setAutorefreshDCM(self, parameter):
-        if parameter.getValue():
-            self.refreshTimer.start()
-        else:
-            self.refreshTimer.stop()
-
     def getCurrentScope(self):
         return self.scopetype
 
-    @setupSetParam("Connection")
     def setCurrentScope(self, scope):
         self.scopetype = scope
 
@@ -125,10 +171,10 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
 
         Returns:
             One of the following:
-            - ""
-            - "cwlite"
-            - "cw1200"
-            - "cwrev2"
+             -  ""
+             -  "cwlite"
+             -  "cw1200"
+             -  "cwrev2"
         """
         hwInfoVer = self.qtadc.sc.hwInfo.versions()[2]
         if "ChipWhisperer" in hwInfoVer:
@@ -140,48 +186,53 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
                 return "cwrev2"
         return ""
 
-    def _con(self):
-        if self.scopetype is not None:
-            self.scopetype.con()
+    def get_name(self):
+        """ Gets the name of the attached scope
 
-            # TODO Fix this hack
-            if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
-                self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
+        Returns:
+            'ChipWhisperer Lite' if a Lite, 'ChipWhisperer Pro' if a Pro
+        """
+        name = self._getCWType()
+        if name == "cwlite":
+            return "ChipWhisperer Lite"
+        elif name == "cw1200":
+            return "ChipWhisperer Pro"
+
+    def _con(self, sn=None):
+        if self.scopetype is not None:
+            self.scopetype.con(sn)
+
+            self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
 
             cwtype = self._getCWType()
             if cwtype != "":
-
-                #For OpenADC: If we have CW Stuff, add that now
-                #TODO FIXME - this shouldn't be needed, but if you connect/disconnect you can no longer
-                #             use self.api.setParameter(...) with CWExtra-specific settings. The OpenADC
-                #             settings will work, but not CWExtra ones? For now this works, but doesn't let
-                #             you change the OpenADC type.
-                #if self.advancedSettings is None:
                 self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.qtadc.sc)
-                self.params.append(self.advancedSettings.getParams())
 
                 util.chipwhisperer_extra = self.advancedSettings
 
                 if cwtype == "cwrev2" or cwtype == "cw1200":
-                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.qtadc.sc)
-                    self.params.append(self.advancedSAD.getParams())
+                    self.SAD = ChipWhispererSAD.ChipWhispererSAD(self.qtadc.sc)
 
                 if cwtype == "cw1200":
-                    self.decodeIO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.qtadc.sc)
-                    self.params.append(self.decodeIO.getParams())
+                    self.decode_IO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.qtadc.sc)
+                    #self.advancedSettings.cwEXTRA.triggermux._set_is_pro(True)
 
                 if cwtype == "cwcrev2":
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
-                    self.params.append(self.digitalPattern.getParams())
 
             self.adc = self.qtadc.parm_trigger
             self.gain = self.qtadc.parm_gain
             self.clock = self.qtadc.parm_clock
 
+            if cwtype == "cw1200":
+                self.adc._is_pro = True
             if self.advancedSettings:
                 self.io = self.advancedSettings.cwEXTRA.gpiomux
                 self.trigger = self.advancedSettings.cwEXTRA.triggermux
                 self.glitch = self.advancedSettings.glitch.glitchSettings
+                if cwtype == "cw1200":
+                    self.trigger = self.advancedSettings.cwEXTRA.protrigger
+
 
             self.disable_newattr()
             self._is_connected = True
@@ -192,16 +243,13 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         if self.scopetype is not None:
             self.scopetype.dis()
             if self.advancedSettings is not None:
-                self.advancedSettings.getParams().remove()
                 self.advancedSettings = None
                 util.chipwhisperer_extra = None
 
             if self.advancedSAD is not None:
-                self.advancedSAD.getParams().remove()
                 self.advancedSAD = None
 
             if self.digitalPattern is not None:
-                self.digitalPattern.getParams().remove()
                 self.digitalPattern = None
 
         # TODO Fix this hack
@@ -213,10 +261,19 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         return True
 
     def arm(self):
-        if self.connectStatus.value() is False:
-            raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
+        """Setup scope to begin capture/glitching when triggered.
 
-        self.refreshTimer.stop()  # Disable DCM Status Auto-Refresh during capture
+        The scope must be armed before capture or glitching (when set to
+        'ext_single') can begin.
+
+        Raises:
+           OSError: Scope isn't connected.
+           Exception: Error when arming. This method catches these and
+               disconnects before reraising them.
+        """
+        if self.connectStatus is False:
+            raise OSError("Scope is not connected. Connect it first...")
+
         try:
             if self.advancedSettings:
                 self.advancedSettings.armPreScope()
@@ -229,22 +286,32 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
             self.qtadc.startCaptureThread()
         except Exception:
             self.dis()
-            self.setAutorefreshDCM(self.findParam('Auto-Refresh DCM Status'))
             raise
 
     def capture(self):
-        """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
-        try:
-            ret = self.qtadc.capture()
-        finally:
-            self.setAutorefreshDCM(self.findParam('Auto-Refresh DCM Status'))
+        """Captures trace. Scope must be armed before capturing.
+
+        Returns:
+           True if capture timed out, false if it didn't.
+
+        Raises:
+           IOError: Unknown failure.
+        """
+        if not self.adc.stream_mode:
+            return self.qtadc.capture(self.adc.offset)
+        else:
+            return self.qtadc.capture(None)
         return ret
 
-    def getLastTrace(self):
+    def get_last_trace(self):
         """Return the last trace captured with this scope.
+
+        Returns:
+           Numpy array of the last capture trace.
         """
         return self.qtadc.datapoints
 
+    getLastTrace = util.camel_case_deprecated(get_last_trace)
 
     def _dict_repr(self):
         dict = OrderedDict()
@@ -254,6 +321,9 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         dict['trigger'] = self.trigger._dict_repr()
         dict['io']      = self.io._dict_repr()
         dict['glitch']  = self.glitch._dict_repr()
+        if self._getCWType() == "cw1200":
+            dict['SAD'] = self.SAD._dict_repr()
+            dict['decode_IO'] = self.decode_IO._dict_repr()
 
         return dict
 

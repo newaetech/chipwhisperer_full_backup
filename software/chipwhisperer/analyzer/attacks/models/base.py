@@ -69,7 +69,7 @@ class ModelsBase(Parameterized):
         #Update interal models (if required)
         self._updateHwModel()
 
-        if model.name in self.hwModels.keys():
+        if model.name in self.hwModels:
             if self.hwModels[model.name] != model:
                 self.hwModels[str(model)] = model
         else:

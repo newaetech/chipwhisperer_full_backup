@@ -24,7 +24,7 @@
 #=================================================
 import logging
 
-from _base import ProtocolTemplate
+from ._base import ProtocolTemplate
 
 
 class ProtocolJCardTest(ProtocolTemplate):

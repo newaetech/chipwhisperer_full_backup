@@ -32,7 +32,7 @@ import os
 try:
     from configobj import ConfigObj  # import the module
 except ImportError:
-    print "ERROR: configobj (https://pypi.python.org/pypi/configobj/) is required for this program"
+    print("ERROR: configobj (https://pypi.python.org/pypi/configobj/) is required for this program")
     sys.exit()
 
 
@@ -148,7 +148,7 @@ class TraceContainerConfig(object):
         lst = []
         
         for i in self.attrList:
-            for p in i["values"].iterkeys():
+            for p in i["values"].keys():
                 try:
                     lst += [{ "name":p, "header":i["values"][p]["headerLabel"], "desc":i["values"][p]["desc"], "order":i["values"][p]["order"] }]
                 except KeyError:
@@ -212,7 +212,7 @@ class TraceContainerConfig(object):
                 logging.debug('Section %s not found' % sn)
                 
             #Check each item
-            for item in ad["values"].iterkeys():
+            for item in ad["values"].keys():
                 try:
                     self.config[sn][item]
                     

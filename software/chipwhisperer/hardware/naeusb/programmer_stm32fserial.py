@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Original Author: Ivan A-R <ivan@tuxotronic.org>
-# Modified by: Colin O'Flynn (2017), NewAE Technology Inc.
+# Modified by: Colin O'Flynn (2017-2018), NewAE Technology Inc.
 # Original Project page: http://tuxotronic.org/wiki/projects/stm32loader
 #
 # This file is part of stm32loader.
@@ -29,7 +29,7 @@ import traceback
 from datetime import datetime
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 from chipwhisperer.common.utils.timer import nonBlockingDelay
-from chipwhisperer.common.utils.util import updateUI
+from functools import reduce
 
 #From ST AN2606, See Section 50 (Device-dependent bootloader parameters), Page 244/268 on Rev 30 of document
 #http://www.st.com/content/ccc/resource/technical/document/application_note/b9/9b/16/3a/12/1e/40/0c/CD00167594.pdf/files/CD00167594.pdf/jcr:content/translations/en.CD00167594.pdf
@@ -82,7 +82,7 @@ supported_stm32f = [STM32F071(), STM32F10xxx_LD(), STM32F10xxx_MD(), STM32F10xxx
                     STM32F10xxx_HDV(), STM32F2(), STM32F303cBC(), STM32F40xxx()]
 
 def print_fun(s):
-    print s
+    print(s)
 
 class CmdException(Exception):
     pass
@@ -109,7 +109,7 @@ class STM32FSerial(object):
 
         self._old_baud = None
 
-    def open_port(self):
+    def open_port(self, baud=115200):
 
         if self._cwserial:
             self._old_baud = self._cwserial._baud
@@ -117,7 +117,7 @@ class STM32FSerial(object):
             self._old_stopbits = self._cwserial._stopbits
             self._old_timeout = self._cwserial.timeout
             self._cwserial.init(baud=38400, stopbits=1, parity="even")
-            self._cwserial.timeout = 1000
+            self._cwserial.timeout = self._timeout
 
             self.sp = self._cwserial
         else:
@@ -176,7 +176,7 @@ class STM32FSerial(object):
         fdata = f.tobinarray(start=f.minaddr())
         startaddr = f.minaddr()
 
-        logfunc("Attempting to programming %d bytes at 0x%x"% (fsize, startaddr))
+        logfunc("Attempting to program %d bytes at 0x%x"% (fsize, startaddr))
 
         logfunc("STM32F Programming %s..." % memtype)
         if waitfunc: waitfunc()
@@ -185,7 +185,11 @@ class STM32FSerial(object):
         logfunc("STM32F Reading %s..." % memtype)
         if waitfunc: waitfunc()
 
-        self.verifyMemory(startaddr, fdata, self.small_blocks)
+        try:
+            self.verifyMemory(startaddr, fdata, self.small_blocks)
+        except CmdException:
+            logfunc("Error during verify. Retrying with small blocks...")
+            self.verifyMemory(startaddr, fdata, True)
 
         logfunc("Verified %s OK, %d bytes" % (memtype, fsize))
 
@@ -223,7 +227,7 @@ class STM32FSerial(object):
 
                 status = "SUCCEEDED"
 
-            except IOError, e:
+            except IOError as e:
                 if logfunc: logfunc("FAILED: %s" % str(e))
                 try:
                     self.close_port()
@@ -281,7 +285,7 @@ class STM32FSerial(object):
         try:
             ask = self.sp.read(1)[0]
         except:
-            raise CmdException("Can't read port or timeout (%s)" % traceback.format_exc())
+            raise CmdException("Can't read port or timeout (%s). Target didn't respond when an ack was expected." % traceback.format_exc())
         else:
             if ask == 0x79:
                 # ACK
@@ -332,7 +336,7 @@ class STM32FSerial(object):
             version = self.sp.read(1)[0]
             logging.info("    Bootloader version: " + hex(version))
             #dat = map(lambda c: hex(self.sp.read(len))
-            dat = map(hex, self.sp.read(len))
+            dat = list(map(hex, self.sp.read(len)))
             if '0x44' in dat:
                 self.extended_erase = 1
             else:
@@ -368,7 +372,7 @@ class STM32FSerial(object):
         baddr = bytearray(struct.pack(">L", addr))
         crc = reduce(lambda x, y: x ^ y, baddr)
         baddr.append(crc)
-        return str(baddr)
+        return bytes(baddr)
 
     def cmdReadMemory(self, addr, lng):
         assert (0 < lng <= 256)
@@ -380,7 +384,7 @@ class STM32FSerial(object):
             crc = N ^ 0xFF
             self.sp.write(chr(N) + chr(crc))
             self._wait_for_ask("0x11 length failed")
-            return map(lambda c: c, self.sp.read(lng))
+            return [c for c in self.sp.read(lng)]
         else:
             raise CmdException("ReadMemory (0x11) failed")
 
@@ -450,7 +454,7 @@ class STM32FSerial(object):
             self.sp.write(chr(0x00))
             tmp = self.sp.timeout
             self.sp.timeout = 30000
-            print "Extended erase (0x44), this can take ten seconds or more"
+            print("Extended erase (0x44), this can take ten seconds or more")
             self._wait_for_ask("0x44 erasing failed")
             self.sp.timeout = tmp
             logging.info("    Extended Erase memory done")
@@ -574,12 +578,12 @@ class STM32FSerial(object):
         """Read from flash using bootloader. If smallblocks is true uses a smaller
            block size, which can be more reliable as sometimes the full block size
            causes weird timeouts"""
-        
+
         if smallblocks:
             block_size = 64
         else:
             block_size = 256
-        
+
         data = []
         while lng > block_size:
             logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
@@ -594,20 +598,37 @@ class STM32FSerial(object):
             data += self.cmdReadMemory(addr, lng)
         return data
 
-    def writeMemory(self, addr, data):
+    def writeMemory(self, addr, data, smallblocks=False):
+        """Write to the memory on the chip. If smallblocks is true, it uses a smaller
+           block size, which can be more reliable as sometimes the full block size
+           causes weird timeouts"""
+
         lng = len(data)
         data = list(data)
 
+        if smallblocks:
+            block_size = 64
+        else:
+            block_size = 256
+
         offs = 0
-        while lng > 256:
-            logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': 256})
-            self.cmdWriteMemory(addr, data[offs:offs + 256])
-            updateUI()
+        while lng > block_size:
+            logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
+
+            try:
+                self.cmdWriteMemory(addr, data[offs:offs + block_size])
+            except CmdException:
+                # Try shrinking the block size for the writes
+                block_size = 64
+                logging.debug("Write with block size 256 failed, retrying with block size of 64")
+                self.cmdWriteMemory(addr, data[offs:offs + block_size])
+
             if self.slow_speed:
                 self.delay_func(1)
-            offs += 256
-            addr += 256
-            lng -= 256
+            offs += block_size
+            addr += block_size
+            lng -= block_size
+
         if lng:
             logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
             self.cmdWriteMemory(addr, data[offs:])

@@ -120,7 +120,7 @@ class PassiveTraceObserver(Parameterized):
         ])
 
     @setupSetParam('Input')
-    def setTraceSource(self, traceSource):
+    def set_trace_source(self, traceSource):
         if self._traceSource:
             self._traceSource.sigTracesChanged.disconnect(self.tracesUpdated)
         if traceSource:
@@ -128,8 +128,12 @@ class PassiveTraceObserver(Parameterized):
         self._traceSource = traceSource
         self.tracesUpdated()
 
-    def getTraceSource(self):
+    setTraceSource = set_trace_source
+
+    def get_trace_source(self):
         return self._traceSource
+
+    getTraceSource = get_trace_source
 
     def tracesUpdated(self):
         """Trace source was updated. Time to do something about"""
@@ -146,23 +150,6 @@ class PassiveTraceObserver(Parameterized):
         par = self.findParam('input')
         par.setLimits({})  # Will not update if the obj is the same :(
         par.setLimits(TraceSource.registeredObjects)
-        if par.getValue() not in TraceSource.registeredObjects.values():
+        if par.getValue() not in list(TraceSource.registeredObjects.values()):
             par.setValue(None)
 
-
-class ActiveTraceObserver(PassiveTraceObserver):
-    """Observes a TraceSource for state changes and process the Traces actively """
-
-    @setupSetParam('Input')
-    def setTraceSource(self, traceSource):
-        #Avoid doing processing when set to same value
-        if self._traceSource == traceSource:
-            return
-
-        if self._traceSource:
-            self._traceSource.sigTracesChanged.disconnect(self.processTraces)
-        if traceSource:
-            traceSource.sigTracesChanged.connect(self.processTraces)
-        self._traceSource = traceSource
-
-        self.processTraces()

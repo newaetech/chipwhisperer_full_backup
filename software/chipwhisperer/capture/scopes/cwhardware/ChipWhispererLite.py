@@ -22,18 +22,15 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.capture.ui.programmers_dialog import XMEGAProgrammerDialog, AVRProgrammerDialog, STM32FProgrammerDialog
-from chipwhisperer.common.utils.parameter import Parameterized
 from chipwhisperer.hardware.naeusb.fpga import FPGA
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
 from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import STM32FSerial
 from chipwhisperer.hardware.naeusb.serial import USART
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 
-class CWLiteUSB(Parameterized):
+class CWLiteUSB(object):
     _name = "ChipWisperer-Lite USB"
 
     def __init__(self):
@@ -44,13 +41,7 @@ class CWLiteUSB(Parameterized):
         self.xmega = XMEGAPDI(self._cwusb)
         self.avr = AVRISP(self._cwusb)
         self.usart = USART(self._cwusb)
-        self.serialstm32f = STM32FSerial(cwserial=self.usart, cwapi=CWCoreAPI.getInstance())
-
-        self.getParams().addChildren([
-            {'name':"CW-Lite XMEGA Programmer", 'tip':"Open XMEGA Programmer (ChipWhisperer-Lite Only)", 'type':"menu", "action":lambda _:self.getCwliteXMEGA().show()},
-            {'name':"CW-Lite AVR Programmer", 'tip':"Open AVR Programmer (ChipWhisperer-Lite Only)", 'type':"menu", "action":lambda _:self.getCwliteAVR().show()},
-            {'name':'Serial STM32F Programmer', 'tip':"Open STM32F Programmer (Serial/ChipWhisperer)", 'type':"menu", "action":lambda _:self.getSerialSTM32F().show()}
-        ])
+        self.serialstm32f = STM32FSerial(cwserial=self.usart, cwapi=None)
 
     def get_possible_devices(self, idProduct):
         return self._cwusb.get_possible_devices(idProduct=idProduct)
@@ -58,31 +49,9 @@ class CWLiteUSB(Parameterized):
     def con(self, *args, **kwargs):
         return self._cwusb.con(*args, **kwargs)
 
-    # def __del__(self):
-    #     print "here"
-
     def dis(self):
-        if self.params is not None:
-            self.getParams().delete()
-        self.params = None
-        # gc.collect()
-        # print sys.getrefcount(self)
-        # print gc.get_referrers(self)
+        pass
 
     def usbdev(self):
         return self._cwusb
 
-    def getCwliteXMEGA(self):
-        if not hasattr(self, 'cwliteXMEGA'):
-            self.cwliteXMEGA = XMEGAProgrammerDialog()
-        return self.cwliteXMEGA
-
-    def getCwliteAVR(self):
-        if not hasattr(self, 'cwliteAVR'):
-            self.cwliteAVR = AVRProgrammerDialog()
-        return self.cwliteAVR
-
-    def getSerialSTM32F(self):
-        if not hasattr(self, 'serialSTM32F'):
-            self.serialSTM32F = STM32FProgrammerDialog()
-        return self.serialSTM32F

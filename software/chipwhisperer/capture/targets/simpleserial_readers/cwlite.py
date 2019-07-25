@@ -24,10 +24,8 @@
 #=================================================
 import logging
 
-from _base import SimpleSerialTemplate
+from ._base import SimpleSerialTemplate
 from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
-from chipwhisperer.common.utils.parameter import setupSetParam
-
 
 class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
     _name = 'NewAE USB (CWLite/CW1200)'
@@ -36,14 +34,10 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         SimpleSerialTemplate.__init__(self)
         self._baud = 38400
         self.cwlite_usart = None
-        self.params.addChildren([
-            {'name':'baud', 'type':'int', 'key':'baud', 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud, 'default':38400}
-        ])
 
     def close(self):
         pass
 
-    @setupSetParam("baud")
     def setBaud(self, baud):
         self._baud = baud
         if self.cwlite_usart:
@@ -58,15 +52,12 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         if scope is None or not hasattr(scope, "qtadc"):
             Warning("You need a scope with OpenADC connected to use this Target")
 
-        scope.connectStatus.connect(self.dis)
         if hasattr(scope, 'qtadc'):
             ser = scope.qtadc.ser
         else:
             ser = scope._cwusb
         self.cwlite_usart = CWL_USART(ser)
-        self.cwlite_usart.init(baud=self.findParam('baud').getValue())
-        self.params.refreshAllParameters()
-        self.connectStatus.setValue(True)
+        self.cwlite_usart.init(baud=self._baud)
 
 
     def hardware_inWaiting(self):

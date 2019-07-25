@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014-2016, NewAE Technology Inc
+# Copyright (c) 2014-2018, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
-# project, http://www.assembla.com/spaces/chipwhisperer
+# project, http://www.chipwhisperer.com
 #
 #    This file is part of chipwhisperer.
 #
@@ -20,25 +19,33 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-#==========================================================================
+# ChipWhisperer is a trademark of NewAE Technology Inc., registered in the
+# United States of America, the European Union, and other jurisdictions.
+# ==========================================================================
 import logging
+import warnings
 import time
-import usb.backend.libusb0 as libusb0
-import usb.core
-import usb.util
 import math
 from threading import Condition, Thread
-import array
+import struct
+import pickle
+import traceback
+import os
 
-import chipwhisperer.hardware.firmware.cwlite as fw_cwlite
-import chipwhisperer.hardware.firmware.cw1200 as fw_cw1200
-import chipwhisperer.hardware.firmware.cw305  as fw_cw305
+from usb.backend import libusb0
+import usb.core
+import usb.util
+
+from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
+from chipwhisperer.hardware.firmware import cw1200 as fw_cw1200
+from chipwhisperer.hardware.firmware import cw305  as fw_cw305
 
 
 
 def packuint32(data):
     """Converts a 32-bit integer into format expected by USB firmware"""
 
+    data = int(data)
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
 
 def unpackuint32(buf):
@@ -53,6 +60,8 @@ def unpackuint32(buf):
 def packuint16(data):
     """Converts a 16-bit integer into format expected by USB firmware"""
 
+    data = int(data)
+
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
 
 
@@ -64,12 +73,168 @@ NEWAE_PIDS = {
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fw_cw305.fwver},
 }
 
-class NAEUSB(object):
+class NAEUSB_Serializer_base(object):
     """
-    USB Interface for NewAE Products with Custom USB Firmware
+    Base clase for packaging USB commands. The seralizer class is used when the USB may talk via a daemon instead
+    of directly running from the Python code. This is useful when you want the USB device to be handled asynchronously,
+    such as required to keep serial data being sent to/from the device.
     """
 
-    CMD_FW_VERSION = 0x17
+    FLUSH_INPUT = 0xE0
+    CLOSE = 0xF0
+    OPEN = 0xF1
+    WRITE_CTRL = 0xF2
+    READ_CTRL = 0xF3
+    CMD_WRITE_MEM = 0xF4
+    CMD_READ_MEM = 0xF5
+    GET_POSSIBLE_DEVICES = 0xF6
+    WRITE_BULK = 0xF7
+    READ_BULK = 0xF8
+
+
+    ACK = 0xA0
+    ERROR = 0xA1
+
+    def make_cmd(self, cmd, datalist):
+
+        if datalist is None:
+            pcmd = None
+        else:
+            pcmd = pickle.dumps(datalist)
+
+        hdr = bytes(bytearray([cmd]))
+
+        if pcmd:
+            hdr += struct.pack("!I", len(pcmd))
+            cmdpacket = hdr + pcmd
+        else:
+            hdr += struct.pack("!I", 0)
+            cmdpacket = hdr
+
+        return cmdpacket
+
+class NAEUSB_Serializer(NAEUSB_Serializer_base):
+    """
+    This class does not talk to libusb directly, but instead uses a class that expects special commands passed
+    to it. The function which will process commands must be passed to the initilizer, which allows passing the
+    data over a network or similar.
+    """
+
+    def __init__(self, transmitfunc):
+
+        self.txrx = transmitfunc
+
+
+    def get_possible_devices(self, idProduct=None):
+        """Get a list of connected USB devices."""
+        cmdpacket = self.make_cmd(self.GET_POSSIBLE_DEVICES, idProduct)
+        return self.process_rx(self.txrx(tx=cmdpacket))
+
+    def process_rx(self, inp):
+        """Process the data received back from the end, normally means find errors or return payload."""
+        resp = inp[0]
+
+        plen = struct.unpack("!I", inp[1:5])[0]
+
+        if plen > 0:
+
+            pdata = inp[5:]
+            if plen != len(pdata):
+                raise ValueError("This pickle smells funny")
+
+            payload = pickle.loads(pdata)
+        else:
+            payload = None
+
+
+        if resp == self.ERROR:
+            raise payload
+
+        return payload
+
+    def open(self, serial_number = None):
+        """Opens USB device"""
+        cmdpacket = self.make_cmd(self.OPEN, serial_number)
+        return self.process_rx(self.txrx(tx=cmdpacket))
+
+    def close(self, serial_number):
+        """Close USB connection."""
+        cmdpacket = self.make_cmd(self.CLOSE, serial_number)
+        return self.process_rx(self.txrx(tx=cmdpacket))
+
+    def sendCtrl(self, cmd, value=0, data=[]):
+        """
+        Send data over control endpoint
+        """
+        # Vendor-specific, OUT, interface control transfer
+
+        cmdpacket = [0x41, cmd, value, 0, len(data)]
+        cmdpacket.extend(data)
+
+        cmdpacket = self.make_cmd(self.WRITE_CTRL, cmdpacket)
+
+        self.process_rx(self.txrx(tx=cmdpacket))
+
+    def readCtrl(self, cmd, value=0, dlen=0):
+        """
+        Read data from control endpoint
+        """
+
+        cmdpacket = [0xC1, cmd, value, 0, dlen]
+        cmdpacket = self.make_cmd(self.READ_CTRL, cmdpacket)
+        return self.process_rx(self.txrx(tx=cmdpacket))
+
+
+    def cmdReadMem(self, addr, dlen):
+        """
+        Send command to read over external memory interface from FPGA. Automatically
+        decides to use control-transfer or bulk-endpoint transfer based on data length.
+        """
+
+        dlen = int(dlen)
+        payload = [addr, dlen]
+        cmdpacket = self.make_cmd(self.CMD_READ_MEM, payload)
+
+        return self.process_rx(self.txrx(tx=cmdpacket))
+
+    def cmdWriteMem(self, addr, data):
+        """
+        Send command to write memory over external memory interface to FPGA. Automatically
+        decides to use control-transfer or bulk-endpoint transfer based on data length.
+        """
+
+        dlen = len(data)
+
+        payload = [addr]
+        payload.extend(data)
+        cmdpacket = self.make_cmd(self.CMD_WRITE_MEM, payload)
+        return self.process_rx(self.txrx(tx=cmdpacket))
+
+    def writeBulk(self, data):
+        """
+        Low-level function.
+        Writes bulk data to the bulk USB endpoint.
+        :param data: Data to write to the endpoint
+        :return:
+        """
+        cmdpacket = self.make_cmd(self.WRITE_BULK, data)
+        return self.process_rx(self.txrx(tx=cmdpacket))
+
+    def flushInput(self):
+        """
+        Of dubious value: flushes the USB endpoints. Causes slowdowns on MAC OS X, so need to investigate
+        the usefulness of this.
+        """
+
+        cmdpacket = self.make_cmd(self.FLUSH_INPUT, None)
+        return self.process_rx(self.txrx(tx=cmdpacket))
+
+
+class NAEUSB_Backend(NAEUSB_Serializer_base):
+    """
+    This backend actually talks to the USB device itself. It is designed to mostly be used via the serializer, but
+    can be called directly too.
+    """
 
     CMD_READMEM_BULK = 0x10
     CMD_WRITEMEM_BULK = 0x11
@@ -77,50 +242,85 @@ class NAEUSB(object):
     CMD_WRITEMEM_CTRL = 0x13
     CMD_MEMSTREAM = 0x14
 
-    stream = False
-
-    # TODO: make this better
-    fwversion_latest = [0, 11]
     def __init__(self):
         self._usbdev = None
+        self._timeout = 500
 
-    def get_possible_devices(self, idProduct):
+    def usbdev(self):
+        """Safely get USB device, throwing error if not connected"""
+
+        if not self._usbdev: raise OSError("USB Device not found. Did you connect it first?")
+        return self._usbdev
+
+    def txrx(self, tx=[]):
         """
-        Get a list of matching devices being based a list of PIDs. Returns list of usbdev that match (or empty if none)
+        Process USB command, and returns a result such as data or an encoded exception. Excepts that happen
+        are not raised, but instead only printed (for debug) and passed back.
         """
 
-        devlist = []
+        response = None
 
-        for id in idProduct:
-            try:
-                # Connect to device (attempt #1)
-                dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, backend=libusb0.get_backend()))
-            except usb.core.NoBackendError:
-                try:
-                    # An error in the previous one is often caused by Windows 64-bit not detecting the correct library, attempt to force this with paths
-                    # that often work so user isn't aware
-                    dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, backend=libusb0.get_backend(
-                        find_library=lambda x: r"c:\Windows\System32\libusb0.dll")))
-                except usb.core.NoBackendError:
-                    raise IOError(
-                        "Failed to find USB backend. Check libusb drivers installed, check for path issues on library, and check for 32 vs 64-bit issues.")
-            # Found something
-            if len(dev) > 0:
-                devlist.extend(dev)
+        try:
+            #Get command
+            cmd = tx[0]
+            pickle_len = struct.unpack("!I", tx[1:5])[0]
 
-        return devlist
+            if pickle_len > 0:
+                pickle_data = tx[5:]
 
-    def con(self, idProduct=[0xACE2], connect_to_first=False, serial_number=None):
+                if len(pickle_data) != pickle_len:
+                    raise ValueError("Pickle smells funny. Check best before date.")
+
+                payload = pickle.loads(pickle_data)
+            else:
+                payload = None
+
+            if cmd == self.READ_CTRL:
+                response = self.usbdev().ctrl_transfer(payload[0], payload[1], payload[2], payload[3], payload[4], timeout=self._timeout)
+            elif cmd == self.WRITE_CTRL:
+                if payload[4] != len(payload[5:]):
+                    raise ValueError("Specified payload length & actual do not match")
+                self.usbdev().ctrl_transfer(payload[0], payload[1], payload[2], payload[3], payload[5:], timeout=self._timeout)
+            elif cmd == self.CMD_READ_MEM:
+                addr = payload[0]
+                dlen = payload[1]
+                response = self.cmdReadMem(addr, dlen)
+            elif cmd == self.CMD_WRITE_MEM:
+                addr = payload[0]
+                data = payload[1:]
+                self.cmdWriteMem(addr, data)
+            elif cmd == self.GET_POSSIBLE_DEVICES:
+                response = self.get_possible_devices(payload)
+            elif cmd == self.OPEN:
+                response = self.open(serial_number=payload)
+            elif cmd == self.CLOSE:
+                self.close()
+            elif cmd == self.WRITE_BULK:
+                self.cmdWriteBulk(payload)
+            elif cmd == self.FLUSH_INPUT:
+                self.flushInput()
+            elif cmd == self.READ:
+                dlen = payload[0]
+                response = self.read(dlen)
+            else:
+                raise ValueError("Unknown Command: %02x"%cmd)
+        except Exception as e:
+            traceback.print_exc()
+            return self.make_cmd(self.ERROR, e)
+
+        return self.make_cmd(self.ACK, response)
+
+    def open(self, serial_number=None, connect_to_first=False):
         """
         Connect to device using default VID/PID
         """
 
-        devlist = self.get_possible_devices(idProduct)
+        devlist = self.get_possible_devices(dictonly=False)
         snlist = [d.serial_number + " (" + d.product + ")\n" for d in devlist]
         snlist = "".join(snlist)
 
         if len(devlist) == 0:
-            raise Warning("Failed to find USB Device")
+            raise OSError("Failed to find USB Device")
 
         elif serial_number:
             dev = None
@@ -130,8 +330,7 @@ class NAEUSB(object):
                     break
 
             if dev is None:
-                raise Warning("Failed to find USB device with S/N %s\n. Found S/N's:\n" + snlist)
-
+                raise OSError("Failed to find USB device with S/N %s\n. Found S/N's:\n" + snlist)
 
         elif len(devlist) == 1:
             dev = devlist[0]
@@ -146,7 +345,7 @@ class NAEUSB(object):
             dev.set_configuration(0)
             dev.set_configuration()
         except ValueError:
-            raise IOError("NAEUSB: Could not configure USB device")
+            raise OSError("NAEUSB: Could not configure USB device")
 
         # Get serial number
         try:
@@ -173,33 +372,64 @@ class NAEUSB(object):
         self.wep = 0x02
         self._timeout = 200
 
-        fwver = self.readFwVersion()
-        logging.info('SAM3U Firmware version = %d.%d b%d' % (fwver[0], fwver[1], fwver[2]))
-
-        latest = fwver[0] > fw_latest[0] or (fwver[0] == fw_latest[0] and fwver[1] >= fw_latest[1])
-        if not latest:
-            logging.warning('Your firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
-                            '. Suggested to update firmware, as you may experience errors')
-
         return foundId
 
-    def usbdev(self):
-        if not self._usbdev: raise Warning("USB Device not found. Did you connect it first?")
-        return self._usbdev
-
     def close(self):
-        """Close USB connection."""
+        """Close the USB connection"""
         try:
             usb.util.dispose_resources(self.usbdev())
         except usb.USBError as e:
             logging.info('USB Failure calling dispose_resources: %s' % str(e))
 
-    def readFwVersion(self):
+
+    def get_possible_devices(self, idProduct=None, dictonly=True):
+        """
+        Get a list of matching devices being based a list of PIDs. Returns list of usbdev that match (or empty if none)
+        """
+        if idProduct is None:
+            idProduct = [None]
+
+        libusb_backend = libusb0.get_backend()
+        if os.name == "nt":
+            #on windows, need to manually load libusb because of 64bit python loading the wrong one
+            libusb_backend = libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll")
+        devlist = []
         try:
-            data = self.readCtrl(self.CMD_FW_VERSION, dlen=3)
-            return data
-        except usb.USBError:
-            return [0, 0, 0]
+            for id in idProduct:
+                if id:
+                    dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, backend=libusb_backend))
+                else:
+                    dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, backend=libusb_backend))
+                if len(dev) > 0:
+                    if len(dev) == 1:
+                        devlist.extend(dev)
+                    else:
+                        # Deals with the multiple chipwhisperers attached but user only
+                        # has permission to access a subset. The langid error is usually
+                        # raised when there are improper permissions, so it is used to
+                        # skip the those devices. However, the user is warned when this
+                        # happens because the langid error is occasionally raised when
+                        # there are backend errors.
+                        for d in dev:
+                            try:
+                                d.serial_number
+                                devlist.append(d)
+                            except ValueError as e:
+                                if "langid" in str(e):
+                                    logging.info('A device raised the "no langid" error, it is being skipped')
+                                else:
+                                    raise
+            if dictonly:
+                devlist = [{'sn': d.serial_number, 'product': d.product, 'pid': d.idProduct, 'vid': d.idVendor} for d in devlist]
+
+            return devlist
+        except ValueError as e:
+            if "langid" not in str(e):
+                raise
+            raise OSError("'This device has no langid' ValueError caught. This is usually caused by us trying to read the serial number of the chipwhisperer, but it failing. The device is here and we can see it, but we can't access it. This has a number of root causes, including:\n" +
+                        "-Not having permission to access the ChipWhisperer (this still crops up if you have permission for one ChipWhisperer, but another ChipWhisperer is connected that you don't have access to)\n" +
+                        "-Not having the correct libusb backend loaded (common on Windows with 64bit Python). We try to handle this by loading the correct backend on Windows"
+                        )
 
     def sendCtrl(self, cmd, value=0, data=[]):
         """
@@ -220,6 +450,8 @@ class NAEUSB(object):
         Send command to read over external memory interface from FPGA. Automatically
         decides to use control-transfer or bulk-endpoint transfer based on data length.
         """
+
+        dlen = int(dlen)
 
         if dlen < 48:
             cmd = self.CMD_READMEM_CTRL
@@ -268,6 +500,168 @@ class NAEUSB(object):
             pass
 
         return data
+
+
+    def cmdWriteBulk(self, data):
+        """
+        Write data directly to the bulk endpoint.
+        :param data: Data to be written
+        :return:
+        """
+
+        self.usbdev().write(self.wep, data, timeout=self._timeout)
+
+
+    def flushInput(self):
+        """Dump all the crap left over"""
+        try:
+            # TODO: This probably isn't needed, and causes slow-downs on Mac OS X.
+            self.usbdev().read(self.rep, 1000, timeout=0.010)
+        except:
+            pass
+
+    def read(self, dbuf, timeout):
+        return self.usbdev().read(self.rep, dbuf, timeout)
+
+class NAEUSB(object):
+    """
+    USB Interface for NewAE Products with Custom USB Firmware. This function allows use of a daemon backend, as it is
+    not directly touching the USB device itself.
+    """
+
+    CMD_FW_VERSION = 0x17
+
+    CMD_READMEM_BULK = 0x10
+    CMD_WRITEMEM_BULK = 0x11
+    CMD_READMEM_CTRL = 0x12
+    CMD_WRITEMEM_CTRL = 0x13
+    CMD_MEMSTREAM = 0x14
+
+    stream = False
+
+    # TODO: make this better
+    fwversion_latest = [0, 11]
+    def __init__(self):
+        self._usbdev = None
+        self.usbtx = NAEUSB_Backend()
+        self.usbseralizer = NAEUSB_Serializer(self.usbtx.txrx)
+
+    def get_possible_devices(self, idProduct):
+        return self.usbseralizer.get_possible_devices(idProduct)
+
+    def con(self, idProduct=[0xACE2], connect_to_first=False, serial_number=None):
+        """
+        Connect to device using default VID/PID
+        """
+
+        devlist = self.get_possible_devices(idProduct)
+
+        snlist = [d['sn'] + " (" + d['product'] + ")\n" for d in devlist]
+        snlist = "".join(snlist)
+
+        if len(devlist) == 0:
+            raise Warning("Failed to find USB Device")
+
+        elif serial_number:
+            dev = None
+            for d in devlist:
+                if d["sn"] == serial_number:
+                    dev = d
+                    break
+
+            if dev is None:
+                raise Warning("Failed to find USB device with S/N %s\n. Found S/N's:\n" + snlist)
+
+        elif len(devlist) == 1:
+            dev = devlist[0]
+
+        else:
+            if connect_to_first:
+                dev = devlist[0]
+            else:
+                #User did not help us out - throw it in their face
+                raise Warning("Found multiple potential USB devices. Please specify device to use. Possible S/Ns:\n" + snlist)
+
+        self.usbseralizer.open(dev['sn'])
+        foundId = dev['pid']
+
+        if foundId in NEWAE_PIDS:
+            name = NEWAE_PIDS[foundId]['name']
+            fw_latest = NEWAE_PIDS[foundId]['fwver']
+        else:
+            name = "Unknown (PID = %04x)"%foundId
+            fw_latest = [0, 0]
+
+        self.snum = dev['sn']
+
+        logging.info('Found %s, Serial Number = %s' % (name, self.snum))
+
+        fwver = self.readFwVersion()
+        logging.info('SAM3U Firmware version = %d.%d b%d' % (fwver[0], fwver[1], fwver[2]))
+
+        latest = fwver[0] > fw_latest[0] or (fwver[0] == fw_latest[0] and fwver[1] >= fw_latest[1])
+        if not latest:
+            logging.warning('Your firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
+                            '. Suggested to update firmware, as you may experience errors')
+        return foundId
+
+    def usbdev(self):
+        raise AttributeError("Do Not Call Me")
+
+    def close(self):
+        """Close USB connection."""
+        self.usbseralizer.close(self.snum)
+        self.snum = None
+
+    def readFwVersion(self):
+        try:
+            data = self.readCtrl(self.CMD_FW_VERSION, dlen=3)
+            return data
+        except usb.USBError:
+            return [0, 0, 0]
+
+    def sendCtrl(self, cmd, value=0, data=[]):
+        """
+        Send data over control endpoint
+        """
+        # Vendor-specific, OUT, interface control transfer
+        self.usbseralizer.sendCtrl(cmd, value, data)
+
+    def readCtrl(self, cmd, value=0, dlen=0):
+        """
+        Read data from control endpoint
+        """
+        # Vendor-specific, IN, interface control transfer
+        return self.usbseralizer.readCtrl(cmd, value, dlen)
+
+    def cmdReadMem(self, addr, dlen):
+        """
+        Send command to read over external memory interface from FPGA. Automatically
+        decides to use control-transfer or bulk-endpoint transfer based on data length.
+        """
+
+        return self.usbseralizer.cmdReadMem(addr, dlen)
+
+    def cmdWriteMem(self, addr, data):
+        """
+        Send command to write memory over external memory interface to FPGA. Automatically
+        decides to use control-transfer or bulk-endpoint transfer based on data length.
+        """
+
+        return self.usbseralizer.cmdWriteMem(addr, data)
+
+    def writeBulkEP(self, data):
+        """
+        Write directoly to the bulk endpoint.
+        :param data: Data to be written.
+        :return:
+        """
+
+        return self.usbseralizer.writeBulk(data)
+
+    def flushInput(self):
+        """Dump all the crap left over"""
+        self.usbseralizer.flushInput()
 
     def cmdReadStream_getStatus(self):
         """
@@ -335,10 +729,11 @@ class NAEUSB(object):
 
         # Flush input buffers in case anything was left
         try:
-            self.usbdev().read(self.rep, 4096, timeout=10)
-            self.usbdev().read(self.rep, 4096, timeout=10)
-            self.usbdev().read(self.rep, 4096, timeout=10)
-            self.usbdev().read(self.rep, 4096, timeout=10)
+            #self.cmdReadMem(self.rep)
+            self.usbtx.read(4096, timeout=10)
+            self.usbtx.read(4096, timeout=10)
+            self.usbtx.read(4096, timeout=10)
+            self.usbtx.read(4096, timeout=10)
         except IOError:
             pass
 
@@ -353,13 +748,8 @@ class NAEUSB(object):
         if forreal:
             self.sendCtrl(0x22, 3)
 
-    def flushInput(self):
-        """Dump all the crap left over"""
-        try:
-            # TODO: This probably isn't needed, and causes slow-downs on Mac OS X.
-            self.usbdev().read(self.rep, 1000, timeout=0.010)
-        except:
-            pass
+    def read(self, dlen, timeout=2000):
+        self.usbserializer.read(dlen, timeout)
 
     class StreamModeCaptureThread(Thread):
         def __init__(self, serial, dlen, dbuf_temp, timeout_ms=2000):
@@ -386,66 +776,18 @@ class NAEUSB(object):
             logging.debug("Streaming: starting USB read")
             start = time.time()
             try:
-                self.drx = self.serial.usbdev().read(self.serial.rep, self.dbuf_temp, timeout=self.timeout_ms)
+                self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
             except IOError as e:
                 logging.warning('Streaming: USB stream read timed out')
             diff = time.time() - start
             logging.debug("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
 
-            #while(self.drx < num_totalbytes):
-            #    bytesread = self.serial.usbdev().read(self.serial.rep, buf, timeout=to)
-            #    self.dbuf_temp[self.drx:self.drx+bytesread] = buf[:]
-            #    self.drx += bytesread
-            #    to = 50
-
-
-            # # Get block size of samples, bytes per block
-            # _, self.bsize_samples, self.bsize_bytes = self.serial._cmdReadStream_blockSizes(self.dlen)
-            #
-            # dlen = self.dlen
-            # to = self.timeout_ms
-            #
-            # self.drx = 0
-            #
-            # start = time.time()
-            # while dlen > 0:
-            #     try:
-            #         if dlen > 9216:
-            #             bsize = self.bsize_bytes
-            #         elif dlen >= 6122:
-            #             bsize = 4096*3
-            #         elif dlen >= 3072:
-            #             bsize = 4096*2
-            #         else:
-            #             bsize = 4096
-            #
-            #         #Commented out normally for performance
-            #         #logging.debug("USB Read Request: %d bytes, %d samples left"%(bsize, dlen))
-            #         diff = time.time() - start
-            #         logging.debug("Sending USB read request at %.20f" % diff)
-            #
-            #         #self.dbuf_temp[self.drx:(self.drx+bsize)] = (self.serial.usbdev().read(self.serial.rep, bsize, timeout=to))
-            #         self.serial.usbdev().read(self.serial.rep, bsize, timeout=to)
-            #     except IOError as e:
-            #         self.timeout = True
-            #         if self.drx == 0:
-            #             logging.debug("Timeout during stream mode with no data - assumed no trigger")
-            #         else:
-            #             logging.debug("Timeout during stream mode after %d bytes" % self.drx)
-            #         break
-            #
-            #     #once we have a block of data, quicker timeout is OK
-            #     to = 50
-            #
-            #     dlen -= (bsize / 4) * 3
-            #     self.drx += bsize
-
 
 if __name__ == '__main__':
-    from fpga import FPGA
-    from programmer_avr import AVRISP
-    from programmer_xmega import XMEGAPDI, supported_xmega
-    from serial import USART
+    from chipwhisperer.hardware.naeusb.fpga import FPGA
+    from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
+    from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI, supported_xmega
+    from chipwhisperer.hardware.naeusb.serial import USART
 
     cwtestusb = NAEUSB()
     cwtestusb.con()
@@ -464,7 +806,7 @@ if __name__ == '__main__':
         # fpga.FPGAProgram(open(r"C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\temp\artix7test\artix7test.runs\impl_1\cw305_top.bit", "rb"))
         # fpga.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\api\chipwhisperer-lite\hdl\cwlite_ise_spifake\cwlite_interface.bit", "rb"))
         stoptime = datetime.now()
-        print "FPGA Config time: %s" % str(stoptime - starttime)
+        print("FPGA Config time: %s" % str(stoptime - starttime))
 
     # print fpga.cmdReadMem(10, 6)
     # print fpga.cmdReadMem(0x1A, 4)
@@ -483,21 +825,21 @@ if __name__ == '__main__':
         xmega.setParamTimeout(200)
 
         try:
-            print "Enable"
+            print("Enable")
             xmega.enablePDI(True)
 
-            print "Read sig"
+            print("Read sig")
             # Read signature bytes
             data = xmega.readMemory(0x01000090, 3, "signature")
 
-            print data
+            print(data)
 
             if data[0] != 0x1E or data[1] != 0x97 or data[2] != 0x46:
-                print "Signature bytes failed: %02x %02x %02x != 1E 97 46" % (data[0], data[1], data[2])
+                print("Signature bytes failed: %02x %02x %02x != 1E 97 46" % (data[0], data[1], data[2]))
             else:
-                print "Detected XMEGA128A4U"
+                print("Detected XMEGA128A4U")
 
-            print "Erasing"
+            print("Erasing")
             # Chip erase
             try:
                 xmega.eraseChip()
@@ -506,63 +848,24 @@ if __name__ == '__main__':
                 xmega.enablePDI(True)
 
             fakedata = [i & 0xff for i in range(0, 2048)]
-            print "Programming FLASH Memory"
+            print("Programming FLASH Memory")
             xmega.writeMemory(0x0800000, fakedata, memname="flash")
 
-            print "Verifying"
+            print("Verifying")
             test = xmega.readMemory(0x0800000, 512)
 
-            print test
+            print(test)
 
 
-        except TypeError, e:
-            print str(e)
+        except TypeError as e:
+            print(str(e))
 
-        except IOError, e:
-            print str(e)
+        except IOError as e:
+            print(str(e))
 
         xmega.enablePDI(False)
 
-
-    # cwtestusb.cmdReadMem(0x00, 25)
-    # cwtestusb.cmdWriteMem(0, [1, 2, 3, 4, 5, 0xFF])
-    # cwtestusb.cmdWriteMem(0x100, [0xFF, 2, 3])
-    # time.sleep(1)
-    # cwtestusb.cmdWriteMem(0x100, [0x00])
-    # time.sleep(1)
-    # cwtestusb.cmdWriteMem(0x100, [0xFF])
-
-    # key = [0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c]
-    # key = [i for i in range(0, 16)]
-    # text = [0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a]
-    # text = [i for i in range(0, 16)]
-    # text = key
-    # text = [0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2b]
-
-    # key = key[::-1]
-    # text = text[::-1]
-
-    # cwtestusb.cmdWriteMem(0x200, key)
-    # cwtestusb.cmdWriteMem(0x300, text)
-
-    # print "enable AES and wait..."
-    # print cwtestusb.cmdReadMem(0x110, 1)[0]
-    # cwtestusb.cmdWriteMem(0x100, [1])
-    # print cwtestusb.cmdReadMem(0x110, 1)[0]
-
-    # print "done"
-    # print cwtestusb.cmdReadMem(0x110, 1)[0]
-    # while cwtestusb.cmdReadMem(0x110, 1)[0] == 0:
-    #    time.sleep(0.01)
-    #    print "waiting..."
-    # cwtestusb.cmdWriteMem(0x100, [0])
-    # # time.sleep(0.5)
-    # print ["%02x" % i for i in cwtestusb.cmdReadMem(0x600, 16)]
-    # print ["%02x" % i for i in cwtestusb.cmdReadMem(0x200, 16)]
-    # print ["%02x" % i for i in cwtestusb.cmdReadMem(0x300, 16)]
-
-
-    print "Let's Rock and Roll baby"
+    print("Let's Rock and Roll baby")
 
     sertest = True
 
@@ -570,19 +873,4 @@ if __name__ == '__main__':
         usart.init()
         usart.write("hello\n")
         time.sleep(0.1)
-        print usart.read()
-
-    # cwtestusb.sendCtrl(0x1F, 0x01)
-    # flog = open("spilog.txt", "w+")
-    # while True:
-    #    try:
-    #        data = cwtestusb._usbdev.read(cwtestusb.rep, 512)
-    #        slog = ""
-    #        slog += "%s: " % str(datetime.now())
-    #        for d in data:
-    #            slog += "%02x " % d
-    #        print slog
-    #        flog.write(slog + "\n")
-    #        flog.flush()
-    #    except usb.core.USBError:
-    #        pass
+        print(usart.read())

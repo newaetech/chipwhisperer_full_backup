@@ -19,7 +19,7 @@
 #include "hal.h"
 #include <stdint.h>
 #include <stdlib.h>
-#include <util/delay.h>
+//#include <util/delay.h>
 #include "decryption.h"
 
 char hex_lookup[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -111,6 +111,11 @@ int main(void)
 				ascii_idx = 0;
 				ascii_buffer[ascii_idx++] = 'r';
 				ascii_buffer[ascii_idx++] = '0';
+				ascii_buffer[ascii_idx++] = '\n';
+				ascii_buffer[ascii_idx++] = '\n';
+				ascii_buffer[ascii_idx++] = '\n';
+				ascii_buffer[ascii_idx++] = '\n';
+				ascii_buffer[ascii_idx++] = '\n';
 				ascii_buffer[ascii_idx++] = '\n';
 				state = RESPOND;
 			} 

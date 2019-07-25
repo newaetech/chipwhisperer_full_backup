@@ -21,8 +21,7 @@
 #=================================================
 import logging
 import sys
-import chipwhisperer.capture.scopes._qt as openadc_qt
-from chipwhisperer.common.utils.pluginmanager import Plugin
+from .. import _qt as openadc_qt
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 try:
     import ftd2xx as ft
@@ -30,7 +29,7 @@ except:
     ft = None
 
 
-class OpenADCInterface_FTDI(Parameterized, Plugin):
+class OpenADCInterface_FTDI(Parameterized):
     _name = "FTDI (SASEBO-W/SAKURA-G)"
 
     def __init__(self, oadcInstance):
@@ -64,7 +63,7 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
                 self.dev.setTimeouts(500, 500)
                 self.dev.setLatencyTimer(2)
                 self.ser = self
-            except ft.ftd2xx.DeviceError, e:
+            except ft.ftd2xx.DeviceError as e:
                 self.ser = None
                 raise IOError("Could not open %s: %s" % (self.serialNumber, e))
 

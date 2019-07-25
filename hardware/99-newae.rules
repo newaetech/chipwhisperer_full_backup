@@ -10,6 +10,9 @@
 # 5) Log in/out again for changes to take effect
 # 6) Connect hardware
 #
+# CW-Nano
+SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace0", MODE="0664", GROUP="plugdev"
+
 
 # CW-Lite
 SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace2", MODE="0664", GROUP="plugdev"

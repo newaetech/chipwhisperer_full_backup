@@ -24,7 +24,7 @@
 #=================================================
 import logging
 
-from _base import ReaderTemplate
+from ._base import ReaderTemplate
 
 
 class ReaderChipWhispererLiteSCard(ReaderTemplate):

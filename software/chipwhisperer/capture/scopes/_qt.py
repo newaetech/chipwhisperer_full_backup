@@ -24,18 +24,16 @@
 #=================================================
 import logging
 
-import _OpenADCInterface as openadc
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from . import _OpenADCInterface as openadc
 from chipwhisperer.common.utils import util, timer
 
 
-class OpenADCQt(Parameterized):
+class OpenADCQt(object):
     _name= 'OpenADC'
 
     def __init__(self):
         self.dataUpdated = util.Signal()
 
-        self.getParams()
 
         self.offset = 0.5
         self.ser = None
@@ -93,44 +91,42 @@ class OpenADCQt(Parameterized):
 
         try:
             self.datapoints = self.sc.readData(numberPoints)
-        except IndexError, e:
+            if self.datapoints is None or len(self.datapoints) == 0:
+                return True #effectively a timeout for now
+        except IndexError as e:
             raise IOError("Error reading data: %s" % str(e))
 
         self.dataUpdated.emit(channelNr, self.datapoints, -self.parm_trigger._get_presamples(True), self.parm_clock._adcSampleRate())
+        return False
 
 
     def trigger_duration(self):
         return self.parm_trigger.duration()
 
-    def capture(self):
-        timeout = self.sc.capture()
-        self.read()
-        return timeout
+    def capture(self, offset=None):
+        timeout = self.sc.capture(offset)
+        timeout2 = self.read()
+
+        return timeout or timeout2
 
     def reset(self):
         self.sc.setReset(True)
-        self.params.refreshAllParameters()
 
     def test(self):
         self.sc.testAndTime()
 
     def con(self, ser):
-        self.getParams().register()
         self.ser = ser
         # See if device seems to be attached
         self.sc = openadc.OpenADCInterface(self.ser)
 
         self.parm_hwinfo = openadc.HWInformation(self.sc)
-        self.params.append(self.parm_hwinfo.getParams())
 
         self.parm_gain = openadc.GainSettings(self.sc)
-        self.params.append(self.parm_gain.getParams())
 
         self.parm_trigger = openadc.TriggerSettings(self.sc)
-        self.params.append(self.parm_trigger.getParams())
 
         self.parm_clock = openadc.ClockSettings(self.sc, hwinfo=self.parm_hwinfo)
-        self.params.append(self.parm_clock.getParams())
 
         deviceFound = False
         numTries = 0
@@ -151,26 +147,16 @@ class OpenADCQt(Parameterized):
 
                 raise IOError("Opened port %s but failed to find OpenADC" % portname)
 
-        self.params.refreshAllParameters()
         self.setEnabled(True)
 
     def close(self):
-        self.params.deregister()
         self.ser = None
-        if self.parm_hwinfo is not None:
-            self.parm_hwinfo.getParams().delete()
         self.parm_hwinfo = None
 
-        if self.parm_gain is not None:
-            self.parm_gain.getParams().delete()
         self.parm_gain = None
 
-        if self.parm_trigger is not None:
-            self.parm_trigger.getParams().delete()
         self.parm_trigger = None
 
-        if self.parm_clock is not None:
-            self.parm_clock.getParams().delete()
         self.parm_clock = None
         self.sc = None
 

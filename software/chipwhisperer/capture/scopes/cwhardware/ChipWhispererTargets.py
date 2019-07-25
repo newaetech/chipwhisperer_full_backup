@@ -355,8 +355,8 @@ class CWUniversalSerial(object):
             return
 
         while(self.doneRx() == False):
-            time.sleep(0.01)
-            timeout -= 0.01
+            time.sleep(0.001)
+            timeout -= 0.001
             if timeout <= 0:
                 raise IOError("Timeout in readString")
         
@@ -384,7 +384,7 @@ class CWUniversalSerial(object):
                 
         if wait:
             while(self.doneTx() == False):
-                time.sleep(0.01)
+                time.sleep(0.001)
             
             self.setRunTx(False)     
     
@@ -399,7 +399,7 @@ class CWUniversalSerial(object):
         self.write([0x80,0xC0, 0x00, 0x00, 0x10])
         p = bytearray(self.read(16, waitonly=True))
         for t in p:
-            print "%2x "%t,
+            print("%2x "%t, end=' ')
 
 
 ADDR_STATUS     = 30
@@ -455,7 +455,7 @@ class CWSCardIntegrated(object):
         #Reset active, pass-through on
         cmd[0] = FLAG_PASSTHRU | FLAG_RESET
         self.oa.sendMessage(CODE_WRITE, ADDR_STATUS, cmd, Validate=False)
-        time.sleep(0.2)
+        time.sleep(0.02)
 
         self.oa.flushInput()
         
@@ -535,9 +535,9 @@ class CWSCardIntegrated(object):
             if len(payload) > 16:
                 logging.warning('APDU Payload must be < 16 bytes')
             payload = bytearray(payload)
-            payload = payload + bytearray(range(16-len(payload)))
+            payload = payload + bytearray(list(range(16-len(payload))))
         else:
-            payload = bytearray(range(16))
+            payload = bytearray(list(range(16)))
 
         #Padding
         payload += bytearray([0, 0])        

@@ -28,7 +28,6 @@
 import numpy as np
 
 from ..algorithmsbase import AlgorithmsBase
-from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
 class AttackCPA_Bayesian(AlgorithmsBase):
@@ -48,7 +47,7 @@ class AttackCPA_Bayesian(AlgorithmsBase):
 
         # foundkey = []
 
-        self.all_diffs = range(0,16)
+        self.all_diffs = list(range(0,16))
 
         pbcnt = 0
         if progressBar:
@@ -68,7 +67,7 @@ class AttackCPA_Bayesian(AlgorithmsBase):
                 textins.append(traceSource.getTextin(tnum))
                 textouts.append(traceSource.getTextout(tnum))
                 knownkeys.append(traceSource.getKnownKey(tnum))
-            except Exception, e:
+            except Exception as e:
                 progressBar.abort(e.message)
                 return
 
@@ -188,7 +187,7 @@ class AttackCPA_Bayesian(AlgorithmsBase):
 
     def _getResult(self, bnum, hyprange=None):
         if hyprange == None:
-            hyprange = range(0,256)
+            hyprange = list(range(0,256))
         return [self.all_diffs[bnum][i] for i in hyprange]
 
     def getDiff(self, bnum, hyprange=None):

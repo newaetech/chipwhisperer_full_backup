@@ -24,7 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-from base import ModelsBase
+from .base import ModelsBase
 from chipwhisperer.analyzer.attacks.models.aes.funcs import sbox, inv_sbox
 
 

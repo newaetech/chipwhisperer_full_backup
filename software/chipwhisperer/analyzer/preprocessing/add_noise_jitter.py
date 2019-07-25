@@ -67,7 +67,7 @@ class AddNoiseJitter(PreprocessingBase):
 
     @jitter.setter
     def jitter(self, jit):
-        if not isinstance(jit, (int, long)):
+        if not isinstance(jit, int):
             raise TypeError("Expected int; got %s" % type(jit), jit)
         self._setJitter(jit)
    

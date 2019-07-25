@@ -23,5 +23,6 @@ ASFLAGS +=  -mthumb -mfloat-abi=soft -ffunction-sections
 CDEFS   += -DSTM32F071xB -DSTM32F071RBTX -DSTM32F0 -DSTM32 -DDEBUG
 CPPDEFS += -DSTM32F071xB -DSTM32F071RBTX -DSTM32F0 -DSTM32 -DDEBUG
 
-LDFLAGS += --specs=nano.specs -T $(HALPATH)/stm32f0/LinkerScript.ld -Wl,--gc-sections -lm
+LDFLAGS += --specs=nano.specs --specs=nosys.specs -T $(HALPATH)/stm32f0/LinkerScript.ld -Wl,--gc-sections -lm
 LDFLAGS += -mthumb -mcpu=cortex-m0 
+

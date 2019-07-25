@@ -25,14 +25,21 @@
 
 import random
 from chipwhisperer.common.utils import util
-from _base import AcqKeyTextPattern_Base
-from chipwhisperer.common.utils.parameter import setupSetParam
-
+from ._base import AcqKeyTextPattern_Base
+from chipwhisperer.common.utils.util import camel_case_deprecated
 
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
+    """Class for getting basic keys and plaintexts.
+
+    Basic usage::
+
+        import chipwhisperer as cw
+        ktp = cw.ktp.Basic()
+        key, text = ktp.next()
+    """
     _name = "Basic"
 
-    def __init__(self, target=None):
+    def __init__(self):
         AcqKeyTextPattern_Base.__init__(self)
         self._fixedKey = True
         self._fixedPlain = False
@@ -42,33 +49,60 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self._textin = util.hexStrToByteArray(self.inittext)
         self.types = {'Random': False, 'Fixed': True}
 
-        self.getParams().addChildren([
-            {'name':'Key', 'type':'list', 'values':self.types , 'get':self.getKeyType, 'set':self.setKeyType, 'action':lambda p:self.findParam("initkey").show(p.getValue()), 'linked':['initkey']},
-            # {'name':'Size', 'type':'int'},
-            {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'get':self.getInitialKey, 'set':self.setInitialKey, 'visible':self.getKeyType()},
-            {'name':'Plaintext', 'type':'list', 'values':self.types , 'get':self.getPlainType, 'set':self.setPlainType, 'action':lambda p:self.findParam("inittext").show(p.getValue()), 'linked':['inittext']},
-            {'name':'Fixed Plaintext', 'key':'inittext', 'type':'str', 'get':self.getInitialText, 'set':self.setInitialText, 'visible':self.getPlainType()},
-        ])
-        self.setTarget(target)
+    @property
+    def fixed_key(self):
+        """Generate fixed key (True) or not (False).
 
-    def getKeyType(self):
+        :Getter: Return True if using fixed key or False if not.
+
+        :Setter: Set whether to use fixed key (True) or not (False).
+
+        .. versionadded:: 5.1
+            Added fixed_key property
+        """
         return self._fixedKey
 
-    @setupSetParam("Key")
-    def setKeyType(self, t):
+    @fixed_key.setter
+    def fixed_key(self, enabled):
+        self._fixedKey = enabled
+
+    @property
+    def fixed_text(self):
+        """Generate fixed plaintext (True) or not (False).
+
+        :Getter: Return True if using fixed plaintext or False if not.
+
+        :Setter: Set whether to use fixed plaintext (True) or not (False).
+
+        .. versionadded:: 5.1
+            Added fixed_text property
+        """
+        return self._fixedPlain
+
+    @fixed_text.setter
+    def fixed_text(self, enabled):
+        self._fixedPlain = enabled
+
+    def get_key_type(self):
+        return self._fixedKey
+
+    getKeyType = camel_case_deprecated(get_key_type)
+
+    def set_key_type(self, t):
         self._fixedKey = t
+
+    setKeyType = camel_case_deprecated(set_key_type)
+
 
     def getPlainType(self):
         return self._fixedPlain
 
-    @setupSetParam("Plaintext")
     def setPlainType(self, t):
         self._fixedPlain = t
 
     def getInitialKey(self):
         return " ".join(["%02X"%b for b in self._key])
 
-    @setupSetParam("Fixed Encryption Key")
     def setInitialKey(self, initialKey, binaryKey=False):
         if initialKey:
             if binaryKey:
@@ -85,7 +119,6 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     def getInitialText(self):
         return " ".join(["%02X" % b for b in self._textin])
 
-    @setupSetParam("Fixed Plaintext")
     def setInitialText(self, initialText, binaryText=False):
         if initialText:
             if binaryText:
@@ -102,7 +135,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     def initPair(self, maxtraces):
         pass
 
-    def newPair(self):
+    def new_pair(self):
         if self._fixedKey is False:
             self._key = bytearray(self.keyLen())
             for i in range(0, self.keyLen()):
@@ -119,7 +152,62 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
 
         return self._key, self._textin
 
-    def __str__(self):
+    newPair = new_pair
+
+    def next(self):
+        """Returns the next key text pair
+
+        Updates last key and text
+
+        Returns:
+            (key (bytearray), text (bytearray))
+
+        .. versionadded:: 5.1
+            Added next
+        """
+
+        return self.next_key(), self.next_text()
+
+    def next_text(self):
+        """ Returns the next plaintext
+
+        Does not update key. If text is fixed, returns the same plaintext as
+        last time
+
+        Returns:
+            text (bytearray)
+
+        .. versionadded:: 5.1
+            Added next_text
+        """
+        if self._fixedPlain is False:
+            self._textin = bytearray(self.textLen())
+            for i in range(0, self.textLen()):
+                self._textin[i] = random.randint(0, 255)
+
+        self.validateText()
+        return self._textin
+
+    def next_key(self):
+        """ Returns the next key
+
+        Does not update text. If key is fixed, returns the same key as last
+        time
+
+        Returns:
+            key (bytearray)
+
+        .. versionadded:: 5.1
+            Added next_key
+        """
+        if self._fixedKey is False:
+            self._key = bytearray(self.keyLen())
+            for i in range(0, self.keyLen()):
+                self._key[i] = random.randint(0, 255)
+        self.validateKey()
+        return self._key
+
+    """def __str__(self):
         key = "Key=" + self.findParam("Key").getValueKey()
         if self._fixedKey:
             key = key + ":" + self.findParam("initkey").getValue()
@@ -127,4 +215,4 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         if self._fixedPlain:
             plaintext = plaintext + ":" + self.findParam("inittext").getValue()
 
-        return self.getName() + " (%s, %s)" % (key, plaintext)
+        return self.getName() + " (%s, %s)" % (key, plaintext)"""

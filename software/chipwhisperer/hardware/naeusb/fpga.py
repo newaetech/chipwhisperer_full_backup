@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014-2016, NewAE Technology Inc
+# Copyright (c) 2014-2018, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -25,7 +25,7 @@
 
 import time
 import logging
-from naeusb import packuint32
+from .naeusb import packuint32
 
 class FPGA(object):
 
@@ -58,10 +58,10 @@ class FPGA(object):
         # Erase the FPGA by toggling PROGRAM pin, setup
         # NAEUSB chip for FPGA programming
         self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA0)
-        time.sleep(0.01)
+        time.sleep(0.001)
         self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA1)
 
-        time.sleep(0.05)
+        time.sleep(0.001)
 
         # Download actual bitstream now if present
         if bitstream:
@@ -74,7 +74,7 @@ class FPGA(object):
                 programStatus = self.isFPGAProgrammed()
                 if programStatus:
                     break
-                time.sleep(0.01)
+                time.sleep(0.001)
                 wait -= 1
 
             # Exit FPGA programming mode
@@ -97,7 +97,7 @@ class FPGA(object):
         transactionBytes = 2048
         t0 = 0
 
-        buffer_ = [None] * (16 * 1024 * 1024 / transactionBytes)
+        buffer_ = [None] * int(16 * 1024 * 1024 / transactionBytes)
         size = 0
 
         # Read entire thing in
@@ -108,7 +108,7 @@ class FPGA(object):
         # Might need a few extra CCLKs at end to finish off, and as written elsewhere this is done with DO=1
         # Perhaps micro should add these instead? For now this should be reliable enough (things worked even w/o this it seemed, so this is
         # a just in case item)
-        inputStream += "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+        inputStream += bytes([0xff] * 32)
 
         inputStream = inputStream[0x7C:]
 
@@ -151,7 +151,7 @@ class FPGA(object):
                     if j > transactionBytes:
                         j = transactionBytes
 
-                    self._usb.usbdev().write(self._usb.wep, buffer_[i], timeout=self._timeout)
+                    self._usb.writeBulkEP(buffer_[i])
 
                     bs += j
                     for k in range(0, len(buffer_[i])):
@@ -170,7 +170,7 @@ class FPGA(object):
                 # t0 += Date().getTime()
             except IOError as e:
                 if tries > 1:
-                    print("Warning: " + str(e) + ": Retrying it ...")
+                    print(("Warning: " + str(e) + ": Retrying it ..."))
                 else:
                     raise
             tries -= 1

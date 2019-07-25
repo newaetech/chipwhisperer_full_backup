@@ -24,7 +24,7 @@
 #=================================================
 import logging
 
-from _base import ReaderTemplate
+from ._base import ReaderTemplate
 import serial
 import time
 from chipwhisperer.common.utils import serialport

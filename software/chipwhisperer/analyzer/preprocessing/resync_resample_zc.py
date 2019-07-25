@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2018, NewAE Technology Inc
 # All rights reserved.
 #
 # Author: Colin O'Flynn
@@ -68,7 +68,7 @@ class ResyncResampleZC(PreprocessingBase):
 
     @ref_trace.setter
     def ref_trace(self, num):
-        if not isinstance(num, (int, long)):
+        if not isinstance(num, int):
             raise TypeError("Expected int; got %s" % type(num), num)
         self._setRefTrace(num)
 
@@ -115,7 +115,7 @@ class ResyncResampleZC(PreprocessingBase):
 
     @bin_length.setter
     def bin_length(self, len):
-        if not isinstance(len, (int, long)):
+        if not isinstance(len, int):
             raise TypeError("Expected float; got %s" % type(len), len)
         self._setBinLength(len)
 

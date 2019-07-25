@@ -21,16 +21,14 @@
 import logging
 import sys
 import traceback
-import chipwhisperer.capture.scopes._qt as openadc_qt
+# import chipwhisperer.capture.scopes._qt as openadc_qt
+from .. import _qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
-from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
-from chipwhisperer.common.utils.util import DictType
+from chipwhisperer.common.utils.util import DictType, camel_case_deprecated
 
 try:
-    import chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite as CWL
+    from chipwhisperer.capture.scopes.cwhardware import ChipWhispererLite as CWL
 except ImportError:
     CWL = None
     logging.error("Could not import ChipWhispererLite\n" + traceback.format_exc())
@@ -42,7 +40,7 @@ except ImportError:
     logging.error("Could not import USB\n" + traceback.format_exc())
 
 
-class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
+class OpenADCInterface_NAEUSBChip(object):
     _name = "NewAE USB (CWLite/CW1200)"
 
     def __init__(self, oadcInstance):
@@ -50,12 +48,6 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         self.dev = None
         self.scope = None
         self.last_id = None
-
-        self.getParams().addChildren([
-            {'name':"CW Firmware Preferences", 'tip':"Configure ChipWhisperer FW Paths", 'type':"menu", "action":lambda _:self.getFwLoaderConfigGUI().show()}, # Can' use Config... name with MacOS
-            {'name':"Download CW Firmware", 'tip':"Download Firmware+FPGA To Hardware", 'type':"menu", "action":lambda _:self.cwFirmwareConfig[self.last_id].loadRequired()},
-            {'name':"Serial Number", 'key':'cwsn', 'type':"list", 'values':{"Auto":None}, 'value':"Auto"},
-        ])
 
         if (openadc_qt is None) or (usb is None):
             missingInfo = ""
@@ -71,30 +63,27 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             }
             self.scope = oadcInstance
 
-    def con(self):
-        self.findParam('cwsn').setReadonly(False)
+    def con(self, sn=None):
         if self.ser is None:
             self.dev = CWL.CWLiteUSB()
-            self.getParams().append(self.dev.getParams())
 
             try:
                 nae_products = [0xACE2, 0xACE3]
                 possible_sn = self.dev.get_possible_devices(nae_products)
+                serial_numbers = []
                 if len(possible_sn) > 1:
                     #Update list...
-                    snlist = DictType({'Select Device to Connect':None})
-                    for d in possible_sn:
-                        snlist[str(d.serial_number) + " (" + str(d.product) + ")"] = d.serial_number
-
-                    if self.findParam('cwsn').getValue() not in snlist.values():
-                        self.findParam('cwsn').setValue(None)
-
-                    self.findParam('cwsn').setLimits(snlist)
-                    sn = self.findParam('cwsn').getValue()
+                    if sn is None:
+                        snlist = DictType({'Select Device to Connect':None})
+                        for d in possible_sn:
+                            snlist[str(d['sn']) + " (" + str(d['product']) + ")"] = d['sn']
+                            serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
+                            pass
+                        raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
                 else:
-                    self.findParam('cwsn').setValue(None)
-                    self.findParam('cwsn').setLimits({"Auto":None})
-                    sn = None
+                    pass
+                    #if possible_sn[0]['sn'] !=
+                    #sn = None
                 found_id = self.dev.con(idProduct=nae_products, serial_number=sn)
             except (IOError, ValueError):
                 raise Warning('Could not connect to "%s". It may have been disconnected, is in an error state, or is being used by another tool.' % self.getName())
@@ -115,15 +104,11 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         try:
             self.scope.con(self.ser)
             logging.info('OpenADC Found, Connecting')
-        except IOError, e:
+        except IOError as e:
             exctype, value = sys.exc_info()[:2]
             raise IOError("OpenADC: " + (str(exctype) + str(value)))
 
-        #OK everything worked?
-        self.findParam('cwsn').setReadonly(True)
-
     def dis(self):
-        self.findParam('cwsn').setReadonly(False)
         if self.ser is not None:
             self.getFWConfig().setInterface(None)
             self.scope.close()
@@ -143,5 +128,7 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         except KeyError as e:
             return FWLoaderConfig(CWLite_Loader())
 
-    def getFwLoaderConfigGUI(self):
-        return FWLoaderConfigGUI(self.getFWConfig(), self.ser is not None)
+    def get_name(self):
+        return self._name
+
+    getName = camel_case_deprecated(get_name)

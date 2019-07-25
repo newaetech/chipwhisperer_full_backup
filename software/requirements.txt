@@ -1,17 +1,12 @@
-backports.functools-lru-cache==1.5
+# configobj required for project stuff, date stuff for projects, sphinx_rtd_theme for proper syntax highlighting
 configobj==5.0.6
-cycler==0.10.0
-future==0.16.0
 iso8601==0.1.12
-matplotlib==2.1.2
-numpy==1.14.0
+numpy>=1.14.0
+pycryptodome>=3.7.0
 pyparsing==2.2.0
-pyqtgraph==0.10.0
-PySide==1.2.2
 python-dateutil==2.6.1
 pytz==2017.3
 pyusb==1.0.2
-PyYAML>=4.2b1
-scipy==1.0.0
-serial==0.0.38
-six==1.11.0
+scipy==1.1.0
+sphinx_rtd_theme>=0.3.1
+pyserial==3.4

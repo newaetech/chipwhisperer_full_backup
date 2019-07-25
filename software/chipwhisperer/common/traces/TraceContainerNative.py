@@ -24,11 +24,22 @@
 
 import os
 import numpy as np
-from _base import TraceContainer
-
+from datetime import datetime
+from ._base import TraceContainer
 
 class TraceContainerNative(TraceContainer):
+    """ Most common TraceContainer for CW Projects
+
+    Stick to add_trace(). Trust me.
+    """
     _name = "ChipWhisperer/Native"
+    
+    def default_config_setup(self, project):
+        starttime = datetime.now()
+        prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S') + "_"
+        self.config.setConfigFilename(os.path.join(project.datadirectory, "traces", "config_" + prefix + ".cfg"))
+        self.config.setAttr("prefix", prefix)
+        self.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
 
     def copyTo(self, srcTraces=None):
         self.numTrace = srcTraces.numTraces()
@@ -38,12 +49,12 @@ class TraceContainerNative(TraceContainer):
         self.textins = np.zeros([self.numTrace, 16], dtype=np.uint8)
         for n in range(0, self.numTrace):
             tin = srcTraces.textins[n]
-            self.textins[n] = map(int, tin, [16] * len(tin))
+            self.textins[n] = list(map(int, tin, [16] * len(tin)))
 
         self.textouts = np.zeros([self.numTrace, 16], dtype=np.uint8)
         for n in range(0, self.numTrace):
             tout = srcTraces.textouts[n]
-            self.textouts[n] = map(int, tout, [16] * len(tout))
+            self.textouts[n] = list(map(int, tout, [16] * len(tout)))
 
         if srcTraces.tracedtype:
             userdtype = srcTraces.tracedtype
@@ -61,21 +72,21 @@ class TraceContainerNative(TraceContainer):
         if self.config.configFilename():
             if directory is None:
                 directory = os.path.split(self.config.configFilename())[0]
-            if prefix is None:
+            if prefix is None or prefix == '':
                 prefix = self.config.attr("prefix")
 
-        self.traces = np.load(directory + "/%straces.npy" % prefix, mmap_mode='r')
-        self.textins = np.load(directory + "/%stextin.npy" % prefix)
-        self.textouts = np.load(directory + "/%stextout.npy" % prefix)
+        self.traces = np.load(os.path.join(directory, "%straces.npy" % prefix), mmap_mode='r', allow_pickle=True)
+        self.textins = np.load(os.path.join(directory, "%stextin.npy" % prefix), allow_pickle=True)
+        self.textouts = np.load(os.path.join(directory, "%stextout.npy" % prefix), allow_pickle=True)
 
         try:
-            self.knownkey = np.load(directory + "/%sknownkey.npy" % prefix)
+            self.knownkey = np.load(os.path.join(directory, "%sknownkey.npy" % prefix), allow_pickle=True)
         except IOError:
             self.knownkey = None
 
         # OK if this fails
         try:
-            self.keylist = np.load(directory + "/%skeylist.npy" % prefix)
+            self.keylist = np.load(os.path.join(directory, "%skeylist.npy" % prefix), allow_pickle=True)
         except IOError:
             self.keylist = None
 
@@ -110,15 +121,16 @@ class TraceContainerNative(TraceContainer):
         path = os.path.dirname(self.config.configFilename())
         # prefix = self.config.attr("prefix")
         # fname = "%s%s.npy" % (prefix, extraname)
-        return np.load(path + "/" + fname)
+        file_path = os.path.join(path, fname)
+        return np.load(file_path)
 
     def saveAllTraces(self, directory, prefix=""):
         self.config.saveTrace()
-        np.save(directory + "/%straces.npy" % prefix, self.traces)
-        np.save(directory + "/%stextin.npy" % prefix, self.textins)
-        np.save(directory + "/%stextout.npy" % prefix, self.textouts)
-        np.save(directory + "/%skeylist.npy" % prefix, self.keylist)
-        np.save(directory + "/%sknownkey.npy" % prefix, self.knownkey)
+        np.save(os.path.join(directory, "%straces.npy" % prefix), self.traces)
+        np.save(os.path.join(directory, "%stextin.npy" % prefix), self.textins)
+        np.save(os.path.join(directory, "%stextout.npy" % prefix), self.textouts)
+        np.save(os.path.join(directory, "%skeylist.npy" % prefix), self.keylist)
+        np.save(os.path.join(directory, "%sknownkey.npy" % prefix), self.knownkey)
         self.setDirty(False)
 
     def closeAll(self, clearTrace=True, clearText=True, clearKeys=True):

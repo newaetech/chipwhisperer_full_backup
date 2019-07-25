@@ -29,7 +29,6 @@ import numpy as np
 import math
 
 from ..algorithmsbase import AlgorithmsBase
-from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
 class CPAProgressiveOneSubkey(object):
@@ -148,7 +147,7 @@ class CPAProgressiveOneSubkey(object):
         return (diffs, pbcnt)
 
 
-class CPAProgressive(AlgorithmsBase, Plugin):
+class CPAProgressive(AlgorithmsBase):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
@@ -214,12 +213,13 @@ class CPAProgressive(AlgorithmsBase, Plugin):
                     tnum = i + tracerange[0]
 
                     try:
-                        data.append(traceSource.getTrace(tnum))
-                        textins.append(traceSource.getTextin(tnum))
-                        textouts.append(traceSource.getTextout(tnum))
-                        knownkeys.append(traceSource.getKnownKey(tnum))
-                    except Exception, e:
-                        progressBar.abort(e.message)
+                        data.append(traceSource.get_trace(tnum))
+                        textins.append(traceSource.get_textin(tnum))
+                        textouts.append(traceSource.get_textout(tnum))
+                        knownkeys.append(traceSource.get_known_key(tnum))
+                    except Exception as e:
+                        if progressBar:
+                            progressBar.abort(e.message)
                         return
 
                 traces = np.array(data)
@@ -234,13 +234,10 @@ class CPAProgressive(AlgorithmsBase, Plugin):
                         bnum = bnum_df
 
                     skip = False
-                    if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):
-                        if isinstance(pointRange, list):
-                            bptrange = pointRange[bnum]
-                        else:
-                            bptrange = pointRange
+                    if (self.stats.simple_PGE(bnum) != 0) or (skipPGE == False):
+                        bptrange = pointRange
                         (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, knownkeys, progressBar, cpa[bnum].modelstate, pbcnt)
-                        self.stats.updateSubkey(bnum, data, tnum=tend)
+                        self.stats.update_subkey(bnum, data, tnum=tend)
                     else:
                         skip = True
 

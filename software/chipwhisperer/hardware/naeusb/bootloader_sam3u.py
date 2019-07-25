@@ -31,7 +31,7 @@
 #
 
 #Avoid namespace collision with 'serial'
-from __future__ import absolute_import
+
 
 import logging
 
@@ -64,7 +64,7 @@ class Samba(object):
             ser.read(3)
 
         # Binary mode
-        ser.write("N#")
+        ser.write("N#".encode("ascii"))
         ser.read(2)
 
         cid = self.chip_id()
@@ -124,23 +124,23 @@ class Samba(object):
         """ Read a word from SAM3U """
 
         cmd = "w%08X,4#" % addr
-        self.ser.write(cmd)
+        self.ser.write(cmd.encode("ascii"))
         resp = self.ser.read(4)
 
-        value = (ord(resp[3]) << 24 | ord(resp[2]) << 16 | ord(resp[1]) << 8 | ord(resp[0]) << 0)
+        value = (resp[3] << 24 | resp[2] << 16 | resp[1] << 8 | resp[0] << 0)
         return value
 
     def write_word(self, addr, value):
         """ Write a word to SAM3U """
 
         cmd = "W%08X,%08X#" % (addr, value)
-        self.ser.write(cmd)
+        self.ser.write(cmd.encode("ascii"))
 
     def read_byte(self, addr):
         """ Read a byte from SAM3U """
 
         cmd = "o%08X,4#" % addr
-        self.ser.write(cmd)
+        self.ser.write(cmd.encode("ascii"))
         resp = self.ser.read(1)
         return resp[0]
 
@@ -148,7 +148,7 @@ class Samba(object):
         """ Run applet """
 
         cmd = "G%08X#" % addr
-        self.ser.write(cmd)
+        self.ser.write(cmd.encode("ascii"))
 
         if self.usbmode:
             self.flush()
@@ -168,9 +168,9 @@ class Samba(object):
             raise AttributeError("Only USB Mode Supported")
 
         if len(buf) != size:
-            raise AttributeError("Buffer length not as reported")
+            raise AttributeError("Buffer length not as reported, expected {} got {}", size, len(buf))
 
-        self.ser.write("S%08X,%08X#" % (addr, size))
+        self.ser.write(("S%08X,%08X#" % (addr, size)).encode("ascii"))
         # Flush to ensure transactions arrive separately to bootloader
         # (Otherwise error)
         self.flush()
@@ -192,12 +192,12 @@ class Samba(object):
         #   via USB.  If that is the case here, then read the first byte
         #   with a readByte and then read one less than the requested size.
         if self.usbmode and (size > 32) and not (size & (size - 1)):
-            buf.extend(self.read_byte(addr))
+            buf.append(self.read_byte(addr))
             addr = addr + 1
             size = size - 1
 
         cmd = "R%08X,%08X#" % (addr, size)
-        self.ser.write(cmd)
+        self.ser.write(cmd.encode("ascii"))
         buf.extend(self.ser.read(size))
         return buf
 
@@ -222,12 +222,14 @@ class Samba(object):
         bytesleft = len(bindata)
 
         i = 0
-        while bytesleft:
+        while bytesleft > 0:
 
             if bytesleft < page_size:
                 # Pad partial page with 0xFF
                 buf = bytearray(bindata[i:(i + bytesleft)])
+                # print(len(buf))
                 buf.extend([0xff] * (page_size - bytesleft))
+                # print(bytesleft)
             else:
                 # Read full page
                 buf = bindata[i:(i + page_size)]
@@ -261,7 +263,7 @@ class Samba(object):
         bytesleft = len(bindata)
 
         i = 0
-        while bytesleft:
+        while bytesleft > 0:
 
             if bytesleft < page_size:
                 # Pad partial page with 0xFF
@@ -272,12 +274,13 @@ class Samba(object):
                 buf = bindata[i:(i + page_size)]
 
             if (page_num % 10) == 0 and doprint:
-                logging.debug('Verifying %d/%d' % (page_num, totalpages))
+                print('Verifying %d/%d' % (page_num, totalpages))
 
-            bufferB = self.flash.readPage(page_num)
+            bufferB = bytearray(self.flash.readPage(page_num))
 
             if bytearray(buf) != bytearray(bufferB):
-                logging.warning('FWUP: Verify FAILED at %d"=' % i)
+                # logging.warning('FWUP: Verify FAILED at %d"=' % i)
+                logging.warning("Verify failed at {} (got {} expected {})".format(i, buf, bufferB))
                 return False
                 # print "fail at %d"%i
                 # print "".join(["%02x"%ord(a) for a in buf])
@@ -381,7 +384,7 @@ class EefcFlash(object):
         self.EEFC_FCMD_CGPB = 0xc
         self.EEFC_FCMD_GGPB = 0xd
 
-        self.word_copy.set_words(size / 4)
+        self.word_copy.set_words(int(size / 4))
         self.word_copy.set_stack(stack)
         self._onBufferA = True
         self._pageBufferA = self.user + self.word_copy.size()
@@ -464,7 +467,7 @@ class EefcFlash(object):
                 else:
                     self.writeFCR1(self.EEFC_FCMD_CLB, page)
             else:
-                page = region * self.pages / self.lockRegions
+                page = int(region * self.pages / self.lockRegions)
                 self.waitFSR()
                 if enable:
                     self.writeFCR0(self.EEFC_FCMD_SLB, page)

@@ -28,22 +28,18 @@
 import logging
 import numpy as np
 from usb import USBError
-from base import ScopeTemplate
+from .base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.utils import util, timer, pluginmanager
-from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
-from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils import util, timer
 from chipwhisperer.common.utils.util import dict_to_str
 from collections import OrderedDict
 
-from chipwhisperer.capture.ui.programmers_dialog import XMEGAProgrammerDialog, AVRProgrammerDialog, STM32FProgrammerDialog
-from chipwhisperer.common.utils.parameter import Parameterized
 from chipwhisperer.hardware.naeusb.serial import USART
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, packuint32, unpackuint32
 from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
 from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import STM32FSerial
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.utils.util import camel_case_deprecated
 import time
 import datetime
 
@@ -73,7 +69,7 @@ class ADCSettings(util.DisableNewAttr):
 
     @property
     def samples(self):
-        """Number of samples to store"""
+        """Number of samples to store."""
 
         resp = self.usb.readCtrl(self.USB_SAMPLES, 0, 4)
         return unpackuint32(resp)
@@ -87,7 +83,13 @@ class ADCSettings(util.DisableNewAttr):
 
     @property
     def clk_src(self):
-        """ADC Clock source: 'int' or 'ext' """
+        """ADC Clock source.
+
+        :Getter: Returns 'int' or 'ext' based on the clock source.
+
+        :Setter: (str) Set the ADC clock source to either internal or external:
+            ('int' or 'ext')
+        """
 
         resp = self.usb.readCtrl(self.USB_ADCLK_SET, 0, 5)
         if resp[3] == 0:
@@ -115,8 +117,13 @@ class ADCSettings(util.DisableNewAttr):
 
     @property
     def clk_freq(self):
-        """"Set the frequency for CLKOUT. Will be rounded to nearest possible values, check results to see
-        programmed value. Set to 'None' for disabling (High-Z) output."""
+        """Set the frequency for CLKOUT. Will be rounded to nearest possible values, check results to see
+        programmed value. Set to 'None' for disabling (High-Z) output.
+
+        :Getter: Returns the actual frequency for CLKOUT
+
+        :Setter: Sets CLKOUT to the nearest possible value.
+        """
 
         resp = self.usb.readCtrl(self.USB_ADCLK_SET, 0, 5)
         if resp[0] == 0:
@@ -269,16 +276,17 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO1 pin.
 
         TIO1 can be used for the following functions:
-        - "serial_rx": UART input
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+          * "serial_rx": UART input
+          * "high_z" / None: High impedance input
+          * "gpio_low" / False: Driven output: logic 0
+          * "gpio_high" / True: Driven output: logic 1
+          * "gpio_disabled": Driven output: no effect
+
         Default value is "serial_rx".
 
-        Getter: Return one of the above strings
+        :Getter: Return one of the above strings
 
-        Setter: Set the Target IO1 mode.
+        :Setter: Set the Target IO1 mode.
             Raises: ValueError if new value is not one of the above modes
         """
         return None
@@ -296,16 +304,17 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO2 pin.
 
         TIO2 can be used for the following functions:
-        - "serial_tx": UART output
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+          * "serial_tx": UART output
+          * "high_z" / None: High impedance input
+          * "gpio_low" / False: Driven output: logic 0
+          * "gpio_high" / True: Driven output: logic 1
+          * "gpio_disabled": Driven output: no effect
+
         Default value is "serial_tx".
 
-        Getter: Return one of the above strings
+        :Getter: Return one of the above strings
 
-        Setter: Set the Target IO2 mode.
+        :Setter: Set the Target IO2 mode.
             Raises: ValueError if new value is not one of the above modes
         """
         return None
@@ -323,15 +332,16 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO3 pin.
 
         TIO3 can be used for the following functions:
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+          * "high_z" / None: High impedance input
+          * "gpio_low" / False: Driven output: logic 0
+          * "gpio_high" / True: Driven output: logic 1
+          * "gpio_disabled": Driven output: no effect
+
         Default value is "high_z".
 
-        Getter: Return one of the above strings
+        :Getter: Return one of the above strings
 
-        Setter: Set the Target IO3 mode.
+        :Setter: Set the Target IO3 mode.
             Raises: ValueError if new value is not one of the above modes
         """
         return None
@@ -346,16 +356,17 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO4 pin.
 
         TIO4 can be used for the following functions:
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+          * "high_z" / None: High impedance input
+          * "gpio_low" / False: Driven output: logic 0
+          * "gpio_high" / True: Driven output: logic 1
+          * "gpio_disabled": Driven output: no effect
+
         Default value is "high_z". Typically, this pin is used as a trigger
         input.
 
-        Getter: Return one of the above strings
+        :Getter: Return one of the above strings
 
-        Setter: Set the Target IO4 mode
+        :Setter: Set the Target IO4 mode
             Raises: ValueError if new value is not one of the above modes
         """
         return None
@@ -370,13 +381,13 @@ class GPIOSettings(util.DisableNewAttr):
         """The state of the PDIC pin output pin.
 
         This is a GPIO pin. The following values are allowed:
-        - "high" / True: logic 1
-        - "low" / False: logic 0
-        - "disabled" / "default" / "high_z" / None: undriven
+          * "high" / True: logic 1
+          * "low" / False: logic 0
+          * "disabled" / "default" / "high_z" / None: undriven
 
-        Getter: Return one of "high", "low", or "high_z"
+        :Getter: Return one of "high", "low", or "high_z"
 
-        Setter: Set the pin's state
+        :Setter: Set the pin's state
             Raises: ValueError if new state not listed above
         """
         return False
@@ -492,22 +503,33 @@ class GPIOSettings(util.DisableNewAttr):
         return state
 
 
-class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
+class CWNano(ScopeTemplate, util.DisableNewAttr):
     """CWNano scope object.
 
     This class contains the public API for the CWNano hardware. It includes
     specific settings for each of these devices.
 
-    To connect to one of these devices, the easiest method is
+    To connect to one of these devices, the easiest method is::
 
-    This code will automatically detect an attached ChipWhisperer device and
-    connect to it.
+        import chipwhisperer as cw
+        scope = cw.scope(type=scopes.CWNano)
+
+    Some sane default settings can be set using::
+
+        scope.default_setup()
 
     For more help about scope settings, try help() on each of the ChipWhisperer
-    scope submodules:
-        scope.adc
-        scope.io
-        scope.glitch
+    scope submodules (scope.adc, scope.io, scope.glitch):
+
+      * :attr:`scope.adc <.CWNano.adc>`
+      * :attr:`scope.io <.CWNano.io>`
+      * :attr:`scope.glitch <.CWNano.glitch>`
+      * :meth:`scope.default_setup <.CWNano.default_setup>`
+      * :meth:`scope.con <.CWNano.con>`
+      * :meth:`scope.dis <.CWNano.dis>`
+      * :meth:`scope.get_last_trace <.CWNano.get_last_trace>`
+      * :meth:`scope.arm <.CWNano.arm>`
+      * :meth:`scope.capture <.CWNano.capture>`
     """
 
     _name = "ChipWhisperer Nano"
@@ -519,7 +541,6 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
         ScopeTemplate.__init__(self)
         self._is_connected = False
 
-        self.params.init()
 
         self._cwusb = NAEUSB()
         self.ser = self._cwusb
@@ -538,19 +559,48 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
 
         self._lasttrace = None
 
-        self.getParams().addChildren([
-            {'name':"CW-Lite XMEGA Programmer", 'tip':"Open XMEGA Programmer (ChipWhisperer-Lite Only)", 'type':"menu", "action":lambda _:self.getCwliteXMEGA().show()},
-            {'name':"CW-Lite AVR Programmer", 'tip':"Open AVR Programmer (ChipWhisperer-Lite Only)", 'type':"menu", "action":lambda _:self.getCwliteAVR().show()},
-            {'name':'Serial STM32F Programmer', 'tip':"Open STM32F Programmer (Serial/ChipWhisperer)", 'type':"menu", "action":lambda _:self.getSerialSTM32F().show()}
-        ])
-
         self.disable_newattr()
+
+    def default_setup(self):
+        """ Sets up sane capture defaults for this scope
+
+          * 7.5MHz ADC clock
+          * 7.5MHz output clock
+          * 5000 capture samples
+          * tio1 = serial rx
+          * tio2 = serial tx
+          * glitch module off
+
+        .. versionadded:: 5.1
+            Added default setup for CWNano
+        """
+        self.adc.clk_freq = 7.5E6
+        self.io.clkout = 7.5E6
+        self.adc.samples = 5000
+        self.io.tio1 = "serial_rx"
+        self.io.tio2 = "serial_tx"
+        self.glitch.repeat = 0
 
     def getCurrentScope(self):
         return self
 
-    def _con(self):
-        self._cwusb.con(idProduct=[0xACE0])
+    def _getNAEUSB(self):
+        return self._cwusb
+
+    def _con(self, sn=None):
+        try:
+            possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
+            serial_numbers = []
+            if len(possible_sn) > 1:
+                if sn is None:
+                    for d in possible_sn:
+                        serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
+                    raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
+            else:
+                sn = None
+            found_id = self._cwusb.con(idProduct=[0xACE0], serial_number=sn)
+        except (IOError, ValueError):
+            raise Warning("Could not connect to cwnano. It may have been disconnected, is in an error state, or is being used by another tool.")
         self.disable_newattr()
         self._is_connected = True
         return True
@@ -562,7 +612,7 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
 
     def arm(self):
         """Arm the ADC, the trigger will be GPIO4 rising edge (fixed trigger)."""
-        if self.connectStatus.value() is False:
+        if self.connectStatus is False:
             raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
 
         self._cwusb.sendCtrl(self.REQ_ARM, 1)
@@ -586,15 +636,17 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
 
         self._lasttrace = np.array(self._lasttrace) / 256.0 - 0.5
 
-        self.newDataReceived(0, self._lasttrace, 0, self.adc.clk_freq)
+        #self.newDataReceived(0, self._lasttrace, 0, self.adc.clk_freq)
 
         return False
 
 
-    def getLastTrace(self):
+    def get_last_trace(self):
         """Return the last trace captured with this scope.
         """
         return self._lasttrace
+
+    getLastTrace = camel_case_deprecated(get_last_trace)
 
 
     def _dict_repr(self):
@@ -621,24 +673,3 @@ class CWNano(ScopeTemplate, Plugin, util.DisableNewAttr):
 
     def usbdev(self):
         return self._cwusb
-
-    def getCwliteXMEGA(self):
-        if not hasattr(self, 'cwliteXMEGA'):
-            self.enable_newattr()
-            self.cwliteXMEGA = XMEGAProgrammerDialog()
-            self.disable_newattr()
-        return self.cwliteXMEGA
-
-    def getCwliteAVR(self):
-        if not hasattr(self, 'cwliteAVR'):
-            self.enable_newattr()
-            self.cwliteAVR = AVRProgrammerDialog()
-            self.disable_newattr()
-        return self.cwliteAVR
-
-    def getSerialSTM32F(self):
-        if not hasattr(self, 'serialSTM32F'):
-            self.enable_newattr()
-            self.serialSTM32F = STM32FProgrammerDialog()
-            self.disable_newattr()
-        return self.serialSTM32F

@@ -28,8 +28,7 @@
 #===========================================================
 
 import sys
-from chipwhisperer.common.utils import pluginmanager
-from _base import AttackBaseClass
+from ._base import AttackBaseClass
 
 
 class Profiling(AttackBaseClass):
@@ -37,18 +36,16 @@ class Profiling(AttackBaseClass):
     _name = "Profiling"
 
     def __init__(self):
-        self._algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", True, False)
+        self._algos = None
         self._analysisAlgorithm = self._algos["Template Attack"]
         AttackBaseClass.__init__(self)
         self.useAbs = False # Do not use absolute
 
     def updateScript(self, _=None):
         AttackBaseClass.updateScript(self)
-        self.importsAppend("from chipwhisperer.analyzer.attacks.profiling import Profiling")
 
         analysAlgoStr = sys.modules[self._analysisAlgorithm.__class__.__module__].__name__ + '.' + self._analysisAlgorithm.__class__.__name__
         model_path = sys.modules[self.findParam('Crypto Algorithm').getValue().__class__.__module__].__name__
         cryptoalg = model_path + '.' + self.findParam('Crypto Algorithm').getValue().__class__.__name__
         hwmodel = model_path + '.' + self.findParam('Crypto Algorithm').getValue().getHwModel().__name__
         self.addVariable("init", "leakage_object", "%s(%s)" % (cryptoalg, hwmodel))
-        self.addFunction("init", "setAnalysisAlgorithm", "%s,leakage_object" % (analysAlgoStr), loc=1)

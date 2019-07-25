@@ -27,37 +27,78 @@
 
 from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
 import logging
+from chipwhisperer.common.utils.util import dict_to_str
+from collections import OrderedDict
+from copy import copy
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
+
+CODE_USART      = 0x01
 
 ADDR_DECODECFG = 57
 ADDR_DECODEDATA = 58
 
 
-class ChipWhispererDecodeTrigger(Parameterized):
+class ChipWhispererDecodeTrigger(object):
     """
-    Communicates and drives with the Digital Pattern Match module inside the FPGA. 
+    Communicates and drives the Digital Pattern Match module inside the FPGA.
+
+    Basic Usage for triggering on 'r'::
+
+        #assuming setup scope:
+        scope.trigger.triggers = 'tio1'
+        scope.trigger.module = 'DECODEIO'
+        scope.decode_IO.baud = 38400
+        scope.decode_IO.decode_type = 'USART'
+        scope.decode_IO.trigger_pattern = ['r']
     """
     _name = 'I/O Decoder Trigger Module'
     def __init__(self, oa):
         self.oa = oa
-        
+        self.pattern = None
+
         #init baud to avoid weird baud being reported (-91.4)
         breg = (38400 * 8 * 512 + self.systemClk() / 255) / (self.systemClk() / 128)
         breg = int(round(breg))
         self.setRxBaudReg(breg)
-        
-        self.getParams().addChildren([
 
-            {'name': 'Decode Type', 'type': 'list', 'values': {'USART': 1, 'SPI': 2, 'Unknown':0}, 'get':self.get_decodetype, 'set':self.set_decodetype},
-            #{'name':'Data Line Source', 'type':'list', 'values':{'Ext-Trigger Mux':0, 'MOSI':1, 'MOSI':2, 'PDID':3}, 'get':self.get_dataline_src, 'set':self.set_dataline_src},
-            {'name':'Trigger Data', 'key':'trigpatt', 'type':'str', 'get':self.get_triggerpattern, 'set':self.set_triggerpattern},
-            {'name':'Baud', 'key':'baud', 'type':'int', 'limits':(0, 1E6), 'get':self.get_rxbaud, 'set':self.set_rxbaud},
-            #{'name': 'Stop-Bits', 'key': 'stopbits', 'type': 'list', 'values': {'1': 1, '2': 2}, 'default': 1, 'get': self.stopBits, 'set': self.setStopBits, 'readonly': True},
-            #{'name': 'Parity', 'key': 'parity', 'type': 'list', 'values': {'None': 'n', 'Even': 'e'}, 'default': 'n', 'get': self.parity, 'set': self.setParity, 'readonly': True},
-        ])
+    def __str__(self):
+        return self.__repr__()
 
+    def __repr__(self):
+        return dict_to_str(self._dict_repr)
+
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['trigger_pattern'] = self.trigger_pattern
+        dict['rx_baud'] = self.rx_baud
+        dict['decode_type'] = self.decode_type
+        return dict
+
+    @property
+    def trigger_pattern(self):
+        r""" The pattern to trigger off of.
+
+        :Getter: Get the currently set trigger pattern
+
+        :Setter: Sets the trigger pattern. Expects a list of ASCII
+            characters/ints. ints in this list are equivalent to their
+            corresponding ASCII representation. For example, [0x10] is the same
+            as ['\\n'].
+
+        Warns the user if they try to set an incorrect pattern.
+
+        Example to trigger off of 'r\\n'::
+
+            scope.decode_IO.trigger_pattern = ['r', 0x10]
+
+        """
+        return self.pattern
+
+    @trigger_pattern.setter
+    def trigger_pattern(self, tp):
+        self.set_triggerpattern(tp)
 
     def get_triggerpattern(self):
         """ Get the trigger pattern, where 'XX' is used for don't-care bytes """
@@ -83,7 +124,6 @@ class ChipWhispererDecodeTrigger(Parameterized):
 
         return str(trigger_pattern)
 
-    @setupSetParam("Trigger Data")
     def set_triggerpattern(self, tp):
         """
         Set the trigger pattern - expects to be passed a string which will be evaluated, or a list directly
@@ -92,7 +132,7 @@ class ChipWhispererDecodeTrigger(Parameterized):
         """
 
 
-        if isinstance(tp, basestring):
+        if isinstance(tp, str):
             # If we can't evaluate the string, give up now
             try:
                 tl = eval(tp)
@@ -111,6 +151,7 @@ class ChipWhispererDecodeTrigger(Parameterized):
             return
 
         #Reverse order
+        self.pattern = copy(tl)
         tl = tl[::-1]
 
         # Bitmap: 0s indicate "don't care" bytes in tdata
@@ -122,17 +163,44 @@ class ChipWhispererDecodeTrigger(Parameterized):
             if tli == "XX" or tli == "xx":
                 pass
             # Other strings need to be length 1
-            elif (isinstance(tli, basestring)) and (len(tli) != 1):
+            elif (isinstance(tli, str)) and (len(tli) != 1):
                 logging.error("Trigger pattern with list of strings must have length = 1 for each string")
                 return
             else:
-                tdata[i] = tl[i]
+                if isinstance(tl[i], str):
+                    tdata[i] = ord(tl[i])
+                else:
+                    tdata[i] = tl[i]
                 bm = bm | (1<<i)
 
         self.set_trig_bitmap(bm)
         self.set_trig_rawdata(tdata)
 
-    @setupSetParam("Decode Type")
+    @property
+    def decode_type(self):
+        """ Type of data to trigger off of. Only 'USART' for now.
+
+        :Getter: Gets the current decode_type
+
+        :Setter: Sets the decode_type
+
+        Raises:
+            ValueError: User attempted to set decode_type to something other than
+                'USART'
+        """
+        dtype = self.get_decodetype()
+        if dtype == CODE_USART:
+            return "USART"
+        else:
+            return "unknown"
+
+    @decode_type.setter
+    def decode_type(self, typ):
+        if typ == "USART":
+            self.set_decodetype(CODE_USART)
+        else:
+            raise ValueError("Unknown decode type {}. Must be 'USART'".format(typ))
+
     def set_decodetype(self, type):
         data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
         data[0] = (data[0] & 0xF0) | type
@@ -158,7 +226,28 @@ class ChipWhispererDecodeTrigger(Parameterized):
     def set_trig_rawdata(self, data):
         self.oa.sendMessage(CODE_WRITE, ADDR_DECODEDATA, data)
 
-    @setupSetParam("Baud")
+    @property
+    def rx_baud(self):
+        """ The baud rate of the serial data to trigger off of
+
+        The baud rate can be between 0 and 1E6
+
+        :Getter: Gets the set baud rate
+
+        :Setter: Sets the baud rate
+
+        Raises:
+            ValueError: User attempted to set baud rate out of bounds
+        """
+        return self.get_rxbaud()
+
+    @rx_baud.setter
+    def rx_baud(self, baud):
+        if baud > 1E6 or baud < 0:
+            raise ValueError("Baud rate {} out of bounds of (0, 100000)".format(baud))
+        self.set_rxbaud(baud)
+
+
     def set_rxbaud(self, baud):
         breg = (baud * 8 * 512 + self.systemClk() / 255) / (self.systemClk() / 128)
         breg = int(round(breg))
@@ -169,6 +258,8 @@ class ChipWhispererDecodeTrigger(Parameterized):
         tmp =((breg * (self.systemClk() / 128)) - (self.systemClk() / 255)) / 512
         baud = tmp / 8
         return baud
+
+
 
     def setRxBaudReg(self, breg):
         data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)

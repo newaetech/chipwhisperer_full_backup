@@ -28,10 +28,9 @@
 import numpy as np
 
 from ..algorithmsbase import AlgorithmsBase
-from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class CPASimpleLoop(AlgorithmsBase, Plugin):
+class CPASimpleLoop(AlgorithmsBase):
     """
     CPA Attack done as a loop - the 'classic' attack provided for familiarity to textbook samples.
     This attack does not provide trace-by-trace statistics however, you can only gather results once

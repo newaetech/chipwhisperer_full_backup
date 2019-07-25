@@ -22,7 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import ConfigParser
+import configparser
 import logging
 import os.path
 import re
@@ -31,12 +31,18 @@ from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNativ
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import TraceSource
 
+from datetime import datetime
+from pathlib import Path
+import copy
 
 class TraceManager(TraceSource):
     """
-    When using traces in ChipWhisperer, you may have remapped a bunch of trace files into one
-    segment of traces. This class is used to handle the remapping and provide methods to save,
-    load and manage the traces.
+    When using traces in ChipWhisperer, you may have remapped a bunch of trace
+    files into one segment of traces. This class is used to handle the
+    remapping and provide methods to save, load and manage the traces.
+
+    Don't use anything that modifies the trace manager -> stick to stuff
+    that gives you information about it instead (i.e. get_trace, get_known_key)
     """
 
     def __init__(self, name = "Trace Management"):
@@ -48,41 +54,55 @@ class TraceManager(TraceSource):
         self._sampleRate = 0
         self.lastUsedSegment = None
         self.traceSegments = []
+        self.saved = False
         if __debug__: logging.debug('Created: ' + str(self))
 
-    def newProject(self):
+    def new_project(self):
         """Create a new empty set of traces."""
         self.traceSegments = []
         self.dirty.setValue(False)
         self.sigTracesChanged.emit()
 
-    def saveProject(self, config, configfilename):
+    newProject = new_project
+
+    def save_project(self, config, configfilename):
         """Save the trace segments information to a project file."""
         config[self.name].clear()
         for indx, t in enumerate(self.traceSegments):
+            starttime = datetime.now()
+            prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S') + "_"
+            t.config.setConfigFilename(os.path.splitext(configfilename)[0] + "_data" + "/traces/config_" + prefix + ".cfg")
+            t.config.setAttr("prefix", prefix)
+            t.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
             config[self.name]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
             config[self.name]['enabled%d' % indx] = str(t.enabled)
+
+            t.saveAllTraces(os.path.dirname(t.config.configFilename()), prefix)
         self.dirty.setValue(False)
+        self.saved = True
+
+    saveProject = util.camel_case_deprecated(save_project)
 
     def loadProject(self, configfilename):
         """Load the trace segments information from a project file."""
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
         config.read(configfilename)
         alltraces = config.items(self.name)
         self.newProject()
 
-        fdir = os.path.split(configfilename)[0] + "/"
+        path, name = os.path.split(configfilename)
 
         for t in alltraces:
             if t[0].startswith("tracefile"):
-                fname = fdir + t[1]
+                fname = os.path.join(path, t[1])
                 fname = os.path.normpath(fname.replace("\\", "/"))
                 # print "Opening %s"%fname
                 ti = TraceContainerNative()
                 try:
                     ti.config.loadTrace(fname)
-                except Exception, e:
-                    logging.error(e.message)
+                    ti.loadAllTraces()
+                except Exception as e:
+                    logging.error(str(e))
                 self.traceSegments.append(ti)
             if t[0].startswith("enabled"):
                 tnum = re.findall(r'[0-9]+', t[0])
@@ -114,14 +134,14 @@ class TraceManager(TraceSource):
         dataDict = {'offsetList':[], 'lengthList':[]}
 
         while(tnum < end):
-            t = self.getSegment(tnum)
+            t = self.get_segment(tnum)
             dataDict['offsetList'].append(t.mappedRange[0])
             dataDict['lengthList'].append(t.mappedRange[1] - t.mappedRange[0] + 1)
             tnum = t.mappedRange[1] + 1
 
         return dataDict
 
-    def getSegment(self, traceIndex):
+    def get_segment(self, traceIndex):
         """Return the trace segment with the specified trace in the list with all enabled segments."""
         if self.lastUsedSegment is not None:
             if self.lastUsedSegment.mappedRange is not None and self.lastUsedSegment.mappedRange[0] <= traceIndex <= \
@@ -129,8 +149,10 @@ class TraceManager(TraceSource):
                 return self.lastUsedSegment
             else:
                 # Only load one segment at a time for memory reasons
-                self.lastUsedSegment.unloadAllTraces()
-                self.lastUsedSegment = None
+                # If the traces are actually saved :)
+                if self.saved:
+                    self.lastUsedSegment.unloadAllTraces()
+                    self.lastUsedSegment = None
 
         for traceSegment in self.traceSegments:
             if traceSegment.mappedRange and traceSegment.mappedRange[0] <= traceIndex <= traceSegment.mappedRange[1]:
@@ -141,9 +163,11 @@ class TraceManager(TraceSource):
 
         raise ValueError("Error: Trace %d is not in mapped range." % traceIndex)
 
+    getSegment = util.camel_case_deprecated(get_segment)
+
     def getAuxData(self, n, auxDic):
         """Return data about a segment"""
-        t = self.getSegment(n)
+        t = self.get_segment(n)
         cfg = t.getAuxDataConfig(auxDic)
         if cfg is not None:
             filedata = t.loadAuxData(cfg["filename"])
@@ -152,28 +176,36 @@ class TraceManager(TraceSource):
 
         return {'cfgdata':cfg, 'filedata':filedata}
 
-    def getTrace(self, n):
+    def get_trace(self, n):
         """Return the trace with index n in the list of enabled segments"""
-        t = self.getSegment(n)
+        t = self.get_segment(n)
         return t.getTrace(n - t.mappedRange[0])
 
-    def getTextin(self, n):
+    getTrace = util.camel_case_deprecated(get_trace)
+
+    def get_textin(self, n):
         """Return the input text of trace with index n in the list of enabled segments"""
-        t = self.getSegment(n)
+        t = self.get_segment(n)
         return t.getTextin(n - t.mappedRange[0])
 
-    def getTextout(self, n):
+    getTextin = util.camel_case_deprecated(get_textin)
+
+    def get_textout(self, n):
         """Return the output text of trace with index n in the list of enabled segments"""
-        t = self.getSegment(n)
+        t = self.get_segment(n)
         return t.getTextout(n - t.mappedRange[0])
 
-    def getKnownKey(self, n):
+    getTextout = util.camel_case_deprecated(get_textout)
+
+    def get_known_key(self, n):
         """Return the known encryption key."""
         try:
-            t = self.getSegment(n)
+            t = self.get_segment(n)
             return t.getKnownKey(n - t.mappedRange[0])
         except ValueError:
             return []
+
+    getKnownKey = util.camel_case_deprecated(get_known_key)
 
     def _updateRanges(self):
         """Update the trace range for each segments."""
@@ -203,17 +235,22 @@ class TraceManager(TraceSource):
                 t.mappedRange = None
         self._numTraces = startTrace
 
-    def numPoints(self):
+    def num_points(self):
         """Return the number of points in traces of the selected segments."""
         return self._numPoints
 
-    def numTraces(self):
+    numPoints = util.camel_case_deprecated(num_points)
+
+    def num_traces(self):
         """Return the number of traces in the current list of enabled segments."""
         return self._numTraces
+
+    numTraces = util.camel_case_deprecated(num_traces)
 
     def appendSegment(self, ti, enabled=True):
         """Append a new segment to the list of trace segments."""
         ti.enabled = enabled
+        ti._isloaded = True
         self.traceSegments.append(ti)
         self._setModified()
 

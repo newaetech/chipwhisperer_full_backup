@@ -43,7 +43,7 @@ def fft(signal, freq=None):
     # freqs = freqs[2:len(freqs)/2]
     # return (freqs, FFTdb)
 
-    print FFT
+    print(FFT)
 
 
 class DecimationClockRecovery(PreprocessingBase):

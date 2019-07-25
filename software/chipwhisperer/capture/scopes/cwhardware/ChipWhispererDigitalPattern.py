@@ -237,7 +237,7 @@ class ChipWhispererDigitalPattern(Parameterized):
             bitstr = ""
             for t in bitpattern: bitstr += "%d" % t
 
-        except ValueError, s:
+        except ValueError as s:
             bitstr = "Error: %s" % s
 
         self.findParam('binarypatt').setValue(bitstr)

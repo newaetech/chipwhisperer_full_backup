@@ -29,6 +29,8 @@ import os.path
 import shutil
 import weakref
 import numpy as np
+from functools import wraps
+import warnings
 
 try:
     # OrderedDict is new in 2.7
@@ -119,9 +121,9 @@ def convert_to_str(data):
     be doing when it saves and loads the data.
     """
     if isinstance(data, collections.Mapping):
-        return dict(map(convert_to_str, data.iteritems()))
-    elif isinstance(data, collections.Iterable) and not isinstance(data, basestring):
-        return type(data)(map(convert_to_str, data))
+        return dict(list(map(convert_to_str, iter(list(data.items())))))
+    elif isinstance(data, collections.Iterable) and not isinstance(data, str):
+        return type(data)(list(map(convert_to_str, data)))
     else:
         return str(data)
 
@@ -218,7 +220,7 @@ class Signal(object):
         self.callbacks = {}  # observing object ID -> weak ref, methods
 
     def emit(self, *args, **kwargs):
-        callbacks = self.callbacks.keys()
+        callbacks = list(self.callbacks.keys())
         for ID in callbacks:
             try:
                 target, methods = self.callbacks[ID]
@@ -316,15 +318,15 @@ class Command:
         self.kwargs = kwargs
 
     def __call__(self, *args, **kwargs):
-        return apply(self.callback, self.args, self.kwargs)
+        return self.callback(*self.args, **self.kwargs)
 
 if __name__ == '__main__':
     class test(object):
         def m(self):
-            print "here"
+            print("here")
 
         def __del__(self):
-            print "deleted"
+            print("deleted")
 
     x = test()
     y = x.m
@@ -390,15 +392,17 @@ def dict_to_str(input_dict, indent=""):
     return ret
 
 
-class cw_bytearray(bytearray):
-    """Overwrites the __repr__ and __str__ methods of the builtin bytearray class
-    so it prints without trying to turn everything into ascii characters
+class bytearray(bytearray):
+    """bytearray with better repr and str methods.
 
-    It should be usable like the builtin bytearray class in all other regards
+    Overwrites the __repr__ and __str__ methods of the builtin bytearray class
+    so it prints without trying to turn everything into ascii characters.
+
+    It should be usable like the builtin bytearray class in all other regards:
     """
 
     def __repr__(self):
-        return "CWbytearray({})".format([hex(c)[-2:] for c in self])
+        return "CWbytearray(b'{}')".format(' '.join(['{:0>2}'.format(hex(c)[2:]) for c in self]))
 
     def __str__(self):
         return self.__repr__()
@@ -417,3 +421,98 @@ class NoneTypeTarget(object):
     """
     def __getattr__(self, item):
         raise AttributeError('Target has not been connected')
+
+
+def camel_case_deprecated(func):
+    """Wrapper function to deprecate camel case functions.
+
+    This is not a decorator, do not use it that way. This way of deprecating
+    allows the changing of the function definition name and then using this
+    wrapper to define the camel case function, including a usage warning. To
+    use first refactor the camelCase function definition to snake case, then
+    use the wrapper on the snake_case function and assign it to the camelCase
+    function name. It is best shown with an example:
+    Before:
+    .. code::
+        def fooBar():
+            pass
+
+    After:
+    .. code::
+        def foo_bar():
+            pass
+
+        fooBar = camel_case_deprecated(foo_bar)
+
+    Advantages of this method include being able to change the camelCase function
+    to snake_case right away and keeping backwards compatibility, as well as
+    supporting arbitrary amount of arguments and keyword arguments and keeping
+    docstrings in tact.
+
+    Args:
+        func: The now snake_case function
+
+    Returns: The wrapped snake_case function which now raises a warning during
+        usage.
+    """
+
+    def underscore_to_camelcase(value):
+    # .. function author:: Dave Webb: Stack overflow
+
+        def camelcase():
+            yield str.lower
+            while True:
+                yield str.capitalize
+
+        c = camelcase()
+        return ''.join(next(c)(x) if x else '_' for x in value.split('_'))
+
+    cc_func = underscore_to_camelcase(func.__name__)
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        warnings.warn('{} function is deprecated use {} instead.'.format(cc_func, func.__name__))
+        return func(*args, *kwargs)
+
+    wrapper.__name__ = underscore_to_camelcase(func.__name__)
+    wrapper.__doc__ = 'Deprecated: Use {} instead.'.format(func.__name__)
+    return wrapper
+
+
+def get_cw_type(sn=None):
+    """ Gets the scope type of the connected ChipWhisperer
+
+    If multiple connected, sn must be specified
+    """
+    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
+    from chipwhisperer.capture import scopes
+    possible_ids = [0xace0, 0xace2, 0xace3]
+
+    cwusb = NAEUSB()
+    possible_sn = cwusb.get_possible_devices(idProduct=possible_ids)
+    name = ""
+
+    if (len(possible_sn) > 1):
+        if sn is None:
+            serial_numbers = []
+            for d in possible_sn:
+                serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
+            raise Warning("Multiple chipwhisperers connected, but device and/or serial number not specified.\nDevices:\n{}".format(serial_numbers))
+        else:
+            for d in possible_sn:
+                if d['sn'] == sn:
+                    name = d['product']
+    else:
+        name = possible_sn[0]['product']
+
+    #print(name)
+    if (name == "ChipWhisperer Lite") or (name == "ChipWhisperer CW1200"):
+        return scopes.OpenADC
+    elif name == "ChipWhisperer Nano":
+        return scopes.CWNano
+
+import time
+def better_delay(ms):
+    t = time.perf_counter() + ms / 1000
+    while time.perf_counter() < t:
+        pass

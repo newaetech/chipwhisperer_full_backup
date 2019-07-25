@@ -139,6 +139,7 @@ SECTIONS
     {
         . = ALIGN(8);
          _sheap = .;
+         end = _sheap;
         . = . + HEAP_SIZE;
         . = ALIGN(8);
         _eheap = .;

@@ -24,11 +24,11 @@ raise DeprecationWarning("ChipWhisperer Rev2 is no longer supported")
 
 import logging
 import sys
-import chipwhisperer.capture.scopes._qt as openadc_qt
+# import chipwhisperer.capture.scopes._qt as openadc_qt
+from .. import _qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWCRev2_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
-from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized
 
 try:
@@ -37,7 +37,7 @@ except ImportError:
     usb = None
 
 
-class OpenADCInterface_ZTEX(Parameterized, Plugin):
+class OpenADCInterface_ZTEX(Parameterized):
     _name = "ChipWhisperer Rev2"
 
     def __init__(self, oadcInstance):
@@ -65,7 +65,7 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
 
             try:
                 dev = usb.core.find(idVendor=0x221A, idProduct=0x0100)
-            except IOError, e:
+            except IOError as e:
                 exctype, value = sys.exc_info()[:2]
                 raise IOError("FX2 Port " +  str(exctype) + str(value))
 
@@ -83,7 +83,7 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
         try:
             self.scope.con(self.ser)
             logging.info('OpenADC Found, Connecting')
-        except IOError,e:
+        except IOError as e:
             exctype, value = sys.exc_info()[:2]
             raise IOError("OpenADC Error (FX2 Port): " + (str(exctype) + str(value)) + " - Did you download firmware/FPGA data to ChipWhisperer?")
 
@@ -102,19 +102,19 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
 
         data = bytearray(data)
         if debug:
-            print "RX: ",
+            print("RX: ", end=' ')
             for b in data:
-                print "%02x "%b,
-            print ""
+                print("%02x "%b, end=' ')
+            print("")
         return data
 
     def write(self, data, debug=False):
         data = bytearray(data)
         if debug:
-            print "TX: ",
+            print("TX: ", end=' ')
             for b in data:
-                print "%02x "%b,
-            print ""
+                print("%02x "%b, end=' ')
+            print("")
         # self.interface removed from call for latest API compatibility
         self.dev.write(self.writeEP, data, timeout=500)
 

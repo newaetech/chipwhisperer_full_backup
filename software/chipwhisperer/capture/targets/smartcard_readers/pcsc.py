@@ -25,7 +25,7 @@
 #=================================================
 import logging
 
-from _base import ReaderTemplate
+from ._base import ReaderTemplate
 from chipwhisperer.common.utils import timer
 from chipwhisperer.common.utils.parameter import setupSetParam
 

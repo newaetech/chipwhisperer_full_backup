@@ -49,7 +49,7 @@ class Settings(object):
 
         #Sync local settings to backend (if present)
         if self._backend:
-            for key in self._settings_dict.keys():
+            for key in list(self._settings_dict.keys()):
                 #If backend has value, store locally
                 backend_value = self._backend.value(key, None)
                 if backend_value:

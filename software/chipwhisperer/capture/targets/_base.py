@@ -25,8 +25,6 @@
 
 from chipwhisperer.capture.api.programmers import Programmer
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 try:
     from Crypto.Cipher import AES
@@ -34,13 +32,12 @@ except ImportError:
     AES = None
 
 
-class TargetTemplate(Parameterized, Plugin):
+class TargetTemplate:
     _name = 'Target Connection'
+    connectStatus=False
 
     def __init__(self):
-        self.newInputData = util.Signal()
-        self.connectStatus = util.Observable(False)
-        self.getParams().register()
+        pass
 
     def setSomething(self):
         """Here you would send value to the reader hardware"""
@@ -51,18 +48,19 @@ class TargetTemplate(Parameterized, Plugin):
         self.close()
 
     def getStatus(self):
-        return self.connectStatus.value()
+        return self.connectStatus
 
     def dis(self):
         """Disconnect from target"""
         self.close()
-        self.connectStatus.setValue(False)
+        self.connectStatus = False
+
 
     def con(self, scope=None, **kwargs):
         """Connect to target"""
         Programmer.lastFlashedFile = "unknown"
         try:
-            self.connectStatus.setValue(True)
+            self.connectStatus = True
             self._con(scope, **kwargs)
         except:
             self.dis()
@@ -83,7 +81,7 @@ class TargetTemplate(Parameterized, Plugin):
     def init(self):
         """Init Hardware"""
         pass
-    
+
     def reinit(self):
         pass
 
@@ -104,7 +102,7 @@ class TargetTemplate(Parameterized, Plugin):
         return text
 
     def loadEncryptionKey(self, key):
-        """Load desired encryption key"""        
+        """Load desired encryption key"""
         self.key = key
 
     def loadInput(self, inputtext):
@@ -115,7 +113,7 @@ class TargetTemplate(Parameterized, Plugin):
         """If encryption takes some time after 'go' called, lets user poll if done"""
         return True
 
-    def readOutput(self):        
+    def readOutput(self):
         """Read result"""
         raise NotImplementedError("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".readOutput()")
 
@@ -133,11 +131,11 @@ class TargetTemplate(Parameterized, Plugin):
 
     def getExpected(self):
         """Based on key & text get expected if known, otherwise returns None"""
-        
+
         # e.g. for AES we can do this:
         if AES and hasattr(self, 'key') and hasattr(self, 'input') and self.input and self.key:
-            cipher = AES.new(str(self.key), AES.MODE_ECB)
-            ct = cipher.encrypt(str(self.input))
+            cipher = AES.new(bytes(self.key), AES.MODE_ECB)
+            ct = cipher.encrypt(bytes(self.input))
             ct = bytearray(ct)
             return ct
         else:

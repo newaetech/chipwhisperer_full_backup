@@ -78,6 +78,10 @@ ifeq ($(DEMO),SECCAN)
 	CFLAGS += -DSECCAN
 endif
 
+ifeq ($(MCU_CLK), INT)
+  CFLAGS += -DUSE_INTERNAL_CLK
+endif
+
 ifeq ($(PLATFORM),CW301_AVR)
  MCU = atmega328
  HAL = avr

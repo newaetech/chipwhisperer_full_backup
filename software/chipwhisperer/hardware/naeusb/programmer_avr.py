@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014-2016, NewAE Technology Inc
+# Copyright (c) 2014-2018, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -26,7 +26,7 @@ from datetime import datetime
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 
-from naeusb import packuint32
+from .naeusb import packuint32
 
 # NOTE: These objects are currently manually maintained. Eventually it will be automatically created
 #      from avrdude.conf, but I'd like to test with a few more devices before doing that.
@@ -143,7 +143,7 @@ class ATMega2564RFR2(AVRBase):
 supported_avr = [ATMega328P(), ATMega328(), ATMega168A(), ATMega168PA(), ATMega88A(), ATMega88PA(), ATMega48A(), ATMega48PA(), ATMega128RFA1(), ATMega2564RFR2()]
 
 def print_fun(s):
-    print s
+    print(s)
 
 class AVRISP(object):
 
@@ -309,7 +309,7 @@ class AVRISP(object):
 
                 status = "SUCCEEDED"
 
-            except IOError, e:
+            except IOError as e:
                 if logfunc: logfunc("FAILED: %s" % str(e))
                 try:
                     self.enableISP(False)
@@ -332,7 +332,7 @@ class AVRISP(object):
         """
 
         # windex selects interface
-        self._usb.usbdev().ctrl_transfer(0x41, self.CMD_AVR_PROGRAM, cmd, 0, data, timeout=self._timeout)
+        self._usb.sendCtrl(self.CMD_AVR_PROGRAM, cmd, data)
 
         # Check status
         if checkStatus:
@@ -349,7 +349,7 @@ class AVRISP(object):
         Read the result of some command.
         """
         # windex selects interface, set to 0
-        return self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_AVR_PROGRAM, cmd, 0, dlen, timeout=self._timeout)
+        return self._usb.readCtrl(self.CMD_AVR_PROGRAM, cmd, dlen)
 
     # Low-level functions
 
@@ -605,6 +605,6 @@ class AVRISP(object):
 
     def enableSlowClock(self, enabled):
         if enabled:
-            self._usb.usbdev().ctrl_transfer(0x41, self.CMD_SAM3U_CFG, 0x01, 0, timeout=self._timeout)
+            self._usb.sendCtrl(self.CMD_SAM3U_CFG, 0x01)
         else:
-            self._usb.usbdev().ctrl_transfer(0x41, self.CMD_SAM3U_CFG, 0x02, 0, timeout=self._timeout)
+            self._usb.sendCtrl(self.CMD_SAM3U_CFG, 0x02)

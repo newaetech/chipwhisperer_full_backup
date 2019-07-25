@@ -29,9 +29,7 @@ import numpy as np
 import scipy
 import sys
 
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
 from ..algorithmsbase import AlgorithmsBase
 
@@ -108,7 +106,7 @@ class TemplateUsingMVS(object):
         return template
 
 
-class ProfilingTemplate(AlgorithmsBase, Plugin):
+class ProfilingTemplate(AlgorithmsBase):
     """
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
@@ -128,7 +126,6 @@ class ProfilingTemplate(AlgorithmsBase, Plugin):
                 {'name':'Generate Templates', 'type':'action', 'action':util.Command(self.runScriptFunction.emit, "generateTemplates")}
             ]},
         ])
-        self.addGroup("generateTemplates")
         self.setProfileAlgorithm(TemplateUsingMVS)
         self.updateScript()
 
@@ -155,25 +152,15 @@ class ProfilingTemplate(AlgorithmsBase, Plugin):
             logging.debug('Delaying script for template attack until TraceExplorer exists...')
             return
 
-        self.addFunction('generateTemplates', 'initPreprocessing', '', obj='UserScript')
-        self.addFunction('generateTemplates', 'initAnalysis', '', obj='UserScript')
-        self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam(["Generate New Template",'tgenstart']).getValue(), self.findParam(["Generate New Template",'tgenstop']).getValue()))
 
         if self.findParam(["Generate New Template",'poimode']).getValue() == 0:
-            self.addVariable('generateTemplates', 'poiList', '%s' % ted.poi.poiArray)
-            self.addVariable('generateTemplates', 'partMethod', '%s()' % ted.partObject.partMethod.__class__.__name__)
-            self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % ted.partObject.partMethod.__class__.__name__)
+            pass
         else:
             poidata = self.loadPOIs()[-1]
-            self.addVariable('generateTemplates', 'poiList', '%s' % poidata["poi"])
-            self.addVariable('generateTemplates', 'partMethod', '%s()' % poidata["partitiontype"])
-            self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % poidata["partitiontype"])
 
         profilingPath = sys.modules[self.profiling.__module__].__name__ + '.' + self.profiling.__name__
-        self.addFunction('generateTemplates', profilingPath + '.generate', 'self.getTraceSource(), tRange, poiList, partMethod', 'templatedata', "")
 
         #Save template data to project
-        self.addFunction('generateTemplates', 'saveTemplatesToProject', 'tRange, templatedata', 'tfname')
 
         self.scriptsUpdated.emit()
 

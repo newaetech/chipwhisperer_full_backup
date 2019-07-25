@@ -28,7 +28,6 @@
 import numpy as np
 import scipy as sp
 
-from chipwhisperer.common.results.base import ResultsBase
 from ._base import PreprocessingBase
 from chipwhisperer.common.utils.parameter import setupSetParam
 
@@ -50,7 +49,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
 
         self.params.addChildren([
             {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'get':self._getRefTrace, 'set':self._setRefTrace},
-            {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'get':self._getWindow, 'set':self._setWindow},
+            {'name':'Window', 'key':'rwindow', 'type':'rangegraph',  'get':self._getWindow, 'set':self._setWindow},
             # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr}
         ])
         self._calculateRef()
@@ -72,7 +71,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
 
     @ref_trace.setter
     def ref_trace(self, num):
-        if not isinstance(num, (int, long)):
+        if not isinstance(num, int):
             raise TypeError("Expected int; got %s" % type(num), num)
         self._setRefTrace(num)
 
@@ -99,9 +98,9 @@ class ResyncCrossCorrelation(PreprocessingBase):
     def window(self, win):
         if not isinstance(win, tuple):
             raise TypeError("Expected tuple; got %s" % type(win), win)
-        if not isinstance(win[0], (int, long)):
+        if not isinstance(win[0], int):
             raise TypeError("Expected int; got %s" % type(win[0]), win[0])
-        if not isinstance(win[1], (int, long)):
+        if not isinstance(win[1], int):
             raise TypeError("Expected int; got %s" % type(win[1]), win[1])
         self._setWindow(win)
    

@@ -28,18 +28,16 @@ import logging
 
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import TraceSource
-from chipwhisperer.common.utils.parameter import Parameterized
 
 
-class ScopeTemplate(Parameterized):
+class ScopeTemplate(object):
     _name = "None"
 
-    scope_disconnected_signal = util.Signal()
-
     def __init__(self):
-        self.connectStatus = util.Observable(False)
-        self.getParams().register()
-        self.channels = [Channel(self.getName() + " - Channel " + str(n)) for n in range(1,2)]
+        self.connectStatus = False
+
+    def _getNAEUSB(self):
+        raise Warning("Can't find low level USB interface for scope " + self.getName())
 
     def dcmTimeout(self):
         pass
@@ -51,28 +49,25 @@ class ScopeTemplate(Parameterized):
         pass
 
     def newDataReceived(self, channelNum, data=None, offset=0, sampleRate=0):
-        self.channels[channelNum].newScopeData(data, offset, sampleRate)
+        pass
 
     def getStatus(self):
-        return self.connectStatus.value()
+        return self.connectStatus
 
-    def con(self):
-        for channel in self.channels:
-            channel.register()
-        if self._con():
-            self.connectStatus.setValue(True)
+    def con(self, sn=None):
+        if self._con(sn):
+            self.connectStatus = True
 
-    def _con(self):
-        raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
+    def _con(self, sn=None):
+        raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def dis(self):
         if self._dis():
-            for channel in self.channels:
-                channel.deregister()
-        self.connectStatus.setValue(False)
+            pass
+        self.connectStatus = False
 
     def _dis(self):
-        raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".dis()")
+        raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".dis()")
 
     def arm(self):
         """Prepare the scope for capturing"""
@@ -93,39 +88,7 @@ class ScopeTemplate(Parameterized):
         #     util.updateUI()
         pass
 
+    def get_name(self):
+        return self._name
 
-class Channel(TraceSource):
-    """Save the traces emited by the scopes and notify the TraceSourceObservers."""
-
-    def __init__(self, name="Unknown Channel"):
-        TraceSource.__init__(self, name)
-        self._lastData = []
-        self._lastOffset = 0
-        self._sampleRate = 0
-
-    def newScopeData(self, data=None, offset=0, sampleRate=0):
-        """Capture the received trace and emit a signal to inform the observers"""
-        self._lastData = data
-        self._lastOffset = offset
-        self._sampleRate = sampleRate
-        if len(data) > 0:
-            self.sigTracesChanged.emit()
-        else:
-            logging.warning('Captured trace in "%s" has len=0' % self.name)
-
-    def getTrace(self, n=0):
-        if n != 0:
-            raise ValueError("Live trace source has no buffer, so it only supports trace 0.")
-        return self._lastData
-
-    def numPoints(self):
-        return len(self._lastData)
-
-    def numTraces(self):
-        return 1
-
-    def offset(self):
-        return self._lastOffset
-
-    def getSampleRate(self):
-        return self._sampleRate
+    getName = util.camel_case_deprecated(get_name)

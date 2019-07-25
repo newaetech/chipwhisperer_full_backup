@@ -28,8 +28,7 @@ import logging
 import time
 from collections import OrderedDict
 from functools import partial
-import ChipWhispererGlitch
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
+from . import ChipWhispererGlitch
 from chipwhisperer.common.utils import util
 
 CODE_READ = 0x80
@@ -72,6 +71,7 @@ class GPIOSettings(util.DisableNewAttr):
     def __init__(self, cwextra):
         self.cwe = cwextra
 
+        # This stuff actually matters, used with _tio_alias above
         self.TIO_VALID = [
             {'Serial TXD': self.cwe.IOROUTE_STX, 'Serial RXD': self.cwe.IOROUTE_SRX, 'USI-Out': self.cwe.IOROUTE_USIO,
              'USI-In': self.cwe.IOROUTE_USII, 'GPIO': self.cwe.IOROUTE_GPIOE, 'High-Z': self.cwe.IOROUTE_HIGHZ},
@@ -123,8 +123,8 @@ class GPIOSettings(util.DisableNewAttr):
         """Convert an API TIO string to a (TIO, GPIO) parameter tuple
 
         Ex:
-        - "serial_tx" -> ("Serial TXD", None)
-        - "gpio_high" -> ("GPIO", "High")
+         * "serial_tx" -> ("Serial TXD", None)
+         * "gpio_high" -> ("GPIO", "High")
         """
 
         # Accept None in place of "high-z"
@@ -152,8 +152,8 @@ class GPIOSettings(util.DisableNewAttr):
         """Convert TIO and GPIO parameter settings to an API string.
 
         Ex:
-        - ("Serial TXD", None) -> "serial_tx"
-        - ("GPIO", "High") -> "gpio_high"
+         * ("Serial TXD", None) -> "serial_tx"
+         * ("GPIO", "High") -> "gpio_high"
         """
         try:
             if tio_setting == "GPIO":
@@ -168,18 +168,22 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO1 pin.
 
         TIO1 can be used for the following functions:
-        - "serial_rx": UART input
-        - "serial_tx": UART output
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+         * "serial_rx": UART input
+         * "serial_tx": UART output
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
+
         Default value is "serial_rx".
 
-        Getter: Return one of the above strings
+        :Getter:  Return one of the above strings
 
-        Setter: Set the Target IO1 mode.
-            Raises: ValueError if new value is not one of the above modes
+        :Setter: Set the Target IO1 mode.
+
+        Raises:
+           ValueError: if new value is not one of the above modes
+
         """
         return self._tioInternalToApi(self._getTio(0), self._getGpio(0))
 
@@ -194,18 +198,21 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO2 pin.
 
         TIO2 can be used for the following functions:
-        - "serial_rx": UART input
-        - "serial_tx": UART output
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+         * "serial_rx": UART input
+         * "serial_tx": UART output
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
+
         Default value is "serial_tx".
 
-        Getter: Return one of the above strings
+        :Getter:  Return one of the above strings
 
-        Setter: Set the Target IO2 mode.
-            Raises: ValueError if new value is not one of the above modes
+        :Setter: Set the Target IO2 mode.
+
+        Raises:
+           ValueError: if new value is not one of the above modes
         """
         return self._tioInternalToApi(self._getTio(1), self._getGpio(1))
 
@@ -220,19 +227,22 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO3 pin.
 
         TIO3 can be used for the following functions:
-        - "serial_rx": UART input
-        - "serial_tx": UART output
-        - "serial_tx_rx": UART 1-wire I/O (for smartcards)
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+         * "serial_rx": UART input
+         * "serial_tx": UART output
+         * "serial_tx_rx": UART 1-wire I/O (for smartcards)
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
+
         Default value is "high_z".
 
-        Getter: Return one of the above strings
+        :Getter:  Return one of the above strings
 
-        Setter: Set the Target IO3 mode.
-            Raises: ValueError if new value is not one of the above modes
+        :Setter: Set the Target IO3 mode.
+
+        Raises:
+           ValueError: if new value is not one of the above modes
         """
         return self._tioInternalToApi(self._getTio(2), self._getGpio(2))
 
@@ -247,18 +257,21 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO4 pin.
 
         TIO4 can be used for the following functions:
-        - "serial_tx": UART output
-        - "high_z" / None: High impedance input
-        - "gpio_low" / False: Driven output: logic 0
-        - "gpio_high" / True: Driven output: logic 1
-        - "gpio_disabled": Driven output: no effect
+         * "serial_tx": UART output
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
+
         Default value is "high_z". Typically, this pin is used as a trigger
         input.
 
-        Getter: Return one of the above strings
+        :Getter:  Return one of the above strings
 
-        Setter: Set the Target IO4 mode
-            Raises: ValueError if new value is not one of the above modes
+        :Setter: Set the Target IO4 mode
+
+        Raises:
+           ValueError: if new value is not one of the above modes
         """
         return self._tioInternalToApi(self._getTio(3), self._getGpio(3))
 
@@ -277,7 +290,7 @@ class GPIOSettings(util.DisableNewAttr):
         mode &= ~self.cwe.IOROUTE_GPIO
 
         # Find string
-        for s, bmask in self.TIO_VALID[pinnum].iteritems():
+        for s, bmask in self.TIO_VALID[pinnum].items():
             if mode == bmask:
                 return s
 
@@ -290,7 +303,7 @@ class GPIOSettings(util.DisableNewAttr):
         if pinnum < 0 or pinnum >= 4:
             raise ValueError("Invalid PIN: %d. Valid range = 0-3." % pinnum, pinnum)
 
-        valid_modes = self.TIO_VALID[pinnum].keys()
+        valid_modes = list(self.TIO_VALID[pinnum].keys())
 
         try:
             iomode = self.TIO_VALID[pinnum][mode]
@@ -304,14 +317,16 @@ class GPIOSettings(util.DisableNewAttr):
         """The state of the PDIC pin output pin.
 
         This is a GPIO pin. The following values are allowed:
-        - "high" / True: logic 1
-        - "low" / False: logic 0
-        - "disabled" / "default" / "high_z" / None: undriven
+         * "high" / True: logic 1
+         * "low" / False: logic 0
+         * "disabled" / "default" / "high_z" / None: undriven
 
-        Getter: Return one of "high", "low", or "high_z"
+        :Getter:  Return one of "high", "low", or "high_z"
 
-        Setter: Set the pin's state
-            Raises: ValueError if new state not listed above
+        :Setter: Set the pin's state
+
+        Raises:
+        ValueError: if new state not listed above
         """
         return self._getGpio(102)
 
@@ -378,17 +393,19 @@ class GPIOSettings(util.DisableNewAttr):
         """The clock signal routed to the HS2 high speed output pin.
 
         Allowed clock signals are:
-        - "clkgen": The output from the CLKGEN module
-        - "glitch": The output from the glitch module
-        - "disabled" / None: No clock; output driven low
+         * "clkgen": The output from the CLKGEN module
+         * "glitch": The output from the glitch module
+         * "disabled" / None: No clock; output driven low
 
-        Getter: Return one of "clkgen", "glitch", or "disabled"
+        :Getter:  Return one of "clkgen", "glitch", or "disabled"
 
-        Setter: Set the clock to be output on HS2.
-            Raises: ValueError if new value not listed above
+        :Setter: Set the clock to be output on HS2.
+
+        Raises:
+        ValueError: if new value not listed above
         """
         mode = self.cwe.targetClkOut()
-        for k, v in self.HS2_VALID.iteritems():
+        for k, v in self.HS2_VALID.items():
             if mode == v:
                 if k == 'disabled':
                     return None
@@ -404,7 +421,7 @@ class GPIOSettings(util.DisableNewAttr):
 
         if mode not in self.HS2_VALID:
             raise ValueError(
-                "Unknown mode for HS2 pin: '%s'. Valid modes: [%s]" % (mode, self.HS2_VALID.keys()), mode)
+                "Unknown mode for HS2 pin: '%s'. Valid modes: [%s]" % (mode, list(self.HS2_VALID.keys())), mode)
 
         self.cwe.setTargetCLKOut(self.HS2_VALID[mode])
 
@@ -419,9 +436,9 @@ class GPIOSettings(util.DisableNewAttr):
         If the target board is powered through an external supply, this setting
         may have no effect.
 
-        Getter: Return the current power state of the target (True or False)
+        :Getter:  Return the current power state of the target (True or False)
 
-        Setter: Turn the target power on or off.
+        :Setter: Turn the target power on or off.
         """
         return self.cwe.getTargetPowerState()
 
@@ -434,13 +451,13 @@ class GPIOSettings(util.DisableNewAttr):
         high-powered MOSFET shorts the power-rail to ground when the glitch
         module's output is active.
 
-        Use with caution - ensure that the glitch module is properly configured
-        before enabling this setting, as it is possible to permanently damage
-        hardware with this output.
+        .. warning:: Use with caution - ensure that the glitch module is properly
+            configured before enabling this setting, as it is possible to
+            permanently damage hardware with this output.
 
-        Getter: Return True if enabled or False if disabled
+        :Getter:  Return True if enabled or False if disabled
 
-        Setter: Turn the high-power MOSFET on or off
+        :Setter: Turn the high-power MOSFET on or off
         """
         return self.cwe.targetGlitchOut('A')
 
@@ -468,7 +485,8 @@ class GPIOSettings(util.DisableNewAttr):
     def reset_target(self, initial_state=1, reset_state=0, reset_delay=0.01, postreset_delay=0.01):
         raise NotImplementedError()
 
-    # TODO: implement SCK/MOSI/MISO/CS?
+    # .. todo:: implement SCK/MOSI/MISO/CS?
+
     def sck(self):
         raise NotImplementedError()
 
@@ -482,8 +500,6 @@ class GPIOSettings(util.DisableNewAttr):
         raise NotImplementedError()
 
 class TriggerSettings(util.DisableNewAttr):
-    # TODO: this module should include SAD/UART settings for CW1200
-
     def __init__(self, cwextra):
         self.cwe = cwextra
 
@@ -494,6 +510,7 @@ class TriggerSettings(util.DisableNewAttr):
             'tio4': self.cwe.PIN_RTIO4,
         }
 
+        self.last_module = "basic"
         if self.cwe.hasAux:
             self.supported_tpins['sma'] = self.cwe.PIN_FPA
 
@@ -522,31 +539,34 @@ class TriggerSettings(util.DisableNewAttr):
         different boolean operations.
 
         Pins:
-        - tio1-4: Target I/O pins 1-4. Note that these pins can be in any mode.
-        - sma: An auxiliary SMA input, if available (only on CW1200)
+         * tio1-4: Target I/O pins 1-4. Note that these pins can be in any mode.
+         * sma: An auxiliary SMA input, if available (only on CW1200)
 
         Boolean operations:
-        - OR: True if any inputs are True; False if none are
-        - AND: True if all inputs are True; False if any are not
-        - NAND: False if all inputs are True; True if any are not
+         * OR: True if any inputs are True; False if none are
+         * AND: True if all inputs are True; False if any are not
+         * NAND: False if all inputs are True; True if any are not
+
         Note that only one boolean operation can be used over all input pins.
 
         Examples of acceptable trigger inputs:
-        - "tio1"
-        - "tio3 OR tio4"
-        - "tio1 NAND tio2 NAND sma"
+         * "tio1"
+         * "tio3 OR tio4"
+         * "tio1 NAND tio2 NAND sma"
 
         Examples of unallowed trigger inputs:
-        - "tio1 tio2"
-        - "tio1 AND tio2 OR tio3"
-        - "tio1 OR tio1"
-        - "tio1 XOR tio2"
-        - "serial-tx"
+         * "tio1 tio2"
+         * "tio1 AND tio2 OR tio3"
+         * "tio1 OR tio1"
+         * "tio1 XOR tio2"
+         * "serial-tx"
 
-        Getter: Return a string describing the trigger mode (see examples)
+        :Getter:  Return a string describing the trigger mode (see examples)
 
-        Setter: Set the trigger mode using a string like the ones above
-            Raises: ValueError if string cannot be converted to a legal mode
+        :Setter: Set the trigger mode using a string like the ones above
+
+        Raises:
+           ValueError: if string cannot be converted to a legal mode
         """
         #Get pin logic + combo mode
         pins, mode = self.cwe.getPins()
@@ -604,7 +624,7 @@ class TriggerSettings(util.DisableNewAttr):
         enablelogic = 0
 
         #Figure out enabled triggers
-        for t in self.supported_tpins.keys():
+        for t in list(self.supported_tpins.keys()):
             if t in triggers:
                 if triggers.count(t) != 1:
                     raise ValueError("Pin '%s' appears %d times, only 1 apperance supported" % (t, triggers.count(t)), s)
@@ -625,8 +645,8 @@ class TriggerSettings(util.DisableNewAttr):
         expect_tpin = True
         for t in triggers:
             if expect_tpin:
-                if t not in self.supported_tpins.keys():
-                    raise ValueError("Error processing string at expected pin '%s'. Valid pins: %s"%(t, self.supported_tpins.keys()), s)
+                if t not in list(self.supported_tpins.keys()):
+                    raise ValueError("Error processing string at expected pin '%s'. Valid pins: %s"%(t, list(self.supported_tpins.keys())), s)
             else:
                 if t != modes:
                     raise ValueError("Unexpected combination mode '%s'. Expected %s."%(t, modes), s)
@@ -644,11 +664,9 @@ class TriggerSettings(util.DisableNewAttr):
         data and SAD triggers are available too.
 
         Available trigger modules:
-        - "basic": Trigger on a logic level or edge
+         * 'basic': Trigger on a logic level or edge
 
-        Getter: Return the active trigger module
-
-        TODO: add support for CW1200 trigger modules; read-only for now
+        :Getter: Returns 'basic'
         """
         return "basic"
 
@@ -662,6 +680,71 @@ class TriggerSettings(util.DisableNewAttr):
         self.triggers("tio1 NAND tio2 NAND")
         self.triggers("tio1 AND tio1")
 
+class ProTrigger(TriggerSettings):
+    def _dict_repr(self):
+        dict = super()._dict_repr()
+        dict['module'] = self.module
+        return dict
+
+    @property
+    def module(self):
+        """The trigger module in use.
+
+        The trigger modules available depend on the hardware. On the CWLite,
+        only the basic trigger module can be used; on the CW1200, the serial
+        data and SAD triggers are available too.
+
+        Available trigger modules:
+         * 'basic': Trigger on a logic level or edge
+         * 'SAD':   Trigger from SAD module
+         * 'DECODEIO': Trigger from decode_IO module
+
+
+        :Getter: Return the active trigger module
+
+        :Setter: Sets the active trigger module
+
+        .. todo:: add support for CW1200 serial data trigger
+        .. todo:: Fix getter so that we don't have to store the module anymore
+
+        Raises:
+            ValueError: module isn't one of the available strings
+        """
+        '''
+        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
+                                       Validate=False, maxResp=1)
+        module = resp[0] & 0xF8
+        if module == self.cwe.MODULE_BASIC:
+            return "basic"
+        elif module == self.cwe.MODULE_SADPATTERN:
+            return "SAD"
+        elif module == self.cwe.MODULE_DECODEIO:
+            return "DECODEIO"
+        else:
+            return "Unknown"
+        '''
+        return self.last_module
+
+    @module.setter
+    def module(self, mode):
+        if mode == "basic":
+            module = self.cwe.MODULE_BASIC
+        elif mode == "SAD":
+            module = self.cwe.MODULE_SADPATTERN
+        elif mode == "DECODEIO":
+            module = self.cwe.MODULE_DECODEIO
+        else:
+            raise ValueError("Invalid mode {}. Must be 'basic', 'SAD', or 'DECODEIO'")
+
+        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
+                                       Validate=False, maxResp=1)
+        resp[0] &= 0xF8
+        resp[0] |= module
+        resp = self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD,
+                                       resp)
+        self.last_module = mode
+
+
 
 class SADTrigger(util.DisableNewAttr):
     pass
@@ -671,7 +754,7 @@ class DataTrigger(util.DisableNewAttr):
     pass
 
 
-class ChipWhispererExtra(Parameterized):
+class ChipWhispererExtra(object):
     _name = 'CW Extra'
 
     def __init__(self, cwtype, scope, oa):
@@ -681,9 +764,6 @@ class ChipWhispererExtra(Parameterized):
         self.enableGlitch = True
         if self.enableGlitch:
             self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(cwtype, scope, oa)
-
-        self.getParams().append(self.cwEXTRA.getParams())
-        self.getParams().append(self.glitch.getParams())
 
     def armPreScope(self):
         if self.enableGlitch:
@@ -700,7 +780,7 @@ class ChipWhispererExtra(Parameterized):
     #    self.cwADV.setIOPattern(strToPattern("\n"), clkdiv=clkdivider)
 
 
-class CWExtraSettings(Parameterized):
+class CWExtraSettings(object):
     PIN_FPA = 0x01
     PIN_FPB = 0x02
     PIN_RTIO1 = 0x04
@@ -760,133 +840,11 @@ class CWExtraSettings(Parameterized):
         self.hasPLL = hasPLL
         self.hasAux = hasAux
 
-        ret = []
-        # Generate list of input pins present on the hardware
-        if self.hasFPAFPB:
-            tpins = [
-                {'name': 'Front Panel A', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_FPA), 'set':partial(self.setPin, pin=self.PIN_FPA)},
-                {'name': 'Front Panel B', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_FPB), 'set':partial(self.setPin, pin=self.PIN_FPB)}
-            ]
-        else:
-            tpins = []
-
-        if self.hasAux:
-            tpins.append({'name': 'Aux SMA', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_FPA), 'set':partial(self.setPin, pin=self.PIN_FPA)})
-
-        tpins.extend([
-            {'name': 'Target IO1 (Serial TXD)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO1), 'set':partial(self.setPin, pin=self.PIN_RTIO1)},
-            {'name': 'Target IO2 (Serial RXD)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO2), 'set':partial(self.setPin, pin=self.PIN_RTIO2)},
-            {'name': 'Target IO3 (SmartCard Serial)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO3), 'set':partial(self.setPin, pin=self.PIN_RTIO3)},
-            {'name': 'Target IO4 (Trigger Line)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO4), 'set':partial(self.setPin, pin=self.PIN_RTIO4)},
-            {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND, "NAND":self.MODE_NAND}, 'get':self.getPinMode, 'set':self.setPinMode }
-        ])
-
-        # Add trigger pins & modules
-
-        trigger_modules = {"Basic (Edge/Level)": self.MODULE_BASIC}
-
-        if cwtype == "cwlite":
-            pass
-        elif cwtype == "cw1200":
-            trigger_modules["SAD Match"] = self.MODULE_SADPATTERN
-            trigger_modules["Digital IO Decode"] = self.MODULE_DECODEIO
-        elif cwtype == "cwrev2":
-            trigger_modules["SAD Match"] = self.MODULE_SADPATTERN
-            trigger_modules["Digital Pattern Matching"] = self.MODULE_ADVPATTERN
-        else:
-            raise ValueError("Unknown ChipWhisperer %s"%cwtype)
-
-        ret.extend([
-            {'name': 'Trigger Pins', 'type':'group', 'children':tpins},
-            {'name': 'Trigger Module', 'type':'list', 'values':trigger_modules,
-             'set':self.setTriggerModule, 'get':self.getTriggerModule}
-        ])
-
-        # Generate list of clock sources present in the hardware
-        if self.hasFPAFPB:
-            ret.append({'name': 'Trigger Out on FPA', 'type':'bool', 'set':self.setTrigOut, 'get':self.getTrigOut})
-            clksrc = {'Front Panel A':self.CLOCK_FPA, 'Front Panel B':self.CLOCK_FPB}
-        else:
-            clksrc = {}
-
-        if self.hasAux:
-            ret.append({'name': 'Trigger Out on Aux', 'type':'bool', 'set':self.setTrigOutAux, 'get':self.getTrigOut})
-        else:
-            clksrc = {}
-
-        if self.hasPLL:
-            clksrc["PLL Input"] = self.CLOCK_PLL
-
-        clksrc["Target IO-IN"] = self.CLOCK_RTIOIN
-
-        #Added July 6/2015, Release 0.11RC1
-        #WORKAROUND: Initial CW-Lite FPGA firmware didn't default to CLKIN routed properly, and needed
-        #            this to be set, as you can't do it through the GUI. This will be fixed in later firmwares.
-        if cwtype == "cwlite":
-            self.forceclkin = True
-        else:
-            self.forceclkin = False
-        # TEMPORARY PATCH: REMOVE ONCE FPGA FIXED
-        #Over-ride default for CW-Lite
-        if self.forceclkin:
-            self.setClockSource(self.CLOCK_RTIOIN, blockSignal=True)
-
-        ret.extend([
-            {'name':'Clock Source', 'type':'list', 'values':clksrc, 'set':self.setClockSource, 'get':self.clockSource},
-            {'name':'Target HS IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},
-        ])
-
-        if self.hasGlitchOut:
-            ret.extend([
-                {'name':'HS-Glitch Out Enable (High Power)', 'type':'bool', 'set':partial(self.setTargetGlitchOut, 'A'), 'get':partial(self.targetGlitchOut, 'A')},
-                {'name':'HS-Glitch Out Enable (Low Power)', 'type':'bool', 'set':partial(self.setTargetGlitchOut, 'B'), 'get':partial(self.targetGlitchOut, 'B')}
-            ])
-
-        ret.extend([
-            {'name':'Target IOn Pins', 'type':'group', 'children':[
-                {'name': 'Target IO1', 'key':'gpio1mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
-                                                                'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                       'set':self.setTargetIOMode1, 'get':partial(self.getTargetIOMode, IONumber=0)},
-                {'name': 'Target IO2', 'key':'gpio2mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
-                                                                'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                       'set':self.setTargetIOMode2, 'get':partial(self.getTargetIOMode, IONumber=1)},
-                {'name': 'Target IO3', 'key':'gpio3mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'Serial-TX/RX':self.IOROUTE_STXRX,
-                                                                'USI-Out':self.IOROUTE_USIO, 'USI-In':self.IOROUTE_USII, 'USI-IN/OUT':self.IOROUTE_USINOUT,
-                                                                'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                       'set':self.setTargetIOMode3, 'get':partial(self.getTargetIOMode, IONumber=2)},
-                {'name': 'Target IO4', 'key':'gpio4mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                       'set':self.setTargetIOMode4, 'get':partial(self.getTargetIOMode, IONumber=3)},
-            ]},
-
-            {'name':'Target IOn GPIO Mode', 'type':'group', 'children':[
-                {'name':'Target IO1: GPIO', 'key':'gpiostate1', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
-                                       'get':partial(self.getGPIOState, IONumber=0), 'set':self.setGPIOState1},
-                {'name':'Target IO2: GPIO', 'key':'gpiostate2', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
-                                       'get':partial(self.getGPIOState, IONumber=1), 'set':self.setGPIOState2},
-                {'name':'Target IO3: GPIO', 'key':'gpiostate3', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
-                                       'get':partial(self.getGPIOState, IONumber=2), 'set':self.setGPIOState3},
-                {'name':'Target IO4: GPIO', 'key':'gpiostate4', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
-                                       'get':partial(self.getGPIOState, IONumber=3), 'set':self.setGPIOState4},
-                {'name':'nRST: GPIO', 'key':'gpiostatenrst', 'type':'list', 'values':{'Low':False, 'High':True, 'Default':None},
-                                       'get':partial(self.getGPIOState, IONumber=100), 'set':self.setGPIOStatenrst},
-                {'name': 'PDID: GPIO', 'key': 'gpiostatepdid', 'type': 'list', 'values': {'Low': False, 'High': True, 'Default': None},
-                                       'get': partial(self.getGPIOState, IONumber=101), 'set':self.setGPIOStatepdid},
-                {'name': 'PDIC: GPIO', 'key': 'gpiostatepdic', 'type': 'list', 'values': {'Low': False, 'High': True, 'Default': None},
-                                       'get': partial(self.getGPIOState, IONumber=102), 'set':self.setGPIOStatepdic},
-            ]},
-        ])
-
-        #Catch for CW-Lite Specific Stuff
-        if self.hasFPAFPB==False and self.hasPLL==False:
-            ret.extend([
-                {'name':'Target Power State', 'type':'bool', 'set':self.setTargetPowerState, 'get':self.getTargetPowerState}
-            ])
-
-        self.params = Parameter(name=self.getName(), type='group' , children=ret).register()
 
         #Add special single-class items used as higher-level API
         self.gpiomux = GPIOSettings(self)
         self.triggermux = TriggerSettings(self)
+        self.protrigger = ProTrigger(self)
 
 
     def _setGPIOState(self, state, IONumber):
@@ -932,31 +890,24 @@ class CWExtraSettings(Parameterized):
 
             self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
 
-    @setupSetParam(['Target IOn GPIO Mode', 'Target IO1: GPIO'])
     def setGPIOState1(self, state):
         self._setGPIOState(state, 0)
 
-    @setupSetParam(['Target IOn GPIO Mode', 'Target IO2: GPIO'])
     def setGPIOState2(self, state):
         self._setGPIOState(state, 1)
 
-    @setupSetParam(['Target IOn GPIO Mode', 'Target IO3: GPIO'])
     def setGPIOState3(self, state):
         self._setGPIOState(state, 2)
 
-    @setupSetParam(['Target IOn GPIO Mode', 'Target IO4: GPIO'])
     def setGPIOState4(self, state):
         self._setGPIOState(state, 3)
 
-    @setupSetParam(['Target IOn GPIO Mode', 'nRST: GPIO'])
     def setGPIOStatenrst(self, state):
         self._setGPIOState(state, 100)
 
-    @setupSetParam(['Target IOn GPIO Mode', 'PDID: GPIO'])
     def setGPIOStatepdid(self, state):
         self._setGPIOState(state, 101)
 
-    @setupSetParam(['Target IOn GPIO Mode', 'PDIC: GPIO'])
     def setGPIOStatepdic(self, state):
         self._setGPIOState(state, 102)
 
@@ -1001,7 +952,7 @@ class CWExtraSettings(Parameterized):
             return None
 
         return data[IONumber] & self.IOROUTE_GPIO
-    
+
     def readTIOPins(self):
         """Read signal level of all 4 Target IOn pins synchronously.
 
@@ -1013,7 +964,7 @@ class CWExtraSettings(Parameterized):
         pins is read as high. Counting starts at bit 0, for example, bit0
         refers to tio1.
         """
-        
+
         data = self.oa.sendMessage(CODE_READ, ADDR_IOREAD, Validate=False, maxResp=1)
         return data[0]
 
@@ -1028,19 +979,15 @@ class CWExtraSettings(Parameterized):
         tios = self.readTIOPins()
         return (tios & (1<<(tio-1))) > 0
 
-    @setupSetParam(['Target IOn Pins', 'Target IO1'])
     def setTargetIOMode1(self, setting):
         self._setTargetIOMode(setting, 0)
 
-    @setupSetParam(['Target IOn Pins', 'Target IO2'])
     def setTargetIOMode2(self, setting):
         self._setTargetIOMode(setting, 1)
 
-    @setupSetParam(['Target IOn Pins', 'Target IO3'])
     def setTargetIOMode3(self, setting):
         self._setTargetIOMode(setting, 2)
 
-    @setupSetParam(['Target IOn Pins', 'Target IO4'])
     def setTargetIOMode4(self, setting):
         self._setTargetIOMode(setting, 3)
 
@@ -1068,7 +1015,6 @@ class CWExtraSettings(Parameterized):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
         return data[IONumber]
 
-    @setupSetParam("Clock Source")
     def setClockSource(self, source):
         data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         data[0] = (data[0] & ~0x07) | source
@@ -1078,7 +1024,6 @@ class CWExtraSettings(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         return resp[0] & 0x07
 
-    @setupSetParam("Target HS IO-Out")
     def setTargetCLKOut(self, clkout):
         data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         data[0] = (data[0] & ~(3<<5)) | (clkout << 5)
@@ -1088,7 +1033,6 @@ class CWExtraSettings(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         return ((resp[0] & (3<<5)) >> 5)
 
-    @setupSetParam("")
     def setTargetGlitchOut(self, out='A', enabled=False):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
 
@@ -1124,7 +1068,6 @@ class CWExtraSettings(Parameterized):
 
         self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
 
-    @setupSetParam("Target Power State")
     def setTargetPowerState(self, enabled):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
         if enabled:
@@ -1150,7 +1093,6 @@ class CWExtraSettings(Parameterized):
         else:
             return True
 
-    @setupSetParam("")
     def setPin(self, enabled, pin):
         current = self.getPins()
 
@@ -1168,7 +1110,6 @@ class CWExtraSettings(Parameterized):
         else:
             return True
 
-    @setupSetParam("Collection Mode")
     def setPinMode(self, mode):
         current = self.getPins()
         self.setPins(current[0], mode)
@@ -1188,16 +1129,9 @@ class CWExtraSettings(Parameterized):
         mode = resp[0] >> 6
         return(pins, mode)
 
-    @setupSetParam("Trigger Module")
     def setTriggerModule(self, module):
 
         #When using special modes, force rising edge & stop user from easily changing
-        if module != self.MODULE_BASIC:
-            Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Mode']).setValue("rising edge", ignoreReadonly=True)
-            Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Mode']).setReadonly(True)
-        else:
-            Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Mode']).setReadonly(False)
-
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         resp[0] &= 0xF8
         resp[0] |= module
@@ -1207,7 +1141,6 @@ class CWExtraSettings(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         return resp[0]
 
-    @setupSetParam("Trigger Out on Aux")
     def setTrigOutAux(self, enabled):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         resp[0] &= 0xE7
@@ -1215,7 +1148,6 @@ class CWExtraSettings(Parameterized):
             resp[0] |= 0x08
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
 
-    @setupSetParam("Trigger Out on FPA")
     def setTrigOut(self, enabled):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         resp[0] &= 0xE7
@@ -1382,15 +1314,15 @@ class CWPLLDriver(object):
     def readByte(self, regaddr, slaveaddr=0x69):
         d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
-        time.sleep(0.05)
+        time.sleep(0.001)
 
         d = bytearray([0x04, 0x80 | 0x69, 0x80 |  regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
-        time.sleep(0.05)
+        time.sleep(0.001)
 
         d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
-        time.sleep(0.05)
+        time.sleep(0.001)
 
         stat = self.oa.sendMessage(CODE_READ, ADDR_I2CSTATUS, Validate=False, maxResp=3)
         if stat[0] & 0x01:
@@ -1405,15 +1337,15 @@ class CWPLLDriver(object):
 
         d = bytearray([0x00, 0x69, 0x80 | regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
-        time.sleep(0.05)
+        time.sleep(0.005)
 
         d = bytearray([0x04, 0x69, 0x80 | regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
-        time.sleep(0.05)
+        time.sleep(0.005)
 
         d = bytearray([0x00, 0x69, 0x80 | regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
-        time.sleep(0.05)
+        time.sleep(0.005)
 
         stat = self.oa.sendMessage(CODE_READ, ADDR_I2CSTATUS, Validate=False, maxResp=3)
         if stat[0] & 0x01:

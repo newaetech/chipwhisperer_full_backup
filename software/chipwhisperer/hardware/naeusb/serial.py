@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014-2016, NewAE Technology Inc
+# Copyright (c) 2014-2018, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -24,7 +24,8 @@
 
 
 import time
-from naeusb import packuint32
+import os
+from .naeusb import packuint32
 
 class USART(object):
     """
@@ -50,6 +51,11 @@ class USART(object):
         self._baud = 38400
         self._stopbits = 1
         self._parity = "none"
+
+    def delay(self, s):
+        if os.name == "nt":
+            return
+        time.sleep(s)
 
     def init(self, baud=115200, stopbits=1, parity="none"):
         """
@@ -90,7 +96,7 @@ class USART(object):
         self._usartTxCmd(self.USART_CMD_INIT, cmdbuf)
         self._usartTxCmd(self.USART_CMD_ENABLE)
 
-    def write(self, data):
+    def write(self, data, slow=False):
         """
         Send data to serial port.
         """
@@ -110,7 +116,7 @@ class USART(object):
         while datasent < len(data):
             datatosend = len(data) - datasent
             datatosend = min(datatosend, 58)
-            self._usb.usbdev().ctrl_transfer(0x41, self.CMD_USART0_DATA, 0, 0, data[datasent:(datasent + datatosend)], timeout=self.timeout)
+            self._usb.sendCtrl(self.CMD_USART0_DATA, 0, data[datasent:(datasent + datatosend)])
             datasent += datatosend
 
         time.sleep(0.0000001)
@@ -150,14 +156,14 @@ class USART(object):
 
         resp = []
 
-        while dlen and timeout > 0:
+        while dlen and (timeout * 10) > 0:
             if waiting > 0:
-                newdata = self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_USART0_DATA, 0, 0, min(waiting, dlen), timeout=timeout)
+                newdata = self._usb.readCtrl(self.CMD_USART0_DATA, 0, min(waiting, dlen))
                 resp.extend(newdata)
                 dlen -= len(newdata)
             waiting = self.inWaiting()
             timeout -= 1
-            time.sleep(0.001)
+            self.delay(0.0000001)
 
         return resp
 
@@ -168,12 +174,11 @@ class USART(object):
         """
 
         # windex selects interface
-        self._usb.usbdev().ctrl_transfer(0x41, self.CMD_USART0_CONFIG, cmd, 0, data, timeout=self.timeout)
-
+        self._usb.sendCtrl(self.CMD_USART0_CONFIG, cmd, data)
 
     def _usartRxCmd(self, cmd, dlen=1):
         """
         Read the result of some command (internal function).
         """
         # windex selects interface, set to 0
-        return self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_USART0_CONFIG, cmd, 0, dlen, timeout=self.timeout)
+        return self._usb.readCtrl(self.CMD_USART0_CONFIG, cmd, dlen)

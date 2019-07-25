@@ -26,8 +26,9 @@
 import logging
 import time
 
-import chipwhisperer.capture.scopes._qt as openadc_qt
-from _base import TargetTemplate
+# import chipwhisperer.capture.scopes._qt as openadc_qt
+from ..scopes import _qt as openadcqt
+from ._base import TargetTemplate
 from chipwhisperer.capture.scopes.openadc_interface import ftdi
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
@@ -227,7 +228,7 @@ class FTDIComm(object):
     def con(self, scope=None):
         try:
             self.sasebo = ft.openEx(self.serNo)
-        except ft.ftd2xx.DeviceError, e:
+        except ft.ftd2xx.DeviceError as e:
             self.sasebo = None
             logging.error('Failed to find device: %s' % str(e))
             return False

@@ -102,11 +102,11 @@ class tracereader_dpacontestv3:
 
     def getTextin(self, n):
         tin = self.textins[n]
-        return map(int, tin, [16]*len(tin))
+        return list(map(int, tin, [16]*len(tin)))
 
     def getTextout(self, n):
         tout = self.textouts[n]
-        return map(int, tout, [16]*len(tout))
+        return list(map(int, tout, [16]*len(tout)))
 
     def getKnownKey(self):
         return self.knownkey

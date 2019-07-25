@@ -23,13 +23,10 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 import collections
 import logging
 
-class SimpleSerialTemplate(Parameterized, Plugin):
+class SimpleSerialTemplate:
 
     """
     SimpleSerial serial reader base class.
@@ -49,8 +46,7 @@ class SimpleSerialTemplate(Parameterized, Plugin):
     _name= 'Simple Serial Reader'
 
     def __init__(self):
-        self.connectStatus = util.Observable(False)
-        self.getParams()
+        self.connectStatus = False
 
         self.target_queue = collections.deque()
         self.target_count = 0
@@ -68,12 +64,12 @@ class SimpleSerialTemplate(Parameterized, Plugin):
 
     def con(self, scope=None):
         """Connect to target"""
-        self.connectStatus.setValue(True)
+        self.connectStatus = True
 
     def dis(self):
         """Disconnect from target"""
         self.close()
-        self.connectStatus.setValue(False)
+        self.connectStatus = False
 
     def flushInput(self):
         self.flush()
@@ -117,7 +113,7 @@ class SimpleSerialTemplate(Parameterized, Plugin):
         This is the interface for target modules - it places the received bytes in a terminal buffer.
 
         Args:
-            num: The number of bytes to be read. If 0, read all data available.
+            num: The number of bytes to be read. If 0, read no data.
             timeout: How long to wait before returning, in ms. If 0, block until data received.
 
         Returns:
@@ -135,7 +131,7 @@ class SimpleSerialTemplate(Parameterized, Plugin):
             return ret
 
         # If we didn't get enough data, try to read more from the hardware
-        data = str(bytearray(self.hardware_read(num, timeout=timeout)))
+        data = bytearray(self.hardware_read(num, timeout=timeout)).decode('latin-1')
         for c in data:
             self.terminal_queue.append(['in', c])
             if self.terminal_count < self.max_queue_size:
