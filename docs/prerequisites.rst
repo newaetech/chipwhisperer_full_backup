@@ -4,11 +4,10 @@
 Prerequisites
 #############
 
-A few methods for installing ChipWhisperer do not require prior installation of
-the following prerequisites (:ref:`install-windows-auto`,
-:ref:`install-virtual-machine`). However, if you want more control over where, and how
-you install the prerequisites, the prerequisite installation process for your
-operating system is detailed below.
+One for installing ChipWhisperer do not require prior installation of
+the following prerequisites (:ref:`install-virtual-machine`). However,
+if you want more control over where, and how you install the prerequisites,
+the prerequisite installation process for your operating system is detailed below.
 
  * :ref:`GNU/Linux <prerequisites-linux>`
  * :ref:`Windows <prerequisites-windows>`

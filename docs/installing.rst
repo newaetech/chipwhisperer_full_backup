@@ -146,6 +146,8 @@ If you want to run the tutorials you can now start the
 :ref:`Jupyter Notebook server <starting>`.
 
 
+.. _releases: https://github.com/newaetech/chipwhisperer/releases
+
 .. _install-repo-pypi:
 
 PyPi
