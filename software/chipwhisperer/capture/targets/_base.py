@@ -26,11 +26,6 @@
 from chipwhisperer.capture.api.programmers import Programmer
 from chipwhisperer.common.utils import util
 
-try:
-    from Crypto.Cipher import AES
-except ImportError:
-    AES = None
-
 
 class TargetTemplate:
     _name = 'Target Connection'
@@ -131,15 +126,15 @@ class TargetTemplate:
 
     def getExpected(self):
         """Based on key & text get expected if known, otherwise returns None"""
-
         # e.g. for AES we can do this:
-        if AES and hasattr(self, 'key') and hasattr(self, 'input') and self.input and self.key:
+        return None
+        """if AES and hasattr(self, 'key') and hasattr(self, 'input') and self.input and self.key:
             cipher = AES.new(bytes(self.key), AES.MODE_ECB)
             ct = cipher.encrypt(bytes(self.input))
             ct = bytearray(ct)
             return ct
         else:
-            return None
+            return None"""
 
     def validateSettings(self):
         # return [("warn", "Target Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]

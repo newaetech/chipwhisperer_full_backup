@@ -21,7 +21,6 @@ setup(
         'numpy',
         'pyusb',
         'scipy',
-        'pycryptodome'
     ],
     project_urls={
         'Documentation': 'https://chipwhisperer.readthedocs.io',

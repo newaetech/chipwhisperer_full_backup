@@ -25,14 +25,9 @@
 import logging
 import random
 from chipwhisperer.common.utils import util
+from chipwhisperer.analyzer.utils.aes_funcs import key_schedule_rounds
+from chipwhisperer.common.utils.aes_cipher import AESCipher
 from ._base import AcqKeyTextPattern_Base
-
-try:
-    from Crypto.Cipher import AES
-except ImportError:
-    logging.warn('T-test inputs: no AES module found. Using pseudorandom plaintexts instead')
-    AES = None
-
 
 class AcqKeyTextPattern_TVLATTest(AcqKeyTextPattern_Base):
     """Class for getting key and text for TVLA T-Tests.
@@ -101,15 +96,23 @@ class AcqKeyTextPattern_TVLATTest(AcqKeyTextPattern_Base):
         if group1:
             self._textin = self._textin1
 
-            if AES is not None:
-                cipher = AES.new(bytes(self._key), AES.MODE_ECB)
-                self._textin1 = bytearray(cipher.encrypt(bytes(self._textin1)))
-            else:
-                self._textin1 = bytearray(16)
-                for i in range(0, 16):
-                    self._textin1[i] = random.randint(0, 255)
-                if self.num_group1 > 0:
-                    self.num_group1 -= 1
+            exp_key = list(self._key)
+            rounds = 0
+            keylen = self.keyLen()
+
+            if keylen == 16:
+                rounds = 10
+            elif keylen == 24:
+                rounds = 12
+            elif keylen == 32:
+                rounds = 14
+
+            #expand key
+            for i in range(1, rounds+1):
+                exp_key.extend(key_schedule_rounds(list(self._key), 0, i))
+
+            cipher = AESCipher(exp_key)
+            self._textin1 = bytearray(cipher.cipher_block(list(self._textin1)))
         else:
             self._textin = self._interleavedPlaintext
             if self.num_group2 > 0:

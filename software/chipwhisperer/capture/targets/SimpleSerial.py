@@ -520,7 +520,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         varList = [("$KEY$",self.key, "Hex Encryption Key"),
                    ("$TEXT$",self.input, "Input Plaintext"),
                    ("$MASK$",self._mask, "Mask"),
-                   ("$EXPECTED$", self.getExpected(), "Expected Ciphertext")]
+                   ("$EXPECTED$", None, "Expected Ciphertext")]
 
         newstr = cmdstr
 
@@ -688,6 +688,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
     def getExpected(self):
         """Based on key & text get expected if known, otherwise returns None"""
+        return None
         if self.textLen() == 16:
             return TargetTemplate.getExpected(self)
         else:
