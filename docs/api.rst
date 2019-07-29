@@ -249,7 +249,7 @@ OpenADC Scope
             # assuming setup scope
             scope.trigger.triggers = 'tio1'
             scope.trigger.module = 'DECODEIO'
-            scope.decode_IO.baud = 38400
+            scope.decode_IO.rx_baud = 38400
             scope.decode_IO.decode_type = 'USART'
             scope.decode_IO.trigger_pattern = ['r', '\n']
 
