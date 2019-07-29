@@ -331,6 +331,7 @@ Supported Targets:
 
   * :ref:`XMEGA <tutorial-pa_profiling_1-openadc-cwlitexmega>`
   * :ref:`ARM (STM32F3) <tutorial-pa_profiling_1-openadc-cwlitearm>`
+  * :ref:`ChipWhisperer Nano <tutorial-pa_profiling_1-cwnano-cwnano>`
 
 
 .. _tutorials-pa-tvla:
