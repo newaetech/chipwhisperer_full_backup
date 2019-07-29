@@ -188,7 +188,9 @@ class GlitchSettings(util.DisableNewAttr):
         This is a dimensionless number that makes small adjustments to the
         glitch pulses' width. Valid range is [-255, 255].
 
-        :Getter: Return the current glitch fine width
+        .. warning:: This value is write-only. Reads will always return 0.
+
+        :Getter: Returns 0
 
         :Setter: Update the glitch fine width
 
@@ -241,7 +243,9 @@ class GlitchSettings(util.DisableNewAttr):
         This is a dimensionless number that makes small adjustments to the
         glitch pulses' offset. Valid range is [-255, 255].
 
-        :Getter: Return the current glitch fine offset
+        .. warning:: This value is write-only. Reads will always return 0.
+
+        :Getter: Returns 0
 
         :Setter: Update the glitch fine offset
 
