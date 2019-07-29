@@ -22,7 +22,7 @@ The biggest (and most breaking) change is here. ChipWhisperer 5.0 uses Python 3 
 * Fully usable as a standalone python package
 * Project API supports import and export to zip file to move projects around.
 
-An overview of the major changes can be found on the new ReadtheDocs [Overview Page](https://chipwhisperer.readthedocs.io/en/stable/getting-started.html).
+An overview of the major changes can be found on the new ReadtheDocs [Overview Page](https://chipwhisperer.readthedocs.io/en/latest/getting-started.html).
 
 We highly recommend you switch to CW5 as all development since last year has been for CW5, and will continue this way. The final tagged version of CW4 is 4.0.5, it can be found in the **develop** branch if you insist. 
 
