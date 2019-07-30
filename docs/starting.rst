@@ -13,10 +13,13 @@ following the :ref:`tutorials <tutorials>` easier.
 Jupyter Notebooks
 *****************
 
-There are a lot of online resources for learning how to use Jupyter
-Notebooks, a search will come up with too many. We will just provide a
-quick start guide based on you having finished the installation of
-**chipwhisperer**.
+Recommended reading for using Jupyter notebooks:
+
+  * `Jupyter Notebook ReadtheDocs <https://jupyter-notebook.readthedocs.io/en/stable/>`_
+
+Here is a quick start guide based on you having finished the installation
+of **chipwhisperer**. It only covers steps unique to our chipwhisperer/Jupyter
+installation.
 
  #. Make sure you are using a bash like terminal. Many of the jupyter
     notebooks use bash to run **make** or remove files for building
