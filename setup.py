@@ -17,7 +17,6 @@ setup(
     install_requires=[
         'configobj',
         'pyserial',
-        'docutils',  # makes help more readable.
         'numpy',
         'pyusb',
         'scipy',
