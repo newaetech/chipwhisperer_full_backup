@@ -193,9 +193,14 @@ Code Base
 
 Our source code can be found on the `GitHub repository`_. The issues and
 enhancements being worked on can be found in the `GitHub issue tracker`_.
-If you need ideas about what to work on, this is the place to go. Once
-ChipWhisperer 5.0 is officially released code development will take place
-on the **develop** branch again.
+If you need ideas about what to work on, this is the place to go.
+Development of **chipwhisperer** takes place on the **develop** branch
+once tested, t is merged into the **master** branch and tagged for release.
+
+Recommended Reading:
+
+  * `Semantic Versioning <https://semver.org/>`_
+
 
 .. _GitHub issue tracker: https://github.com/newaetech/chipwhisperer/issues
 
