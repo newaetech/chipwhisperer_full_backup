@@ -157,21 +157,6 @@ notebooks.
 .. _WinPython: http://winpython.sourceforge.net/
 
 
-Python Packages
-===============
-
-There are a number of packages that the ChipWhisperer project uses.
-You'll need to install these so that the software can run. With your
-WinPython command prompt, navigate to where you downloaded
-ChipWhisperer to, then move to the *chipwhisperer/software/* directory.
-
-Run the following commands to get the needed packages:
-
-.. code:: bash
-
-    pip install -r requirements.txt
-
-
 Installing Hardware Drivers
 ===========================
 
