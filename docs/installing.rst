@@ -124,19 +124,19 @@ want to use *C:\\chipwhisperer\\*.
 
 Once you've got the file, install the python dependencies and run the Python
 install procedure (setup.py). Use the develop command to indicate that the files
-will probably be changing frequently. to do this, open a terminal and run the
+will probably be changing frequently. To do this, open a terminal and run the
 following, adjusting paths as needed:
 
 .. code:: bash
 
-	cd chipwhisperer
-	python setup.py develop
+    cd chipwhisperer
+    python setup.py develop
 
     # to be able to run jupyter and the tutorials
     pip install -r jupyter/requirements.txt
 
 
-To test, run python and try importing the chipwhisperer module:
+To test, run python and try importing the **chipwhisperer** module:
 
 .. code:: python
 

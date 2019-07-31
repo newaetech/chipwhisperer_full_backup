@@ -195,7 +195,7 @@ Our source code can be found on the `GitHub repository`_. The issues and
 enhancements being worked on can be found in the `GitHub issue tracker`_.
 If you need ideas about what to work on, this is the place to go.
 Development of **chipwhisperer** takes place on the **develop** branch
-once tested, t is merged into the **master** branch and tagged for release.
+once tested, it is merged into the **master** branch and tagged for release.
 
 Recommended Reading:
 
