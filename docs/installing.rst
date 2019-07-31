@@ -88,8 +88,13 @@ the Jupyter Notebook server running in the virtual machine.
 ChipWhisperer
 *************
 
-.. note:: You must have the pre-requisites for your system installed
+.. note:: You must have the :ref:`prerequisites` for your system installed
 	before continuing with the installation of the repository.
+
+.. note:: You may have to replace all the calls to **python** on the command line with
+    whatever gives you access to the python version you installed. On GNU/Linux you will
+    probably use **python3**, or you can use the full path to the python interpreter.
+    It is not required but recommended to use a virtual environment.
 
 After satisfying prerequisites for your system, install the ChipWhisperer
 repository/package using one of:
