@@ -209,6 +209,17 @@ you through the installation.
 
 .. _brew's website: https://brew.sh/
 
+Packages
+========
+
+**libusb** is required by the **chipwhisperer** software to communicate with
+the board. You can install it using **brew**:
+
+.. code:: bash
+
+    brew install libusb
+
+
 Python
 ======
 
