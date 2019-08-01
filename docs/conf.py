@@ -113,14 +113,8 @@ def create_tutorial_files(app, config):
     for old_file in glob(os.path.join(tutorials_output_dir, '*.rst')):
         os.remove(old_file)
 
-    p1 = re.compile(r'.*-(.*)-(.*)\.rst')  # for scope and target
-    # repr and strip are to get around string escaping craziness
-    p2 = re.compile(r'{}([A-Za-z_\d*]*)-'.format(repr(os.sep).strip("'")))  # for tutorial identifier (pa_cpa_1)
-
-    generated_files = []
 
     # move images over for linking
-
     if not os.path.isdir(output_image_dir):
         os.mkdir(output_image_dir)
 
@@ -128,24 +122,26 @@ def create_tutorial_files(app, config):
         _, image_name = os.path.split(image_file)
         shutil.copyfile(image_file, os.path.join(output_image_dir, image_name))
 
+    # for tutorial identifier (pa_cpa_1), scope and target
+    p = re.compile(r'([A-Za-z_\d]*)-.*-([^-]*)-([^-]*)\.rst')
+
+    generated_files = []
     for file in glob(os.path.join(tutorials_src_dir, "*.rst")):
-        scope, target = p1.findall(file)[0]
-        try:
-            tutorial_id = p2.findall(file)[0].lower()
-        except IndexError:
+        filename = os.path.basename(file)
+        match = p.match(filename)
+
+        if not match:
             print('Error when using regex on file:', file)
             continue
 
-        tutorial_input_path = os.path.join(tutorials_src_dir, file)
-
-        tutorial_id = tutorial_id.lower() + '-' + scope.lower() + '-' + target.lower()
-
-        tutorial_output_name = tutorial_id + '.rst'
+        tutorial_id, scope, target = match.groups()
+        tutorial_name = '{}-{}-{}'.format(tutorial_id, scope, target).lower()
+        tutorial_output_name = tutorial_name + '.rst'
         tutorial_output_path = os.path.join(tutorials_output_dir, tutorial_output_name)
 
-        with open(tutorial_input_path, 'r', encoding='utf-8') as in_rstfile:
+        with open(file, 'r', encoding='utf-8') as in_rstfile:
             with open(tutorial_output_path, 'w', encoding='utf-8') as out_rstfile:
-                tutorial_link = 'tutorial-' + tutorial_id
+                tutorial_link = 'tutorial-' + tutorial_name
                 out_rstfile.write('.. role:: raw-latex(raw)\n    :format: latex\n\n')
                 out_rstfile.write('.. _{}:\n\n'.format(tutorial_link))
                 # ..todo:: get linking to work instead of copying.
