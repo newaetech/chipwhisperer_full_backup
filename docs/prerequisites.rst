@@ -35,6 +35,17 @@ On Ubuntu or similar:
     sudo apt install python3 python3-pip
 
 
+Packages
+========
+
+There are some packages required for **chipwhisperer** and its dependencies such
+as **pyusb** to work. Install using::
+
+.. code:: bash
+
+    sudo apt install libusb-dev make
+
+
 Compilers
 =========
 
