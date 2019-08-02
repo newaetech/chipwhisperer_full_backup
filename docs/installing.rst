@@ -128,17 +128,17 @@ become your ChipWhisperer working directory. For example, on Windows, you might
 want to use *C:\\chipwhisperer\\*.
 
 Once you've got the file, install the python dependencies and run the Python
-install procedure (setup.py). Use the develop command to indicate that the files
-will probably be changing frequently. To do this, open a terminal and run the
-following, adjusting paths as needed:
+install procedure (setup.py) using pip. Use the -e flag for develop mode to indicate
+that the files will probably be changing frequently. To do this, open a terminal and run
+the following, adjusting paths as needed:
 
 .. code:: bash
 
     cd chipwhisperer
-    python setup.py develop
+    python -m pip install -e . --user
 
     # to be able to run jupyter and the tutorials
-    pip install -r jupyter/requirements.txt
+    pip install -r jupyter/requirements.txt --user
 
 
 To test, run python and try importing the **chipwhisperer** module:
@@ -195,11 +195,13 @@ If you have Git already set up, this is easy to do:
 
     # To get the jupyter notebook tutorials
     git submodule update --init jupyter
-    pip install -r jupyter/requirements.txt
+    python -m pip install -r jupyter/requirements.txt --user
 
     # note the setup.py used to be in software, it was moved
     # in version 5.1.0
-    python setup.py develop
+
+    # use pip to install in develop mode
+    python -m pip install -e . --user
 
 The user flag installs ChipWhisperer in the user's local python
 site-packages directory.
@@ -213,6 +215,6 @@ you need it:
     cd ..
     git submodule update --init openadc
     cd openadc/controlsw/python
-    python setup.py develop
+    python -m pip install -e . --user
 
 Once ChipWhisperer is installed, you can :ref:`run chipwhisperer <starting>`.
