@@ -113,6 +113,10 @@ class AcqKeyTextPattern_TVLATTest(AcqKeyTextPattern_Base):
 
             cipher = AESCipher(exp_key)
             self._textin1 = bytearray(cipher.cipher_block(list(self._textin1)))
+
+            if self.num_group1 > 0:
+                self.num_group1 -= 1
+
         else:
             self._textin = self._interleavedPlaintext
             if self.num_group2 > 0:
