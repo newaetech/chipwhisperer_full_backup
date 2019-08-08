@@ -47,10 +47,19 @@ the correct extension pack is installed.
  * Download a ChipWhisperer virtual machine image release or build it
    yourself using Vagrant.
 
- * Unzip the VirtualBox image, go to Machine>Add in VirtualBox and select
+ * Unzip the VirtualBox image, go to *Machine* > *Add* in VirtualBox and select
    the VM that was unzipped.
 
  * Verify that the VM boots.
+
+.. note:: If you are on linux you need to add yourself to the *vboxusers*
+    permission group using, so Virtual Box is given permission to access
+    usb devices::
+
+        sudo usermod -aG vboxusers <your username>
+
+    Then refresh the groups by restarting your computer or logging out and in
+    again.
 
 Next, we'll need to update some passwords for the VM. Boot the virtual
 machine then:
