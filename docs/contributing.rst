@@ -231,6 +231,31 @@ page. Each tutorial has a test section at the end of the notebook
 which asserts certain test criteria. The criteria is often hard to chose
 due to the nature of the attacks, especially glitching.
 
+Creating / Editing
+------------------
+
+When editing or creating tutorials here are a few things to consider:
+
+  * If the tutorial is meant to be run using some of the chipwhisperer
+    hardware the first source code block must contain::
+
+        SCOPETYPE = 'OPENADC'
+        PLATFORM = 'CWLITEARM'
+        CRYPTO_TARGET = 'TINYAES128C'
+
+    or equivalent for the different types of hardware. Don't worry about
+    getting it right, when you are creating a tutorial, we can help you
+    is you take out a pull request. The reason this block is there is for
+    use with nbparameterize for running our automated tests so we can figure
+    it out for you.
+
+  * When writing in markdown cells please use the `pandoc style markdown`_.
+
+  * This list contains guidelines and will update over time. We will run the
+    tutorials through the tutorial build system and fix errors that come up.
+
+.. _pandoc style markdown: https://rmarkdown.rstudio.com/authoring_pandoc_markdown.html
+
 Tutorials Test/Export System
 ----------------------------
 
