@@ -90,7 +90,7 @@ def _default_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
     df = pd.concat([df_pge, df], ignore_index=False)
 
     clear_output(wait=True)
-    reporting_interval = attack.get_reporting_interval()
+    reporting_interval = attack.reporting_interval
     tstart = current_trace_iteration * reporting_interval
     tend = tstart + reporting_interval
     current_trace_iteration += 1

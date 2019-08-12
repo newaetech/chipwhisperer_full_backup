@@ -47,6 +47,7 @@ class CPA(CPA_Old):
     """
     trace_range = None
     _project = None
+    reporting_interval = 10
 
     def __init__(self, proj, leak_model, algorithm):
         """
@@ -154,9 +155,11 @@ class CPA(CPA_Old):
             Results, the results of the attack. See documentation
             for Results for more details.
         """
+        if update_interval:
+            self.reporting_interval = update_interval
         self.algorithm.setModel(self.leak_model)
         self.algorithm.get_statistics().clear()
-        self.algorithm.set_reporting_interval(update_interval)
+        self.algorithm.set_reporting_interval(self.reporting_interval)
         self.algorithm.set_target_subkeys(self.get_target_subkeys())
         self.algorithm.setStatsReadyCallback(callback)
         self.algorithm.addTraces(self.get_trace_source(), self.trace_range,
