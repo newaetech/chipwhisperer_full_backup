@@ -39,7 +39,7 @@ Packages
 ========
 
 There are some packages required for **chipwhisperer** and its dependencies such
-as **pyusb** to work. Install using::
+as **pyusb** to work. Install using:
 
 .. code:: bash
 
@@ -77,7 +77,7 @@ The Arm Toolchain can be installed using:
 Hardware Drivers
 ================
 
-The driver for Linux is built in; however, you need to allow your user account to access the peripheral. To do so, you'll have to make a file called /etc/udev/rules.d/99-newae.rules . The contents of this file should be:
+The driver for Linux is built in; however, you need to allow your user account to access the peripheral. To do so, you'll have to make a file called :code:`/etc/udev/rules.d/99-newae.rules`. The contents of this file should be:
 
 .. code::
 
@@ -96,6 +96,9 @@ The driver for Linux is built in; however, you need to allow your user account t
     # CW-CR2
     SUBSYSTEM=="usb", ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="8613", MODE="0664", GROUP="plugdev"
     SUBSYSTEM=="usb", ATTRS{idVendor}=="221a", ATTRS{idProduct}=="0100", MODE="0664", GROUP="plugdev"
+
+Alternatively, you can just copy :code:`chipwhisperer/hardware/99-newae.rules`
+to :code:`/etc/udev/rules.d/`.
 
 Then add your username to the plugdev group:
 
@@ -125,6 +128,12 @@ You are now ready to move on to :ref:`install-repo`.
 **************
 Windows Manual
 **************
+
+.. attention:: Installing ChipWhisperer prerequisites on Windows presents
+    additional challenges compared to other installation methods. It's
+    assumed that you're comfortable with modifying your path and
+    potentially replacing .dll files.
+
 
 Python
 ======
@@ -178,15 +187,33 @@ available from ChipWhisperer `releases`_ section.
 .. _releases: https://github.com/newaetech/chipwhisperer/releases
 
 
+Make
+====
+To build firmware for target boards, you'll need to install GNU Make. There's
+a couple of ways you can install make:
+
+ * Install WinAVR. If you're running Windows 8 or later, this will require
+    replacing a .dll file in WinAVR.
+ * Install MinGW and add :code:`MinGW/bin` to your path.
+ * Install Cygwin, install make, and add :code:`cygwin/bin` to your path.
+
+
 Compilers
 =========
 
 It assumed any time the :code:`make` command is run, that the
-appropriate compiler is on the path, whether that is the `ARM toolchain`_ or the
-`AVR-GCC standalone`_.
+appropriate compiler is on the path, whether that is the `ARM toolchain`_ or
+AVRGCC. AVRGCC can be installed:
+
+ * Through `AVRGCC standalone`_. You'll need to add
+   :code:`avr8-gnu-toolchain-win32_x88/bin` to your path
+ * Through `WinAVR`_. If you're on Windows 8 or later, you'll need to replace
+   :code:`WinAVR/utils/bin/mysys0.dll` with an `updated version`_
 
 .. _ARM toolchain: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
-.. _AVR-GCC standalone: https://www.microchip.com/mymicrochip/filehandler.aspx?ddocname=en607654
+.. _AVRGCC standalone: https://www.microchip.com/mymicrochip/filehandler.aspx?ddocname=en607654
+.. _WinAVR: https://sourceforge.net/projects/winavr/
+.. _updated version: http://www.madwizard.org/download/electronics/msys-1.0-vista64.zip
 
 
 ChipWhisperer
