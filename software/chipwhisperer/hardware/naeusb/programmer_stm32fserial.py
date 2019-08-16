@@ -29,7 +29,18 @@ import traceback
 from datetime import datetime
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 from chipwhisperer.common.utils.timer import nonBlockingDelay
-from functools import reduce
+from functools import reduce, wraps
+
+def close_on_fail(func):
+    @wraps(func)
+    def func_wrapper(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        except:
+            self.close_port()
+            raise
+    return func_wrapper
+
 
 #From ST AN2606, See Section 50 (Device-dependent bootloader parameters), Page 244/268 on Rev 30 of document
 #http://www.st.com/content/ccc/resource/technical/document/application_note/b9/9b/16/3a/12/1e/40/0c/CD00167594.pdf/files/CD00167594.pdf/jcr:content/translations/en.CD00167594.pdf
@@ -140,6 +151,7 @@ class STM32FSerial(object):
         if hasattr(self.sp, "close"):
             self.sp.close()
 
+    @close_on_fail
     def find(self, logfunc=print_fun):
         #setup serial port (or CW-serial port?)
 
@@ -166,6 +178,7 @@ class STM32FSerial(object):
         logfunc("Detected unknown STM32F ID: 0x%03x" % chip_id)
         return chip_id, None
 
+    @close_on_fail
     def program(self, filename, memtype="flash", verify=True, logfunc=print_fun, waitfunc=None):
         """Programs memory type, dealing with opening filename as either .hex or .bin file"""
         self.lastFlashedFile = filename
@@ -194,6 +207,7 @@ class STM32FSerial(object):
         logfunc("Verified %s OK, %d bytes" % (memtype, fsize))
 
 
+    @close_on_fail
     def autoProgram(self, hexfile, erase=True, verify=True, logfunc=print_fun, waitfunc=None):
         # Helper function for programmer UI
         # Automatically program device with some error checking
@@ -249,6 +263,7 @@ class STM32FSerial(object):
     def setChip(self, chiptype):
         self._chip = chiptype
 
+    @close_on_fail
     def reset(self):
         if self._cwapi:
             self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'Low'])
@@ -263,6 +278,7 @@ class STM32FSerial(object):
         else:
             raise ValueError('requires either scope or api to be set')
 
+    @close_on_fail
     def set_boot(self, enter_bootloader):
         if enter_bootloader:
             if self._cwapi:
@@ -279,6 +295,7 @@ class STM32FSerial(object):
             else:
                 raise ValueError('requires either scope or api to be set')
         logging.info("Assuming appropriate BOOT pins set HIGH on STM32F Hardware now")
+
 
 
     def _wait_for_ask(self, info=""):
@@ -299,6 +316,7 @@ class STM32FSerial(object):
                     # Unknown response
                     raise CmdException("Unknown response. " + info + ": " + hex(ask))
 
+    @close_on_fail
     def initChip(self):
         self.set_boot(True)
         self.reset()
@@ -321,6 +339,7 @@ class STM32FSerial(object):
         self.releaseChip()
         raise IOError("Could not detect STM32F, check connections, BOOT MODE entry setup")
 
+    @close_on_fail
     def releaseChip(self):
         self.set_boot(False)
         self.reset()
@@ -506,6 +525,7 @@ class STM32FSerial(object):
 
             # Complex commands section
 
+    @close_on_fail
     def verifyMemory(self, addr, fdata, smallblocks=False):
 
         fdata_idx = 0
@@ -575,6 +595,7 @@ class STM32FSerial(object):
             lng -= block_size
 
 
+    @close_on_fail
     def readMemory(self, addr, lng, smallblocks=False):
         """Read from flash using bootloader. If smallblocks is true uses a smaller
            block size, which can be more reliable as sometimes the full block size
@@ -599,6 +620,7 @@ class STM32FSerial(object):
             data += self.cmdReadMemory(addr, lng)
         return data
 
+    @close_on_fail
     def writeMemory(self, addr, data, smallblocks=False):
         """Write to the memory on the chip. If smallblocks is true, it uses a smaller
            block size, which can be more reliable as sometimes the full block size
