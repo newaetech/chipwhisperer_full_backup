@@ -90,6 +90,7 @@ class USART(object):
 
         self._usartTxCmd(self.USART_CMD_INIT, cmdbuf)
         self._usartTxCmd(self.USART_CMD_ENABLE)
+        print("Serial baud rate = {}".format(baud))
 
     def write(self, data, slow=False):
         """
