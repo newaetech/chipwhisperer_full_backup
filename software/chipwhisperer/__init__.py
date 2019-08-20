@@ -292,7 +292,10 @@ def capture_trace(scope, target, plaintext, key=None):
     response = target.simpleserial_read('r', 16)
     wave = scope.get_last_trace()
 
-    return Trace(wave, plaintext, response, key)
+    if len(wave) >= 1:
+        return Trace(wave, plaintext, response, key)
+    else:
+        return None
 
 
 captureTrace = camel_case_deprecated(capture_trace)
