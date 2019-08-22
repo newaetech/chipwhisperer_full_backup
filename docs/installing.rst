@@ -149,6 +149,9 @@ the following, adjusting paths as needed:
     # to be able to run jupyter and the tutorials
     pip install -r jupyter/requirements.txt --user
 
+    # enable jpyter interactive widgets
+    jupyter nbextension enable --py widgetsnbextension
+
 
 To test, run python and try importing the **chipwhisperer** module:
 
@@ -205,6 +208,9 @@ If you have Git already set up, this is easy to do:
     # To get the jupyter notebook tutorials
     git submodule update --init jupyter
     python -m pip install -r jupyter/requirements.txt --user
+
+    # enable jpyter interactive widgets
+    jupyter nbextension enable --py widgetsnbextension
 
     # note the setup.py used to be in software, it was moved
     # in version 5.1.0
