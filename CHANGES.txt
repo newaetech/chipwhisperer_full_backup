@@ -1,3 +1,6 @@
+V5.1.2:
+  * Windows installer
+
 V5.1.1:
   * Fix STM32F baud setting
   * Update Jupyter requirements to have everything needed to run all tutorials
