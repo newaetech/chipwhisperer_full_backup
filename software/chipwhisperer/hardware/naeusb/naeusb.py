@@ -389,17 +389,18 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         if idProduct is None:
             idProduct = [None]
 
-        libusb_backend = libusb0.get_backend()
+        my_kwargs={}
         if os.name == "nt":
             #on windows, need to manually load libusb because of 64bit python loading the wrong one
             libusb_backend = libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll")
+            my_kwargs = {'backend': libusb_backend}
         devlist = []
         try:
             for id in idProduct:
                 if id:
-                    dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, backend=libusb_backend))
+                    dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, **my_kwargs))
                 else:
-                    dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, backend=libusb_backend))
+                    dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, **my_kwargs))
                 if len(dev) > 0:
                     if len(dev) == 1:
                         devlist.extend(dev)
