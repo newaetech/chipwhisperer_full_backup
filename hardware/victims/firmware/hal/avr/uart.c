@@ -29,73 +29,56 @@ baud rates BUT will only need a few, it would be easier to pre-calculate
 the baud register settings in pre-processor, and use a switch statement that
 lets you select between a few baud rates*/
 
-void												init_uart0
-	(
-   void
-   )
-   {
+void init_uart0(void)
+{
 	//turn on TX and RX
    RXTXEN0_REG = (1<<RX0EN) | (1<<TX0EN);
 
    //set up baud rate
-   #if (BAUDREGS == 2)
+#if (BAUDREGS == 2)
    	BAUD0H_REG = (unsigned char)(BAUD_RATE0_REG >> 8);
    	BAUD0L_REG = (unsigned char)BAUD_RATE0_REG;
    #else
    	BAUD0L_REG = (unsigned char)BAUD_RATE0_REG;
-   #endif              
+#endif
    return;
-   }
+}
 
-unsigned char									input_ch_w_timeout_0
-	(
-   char *					 	data,
-   volatile unsigned int				timeout
-   )
-   {
-   unsigned int				timeout_counter = 0;
-   
+unsigned char input_ch_w_timeout_0(char *data, volatile unsigned int timeout)
+{
+   unsigned int	timeout_counter = 0;
+
    //check if a byte has been recieved or if the timeout has been excedded
-   while (timeout_counter != timeout)
-		{	
-		if ((STAT0RXTX_REG & (1<<RX0C)) == (1<<RX0C))
-			{
+   while (timeout_counter != timeout) {
+		if ((STAT0RXTX_REG & (1<<RX0C)) == (1<<RX0C)) {
 			*data = UDR0;
 			return BYTE_REC;
-			}
-		timeout_counter++;
 		}
-		
-	return TIMEOUT;
+		timeout_counter++;
 	}
-		
-char												input_ch_0
-	(
-   void
-   )
-   {
+
+	return TIMEOUT;
+}
+
+char input_ch_0(void)
+{
    //check if a byte has been recieved or if the timeout has been excedded
-   while ((STAT0RXTX_REG & (1<<RX0C)) != (1<<RX0C))
-		{
-		continue;		
-		}		
+    while ((STAT0RXTX_REG & (1<<RX0C)) != (1<<RX0C)) {
+		continue;
+	}
 	return UDR0;
 	}
-	
-void												output_ch_0
-	(
-	char							data
-	)
-	{
-	while ((STAT0RXTX_REG & (1<<UDR0E)) != (1<<UDR0E))
-		{
+
+void output_ch_0(char data)
+{
+	while ((STAT0RXTX_REG & (1<<UDR0E)) != (1<<UDR0E)) {
 		continue;
-		}
-	UDR0 = data;
-	
-	return;
 	}
-   
+	UDR0 = data;
+
+	return;
+}
+
 
 
 #if (NUM_OF_UARTS == 2)
@@ -107,71 +90,54 @@ baud rates BUT will only need a few, it would be easier to pre-calculate
 the baud register settings in pre-processor, and use a switch statement that
 lets you select between a few baud rates*/
 
-void												init_uart1
-	(
-   void
-   )
-   {
+void init_uart1 (void)
+{
 	//turn on TX and RX
    RXTXEN1_REG = (1<<RX1EN) | (1<<TX1EN);
 
    //set up baud rate
-   #if (BAUDREGS == 2)
+#if (BAUDREGS == 2)
    	BAUD1H_REG = (unsigned char)(BAUD_RATE1_REG >> 8);
    	BAUD1L_REG = (unsigned char)BAUD_RATE1_REG;
-   #else
+#else
    	BAUD1L_REG = (unsigned char)BAUD_RATE1_REG;
-   #endif              
+#endif
    return;
-   }
+}
 
-unsigned char									input_ch_w_timeout_1
-	(
-   char *					 	data,
-   volatile unsigned int				timeout
-   )
-   {
-   unsigned int				timeout_counter = 0;
-   
+unsigned char input_ch_w_timeout_1(char *data, volatile unsigned int timeout)
+{
+   unsigned int	timeout_counter = 0;
+
    //check if a byte has been recieved or if the timeout has been excedded
-   while (timeout_counter != timeout)
-		{	
-		if ((STAT1RXTX_REG & (1<<RX1C)) == (1<<RX1C))
-			{
+    while (timeout_counter != timeout) {
+		if ((STAT1RXTX_REG & (1<<RX1C)) == (1<<RX1C)) {
 			*data = UDR1;
 			return BYTE_REC;
-			}
+		}
 		timeout_counter++;
-		}
-		
+	}
+
 	return TIMEOUT;
-	}
-		
-char												input_ch_1
-	(
-   void
-   )
-   {
+}
+
+char input_ch_1(void)
+{
    //check if a byte has been recieved or if the timeout has been excedded
-   while ((STAT1RXTX_REG & (1<<RX1C)) != (1<<RX1C))
-		{
-		continue;		
-		}		
+    while ((STAT1RXTX_REG & (1<<RX1C)) != (1<<RX1C)) {
+	   continue;
+    }
 	return UDR1;
+}
+
+void output_ch_1(char data)
+{
+	while ((STAT1RXTX_REG & (1<<UDR1E)) != (1<<UDR1E)) {
+	   continue;
 	}
-	
-void												output_ch_1
-	(
-	char							data
-	)
-	{
-	while ((STAT1RXTX_REG & (1<<UDR1E)) != (1<<UDR1E))
-		{
-		continue;
-		}
 	UDR1 = data;
-	
+
 	return;
-	}
+}
 
 #endif
