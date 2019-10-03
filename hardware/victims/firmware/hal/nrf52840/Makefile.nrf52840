@@ -93,7 +93,7 @@ MKDIR_LIST = components \
              components/drivers_nrf/nrf_soc_nosd \
              modules \
              modules/nrfx \
-             modules/nrfx/driver \
+             modules/nrfx/drivers \
              modules/nrfx/drivers/src \
              modules/nrfx/drivers/src/prs \
              modules/nrfx/mdk

@@ -94,17 +94,17 @@ void init_uart(void)
 
 void trigger_setup(void)
 {
-    nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(0,2));
+    nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(0,29));
 }
 
 void trigger_high(void)
 {
-    nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(0,2), 1);
+    nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(0,29), 1);
 }
 
 void trigger_low(void)
 {
-    nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(0,2), 0);
+    nrf_gpio_pin_write(NRF_GPIO_PIN_MAP(0,29), 0);
 }
 
 char getch(void)

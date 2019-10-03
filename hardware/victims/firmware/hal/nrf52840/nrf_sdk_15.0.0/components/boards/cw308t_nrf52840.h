@@ -15,7 +15,7 @@ extern "C" {
 #define LED_3          NRF_GPIO_PIN_MAP(0,16)
 #define LED_START      LED_1
 #define LED_STOP       LED_3
-#define XTAL_OUT       NRF_GPIO_PIN_MAP(1,15)
+#define XTAL_OUT       NRF_GPIO_PIN_MAP(1,10)
 
 #define LEDS_ACTIVE_STATE 0
 
@@ -35,19 +35,19 @@ extern "C" {
 
 #define BUTTONS_LIST { }
 
-#define RX_PIN_NUMBER  NRF_GPIO_PIN_MAP(1,13)
-#define TX_PIN_NUMBER  NRF_GPIO_PIN_MAP(1,10)
+#define RX_PIN_NUMBER  NRF_GPIO_PIN_MAP(1,15)
+#define TX_PIN_NUMBER  NRF_GPIO_PIN_MAP(1,13)
 #define CTS_PIN_NUMBER UART_PIN_DISCONNECTED
 #define RTS_PIN_NUMBER UART_PIN_DISCONNECTED
 #define HWFC           false
 
 // serialization APPLICATION board - temp. setup for running serialized MEMU tests
-#define SER_APP_RX_PIN              NRF_GPIO_PIN_MAP(1,13)    // UART RX pin number.
-#define SER_APP_TX_PIN              NRF_GPIO_PIN_MAP(1,10)    // UART TX pin number.
+#define SER_APP_RX_PIN              NRF_GPIO_PIN_MAP(1,15)    // UART RX pin number.
+#define SER_APP_TX_PIN              NRF_GPIO_PIN_MAP(1,13)    // UART TX pin number.
 
 // serialization CONNECTIVITY board
-#define SER_CON_RX_PIN              NRF_GPIO_PIN_MAP(1,13)    // UART RX pin number.
-#define SER_CON_TX_PIN              NRF_GPIO_PIN_MAP(1,10)    // UART TX pin number.
+#define SER_CON_RX_PIN              NRF_GPIO_PIN_MAP(1,15)    // UART RX pin number.
+#define SER_CON_TX_PIN              NRF_GPIO_PIN_MAP(1,13)    // UART TX pin number.
 
 #ifdef __cplusplus
 }
