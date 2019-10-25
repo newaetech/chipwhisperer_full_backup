@@ -1,5 +1,7 @@
 V5.1.2:
   * Windows installer
+  * Fix PGE calculation and known key highlighting for attacks which don't
+    target the base key.
 
 V5.1.1:
   * Fix STM32F baud setting

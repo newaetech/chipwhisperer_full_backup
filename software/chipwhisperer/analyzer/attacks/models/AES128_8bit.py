@@ -134,7 +134,7 @@ class LastroundHW(AESLeakageHelper):
         st9 = inv_sbox(ct[bnum] ^ key[bnum])
         return st9
 
-    def processKnownKey(self, inpkey):
+    def process_known_key(self, inpkey):
         return key_schedule_rounds(inpkey, 0, 10)
 
 
@@ -149,7 +149,7 @@ class LastroundStateDiff(AESLeakageHelper):
         st9 = inv_sbox(ct[bnum] ^ key[bnum])
         return (st9 ^ st10)
 
-    def processKnownKey(self, inpkey):
+    def process_known_key(self, inpkey):
         return key_schedule_rounds(inpkey, 0, 10)
 
 class LastroundStateDiffAlternate(AESLeakageHelper):
@@ -160,7 +160,7 @@ class LastroundStateDiffAlternate(AESLeakageHelper):
         st9 = inv_sbox(ct[bnum] ^ key[bnum])
         return (st9 ^ st10)
 
-    def processKnownKey(self, inpkey):
+    def process_known_key(self, inpkey):
         k = key_schedule_rounds(inpkey, 0, 10)
         k = self.shiftrows(k)
         return k
@@ -307,9 +307,9 @@ class AES128_8bit(ModelsBase):
         if self.modelobj is None:
             raise ValueError("Invalid model: %s" % str(self.model))
 
-    def processKnownKey(self, inpkey):
-        if hasattr(self.modelobj, 'processKnownKey'):
-            return self.modelobj.processKnownKey(inpkey)
+    def process_known_key(self, inpkey):
+        if hasattr(self.modelobj, 'process_known_key'):
+            return self.modelobj.process_known_key(inpkey)
         return inpkey
 
     def leakage(self, pt, ct, guess, bnum, state):

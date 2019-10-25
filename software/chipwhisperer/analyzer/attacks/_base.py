@@ -133,7 +133,6 @@ class AttackBaseClass(PassiveTraceObserver):
         Returns key under attack which should be highlighted in graph
         """
         return inpkey
-    processKnownKey = camel_case_deprecated(process_known_key)
 
     def process_traces(self, callback=None):
         """ Run the attack!

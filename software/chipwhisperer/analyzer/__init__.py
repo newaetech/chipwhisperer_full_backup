@@ -63,7 +63,7 @@ def _default_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
     from IPython.display import clear_output
     global current_trace_iteration
     attack_results = attack.results
-    key = attack.project.keys[0]
+    key = attack.known_key()
 
     def format_stat(stat):
         if type(stat) is int:

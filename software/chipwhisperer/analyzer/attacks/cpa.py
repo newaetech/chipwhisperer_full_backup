@@ -62,12 +62,12 @@ class CPA(AttackBaseClass):
         hwmodel = None
 
 
-    def processKnownKey(self, inpkey):
+    def process_known_key(self, inpkey):
         if inpkey is None:
             return None
 
-        if hasattr(self.attack, 'processKnownKey'):
-            return self.attack.processKnownKey(inpkey)
+        if hasattr(self.attack, 'process_known_key'):
+            return self.attack.process_known_key(inpkey)
         else:
             return inpkey
 

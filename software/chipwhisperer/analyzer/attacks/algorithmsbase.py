@@ -63,8 +63,8 @@ class AlgorithmsBase(Parameterized):
         if model:
             self.stats = Results(model.getNumSubKeys(), model.getPermPerSubkey())
 
-    def processKnownKey(self, inpkey):
-        return self.model.processKnownKey(inpkey)
+    def process_known_key(self, inpkey):
+        return self.model.process_known_key(inpkey)
 
     def get_statistics(self):
         return self.stats

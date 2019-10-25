@@ -91,7 +91,7 @@ class XOR_8bit(ModelsBase):
         if self.modelobj is None:
             raise ValueError("Invalid model: %s" % str(self.model))
 
-    def processKnownKey(self, inpkey):
+    def process_known_key(self, inpkey):
         return inpkey
 
     def leakage(self, pt, ct, guess, bnum, state):

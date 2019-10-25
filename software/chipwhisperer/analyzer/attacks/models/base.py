@@ -89,7 +89,7 @@ class ModelsBase(Parameterized):
     def getHW(cls, n):
         return cls.HW[n]
 
-    def processKnownKey(self, inpkey):
+    def process_known_key(self, inpkey):
         return inpkey
 
     def leakage(self, pt, ct, guess, bnum, state):

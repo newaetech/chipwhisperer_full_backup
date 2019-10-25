@@ -279,7 +279,7 @@ class DES(ModelsBase):
         if self.modelobj is None:
             raise ValueError("Invalid model: %s" % str(self.model))
 
-    def processKnownKey(self, inpkey):
+    def process_known_key(self, inpkey):
         return self.modelobj.keyScheduleRounds(inpkey, 0, 1)
 
     def leakage(self, pt, ct, guess, bnum, state):
