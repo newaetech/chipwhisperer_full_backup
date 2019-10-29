@@ -1,0 +1,72 @@
+
+
+VPATH += :$(HALPATH)/psoc62 
+VPATH += :$(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/devices/psoc6/startup/gcc
+VPATH += :$(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/devices/psoc6/startup
+VPATH += :$(HALPATH)/psoc62/generated_source
+VPATH += :$(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/drivers/source
+VPATH += :$(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/drivers/source/gcc
+
+EXTRAINCDIRS += $(HALPATH)/psoc62 $(HALPATH)/psoc62/generated_source
+EXTRAINCDIRS += $(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/cmsis/include
+EXTRAINCDIRS += $(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/devices/psoc6/include 
+EXTRAINCDIRS += $(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/drivers/include 
+
+SRC += system_psoc6_cm4.c psoc62_hal.c
+ASRC += startup_psoc6_01_cm4.S cy_syslib_gcc.S
+
+SRC += cycfg_clocks.c \
+       cycfg_peripherals.c \
+       cycfg_pins.c \
+       cycfg_platform.c \
+       cycfg_routing.c \
+       cycfg.c
+       
+SRC += cy_device.c \
+       cy_efuse.c \
+       cy_flash.c \
+       cy_gpio.c \
+       cy_ipc_drv.c \
+       cy_ipc_pipe.c \
+       cy_ipc_sema.c \
+       cy_prot.c \
+       cy_scb_common.c \
+       cy_scb_uart.c \
+       cy_sysclk.c \
+       cy_syslib.c \
+       cy_sysint.c \
+       cy_syspm.c \
+       cy_systick.c
+
+MCU_FLAGS = -mcpu=cortex-m4
+
+CC = arm-none-eabi-gcc
+OBJCOPY = arm-none-eabi-objcopy
+OBJDUMP = arm-none-eabi-objdump
+SIZE = arm-none-eabi-size
+AR = arm-none-eabi-ar rcs
+NM = arm-none-eabi-nm
+
+#Output Format = Binary for this target
+FORMAT = binary
+
+CFLAGS += -fdata-sections -ffunction-sections -mthumb -mlong-calls -mfpu=fpv4-sp-d16 -ffat-lto-objects
+CPPFLAGS += $(CFLAGS)
+ASFLAGS += -mthumb
+
+CDEFS += -DCY8C6247BZI_D44
+CDEFS += -DAPP_NAME='"CustomApp_cm4"'
+CDEFS += -DDEBUG
+
+CPPDEFS += $(CDEFS)
+
+OPT = 1
+
+LDFLAGS += -specs=nano.specs -T $(HALPATH)/psoc62/cy8c6xx7_cm4_dual.ld -Xlinker --gc-sections -lm
+
+### Special signing needed for image to actually load 
+MCUELFTOOL = $(HALPATH)/psoc62/tools/win_x64/cymcuelftool.exe
+
+signed: all
+	$(MCUELFTOOL) --sign $(TARGET-PLAT).elf --output $(TARGET-PLAT)_cm4_signed.elf
+	$(MCUELFTOOL) --merge $(TARGET-PLAT)_cm4_signed.elf $(HALPATH)/psoc62/psoc6_01_cm0p_sleep_signed.elf --output $(TARGET-PLAT)_cm4_final.elf
