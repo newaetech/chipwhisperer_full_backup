@@ -1,6 +1,6 @@
 /*
     This file is part of the ChipWhisperer Example Targets
-    Copyright (C) 2017 NewAE Technology Inc.
+    Copyright (C) 2019 NewAE Technology Inc.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ void platform_init(void)
 void init_uart(void)
 {
 	Cy_SCB_UART_Init(SCB1, &scb_1_config, &uart_ctx);
-	//Cy_GPIO_SetHSIOM(SCB1, P2_1_NUM, P2_1_SCB1_UART_TX);
 	Cy_SysClk_PeriphAssignDivider(PCLK_SCB1_CLOCK, CY_SYSCLK_DIV_16_BIT, 0);
 	Cy_SCB_UART_Enable(SCB1);
 }
@@ -41,7 +40,6 @@ void putch(char c)
 {
 	Cy_SCB_UART_Put(SCB1, c);
 	while (!Cy_SCB_UART_IsTxComplete(SCB1));
-	//while (Cy_SCB_UART_Transmit(SCB1, &c, 1, &uart_ctx) != CY_SCB_UART_SUCCESS);
 }
 
 char getch(void)

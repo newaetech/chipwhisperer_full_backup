@@ -1,4 +1,4 @@
-
+# Makefile for CW308T-PSOC62 Target, with CY8C6247BZI-D44 device
 
 VPATH += :$(HALPATH)/psoc62 
 VPATH += :$(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/devices/psoc6/startup/gcc
@@ -60,6 +60,7 @@ CDEFS += -DDEBUG
 
 CPPDEFS += $(CDEFS)
 
+#TODO - somehow with 's' optimization causes a fault later (!)
 OPT = 1
 
 LDFLAGS += -specs=nano.specs -T $(HALPATH)/psoc62/cy8c6xx7_cm4_dual.ld -Xlinker --gc-sections -lm

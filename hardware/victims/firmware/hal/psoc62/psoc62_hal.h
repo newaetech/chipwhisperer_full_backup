@@ -1,6 +1,6 @@
 /*
     This file is part of the ChipWhisperer Example Targets
-    Copyright (C) 2017 NewAE Technology Inc.
+    Copyright (C) 2019 NewAE Technology Inc.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,12 +25,6 @@
 #define trigger_setup()
 #define trigger_high()  {Cy_GPIO_Write(ioss_0_port_3_pin_2_PORT, 2, 1);}
 #define trigger_low()   {Cy_GPIO_Write(ioss_0_port_3_pin_2_PORT, 2, 0);}
-
-/*
-#define aes_indep_init aes_init
-#define aes_indep_key  aes_set_key
-#define aes_indep_enc  aes_encrypt
-*/
 
 void init_uart(void);
 void putch(char c);
