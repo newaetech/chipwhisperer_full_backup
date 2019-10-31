@@ -1,6 +1,6 @@
 # ChipWhisperer-Nano
 
-ChipWhisperer-Nano is a super-low cost SCA platform (with even some glitching support).
+ChipWhisperer-Nano is a super-low cost SCA platform (with even some glitching support). See the [full datasheet](https://github.com/newaetech/chipwhisperer/blob/develop/hardware/capture/chipwhisperer-nano/NAE-CW1101_datasheet.pdf "full datasheet") for a more detailed overview of capabilities.
 
 ![](cwnano.png)
 
