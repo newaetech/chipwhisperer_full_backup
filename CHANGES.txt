@@ -1,3 +1,10 @@
+V5.1.3
+  * Windows installer (released)
+  * Improvements to Jupyter notebooks - use real-time plotting during capture, various small fixes
+  * New LPC1114 Jupyter tutorial
+  * Add PSOC62 HAL, fix NRF52840 HAL and SAM4L HAL
+  * Add CW-Nano firmware source + schematics
+
 V5.1.2:
   * Windows installer
   * Fix PGE calculation and known key highlighting for attacks which don't

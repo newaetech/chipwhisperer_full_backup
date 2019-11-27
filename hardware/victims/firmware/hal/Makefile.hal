@@ -13,7 +13,8 @@ EXTRAINCDIRS += $(HALPATH)
 #Manually have to update these lists...
 PLATFORM_LIST = CW308_CC2538 CW301_AVR CW303 CW304 CW308_MEGARF CW308_SAM4L \
 	CW308_STM32F0 CW308_STM32F1 CW308_STM32F2 CW308_STM32F3 CW308_STM32F4 CW308_K24F \
-    CW308_NRF52 CW308_AURIX CW308_SAML11 CW308_EFM32TG11B CWLITEARM CWLITEXMEGA CWNANO CW308_K82F
+    CW308_NRF52 CW308_AURIX CW308_SAML11 CW308_EFM32TG11B CWLITEARM CWLITEXMEGA CWNANO CW308_K82F \
+    CW308_PSOC62
 
 define KNOWN_PLATFORMS
 
@@ -62,6 +63,8 @@ define KNOWN_PLATFORMS
 | EFM32TG11B    | (Silicon Labs EFM32TG11B)             |
 +-------------------------------------------------------+
 | CW308_K82F    | CW308T-K82F (NXP Kinetis K82F)        |
++-------------------------------------------------------+
+| CW308_PSOC62  | CW308T-PSOC62 (Cypress PSOC 62)       |
 +-------------------------------------------------------+
 Options to define platform:
 (1) Run make with PLATFORM specified as follows:
@@ -161,6 +164,9 @@ else ifeq ($(PLATFORM),CW308_EFM32TG11B)
 else ifeq ($(PLATFORM),CW308_LPC55S6X)
  HAL = lpc55s6x
  PLTNAME = LPC55S6X
+else ifeq ($(PLATFORM),CW308_PSOC62)
+ HAL = psoc62
+ PLTNAME = PSOC62
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
 endif

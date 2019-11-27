@@ -44,26 +44,28 @@ void platform_init(void);
 #define CW308_EFM32TG11B 24
 #define CW308_K82F     25
 #define CW308_LPC55S6X 26
+#define CW308_PSOC62   27
 
 //HAL_TYPE Define Types
-#define HAL_avr     1
-#define HAL_xmega   2
-#define HAL_pic24f  3
-#define HAL_sam4l   4
-#define HAL_stm32f0 5
-#define HAL_stm32f1 6
-#define HAL_stm32f2 7
-#define HAL_stm32f3 8
-#define HAL_stm32f4 9
-#define HAL_cc2538  10
-#define HAL_k24f    11
+#define HAL_avr      1
+#define HAL_xmega    2
+#define HAL_pic24f   3
+#define HAL_sam4l    4
+#define HAL_stm32f0  5
+#define HAL_stm32f1  6
+#define HAL_stm32f2  7
+#define HAL_stm32f3  8
+#define HAL_stm32f4  9
+#define HAL_cc2538   10
+#define HAL_k24f     11
 #define HAL_nrf52840 12
 #define HAL_stm32f0_nano 13
-#define HAL_aurix 14
-#define HAL_saml11 15
+#define HAL_aurix    14
+#define HAL_saml11   15
 #define HAL_efm32tg11b 16
-#define HAL_k82f    17
+#define HAL_k82f     17
 #define HAL_lpc55s6x 18
+#define HAL_psoc62   19
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
@@ -111,6 +113,8 @@ void platform_init(void);
      #include "efm32tg11b/efm32tg11b_hal.h"
 #elif HAL_TYPE == HAL_lpc55s6x
      #include "lpc55s6x/lpc55s6x_hal.h"
+#elif HAL_TYPE == HAL_psoc62
+    #include "psoc62/psoc62_hal.h"
 #else
     #error "Unsupported HAL Type"
 #endif
