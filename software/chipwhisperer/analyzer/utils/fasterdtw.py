@@ -177,12 +177,7 @@ def dtw(x, y, window=None, dist=lambda a, b: abs(a - b)):
 
     window = list(window)
     window_len = len(window)
-    print(window_len)
     idx = 0
-    if window_len > 10000:
-        pass
-    else:
-        progress_bar = None
     for i,j in window:
         dt = dist(x[i-1], y[j-1])
         D[i, j] = (D[i-1, j-1][0], i-1, j-1)
@@ -193,10 +188,6 @@ def dtw(x, y, window=None, dist=lambda a, b: abs(a - b)):
         D[i, j] = (D[i, j][0] + dt, D[i,j][1], D[i,j][2])
 
         idx += 1
-        if progress_bar is not None and idx % 1000 == 0:
-            progress_bar.updateStatus(idx, idx)
-            if progress_bar.wasAborted():
-                raise RuntimeWarning("User aborted DTW operation")
 
     path = []
     i, j = len_x, len_y
