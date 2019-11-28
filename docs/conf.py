@@ -38,6 +38,7 @@ extensions = [
 	'sphinx.ext.napoleon',
 	'sphinx.ext.autodoc',
 	'sphinx.ext.todo',
+    'sphinxcontrib.images'
 ]
 
 # explicitly set the master document to index.rst

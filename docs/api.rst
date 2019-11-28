@@ -90,6 +90,9 @@ OpenADC Scope
 
 
     .. attribute:: clock
+    
+        .. thumbnail:: figures/cwlitepro_clock.png
+    
         :annotation: scope.clock
 
         .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.adc_src
@@ -180,6 +183,9 @@ OpenADC Scope
 
 
     .. attribute:: glitch
+    
+        .. thumbnail:: figures/cwlitepro_glitch.png
+    
         :annotation: scope.glitch
 
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.clk_src
@@ -199,6 +205,9 @@ OpenADC Scope
 
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.trigger_src
             :annotation: scope.glitch.trigger_src
+
+        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.manual_trigger
+            :annotation: scope.glitch.manual_trigger
 
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.arm_timing
             :annotation: scope.glitch.arm_timing
