@@ -82,7 +82,7 @@ class GlitchSettings(util.DisableNewAttr):
         dict['ext_offset'] = self.ext_offset
         dict['repeat'] = self.repeat
         dict['output'] = self.output
-
+        
         return dict
 
     def __repr__(self):
@@ -91,13 +91,16 @@ class GlitchSettings(util.DisableNewAttr):
     def __str__(self):
         return self.__repr__()
 
-    def manualTrigger(self):
+    def manual_trigger(self):
         """Manually trigger the glitch output.
 
         This trigger is most useful in Manual trigger mode, where this is the
         only way to cause a glitch.
         """
         self.cwg.glitchManual()
+        
+    def manualTrigger(self):
+        self.manual_trigger()
 
     def readStatus(self):
         """Read the status of the two glitch DCMs.
