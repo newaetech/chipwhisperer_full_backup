@@ -483,6 +483,7 @@ class STM32FSerial(object):
             raise CmdException("Extended Erase memory (0x44) failed")
 
     def cmdWriteProtect(self, sectors):
+        # generates system reset upon success, programmer needs to be reopened again
         if self.cmdGeneric(0x63):
             logging.info("*** Write protect command")
             self.sp.write(chr((len(sectors) - 1) & 0xFF))
@@ -497,28 +498,28 @@ class STM32FSerial(object):
             raise CmdException("Write Protect memory (0x63) failed")
 
     def cmdWriteUnprotect(self):
+        # generates system reset upon success, programmer needs to be reopened again
         if self.cmdGeneric(0x73):
             logging.info("*** Write Unprotect command")
             self._wait_for_ask("0x73 write unprotect failed")
-            self._wait_for_ask("0x73 write unprotect 2 failed")
             logging.info("    Write Unprotect done")
         else:
             raise CmdException("Write Unprotect (0x73) failed")
 
     def cmdReadoutProtect(self):
+        # generates system reset upon success, programmer needs to be reopened again
         if self.cmdGeneric(0x82):
             logging.info("*** Readout protect command")
             self._wait_for_ask("0x82 readout protect failed")
-            self._wait_for_ask("0x82 readout protect 2 failed")
             logging.info("    Read protect done")
         else:
             raise CmdException("Readout protect (0x82) failed")
 
     def cmdReadoutUnprotect(self):
+        # generates system reset upon success, programmer needs to be reopened again
         if self.cmdGeneric(0x92):
             logging.info("*** Readout Unprotect command")
             self._wait_for_ask("0x92 readout unprotect failed")
-            self._wait_for_ask("0x92 readout unprotect 2 failed")
             logging.info("    Read Unprotect done")
         else:
             raise CmdException("Readout unprotect (0x92) failed")
