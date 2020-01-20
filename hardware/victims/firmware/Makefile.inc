@@ -317,6 +317,8 @@ ALL_ASFLAGS = $(MCU_FLAGS) -I. -x assembler-with-cpp $(ASFLAGS)
 # Default target.
 all: clean_objs $(OBJDIR) .dep begin gccversion build sizeafter end
 
+allquick: begin gccversion build sizeafter end
+
 # Change the build target to build a HEX file or a library.
 build: elf hex eep lss sym
 #build: lib
@@ -517,8 +519,8 @@ clean_objs :
 	$(REMOVE) $(TARGET-PLAT).map
 	$(REMOVE) $(TARGET-PLAT).sym
 	$(REMOVE) $(TARGET-PLAT).lss
-	-$(REMOVE) $(OBJDIR)/*.o
-	-$(REMOVE) $(OBJDIR)/*.lst
+	$(REMOVE) $(OBJDIR)/*.o
+	$(REMOVE) $(OBJDIR)/*.lst
 	$(REMOVE) $(SRC:.c=.s)
 	$(REMOVE) $(SRC:.c=.d)
 	$(REMOVE) $(SRC:.c=.i)
@@ -558,7 +560,7 @@ clean_list :
 
 
 # Listing of phony targets.
-.PHONY : all begin finish end sizeafter gccversion \
+.PHONY : all allquick begin finish end sizeafter gccversion \
 build elf hex eep lss sym coff extcoff \
 clean clean_list clean_print clean_objs program debug gdb-config
 

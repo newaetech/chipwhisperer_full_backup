@@ -45,6 +45,7 @@ void platform_init(void);
 #define CW308_K82F     25
 #define CW308_LPC55S6X 26
 #define CW308_PSOC62   27
+#define CW308_IMXRT1062 28
 
 //HAL_TYPE Define Types
 #define HAL_avr      1
@@ -66,6 +67,7 @@ void platform_init(void);
 #define HAL_k82f     17
 #define HAL_lpc55s6x 18
 #define HAL_psoc62   19
+#define HAL_imxrt1062 20
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
@@ -115,6 +117,8 @@ void platform_init(void);
      #include "lpc55s6x/lpc55s6x_hal.h"
 #elif HAL_TYPE == HAL_psoc62
     #include "psoc62/psoc62_hal.h"
+#elif HAL_TYPE == HAL_imxrt1062
+    #include "imxrt1062/imxrt1062_hal.h"
 #else
     #error "Unsupported HAL Type"
 #endif
