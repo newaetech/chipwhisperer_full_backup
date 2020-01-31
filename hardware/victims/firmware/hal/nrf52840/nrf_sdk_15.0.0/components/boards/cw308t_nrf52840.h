@@ -11,21 +11,21 @@ extern "C" {
 #define LEDS_NUMBER    3
 
 #define LED_1          NRF_GPIO_PIN_MAP(0,24)
-#define LED_2          NRF_GPIO_PIN_MAP(0,18)
-#define LED_3          NRF_GPIO_PIN_MAP(0,16)
+#define LED_2          NRF_GPIO_PIN_MAP(0,22)
+#define LED_3          NRF_GPIO_PIN_MAP(0,20)
 #define LED_START      LED_1
 #define LED_STOP       LED_3
 #define XTAL_OUT       NRF_GPIO_PIN_MAP(1,10)
 
-#define LEDS_ACTIVE_STATE 0
+#define LEDS_ACTIVE_STATE 1
 
 #define LEDS_LIST { LED_1, LED_2, LED_3 }
 
 #define LEDS_INV_MASK  LEDS_MASK
 
 #define BSP_LED_0      24
-#define BSP_LED_1      18
-#define BSP_LED_2      16
+#define BSP_LED_1      22
+#define BSP_LED_2      20
 
 #define BUTTONS_NUMBER 0
 
