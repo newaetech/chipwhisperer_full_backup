@@ -13,6 +13,8 @@ python:
   install:
     - requirements: software/requirements.txt
     - requirements: jupyter/requirements.txt
+    - method: pip
+      path: sphinxcontrib-images
     - method: setuptools
       path: .
 
