@@ -62,31 +62,31 @@ OpenADC Scope
         :annotation: scope.adc
 
         .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.state
-            :annotation: scope.trigger.state
+            :annotation: scope.adc.state
 
         .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.stream_mode
-            :annotation: scope.trigger.stream_mode
+            :annotation: scope.adc.stream_mode
 
         .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.decimate
-            :annotation: scope.trigger.decimate
+            :annotation: scope.adc.decimate
 
         .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.samples
-            :annotation: scope.trigger.samples
+            :annotation: scope.adc.samples
 
         .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.timeout
-            :annotation: scope.trigger.timeout
+            :annotation: scope.adc.timeout
 
         .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.offset
-            :annotation: scope.trigger.offset
+            :annotation: scope.adc.offset
 
         .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.presamples
-            :annotation: scope.trigger.presamples
+            :annotation: scope.adc.presamples
 
         .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.basic_mode
-            :annotation: scope.trigger.basic_mode
+            :annotation: scope.adc.basic_mode
 
         .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.trig_count
-            :annotation: scope.trigger.trig_count
+            :annotation: scope.adc.trig_count
 
 
     .. attribute:: clock
