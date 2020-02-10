@@ -41,8 +41,9 @@ the correct extension pack is installed.
  * Install `VirtualBox`_. This program is freely available on Windows, Mac,
    and Linux.
 
- * Install the `VirtualBox Extension Pack`_. This is necessary for the VM to
-   interact with the ChipWhisperer hardware.
+ * Install the VirtualBox Extension pack, which can be found on the VirtualBox 
+   downloads page linked above. This is necessary for the VM to interact with 
+   the ChipWhisperer hardware.
 
  * Download a ChipWhisperer virtual machine image release or build it
    yourself using Vagrant.
@@ -88,8 +89,6 @@ type **localhost:8888** into the address bar. This will give you access to
 the Jupyter Notebook server running in the virtual machine.
 
 .. _VirtualBox: https://www.virtualbox.org/wiki/Downloads
-.. _VirtualBox Extension Pack: https://download.virtualbox.org/virtualbox/6.0.6/Oracle_VM_VirtualBox_Extension_Pack-6.0.6.vbox-extpack
-
 
 .. _install-repo:
 
