@@ -384,7 +384,7 @@ class Project(Parameterized):
         """Saves the project.
 
         Writes the project to the disk. Before this is called your data
-        is not saved.
+        is not saved. Filenames for traces are set in this method.
         """
         if self.filename is None:
             return
@@ -803,11 +803,6 @@ class Segments:
         """
         seg = copy.copy(self.trace_container)
         seg.clear()
-        start_time = datetime.now()
-        prefix = start_time.strftime('%Y.%m.%d-%H.%M.%S') + "_"
-        seg.config.setConfigFilename(self.data_directory + "traces/config_" + prefix + ".cfg")
-        seg.config.setAttr("prefix", prefix)
-        seg.config.setAttr("date", start_time.strftime('%Y-%m-%d %H:%M:%S'))
         return seg
 
     def append(self, seg):
