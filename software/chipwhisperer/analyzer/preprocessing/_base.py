@@ -197,6 +197,9 @@ class PreprocessingBase(TraceSource, PassiveTraceObserver):
         proj = Project()
 
         for i in range(self.num_traces()):
+            if self.get_trace(i) is None:
+                logging.warn("Wave {} ({}) is invalid. Skipping ".format(i, self.get_trace(i)))
+                continue
             proj.traces.append(Trace(self.get_trace(i), self.get_textin(i),
                                 self.get_textout(i), self.get_known_key(i)))
         return proj
