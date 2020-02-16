@@ -70,7 +70,7 @@ class TraceManager(TraceSource):
         config[self.name].clear()
         for indx, t in enumerate(self.traceSegments):
             starttime = datetime.now()
-            prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S') + "_"
+            prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S') + "_" + str(indx)
             t.config.setConfigFilename(os.path.splitext(configfilename)[0] + "_data" + "/traces/config_" + prefix + ".cfg")
             t.config.setAttr("prefix", prefix)
             t.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))

@@ -30,7 +30,7 @@ from ._base import TraceContainer
 class TraceContainerNative(TraceContainer):
     """ Most common TraceContainer for CW Projects
 
-    Stick to add_trace(). Trust me.
+    Stick to add_trace().
     """
     _name = "ChipWhisperer/Native"
     
