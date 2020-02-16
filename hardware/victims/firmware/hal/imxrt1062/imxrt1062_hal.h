@@ -19,12 +19,16 @@
 #ifndef IMXRT1062_HAL_H_
 #define IMXRT1062_HAL_H_
 
-#define trigger_setup()
-#define trigger_high()
-#define trigger_low()
+void trigger_setup(void);
+void trigger_high(void); 
+void trigger_low(void);
 
 void init_uart(void);
 void putch(char c);
 char getch(void);
+
+/* MXRT1062 has Glithc Detector */
+int hal_glitch_detected(void);
+void hal_glitch_detect_reset(void);
 
 #endif //IMXRT1062

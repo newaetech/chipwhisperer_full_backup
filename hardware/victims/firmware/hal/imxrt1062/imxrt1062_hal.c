@@ -19,25 +19,63 @@
 #include "imxrt1062_hal.h"
 #include "board.h"
 #include "fsl_dcp.h"
+#include "fsl_lpuart.h"
+#include "fsl_snvs_lp.h"
 #include "pin_mux.h"
 #include "system_MIMXRT1062.h"
 #include "clock_config.h"
 
+/* This function is defined in some other functions too */
+__attribute__ ((weak)) void uart_puts(char * s){
+    while(*s){
+        putch(*(s++));
+    }
+}
+
 void init_uart(void)
 {
-    ;
+    lpuart_config_t lpuartConfig;
+    LPUART_GetDefaultConfig(&lpuartConfig);
+    lpuartConfig.baudRate_Bps = 38400U;
+    lpuartConfig.enableTx = 1;
+    lpuartConfig.enableRx = 1;
+    LPUART_Init(LPUART1, &lpuartConfig, 4000000U);
 }
 
 void putch(char c)
 {
-    ;
+    while (0U == (LPUART1->STAT & LPUART_STAT_TDRE_MASK)){;}
+    
+    LPUART1->DATA = c;
+    
+    /* Ensure all the data in the transmit buffer are sent out to bus. */
+    /*
+    while (0U == (LPUART1->STAT & LPUART_STAT_TC_MASK))
+    {
+    }
+    */
 }
 
 char getch(void)
 {
-    return 'c';
+    while (0U == (LPUART1->STAT & LPUART_STAT_RDRF_MASK)){;}
+    
+    return LPUART1->DATA;
 }
 
+
+void trigger_setup(void)
+{
+    ;
+}
+void trigger_high(void)
+{
+    ;
+}
+void trigger_low(void)
+{
+    ;
+}
 
 /*******************************************************************************
  * Definitions
@@ -76,6 +114,28 @@ void SysTick_DelayTicks(uint32_t n)
     }
 }
 
+static dcp_handle_t _dcp_handle;
+
+void hwcrypto_init(void)
+{
+    dcp_config_t config;
+    DCP_GetDefaultConfig(&config);
+    DCP_Init(DCP, &config);
+    
+    _dcp_handle.channel = kDCP_Channel0;
+    _dcp_handle.keySlot = 0;
+} 
+
+void hwcrypto_setkey(uint8_t * key)
+{
+    DCP_AES_SetKey(DCP, &_dcp_handle, key, 16);
+}
+
+void hwcrypto_enc(uint8_t * pt)
+{
+    DCP_AES_EncryptEcb(DCP, &_dcp_handle, pt, pt, 16);
+}
+
 void platform_init(void)
 {
     /* Board pin init */
@@ -84,8 +144,18 @@ void platform_init(void)
     
     /* Update the core clock */
     SystemCoreClockUpdate();
+    
+    init_uart();
+    
+    /* Check if from previous boot we had a power glitch */
+    if(hal_glitch_detected()) {
+        uart_puts("BOOT-GLITCH\n");
+    }
+    
+    /* Power glitch detector enabled */
+    SNVS_LP_Init(SNVS);
 
-    /* Set systick reload value to generate 1ms interrupt */
+    /*
     if (SysTick_Config(SystemCoreClock / 1000U))
     {
         while (1)
@@ -95,7 +165,6 @@ void platform_init(void)
 
     while (1)
     {
-        /* Delay 1000 ms */
         SysTick_DelayTicks(1000U);
         if (g_pinSet)
         {
@@ -108,5 +177,17 @@ void platform_init(void)
             g_pinSet = true;
         }
     }
-    
+    */
+}
+
+/* Power glitch detection - appears to only be detected if caused reset */
+int hal_glitch_detected(void)
+{
+    return SNVS->LPSR & SNVS_LPSR_PGD_MASK;
+}
+
+/* Reset power glitch flag */
+void hal_glitch_detect_reset(void)
+{
+    SNVS->LPSR = SNVS_LPSR_PGD_MASK;
 }

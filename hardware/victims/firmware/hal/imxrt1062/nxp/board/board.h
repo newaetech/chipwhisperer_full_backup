@@ -37,10 +37,10 @@
 #define LOGIC_LED_ON (0U)
 #define LOGIC_LED_OFF (1U)
 #ifndef BOARD_USER_LED_GPIO
-#define BOARD_USER_LED_GPIO GPIO1
+#define BOARD_USER_LED_GPIO GPIO4
 #endif
-#ifndef BOARD_USER_LED_GPIO_PIN
-#define BOARD_USER_LED_GPIO_PIN (9U)
+#ifndef BOARD_USER_LED_PIN
+#define BOARD_USER_LED_PIN (20U)
 #endif
 
 #define USER_LED_INIT(output)                                            \

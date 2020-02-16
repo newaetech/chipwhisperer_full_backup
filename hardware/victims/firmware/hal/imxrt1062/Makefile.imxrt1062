@@ -11,7 +11,6 @@ VPATH += :$(HALPATH)/imxrt1062/nxp/drivers
 VPATH += :$(HALPATH)/imxrt1062/nxp/source
 VPATH += :$(HALPATH)/imxrt1062/nxp/startup
 VPATH += :$(HALPATH)/imxrt1062/nxp/utilities
-VPATH += :$(HALPATH)/imxrt1062/sec
 VPATH += :$(HALPATH)/imxrt1062/xip
 
 EXTRAINCDIRS += $(HALPATH)/imxrt1062/nxp
@@ -25,7 +24,6 @@ EXTRAINCDIRS += $(HALPATH)/imxrt1062/nxp/drivers
 EXTRAINCDIRS += $(HALPATH)/imxrt1062/nxp/source
 EXTRAINCDIRS += $(HALPATH)/imxrt1062/nxp/startup
 EXTRAINCDIRS += $(HALPATH)/imxrt1062/nxp/utilities
-EXTRAINCDIRS += $(HALPATH)/imxrt1062/sec
 EXTRAINCDIRS += $(HALPATH)/imxrt1062/xip
 
 SRC += board.c clock_config.c pin_mux.c
@@ -37,6 +35,7 @@ SRC += startup_mimxrt1062.c
 SRC += fsl_assert.c fsl_debug_console.c fsl_str.c
 SRC += imxrt1062_hal.c
 SRC += evkmimxrt1060_flexspi_nor_config.c fsl_flexspi_nor_boot.c
+SRC += fsl_dcp.c fsl_snvs_lp.c
 
 MCU_FLAGS = -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb
 
