@@ -473,7 +473,10 @@ class STM32FSerial(object):
             # Checksum
             self.sp.write(chr(0x00))
             tmp = self.sp.timeout
-            self.sp.timeout = 1000000 #TODO HACK - serial timeout is screwed up for some reason
+            if self._chip.name == STM32F40xxx().name:
+                self.sp.timeout = 1000000 #TODO HACK - serial timeout is screwed up for some reason
+            else:
+                self.sp.timeout = 30000
                                       # Need to fix that eventually.
             print("Extended erase (0x44), this can take ten seconds or more")
             self._wait_for_ask("0x44 erasing failed")
