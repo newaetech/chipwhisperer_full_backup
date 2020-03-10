@@ -231,7 +231,7 @@ def target(scope, target_type=targets.SimpleSerial, **kwargs):
     target.con(scope, **kwargs)
     return target
 
-def capture_trace(scope, target, plaintext, key=None):
+def capture_trace(scope, target, plaintext, key=None, ack=True):
     """Capture a trace, sending plaintext and key
 
     Does all individual steps needed to capture a trace (arming the scope
@@ -245,6 +245,8 @@ def capture_trace(scope, target, plaintext, key=None):
             sent). If None, don't send plaintext.
         key (bytearray, optional): Key to send to target. Should be unencoded
             bytearray. If None, don't send key. Defaults to None.
+        ack (bool, optional): Check for ack when reading response from target.
+            Defaults to True.
 
     Returns:
         :class:`Trace <chipwhisperer.common.traces.Trace>` or None if capture
@@ -289,7 +291,7 @@ def capture_trace(scope, target, plaintext, key=None):
         warnings.warn("Timeout happened during capture")
         return None
 
-    response = target.simpleserial_read('r', 16)
+    response = target.simpleserial_read('r', 16, ack=ack)
     wave = scope.get_last_trace()
 
     if len(wave) >= 1:
