@@ -1,0 +1,10 @@
+[Trace Management]
+tracefile0 = Tutorial_B5_data\traces\config_2020.03.10-15.16.25_0.cfg
+enabled0 = True
+[ChipWhisperer]
+[[General Settings]]
+Project Name = Untitled
+Project File Version = 1.00
+Project Author = Unknown
+Program Name = ChipWhisperer
+Program Version = ""

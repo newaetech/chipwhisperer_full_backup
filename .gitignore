@@ -17,12 +17,13 @@ software/build/*
 doc/sphinx/_build/html/_static
 doc/sphinx/_build
 *.epf
-*.cwp
 *_data
 default-data-dir/
 *.o
 *.d
 *.lst
+*.cwp
+!tests/**
 *.npy
 hardware/victims/firmware/simpleserial-*/simpleserial-*-CW*
 hardware/victims/firmware/basic-passwdcheck/basic-passwdcheck-CW*
