@@ -293,7 +293,7 @@ class TestCPA(unittest.TestCase):
         for i in range(len(project.keys[0])):
             self.assertEqual(project.keys[0][i], keys[i])
 
-        project.close()
+        project.close(save=False)
 
     def test_jitter(self):
         project = cw.open_project('projects/jittertime')
@@ -308,6 +308,7 @@ class TestCPA(unittest.TestCase):
         keys = results.find_key()
         for i in range(len(project.keys[0])):
             self.assertEqual(project.keys[0][i], keys[i])
+        project.close(save=False)
 
 
 
