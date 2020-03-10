@@ -259,6 +259,58 @@ class TestUtils(unittest.TestCase):
         arr = bytearray([14, 10, 2])
         self.assertEqual(str(arr), "CWbytearray(b'0e 0a 02')")
 
+class TestSegment(unittest.TestCase):
+    def setUp(self):
+        self.project = cw.create_project('test_seg', overwrite=True)
+        for i in range(0, 10000):
+            arr = bytearray(b'CWUNIQUESTRING1')
+            tr = cw.Trace(np.array([0]), arr, arr, arr)
+            self.project.traces.append(tr)
+
+        arr = bytearray(b'CWUNIQUESTRING2')
+        tr = cw.Trace(np.array([0]), arr, arr, arr)
+        self.project.traces.append(tr)
+        self.project.save()
+        self.project.close()
+
+    def tearDown(self):
+        self.project.close(save=False)
+        self.project.remove(i_am_sure=True)
+
+    def test_trace_beyond_segment(self):
+        self.project = cw.open_project('test_seg')
+        arr = bytearray(b'CWUNIQUESTRING2')
+        for i in range(0, len(arr)):
+            self.assertEqual(self.project.textins[10000][i], arr[i])
+
+class TestCPA(unittest.TestCase):
+    def test_CPA(self):
+        project = cw.open_project('projects/Tutorial_B5')
+        leak_model = cwa.leakage_models.sbox_output
+        attack = cwa.cpa(project, leak_model)
+        results = attack.run()
+        keys = results.find_key()
+        for i in range(len(project.keys[0])):
+            self.assertEqual(project.keys[0][i], keys[i])
+
+        project.close()
+
+    def test_jitter(self):
+        project = cw.open_project('projects/jittertime')
+        resync_traces = cwa.preprocessing.ResyncSAD(project)
+        resync_traces.ref_trace = 0
+        resync_traces.target_window = (700, 1500)
+        resync_traces.max_shift = 700
+        new_proj = resync_traces.preprocess()
+        leak_model = cwa.leakage_models.sbox_output
+        attack = cwa.cpa(new_proj, leak_model)
+        results = attack.run()
+        keys = results.find_key()
+        for i in range(len(project.keys[0])):
+            self.assertEqual(project.keys[0][i], keys[i])
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
