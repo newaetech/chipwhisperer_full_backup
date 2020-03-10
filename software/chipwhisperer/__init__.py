@@ -270,7 +270,7 @@ def capture_trace(scope, target, plaintext, key=None, ack=True):
         Added to simplify trace capture.
     """
     if key:
-        target.set_key(key)
+        target.set_key(key, ack=ack)
 
     scope.arm()
 
