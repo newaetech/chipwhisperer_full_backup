@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_crypto_core_crc.h
-* \version 2.20
+* \version 2.30.1
 *
 * \brief
 *  This file provides the headers for CRC API
@@ -30,6 +30,10 @@
 #include "cy_crypto_common.h"
 
 #if defined(CY_IP_MXCRYPTO)
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 #if (CPUSS_CRYPTO_CRC == 1)
 
@@ -91,7 +95,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Crc_Init(CRYPTO_Type *base,
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Crc_Init(base, polynomial, dataReverse, dataXor, remReverse, remXor);
     }
@@ -136,7 +140,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Crc(CRYPTO_Type *base,
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Crc(base, crc, data, dataSize, lfsrInitState);
     }
@@ -193,7 +197,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Crc_CalcInit(CRYPTO_Type *b
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Crc_CalcInit(base, width, polynomial, dataReverse, dataXor,
                                                  remReverse, remXor, lfsrInitState);
@@ -231,7 +235,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Crc_CalcStart(CRYPTO_Type *
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Crc_CalcStart(base, width, lfsrInitState);
     }
@@ -267,7 +271,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Crc_CalcPartial(CRYPTO_Type
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Crc_CalcPartial(base, data, dataSize);
     }
@@ -302,7 +306,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Crc_CalcFinish(CRYPTO_Type 
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Crc_CalcFinish(base, width, crc);
     }
@@ -345,7 +349,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Crc_Calc(CRYPTO_Type *base,
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Crc_Calc(base, width, crc, data, dataSize);
     }
@@ -360,6 +364,10 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Crc_Calc(CRYPTO_Type *base,
 /** \} group_crypto_lld_crc_functions */
 
 #endif /* #if (CPUSS_CRYPTO_CRC == 1) */
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* CY_IP_MXCRYPTO */
 

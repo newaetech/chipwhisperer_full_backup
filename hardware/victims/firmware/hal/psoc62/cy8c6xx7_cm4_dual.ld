@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy8c6xx7_cm4_dual.ld
-* \version 2.30
+* \version 2.70
 *
 * Linker file for the GNU C compiler.
 *
@@ -40,6 +40,11 @@ SEARCH_DIR(.)
 GROUP(-lgcc -lc -lnosys)
 ENTRY(Reset_Handler)
 
+/* The size of the stack section at the end of CM4 SRAM */
+STACK_SIZE = 0x1000;
+
+/* The size of the Cortex-M0+ application image at the start of FLASH */
+FLASH_CM0P_SIZE  = 0x2000;
 
 /* Force symbol to be entered in the output file as an undefined symbol. Doing
 * this may, for example, trigger linking of additional modules from standard
@@ -56,13 +61,13 @@ MEMORY
 {
     /* The ram and flash regions control RAM and flash memory allocation for the CM4 core.
      * You can change the memory allocation by editing the 'ram' and 'flash' regions.
-     * Note that 2 KB of RAM (at the end of the RAM section) are reserved for system use.
+     * Note that 2 KB of RAM (at the end of the SRAM) are reserved for system use.
      * Using this memory region for other purposes will lead to unexpected behavior.
      * Your changes must be aligned with the corresponding memory regions for CM0+ core in 'xx_cm0plus.ld',
      * where 'xx' is the device group; for example, 'cy8c6xx7_cm0plus.ld'.
      */
     ram               (rwx)   : ORIGIN = 0x08002000, LENGTH = 0x45800
-    flash             (rx)    : ORIGIN = 0x10002000, LENGTH = 0xFE000
+    flash             (rx)    : ORIGIN = 0x10000000, LENGTH = 0x100000
 
     /* This is a 32K flash region used for EEPROM emulation. This region can also be used as the general purpose flash.
      * You can assign sections to this memory region for only one of the cores.
@@ -120,7 +125,20 @@ GROUP(libgcc.a libc.a libm.a libnosys.a)
 
 SECTIONS
 {
-    .text :
+     /* Cortex-M0+ application flash image area */
+    .cy_m0p_image ORIGIN(flash) :
+    {
+        . = ALIGN(4);
+        __cy_m0p_code_start = . ;
+        KEEP(*(.cy_m0p_image))
+        __cy_m0p_code_end = . ;
+    } > flash
+
+    /* Check if .cy_m0p_image size exceeds FLASH_CM0P_SIZE */
+    ASSERT(__cy_m0p_code_end <= ORIGIN(flash) + FLASH_CM0P_SIZE, "CM0+ flash image overflows with CM4, increase FLASH_CM0P_SIZE")
+
+    /* Cortex-M4 application flash area */
+    .text ORIGIN(flash) + FLASH_CM0P_SIZE :
     {
         . = ALIGN(4);
         __Vectors = . ;
@@ -236,7 +254,6 @@ SECTIONS
         KEEP(*(.init_array))
         PROVIDE_HIDDEN (__init_array_end = .);
 
-
         . = ALIGN(4);
         /* finit data */
         PROVIDE_HIDDEN (__fini_array_start = .);
@@ -293,6 +310,7 @@ SECTIONS
         __end__ = .;
         end = __end__;
         KEEP(*(.heap*))
+        . = ORIGIN(ram) + LENGTH(ram) - STACK_SIZE;
         __HeapLimit = .;
     } > ram
 
@@ -358,7 +376,7 @@ SECTIONS
         KEEP(*(.cy_toc_part2))
     } > sflash_toc_2
 
-    
+
     /* Supervisory Flash: Table of Content # 2 Copy */
     .cy_rtoc_part2 :
     {

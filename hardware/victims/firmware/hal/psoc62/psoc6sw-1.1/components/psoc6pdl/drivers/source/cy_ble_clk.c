@@ -1,13 +1,13 @@
  /***************************************************************************//**
 * \file cy_ble_clk.c
-* \version 3.10
+* \version 3.40
 *
 * \brief
 *  This driver provides the source code for API BLE ECO clock.
 *
 ********************************************************************************
 * \copyright
-* Copyright 2017-2019 Cypress Semiconductor Corporation
+* Copyright 2017-2020 Cypress Semiconductor Corporation
 * SPDX-License-Identifier: Apache-2.0
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +27,7 @@
 #include "cy_gpio.h"
 #include "cy_syspm.h"
 #include "cy_ble_clk.h"
+#include "cy_sysclk.h"
 
 #if defined(CY_IP_MXBLESS)
 
@@ -50,6 +51,7 @@ static cy_en_ble_eco_status_t Cy_BLE_HAL_MxdRadioEnableClocks(cy_en_ble_eco_freq
 *******************************************************************************/
 
 /** \cond INTERNAL */
+
 #define CY_BLE_PORT2_CFG_VAL                                 (0x66666666u)
 #define CY_BLE_PORT3_CFG_VAL                                 (0x66EEE666u)
 #define CY_BLE_PORT4_CFG_VAL                                 (0x6666E666u)
@@ -201,7 +203,7 @@ static cy_en_ble_eco_status_t Cy_BLE_HAL_MxdRadioEnableClocks(cy_en_ble_eco_freq
 *  CY_BLE_ECO_HARDWARE_ERROR   | The RCB or BLE ECO operation failed.
 *
 *  \funcusage 
-*  \snippet bleclk\3.0\snippet\main.c BLE ECO clock API: Cy_BLE_EcoConfigure()
+*  \snippet bleclk/snippet/main.c BLE ECO clock API: Cy_BLE_EcoConfigure()
 *
 *  \sideeffect
 *   The I/O pins will be automatically unfrozen coming out of Hibernate when
@@ -233,8 +235,7 @@ cy_en_ble_eco_status_t Cy_BLE_EcoConfigure(cy_en_ble_eco_freq_t freq, cy_en_ble_
             Cy_SysPm_IoUnfreeze();
         }
 
-        if(((BLE_BLESS_MT_CFG & BLE_BLESS_MT_CFG_ENABLE_BLERD_Msk) != 0u) &&
-           ((BLE_BLESS_MT_STATUS & BLE_BLESS_MT_STATUS_BLESS_STATE_Msk) != 0u))
+        if(Cy_BLE_EcoIsEnabled())
         {
             status = CY_BLE_ECO_ALREADY_STARTED;
         }
@@ -274,9 +275,11 @@ cy_en_ble_eco_status_t Cy_BLE_EcoConfigure(cy_en_ble_eco_freq_t freq, cy_en_ble_
                 /* If clock source for RCB is PeriClk */
                 if((BLE_BLESS_LL_CLK_EN & BLE_BLESS_LL_CLK_EN_SEL_RCB_CLK_Msk) == 0U)
                 {
-                    if(cy_PeriClkFreqHz > CY_BLE_DEFAULT_RCB_CTRL_FREQ)
+                    uint32_t periClkFreqHz = Cy_SysClk_ClkPeriGetFrequency();
+
+                    if(periClkFreqHz > CY_BLE_DEFAULT_RCB_CTRL_FREQ)
                     {
-                        rcbDivider = (cy_PeriClkFreqHz / CY_BLE_DEFAULT_RCB_CTRL_FREQ) - 1U;
+                        rcbDivider = (periClkFreqHz / CY_BLE_DEFAULT_RCB_CTRL_FREQ) - 1U;
                     }
                 }
                 else
@@ -411,6 +414,7 @@ void Cy_BLE_EcoReset(void)
 {
     /* Initiate Soft Reset */
     BLE_BLESS_LL_CLK_EN |= BLE_BLESS_LL_CLK_EN_BLESS_RESET_Msk;
+    cy_BleEcoClockFreqHz = 0UL; /* Reset the BLE ECO frequency */
 }
 
 

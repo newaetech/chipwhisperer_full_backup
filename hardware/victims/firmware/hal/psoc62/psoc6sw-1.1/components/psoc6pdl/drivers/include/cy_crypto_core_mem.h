@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_crypto_core_mem.h
-* \version 2.20
+* \version 2.30.1
 *
 * \brief
 *  This file provides the headers for the memory management API
@@ -30,6 +30,10 @@
 #include "cy_crypto_common.h"
 
 #if defined(CY_IP_MXCRYPTO)
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 #include "cy_crypto_core_mem_v1.h"
 #include "cy_crypto_core_mem_v2.h"
@@ -72,7 +76,7 @@ typedef void (*cy_crypto_memxor_func_t)(CRYPTO_Type *base, void* dst,
 *******************************************************************************/
 __STATIC_INLINE void Cy_Crypto_Core_MemCpy(CRYPTO_Type *base, void* dst, void const *src, uint16_t size)
 {
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         Cy_Crypto_Core_V1_MemCpy(base, dst, src, size);
     }
@@ -104,7 +108,7 @@ __STATIC_INLINE void Cy_Crypto_Core_MemCpy(CRYPTO_Type *base, void* dst, void co
 *******************************************************************************/
 __STATIC_INLINE void Cy_Crypto_Core_MemSet(CRYPTO_Type *base, void* dst, uint8_t data, uint16_t size)
 {
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         Cy_Crypto_Core_V1_MemSet(base, dst, data, size);
     }
@@ -140,7 +144,7 @@ __STATIC_INLINE void Cy_Crypto_Core_MemSet(CRYPTO_Type *base, void* dst, uint8_t
 __STATIC_INLINE uint32_t Cy_Crypto_Core_MemCmp(CRYPTO_Type *base, void const *src0, void const *src1, uint16_t size)
 {
     uint32_t tmpResult;
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_MemCmp(base, src0, src1, size);
     }
@@ -179,7 +183,7 @@ __STATIC_INLINE uint32_t Cy_Crypto_Core_MemCmp(CRYPTO_Type *base, void const *sr
 __STATIC_INLINE void Cy_Crypto_Core_MemXor(CRYPTO_Type *base, void* dst,
                                            void const *src0, void const *src1, uint16_t size)
 {
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         Cy_Crypto_Core_V1_MemXor(base, dst, src0, src1, size);
     }
@@ -190,6 +194,10 @@ __STATIC_INLINE void Cy_Crypto_Core_MemXor(CRYPTO_Type *base, void* dst,
 }
 
 /** \} group_crypto_lld_mem_functions */
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* CY_IP_MXCRYPTO */
 

@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_ipc_sema.c
-* \version 1.30
+* \version 1.40
 *
 *  Description:
 *   IPC Semaphore Driver - This source file contains the source code for the
@@ -66,13 +66,14 @@ static IPC_STRUCT_Type* cy_semaIpcStruct;
 *    \retval CY_IPC_SEMA_ERROR_LOCKED:  Could not acquire semaphores IPC channel
 *
 * \funcusage
-* \snippet IPC_sut_01.cydsn/main_cm4.c snippet_Cy_IPC_Sema_Init
+* \snippet ipc/snippet/main.c snippet_Cy_IPC_Sema_Init
 *
 *******************************************************************************/
 cy_en_ipcsema_status_t Cy_IPC_Sema_Init(uint32_t ipcChannel,
                                         uint32_t count, uint32_t memPtr[])
 {
     /* Structure containing semaphores control data */
+    CY_SECTION(".cy_sharedmem")
     static cy_stc_ipc_sema_t       cy_semaData;
 
     cy_en_ipcsema_status_t retStatus = CY_IPC_SEMA_BAD_PARAM;
@@ -222,7 +223,7 @@ cy_en_ipcsema_status_t Cy_IPC_Sema_InitExt(uint32_t ipcChannel, cy_stc_ipc_sema_
 *    \retval CY_IPC_SEMA_OUT_OF_RANGE: The semaphore number is not valid
 *
 * \funcusage
-* \snippet IPC_sut_01.cydsn/main_cm4.c snippet_Cy_IPC_Sema_Set
+* \snippet ipc/snippet/main.c snippet_Cy_IPC_Sema_Set
 *
 *******************************************************************************/
 cy_en_ipcsema_status_t Cy_IPC_Sema_Set(uint32_t semaNumber, bool preemptable)
@@ -310,7 +311,7 @@ cy_en_ipcsema_status_t Cy_IPC_Sema_Set(uint32_t semaNumber, bool preemptable)
 *    \retval CY_IPC_SEMA_OUT_OF_RANGE:    The semaphore number is not valid
 *
 * \funcusage
-* \snippet IPC_sut_01.cydsn/main_cm4.c snippet_Cy_IPC_Sema_Clear
+* \snippet ipc/snippet/main.c snippet_Cy_IPC_Sema_Clear
 *
 *******************************************************************************/
 cy_en_ipcsema_status_t Cy_IPC_Sema_Clear(uint32_t semaNumber, bool preemptable)
@@ -381,7 +382,7 @@ cy_en_ipcsema_status_t Cy_IPC_Sema_Clear(uint32_t semaNumber, bool preemptable)
 *     \retval CY_IPC_SEMA_OUT_OF_RANGE:     The semaphore number is not valid
 *
 * \funcusage
-* \snippet IPC_sut_01.cydsn/main_cm4.c snippet_Cy_IPC_Sema_Status
+* \snippet ipc/snippet/main.c snippet_Cy_IPC_Sema_Status
 *
 *******************************************************************************/
 cy_en_ipcsema_status_t Cy_IPC_Sema_Status(uint32_t semaNumber)
@@ -427,7 +428,7 @@ cy_en_ipcsema_status_t Cy_IPC_Sema_Status(uint32_t semaNumber)
 *     Returns the semaphores quantity.
 *
 * \funcusage
-* \snippet IPC_sut_01.cydsn/main_cm4.c snippet_Cy_IPC_Sema_GetMaxSems
+* \snippet ipc/snippet/main.c snippet_Cy_IPC_Sema_GetMaxSems
 *
 *******************************************************************************/
 uint32_t Cy_IPC_Sema_GetMaxSems(void)

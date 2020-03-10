@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_scb_i2c.h
-* \version 2.20
+* \version 2.40
 *
 * Provides I2C API declarations of the SCB driver.
 *
@@ -82,14 +82,14 @@
 * function providing a pointer to the populated \ref cy_stc_scb_i2c_config_t
 * structure and the allocated \ref cy_stc_scb_i2c_context_t structure.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_CFG
+* \snippet scb/i2c_snippet/main.c I2C_CFG
 *
 * Set up I2C slave read and write buffer before enabling its
 * operation using \ref Cy_SCB_I2C_SlaveConfigReadBuf and \ref
 * Cy_SCB_I2C_SlaveConfigWriteBuf appropriately. Note that the master reads
 * data from the slave read buffer and writes data into the slave write buffer.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_CFG_BUFFER
+* \snippet scb/i2c_snippet/main.c I2C_CFG_BUFFER
 *
 ********************************************************************************
 * \subsection group_scb_i2c_pins Assign and Configure Pins
@@ -99,7 +99,7 @@
 * SCB block. Also the I2C pins must be configured in Open-Drain, Drives Low mode 
 * (this pins  configuration implies usage of external pull-up resistors):
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_CFG_PINS
+* \snippet scb/i2c_snippet/main.c I2C_CFG_PINS
 *
 * \note
 * The alternative pins configuration is Resistive Pull-ups which implies usage
@@ -115,7 +115,7 @@
 * You must use one of the 8-bit or 16-bit dividers. Use the \ref group_sysclk 
 * driver API to do this.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_CFG_ASSIGN_CLOCK
+* \snippet scb/i2c_snippet/main.c I2C_CFG_ASSIGN_CLOCK
 *
 ********************************************************************************
 * \subsection group_scb_i2c_data_rate Configure Data Rate
@@ -124,7 +124,7 @@
 * fast enough to provide sufficient oversampling. Use the
 * \ref group_sysclk driver API to do this.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_CFG_DATA_RATE_SLAVE
+* \snippet scb/i2c_snippet/main.c I2C_CFG_DATA_RATE_SLAVE
 *
 * To get I2C master operation with the desired data rate, the source clock
 * frequency and SCL low and high phase duration must be configured. Use the
@@ -133,7 +133,7 @@
 * digital filter. This function sets SCL low and high phase settings based on 
 * source clock frequency.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_CFG_DATA_RATE_MASTER
+* \snippet scb/i2c_snippet/main.c I2C_CFG_DATA_RATE_MASTER
 *
 * Alternatively, the low, high phase and digital filter can be set directly 
 * using configuration structure \ref cy_stc_scb_i2c_config_t fields 
@@ -168,8 +168,8 @@
 *  call the slave- or master-specific interrupt functions \ref Cy_SCB_I2C_SlaveInterrupt
 * or \ref Cy_SCB_I2C_MasterInterrupt, when appropriate.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_INTR_A
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_INTR_B
+* \snippet scb/i2c_snippet/main.c I2C_INTR_A
+* \snippet scb/i2c_snippet/main.c I2C_INTR_B
 *
 ********************************************************************************
 * \subsection group_scb_i2c_enable Enable I2C
@@ -178,7 +178,7 @@
 * slave starts respond to the assigned address and I2C master ready to execute
 * transfers.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_ENABLE
+* \snippet scb/i2c_snippet/main.c I2C_ENABLE
 *
 * \section group_scb_i2c_use_cases Common Use Cases
 *
@@ -204,7 +204,7 @@
 * \ref Cy_SCB_I2C_RegisterEventCallback to be notified about
 * \ref group_scb_i2c_macros_callback_events.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_MASTER_WRITE_READ_INT
+* \snippet scb/i2c_snippet/main.c I2C_MASTER_WRITE_READ_INT
 *
 ********************************************************************************
 * \subsubsection group_scb_i2c_master_ll Use Low-Level Functions
@@ -226,10 +226,10 @@
 * transactions correctly.
 *
 * <b>Master Write Operation</b>
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_MASTER_WRITE_MANUAL
+* \snippet scb/i2c_snippet/main.c I2C_MASTER_WRITE_MANUAL
 *
 * <b>Master Read Operation</b>
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_MASTER_READ_MANUAL
+* \snippet scb/i2c_snippet/main.c I2C_MASTER_READ_MANUAL
 *
 ********************************************************************************
 * \subsection group_scb_i2c_slave Slave Operation
@@ -249,11 +249,11 @@
 * to be notified about \ref group_scb_i2c_macros_callback_events.
 *
 * <b>Get Slave Events Notification</b>
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_SLAVE_REG_CALLBACK
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_SLAVE_NOTIFICATION
+* \snippet scb/i2c_snippet/main.c I2C_SLAVE_REG_CALLBACK
+* \snippet scb/i2c_snippet/main.c I2C_SLAVE_NOTIFICATION
 *
 * <b>Polling Slave Completion Events</b>
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\i2c_snippets.c I2C_SLAVE_POLLING
+* \snippet scb/i2c_snippet/main.c I2C_SLAVE_POLLING
 *
 * \note
 * All slave API (except \ref Cy_SCB_I2C_SlaveAbortRead and
@@ -285,173 +285,6 @@
 * source from Deep Sleep mode, the \ref Cy_SCB_I2C_DeepSleepCallback must be
 * copied and modified. Refer to the function description to get the details.
 *
-********************************************************************************
-* \section group_scb_i2c_more_information More Information
-********************************************************************************
-* For more information on the SCB peripheral, refer to the technical reference
-* manual (TRM).
-*
-********************************************************************************
-* \section group_scb_i2c_MISRA MISRA-C Compliance
-********************************************************************************
-* <table class="doxtable">
-*   <tr>
-*     <th>MISRA Rule</th>
-*     <th>Rule Class (Required/Advisory)</th>
-*     <th>Rule Description</th>
-*     <th>Description of Deviation(s)</th>
-*   </tr>
-*   <tr>
-*     <td>11.4</td>
-*     <td>A</td>
-*     <td>A cast should not be performed between a pointer to object type and
-*         a different pointer to object type.</td>
-*     <td>The functions \ref Cy_SCB_I2C_DeepSleepCallback and
-*         \ref Cy_SCB_I2C_HibernateCallback are callback of
-*         \ref cy_en_syspm_status_t type. The cast operation safety in these
-*         functions becomes the user's responsibility because pointers are
-*         initialized when callback is registered in SysPm driver.</td>
-*   </tr>
-*   <tr>
-*     <td>14.1</td>
-*     <td>R</td>
-*     <td>There shall be no unreachable code.</td>
-*     <td>The SCB block parameters can be a constant false or true depends on
-*         the selected device and cause code to be unreachable.</td>
-*   </tr>
-*   <tr>
-*     <td>13.7</td>
-*     <td>R</td>
-*     <td>Boolean operations whose results are invariant shall not be
-*         permitted.</td>
-*     <td>
-*         * The SCB block parameters can be a constant false or true depends on
-*         the selected device and cause this violation.
-*         * The same condition check is executed before and after callback is
-*         called because after the callback returns, the condition might be not
-*         true any more.</td>
-*   </tr>
-*   <tr>
-*     <td>14.2</td>
-*     <td>R</td>
-*     <td>All non-null statements shall either: a) have at least one side-effect
-*         however executed, or b) cause control flow to change.</td>
-*     <td>The unused function parameters are cast to void. This statement
-*         has no side-effect and is used to suppress a compiler warning.</td>
-*   </tr>
-*   <tr>
-*     <td>14.7</td>
-*     <td>R</td>
-*     <td>A function shall have a single point of exit at the end of the
-*         function.</td>
-*     <td>The functions can return from several points. This is done to improve
-*         code clarity when returning error status code if input parameters
-*         validation fails.</td>
-*   </tr>
-* </table>
-*
-* \section group_scb_i2c_changelog Changelog
-* <table class="doxtable">
-*   <tr><th>Version</th><th>Changes</th><th>Reason for Change</th></tr>
-*   <tr>
-*     <td rowspan="4"> 2.20</td>
-*     <td>Flattened the organization of the driver source code into the single 
-*         source directory and the single include directory.
-*     </td>
-*     <td>Driver library directory-structure simplification.</td>
-*   </tr>
-*   <tr>
-*     <td>Added the enableDigitalFilter, highPhaseDutyCycle and lowPhaseDutyCycle 
-*         fields to the \ref cy_stc_scb_i2c_config_t configuration structure.
-*     </td>
-*     <td>Added the I2C master data rate configuration using the configuration structure.
-*     </td>
-*   </tr>
-*   <tr>
-*     <td>Fixed the \ref Cy_SCB_I2C_SetDataRate function to properly configure data rates 
-*         greater than 400 kbps in Master and Master-Slave modes. \n
-*         Added verification that clk_scb is within the valid range for the desired data rate.
-*     </td>     
-*     <td>The analog filter was enabled for all data rates in Master and Master-Slave modes. 
-*         This prevents reaching the maximum supported data rate of 1000 kbps which requires a digital filter.
-*     </td>
-*   </tr>
-*   <tr>
-*     <td>Added register access layer. Use register access macros instead
-*         of direct register access using dereferenced pointers.</td>
-*     <td>Makes register access device-independent, so that the PDL does 
-*         not need to be recompiled for each supported part number.</td>
-*   </tr>
-*   <tr>
-*     <td rowspan="4"> 2.10</td>
-*     <td>Fixed the ReStart condition generation sequence for a write
-*         transaction in the \ref Cy_SCB_I2C_MasterWrite function.</td>
-*     <td>The driver can notify about a zero length write transaction completion 
-*         before the address byte is sent if the \ref Cy_SCB_I2C_MasterWrite 
-*         function execution was interrupted between setting the restart 
-*         generation command and writing the address byte into the TX FIFO.</td>
-*   </tr>
-*   <tr>
-*     <td>Added the slave- and master-specific interrupt functions:
-*         \ref Cy_SCB_I2C_SlaveInterrupt and \ref Cy_SCB_I2C_MasterInterrupt.
-*     </td>
-*     <td>Improved the interrupt configuration options for the I2C slave and
-*         master mode configurations.</td>
-*   </tr>
-*   <tr>
-*     <td>Updated the Start condition generation sequence in the \ref 
-*         Cy_SCB_I2C_MasterWrite and \ref Cy_SCB_I2C_MasterRead.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>Updated the ReStart condition generation sequence for a write
-*         transaction in the \ref Cy_SCB_I2C_MasterSendReStart function.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td rowspan="5"> 2.0</td>
-*     <td>Fixed the \ref Cy_SCB_I2C_MasterSendReStart function to properly 
-*         generate the ReStart condition when the previous transaction was 
-*         a write.</td>
-*     <td>The master interpreted the address byte written into the TX FIFO as a
-*         data byte and continued a write transaction. The ReStart condition was
-*         generated after the master completed transferring the data byte.
-*         The SCL line was stretched by the master waiting for the address byte
-*         to be written into the TX FIFO after the ReStart condition generation.
-*         The following timeout detection released the bus from the master
-*         control.</td>
-*   </tr>
-*   <tr>
-*     <td>Fixed the slave operation after the address byte was NACKed by the
-*         firmware.</td>
-*     <td>The observed slave operation failure depends on whether Level 2 assert
-*         is enabled or not. Enabled: the device stuck in the fault handler due
-*         to the assert assignment in the \ref Cy_SCB_I2C_Interrupt. Disabled: 
-*         the slave sets the transaction completion status and notifies on the 
-*         transaction completion event after the address was NACKed. The failure
-*         is observed only when the slave is configured to accept an address in 
-*         the RX FIFO.</td>
-*   </tr>
-*   <tr>
-*     <td>Added parameters validation for public API.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>Replaced variables which have limited range of values with enumerated
-*         types.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>Added missing "cy_cb_" to the callback function type names.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>1.0</td>
-*     <td>Initial version.</td>
-*     <td></td>
-*   </tr>
-* </table>
-*
 * \defgroup group_scb_i2c_macros Macros
 * \defgroup group_scb_i2c_functions Functions
 * \{
@@ -470,6 +303,8 @@
 #define CY_SCB_I2C_H
 
 #include "cy_scb_common.h"
+
+#ifdef CY_IP_MXSCB
 
 #if defined(__cplusplus)
 extern "C" {
@@ -1534,8 +1369,9 @@ __STATIC_INLINE void Cy_SCB_I2C_RegisterAddrCallback(CySCB_Type const *base,
 
 /** \} group_scb_i2c */
 
-#endif /* (CY_SCB_I2C_H) */
+#endif /* (CY_IP_MXSCB) */
 
+#endif /* (CY_SCB_I2C_H) */
 
 /* [] END OF FILE */
 

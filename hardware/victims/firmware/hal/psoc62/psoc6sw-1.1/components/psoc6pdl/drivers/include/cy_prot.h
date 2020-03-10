@@ -1,13 +1,13 @@
 /***************************************************************************//**
 * \file cy_prot.h
-* \version 1.30
+* \version 1.30.2
 *
 * \brief
 * Provides an API declaration of the Protection Unit driver
 *
 ********************************************************************************
 * \copyright
-* Copyright 2016-2019 Cypress Semiconductor Corporation
+* Copyright 2016-2020 Cypress Semiconductor Corporation
 * SPDX-License-Identifier: Apache-2.0
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -152,7 +152,7 @@
 * and bit 3 - the valid field for CM0_PC3_HANDLER.
 *
 * The example of using of the single entry point mechanism is shown below.
-* \snippet prot/1.20/snippet/main.c snippet_Cy_Prot_ProtectionContext
+* \snippet prot/snippet/main.c snippet_Cy_Prot_ProtectionContext
 *
 * \section group_prot_access_evaluation Access Evaluation
 *
@@ -389,6 +389,17 @@
 * \section group_prot_changelog Changelog
 * <table class="doxtable">
 *   <tr><th>Version</th><th>Changes</th><th>Reason for Change</th></tr>
+*   <tr>
+*     <td>1.30.2</td>
+*     <td>Clarified the description of the next API functions: \ref Cy_Prot_ConfigPpuProgMasterAtt,\n
+*         \ref Cy_Prot_ConfigPpuProgSlaveAtt, \ref Cy_Prot_ConfigPpuFixedMasterAtt, \ref Cy_Prot_ConfigPpuFixedSlaveAtt.</td>
+*     <td>API enhancement based on usability feedback.</td>
+*   </tr>
+*   <tr>
+*     <td>1.30.1</td>
+*     <td>Snippet updated.</td>
+*     <td>Old snippet outdated.</td>
+*   </tr>
 *   <tr>
 *     <td>1.30</td>
 *     <td>Defect in \ref Cy_Prot_GetPpuProgStruct() function due to faulty defines is fixed.</td>
@@ -1083,7 +1094,7 @@ cy_en_prot_status_t Cy_Prot_DisablePpuFixedRgSlaveStruct(PERI_GR_PPU_RG_Type* ba
 *  CY_PROT_INVALID_STATE | Function was called on the unsupported PERI IP version
 *
 * \funcusage
-* \snippet prot/1.20/snippet/main.c snippet_Cy_Prot_DisableSmpuStruct
+* \snippet prot/snippet/main.c snippet_Cy_Prot_DisableSmpuStruct
 *
 *******************************************************************************/
 __STATIC_INLINE cy_en_prot_status_t Cy_Prot_DisableSmpuStruct(PROT_SMPU_SMPU_STRUCT_Type* base)
@@ -1127,7 +1138,7 @@ __STATIC_INLINE cy_en_prot_status_t Cy_Prot_DisableSmpuStruct(PROT_SMPU_SMPU_STR
 *  CY_PROT_INVALID_STATE | Function was called on the unsupported PERI IP version
 *
 * \funcusage
-* \snippet prot/1.20/snippet/main.c snippet_Cy_Prot_DisablePpuProgStruct
+* \snippet prot/snippet/main.c snippet_Cy_Prot_DisablePpuProgStruct
 *
 *******************************************************************************/
 __STATIC_INLINE cy_en_prot_status_t Cy_Prot_DisablePpuProgStruct(PERI_PPU_PR_Type* base)

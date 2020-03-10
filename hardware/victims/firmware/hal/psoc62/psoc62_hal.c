@@ -19,13 +19,17 @@
 */
 
 #include "psoc62_hal.h"
-
+#include "cy_crypto_common.h"
+#include "cy_crypto_core_aes.h"
 
 cy_stc_scb_uart_context_t uart_ctx;
 
 void platform_init(void)
 {
     init_cycfg_all();
+    
+    /* Enable the Crypto block */
+    Cy_Crypto_Core_Enable(CRYPTO);
 }
 
 void init_uart(void)
@@ -52,3 +56,49 @@ char getch(void)
     
     return (char)val;
 }
+
+
+cy_stc_crypto_aes_state_t aesState;
+
+/* Key used for AES encryption*/
+CY_ALIGN(4) uint8_t AES_Key[16]={};
+CY_ALIGN(4) uint8_t message[16];
+CY_ALIGN(4) uint8_t encrypted_msg[16];
+
+void aes_init(void)
+{
+    ;//Init is done in the main function instead
+}
+
+void aes_encrypt(uint8_t * pt)
+{
+    for(int i = 0; i < 16; i++){
+        message[i] = pt[i];
+    }
+    
+    Cy_Crypto_Core_Aes_Init(CRYPTO, AES_Key, CY_CRYPTO_KEY_AES_128, &aesState);
+    
+    trigger_high();
+    Cy_Crypto_Core_Aes_Ecb(CRYPTO, CY_CRYPTO_ENCRYPT, encrypted_msg, message, &aesState);
+    trigger_low();
+
+    /* Wait for Crypto Block to be available */
+    Cy_Crypto_Core_WaitForReady(CRYPTO);
+    
+    for(int i = 0; i < 16; i++){
+        pt[i] = encrypted_msg[i];
+    }
+}
+
+void aes_set_key(uint8_t * key)
+{
+    for(int i = 0; i < 16; i++){
+        AES_Key[i] = key[i];
+    }
+}
+
+void aes_indep_mask(uint8_t* m)
+{
+	;
+}
+

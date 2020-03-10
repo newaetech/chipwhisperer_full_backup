@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_crypto_core_sha.h
-* \version 2.20
+* \version 2.30.1
 *
 * \brief
 *  This file provides constants and function prototypes
@@ -30,6 +30,10 @@
 #include "cy_crypto_common.h"
 
 #if defined(CY_IP_MXCRYPTO)
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 #if (CPUSS_CRYPTO_SHA == 1)
 
@@ -80,7 +84,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Sha(CRYPTO_Type *base,
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Sha(base, message, messageSize, digest, mode);
     }
@@ -122,7 +126,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Sha_Init(CRYPTO_Type *base,
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Sha_Init(base, shaHashState, mode, shaBuffers);
     }
@@ -154,7 +158,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Sha_Start(CRYPTO_Type *base
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Sha_Start(base, hashState);
     }
@@ -200,7 +204,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Sha_Update(CRYPTO_Type *bas
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Sha_Update(base, hashState, message, messageSize);
     }
@@ -237,7 +241,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Sha_Finish(CRYPTO_Type *bas
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Sha_Finish(base, hashState, digest);
     }
@@ -269,7 +273,7 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Sha_Free(CRYPTO_Type *base,
 {
     cy_en_crypto_status_t tmpResult;
 
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         tmpResult = Cy_Crypto_Core_V1_Sha_Free(base, hashState);
     }
@@ -284,6 +288,10 @@ __STATIC_INLINE cy_en_crypto_status_t Cy_Crypto_Core_Sha_Free(CRYPTO_Type *base,
 /** \} group_crypto_lld_sha_functions */
 
 #endif /* #if (CPUSS_CRYPTO_SHA == 1) */
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* CY_IP_MXCRYPTO */
 

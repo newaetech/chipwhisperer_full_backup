@@ -1,13 +1,13 @@
 /***************************************************************************//**
 * \file cy_device.h
-* \version 1.10
+* \version 2.10
 *
 * This file specifies the structure for core and peripheral block HW base
 * addresses, versions, and parameters.
 *
 ********************************************************************************
 * \copyright
-* Copyright 2018-2019 Cypress Semiconductor Corporation
+* Copyright 2018-2020 Cypress Semiconductor Corporation
 * SPDX-License-Identifier: Apache-2.0
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,31 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
+/**
+* \section group_device_MISRA MISRA-C Compliance
+* <table class="doxtable">
+*   <tr>
+*     <th>MISRA Rule</th>
+*     <th>Rule Class (Required/Advisory)</th>
+*     <th>Rule Description</th>
+*     <th>Description of Deviation(s)</th>
+*   </tr>
+*   <tr>
+*     <td>10.1</td>
+*     <td>R</td>
+*     <td>The value of an expression of integer type shall not be implicitly converted to a different underlying type
+*         under some circumstances.</td>
+*     <td>An operand of essentially enum type is being converted to unsigned type as a result of an arithmetic or
+*         conditional operation. The conversion does not have any unintended effect.</td>
+*   </tr>
+*   <tr>
+*     <td>20.6</td>
+*     <td>R</td>
+*     <td>The macro offsetof, in library <stddef.h>, shall not be used.</td>
+*     <td>The only HW block register offsets are defined using this macro.</td>
+*   </tr>
+* </table>
+*/
 
 #ifndef CY_DEVICE_H_
 #define CY_DEVICE_H_
@@ -55,7 +80,9 @@
 #include "ip/cyip_i2s.h"
 #include "ip/cyip_pdm.h"
 #include "ip/cyip_lcd.h"
+#include "ip/cyip_lcd_v2.h"
 #include "ip/cyip_sdhc.h"
+#include "ip/cyip_canfd.h"
 #include "ip/cyip_smartio.h"
 
 /* Device descriptor type */
@@ -73,21 +100,19 @@ typedef struct
     uint32_t ipcBase;
     uint32_t cryptoBase;
 
-    /* IP block versions */
+    /* IP block versions: [7:4] major, [3:0] minor */
     uint8_t  cpussVersion;
     uint8_t  cryptoVersion;
     uint8_t  dwVersion;
-    uint8_t  flashcVersion;
-    uint8_t  gpioVersion;
-    uint8_t  hsiomVersion;
     uint8_t  ipcVersion;
     uint8_t  periVersion;
-    uint8_t  protVersion;
+    uint8_t  srssVersion;
 
     /* Parameters */
     uint8_t  cpussIpcNr;
     uint8_t  cpussIpcIrqNr;
-    uint8_t  cpussDwChNr;
+    uint8_t  cpussDw0ChNr;
+    uint8_t  cpussDw1ChNr;
     uint8_t  cpussFlashPaSize;
     int16_t  cpussIpc0Irq;
     int16_t  cpussFmIrq;
@@ -175,6 +200,7 @@ typedef struct
 extern const cy_stc_device_t   cy_deviceIpBlockCfgPSoC6_01;
 extern const cy_stc_device_t   cy_deviceIpBlockCfgPSoC6_02;
 extern const cy_stc_device_t   cy_deviceIpBlockCfgPSoC6_03;
+extern const cy_stc_device_t   cy_deviceIpBlockCfgPSoC6_04;
 extern const cy_stc_device_t * cy_device;
 
 
@@ -189,7 +215,10 @@ void Cy_PDL_Init(const cy_stc_device_t * device);
 *               Register Access Helper Macros
 *******************************************************************************/
 
-#define CY_CRYPTO_HW_V1                     (1U == cy_device->cryptoVersion) /* true if the mxcrypto version is 1 */
+#define CY_CRYPTO_V1                        (0x20U > cy_device->cryptoVersion) /* true if the mxcrypto version is 1.x */
+
+#define CY_SRSS_V1_3                        (0x13U == cy_device->srssVersion)
+#define CY_SRSS_MFO_PRESENT                 (CY_SRSS_V1_3)
 
 #define CY_SRSS_NUM_CLKPATH                 ((uint32_t)(cy_device->srssNumClkpath))
 #define CY_SRSS_NUM_PLL                     ((uint32_t)(cy_device->srssNumPll))
@@ -222,6 +251,8 @@ void Cy_PDL_Init(const cy_stc_device_t * device);
 #define SRSS_CLK_ECO_CONFIG                 (((SRSS_V1_Type *) SRSS)->CLK_ECO_CONFIG)
 #define SRSS_CLK_ECO_STATUS                 (((SRSS_V1_Type *) SRSS)->CLK_ECO_STATUS)
 #define SRSS_CLK_PILO_CONFIG                (((SRSS_V1_Type *) SRSS)->CLK_PILO_CONFIG)
+#define SRSS_CLK_MF_SELECT                  (((SRSS_V1_Type *) SRSS)->CLK_MF_SELECT)  /* for CY_SRSS_V1_3 only */
+#define SRSS_CLK_MFO_CONFIG                 (((SRSS_V1_Type *) SRSS)->CLK_MFO_CONFIG) /* for CY_SRSS_V1_3 only */
 #define SRSS_CLK_FLL_CONFIG                 (((SRSS_V1_Type *) SRSS)->CLK_FLL_CONFIG)
 #define SRSS_CLK_FLL_CONFIG2                (((SRSS_V1_Type *) SRSS)->CLK_FLL_CONFIG2)
 #define SRSS_CLK_FLL_CONFIG3                (((SRSS_V1_Type *) SRSS)->CLK_FLL_CONFIG3)
@@ -267,6 +298,54 @@ void Cy_PDL_Init(const cy_stc_device_t * device);
 #define BACKUP_RESET                        (((BACKUP_V1_Type *) BACKUP)->RESET)
 
 /*******************************************************************************
+*                CANFD
+*******************************************************************************/
+
+#define CANFD_CTL(base)                     (((CANFD_V1_Type *)(base))->CTL)
+#define CANFD_STATUS(base)                  (((CANFD_V1_Type *)(base))->STATUS)
+#define CANFD_NBTP(base, chan)                    (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.NBTP)
+#define CANFD_IR(base, chan)                      (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.IR)
+#define CANFD_IE(base, chan)                      (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.IE)
+#define CANFD_ILS(base, chan)                     (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.ILS)
+#define CANFD_ILE(base, chan)                     (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.ILE)
+#define CANFD_CCCR(base, chan)                    (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.CCCR)
+#define CANFD_SIDFC(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.SIDFC)
+#define CANFD_XIDFC(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.XIDFC)
+#define CANFD_XIDAM(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.XIDAM)
+#define CANFD_RXESC(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.RXESC)
+#define CANFD_RXF0C(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.RXF0C)
+#define CANFD_RXF1C(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.RXF1C)
+#define CANFD_RXFTOP_CTL(base, chan)              (((CANFD_V1_Type *)(base))->CH[chan].RXFTOP_CTL)
+#define CANFD_RXBC(base, chan)                    (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.RXBC)
+#define CANFD_TXESC(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.TXESC)
+#define CANFD_TXEFC(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.TXEFC)
+#define CANFD_TXBC(base, chan)                    (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.TXBC)
+#define CANFD_DBTP(base, chan)                    (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.DBTP)
+#define CANFD_TDCR(base, chan)                    (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.TDCR)
+#define CANFD_GFC(base, chan)                     (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.GFC)
+#define CANFD_TXBRP(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.TXBRP)
+#define CANFD_TXBAR(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.TXBAR)
+#define CANFD_TXBCR(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.TXBCR)
+#define CANFD_TXBTO(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.TXBTO)
+#define CANFD_TXBCF(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.TXBCF)
+#define CANFD_TXBTIE(base, chan)                  (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.TXBTIE)
+#define CANFD_TXBCIE(base, chan)                  (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.TXBCIE)
+#define CANFD_NDAT1(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.NDAT1)
+#define CANFD_NDAT2(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.NDAT2)
+#define CANFD_RXF0S(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.RXF0S)
+#define CANFD_RXFTOP0_DATA(base, chan)            (((CANFD_V1_Type *)(base))->CH[chan].RXFTOP0_DATA)
+#define CANFD_RXFTOP1_DATA(base, chan)            (((CANFD_V1_Type *)(base))->CH[chan].RXFTOP1_DATA)
+#define CANFD_RXF0A(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.RXF0A)
+#define CANFD_RXF1S(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.RXF1S)
+#define CANFD_RXF1A(base, chan)                   (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.RXF1A)
+#define CANFD_PSR(base, chan)                     (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.PSR)
+#define CANFD_TEST(base, chan)                    (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.TEST)
+#define CANFD_CREL(base, chan)                    (((CANFD_V1_Type *)(base))->CH[chan].M_TTCAN.CREL)
+
+#define CY_CANFD_CHANNELS_NUM               (0x1UL)
+
+
+/*******************************************************************************
 *                FLASHC
 *******************************************************************************/
 
@@ -303,9 +382,9 @@ void Cy_PDL_Init(const cy_stc_device_t * device);
 #define SFLASH_CPUSS_TRIM_ROM_CTL_ULP       (((SFLASH_V1_Type *) SFLASH)->CPUSS_TRIM_ROM_CTL_ULP)
 #define SFLASH_CPUSS_TRIM_RAM_CTL_ULP       (((SFLASH_V1_Type *) SFLASH)->CPUSS_TRIM_RAM_CTL_ULP)
 #define SFLASH_CPUSS_TRIM_ROM_CTL_HALF_LP   (((SFLASH_V1_Type *) SFLASH)->CPUSS_TRIM_ROM_CTL_HALF_LP)
-#define SFLASH_CPUSS_TRIM_ROM_CTL_HALF_LP   (((SFLASH_V1_Type *) SFLASH)->CPUSS_TRIM_ROM_CTL_HALF_LP)
-#define SFLASH_CPUSS_TRIM_RAM_CTL_HALF_ULP  (((SFLASH_V1_Type *) SFLASH)->CPUSS_TRIM_RAM_CTL_HALF_ULP)
+#define SFLASH_CPUSS_TRIM_RAM_CTL_HALF_LP   (((SFLASH_V1_Type *) SFLASH)->CPUSS_TRIM_RAM_CTL_HALF_LP)
 #define SFLASH_CPUSS_TRIM_ROM_CTL_HALF_ULP  (((SFLASH_V1_Type *) SFLASH)->CPUSS_TRIM_ROM_CTL_HALF_ULP)
+#define SFLASH_CPUSS_TRIM_RAM_CTL_HALF_ULP  (((SFLASH_V1_Type *) SFLASH)->CPUSS_TRIM_RAM_CTL_HALF_ULP)
 
 
 #define SFLASH_CSD0_ADC_VREF0_TRIM          (((SFLASH_V1_Type *) SFLASH)->CSDV2_CSD0_ADC_VREF0)
@@ -317,7 +396,7 @@ void Cy_PDL_Init(const cy_stc_device_t * device);
 *                CPUSS
 *******************************************************************************/
 
-#define CY_CPUSS_V1                         (1U == cy_device->cpussVersion)
+#define CY_CPUSS_V1                         (0x20U > cy_device->cpussVersion)
 
 #define CY_CPUSS_NOT_CONNECTED_IRQN         ((uint32_t)(cy_device->cpussNotConnectedIrq))
 #define CY_CPUSS_DISCONNECTED_IRQN          ((cy_en_intr_t)CY_CPUSS_NOT_CONNECTED_IRQN)
@@ -593,9 +672,11 @@ void Cy_PDL_Init(const cy_stc_device_t * device);
 *                DW
 *******************************************************************************/
 
-#define CY_DW_V1                            (1U == cy_device->dwVersion)
-#define CY_DW_CRC                           (1U < cy_device->dwVersion)
-#define CY_DW_CH_NR                         (cy_device->cpussDwChNr)
+#define CY_DW_V1                            (0x20U > cy_device->dwVersion)
+#define CY_DW_CRC                           (0x20U <= cy_device->dwVersion)
+#define CY_DW0_BASE                         ((DW_Type*) 0x40280000UL)
+#define CY_DW0_CH_NR                        (cy_device->cpussDw0ChNr)
+#define CY_DW1_CH_NR                        (cy_device->cpussDw1ChNr)
 
 #define CY_DW_CH_CTL_PRIO_Pos               ((uint32_t)(cy_device->dwChCtlPrioPos))
 #define CY_DW_CH_CTL_PRIO_Msk               ((uint32_t)(0x3UL << CY_DW_CH_CTL_PRIO_Pos))
@@ -651,7 +732,7 @@ void Cy_PDL_Init(const cy_stc_device_t * device);
 *******************************************************************************/
 #define CY_PERI_BASE                        ((PERI_V1_Type *) cy_device->periBase)
 
-#define CY_PERI_V1                          (1U == cy_device->periVersion) /* true if the mxperi version is 1 */
+#define CY_PERI_V1                          (0x20U > cy_device->periVersion) /* true if the mxperi version is 1.x */
 #define CY_PERI_V2_TR_GR_SIZE               (sizeof(PERI_TR_GR_V2_Type))
 #define CY_PERI_TR_CTL_NUM                  (cy_device->periTrGrSize / sizeof(uint32_t))
 #define CY_PERI_TR_CTL_SEL_Pos              (0UL)
@@ -827,8 +908,10 @@ void Cy_PDL_Init(const cy_stc_device_t * device);
 *                LCD
 *******************************************************************************/
 
-#define LCD_OCTET_NUM                       (8U) /* number of octets */
-#define LCD_COM_NUM                         (8U) /* maximum number of commons */
+#define LCD_OCTET_NUM                       (8U) /* LCD_NUMPORTS - number of octets supporting up to 4 COMs */
+#define LCD_OCTET_NUM_8                     (8U) /* LCD_NUMPORTS8 - number of octets supporting up to 8 COMs */
+#define LCD_OCTET_NUM_16                    (0U) /* LCD_NUMPORTS16 - number of octets supporting up to 16 COMs */
+#define LCD_COM_NUM                         (8U) /* LCD_CHIP_TOP_COM_NR - maximum number of commons */
 
 #define LCD_ID(base)                        (((LCD_V1_Type*)(base))->ID)
 #define LCD_CONTROL(base)                   (((LCD_V1_Type*)(base))->CONTROL)
@@ -842,6 +925,8 @@ void Cy_PDL_Init(const cy_stc_device_t * device);
 /*******************************************************************************
 *                IPC
 *******************************************************************************/
+
+#define CY_IPC_V1                              (0x20u > cy_device->ipcVersion) /* true if the IPC version is 1.x */
 
 #define REG_IPC_STRUCT_ACQUIRE(base)           (((IPC_STRUCT_V1_Type*)(base))->ACQUIRE)
 #define REG_IPC_STRUCT_RELEASE(base)           (((IPC_STRUCT_V1_Type*)(base))->RELEASE)
@@ -864,7 +949,7 @@ void Cy_PDL_Init(const cy_stc_device_t * device);
 #define CY_IPC_CHAN_SYSCALL_CM0             (0U)  /* System calls for the CM0 processor */
 #define CY_IPC_CHAN_SYSCALL_CM4             (1U)  /* System calls for the 1st non-CM0 processor */
 #define CY_IPC_CHAN_SYSCALL_DAP             (2UL) /* System calls for the DAP */
-#define CY_IPC_CHAN_SEMA                    (4UL) /* IPC data channel for the Semaphores */
+#define CY_IPC_CHAN_SEMA                    (3UL) /* IPC data channel for the Semaphores */
 #define CY_IPC_CHAN_CYPIPE_EP0              (5UL) /* IPC data channel for CYPIPE EP0 */
 #define CY_IPC_CHAN_CYPIPE_EP1              (6UL) /* IPC data channel for CYPIPE EP1 */
 #define CY_IPC_CHAN_DDFT                    (7UL) /* IPC data channel for DDFT */
@@ -1000,26 +1085,26 @@ void Cy_PDL_Init(const cy_stc_device_t * device);
 *                BLE
 *******************************************************************************/
 
-#define BLE_RCB_INTR                        (((BLE_V1_Type *) BLE)->RCB.INTR)
-#define BLE_RCB_TX_FIFO_WR                  (((BLE_V1_Type *) BLE)->RCB.TX_FIFO_WR)
-#define BLE_RCB_RX_FIFO_RD                  (((BLE_V1_Type *) BLE)->RCB.RX_FIFO_RD)
-#define BLE_RCB_CTRL                        (((BLE_V1_Type *) BLE)->RCB.CTRL)
-#define BLE_RCB_RCBLL_CTRL                  (((BLE_V1_Type *) BLE)->RCB.RCBLL.CTRL)
-#define BLE_BLESS_XTAL_CLK_DIV_CONFIG       (((BLE_V1_Type *) BLE)->BLESS.XTAL_CLK_DIV_CONFIG)
-#define BLE_BLESS_MT_CFG                    (((BLE_V1_Type *) BLE)->BLESS.MT_CFG)
-#define BLE_BLESS_MT_STATUS                 (((BLE_V1_Type *) BLE)->BLESS.MT_STATUS)
-#define BLE_BLESS_MT_DELAY_CFG              (((BLE_V1_Type *) BLE)->BLESS.MT_DELAY_CFG)
-#define BLE_BLESS_MT_DELAY_CFG2             (((BLE_V1_Type *) BLE)->BLESS.MT_DELAY_CFG2)
-#define BLE_BLESS_MT_DELAY_CFG3             (((BLE_V1_Type *) BLE)->BLESS.MT_DELAY_CFG3)
-#define BLE_BLESS_MT_VIO_CTRL               (((BLE_V1_Type *) BLE)->BLESS.MT_VIO_CTRL)
-#define BLE_BLESS_LL_CLK_EN                 (((BLE_V1_Type *) BLE)->BLESS.LL_CLK_EN)
-#define BLE_BLESS_MISC_EN_CTRL              (((BLE_V1_Type *) BLE)->BLESS.MISC_EN_CTRL)
-#define BLE_BLESS_INTR_STAT                 (((BLE_V1_Type *) BLE)->BLESS.INTR_STAT)
-#define BLE_BLELL_EVENT_INTR                (((BLE_V1_Type *) BLE)->BLELL.EVENT_INTR)
-#define BLE_BLELL_CONN_INTR                 (((BLE_V1_Type *) BLE)->BLELL.CONN_INTR)
-#define BLE_BLELL_CONN_EXT_INTR             (((BLE_V1_Type *) BLE)->BLELL.CONN_EXT_INTR)
-#define BLE_BLELL_SCAN_INTR                 (((BLE_V1_Type *) BLE)->BLELL.SCAN_INTR)
-#define BLE_BLELL_ADV_INTR                  (((BLE_V1_Type *) BLE)->BLELL.ADV_INTR)
+#define BLE_RCB_INTR                        (((BLE_V1_Type *) BLE_BASE)->RCB.INTR)
+#define BLE_RCB_TX_FIFO_WR                  (((BLE_V1_Type *) BLE_BASE)->RCB.TX_FIFO_WR)
+#define BLE_RCB_RX_FIFO_RD                  (((BLE_V1_Type *) BLE_BASE)->RCB.RX_FIFO_RD)
+#define BLE_RCB_CTRL                        (((BLE_V1_Type *) BLE_BASE)->RCB.CTRL)
+#define BLE_RCB_RCBLL_CTRL                  (((BLE_V1_Type *) BLE_BASE)->RCB.RCBLL.CTRL)
+#define BLE_BLESS_XTAL_CLK_DIV_CONFIG       (((BLE_V1_Type *) BLE_BASE)->BLESS.XTAL_CLK_DIV_CONFIG)
+#define BLE_BLESS_MT_CFG                    (((BLE_V1_Type *) BLE_BASE)->BLESS.MT_CFG)
+#define BLE_BLESS_MT_STATUS                 (((BLE_V1_Type *) BLE_BASE)->BLESS.MT_STATUS)
+#define BLE_BLESS_MT_DELAY_CFG              (((BLE_V1_Type *) BLE_BASE)->BLESS.MT_DELAY_CFG)
+#define BLE_BLESS_MT_DELAY_CFG2             (((BLE_V1_Type *) BLE_BASE)->BLESS.MT_DELAY_CFG2)
+#define BLE_BLESS_MT_DELAY_CFG3             (((BLE_V1_Type *) BLE_BASE)->BLESS.MT_DELAY_CFG3)
+#define BLE_BLESS_MT_VIO_CTRL               (((BLE_V1_Type *) BLE_BASE)->BLESS.MT_VIO_CTRL)
+#define BLE_BLESS_LL_CLK_EN                 (((BLE_V1_Type *) BLE_BASE)->BLESS.LL_CLK_EN)
+#define BLE_BLESS_MISC_EN_CTRL              (((BLE_V1_Type *) BLE_BASE)->BLESS.MISC_EN_CTRL)
+#define BLE_BLESS_INTR_STAT                 (((BLE_V1_Type *) BLE_BASE)->BLESS.INTR_STAT)
+#define BLE_BLELL_EVENT_INTR                (((BLE_V1_Type *) BLE_BASE)->BLELL.EVENT_INTR)
+#define BLE_BLELL_CONN_INTR                 (((BLE_V1_Type *) BLE_BASE)->BLELL.CONN_INTR)
+#define BLE_BLELL_CONN_EXT_INTR             (((BLE_V1_Type *) BLE_BASE)->BLELL.CONN_EXT_INTR)
+#define BLE_BLELL_SCAN_INTR                 (((BLE_V1_Type *) BLE_BASE)->BLELL.SCAN_INTR)
+#define BLE_BLELL_ADV_INTR                  (((BLE_V1_Type *) BLE_BASE)->BLELL.ADV_INTR)
 
 
 /*******************************************************************************

@@ -1,12 +1,12 @@
 /***************************************************************************//**
-* \file cy_syslib_iar.s
-* \version 2.20
+* \file cy_syslib_a_clang.S
+* \version 2.50.1
 *
-* \brief Assembly routines for IAR Embedded Workbench IDE.
+* \brief Assembly routines for Apple Clang.
 *
 ********************************************************************************
 * \copyright
-* Copyright 2016-2019 Cypress Semiconductor Corporation
+* Copyright 2016-2020 Cypress Semiconductor Corporation
 * SPDX-License-Identifier: Apache-2.0
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,11 +22,9 @@
 * limitations under the License.
 *******************************************************************************/
 
-    SECTION .text:CODE:ROOT(4)
-    PUBLIC Cy_SysLib_DelayCycles
-    PUBLIC Cy_SysLib_EnterCriticalSection
-    PUBLIC Cy_SysLib_ExitCriticalSection
-    THUMB
+.syntax unified
+.text
+.thumb
 
 
 /*******************************************************************************
@@ -39,18 +37,26 @@
 *
 *******************************************************************************/
 /* void Cy_SysLib_DelayCycles(uint32_t cycles) */
+.align 3                    /* Align to 8 byte boundary (2^n) */
+.global _Cy_SysLib_DelayCycles
+.thumb_func
 
-Cy_SysLib_DelayCycles:
-    ADDS r0, r0, #2
-    LSRS r0, r0, #2
-    BEQ Cy_DelayCycles_done
+_Cy_SysLib_DelayCycles:      /* cycles bytes */
+    ADDS r0, r0, #2         /*    1    2    Round to nearest multiple of 4 */
+    LSRS r0, r0, #2         /*    1    2    Divide by 4 and set flags */
+    BEQ Cy_DelayCycles_done /*    2    2    Skip if 0 */
+
+    .align 2                    /* Align to 8 byte boundary (2^n) */
 Cy_DelayCycles_loop:
-    ADDS r0, r0, #1
-    SUBS r0, r0, #2
-    BNE Cy_DelayCycles_loop
-    NOP
+    ADDS r0, r0, #1         /*    1    2    Increment counter */
+    SUBS r0, r0, #2         /*    1    2    Decrement counter by 2 */
+    BNE Cy_DelayCycles_loop /*   (1)2  2    2 CPU cycles (if branch is taken) */
+    NOP                     /*    1    2    Loop alignment padding */
+
+    .align 2                    /* Align to 8 byte boundary (2^n) */
 Cy_DelayCycles_done:
-    BX lr
+    NOP                     /*    1    2    Loop alignment padding */
+    BX lr                   /*    3    2 */
 
 
 /*******************************************************************************
@@ -61,39 +67,42 @@ Cy_DelayCycles_done:
 * indicating whether interrupts were previously enabled.
 *
 * Note Implementation of Cy_SysLib_EnterCriticalSection manipulates the IRQ
-* enable bit with interrupts still enabled. The test and set of the interrupt
-* bits are not atomic. Therefore, to avoid corrupting processor state, it must
-* be the policy that all interrupt routines restore the interrupt enable bits
-* as they were found on entry.
+* enable bit with interrupts still enabled.
 *
 * \return Returns 0 if interrupts were previously enabled or 1 if interrupts
 * were previously disabled.
 *
 *******************************************************************************/
 /* uint8_t Cy_SysLib_EnterCriticalSection(void) */
+.global _Cy_SysLib_EnterCriticalSection
+.thumb_func
 
-Cy_SysLib_EnterCriticalSection:
-    MRS r0, PRIMASK         ; Save and return an interrupt state.
-    CPSID I                 ; Disable interrupts.
+_Cy_SysLib_EnterCriticalSection:
+    MRS r0, PRIMASK         /* Save and return interrupt state */
+    cpsid i                 /* Disable interrupts */
     BX lr
+
 
 /*******************************************************************************
 * Function Name: Cy_SysLib_ExitCriticalSection
 ****************************************************************************//**
 *
-* Cy_SysLib_ExitCriticalSection re-enables the interrupts if they were enabled
-* before Cy_SysLib_EnterCriticalSection was called. The argument should be the
-* value returned from Cy_SysLib_EnterCriticalSection.
+*  Re-enables interrupts if they were enabled before
+*  Cy_SysLib_EnterCriticalSection() was called. The argument should be the value
+*  returned from \ref Cy_SysLib_EnterCriticalSection().
 *
 *  \param uint8_t savedIntrStatus:
-*   The saved interrupt status returned by the
-*   \ref Cy_SysLib_EnterCriticalSection().
+*   Saved interrupt status returned by the \ref Cy_SysLib_EnterCriticalSection().
 *
 *******************************************************************************/
 /* void Cy_SysLib_ExitCriticalSection(uint8_t savedIntrStatus) */
+.global _Cy_SysLib_ExitCriticalSection
+.thumb_func
 
-Cy_SysLib_ExitCriticalSection:
-    MSR PRIMASK, r0         ; Restore the interrupt state.
+_Cy_SysLib_ExitCriticalSection:
+    MSR PRIMASK, r0         /* Restore interrupt state */
     BX lr
 
-    END
+.end
+
+/* [] END OF FILE */

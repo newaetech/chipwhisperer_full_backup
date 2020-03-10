@@ -30,4 +30,9 @@ void init_uart(void);
 void putch(char c);
 char getch(void);
 
-#endif //SAM4L_HAL_H_
+#define aes_indep_init aes_init
+#define aes_indep_key  aes_set_key
+#define aes_indep_enc  aes_encrypt
+
+
+#endif //PSOC62_HAL_H_

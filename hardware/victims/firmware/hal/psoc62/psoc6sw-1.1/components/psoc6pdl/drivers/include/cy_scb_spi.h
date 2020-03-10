@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_scb_spi.h
-* \version 2.20
+* \version 2.40
 *
 * Provides SPI API declarations of the SCB driver.
 *
@@ -80,7 +80,7 @@
 * \ref cy_stc_scb_spi_config_t structure and the allocated 
 * \ref cy_stc_scb_spi_context_t structure.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\spi_snippets.c SPI_CFG
+* \snippet scb/spi_snippet/main.c SPI_CFG
 *
 ********************************************************************************
 * \subsection group_scb_spi_pins Assign and Configure Pins
@@ -90,7 +90,7 @@
 * SCB block. Also, the SPI output pins must be configured in Strong Drive Input 
 * Off mode and SPI input pins in Digital High-Z.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\spi_snippets.c SPI_CFG_PINS
+* \snippet scb/spi_snippet/main.c SPI_CFG_PINS
 *
 ********************************************************************************
 * \subsection group_scb_spi_clock Assign Clock Divider
@@ -100,7 +100,7 @@
 * You must use one of the 8-bit or 16-bit dividers. Use the \ref group_sysclk 
 * driver API to do this.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\spi_snippets.c SPI_CFG_ASSIGN_CLOCK
+* \snippet scb/spi_snippet/main.c SPI_CFG_ASSIGN_CLOCK
 *
 ********************************************************************************
 * \subsection group_scb_spi_data_rate Configure Data Rate
@@ -109,7 +109,7 @@
 * fast enough to provide sufficient oversampling. Use the \ref group_sysclk driver 
 * API to do that.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\spi_snippets.c SPI_CFG_DATA_RATE_SLAVE
+* \snippet scb/spi_snippet/main.c SPI_CFG_DATA_RATE_SLAVE
 *
 * To get the SPI master to operate with the desired data rate, multiply the 
 * oversample factor by the desired data rate to determine the required 
@@ -121,7 +121,7 @@
 * second phase. The level of the first phase of the clock period depends on CPOL
 * settings: 0 - low level and 1 - high level.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\spi_snippets.c SPI_CFG_DATA_RATE_MASTER
+* \snippet scb/spi_snippet/main.c SPI_CFG_DATA_RATE_MASTER
 *
 * <b>Refer to the technical reference manual (TRM) section SPI sub-section
 * Oversampling and Bit Rate to get information about how to configure SPI to run 
@@ -136,8 +136,8 @@
 * in the NVIC.
 * The interrupt must be configured when \ref group_scb_spi_hl will be used.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\spi_snippets.c SPI_INTR_A
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\spi_snippets.c SPI_INTR_B
+* \snippet scb/spi_snippet/main.c SPI_INTR_A
+* \snippet scb/spi_snippet/main.c SPI_INTR_B
 *
 ********************************************************************************
 * \subsection group_scb_spi_enable Enable SPI
@@ -146,7 +146,7 @@
 * For the slave, this means that SPI device starts responding to the transfers.
 * For the master, it is ready to execute transfers.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\spi_snippets.c SPI_ENABLE
+* \snippet scb/spi_snippet/main.c SPI_ENABLE
 *
 ********************************************************************************
 * \section group_scb_spi_use_cases Common Use Cases
@@ -188,7 +188,7 @@
 *   \ref Cy_SCB_SPI_IsBusBusy, \ref Cy_SCB_SPI_IsTxComplete,
 *   \ref Cy_SCB_SPI_GetNumInRxFifo and \ref Cy_SCB_SPI_GetNumInTxFifo.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\spi_snippets.c SPI_TRANFER_DATA_LL
+* \snippet scb/spi_snippet/main.c SPI_TRANFER_DATA_LL
 *
 ********************************************************************************
 * \subsection group_scb_spi_hl High-Level API
@@ -204,7 +204,7 @@
 * Alternatively, use \ref Cy_SCB_SPI_RegisterCallback to register a callback
 * function to be notified about \ref group_scb_spi_macros_callback_events.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\spi_snippets.c SPI_TRANFER_DATA
+* \snippet scb/spi_snippet/main.c SPI_TRANFER_DATA
 *
 ********************************************************************************
 * \section group_scb_spi_dma_trig DMA Trigger
@@ -273,118 +273,6 @@
 * source from Deep Sleep mode, the \ref Cy_SCB_SPI_DeepSleepCallback must be
 * copied and modified. Refer to the function description to get the details.
 *
-********************************************************************************
-* \section group_scb_spi_more_information More Information
-********************************************************************************
-* For more information on the SCB peripheral, refer to the technical reference
-* manual (TRM).
-*
-********************************************************************************
-* \section group_scb_spi_MISRA MISRA-C Compliance
-********************************************************************************
-* <table class="doxtable">
-*   <tr>
-*     <th>MISRA Rule</th>
-*     <th>Rule Class (Required/Advisory)</th>
-*     <th>Rule Description</th>
-*     <th>Description of Deviation(s)</th>
-*   </tr>
-*   <tr>
-*     <td>11.4</td>
-*     <td>A</td>
-*     <td>A cast should not be performed between a pointer to object type and
-*         a different pointer to object type.</td>
-*     <td>
-*         * The pointer to the buffer memory is void to allow handling
-*         different data types: uint8_t (4-8 bits) or uint16_t (9-16 bits).
-*         The cast operation is safe because the configuration is verified
-*         before operation is performed.
-*         * The functions \ref Cy_SCB_SPI_DeepSleepCallback and
-*         \ref Cy_SCB_SPI_HibernateCallback are callback of
-*         \ref cy_en_syspm_status_t type. The cast operation safety in these
-*         functions becomes the user's responsibility because pointers are
-*         initialized when callback is registered in SysPm driver.</td>
-*   </tr>
-*   <tr>
-*     <td>13.7</td>
-*     <td>R</td>
-*     <td>Boolean operations whose results are invariant shall not be
-*         permitted.</td>
-*     <td>The SCB block parameters can be a constant false or true depends on
-*         the selected device and cause this violation.</td>
-*   </tr>
-*   <tr>
-*     <td>14.1</td>
-*     <td>R</td>
-*     <td>There shall be no unreachable code.</td>
-*     <td>The SCB block parameters can be a constant false or true depends on
-*         the selected device and cause code to be unreachable.</td>
-*   </tr>
-*   <tr>
-*     <td>14.2</td>
-*     <td>R</td>
-*     <td>All non-null statements shall either: a) have at least one side-effect
-*         however executed, or b) cause control flow to change.</td>
-*     <td>The unused function parameters are cast to void. This statement
-*         has no side-effect and is used to suppress a compiler warning.</td>
-*   </tr>
-*   <tr>
-*     <td>14.7</td>
-*     <td>R</td>
-*     <td>A function shall have a single point of exit at the end of the
-*         function.</td>
-*     <td>The functions can return from several points. This is done to improve
-*         code clarity when returning error status code if input parameters
-*         validation is failed.</td>
-*   </tr>
-* </table>
-*
-* \section group_scb_spi_changelog Changelog
-* <table class="doxtable">
-*   <tr><th>Version</th><th>Changes</th><th>Reason for Change</th></tr>
-*   <tr>
-*     <td rowspan="2">2.20</td>
-*     <td>Flattened the organization of the driver source code into the single 
-*         source directory and the single include directory.
-*     </td>
-*     <td>Driver library directory-structure simplification.</td>
-*   </tr>
-*   <tr>
-*     <td>Added register access layer. Use register access macros instead
-*         of direct register access using dereferenced pointers.</td>
-*     <td>Makes register access device-independent, so that the PDL does 
-*         not need to be recompiled for each supported part number.</td>
-*   </tr>
-*   <tr>
-*     <td>2.10</td>
-*     <td>None.</td>
-*     <td>SCB I2C driver updated.</td>
-*   </tr>
-*   <tr>
-*     <td rowspan="4"> 2.0</td>
-*     <td>Fixed SPI callback notification when error event occurred.</td>
-*     <td>The SPI callback passed incorrect event value if error event occurred.</td>
-*   </tr>
-*   <tr>
-*     <td>Added parameters validation for public API.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>Replaced variables that have limited range of values with enumerated
-*         types.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>Added missing "cy_cb_" to the callback function type names.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>1.0</td>
-*     <td>Initial version.</td>
-*     <td></td>
-*   </tr>
-* </table>
-*
 * \defgroup group_scb_spi_macros Macros
 * \defgroup group_scb_spi_functions Functions
 * \{
@@ -402,6 +290,8 @@
 #define CY_SCB_SPI_H
 
 #include "cy_scb_common.h"
+
+#ifdef CY_IP_MXSCB
 
 #if defined(__cplusplus)
 extern "C" {
@@ -467,8 +357,8 @@ typedef enum
 typedef enum
 {
     CY_SCB_SPI_CPHA0_CPOL0 = 0U,   /**< Clock is active low, data is changed on first edge   */
-    CY_SCB_SPI_CPHA0_CPOL1 = 1U,   /**< Clock is active high, data is changed on first edge  */
-    CY_SCB_SPI_CPHA1_CPOL0 = 2U,   /**< Clock is active low, data is changed on second edge  */
+    CY_SCB_SPI_CPHA1_CPOL0 = 1U,   /**< Clock is active low, data is changed on second edge  */
+    CY_SCB_SPI_CPHA0_CPOL1 = 2U,   /**< Clock is active high, data is changed on first edge  */
     CY_SCB_SPI_CPHA1_CPOL1 = 3U,   /**< Clock is active high, data is changed on second edge */
 } cy_en_scb_spi_sclk_mode_t;
 
@@ -1607,8 +1497,9 @@ __STATIC_INLINE uint32_t CY_SCB_SPI_GetSclkMode(cy_en_scb_spi_sub_mode_t subMode
 
 /** \} group_scb_spi */
 
-#endif /* (CY_SCB_SPI_H) */
+#endif /* (CY_IP_MXSCB) */
 
+#endif /* (CY_SCB_SPI_H) */
 
 /* [] END OF FILE */
 

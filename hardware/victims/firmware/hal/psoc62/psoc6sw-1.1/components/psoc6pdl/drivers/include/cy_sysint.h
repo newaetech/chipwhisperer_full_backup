@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_sysint.h
-* \version 1.20
+* \version 1.30
 *
 * \brief
 * Provides an API declaration of the SysInt driver
@@ -56,7 +56,7 @@
 * }
 * \endcode
 * And can be used like this:
-* \snippet sysint\1.20\snippet\main.c snippet_Cy_SysInt_flashVT
+* \snippet sysint/snippet/main.c snippet_Cy_SysInt_flashVT
 * Using this method avoids the need for a RAM vector table. However in this scenario, 
 * interrupt handler re-location at run-time is not possible, unless the vector table is
 * relocated to RAM.
@@ -170,6 +170,11 @@
 * <table class="doxtable">
 *   <tr><th>Version</th><th>Changes</th><th>Reason for Change</th></tr>
 *   <tr>
+*     <td>1.30</td>
+*     <td>The Cy_SysInt_SetNmiSource is updated with Protection Context check for CM0+.</td>
+*     <td>User experience enhancement.</td>
+*   </tr>
+*   <tr>
 *     <td>1.20.1</td>
 *     <td>The Vector Table section is extended with a code snippet.</td>
 *     <td>Documentation enhancement.</td>
@@ -265,7 +270,7 @@ extern cy_israddress __ramVectors[]; /**< Relocated vector table in SRAM */
 #define CY_SYSINT_DRV_VERSION_MAJOR    1
     
 /** Driver minor version */
-#define CY_SYSINT_DRV_VERSION_MINOR    20
+#define CY_SYSINT_DRV_VERSION_MINOR    30
 
 /** SysInt driver ID */
 #define CY_SYSINT_ID CY_PDL_DRV_ID     (0x15U)
@@ -360,6 +365,7 @@ typedef struct {
                                                            ((nmiNum) == CY_SYSINT_NMI2) || \
                                                            ((nmiNum) == CY_SYSINT_NMI3) || \
                                                            ((nmiNum) == CY_SYSINT_NMI4))
+    #define CY_SYSINT_IS_PC_0                             (0UL == _FLD2VAL(PROT_MPU_MS_CTL_PC, PROT_MPU_MS_CTL(0U)))
 /** \endcond */
 
 
@@ -420,11 +426,11 @@ cy_israddress Cy_SysInt_GetVector(IRQn_Type IRQn);
 * Interrupt source. This parameter can either be of type cy_en_intr_t or IRQn_Type
 * based on the selected core.
 *
+* \note CM0+ may call this function only at PC=0, CM4 may set its NMI handler at any PC.
 * \note The CM0+ NMI is used for performing system calls that execute out of ROM.
-* Hence modification of the NMI source is strongly discouraged for this core.
 *
 * \funcusage
-* \snippet sysint\1.20\snippet\main.c snippet_Cy_SysInt_SetNmiSource
+* \snippet sysint/snippet/main.c snippet_Cy_SysInt_SetNmiSource
 *
 *******************************************************************************/
 #if (!CY_CPU_CORTEX_M0P) || defined (CY_DOXYGEN)
@@ -434,6 +440,10 @@ __STATIC_INLINE void Cy_SysInt_SetNmiSource(cy_en_sysint_nmi_t nmiNum, cy_en_int
 #endif
 {
     CY_ASSERT_L3(CY_SYSINT_IS_NMI_NUM_VALID(nmiNum));
+
+#if (CY_CPU_CORTEX_M0P)
+    CY_ASSERT_L1(CY_SYSINT_IS_PC_0);
+#endif
     
     if (CY_CPUSS_V1)
     {
@@ -465,7 +475,7 @@ __STATIC_INLINE void Cy_SysInt_SetNmiSource(cy_en_sysint_nmi_t nmiNum, cy_en_int
 * based on the selected core.
 *
 * \funcusage
-* \snippet sysint\1.20\snippet\main.c snippet_Cy_SysInt_SetNmiSource
+* \snippet sysint/snippet/main.c snippet_Cy_SysInt_SetNmiSource
 *
 *******************************************************************************/
 #if (!CY_CPU_CORTEX_M0P) || defined (CY_DOXYGEN)
@@ -501,7 +511,7 @@ __STATIC_INLINE cy_en_intr_t Cy_SysInt_GetNmiSource(cy_en_sysint_nmi_t nmiNum)
 * Interrupt source
 *
 * \funcusage
-* \snippet sysint\1.20\snippet\main.c snippet_Cy_SysInt_SoftwareTrig
+* \snippet sysint/snippet/main.c snippet_Cy_SysInt_SoftwareTrig
 *
 * \note Only privileged software can enable unprivileged access to the
 * Software Trigger Interrupt Register (STIR).

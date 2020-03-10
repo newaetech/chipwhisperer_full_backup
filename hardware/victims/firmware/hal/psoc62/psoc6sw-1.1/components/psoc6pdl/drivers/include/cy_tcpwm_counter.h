@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_tcpwm_counter.h
-* \version 1.10
+* \version 1.10.1
 *
 * \brief
 * The header file of the TCPWM Timer Counter driver.
@@ -22,11 +22,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-
 #if !defined(CY_TCPWM_COUNTER_H)
 #define CY_TCPWM_COUNTER_H
 
 #include "cy_tcpwm.h"
+
+#ifdef CY_IP_MXTCPWM
 
 #if defined(__cplusplus)
 extern "C" {
@@ -184,7 +185,7 @@ __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetPeriod(TCPWM_Type const *base, uint
 * The Counter instance number in the selected TCPWM.
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_Init
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_Init
 *
 *******************************************************************************/
 __STATIC_INLINE void Cy_TCPWM_Counter_Enable(TCPWM_Type *base, uint32_t cntNum)
@@ -206,7 +207,7 @@ __STATIC_INLINE void Cy_TCPWM_Counter_Enable(TCPWM_Type *base, uint32_t cntNum)
 * The Counter instance number in the selected TCPWM.
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_DeInit
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_DeInit
 *
 *******************************************************************************/
 __STATIC_INLINE void Cy_TCPWM_Counter_Disable(TCPWM_Type *base, uint32_t cntNum)
@@ -231,7 +232,7 @@ __STATIC_INLINE void Cy_TCPWM_Counter_Disable(TCPWM_Type *base, uint32_t cntNum)
 * The status. See \ref group_tcpwm_counter_status
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_GetStatus
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_GetStatus
 *
 *******************************************************************************/
 __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetStatus(TCPWM_Type const  *base, uint32_t cntNum)
@@ -263,7 +264,7 @@ __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetStatus(TCPWM_Type const  *base, uin
 * The capture value.
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_Capture
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_Capture
 *
 *******************************************************************************/
 __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetCapture(TCPWM_Type const  *base, uint32_t cntNum)
@@ -288,7 +289,7 @@ __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetCapture(TCPWM_Type const  *base, ui
 * The buffered capture value.
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_Capture
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_Capture
 *
 *******************************************************************************/
 __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetCaptureBuf(TCPWM_Type const  *base, uint32_t cntNum)
@@ -313,7 +314,7 @@ __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetCaptureBuf(TCPWM_Type const  *base,
 * The Compare0 value.
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_SetCompare0
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_SetCompare0
 *
 *******************************************************************************/
 __STATIC_INLINE void Cy_TCPWM_Counter_SetCompare0(TCPWM_Type *base, uint32_t cntNum,  uint32_t compare0)
@@ -338,7 +339,7 @@ __STATIC_INLINE void Cy_TCPWM_Counter_SetCompare0(TCPWM_Type *base, uint32_t cnt
 * Compare value 0.
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_SetCompare0
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_SetCompare0
 *
 *******************************************************************************/
 __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetCompare0(TCPWM_Type const  *base, uint32_t cntNum)
@@ -363,7 +364,7 @@ __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetCompare0(TCPWM_Type const  *base, u
 * The Compare1 value.
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_SetCompare1
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_SetCompare1
 *
 *******************************************************************************/
 __STATIC_INLINE void Cy_TCPWM_Counter_SetCompare1(TCPWM_Type *base, uint32_t cntNum,  uint32_t compare1)
@@ -388,7 +389,7 @@ __STATIC_INLINE void Cy_TCPWM_Counter_SetCompare1(TCPWM_Type *base, uint32_t cnt
 * Compare value 1.
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_SetCompare1
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_SetCompare1
 *
 *******************************************************************************/
 __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetCompare1(TCPWM_Type const  *base, uint32_t cntNum)
@@ -413,7 +414,7 @@ __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetCompare1(TCPWM_Type const  *base, u
 * true = swap enabled, false = swap disabled
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_EnableCompareSwap
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_EnableCompareSwap
 *
 *******************************************************************************/
 __STATIC_INLINE void Cy_TCPWM_Counter_EnableCompareSwap(TCPWM_Type *base, uint32_t cntNum,  bool enable)
@@ -445,7 +446,7 @@ __STATIC_INLINE void Cy_TCPWM_Counter_EnableCompareSwap(TCPWM_Type *base, uint32
 * The value to write into the counter.
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_SetCounter
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_SetCounter
 *
 *******************************************************************************/
 __STATIC_INLINE void Cy_TCPWM_Counter_SetCounter(TCPWM_Type *base, uint32_t cntNum, uint32_t count)
@@ -470,7 +471,7 @@ __STATIC_INLINE void Cy_TCPWM_Counter_SetCounter(TCPWM_Type *base, uint32_t cntN
 * The current counter value.
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_GetCounter
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_GetCounter
 *
 *******************************************************************************/
 __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetCounter(TCPWM_Type const  *base, uint32_t cntNum)
@@ -495,7 +496,7 @@ __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetCounter(TCPWM_Type const  *base, ui
 * The value to write into a period.
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_SetPeriod
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_SetPeriod
 *
 *******************************************************************************/
 __STATIC_INLINE void Cy_TCPWM_Counter_SetPeriod(TCPWM_Type *base, uint32_t cntNum,  uint32_t period)
@@ -520,7 +521,7 @@ __STATIC_INLINE void Cy_TCPWM_Counter_SetPeriod(TCPWM_Type *base, uint32_t cntNu
 * The current period value.
 *
 * \funcusage
-* \snippet tcpwm\1.10\counter\snippet\main.c snippet_Cy_TCPWM_Counter_SetPeriod
+* \snippet tcpwm/counter/snippet/main.c snippet_Cy_TCPWM_Counter_SetPeriod
 *
 *******************************************************************************/
 __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetPeriod(TCPWM_Type const *base, uint32_t cntNum)
@@ -535,7 +536,8 @@ __STATIC_INLINE uint32_t Cy_TCPWM_Counter_GetPeriod(TCPWM_Type const *base, uint
 }
 #endif
 
-#endif /* CY_TCPWM_COUNTER_H */
+#endif /* CY_IP_MXTCPWM */
 
+#endif /* CY_TCPWM_COUNTER_H */
 
 /* [] END OF FILE */

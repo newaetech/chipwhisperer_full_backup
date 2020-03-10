@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_scb_uart.h
-* \version 2.20
+* \version 2.40
 *
 * Provides UART API declarations of the SCB driver.
 *
@@ -86,7 +86,7 @@
 * function providing a pointer to the populated \ref cy_stc_scb_uart_config_t 
 * structure and the allocated \ref cy_stc_scb_uart_context_t structure.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\uart_snippets.c UART_CFG
+* \snippet scb/uart_snippet/main.c UART_CFG
 *
 ********************************************************************************
 * \subsection group_scb_uart_pins Assign and Configure Pins
@@ -96,7 +96,7 @@
 * SCB block. Also, the UART output pins must be configured in Strong Drive 
 * Input Off mode and UART input pins in Digital High-Z:
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\uart_snippets.c UART_CFG_PINS
+* \snippet scb/uart_snippet/main.c UART_CFG_PINS
 *
 ********************************************************************************
 * \subsection group_scb_uart_clock Assign Clock Divider
@@ -106,7 +106,7 @@
 * You must use one of available integer or fractional dividers. Use the 
 * \ref group_sysclk driver API to do this.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\uart_snippets.c UART_CFG_ASSIGN_CLOCK
+* \snippet scb/uart_snippet/main.c UART_CFG_ASSIGN_CLOCK
 *
 ********************************************************************************
 * \subsection group_scb_uart_data_rate Configure Baud Rate
@@ -117,7 +117,7 @@
 * in configuration structure</b></em> to define the number of the SCB clocks
 * within one UART bit-time.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\uart_snippets.c UART_CFG_DATA_RATE
+* \snippet scb/uart_snippet/main.c UART_CFG_DATA_RATE
 *
 * <b>Refer to the technical reference manual (TRM) section UART sub-section
 * Clocking and Oversampling to get information about how to configure the UART to run with
@@ -132,15 +132,15 @@
 * in the NVIC.
 * The interrupt must be configured when \ref group_scb_uart_hl will be used.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\uart_snippets.c UART_INTR_A
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\uart_snippets.c UART_INTR_B
+* \snippet scb/uart_snippet/main.c UART_INTR_A
+* \snippet scb/uart_snippet/main.c UART_INTR_B
 *
 ********************************************************************************
 * \subsection group_scb_uart_enable Enable UART
 ********************************************************************************
 * Finally, enable the UART operation by calling \ref Cy_SCB_UART_Enable.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\uart_snippets.c UART_ENABLE
+* \snippet scb/uart_snippet/main.c UART_ENABLE
 *
 ********************************************************************************
 * \section group_scb_uart_use_cases Common Use Cases
@@ -179,7 +179,7 @@
 *   \ref Cy_SCB_UART_IsTxComplete, \ref Cy_SCB_UART_GetNumInRxFifo and
 *   \ref Cy_SCB_UART_GetNumInTxFifo.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\uart_snippets.c UART_TRANSMIT_DATA_LL
+* \snippet scb/uart_snippet/main.c UART_TRANSMIT_DATA_LL
 *
 ********************************************************************************
 * \subsection group_scb_uart_hl High-Level API
@@ -197,10 +197,10 @@
 * function to be notified about \ref group_scb_uart_macros_callback_events.
 *
 * <b>Receive Operation</b>
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\uart_snippets.c UART_RECEIVE_DATA_HL
+* \snippet scb/uart_snippet/main.c UART_RECEIVE_DATA_HL
 *
 * <b>Transmit Operation</b>
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\uart_snippets.c UART_TRANSMIT_DATA_HL
+* \snippet scb/uart_snippet/main.c UART_TRANSMIT_DATA_HL
 *
 * There is also capability to insert a receive ring buffer that operates between
 * the RX FIFO and the user buffer. The received data is copied into the ring
@@ -273,111 +273,6 @@
 * to the appropriate UART lines to keep them inactive during Deep-Sleep or 
 * Hibernate.
 *
-********************************************************************************
-* \section group_scb_uart_more_information More Information
-********************************************************************************
-* For more information on the SCB peripheral, refer to the technical reference
-* manual (TRM).
-*
-********************************************************************************
-* \section group_scb_uart_MISRA MISRA-C Compliance
-********************************************************************************
-* <table class="doxtable">
-*   <tr>
-*     <th>MISRA Rule</th>
-*     <th>Rule Class (Required/Advisory)</th>
-*     <th>Rule Description</th>
-*     <th>Description of Deviation(s)</th>
-*   </tr>
-*   <tr>
-*     <td>11.4</td>
-*     <td>A</td>
-*     <td>A cast should not be performed between a pointer to object type and
-*         a different pointer to object type.</td>
-*     <td>
-*         * The pointer to the buffer memory is void to allow handling different
-*         different data types: uint8_t (4-8 bits) or uint16_t (9-16 bits).
-*         The cast operation is safe because the configuration is verified
-*         before operation is performed.
-*         * The functions \ref Cy_SCB_UART_DeepSleepCallback and
-*         \ref Cy_SCB_UART_HibernateCallback are callback of
-*         \ref cy_en_syspm_status_t type. The cast operation safety in these
-*         functions becomes the user's responsibility because pointers are
-*         initialized when callback is registered in SysPm driver.</td>
-*   </tr>
-*   <tr>
-*     <td>14.2</td>
-*     <td>R</td>
-*     <td>All non-null statements shall either: a) have at least one side-effect
-*         however executed, or b) cause control flow to change.</td>
-*     <td>The unused function parameters are cast to void. This statement
-*         has no side-effect and is used to suppress a compiler warning.</td>
-*   </tr>
-*   <tr>
-*     <td>14.7</td>
-*     <td>R</td>
-*     <td>A function shall have a single point of exit at the end of the
-*         function.</td>
-*     <td>The functions can return from several points. This is done to improve
-*         code clarity when returning error status code if input parameters
-*         validation fails.</td>
-*   </tr>
-* </table>
-*
-* \section group_scb_uart_changelog Changelog
-* <table class="doxtable">
-*   <tr><th>Version</th><th>Changes</th><th>Reason for Change</th></tr>
-*   <tr>
-*     <td rowspan="2">2.20</td>
-*     <td>Flattened the organization of the driver source code into the single 
-*         source directory and the single include directory.
-*     </td>
-*     <td>Driver library directory-structure simplification.</td>
-*   </tr>
-*   <tr>
-*     <td>Added register access layer. Use register access macros instead
-*         of direct register access using dereferenced pointers.</td>
-*     <td>Makes register access device-independent, so that the PDL does 
-*         not need to be recompiled for each supported part number.</td>
-*   </tr>
-*   <tr>
-*     <td>2.10</td>
-*     <td>None.</td>
-*     <td>SCB I2C driver updated.</td>
-*   </tr>
-*   <tr>
-*     <td rowspan="5">2.0</td>
-*     <td>Added parameters validation for public API.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>Replaced variables that have limited range of values with enumerated
-*         types.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>Added missing "cy_cb_" to the callback function type names.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>Added function \ref Cy_SCB_UART_SendBreakBlocking for break condition
-*         generation.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>Fixed low power callbacks \ref Cy_SCB_UART_DeepSleepCallback and
-*         \ref Cy_SCB_UART_HibernateCallback to prevent the device from entering
-*         low power mode when RX FIFO is not empty.</td>
-*     <td>The callbacks allowed entering device into low power mode when RX FIFO
-*         had data.</td>
-*   </tr>
-*   <tr>
-*     <td>1.0</td>
-*     <td>Initial version.</td>
-*     <td></td>
-*   </tr>
-* </table>
-*
 * \defgroup group_scb_uart_macros Macros
 * \defgroup group_scb_uart_functions Functions
 * \{
@@ -395,6 +290,8 @@
 #define CY_SCB_UART_H
 
 #include "cy_scb_common.h"
+
+#ifdef CY_IP_MXSCB
 
 #if defined(__cplusplus)
 extern "C" {
@@ -955,7 +852,14 @@ cy_en_syspm_status_t Cy_SCB_UART_HibernateCallback(cy_stc_syspm_callback_params_
 * the source of the error
 */
 #define CY_SCB_UART_TRANSMIT_ERR_EVENT     (0x20UL)
+
+/** The receive fifo is not empty. To use this event the \ref CY_SCB_RX_INTR_NOT_EMPTY interrupt must be enabled by the user. */
+#define CY_SCB_UART_RECEIVE_NOT_EMTPY       (0x40UL)
+
+/** The transmit fifo is empty. To use this event the \ref CY_SCB_UART_TX_EMPTY interrupt must be enabled by the user. */
+#define CY_SCB_UART_TRANSMIT_EMTPY          (0x80UL)
 /** \} group_scb_uart_macros_callback_events */
+
 
 /** Data returned by the hardware when an empty RX FIFO is read */
 #define CY_SCB_UART_RX_NO_DATA         (0xFFFFFFFFUL)
@@ -1615,8 +1519,8 @@ __STATIC_INLINE void Cy_SCB_UART_RegisterCallback(CySCB_Type const *base,
 
 /** \} group_scb_uart */
 
+#endif /* (CY_IP_MXSCB) */
+
 #endif /* (CY_SCB_UART_H) */
-
-
 /* [] END OF FILE */
 

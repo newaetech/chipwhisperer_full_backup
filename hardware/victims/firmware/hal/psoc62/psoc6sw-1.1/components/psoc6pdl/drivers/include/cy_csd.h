@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_csd.h
-* \version 1.0.1
+* \version 1.10
 *
 * The header file of the CSD driver.
 *
@@ -105,7 +105,7 @@
 * The following code snippet demonstrates how to capture the CSD HW block for 
 * custom implementation:
 * 
-* \snippet csd/1.0/snippet/main.c snippet_Cy_CSD_Conversion
+* \snippet csd/snippet/main.c snippet_Cy_CSD_Conversion
 * 
 * The entire solution, either CapSense or CSDADC, in addition to 
 * the CSD HW block, incorporates the following instances:
@@ -199,12 +199,12 @@
 * The following code snippet demonstrates how to implement a routine to handle
 * the interrupt. The routine is called when a CSD interrupt is triggered.
 * 
-* \snippet csd/1.0/snippet/main.c snippet_Cy_CSD_IntHandler
+* \snippet csd/snippet/main.c snippet_Cy_CSD_IntHandler
 *
 * The following code snippet demonstrates how to configure and enable
 * the CSD interrupt:
 * 
-* \snippet csd/1.0/snippet/main.c snippet_Cy_CSD_IntEnabling
+* \snippet csd/snippet/main.c snippet_Cy_CSD_IntEnabling
 *
 * For more information, refer to the \ref group_sysint driver.
 *
@@ -253,11 +253,23 @@
 *
 * * <a href="http://www.cypress.com/trm218176"><b>Technical Reference Manual (TRM)</b></a>
 *
-* * <a href="..\..\capsense_api_reference_manual.html"><b>Cypress CapSense Middleware Library</b></a>
+* * <a href="https://github.com/cypresssemiconductorco/capsense">
+*   <b>Cypress CapSense Middleware Library</b></a>
 *
-* * <a href="..\..\csdadc_api_reference_manual.html"><b>Cypress CSDADC Middleware Library</b></a>
+* * <a href="https://cypresssemiconductorco.github.io/capsense/capsense_api_reference_manual/html/index.html">
+*   <b>Cypress CapSense Middleware API Reference Guide</b></a>
 *
-* * <a href="..\..\csdidac_api_reference_manual.html"><b>Cypress CSDIDAC Middleware Library</b></a>
+* * <a href="https://github.com/cypresssemiconductorco/csdadc">
+*   <b>Cypress CSDADC Middleware Library</b></a>
+*
+* * <a href="https://cypresssemiconductorco.github.io/csdadc/csdadc_api_reference_manual/html/index.html">
+*   <b>Cypress CSDADC Middleware API Reference Guide</b></a>
+*
+* * <a href="https://github.com/cypresssemiconductorco/csdidac">
+*   <b>Cypress CSDIDAC Middleware Library</b></a>
+*
+* * <a href="https://cypresssemiconductorco.github.io/csdidac/csdidac_api_reference_manual/html/index.html">
+*   <b>Cypress CSDIDAC Middleware API Reference Guide</b></a>
 *
 * * \ref page_getting_started "Getting Started with the PDL"
 *
@@ -300,14 +312,25 @@
 * <table class="doxtable">
 *   <tr><th>Version</th><th>Changes</th><th>Reason for Change</th></tr>
 *   <tr>
-*     <td>1.0</td>
-*     <td>The initial version.</td>
-*     <td></td>
+*     <td rowspan="2">1.10</td>
+*     <td>The CSD driver sources are enclosed with the conditional compilation 
+*         to ensure a successful compilation for non-CapSense-capable devices
+*     </td>
+*     <td>Compilation for non-CapSense-capable devices</td>
+*   <tr>
+*     <td>Changed the Cy_CSD_GetConversionStatus() function implementation</td>
+*     <td>Fixed defect</td>
+*   </tr>
 *   </tr>
 *   <tr>
 *     <td>1.0.1</td>
-*     <td>Documentation updates.</td>
+*     <td>Documentation updates</td>
 *     <td>Improve user's experience</td>
+*   </tr>
+*   <tr>
+*     <td>1.0</td>
+*     <td>The initial version</td>
+*     <td></td>
 *   </tr>
 * </table>
 */
@@ -334,9 +357,7 @@
 #include "cy_device_headers.h"
 #include "cy_syslib.h"
 
-#ifndef CY_IP_MXCSDV2
-    #error "The CSD driver is not supported on this device"
-#endif
+#if defined(CY_IP_MXCSDV2)
 
 #if defined(__cplusplus)
 extern "C" {
@@ -351,7 +372,7 @@ extern "C" {
 #define CY_CSD_DRV_VERSION_MAJOR            (1)
 
 /** Driver minor version */
-#define CY_CSD_DRV_VERSION_MINOR            (0)
+#define CY_CSD_DRV_VERSION_MINOR            (10)
 
 
 /******************************************************************************
@@ -782,7 +803,7 @@ __STATIC_INLINE void Cy_CSD_WriteBits(CSD_Type * base, uint32_t offset, uint32_t
 *
 * \funcusage
 *
-* \snippet csd/1.0/snippet/main.c snippet_Cy_CSD_CheckKey
+* \snippet csd/snippet/main.c snippet_Cy_CSD_CheckKey
 *
 *******************************************************************************/
 __STATIC_INLINE cy_en_csd_key_t Cy_CSD_GetLockStatus(const CSD_Type * base, const cy_stc_csd_context_t * context)
@@ -810,7 +831,7 @@ __STATIC_INLINE cy_en_csd_key_t Cy_CSD_GetLockStatus(const CSD_Type * base, cons
 *
 * \funcusage
 *
-* \snippet csd/1.0/snippet/main.c snippet_Cy_CSD_CheckStatus
+* \snippet csd/snippet/main.c snippet_Cy_CSD_CheckStatus
 *
 *******************************************************************************/
 __STATIC_INLINE cy_en_csd_status_t Cy_CSD_GetConversionStatus(const CSD_Type * base, const cy_stc_csd_context_t * context)
@@ -818,7 +839,8 @@ __STATIC_INLINE cy_en_csd_status_t Cy_CSD_GetConversionStatus(const CSD_Type * b
     cy_en_csd_status_t csdStatus = CY_CSD_BUSY;
 
     (void)context;
-    if ((base->SEQ_START & CSD_SEQ_START_START_Msk) == 0u)
+    if (((base->SEQ_START & CSD_SEQ_START_START_Msk) == 0u) && 
+        ((base->STAT_SEQ & (CSD_STAT_SEQ_SEQ_STATE_Msk | CSD_STAT_SEQ_ADC_STATE_Msk)) == 0u))
     {
         csdStatus = CY_CSD_SUCCESS;
     }
@@ -832,6 +854,8 @@ __STATIC_INLINE cy_en_csd_status_t Cy_CSD_GetConversionStatus(const CSD_Type * b
 #if defined(__cplusplus)
 }
 #endif
+
+#endif /* CY_IP_MXCSDV2 */
 
 #endif /* CY_CSD_H */
 

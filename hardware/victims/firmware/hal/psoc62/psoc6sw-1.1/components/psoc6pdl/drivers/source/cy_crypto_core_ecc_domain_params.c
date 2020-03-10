@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_crypto_core_ecc_domain_params.c
-* \version 2.20
+* \version 2.30.1
 *
 * \brief
 *  This file provides constant and parameters for the API for the ECC
@@ -25,8 +25,12 @@
 
 
 #include "cy_crypto_core_ecc.h"
-#include "cy_syslib.h"
 
+#if defined(CY_IP_MXCRYPTO)
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /*******************************************************************************
 * Function Name: Cy_Crypto_Core_ECC_GetCurveParams
@@ -438,9 +442,7 @@ cy_stc_crypto_ecc_dp_type *Cy_Crypto_Core_ECC_GetCurveParams(cy_en_crypto_ecc_cu
             CY_CRYPTO_ECC_ECP_SECP521R1,
             CY_CRYPTO_ECC_P521_SIZE,
             "NIST P-521",
-            /* Currently driver uses CY_CRYPTO_NIST_P_BARRETT_RED_ALG algorithm instead of
-                curve specific CY_CRYPTO_NIST_P_CURVE_SPECIFIC_RED_ALG */
-            CY_CRYPTO_NIST_P_BARRETT_RED_ALG,
+            CY_CRYPTO_NIST_P_CURVE_SPECIFIC_RED_ALG,
             /* prime: "1FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" */
             eccP521Polynomial,
             /* barrett_p: "20000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001" */
@@ -465,6 +467,12 @@ cy_stc_crypto_ecc_dp_type *Cy_Crypto_Core_ECC_GetCurveParams(cy_en_crypto_ecc_cu
 
     return tmpResult;
 }
+
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* CY_IP_MXCRYPTO */
 
 
 /* [] END OF FILE */

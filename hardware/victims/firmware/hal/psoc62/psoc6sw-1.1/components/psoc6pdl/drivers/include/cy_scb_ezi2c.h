@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_scb_ezi2c.h
-* \version 2.20
+* \version 2.40
 *
 * Provides EZI2C API declarations of the SCB driver.
 *
@@ -78,13 +78,13 @@
 * function providing a pointer to the populated \ref cy_stc_scb_ezi2c_config_t 
 * structure and the allocated \ref cy_stc_scb_ezi2c_context_t structure.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\ezi2c_snippets.c EZI2C_CFG
+* \snippet scb/ezi2c_snippet/main.c EZI2C_CFG
 *
 * Set up the EZI2C slave buffer before enabling its 
 * operation by using \ref Cy_SCB_EZI2C_SetBuffer1 for the primary slave address  
 * and \ref Cy_SCB_EZI2C_SetBuffer2 for the secondary (if the secondary is enabled).
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\ezi2c_snippets.c EZI2C_CFG_BUFFER
+* \snippet scb/ezi2c_snippet/main.c EZI2C_CFG_BUFFER
 *
 ********************************************************************************
 * \subsection group_scb_ezi2c_pins Assign and Configure Pins
@@ -94,7 +94,7 @@
 * SCB block. Also the I2C pins must be configured in Open-Drain, Drives Low mode 
 * (this pin configuration implies usage of external pull-up resistors):
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\ezi2c_snippets.c EZI2C_CFG_PINS
+* \snippet scb/ezi2c_snippet/main.c EZI2C_CFG_PINS
 *
 * \note
 * The alternative pins configuration is Resistive Pull-ups which implies usage 
@@ -110,7 +110,7 @@
 * You must use one of the 8-bit or 16-bit dividers. Use the \ref group_sysclk 
 * driver API to do this.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\ezi2c_snippets.c EZI2C_CFG_ASSIGN_CLOCK
+* \snippet scb/ezi2c_snippet/main.c EZI2C_CFG_ASSIGN_CLOCK
 *
 ********************************************************************************
 * \subsection group_scb_ezi2c_data_rate Configure Data Rate
@@ -123,7 +123,7 @@
 * Oversampling and Bit Rate to get information about how to configure the 
 * I2C to run at the desired data rate</b>.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\ezi2c_snippets.c EZI2C_CFG_DATA_RATE
+* \snippet scb/ezi2c_snippet/main.c EZI2C_CFG_DATA_RATE
 *
 ********************************************************************************
 * \subsection group_scb_ezi2c_intr Configure Interrupt
@@ -133,15 +133,15 @@
 * handler for the selected SCB instance. Also, this interrupt must be enabled 
 * in the NVIC or it will not work.
 *
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\ezi2c_snippets.c EZI2C_INTR_A
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\ezi2c_snippets.c EZI2C_INTR_B
+* \snippet scb/ezi2c_snippet/main.c EZI2C_INTR_A
+* \snippet scb/ezi2c_snippet/main.c EZI2C_INTR_B
 *
 ********************************************************************************
 * \subsection group_scb_ezi2c_enable Enable EZI2C slave
 ********************************************************************************
 * Finally, enable the EZI2C slave operation by calling \ref Cy_SCB_EZI2C_Enable. 
 * Now the I2C device responds to the assigned address.
-* \snippet SCB_CompDatasheet_sut_01_revA.cydsn\ezi2c_snippets.c EZI2C_ENABLE
+* \snippet scb/ezi2c_snippet/main.c EZI2C_ENABLE
 *
 ********************************************************************************
 * \section group_scb_ezi2c_use_cases Common Use Cases 
@@ -226,97 +226,6 @@
 * source from Deep Sleep mode, the \ref Cy_SCB_EZI2C_DeepSleepCallback must 
 * be copied and modified. Refer to the function description to get the details.
 *
-********************************************************************************
-* \section group_scb_ezi2c_more_information More Information
-********************************************************************************
-* For more information on the SCB peripheral, refer to the technical reference
-* manual (TRM).
-*
-********************************************************************************
-* \section group_scb_ezi2c_MISRA MISRA-C Compliance
-********************************************************************************
-* <table class="doxtable">
-*   <tr>
-*     <th>MISRA Rule</th>
-*     <th>Rule Class (Required/Advisory)</th>
-*     <th>Rule Description</th>
-*     <th>Description of Deviation(s)</th>
-*   </tr>
-*   <tr>
-*     <td>11.4</td>
-*     <td>A</td>
-*     <td>A cast should not be performed between a pointer to object type and
-*         a different pointer to object type.</td>
-*     <td>The functions \ref Cy_SCB_EZI2C_DeepSleepCallback and
-*         \ref Cy_SCB_EZI2C_HibernateCallback are callback of
-*         \ref cy_en_syspm_status_t type. The cast operation safety in these
-*         functions becomes the user's responsibility because pointers are
-*         initialized when callback is registered in SysPm driver.</td>
-*   </tr>
-*   <tr>
-*     <td>14.1</td>
-*     <td>R</td>
-*     <td>There shall be no unreachable code.</td>
-*     <td>The SCB block parameters can be a constant false or true depending on
-*         the selected device and cause code to be unreachable.</td>
-*   </tr>
-*   <tr>
-*     <td>14.2</td>
-*     <td>R</td>
-*     <td>All non-null statements shall either: a) have at least one side-effect
-*         however executed, or b) cause control flow to change.</td>
-*     <td>The unused function parameters are cast to void. This statement
-*         has no side-effect and is used to suppress a compiler warning.</td>
-*   </tr>
-*   <tr>
-*     <td>14.7</td>
-*     <td>R</td>
-*     <td>A function shall have a single point of exit at the end of the
-*         function.</td>
-*     <td>The functions can return from several points. This is done to improve
-*         code clarity when returning error status code if input parameter
-*         validation fails.</td>
-*   </tr>
-* </table>
-*
-* \section group_scb_ezi2c_changelog Changelog
-* <table class="doxtable">
-*   <tr><th>Version</th><th>Changes</th><th>Reason for Change</th></tr>
-*   <tr>
-*     <td rowspan="2">2.20</td>
-*     <td>Flattened the organization of the driver source code into the single 
-*         source directory and the single include directory.
-*     </td>
-*     <td>Driver library directory-structure simplification.</td>
-*   </tr>
-*   <tr>
-*     <td>Added register access layer. Use register access macros instead
-*         of direct register access using dereferenced pointers.</td>
-*     <td>Makes register access device-independent, so that the PDL does 
-*         not need to be recompiled for each supported part number.</td>
-*   </tr>
-*   <tr>
-*     <td>2.10</td>
-*     <td>None.</td>
-*     <td>SCB I2C driver updated.</td>
-*   </tr>
-*   <tr>
-*     <td rowspan="2"> 2.0</td>
-*     <td>Added parameters validation for public API.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>Replaced variables that have limited range of values with enumerated
-*         types.</td>
-*     <td></td>
-*   </tr>
-*   <tr>
-*     <td>1.0</td>
-*     <td>Initial version.</td>
-*     <td></td>
-*   </tr>
-* </table>
-*
 * \defgroup group_scb_ezi2c_macros Macros
 * \defgroup group_scb_ezi2c_functions Functions
 * \{
@@ -332,6 +241,8 @@
 #define CY_SCB_EZI2C_H
 
 #include "cy_scb_common.h"
+
+#ifdef CY_IP_MXSCB
 
 #if defined(__cplusplus)
 extern "C" {
@@ -638,7 +549,7 @@ __STATIC_INLINE void Cy_SCB_EZI2C_Enable(CySCB_Type *base)
 
 /** \} group_scb_ezi2c */
 
+#endif /* (CY_IP_MXSCB) */
+
 #endif /* (CY_SCB_EZI2C_H) */
-
-
 /* [] END OF FILE */

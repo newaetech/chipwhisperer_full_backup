@@ -1,8 +1,8 @@
 /***************************************************************************//**
-* file cy_crypto_core_hw_vu.h
-* version 2.20
+* \file cy_crypto_core_hw_vu.h
+* \version 2.30.1
 *
-* brief
+* \brief
 *  This file provides constants and function prototypes
 *  for the Vector Unit functions in the Crypto block driver.
 *
@@ -27,14 +27,15 @@
 #if !defined(CY_CRYPTO_CORE_HW_VU_H)
 #define CY_CRYPTO_CORE_HW_VU_H
 
-#include "cy_device_headers.h"
+#include "cy_crypto_core_hw.h"
 
 #if defined(CY_IP_MXCRYPTO)
 
-#if (CPUSS_CRYPTO_VU == 1)
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
-#include "cy_device.h"
-#include "cy_crypto_core_hw.h"
+#if (CPUSS_CRYPTO_VU == 1)
 
 /***************************************
 *        Crypto IP opcodes
@@ -87,6 +88,10 @@
 #define CY_CRYPTO_VU_GET_REG_DATA(data)       (((data) >> 16U) & 0x00003fffUL)
 #define CY_CRYPTO_VU_GET_REG_SIZE(data)       ((data) & 0x00000fffUL)
 
+#define CY_CRYPTO_VU_SIZE_FLD_MASK            (0x00001fffuL)
+#define CY_CRYPTO_VU_DATA_FLD_MASK            (0x00003fffuL)
+#define CY_CRYPTO_VU_DATA_FLD_POS             (16u)
+
 /* Vector Unit instructions */
 #define CY_CRYPTO_VU_ALLOC_MEM_OPC            (0x12u)
 #define CY_CRYPTO_VU_FREE_MEM_OPC             (0x13u)
@@ -107,7 +112,7 @@
 /* Instructions with register operand only, category V */
 #define CY_CRYPTO_VU_MOV_STATUS_TO_REG_OPC    (0x05u)
 
-#define CY_CRYPTO_VU2_MOV_IMM_TO_STATUS       (0x0Fu)
+#define CY_CRYPTO_VU2_MOV_IMM_TO_STATUS_OPC   (0x0Fu)
 
 /* Instructions with register operand only, category VI */
 #define CY_CRYPTO_VU_PUSH_REG_OPC             (0x10u)
@@ -190,6 +195,8 @@
 #define CY_CRYPTO_VU2_CLR_BIT_IMM_OPC         (0x2Du)
 #define CY_CRYPTO_VU2_INV_BIT_IMM_OPC         (0x2Eu)
 
+#define CY_CRYPTO_VU1_WAIT_FOR_COMPLETE(base)  do { ; } while (0uL != _FLD2VAL(CRYPTO_STATUS_VU_BUSY, REG_CRYPTO_STATUS(base)))
+#define CY_CRYPTO_VU_READ_SP_REG(base)         CY_CRYPTO_VU_GET_REG_DATA(REG_CRYPTO_VU_RF_DATA(base, 15u))
 
 __STATIC_INLINE void CY_CRYPTO_VU_SAVE_REG (CRYPTO_Type *base, uint32_t rsrc, uint32_t *data);
 __STATIC_INLINE void CY_CRYPTO_VU_RESTORE_REG (CRYPTO_Type *base, uint32_t rdst, uint32_t data);
@@ -198,7 +205,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_SET_REG (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_MOV_REG_TO_STATUS (CRYPTO_Type *base, uint32_t cc, uint32_t rsrc)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_MOV_REG_TO_STATUS_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_MOV_REG_TO_STATUS_OPC,
                                     ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rsrc));
 }
@@ -210,7 +218,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_MOV_REG_TO_STATUS (CRYPTO_Type *base, uint32_t
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_MOV_STATUS_TO_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_MOV_STATUS_TO_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_MOV_STATUS_TO_REG_OPC,
                                     ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst << CY_CRYPTO_RSRC12_SHIFT));
 }
@@ -222,7 +231,7 @@ __STATIC_INLINE void CY_CRYPTO_VU_MOV_STATUS_TO_REG (CRYPTO_Type *base, uint32_t
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_MOV_IMM_TO_STATUS (CRYPTO_Type *base, uint32_t cc, uint32_t imm4)
 {
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         /******* V1 *********/
         uint32_t tmpReg = CY_CRYPTO_VU_HW_REG14;
@@ -234,12 +243,15 @@ __STATIC_INLINE void CY_CRYPTO_VU_COND_MOV_IMM_TO_STATUS (CRYPTO_Type *base, uin
         CY_CRYPTO_VU_SET_REG(base, tmpReg, imm4, 4u);
         CY_CRYPTO_VU_COND_MOV_REG_TO_STATUS(base, cc, tmpReg);
 
+        CY_CRYPTO_VU1_WAIT_FOR_COMPLETE(base);
+
         CY_CRYPTO_VU_RESTORE_REG(base, tmpReg, tmpData);
     }
     else
     {
         /******* V2 *********/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU2_MOV_IMM_TO_STATUS << CY_CRYPTO_OPCODE_POS) |
+            Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                         (uint32_t)CY_CRYPTO_VU2_MOV_IMM_TO_STATUS_OPC,
                                         ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                         ((uint32_t)imm4 << CY_CRYPTO_RSRC0_SHIFT));
     }
@@ -250,19 +262,20 @@ __STATIC_INLINE void CY_CRYPTO_VU_MOV_IMM_TO_STATUS (CRYPTO_Type *base, uint32_t
     CY_CRYPTO_VU_COND_MOV_IMM_TO_STATUS (base, CY_CRYPTO_VU_COND_ALWAYS, imm4);
 }
 
-
 /*******************************************************************************/
 __STATIC_INLINE void CY_CRYPTO_VU_SET_REG (CRYPTO_Type *base, uint32_t rdst, uint32_t data, uint32_t size)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_SET_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                            (uint32_t)CY_CRYPTO_VU_SET_REG_OPC,
                            ((uint32_t)rdst << CY_CRYPTO_RSRC26_SHIFT) |
-                           ((uint32_t)data << ((CY_CRYPTO_HW_V1) ? CY_CRYPTO_RSRC12_SHIFT : CY_CRYPTO_RSRC13_SHIFT)) |
+                           ((uint32_t)data << ((CY_CRYPTO_V1) ? CY_CRYPTO_RSRC12_SHIFT : CY_CRYPTO_RSRC13_SHIFT)) |
                            (((uint32_t)size - 1u) << CY_CRYPTO_RSRC0_SHIFT));
 }
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_LD_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_LD_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                            (uint32_t)CY_CRYPTO_VU_LD_REG_OPC,
                            ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                            ((uint32_t)rdst << CY_CRYPTO_RSRC12_SHIFT) |
                            ((uint32_t)rsrc << CY_CRYPTO_RSRC0_SHIFT));
@@ -275,7 +288,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_LD_REG (CRYPTO_Type *base, uint32_t rdst, uint
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_ST_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_ST_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                            (uint32_t)CY_CRYPTO_VU_ST_REG_OPC,
                            ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                            ((uint32_t)rdst << CY_CRYPTO_RSRC12_SHIFT) |
                            ((uint32_t)rsrc << CY_CRYPTO_RSRC0_SHIFT));
@@ -288,7 +302,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_ST_REG (CRYPTO_Type *base, uint32_t rdst, uint
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_MOV_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_MOV_REG_TO_STATUS_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_MOV_REG_TO_STATUS_OPC,
                                     ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc << CY_CRYPTO_RSRC0_SHIFT));
@@ -301,7 +316,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_MOV_REG (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_SWAP_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_SWAP_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_SWAP_REG_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
                                     ((uint32_t)rsrc0 << CY_CRYPTO_RSRC0_SHIFT));
@@ -314,7 +330,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_SWAP_REG (CRYPTO_Type *base, uint32_t rsrc1, u
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_ADD_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_ADD_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_ADD_REG_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -328,7 +345,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_ADD_REG (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_SUB_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_SUB_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_SUB_REG_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -342,7 +360,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_SUB_REG (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_OR_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_OR_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_OR_REG_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -356,7 +375,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_OR_REG (CRYPTO_Type *base, uint32_t rdst, uint
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_AND_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_AND_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_AND_REG_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -370,7 +390,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_AND_REG (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_XOR_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_XOR_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_XOR_REG_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -384,7 +405,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_XOR_REG (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_NOR_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_NOR_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_NOR_REG_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -398,7 +420,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_NOR_REG (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_NAND_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_NAND_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_NAND_REG_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -412,7 +435,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_NAND_REG (CRYPTO_Type *base, uint32_t rdst, ui
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_MIN_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_MIN_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_MIN_REG_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -426,7 +450,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_MIN_REG (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_MAX_REG (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_MAX_REG_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_MAX_REG_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -440,8 +465,9 @@ __STATIC_INLINE void CY_CRYPTO_VU_MAX_REG (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_PUSH_REG (CRYPTO_Type *base, uint32_t cc)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = ((uint32_t)CY_CRYPTO_VU_PUSH_REG_OPC << CY_CRYPTO_OPCODE_POS) |
-                                   ((uint32_t)cc << CY_CRYPTO_RSRC20_SHIFT);
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                    (uint32_t)CY_CRYPTO_VU_PUSH_REG_OPC,
+                                   ((uint32_t)cc << CY_CRYPTO_RSRC20_SHIFT));
 }
 
 __STATIC_INLINE void CY_CRYPTO_VU_PUSH_REG (CRYPTO_Type *base)
@@ -451,8 +477,9 @@ __STATIC_INLINE void CY_CRYPTO_VU_PUSH_REG (CRYPTO_Type *base)
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_POP_REG (CRYPTO_Type *base, uint32_t cc)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = ((uint32_t)CY_CRYPTO_VU_POP_REG_OPC << CY_CRYPTO_OPCODE_POS) |
-                                   ((uint32_t)cc << CY_CRYPTO_RSRC20_SHIFT);
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                    (uint32_t)CY_CRYPTO_VU_POP_REG_OPC,
+                                   ((uint32_t)cc << CY_CRYPTO_RSRC20_SHIFT));
 }
 
 __STATIC_INLINE void CY_CRYPTO_VU_POP_REG (CRYPTO_Type *base)
@@ -462,10 +489,12 @@ __STATIC_INLINE void CY_CRYPTO_VU_POP_REG (CRYPTO_Type *base)
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_ALLOC_MEM (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t size)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) =
-        (((uint32_t)CY_CRYPTO_VU_ALLOC_MEM_OPC << CY_CRYPTO_OPCODE_POS) |
+    CY_ASSERT_L1( (uint32_t)(CY_CRYPTO_VU_READ_SP_REG(base) * 4u) >= CY_CRYPTO_BYTE_SIZE_OF_BITS(size) );
+
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+          (uint32_t)CY_CRYPTO_VU_ALLOC_MEM_OPC,
          ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
-         ((uint32_t)rdst << ((CY_CRYPTO_HW_V1) ? CY_CRYPTO_RSRC12_SHIFT : CY_CRYPTO_RSRC16_SHIFT)) |
+         ((uint32_t)rdst << ((CY_CRYPTO_V1) ? CY_CRYPTO_RSRC12_SHIFT : CY_CRYPTO_RSRC16_SHIFT)) |
         (((uint32_t)size - 1u)  << CY_CRYPTO_RSRC0_SHIFT));
 }
 
@@ -476,7 +505,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_ALLOC_MEM (CRYPTO_Type *base, uint32_t rdst, u
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_FREE_MEM (CRYPTO_Type *base, uint32_t cc, uint32_t reg_mask)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_FREE_MEM_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_FREE_MEM_OPC,
                                     ((uint32_t)cc << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)reg_mask));
 }
@@ -488,7 +518,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_FREE_MEM (CRYPTO_Type *base, uint32_t reg_mask
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_LSL (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_LSL_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_LSL_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -502,10 +533,11 @@ __STATIC_INLINE void CY_CRYPTO_VU_LSL (CRYPTO_Type *base, uint32_t rdst, uint32_
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_LSL1 (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1)
 {
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         /******* V1 *********/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_LSL1_OPC << CY_CRYPTO_OPCODE_POS) |
+        Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                         (uint32_t)CY_CRYPTO_VU_LSL1_OPC,
                                         ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                         ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                         ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT));
@@ -513,7 +545,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_COND_LSL1 (CRYPTO_Type *base, uint32_t cc, uin
     else
     {
         /******* V2 *********/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_LSL1_OPC << CY_CRYPTO_OPCODE_POS) |
+        Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                         (uint32_t)CY_CRYPTO_VU_LSL1_OPC,
                                         ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                         ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                         ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -528,10 +561,11 @@ __STATIC_INLINE void CY_CRYPTO_VU_LSL1 (CRYPTO_Type *base, uint32_t rdst, uint32
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_LSL1_WITH_CARRY (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1)
 {
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         /******* V1 *********/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_LSL1_WITH_CARRY_OPC << CY_CRYPTO_OPCODE_POS) |
+        Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                         (uint32_t)CY_CRYPTO_VU_LSL1_WITH_CARRY_OPC,
                                         ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                         ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                         ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT));
@@ -539,7 +573,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_COND_LSL1_WITH_CARRY (CRYPTO_Type *base, uint3
     else
     {
         /******* V2 *********/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_LSL1_WITH_CARRY_OPC << CY_CRYPTO_OPCODE_POS) |
+        Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                         (uint32_t)CY_CRYPTO_VU_LSL1_WITH_CARRY_OPC,
                                         ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                         ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                         ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -554,7 +589,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_LSL1_WITH_CARRY (CRYPTO_Type *base, uint32_t r
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_LSR (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)((CY_CRYPTO_HW_V1) ? CY_CRYPTO_VU1_LSR_OPC : CY_CRYPTO_VU2_LSR_OPC) << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)((CY_CRYPTO_V1) ? CY_CRYPTO_VU1_LSR_OPC : CY_CRYPTO_VU2_LSR_OPC),
                                     ((uint32_t)cc       << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst     << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1    << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -568,10 +604,11 @@ __STATIC_INLINE void CY_CRYPTO_VU_LSR (CRYPTO_Type *base, uint32_t rdst, uint32_
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_LSR1 (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1)
 {
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         /******* V1 *********/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)(CY_CRYPTO_VU1_LSR1_OPC) << CY_CRYPTO_OPCODE_POS) |
+        Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                         (uint32_t)CY_CRYPTO_VU1_LSR1_OPC,
                                         ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                         ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                         ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT));
@@ -579,7 +616,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_COND_LSR1 (CRYPTO_Type *base, uint32_t cc, uin
     else
     {
         /******* V2 *********/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)(CY_CRYPTO_VU2_LSR1_OPC) << CY_CRYPTO_OPCODE_POS) |
+        Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                         (uint32_t)CY_CRYPTO_VU2_LSR1_OPC,
                                         ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                         ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                         ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -594,10 +632,11 @@ __STATIC_INLINE void CY_CRYPTO_VU_LSR1 (CRYPTO_Type *base, uint32_t rdst, uint32
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_LSR1_WITH_CARRY (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1)
 {
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         /******* V1 *********/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)(CY_CRYPTO_VU1_LSR1_WITH_CARRY_OPC) << CY_CRYPTO_OPCODE_POS) |
+        Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU1_LSR1_WITH_CARRY_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT));
@@ -605,7 +644,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_COND_LSR1_WITH_CARRY (CRYPTO_Type *base, uint3
     else
     {
         /******* V2 *********/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)(CY_CRYPTO_VU2_LSR1_WITH_CARRY_OPC) << CY_CRYPTO_OPCODE_POS) |
+        Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                         (uint32_t)CY_CRYPTO_VU2_LSR1_WITH_CARRY_OPC,
                                         ((uint32_t)cc      << CY_CRYPTO_RSRC20_SHIFT) |
                                         ((uint32_t)rdst    << CY_CRYPTO_RSRC12_SHIFT) |
                                         ((uint32_t)rsrc1   << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -620,7 +660,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_LSR1_WITH_CARRY (CRYPTO_Type *base, uint32_t r
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_CLSAME (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)((CY_CRYPTO_HW_V1) ? CY_CRYPTO_VU1_CLSAME_OPC : CY_CRYPTO_VU2_CLSAME_OPC) << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)((CY_CRYPTO_V1) ? CY_CRYPTO_VU1_CLSAME_OPC : CY_CRYPTO_VU2_CLSAME_OPC),
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -634,7 +675,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_CLSAME (CRYPTO_Type *base, uint32_t rdst, uint
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_CTSAME (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)((CY_CRYPTO_HW_V1) ? CY_CRYPTO_VU1_CTSAME_OPC : CY_CRYPTO_VU2_CTSAME_OPC) << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)((CY_CRYPTO_V1) ? CY_CRYPTO_VU1_CTSAME_OPC : CY_CRYPTO_VU2_CTSAME_OPC),
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -646,9 +688,10 @@ __STATIC_INLINE void CY_CRYPTO_VU_CTSAME (CRYPTO_Type *base, uint32_t rdst, uint
     CY_CRYPTO_VU_COND_CTSAME (base, CY_CRYPTO_VU_COND_ALWAYS, rdst, rsrc1, rsrc0);
 }
 
- __STATIC_INLINE void CY_CRYPTO_VU_COND_SET_BIT (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc)
- {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)((CY_CRYPTO_HW_V1) ? CY_CRYPTO_VU1_SET_BIT_OPC : CY_CRYPTO_VU2_SET_BIT_OPC) << CY_CRYPTO_OPCODE_POS) |
+__STATIC_INLINE void CY_CRYPTO_VU_COND_SET_BIT (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc)
+{
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)((CY_CRYPTO_V1) ? CY_CRYPTO_VU1_SET_BIT_OPC : CY_CRYPTO_VU2_SET_BIT_OPC),
                                     ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc << CY_CRYPTO_RSRC0_SHIFT));
@@ -661,7 +704,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_SET_BIT (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_CLR_BIT (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)((CY_CRYPTO_HW_V1) ? CY_CRYPTO_VU1_CLR_BIT_OPC : CY_CRYPTO_VU2_CLR_BIT_OPC) << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)((CY_CRYPTO_V1) ? CY_CRYPTO_VU1_CLR_BIT_OPC : CY_CRYPTO_VU2_CLR_BIT_OPC),
                                     ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc << CY_CRYPTO_RSRC0_SHIFT));
@@ -674,7 +718,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_CLR_BIT (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_INV_BIT (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)((CY_CRYPTO_HW_V1) ? CY_CRYPTO_VU1_INV_BIT_OPC : CY_CRYPTO_VU2_INV_BIT_OPC) << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)((CY_CRYPTO_V1) ? CY_CRYPTO_VU1_INV_BIT_OPC : CY_CRYPTO_VU2_INV_BIT_OPC),
                                     ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc << CY_CRYPTO_RSRC0_SHIFT));
@@ -687,7 +732,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_INV_BIT (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_GET_BIT (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)((CY_CRYPTO_HW_V1) ? CY_CRYPTO_VU1_GET_BIT_OPC : CY_CRYPTO_VU2_GET_BIT_OPC) << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)((CY_CRYPTO_V1) ? CY_CRYPTO_VU1_GET_BIT_OPC : CY_CRYPTO_VU2_GET_BIT_OPC),
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -702,7 +748,7 @@ __STATIC_INLINE void CY_CRYPTO_VU_GET_BIT (CRYPTO_Type *base, uint32_t rdst, uin
 /******************************************************************************/
 __STATIC_INLINE void CY_CRYPTO_VU_COND_SET_BIT_IMM (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t imm13)
 {
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         /******** V1 ********/
         uint32_t tmpReg = (rdst != CY_CRYPTO_VU_HW_REG14) ? CY_CRYPTO_VU_HW_REG14 : CY_CRYPTO_VU_HW_REG13;
@@ -713,12 +759,15 @@ __STATIC_INLINE void CY_CRYPTO_VU_COND_SET_BIT_IMM (CRYPTO_Type *base, uint32_t 
         CY_CRYPTO_VU_SET_REG(base, tmpReg, imm13, 13u);
         CY_CRYPTO_VU_COND_SET_BIT(base, cc, rdst, tmpReg);
 
+        CY_CRYPTO_VU1_WAIT_FOR_COMPLETE(base);
+
         CY_CRYPTO_VU_RESTORE_REG(base, tmpReg, tmpData);
     }
     else
     {
         /******** V2 ********/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU2_SET_BIT_IMM_OPC << CY_CRYPTO_OPCODE_POS) |
+            Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                         (uint32_t)CY_CRYPTO_VU2_SET_BIT_IMM_OPC,
                                         ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                         ((uint32_t)rdst  << CY_CRYPTO_RSRC16_SHIFT) |
                                         ((uint32_t)imm13 << CY_CRYPTO_RSRC0_SHIFT));
@@ -732,7 +781,7 @@ __STATIC_INLINE void CY_CRYPTO_VU_SET_BIT_IMM (CRYPTO_Type *base, uint32_t rdst,
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_CLR_BIT_IMM (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t imm13)
 {
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         /******** V1 ********/
         uint32_t tmpReg = (rdst != CY_CRYPTO_VU_HW_REG14) ? CY_CRYPTO_VU_HW_REG14 : CY_CRYPTO_VU_HW_REG13;
@@ -743,12 +792,15 @@ __STATIC_INLINE void CY_CRYPTO_VU_COND_CLR_BIT_IMM (CRYPTO_Type *base, uint32_t 
         CY_CRYPTO_VU_SET_REG(base, tmpReg, imm13, 13u);
         CY_CRYPTO_VU_COND_CLR_BIT(base, cc, rdst, tmpReg);
 
+        CY_CRYPTO_VU1_WAIT_FOR_COMPLETE(base);
+
         CY_CRYPTO_VU_RESTORE_REG(base, tmpReg, tmpData);
     }
     else
     {
         /******** V2 ********/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU2_CLR_BIT_IMM_OPC << CY_CRYPTO_OPCODE_POS) |
+            Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                         (uint32_t)CY_CRYPTO_VU2_CLR_BIT_IMM_OPC,
                                         ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                         ((uint32_t)rdst  << CY_CRYPTO_RSRC16_SHIFT) |
                                         ((uint32_t)imm13 << CY_CRYPTO_RSRC0_SHIFT));
@@ -762,7 +814,7 @@ __STATIC_INLINE void CY_CRYPTO_VU_CLR_BIT_IMM (CRYPTO_Type *base, uint32_t rdst,
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_INV_BIT_IMM (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t imm13)
 {
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         /******** V1 ********/
         uint32_t tmpReg = (rdst != CY_CRYPTO_VU_HW_REG14) ? CY_CRYPTO_VU_HW_REG14 : CY_CRYPTO_VU_HW_REG13;
@@ -773,12 +825,15 @@ __STATIC_INLINE void CY_CRYPTO_VU_COND_INV_BIT_IMM (CRYPTO_Type *base, uint32_t 
         CY_CRYPTO_VU_SET_REG(base, tmpReg, imm13, 13u);
         CY_CRYPTO_VU_COND_INV_BIT(base, cc, rdst, tmpReg);
 
+        CY_CRYPTO_VU1_WAIT_FOR_COMPLETE(base);
+
         CY_CRYPTO_VU_RESTORE_REG(base, tmpReg, tmpData);
     }
     else
     {
         /******** V2 ********/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU2_INV_BIT_IMM_OPC << CY_CRYPTO_OPCODE_POS) |
+            Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                         (uint32_t)CY_CRYPTO_VU2_INV_BIT_IMM_OPC,
                                         ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                         ((uint32_t)rdst  << CY_CRYPTO_RSRC16_SHIFT) |
                                         ((uint32_t)imm13 << CY_CRYPTO_RSRC0_SHIFT));
@@ -793,7 +848,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_INV_BIT_IMM (CRYPTO_Type *base, uint32_t rdst,
 /******************************************************************************/
 __STATIC_INLINE void CY_CRYPTO_VU_COND_TST (CRYPTO_Type *base, uint32_t cc, uint32_t rsrc)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_TST_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_TST_OPC,
                                     ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rsrc << CY_CRYPTO_RSRC0_SHIFT));
 }
@@ -805,7 +861,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_TST (CRYPTO_Type *base, uint32_t rsrc)
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_MOV (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_MOV_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_MOV_OPC,
                                     ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc << CY_CRYPTO_RSRC0_SHIFT));
@@ -818,7 +875,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_MOV (CRYPTO_Type *base, uint32_t rdst, uint32_
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_XSQUARE (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_XSQUARE_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_XSQUARE_OPC,
                                     ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc << CY_CRYPTO_RSRC0_SHIFT));
@@ -831,7 +889,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_XSQUARE (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_XMUL (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_XMUL_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_XMUL_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -846,7 +905,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_XMUL (CRYPTO_Type *base, uint32_t rdst, uint32
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_UMUL (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_UMUL_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_UMUL_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -860,7 +920,7 @@ __STATIC_INLINE void CY_CRYPTO_VU_UMUL (CRYPTO_Type *base, uint32_t rdst, uint32
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_USQUARE (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc)
 {
-    if (CY_CRYPTO_HW_V1)
+    if (CY_CRYPTO_V1)
     {
         /***** V1 *******/
         CY_CRYPTO_VU_COND_UMUL(base, cc, rdst, rsrc, rsrc);
@@ -868,7 +928,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_COND_USQUARE (CRYPTO_Type *base, uint32_t cc, 
     else
     {
         /***** V2 *******/
-        REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU2_USQUARE_OPC << CY_CRYPTO_OPCODE_POS) |
+            Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                         (uint32_t)CY_CRYPTO_VU2_USQUARE_OPC,
                                         ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                         ((uint32_t)rdst << CY_CRYPTO_RSRC12_SHIFT) |
                                         ((uint32_t)rsrc << CY_CRYPTO_RSRC0_SHIFT));
@@ -882,7 +943,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_USQUARE (CRYPTO_Type *base, uint32_t rdst, uin
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_SET_TO_ZERO (CRYPTO_Type *base, uint32_t cc, uint32_t rdst)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_SET_TO_ZERO_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_SET_TO_ZERO_OPC,
                                     ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst << CY_CRYPTO_RSRC12_SHIFT));
 }
@@ -894,7 +956,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_SET_TO_ZERO (CRYPTO_Type *base, uint32_t rdst)
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_SET_TO_ONE (CRYPTO_Type *base, uint32_t cc, uint32_t rdst)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_SET_TO_ONE_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_SET_TO_ONE_OPC,
                                     ((uint32_t)cc   << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst << CY_CRYPTO_RSRC12_SHIFT));
 }
@@ -906,7 +969,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_SET_TO_ONE (CRYPTO_Type *base, uint32_t rdst)
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_ADD (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_ADD_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_ADD_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -920,7 +984,7 @@ __STATIC_INLINE void CY_CRYPTO_VU_ADD (CRYPTO_Type *base, uint32_t rdst, uint32_
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_SUB (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_SUB_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING, (uint32_t)CY_CRYPTO_VU_SUB_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -934,7 +998,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_SUB (CRYPTO_Type *base, uint32_t rdst, uint32_
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_OR (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_OR_OPC  << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_OR_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -948,7 +1013,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_OR (CRYPTO_Type *base, uint32_t rdst, uint32_t
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_AND (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_AND_OPC  << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_AND_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -962,7 +1028,7 @@ __STATIC_INLINE void CY_CRYPTO_VU_AND (CRYPTO_Type *base, uint32_t rdst, uint32_
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_XOR (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_XOR_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING, (uint32_t)CY_CRYPTO_VU_XOR_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -976,7 +1042,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_XOR (CRYPTO_Type *base, uint32_t rdst, uint32_
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_NOR (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_NOR_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_NOR_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -990,7 +1057,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_NOR (CRYPTO_Type *base, uint32_t rdst, uint32_
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_NAND (CRYPTO_Type *base, uint32_t cc, uint32_t rdst, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_NAND_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_NAND_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rdst  << CY_CRYPTO_RSRC12_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
@@ -1004,7 +1072,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_NAND (CRYPTO_Type *base, uint32_t rdst, uint32
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_CMP_SUB (CRYPTO_Type *base, uint32_t cc, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_CMP_SUB_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_CMP_SUB_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
                                     ((uint32_t)rsrc0 << CY_CRYPTO_RSRC0_SHIFT));
@@ -1017,7 +1086,8 @@ __STATIC_INLINE void CY_CRYPTO_VU_CMP_SUB (CRYPTO_Type *base, uint32_t rsrc1, ui
 
 __STATIC_INLINE void CY_CRYPTO_VU_COND_CMP_DEGREE (CRYPTO_Type *base, uint32_t cc, uint32_t rsrc1, uint32_t rsrc0)
 {
-    REG_CRYPTO_INSTR_FF_WR(base) = (((uint32_t)CY_CRYPTO_VU_CMP_DEGREE_OPC << CY_CRYPTO_OPCODE_POS) |
+    Cy_Crypto_Core_Vu_RunInstr(base, CY_CRYPTO_SYNC_NON_BLOCKING,
+                                     (uint32_t)CY_CRYPTO_VU_CMP_DEGREE_OPC,
                                     ((uint32_t)cc    << CY_CRYPTO_RSRC20_SHIFT) |
                                     ((uint32_t)rsrc1 << CY_CRYPTO_RSRC4_SHIFT)  |
                                     ((uint32_t)rsrc0 << CY_CRYPTO_RSRC0_SHIFT));
@@ -1040,6 +1110,10 @@ __STATIC_INLINE void CY_CRYPTO_VU_RESTORE_REG (CRYPTO_Type *base, uint32_t rdst,
 
 
 #endif /* #if (CPUSS_CRYPTO_VU == 1) */
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* CY_IP_MXCRYPTO */
 

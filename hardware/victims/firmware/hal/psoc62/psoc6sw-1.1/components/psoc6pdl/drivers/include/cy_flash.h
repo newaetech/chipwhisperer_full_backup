@@ -1,12 +1,12 @@
 /***************************************************************************//**
 * \file cy_flash.h
-* \version 3.20
+* \version 3.30.4
 *
 * Provides the API declarations of the Flash driver.
 *
 ********************************************************************************
 * \copyright
-* Copyright 2016-2019 Cypress Semiconductor Corporation
+* Copyright 2016-2020 Cypress Semiconductor Corporation
 * SPDX-License-Identifier: Apache-2.0
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,8 +42,8 @@
 * or modify the SROM code. The driver API requests the system call by acquiring
 * the Inter-processor communication (IPC) and writing the SROM function opcode
 * and parameters to its input registers. As a result, an NMI interrupt is invoked
-* and the requested SROM API is executed. The operation status is returned to the
-* driver context and a release interrupt is triggered.
+* and the requested SROM function is executed. The operation status is returned 
+* to the driver context and a release interrupt is triggered.
 *
 * Writing to flash can take up to 20 milliseconds. During this time,
 * the device should not be reset (including XRES pin, software  reset, and
@@ -52,12 +52,13 @@
 * interrupt instead of a reset.
 *
 * A Read while Write violation occurs when a flash Read operation is initiated
-* in the same or neighboring flash sector where the flash Write, Erase, or
+* in the same or neighboring (neighboring restriction is applicable just for the 
+* CY8C6xx6, CY8C6xx7 devices) flash sector where the flash Write, Erase, or 
 * Program operation is working. This violation may cause a HardFault exception.
-* To avoid the Read while Write violation, the user must carefully split the
+* To avoid the Read while Write violation, carefully split the
 * Read and Write operation on flash sectors which are not neighboring,
-* considering both cores in the multi-processor device. The flash is divided
-* into four equal sectors. You may edit the linker script to place the code
+* considering both cores in the multi-processor device. If the flash is divided
+* into four equal sectors, you may edit the linker script to place the code
 * into neighboring sectors. For example, use sectors number 0 and 1 for code
 * and sectors 2 and 3 for data storage.
 *
@@ -65,18 +66,18 @@
 *
 * \subsection group_flash_config_intro Introduction:
 * The PSoC 6 MCU user-programmable Flash consists of:
-* - Four User Flash sectors (0 through 3) - 256KB each.
-* - EEPROM emulation sector - 32KB.
+* - Application flash memory (from 2 to 8 sectors) - 128KB/256KB each.
+* - EE emulation flash memory - 32KB.
 *
-* Write operations are performed on a per-sector basis and may be done as
-* Blocking or Partially Blocking, defined as follows:
+* Write operation may be done as Blocking or Partially Blocking, 
+* defined as follows:
 *
 * \subsection group_flash_config_blocking Blocking:
 * In this case, the entire Flash block is not available for the duration of the
 * Write (&sim;16ms). Therefore, no Flash accesses (from any Bus Master) can
 * occur during that time. CPU execution can be performed from SRAM. All
-* pre-fetching must be disabled. Application code execution from Flash is
-* blocked for the Flash Write duration for both cores.
+* pre-fetching must be disabled. Code execution from Flash is blocked for the 
+* Flash Write duration for both cores.
 *
 * \subsection group_flash_config_block_const Constraints for Blocking Flash operations:
 * -# During write to flash, the device should not be reset (including XRES pin,
@@ -84,27 +85,28 @@
 * of the flash.
 * -# The low-voltage detect circuits should be configured to generate an
 *    interrupt instead of a reset.
-* -# Flash write operation is allowed only in one of the following CM4 states:
+* -# Flash rite operation is allowed only in one of the following CM4 states:
 *     -# CM4 is Active and initialized:<br>
 *        call \ref Cy_SysEnableCM4 "Cy_SysEnableCM4(CY_CORTEX_M4_APPL_ADDR)".
 *        <b>Note:</b> If desired user may put CM4 core in Deep Sleep any time
 *        after calling Cy_SysEnableCM4().
-*     -# CM4 is Off:<br>
+*     -# CM4 is Off and disabled:<br>
 *        call Cy_SysDisableCM4(). <b>Note:</b> In this state Debug mode is not
 *        supported.
 *     .
-* -# Flash write cannot be performed in ULP (core voltage 0.9V) mode.
+* -# Flash Write cannot be performed in Ultra Low Power (core voltage 0.9V) mode.
 * -# Interrupts must be enabled on both active cores. Do not enter a critical
 *    section during flash operation.
-* -# User must guarantee that system pipe interrupts (IPC interrupts 3 and 4)
-*    have the highest priority, or at least that pipe interrupts are not
-*    interrupted or in a pending state for more than 700 &micro;s.
+* -# For the CY8C6xx6, CY8C6xx7 devices user must guarantee that system pipe 
+*    interrupts (IPC interrupts 3 and 4) have the highest priority, or 
+*    at least that pipe interrupts are not interrupted or in a pending state 
+*    for more than 700 &micro;s.
 * -# User must guarantee that during flash write operation no flash read
 *    operations are performed by bus masters other than CM0+ and CM4 (DMA and
 *    Crypto).
 * -# If you do not use the default startup, perform the following steps 
 *    before any flash write/erase operations:
-* \snippet flash\3.20\snippet\main.c Flash Initialization
+* \snippet flash/snippet/main.c Flash Initialization
 *
 * \subsection group_flash_config_rww Partially Blocking:
 * This method has a much shorter time window during which Flash accesses are not
@@ -112,13 +114,13 @@
 * Flash Write duration, for both cores. Blocking duration depends upon the API
 * sequence used.
 *
-* For API sequence Cy_Flash_StartErase() + Cy_Flash_StartProgram() there are
-* four block-out regions during which the read is blocked using the software
-* driver (PDL). See <b>Figure 1</b>.
+* For API sequence Cy_Flash_StartEraseRow() + Cy_Flash_StartProgram() there are
+* four block-out regions during which Read is blocked. See <b>Figure 1</b>.
 *
 * <center>
 * <table class="doxtable">
-* <caption>Table 1 - Block-out periods</caption>
+* <caption>Table 1 - Block-out periods (timing values are valid just for the 
+* CY8C6xx6, CY8C6xx7 devices) </caption>
 *   <tr>
 *     <th>Block-out</th>
 *     <th>Phase</th>
@@ -147,7 +149,7 @@
 * </table>
 * </center>
 *
-* This allows both cores to execute an application for about 80% of Flash Write
+* This allows both cores to execute for about 80% of Flash Write
 * operation - see <b>Figure 1</b>.
 * This capability is important for communication protocols that rely on fast
 * response.
@@ -164,9 +166,9 @@
 * The core that performs read/execute is blocked identically to the previous
 * scenario - see <b>Figure 1</b>.
 *
-* This allows the core that initiates Cy_Flash_StartWrite() to execute an
-* application for about 20% of the Flash Write operation. The other core executes
-* the application for about 80% of the Flash Write operation.
+* This allows the core that initiates Cy_Flash_StartWrite() to execute for about
+* 20% of Flash Write operation. The other core executes for about 80% of Flash 
+* Write operation.
 *
 * Some constraints must be planned for in the Partially Blocking mode which are
 * described in detail below.
@@ -187,7 +189,7 @@
 *        call \ref Cy_SysEnableCM4 "Cy_SysEnableCM4(CY_CORTEX_M4_APPL_ADDR)".
 *        <b>Note:</b> If desired user may put CM4 core in Deep Sleep any time
 *        after calling Cy_SysEnableCM4().
-*     -# CM4 is Off:<br>
+*     -# CM4 is Off and disabled:<br>
 *        call Cy_SysDisableCM4(). <b>Note:</b> In this state Debug mode is not
 *        supported.
 *     .
@@ -195,7 +197,8 @@
 *    read of any bus master: CM0+, CM4, DMA, Crypto, etc.)
 *     -# Do not write to and read/execute from the same flash sector at the same
 *        time. This is true for all sectors.
-*     -# Writing rules in User Flash:
+*     -# Writing rules in application flash (this restriction is applicable just 
+* for CY8C6xx6, CY8C6xx7 devices):
 *         -# Any bus master can read/execute from UFLASH S0 and/or S1, during
 *            flash write to UFLASH S2 or S3.
 *         -# Any bus master can read/execute from UFLASH S2 and/or S3, during
@@ -205,18 +208,16 @@
 *         code for CM4 in either S0 or S1. CM0+ code resides in S0. Write data
 *         to S2 and S3 sections.
 *     .
-* -# Flash write cannot be performed in ULP mode (core voltage 0.9V).
+* -# Flash Write cannot be performed in Ultra Low Power mode (core voltage 0.9V).
 * -# Interrupts must be enabled on both active cores. Do not enter a critical
 *    section during flash operation.
-* -# User must guarantee that system pipe interrupts (IPC interrupts 3 and 4)
-*    have the highest priority, or at least that pipe interrupts are not
-*    interrupted or in a pending state for more than 700 &micro;s.
-* -# User must guarantee that during flash write operation no flash read
-*    operations are performed by bus masters other than CM0+ and CM4
-*    (DMA and Crypto).
+* -# For the CY8C6xx6, CY8C6xx7 devices user must guarantee that system pipe 
+*    interrupts (IPC interrupts 3 and 4) have the highest priority, or at 
+*    least that pipe interrupts are not interrupted or in a pending state 
+*    for more than 700 &micro;s.
 * -# If you do not use the default startup, perform the following steps 
 *    before any flash write/erase operations:
-* \snippet flash\3.20\snippet\main.c Flash Initialization
+* \snippet flash/snippet/main.c Flash Initialization
 *
 * \subsection group_flash_config_emeeprom EEPROM section use:
 * If you plan to use "cy_em_eeprom" section for different purposes for both of
@@ -254,6 +255,41 @@
 *
 * <table class="doxtable">
 *   <tr><th>Version</th><th style="width: 52%;">Changes</th><th>Reason for Change</th></tr>
+*   <tr>
+*     <td rowspan="1">3.30.4</td>
+*     <td>Improved documentation.</td>
+*     <td>User experience enhancement.</td>
+*   </tr>
+*   <tr>
+*     <td rowspan="1">3.30.3</td>
+*     <td>Updated documentation to limit devices with the restrictions. Improved calculation of the CY_FLASH_DELAY_CORRECTIVE macro.</td>
+*     <td>User experience enhancement.</td>
+*   </tr>
+*   <tr>
+*     <td rowspan="1">3.30.2</td>
+*     <td>Updated documentation to limit devices with the neighboring restriction.</td>
+*     <td>User experience enhancement.</td>
+*   </tr>
+*   <tr>
+*     <td rowspan="1">3.30.1</td>
+*     <td>Used the CY_RAMFUNC_BEGIN and CY_RAMFUNC_END macros that allocate the function in RAM instead of using the CY_SECTION(".cy_ramfunc") macros.</td>
+*     <td>Removed the code duplication.</td>
+*   </tr>
+*   <tr>
+*     <td rowspan="3">3.30</td>
+*     <td>Moved ipcWaitMessageStc structure to the RAM section called ".cy_sharedmem".</td>
+*     <td>Support Secure Boot devices.</td>
+*   </tr>
+*	<tr>
+*     <td>Renamed Function Cy_Flash_StartErase() to Cy_Flash_StartEraseRow().</td>
+*     <td>The driver improvements based on the usability feedback.</td>
+*	</tr>
+*   <tr>
+*     <td>Added new API functions \ref Cy_Flash_EraseSector, 
+*   	  \ref Cy_Flash_StartEraseSector, \ref Cy_Flash_EraseSubsector, 
+*         \ref Cy_Flash_StartEraseSubsector </td>
+*     <td>The driver improvements based on the usability feedback.</td>
+*   </tr>
 *   <tr>
 *     <td rowspan="3">3.20</td>
 *     <td>Flattened the organization of the driver source code into the single source directory and the single include directory.</td>
@@ -359,7 +395,7 @@ extern "C" {
 #define CY_FLASH_DRV_VERSION_MAJOR       3
 
 /** Driver minor version */
-#define CY_FLASH_DRV_VERSION_MINOR       20
+#define CY_FLASH_DRV_VERSION_MINOR       30
 
 #define CY_FLASH_ID               (CY_PDL_DRV_ID(0x14UL))                          /**< FLASH PDL ID */
 
@@ -428,11 +464,15 @@ typedef enum cy_en_flashdrv_status
 */
 void Cy_Flash_Init(void);
 cy_en_flashdrv_status_t Cy_Flash_EraseRow(uint32_t rowAddr);
+cy_en_flashdrv_status_t Cy_Flash_StartEraseRow(uint32_t rowAddr);
+cy_en_flashdrv_status_t Cy_Flash_EraseSector(uint32_t sectorAddr);
+cy_en_flashdrv_status_t Cy_Flash_StartEraseSector(uint32_t sectorAddr);
+cy_en_flashdrv_status_t Cy_Flash_EraseSubsector(uint32_t subSectorAddr);
+cy_en_flashdrv_status_t Cy_Flash_StartEraseSubsector(uint32_t subSectorAddr);
 cy_en_flashdrv_status_t Cy_Flash_ProgramRow(uint32_t rowAddr, const uint32_t* data);
 cy_en_flashdrv_status_t Cy_Flash_WriteRow(uint32_t rowAddr, const uint32_t* data);
 cy_en_flashdrv_status_t Cy_Flash_StartWrite(uint32_t rowAddr, const uint32_t* data);
 cy_en_flashdrv_status_t Cy_Flash_StartProgram(uint32_t rowAddr, const uint32_t* data);
-cy_en_flashdrv_status_t Cy_Flash_StartErase(uint32_t rowAddr);
 cy_en_flashdrv_status_t Cy_Flash_IsOperationComplete(void);
 cy_en_flashdrv_status_t Cy_Flash_RowChecksum(uint32_t rowAddr, uint32_t* checksumPtr);
 cy_en_flashdrv_status_t Cy_Flash_CalculateHash(const uint32_t* data, uint32_t numberOfBytes, uint32_t* hashPtr);
@@ -449,11 +489,15 @@ uint32_t Cy_Flash_GetExternalStatus(void);
 void Cy_Flash_ResumeIrqHandler(void);
 #endif
 
-/* Macros to backward compatibility */
+/*******************************************************************************
+Backward compatibility macro. The following code is DEPRECATED and must
+not be used in new projects
+*******************************************************************************/
 #define     Cy_Flash_IsWriteComplete(...)    Cy_Flash_IsOperationComplete()
 #define     Cy_Flash_IsProgramComplete(...)  Cy_Flash_IsOperationComplete()
 #define     Cy_Flash_IsEraseComplete(...)    Cy_Flash_IsOperationComplete()
-#define     CY_FLASH_NUMBER_ROWS            (CY_FLASH_SIZE / CY_FLASH_SIZEOF_ROW)
+#define     CY_FLASH_NUMBER_ROWS             (CY_FLASH_SIZE / CY_FLASH_SIZEOF_ROW)
+#define     Cy_Flash_StartErase              Cy_Flash_StartEraseRow
 
 /** \endcond */
 

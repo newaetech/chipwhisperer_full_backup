@@ -1,12 +1,12 @@
 /***************************************************************************//**
 * \file cy_syslib.c
-* \version 2.20
+* \version 2.50.1
 *
 *  Description:
 *   Provides system API implementation for the SysLib driver.
 *
 ********************************************************************************
-* Copyright 2016-2019 Cypress Semiconductor Corporation
+* Copyright 2016-2020 Cypress Semiconductor Corporation
 * SPDX-License-Identifier: Apache-2.0
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,7 +52,11 @@
 #endif /* (CY_ARM_FAULT_DEBUG == CY_ARM_FAULT_DEBUG_ENABLED) */
 
 #if defined(__ARMCC_VERSION)
-    static __ASM void Cy_SysLib_AsmInfiniteLoop(void) { b . };
+        #if (__ARMCC_VERSION >= 6010050)
+            static void Cy_SysLib_AsmInfiniteLoop(void) { __ASM (" b . "); };
+        #else
+            static __ASM void Cy_SysLib_AsmInfiniteLoop(void) { b . };
+        #endif /* (__ARMCC_VERSION >= 6010050) */
 #endif  /* (__ARMCC_VERSION) */
 
 

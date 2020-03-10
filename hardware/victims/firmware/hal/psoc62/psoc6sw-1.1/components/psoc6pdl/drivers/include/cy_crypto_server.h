@@ -1,6 +1,6 @@
 /***************************************************************************//**
 * \file cy_crypto_server.h
-* \version 2.20
+* \version 2.30.1
 *
 * \brief
 *  This file provides the prototypes for common API
@@ -28,7 +28,6 @@
 #define CY_CRYPTO_SERVER_H
 
 #include "cy_crypto_common.h"
-#include "cy_syslib.h"
 
 #if defined(CY_IP_MXCRYPTO)
 
@@ -66,7 +65,7 @@ extern "C" {
 * \ref cy_en_crypto_status_t
 *
 * \funcusage
-* \snippet crypto/2.10/snippet/main.c snippet_myCryptoServerStartBase
+* \snippet crypto/snippet/main.c snippet_myCryptoServerStartBase
 *
 *******************************************************************************/
 cy_en_crypto_status_t Cy_Crypto_Server_Start_Base(cy_stc_crypto_config_t const *config,

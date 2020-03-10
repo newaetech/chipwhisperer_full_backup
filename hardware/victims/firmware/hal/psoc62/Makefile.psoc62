@@ -5,7 +5,8 @@ VPATH += :$(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/devices/psoc6/startu
 VPATH += :$(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/devices/psoc6/startup
 VPATH += :$(HALPATH)/psoc62/generated_source
 VPATH += :$(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/drivers/source
-VPATH += :$(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/drivers/source/gcc
+VPATH += :$(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/drivers/source/TOOLCHAIN_GCC_ARM
+VPATH += :$(HALPATH)/psoc62/COMPONENT_CM0P_CRYPTO
 
 EXTRAINCDIRS += $(HALPATH)/psoc62 $(HALPATH)/psoc62/generated_source
 EXTRAINCDIRS += $(HALPATH)/psoc62/psoc6sw-1.1/components/psoc6pdl/cmsis/include
@@ -22,7 +23,15 @@ SRC += cycfg_clocks.c \
        cycfg_routing.c \
        cycfg.c
        
-SRC += cy_device.c \
+SRC += psoc6_02_cm0p_crypto.c
+       
+SRC += cy_crypto_core_hw.c \
+       cy_crypto_core_hw_v1.c \
+       cy_crypto_core_aes_v1.c \
+       cy_crypto_core_aes_v2.c \
+       cy_crypto_core_mem_v1.c \
+       cy_crypto_core_mem_v2.c \
+       cy_device.c \
        cy_efuse.c \
        cy_flash.c \
        cy_gpio.c \
@@ -70,4 +79,3 @@ MCUELFTOOL = $(HALPATH)/psoc62/tools/win_x64/cymcuelftool.exe
 
 signed: all
 	$(MCUELFTOOL) --sign $(TARGET-PLAT).elf --output $(TARGET-PLAT)_cm4_signed.elf
-	$(MCUELFTOOL) --merge $(TARGET-PLAT)_cm4_signed.elf $(HALPATH)/psoc62/psoc6_01_cm0p_sleep_signed.elf --output $(TARGET-PLAT)_cm4_final.elf
