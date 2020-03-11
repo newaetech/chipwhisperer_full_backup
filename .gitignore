@@ -1,4 +1,5 @@
 *.pyc
+*.swp
 *.autopilot/*
 *.s#*
 *.b#?
