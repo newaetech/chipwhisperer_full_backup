@@ -142,8 +142,8 @@ class Programmer(object):
 
 
 class AVRProgrammer(Programmer):
-    def __init__(self):
-        self.slow_clock = False
+    def __init__(self, slow_clock = False):
+        self.slow_clock = slow_clock
         super(AVRProgrammer, self).__init__()
 
     @save_and_restore_pins
