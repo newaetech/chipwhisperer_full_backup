@@ -9,6 +9,7 @@ or the hard way.
 
 Basic
  * :ref:`install-virtual-machine` (Recommended)
+ * :ref:`install-windows-exe` (Windows 10 recommended)
 
 Advanced
  * :ref:`prerequisites`
@@ -89,6 +90,67 @@ type **localhost:8888** into the address bar. This will give you access to
 the Jupyter Notebook server running in the virtual machine.
 
 .. _VirtualBox: https://www.virtualbox.org/wiki/Downloads
+
+.. _install-windows-exe:
+
+*****************
+Windows Installer
+*****************
+.. note:: The installer only includes the ChipWhisperer software itself. It 
+  does not include compilers necessary for building firmware for ChipWhisperer 
+  targets. The easiest way to fulfill these requirements is through the Ubuntu 
+  Windows subsystem, which will be discussed later.
+
+If you want to run a native Windows installation of ChipWhisperer, your best 
+bet is to run the Windows installer, which takes care of getting the 
+prerequisites for you. The steps for using the installar are as follows:
+
+ * Navigate to the ChipWhisperer release page on Github: `releases`_
+
+ * Find the latest ChipWhisperer Windows install executable (currently 
+   :code:`Chipwhisperer.v5.1.3.Setup.64-bit.exe` for 64 bit Windows and 
+   :code:`Chipwhisperer.v5.1.3.Setup.32-bit.exe` for 32 bit Windows)
+ 
+ * Run the executable and choose the path you want to install ChipWhisperer at. 
+   You must have read/write permissions for the location you install to, so 
+   avoid installing in a location like C:\Program Files or the like. The 
+   default install location (the user's home directory) will work for most users.
+
+ * Choose whether or not you want to create a desktop shortcut for running 
+   ChipWhisperer and whether or not you want to install Git for updating 
+   ChipWhisperer (recommended).
+
+ * Finally, connect the ChipWhisperer to your computer and install the drivers for your device. Driver installation instructions can be found on the `newae-wiki`_
+
+ Once this is completed, you should have a fully functioning ChipWhisperer 
+ install. However, you will still need to install compilers to build firmware for targets. To finish the installation:
+
+  * Open powershell and run: :code:`Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux`
+
+  * Restart your computer
+ 
+  * Install `Ubuntu-for-Windows`_ 
+  
+  * Run Ubuntu, which should be accessable via the start menu
+
+  * Run the following commands: 
+
+    .. code:: bash
+
+        sudo apt update
+        sudo apt upgrade
+        sudo apt install make avr-libc gcc-avr gcc-arm-none-eabi
+ 
+
+With this, you now have a fully functioning ChipWhisperer install. Run the 
+ChipWhisperer app, then navigate to the Jupyter folder, where tutorials for 
+running ChipWhisperer are located.
+
+.. _newae-wiki: https://wiki.newae.com/Main_Page
+
+.. _releases: https://github.com/newaetech/chipwhisperer/releases
+
+.. _Ubuntu-for-Windows: https://www.microsoft.com/en-ca/p/ubuntu/9nblggh4msv6?activetab=pivot:overviewtab
 
 .. _install-repo:
 

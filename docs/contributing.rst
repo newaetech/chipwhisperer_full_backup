@@ -62,9 +62,11 @@ Software Documentation
 **********************
 
 The software documentation is written using Sphinx.
-Building the documentation requires sphinx. This can be installed using::
+Building the documentation requires sphinx and sphinx images. 
+This can be installed using::
 
     python -m pip install sphinx
+    python -m pip install sphinxcontrib-images
 
 You can then navigate to the *chipwhisperer/docs* folder and run::
 
