@@ -112,6 +112,10 @@ class USART(object):
         while datasent < len(data):
             datatosend = len(data) - datasent
             datatosend = min(datatosend, 58)
+            if datasent > 0:
+                # give CW some time to process the last request
+                # TODO fix CW firmware to process large UART data without loss
+                time.sleep(.05)
             self._usb.sendCtrl(self.CMD_USART0_DATA, 0, data[datasent:(datasent + datatosend)])
             datasent += datatosend
 
