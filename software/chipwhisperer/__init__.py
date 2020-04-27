@@ -291,7 +291,7 @@ def capture_trace(scope, target, plaintext, key=None, ack=True):
         warnings.warn("Timeout happened during capture")
         return None
 
-    response = target.simpleserial_read('r', 16, ack=ack)
+    response = target.simpleserial_read('r', target.output_len, ack=ack)
     wave = scope.get_last_trace()
 
     if len(wave) >= 1:
