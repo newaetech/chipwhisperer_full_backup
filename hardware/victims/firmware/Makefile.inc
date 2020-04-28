@@ -41,6 +41,9 @@ include $(FIRMWAREPATH)/hal/Makefile.hal
 
 include $(FIRMWAREPATH)/crypto/Makefile.crypto
 
+#Debug - can be useful to see variables
+#${info '$(.VARIABLES)'}
+
 # Add the platform to the output filenames
 TARGET-PLAT = $(TARGET)-$(PLATFORM)
 

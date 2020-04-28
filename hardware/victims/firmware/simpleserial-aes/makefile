@@ -41,9 +41,12 @@ EXTRA_OPTS = NO_EXTRA_OPTS
 CFLAGS += -D$(EXTRA_OPTS)
 
 
-ifeq ($(CRYPTO_OPTIONS),)
-CRYPTO_OPTIONS = AES128C
+ifeq ($(CRYPTO_TARGET),)
+  ${info No CRYPTO_TARGET passed - defaulting to TINYAES128C}
+  CRYPTO_TARGET = TINYAES128C
 endif
+
+${info Building for platform ${PLATFORM} with CRYPTO_TARGET=$(CRYPTO_TARGET)}
 
 #Add simpleserial project to build
 include ../simpleserial/Makefile.simpleserial

@@ -23,4 +23,6 @@ else ifeq ($(filter $(SS_VER),$(SS_VERS_ALLOWED)),)
   $(error Invalid SimpleSerial version: $(SS_VER); allowed verions: $(SS_VERS_LIST))
 endif
 
+${info SS_VER set to $(SS_VER)}
+
 CDEFS += -DSS_VER=$(SS_VER)

@@ -62,7 +62,6 @@ else ifeq ($(CRYPTO_TARGET),HWAES)
 else ifeq ($(CRYPTO_TARGET),NONE)
   #Nothing to do :)
 
-
 else
- $(error: Unknown or blank CRYPTO_TARGET: $(CRYPTO_TARGET). If supposed to be blank set to NONE to continue.)
+ ${error Unknown or blank CRYPTO_TARGET: $(CRYPTO_TARGET). If supposed to be blank set to NONE to continue}
 endif
