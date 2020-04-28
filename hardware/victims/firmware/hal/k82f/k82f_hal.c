@@ -24,7 +24,10 @@ static uint32_t nbAesBlocks;
 void platform_init(void)
 {
      trng_config_t trngConfig;
-
+     
+#if ETM_ENABLE
+     etmtrace_enable();
+#endif
      BOARD_BootClockRUN();
 
 #if USE_TRUSTED_CRYPTO

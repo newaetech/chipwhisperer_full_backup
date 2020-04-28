@@ -21,6 +21,9 @@
 #endif /* USE_FULL_ASSERT */
 
 #include <stdint.h>
+
+void etmtrace_enable(void);
+
 void init_uart(void);
 void putch(char c);
 char getch(void);
