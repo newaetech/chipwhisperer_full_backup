@@ -23,6 +23,10 @@ CFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-
 CPPFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -MMD -MP -static 
 CPPFLAGS += -Os -g -DDEBUG -DCPU_MK82FN256VLL15 -DFRDM_K64F -DFREEDOM -w -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin 
 
+ifeq ($(ETM_ENABLE),1)
+    CFLAGS += -DETM_ENABLE=1
+endif
+
 ifeq ($(CRYPTO_TARGET),HWAES)
   ifeq ($(CRYPTO_OPTIONS),LTC)
     $(info Using hardware masked Trusted Crypto engine)
