@@ -159,9 +159,13 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         dict['mask_cmd'] = self.mask_cmd
 
         dict['mask_enabled'] = self.mask_enabled
-        dict['mask_type'] = self.mask_type
-        if dict['mask_type'] == 'fixed':
-            dict['fixed_mask'] = self.fixed_mask
+        if hasattr(self, 'getMaskEnabled'):
+            dict['mask_enabled'] = self.mask_enabled
+        
+        if hasattr(self, 'getMaskType'):
+            dict['mask_type'] = self.mask_type
+            if dict['mask_type'] == 'fixed':
+                dict['fixed_mask'] = self.fixed_mask
 
         dict['baud']     = self.baud
         dict['protver'] = self.protver
