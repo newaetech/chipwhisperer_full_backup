@@ -254,7 +254,7 @@ module reg_clockglitch(
 			oneshot <= 1'b0;		
 	 end
 	
-	 reg [7:0] glitch_cnt;
+	 reg [12:0] glitch_cnt;
 	 reg glitch_go;
 	 always @(posedge sourceclk) begin
 		if (glitch_trigger)
@@ -265,7 +265,7 @@ module reg_clockglitch(
 	
 	 always @(posedge sourceclk) begin
 		if (glitch_go)
-			glitch_cnt <= glitch_cnt + 8'd1;
+			glitch_cnt <= glitch_cnt + 13'd1;
 		else
 			glitch_cnt <= 0;
 	 end

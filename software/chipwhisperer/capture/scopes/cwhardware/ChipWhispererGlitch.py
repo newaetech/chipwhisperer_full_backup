@@ -754,7 +754,7 @@ class ChipWhispererGlitch(object):
             num = 1
         num = num-1
         resp[6] = num & 0xff #LSB        
-        resp[7] = (resp[7] & self.CLKSOURCE_MASK) | ((num >> 7) << 2) #5-bit MSB stored in upper bits
+        resp[7] = (resp[7] & self.CLKSOURCE_MASK) | ((num >> 8) << 2) #5-bit MSB stored in upper bits
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
 
     def numGlitches(self):
