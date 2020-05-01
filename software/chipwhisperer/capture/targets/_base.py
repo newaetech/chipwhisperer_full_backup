@@ -62,6 +62,15 @@ class TargetTemplate:
             raise
 
 
+    @property
+    def output_len(self):
+        """The length of the output expected from the crypto algorithm (in bytes)"""
+        return 16
+
+    @output_len.setter
+    def output_len(self, length):
+        return 16
+
     def _con(self, scope=None):
         raise NotImplementedError
 

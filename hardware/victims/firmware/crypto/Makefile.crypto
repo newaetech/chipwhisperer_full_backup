@@ -10,6 +10,13 @@ VPATH += :$(FIRMWAREPATH)/crypto/
 ########################################
 #### Select the Crypto Library
 
+ifeq ($(CRYPTO_OPTIONS),)
+  ifneq ($(CRYPTO_TARGET),NONE)
+    ${info Blank crypto options, building for AES128}
+    CRYPTO_OPTIONS = AES128C
+  endif
+endif
+
 ifeq ($(CRYPTO_TARGET),AVRCRYPTOLIB)
 # avr-crypto-lib fom daslabor.de
 # Crypto Target: AVRCRYPTOLIB
