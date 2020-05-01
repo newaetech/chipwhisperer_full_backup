@@ -128,7 +128,7 @@ module clockglitch_s6(
 	//Need to think carefully about which clock to syncronize this too, and
 	//which edge. Lots of trouble as different options on outputs & adjustable
 	//phase
-	always @(negedge source_clk) begin
+	always @(negedge dcm1_clk_out) begin
 		glitch_next_reg1 <= glitch_next;
 		glitch_next_reg <= glitch_next_reg1;
 	end
