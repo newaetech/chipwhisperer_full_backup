@@ -4,9 +4,9 @@
 
 /***********************************************************************
 This file is part of the ChipWhisperer Project. See www.newae.com for more details,
-or the codebase at http://www.assembla.com/spaces/chipwhisperer .
+or the codebase at https://github.com/newaetech/chipwhisperer .
 
-Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>. All rights reserved.
+Copyright (c) 2013-2020, Colin O'Flynn <coflynn@newae.com>. All rights reserved.
 This project (and file) is released under the 2-Clause BSD License:
 
 Redistribution and use in source and binary forms, with or without 

@@ -3,11 +3,11 @@
 
 /***********************************************************************
 This file is part of the ChipWhisperer Project. See www.newae.com for more details,
-or the codebase at http://www.assembla.com/spaces/openadc .
+or the codebase at https://github.com/newaetech/chipwhisperer .
 
 This file is the ChipWhisperer Clock Glitcher registers
 
-Copyright (c) 2013-2017, Colin O'Flynn <coflynn@newae.com>. All rights reserved.
+Copyright (c) 2013-2020, Colin O'Flynn <coflynn@newae.com>. All rights reserved.
 This file is released under the 2-Clause BSD License:
 
 Redistribution and use in source and binary forms, with or without 
@@ -190,13 +190,15 @@ module reg_clockglitch(
 	 [47] (Byte 5, Bit 7) = Manual Glitch. Set to 1 then 0, glitch on rising edge
 	 
 	 [55..48] (Byte 6, Bits [7..0])
-	      Cycles to glitch-1 (e.g. 0 means 1 glitch)
+	      Cycles to glitch-1 (e.g. 0 means 1 glitch) (lower 8 bits)
 			
 	 [57..56] (Byte 7, Bits [1..0]) = Glitch Clock Source
 	       00 = Source 0
 			 01 = Source 1
 			 
-	 [63..58] (Byte 7, Bits [7..2]) = Unused
+             **THE FOLLOWING TOP 5-BIT GLITCH WAS ADDED in 2020 - Only on release 5.1.4 or later**
+	 [62..58] (Byte 7, Bits [6..2]) = Cycles to glitch (top 5 bits)
+     [63] (Byte 7, Bit 7) = Unused (reads as 0, used to later expand if needed)
 	 
 	 
 */	
@@ -206,8 +208,8 @@ module reg_clockglitch(
 	 wire [1:0] glitch_trigger_src;
 	 assign glitch_trigger_src = clockglitch_settings_reg[43:42];
 	 
-	 wire [7:0] max_glitches;
-	 assign max_glitches = clockglitch_settings_reg[55:48];
+	 wire [12:0] max_glitches;
+	 assign max_glitches = {clockglitch_settings_reg[62:58], clockglitch_settings_reg[55:48]};
 	 
 	 wire       sourceclk;
 	 assign sourceclk = (clockglitch_settings_reg[57:56] == 1'b01) ? sourceclk1 :
