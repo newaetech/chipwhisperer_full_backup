@@ -151,12 +151,12 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         dict['mask_len'] = self.mask_len
         dict['read_timeout'] = self.read_timeout
 
-        dict['init_cmd']    = self.init_cmd
-        dict['key_cmd']  = self.key_cmd
-        dict['input_cmd']   = self.input_cmd
-        dict['go_cmd']   = self.go_cmd
-        dict['output_cmd'] = self.output_cmd
-        dict['mask_cmd'] = self.mask_cmd
+        dict['init_cmd']    = bytes(self.init_cmd.encode("UTF-8"))
+        dict['key_cmd']  = bytes(self.key_cmd.encode("UTF-8"))
+        dict['input_cmd']   = bytes(self.input_cmd.encode("UTF-8"))
+        dict['go_cmd']   = bytes(self.go_cmd.encode("UTF-8"))
+        dict['output_cmd'] = bytes(self.output_cmd.encode("UTF-8"))
+        dict['mask_cmd'] = bytes(self.mask_cmd.encode("UTF-8"))
 
         dict['mask_enabled'] = self.mask_enabled
         if hasattr(self, 'getMaskEnabled'):
