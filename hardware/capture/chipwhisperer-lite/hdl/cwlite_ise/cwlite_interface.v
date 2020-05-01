@@ -34,7 +34,7 @@ module cwlite_interface(
 	 inout wire       target_PDIC,
 	 
 	 /* Spare Lines - AVR Programming */
-	 output wire 		target_nRST,
+	 inout wire 		target_nRST,
 	 input wire 		target_MISO,
 	 output wire 		target_MOSI,
 	 output wire 		target_SCK,
@@ -209,11 +209,11 @@ module cwlite_interface(
 		.extclk_o(extclk_mux),
 		.adc_sample_clk(adc_sample_clk),
 		//.trigger_fpa_i(),
-		//.trigger_fpb_i(),
 		.trigger_io1_i(target_io1),
 		.trigger_io2_i(target_io2),
 		.trigger_io3_i(target_io3),
 		.trigger_io4_i(target_io4),
+        .trigger_nrst_i(target_nRST),
 		//.trigger_ext_o(advio_trigger_line),
 		.trigger_advio_i(1'b0),
 		.trigger_anapattern_i(1'b0),

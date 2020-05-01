@@ -45,30 +45,30 @@ module reg_chipwhisperer(
 	output			extclk_rearout_o,
 	output			extclk_o,
 			
-	/* Extern Trigger Connections */
-	input 			adc_sample_clk,
+	/* External Trigger Connections */
+	input 				adc_sample_clk,
 	inout				trigger_fpa_i,
-	inout				trigger_fpb_i,
 	input				trigger_io1_i,
 	input				trigger_io2_i,
 	input				trigger_io3_i,
 	input				trigger_io4_i,
-	
+	input				trigger_nrst_i,
+    
 	/* Advanced IO Trigger Connections */
-	output			trigger_ext_o,	
-	input				trigger_advio_i, 
-	input          trigger_decodedio_i,
-	input				trigger_anapattern_i,
+	output			trigger_ext_o,
+	input			trigger_advio_i,
+	input			trigger_decodedio_i,
+	input			trigger_anapattern_i,
 	
 	/* Clock Sources */
-	input				clkgen_i,
-	input				glitchclk_i,
+	input			clkgen_i,
+	input			glitchclk_i,
 	
 	/* GPIO Pins & Routing */
-	inout				targetio1_io,
-	inout				targetio2_io,
-	inout				targetio3_io,
-	inout				targetio4_io,
+	inout			targetio1_io,
+	inout			targetio2_io,
+	inout			targetio3_io,
+	inout			targetio4_io,
 	
 	output			hsglitcha_o,
 	output			hsglitchb_o,
@@ -82,10 +82,10 @@ module reg_chipwhisperer(
 	output			enable_output_pdic,
 	output			output_pdic,
 	
-	input				uart_tx_i,
+	input			uart_tx_i,
 	output			uart_rx_o,
 	
-	input				usi_out_i,
+	input			usi_out_i,
 	output			usi_in_o,
 	
 	output			targetpower_off,
@@ -127,31 +127,31 @@ module reg_chipwhisperer(
    
      0xXX - External Trigger Connections (One Byte)
 	 
-	   [  M  M  R4  R3  R2  R1  FB FA ]
+	   [  M  M  R4  R3  R2  R1  NR FA ]
 	     All external triggers are combined into a single
 		  trigger signal, which can then be passed into one
 		  of the enabled 'trigger modules'
 		  
 		  FA = Front Panel Channel A / Aux SMA
-		  FB = Front Panel Channel B
+		  NR = nRESET Pin
 		  R1 = Rear TargetIO - Line 1
 		  R2 = Rear TargetIO - Line 2
 		  R3 = Rear TargetIO - Line 3
 		  R4 = Rear TargetIO - Line 4
-		  MM = Mode to combine multiple channels
-		    00 = OR
-			 01 = AND
-						
+		  M  = Mode to combine multiple channels
+		    0 = OR
+		    1 = AND
+	
 	  0xXX - Trigger Module Enabled
 	  
-	   [ X  X  X  FB FA M  M  M ]
+	   [ X  X  X  X FA M  M  M ]
 		  M M M = 000 Normal Edge-Mode Trigger
 		          001 Advanced IO Pattern Trigger
-					 010 Advanced SAD Trigger	
-					 
+		          010 Advanced SAD Trigger
+		
 		  FA = Output trigger to Front Panel A / Aux SMA
-		  FB = Output trigger to Front Panel B
-		  
+		 
+		
 	  0xXX - GPIO Pin Routing [8 bytes]
 	   
 		IMPORTANT: Only a single IO can be assigned
@@ -186,7 +186,7 @@ module reg_chipwhisperer(
 				  
 			B  = (Bit 1) Glitch Output B
 			     0  : Disabled
-				  1  : Glitch Module
+				 1  : Glitch Module
 		
 		EXTRA:
 		  [ X X   SC    SC    X    S  P   A ]
@@ -432,18 +432,18 @@ module reg_chipwhisperer(
 	 wire trigger_fpa;
 	 
 	 assign trigger_and = ((registers_cwtrigsrc[0] & trigger_fpa) | ~registers_cwtrigsrc[0]) &
-								 ((registers_cwtrigsrc[1] & trigger_fpb_i) | ~registers_cwtrigsrc[1]) &
+								 ((registers_cwtrigsrc[1] & trigger_nrst_i) | ~registers_cwtrigsrc[1]) &
 								 ((registers_cwtrigsrc[2] & trigger_io1_i) | ~registers_cwtrigsrc[2]) &
 								 ((registers_cwtrigsrc[3] & trigger_io2_i) | ~registers_cwtrigsrc[3]) &
 								 ((registers_cwtrigsrc[4] & trigger_io3_i) | ~registers_cwtrigsrc[4]) &
 								 ((registers_cwtrigsrc[5] & trigger_io4_i) | ~registers_cwtrigsrc[5]);
 								 
 	 assign trigger_or  = (registers_cwtrigsrc[0] & trigger_fpa) |
-								 (registers_cwtrigsrc[1] & trigger_fpb_i) |
+								 (registers_cwtrigsrc[1] & trigger_nrst_i) |
 								 (registers_cwtrigsrc[2] & trigger_io1_i) |
 								 (registers_cwtrigsrc[3] & trigger_io2_i) |
 								 (registers_cwtrigsrc[4] & trigger_io3_i) |
-								 (registers_cwtrigsrc[5] & trigger_io4_i);	
+								 (registers_cwtrigsrc[5] & trigger_io4_i);
 								 
 	 assign trigger_ext =  (registers_cwtrigsrc[7:6] == 2'b00) ? trigger_or :
 								  (registers_cwtrigsrc[7:6] == 2'b01) ? trigger_and : 
@@ -462,8 +462,7 @@ module reg_chipwhisperer(
 	 assign trigger_o = trigger;
 	 
 	 assign fpa_trigger_int = (registers_cwtrigmod[3] == 1'b1) ? trigger : 1'bZ;
-	 assign trigger_fpa_i =  fpa_trigger_int;
-	 assign trigger_fpb_i =  (registers_cwtrigmod[4] == 1'b1) ? trigger : 1'bZ;	 
+	 assign trigger_fpa_i =  fpa_trigger_int; 
 	 
 	 
 `ifdef SUPPORT_AUXLINE
