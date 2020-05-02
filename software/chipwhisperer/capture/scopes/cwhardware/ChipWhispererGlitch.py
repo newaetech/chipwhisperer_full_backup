@@ -385,7 +385,7 @@ class GlitchSettings(util.DisableNewAttr):
         the glitch module to produce stronger glitches (especially during
         voltage glitching).
 
-        Repeat counter must be in the range [1, 255].
+        Repeat counter must be in the range [1, 8192].
 
         :Getter: Return the current repeat value (integer)
 
@@ -393,7 +393,7 @@ class GlitchSettings(util.DisableNewAttr):
 
         Raises:
            TypeError: if value not an integer
-           ValueError: if value outside [1, 255]
+           ValueError: if value outside [1, 8192]
         """
         return self.cwg.numGlitches()
 
@@ -404,8 +404,8 @@ class GlitchSettings(util.DisableNewAttr):
         except ValueError:
             raise TypeError("Can't convert %s to integer" % value, value)
 
-        if int_val < 1 or int_val > 255:
-            raise ValueError("New repeat value %d is outside range [1, 255]", int_val)
+        if int_val < 1 or int_val > 8192:
+            raise ValueError("New repeat value %d is outside range [1, 8192]", int_val)
 
         self.cwg.setNumGlitches(int_val)
 
@@ -752,13 +752,18 @@ class ChipWhispererGlitch(object):
 
         if num < 1:
             num = 1
-        resp[6] = num-1
+        num = num-1
+        resp[6] = num & 0xff #LSB        
+        resp[7] = (resp[7] & self.CLKSOURCE_MASK) | ((num >> 8) << 2) #5-bit MSB stored in upper bits
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
 
     def numGlitches(self):
         """Get number of glitches to occur after a trigger"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
-        return resp[6]+1
+        num = resp[6]
+        num |= ((resp[7] & ~(self.CLKSOURCE_MASK)) >> 2) << 8
+        num += 1
+        return num
 
     def setGlitchTrigger(self, trigger):
         """Set glitch trigger type (manual, continous, adc-trigger)"""

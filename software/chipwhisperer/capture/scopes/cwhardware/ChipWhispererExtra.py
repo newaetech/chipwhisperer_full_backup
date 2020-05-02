@@ -508,6 +508,7 @@ class TriggerSettings(util.DisableNewAttr):
             'tio2': self.cwe.PIN_RTIO2,
             'tio3': self.cwe.PIN_RTIO3,
             'tio4': self.cwe.PIN_RTIO4,
+            'nrst': self.cwe.PIN_TNRST,
         }
 
         self.last_module = "basic"
@@ -540,6 +541,7 @@ class TriggerSettings(util.DisableNewAttr):
 
         Pins:
          * tio1-4: Target I/O pins 1-4. Note that these pins can be in any mode.
+         * nRST: Target I/O pin nRST. Note that these pins can be in any mode.
          * sma: An auxiliary SMA input, if available (only on CW1200)
 
         Boolean operations:
@@ -553,6 +555,7 @@ class TriggerSettings(util.DisableNewAttr):
          * "tio1"
          * "tio3 OR tio4"
          * "tio1 NAND tio2 NAND sma"
+         * "nrst"
 
         Examples of unallowed trigger inputs:
          * "tio1 tio2"
@@ -595,6 +598,10 @@ class TriggerSettings(util.DisableNewAttr):
 
         if pins & self.cwe.PIN_FPA:
             tstring.append("sma")
+            tstring.append(modes)
+            
+        if pins & self.cwe.PIN_TNRST:
+            tstring.append("nrst")
             tstring.append(modes)
 
         #Remove last useless combination mode
@@ -782,7 +789,7 @@ class ChipWhispererExtra(object):
 
 class CWExtraSettings(object):
     PIN_FPA = 0x01
-    PIN_FPB = 0x02
+    PIN_TNRST = 0x02
     PIN_RTIO1 = 0x04
     PIN_RTIO2 = 0x08
     PIN_RTIO3 = 0x10
