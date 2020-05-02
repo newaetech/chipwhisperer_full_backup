@@ -508,7 +508,7 @@ class TriggerSettings(util.DisableNewAttr):
             'tio2': self.cwe.PIN_RTIO2,
             'tio3': self.cwe.PIN_RTIO3,
             'tio4': self.cwe.PIN_RTIO4,
-            'nRST': self.cwe.PIN_TNRST,
+            'nrst': self.cwe.PIN_TNRST,
         }
 
         self.last_module = "basic"
