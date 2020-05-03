@@ -1,0 +1,3 @@
+[submodule "doc/html"]
+	path = doc/html
+	url = https://github.com/sifive/freedom-metal-docs.git
