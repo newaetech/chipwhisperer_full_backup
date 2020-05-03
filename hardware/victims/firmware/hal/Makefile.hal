@@ -177,6 +177,7 @@ else ifeq ($(PLATFORM),CW308_IMXRT1062)
  PLTNAME = IMXRT1062
 else ifeq ($(PLATFORM),CW308_FE310)
  HAL = fe310
+ PLTNAME = FE310-G002
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
 endif
