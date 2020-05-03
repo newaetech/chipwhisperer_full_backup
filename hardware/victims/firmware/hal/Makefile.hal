@@ -67,7 +67,9 @@ define KNOWN_PLATFORMS
 | CW308_PSOC62  | CW308T-PSOC62 (Cypress PSOC 62)       |
 +-------------------------------------------------------+
 | CW308_IMXRT1062 | CW308T-IMXRT1062 (iMX RT1062)       |
-+------------------------------------------------------+
++-------------------------------------------------------+
+| CW308_FE310   | CW308T-FE310-G002 (RISC-V)            |
++-------------------------------------------------------+
 
 Options to define platform:
 (1) Run make with PLATFORM specified as follows:
@@ -173,6 +175,8 @@ else ifeq ($(PLATFORM),CW308_PSOC62)
 else ifeq ($(PLATFORM),CW308_IMXRT1062)
  HAL = imxrt1062
  PLTNAME = IMXRT1062
+else ifeq ($(PLATFORM),CW308_FE310)
+ HAL = fe310
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
 endif
