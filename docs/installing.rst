@@ -22,12 +22,14 @@ Advanced
      * :ref:`install-repo-pypi`
      * :ref:`install-repo-git`
 
+ * :ref:`install-wm-ware`
+
 
 .. _install-virtual-machine:
 
-***************
-Virtual Machine
-***************
+****************************
+Virtual Machine (VirtualBox)
+****************************
 
 If this is your first time using the ChipWhisperer toolchain, the easiest
 way to start is to use a virtual machine with everything already set up for
@@ -294,3 +296,62 @@ you need it:
     python -m pip install -e . --user
 
 Once ChipWhisperer is installed, you can :ref:`run chipwhisperer <starting>`.
+
+.. _install-wm-ware:
+
+*************************
+Virtual Machine (VMWare)
+*************************
+
+For various reasons, such as licensing and USB support, users may prefer to run 
+ChipWhisperer through VMWare instead of VirtualBox. A VMWare compatable image is not
+provided with ChipWhisperer releases, but such an image can be easily converted
+from the provided image using VirtualBox
+
+ * Install `VirtualBox`_
+
+ * Download a ChipWhisperer virtual machine image release or build it
+   yourself using Vagrant.
+
+ * Add the VM image to VirtualBox
+
+ * Right click on the image in VirtualBox and select :code:`Export to OCI` 
+
+ * Select :code:`OVF Format 1.0` and export using the default settings.
+
+ * The resulting :code:`.ovf` file can be opened in VMWare. VMWare may complain
+   about the file not following OVF specifications. If this happens, hit 
+   :code:`retry`.
+
+You should now have a working VMWare image. Boot the VM and add passwords as described in :ref:`install-virtual-machine`
+The final step is to setup VMWare port forwarding. If you have VMWare Workstation
+Player, you'll need to install VMWare Workstation Pro, but you won't need to purchase
+the software to continue on.
+
+ * If you have VMWare Player, you'll need to install VMWare Workstation Pro.
+   The required utility tool does not require a license to run, so Workstation
+   Pro can be installed without purchasing the software. If you're already
+   running Workstation Pro, you can skip this step.
+
+ * Navigate to the folder where VMWare Workstation Pro is installed and run 
+   :code:`vmnetcfg.exe`
+
+ * Click the :code:`Change Settings` button.
+
+ * Click on the :code:`NAT` table entry (typically VMnet8) and click on :code:`NAT Settings...` 
+   Take note of the Subnet Address of this entry
+
+ * Under the Port Fowarding table, click :code:`Add` and fill in the following settings:
+     * :code:`Host port:                  8888`
+     * :code:`Type:                       TCP`
+     * :code:`Virtual machine IP address: <subnet address>`
+     * :code:`Virtual machine port:       8888`
+     * :code:`Description:                Jupyter` (optional)
+
+ * Hit :code:`OK` until :code:`vmnetcfg.exe` is closed
+
+You should now be able to open the VM and connect to :code:`localhost:8888` as with VirtualBox.
+
+
+ 
+
