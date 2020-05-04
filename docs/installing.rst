@@ -324,9 +324,7 @@ from the provided image using VirtualBox
    :code:`retry`.
 
 You should now have a working VMWare image. Boot the VM and add passwords as described in :ref:`install-virtual-machine`
-The final step is to setup VMWare port forwarding. If you have VMWare Workstation
-Player, you'll need to install VMWare Workstation Pro, but you won't need to purchase
-the software to continue on.
+The final step is to setup VMWare port forwarding:
 
  * If you have VMWare Player, you'll need to install VMWare Workstation Pro.
    The required utility tool does not require a license to run, so Workstation
