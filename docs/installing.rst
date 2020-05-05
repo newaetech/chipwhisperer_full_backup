@@ -324,6 +324,12 @@ from the provided image using VirtualBox
    :code:`retry`.
 
 You should now have a working VMWare image. Boot the VM and add passwords as described in :ref:`install-virtual-machine`
+Before logging out, run the following command and record the :code:`eth0` IP Address:
+
+.. code:: bash
+
+    ip addr
+
 The final step is to setup VMWare port forwarding:
 
  * If you have VMWare Player, you'll need to install VMWare Workstation Pro.
@@ -348,7 +354,8 @@ The final step is to setup VMWare port forwarding:
 
  * Hit :code:`OK` until :code:`vmnetcfg.exe` is closed
 
-You should now be able to open the VM and connect to :code:`localhost:8888` as with VirtualBox.
+You should now be able to open the VM and connect to :code:`<eth0 IP>:8888`, replacing
+:code:`<eth0 IP>` with the IP address you recorded after running :code:`ip addr`. 
 
 
  
