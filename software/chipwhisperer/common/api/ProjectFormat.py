@@ -848,7 +848,7 @@ class IndividualIterable:
             raise StopIteration
 
         self.n += 1
-        return self.getter(self.n)
+        return self.getter(self.n - 1)
 
     def __getitem__(self, item):
         if isinstance(item, int):
