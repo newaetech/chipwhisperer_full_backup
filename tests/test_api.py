@@ -125,6 +125,8 @@ class TestProject(unittest.TestCase):
         # check that the power trace matches
         self.assertEqual(traces[index].wave[index_wave], self.project.traces[index].wave[index_wave])
 
+
+        # Note: I think we can just call assertEqual on the arrays instead of doing it per each value
         for i in range(16):
             # check the plaintext matches
             self.assertEqual(traces[index].textin[i], self.project.traces[index].textin[i])
@@ -134,6 +136,22 @@ class TestProject(unittest.TestCase):
 
             # check the key matches
             self.assertEqual(traces[index].key[i], self.project.traces[index].key[i])
+
+    def test_individual_iterables(self):
+        self.project = cw.create_project(self.project_name)
+
+        # make sure textin is still textin and not key, etc.
+        traces = create_random_traces(50, 1)
+        self.project.traces.extend(traces)
+
+        index = 0
+        for wave, textin, textout, key in zip(self.project.waves, self.project.textins, self.project.textouts, self.project.keys):
+            self.assertEqual(traces[index].textin, textin)
+            self.assertEqual(traces[index].textout, textout)
+            self.assertEqual(traces[index].key, key)
+            self.assertEqual(traces[index].wave, wave)
+            index += 1
+
 
     def test_project_openable(self):
         self.project = cw.create_project(self.project_name)
@@ -309,7 +327,6 @@ class TestCPA(unittest.TestCase):
         for i in range(len(project.keys[0])):
             self.assertEqual(project.keys[0][i], keys[i])
         project.close(save=False)
-
 
 
 
