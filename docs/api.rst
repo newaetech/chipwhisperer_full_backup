@@ -456,6 +456,8 @@ Simple Serial Target
 
     .. autoattribute:: baud
 
+    .. autoattribute:: output_len
+
 
 .. _api-target-cw305:
 

@@ -235,7 +235,9 @@ def capture_trace(scope, target, plaintext, key=None, ack=True):
     """Capture a trace, sending plaintext and key
 
     Does all individual steps needed to capture a trace (arming the scope
-    sending the key/plaintext, getting the trace data back, etc.)
+    sending the key/plaintext, getting the trace data back, etc.). Uses
+    target.output_len as the length of the expected target reponse for
+    simpleserial.
 
     Args:
         scope (ScopeTemplate): Scope object to use for capture.
@@ -268,6 +270,9 @@ def capture_trace(scope, target, plaintext, key=None, ack=True):
 
     .. versionadded:: 5.1
         Added to simplify trace capture.
+
+    .. versionchanged:: 5.2
+        Added ack parameter and use of target.output_len
     """
     if key:
         target.set_key(key, ack=ack)
