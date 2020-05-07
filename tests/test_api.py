@@ -86,6 +86,30 @@ class TestProject(unittest.TestCase):
     def tearDown(self):
         self.project.remove(i_am_sure=True)
 
+
+    def test_short_segments(self):
+        self.project = cw.create_project(self.project_name)
+        self.project.seg_len = 2
+        self.project.seg_ind_max = self.project.traces.seg_len - 1
+        traces = create_random_traces(100, 1000)
+        self.project.traces.extend(traces)
+
+        index = random.randrange(0, len(traces))
+        index_wave = random.randrange(0, len(traces[0]))
+        self.assertEqual(traces[index].wave[index_wave], self.project.traces[index].wave[index_wave])
+
+
+        # Note: I think we can just call assertEqual on the arrays instead of doing it per each value
+        for i in range(16):
+            # check the plaintext matches
+            self.assertEqual(traces[index].textin[i], self.project.traces[index].textin[i])
+
+            # check the textout matches
+            self.assertEqual(traces[index].textout[i], self.project.traces[index].textout[i])
+
+            # check the key matches
+            self.assertEqual(traces[index].key[i], self.project.traces[index].key[i])
+
     def test_create_and_save_project(self):
         self.project = cw.create_project(self.project_name)
         self.assertTrue(os.path.isdir(self.project_name + '_data'))
