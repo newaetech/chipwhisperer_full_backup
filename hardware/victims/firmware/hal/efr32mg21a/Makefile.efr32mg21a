@@ -1,0 +1,37 @@
+VPATH += :$(HALPATH)/efr32mg21a
+VPATH += :$(HALPATH)/silabs_sdk/platform/Device/SiliconLabs/EFR32MG21/Source/GCC
+VPATH += :$(HALPATH)/silabs_sdk/platform/Device/SiliconLabs/EFR32MG21/Source
+VPATH += :$(HALPATH)/silabs_sdk/platform/emlib/src
+
+SRC += system_efr32mg21.c efr32mg21a_hal.c
+ASRC += startup_efr32mg21.S
+
+#SiLabs Emlib stuff
+SRC += em_cmu.c em_system.c em_usart.c em_gpio.c em_se.c
+
+EXTRAINCDIRS += $(HALPATH)/efr32mg21a
+EXTRAINCDIRS += $(HALPATH)/silabs_sdk/platform/CMSIS/Include
+EXTRAINCDIRS += $(HALPATH)/silabs_sdk/platform/emlib/inc
+EXTRAINCDIRS += $(HALPATH)/silabs_sdk/platform/Device/SiliconLabs/EFR32MG21/Include
+
+CFLAGS += -DHFXO_FREQ=7372800UL
+
+MCU_FLAGS = -mcpu=cortex-m33
+
+CC = arm-none-eabi-gcc
+OBJCOPY = arm-none-eabi-objcopy
+OBJDUMP = arm-none-eabi-objdump
+SIZE = arm-none-eabi-size
+AR = arm-none-eabi-ar rcs
+NM = arm-none-eabi-nm
+
+#Output Format = Binary for this target
+FORMAT = binary
+
+CFLAGS += -gdwarf-2 -mthumb -fmessage-length=0 -mno-sched-prolog -fno-builtin -ffunction-sections -fdata-sections
+CPPFLAGS += $(CFLAGS)
+ASFLAGS += $(CFLAGS)
+
+CDEFS += -DEFR32MG21A020F1024IM32=1 -mfpu=fpv5-sp-d16 -mfloat-abi=softfp
+
+LDFLAGS += --specs=nano.specs -T $(HALPATH)/silabs_sdk/platform/Device/SiliconLabs/EFR32MG21/Source/GCC/efr32mg21.ld -Wl,--gc-sections -Wl,--start-group -lgcc -lc -lnosys -Wl,--end-group -lm
