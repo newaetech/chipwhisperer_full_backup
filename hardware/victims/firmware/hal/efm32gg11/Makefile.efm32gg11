@@ -1,0 +1,37 @@
+VPATH += :$(HALPATH)/efm32gg11
+VPATH += :$(HALPATH)/silabs_sdk/platform/Device/SiliconLabs/EFM32GG11B/Source/GCC
+VPATH += :$(HALPATH)/silabs_sdk/platform/Device/SiliconLabs/EFM32GG11B/Source
+VPATH += :$(HALPATH)/silabs_sdk/platform/emlib/src
+
+SRC += system_efm32gg11b.c efm32gg11_hal.c
+ASRC += startup_efm32gg11b.S
+
+#SiLabs Emlib stuff
+SRC += em_cmu.c em_system.c em_usart.c em_gpio.c
+
+EXTRAINCDIRS += $(HALPATH)/efm32gg11
+EXTRAINCDIRS += $(HALPATH)/silabs_sdk/platform/CMSIS/Include
+EXTRAINCDIRS += $(HALPATH)/silabs_sdk/platform/emlib/inc
+EXTRAINCDIRS += $(HALPATH)/silabs_sdk/platform/Device/SiliconLabs/EFM32GG11B/Include
+
+CFLAGS += -DHFXO_FREQ=7372800UL
+
+MCU_FLAGS = -mcpu=cortex-m4
+
+CC = arm-none-eabi-gcc
+OBJCOPY = arm-none-eabi-objcopy
+OBJDUMP = arm-none-eabi-objdump
+SIZE = arm-none-eabi-size
+AR = arm-none-eabi-ar rcs
+NM = arm-none-eabi-nm
+
+#Output Format = Binary for this target
+FORMAT = binary
+
+CFLAGS += -gdwarf-2 -mthumb -fmessage-length=0 -mno-sched-prolog -fno-builtin -ffunction-sections -fdata-sections
+CPPFLAGS += $(CFLAGS)
+ASFLAGS += $(CFLAGS)
+
+CDEFS += -DEFM32GG11B120F2048GQ64
+
+LDFLAGS += --specs=nano.specs -T $(HALPATH)/silabs_sdk/platform/Device/SiliconLabs/EFM32GG11B/Source/GCC/efm32gg11b.ld -Wl,--gc-sections -Wl,--start-group -lgcc -lc -lnosys -Wl,--end-group -lm
