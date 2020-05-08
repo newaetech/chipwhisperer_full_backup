@@ -47,6 +47,7 @@ void platform_init(void);
 #define CW308_PSOC62   27
 #define CW308_IMXRT1062 28
 #define CW308_FE310    29
+#define CW308_EFR32MG21A  30
 
 //HAL_TYPE Define Types
 #define HAL_avr      1
@@ -69,7 +70,8 @@ void platform_init(void);
 #define HAL_lpc55s6x 18
 #define HAL_psoc62   19
 #define HAL_imxrt1062 20
-#define HAL_fe310 21
+#define HAL_fe310    21
+#define HAL_efr32mg21a 22
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
@@ -123,6 +125,8 @@ void platform_init(void);
     #include "imxrt1062/imxrt1062_hal.h"
 #elif HAL_TYPE == HAL_fe310
     #include "fe310/fe310_hal.h"
+#elif HAL_TYPE == HAL_efr32mg21a
+    #include "efr32mg21a/efr32mg21a_hal.h"
 #else
     #error "Unsupported HAL Type"
 #endif

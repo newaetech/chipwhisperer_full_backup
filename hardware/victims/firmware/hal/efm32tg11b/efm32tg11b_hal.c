@@ -5,9 +5,8 @@
 //make flashing device lock bootloader
 const uint32_t __attribute__((section (".debug_lock"))) user_lock_word[1] = {0xFFFFFFFD};
 static uint8_t PT_KEY[16];
-static uint8_t CYPHER_KEY[16];
 
-void platform_init()
+void platform_init(void)
 {
      CMU->HFXOCTRL = 3; //xtal is ext clk
      CMU->OSCENCMD = 1 << 2; //enable hfxo
