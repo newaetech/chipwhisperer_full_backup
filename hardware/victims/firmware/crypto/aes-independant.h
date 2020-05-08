@@ -44,6 +44,8 @@
 void aes_indep_init(void);
 void aes_indep_key(uint8_t * key);
 void aes_indep_enc(uint8_t * pt);
+void aes_indep_enc_pretrigger(uint8_t * pt);
+void aes_indep_enc_posttrigger(uint8_t * pt);
 void aes_indep_mask(uint8_t * m);
 
 #endif

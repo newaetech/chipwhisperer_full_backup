@@ -76,7 +76,7 @@ void HW_AES128_LoadKey(uint8_t* key)
      }
 }
 
-void HW_AES128_Enc(uint8_t* pt)
+void HW_AES128_Enc_pretrigger(uint8_t* pt)
 {
      for(int i = 0; i < 4; i++)
      {
@@ -89,10 +89,18 @@ void HW_AES128_Enc(uint8_t* pt)
           uint32_t pt32 = (pt[4*i + 3] << 24) | (pt[4*i + 2] << 16) | (pt[4*i + 1] << 8) | (pt[4*i]);
           CRYPTO0->DATA0 = pt32;
      }
+}
+
+void HW_AES128_Enc(uint8_t* pt)
+{
+
      CRYPTO0->CMD = 5;
      while (!(CRYPTO0->IF & 1)); //wait for aes to finish
      CRYPTO0->IFC = 1; //clear aes finished flag
+}
 
+void HW_AES128_Enc_posttrigger(uint8_t* pt)
+{
      for(int i = 0; i < 4; i++)
      {
           uint32_t ct = CRYPTO0->DATA0;

@@ -36,6 +36,8 @@ uint8_t get_key(uint8_t* k)
 
 uint8_t get_pt(uint8_t* pt)
 {
+    aes_indep_enc_pretrigger(pt);
+    
 	trigger_high();
 
   #ifdef ADD_JITTER
@@ -44,6 +46,9 @@ uint8_t get_pt(uint8_t* pt)
 
 	aes_indep_enc(pt); /* encrypting the data block */
 	trigger_low();
+    
+    aes_indep_enc_posttrigger(pt);
+    
 	simpleserial_put('r', 16, pt);
 	return 0x00;
 }
