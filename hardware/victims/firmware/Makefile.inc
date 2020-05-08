@@ -172,6 +172,8 @@ CPPFLAGS += -Wa,-adhlns=$(addprefix $(OBJDIR)/,$(notdir $(<:%.cpp=%.lst)))
 CPPFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 #CPPFLAGS += $(CSTANDARD)
 
+#Flags that must come at end of list can be specified with CFLAGS_LAST
+CFLAGS += $(CFLAGS_LAST)
 
 #---------------- Assembler Options ----------------
 #  -Wa,...:   tell GCC to pass this to the assembler.

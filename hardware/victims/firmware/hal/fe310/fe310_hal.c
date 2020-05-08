@@ -36,13 +36,13 @@ char getch(void)
 {
     int c;
     do {
-     metal_uart_getc(&__metal_dt_serial_10013000, &c);     
+     metal_uart_getc((struct metal_uart *)&__metal_dt_serial_10013000, &c);     
     }while(c == -1);
     return (char)(c & 0xff);
 }
 
 void putch(char c)
 {
-    metal_uart_putc(&__metal_dt_serial_10013000, c);
+    metal_uart_putc((struct metal_uart *)&__metal_dt_serial_10013000, c);
 }
 

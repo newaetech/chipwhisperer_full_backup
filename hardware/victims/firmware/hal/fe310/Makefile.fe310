@@ -47,6 +47,8 @@ CFLAGS +=   -ffunction-sections
 CPPFLAGS += -ffunction-sections
 ASFLAGS +=  -ffunction-sections
 
+CFLAGS_LAST = -Wno-strict-prototypes
+
 LDFLAGS += --specs=nano.specs -T $(HALPATH)/fe310/metal.default.lds -Wl,--gc-sections -lm -nostartfiles -nostdlib
 LDFLAGS += -Wl,--start-group -lc -lgcc -Wl,--end-group
 
