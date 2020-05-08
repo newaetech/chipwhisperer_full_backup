@@ -19,6 +19,8 @@
 #ifndef HAL_H_
 #define HAL_H_
 
+#include <stdint.h>
+
 void platform_init(void);
 
 //PLATFORM Define Types
