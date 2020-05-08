@@ -30,9 +30,10 @@ void init_uart(void);
 void putch(char c);
 char getch(void);
 
-#define aes_indep_init aes_init
-#define aes_indep_key  aes_set_key
-#define aes_indep_enc  aes_encrypt
-
+void HW_AES128_Init(void);
+void HW_AES128_LoadKey(uint8_t * key);
+void HW_AES128_Enc(uint8_t * pt);
+void HW_AES128_Enc_pretrigger(uint8_t* pt);
+void HW_AES128_Enc_posttrigger(uint8_t* pt);
 
 #endif //PSOC62_HAL_H_

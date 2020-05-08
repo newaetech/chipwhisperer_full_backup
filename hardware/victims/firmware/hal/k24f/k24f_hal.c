@@ -93,3 +93,6 @@ void HW_AES128_Dec(uint8_t *pt)
 {
      MMCAU_AES_DecryptEcb(pt, AES_KEY_SCH, 10, pt);
 }
+
+void HW_AES128_Enc_pretrigger(uint8_t* pt){;}
+void HW_AES128_Enc_posttrigger(uint8_t* pt){;}

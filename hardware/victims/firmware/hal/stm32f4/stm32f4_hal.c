@@ -124,10 +124,19 @@ void HW_AES128_LoadKey(uint8_t* key)
 	}
 }
 
+void HW_AES128_Enc_pretrigger(uint8_t* pt)
+{
+    HAL_CRYP_Init(&cryp);
+}
+
 void HW_AES128_Enc(uint8_t* pt)
 {
-	HAL_CRYP_Init(&cryp);
-  HAL_CRYP_AESECB_Encrypt(&cryp, pt, 16, pt, 1000);
+    HAL_CRYP_AESECB_Encrypt(&cryp, pt, 16, pt, 1000);
+}
+
+void HW_AES128_Enc_posttrigger(uint8_t* pt)
+{
+    ;
 }
 
 void HW_AES128_Dec(uint8_t *pt)
