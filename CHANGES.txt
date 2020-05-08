@@ -1,11 +1,19 @@
 V5.2.0
+ New Features:  
+  * CW-Lite/Pro: Increase maximum glitch repeat to 8192
+  * CW-Lite/Pro:Add nRESET as trigger input
+  * Targets: Add RT1062 HAL (NXP Cross-over MCU)
+  * Targets: Add EFR32MG21 HAL (SiLabs with 'secure element')
+  * Targets: Add FE310 HAL (RISC-V)
+  * Add option to allow more specific hardware AES engine triggers
+ Fixes:
+  * CW-Lite/Pro: Fix glitch logic which was not correctly gating output - start and end edge were slightly off
   * Fix HW float being used on STM32F3 instead of software float
     - This also fixes a crash related to the wrong C library being used on older (pre q2-2018) gcc versions
   * Allow STM32F3 to use different input clock speeds (was previously fixed to 7.37MHz)
   * Fix STM32F3 programming timeout
   * Expand tests
-  * Add ack option to capture_trace()
-  * Add RT1062 HAL
+  * Add ack option to capture_trace()  
   * Fix project not saving correctly when multiple segments used
   * Code cleanup
   * Various other fixes
