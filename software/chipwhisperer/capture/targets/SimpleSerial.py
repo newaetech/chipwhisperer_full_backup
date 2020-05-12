@@ -882,7 +882,54 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         return payload
 
-    def get_response_catch_invalid(self, cmd, pay_len, end="\n", timeout=250, glitch_timeout=8000, ack=True):
+    def simpleserial_read_witherrors(self, cmd, pay_len, end="\n", timeout=250, glitch_timeout=8000, ack=True):
+        r""" Reads a simpleserial command from the target over serial, but returns invalid responses.
+
+        Reads a command starting with <start> with an ASCII encoded bytearray
+        payload of length exp_len*2 (i.e. exp_len=16 for an AES128 key) and
+        ending with <end>. Converts the payload to a bytearray, returns a dictionary
+        showing if processing was successful along with decoded and raw values.
+        This function is designed to be used with glitching where you may have
+        invalid responses.
+
+        Args:
+            cmd (str): Expected start of the command. Will warn the user if
+                the received command does not start with this string.
+            pay_len (int): Expected length of the returned bytearray in number
+                of bytes. Note that SimpleSerial commands send data as ASCII;
+                this is the length of the data that was encoded.
+            end (str, optional): Expected end of the command. Will warn the
+                user if the received command does not end with this string.
+                Defaults to '\n'
+            timeout (int, optional): Value to use for timeouts during initial
+                read of expected data in ms. If 0, block until all expected
+                data is returned. Defaults to 250.
+            glitch_timeout (int, optional): Value to wait for additional data
+                if expected data isn't returned. Useful to have a longer
+                timeout for a reset or other unexpected event.
+            ack (bool, optional): Expect an ack at the end for SimpleSerial
+                >= 1.1. Defaults to True.
+
+        Returns:
+            A dictionary.
+
+        Example:
+            Reading the output of one of the glitch tests when no error:
+                resp = target.simpleserial_read_witherrors('r', 4)
+                print(resp)
+                >{'valid': True, 'payload': CWbytearray(b'c4 09 00 00'), 'full_response': 'rC4090000\n', 'rv': 0}
+
+            Reading the output of one of the glitch tests when an error happened:
+                resp = target.simpleserial_read_witherrors('r', 4)
+                print(resp)
+                >{'valid': False, 'payload': None, 'full_response': '\x00\x00\x00\x00\x00\x00\x00rRESET   \n', 'rv': None}
+
+        Raises:
+            Warning: Device did not ack or error during read.
+
+        .. versionadded:: 5.2
+            Added target.simpleserial_read_witherrors()
+        """
 
         cmd_len = len(cmd)
         ascii_len = pay_len * 2
