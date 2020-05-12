@@ -750,7 +750,6 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             self.dis()
             raise e
 
-
     def simpleserial_wait_ack(self, timeout=500):
         """Waits for an ack from the target for timeout ms
 
@@ -758,23 +757,28 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             timeout (int, optional): Time to wait for an ack in ms. If 0, block
                 until we get an ack. Defaults to 500.
 
+        Returns:
+            The return code from the ChipWhisperer command or None if the target
+            failed to ack
 
         Raises:
             Warning: Target not connected.
 
         .. versionadded:: 5.1
             Added target.simpleserial_wait_ack
+
+        .. versionadded:: 5.2
+            Defined return value
         """
 
         data = self.read(4, timeout = timeout)
-        if len(data) > 1:
-            if data[0] != 'z':
-                logging.error("Ack error: {}".format(data))
-                return False
-        else:
+        if len(data) < 4:
             logging.error("Target did not ack")
-            return False
-        return True
+            return None
+        if data[0] != 'z':
+            logging.error("Ack error: {}".format(data))
+            return None
+        return int(data[1:3], 16)
 
     def simpleserial_write(self, cmd, num, end='\n'):
         """ Writes a simpleserial command to the target over serial.
@@ -873,7 +877,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
                 return None
 
         if ack:
-            self.simpleserial_wait_ack(timeout)
+            if self.simpleserial_wait_ack(timeout) is None:
+                raise Warning("Device failed to ack")
 
         return payload
 
@@ -938,7 +943,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             self.last_key = key
             self.simpleserial_write('k', key)
             if ack:
-                self.simpleserial_wait_ack(timeout)
+                if self.simpleserial_wait_ack(timeout) is None:
+                    raise Warning("Device failed to ack")
 
     def in_waiting(self):
         """Returns the number of characters available from the serial buffer.

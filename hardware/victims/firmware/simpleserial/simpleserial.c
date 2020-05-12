@@ -59,7 +59,7 @@ int hex_decode(int len, char* ascii_buf, uint8_t* data_buf)
 // This can exist in v1.0 as long as we don't actually send back an ack ("z")
 uint8_t check_version(uint8_t* v)
 {
-	return 0x00;
+	return SS_VER;
 }
 
 // Set up the SimpleSerial module by preparing internal commands
