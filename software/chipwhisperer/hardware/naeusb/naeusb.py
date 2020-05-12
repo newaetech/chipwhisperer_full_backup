@@ -433,10 +433,7 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         except ValueError as e:
             if "langid" not in str(e):
                 raise
-            raise OSError("'This device has no langid' ValueError caught. This is usually caused by us trying to read the serial number of the chipwhisperer, but it failing. The device is here and we can see it, but we can't access it. This has a number of root causes, including:\n" +
-                        "-Not having permission to access the ChipWhisperer (this still crops up if you have permission for one ChipWhisperer, but another ChipWhisperer is connected that you don't have access to)\n" +
-                        "-Not having the correct libusb backend loaded (common on Windows with 64bit Python). We try to handle this by loading the correct backend on Windows"
-                        )
+            raise OSError("Unable to communicate with found ChipWhisperer. Check that another process isn't connected to it and that you have permission to communicate with it.")
 
     def sendCtrl(self, cmd, value=0, data=[]):
         """
