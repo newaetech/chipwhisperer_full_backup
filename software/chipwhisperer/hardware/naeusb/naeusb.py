@@ -32,7 +32,7 @@ import pickle
 import traceback
 import os
 
-from usb.backend import libusb0
+from usb.backend import libusb0, libusb1
 import usb.core
 import usb.util
 
@@ -342,7 +342,10 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
                 #User did not help us out - throw it in their face
                 raise Warning("Found multiple potential USB devices. Please specify device to use. Possible S/Ns:\n" + snlist)
         try:
-            dev.set_configuration(0)
+            try:
+                dev.set_configuration(0)
+            except:
+                pass #test
             dev.set_configuration()
         except ValueError:
             raise OSError("NAEUSB: Could not configure USB device")
@@ -389,18 +392,21 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         if idProduct is None:
             idProduct = [None]
 
-        my_kwargs={}
+        my_kwargs = {'find_all': True, 'idVendor': 0x2B3E}
         if os.name == "nt":
             #on windows, need to manually load libusb because of 64bit python loading the wrong one
-            libusb_backend = libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll")
-            my_kwargs = {'backend': libusb_backend}
+            libusb_backend = libusb1.get_backend()
+            if not libusb_backend:
+                libusb_backend = libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll")
+                logging.info("Using libusb0 backend")
+            my_kwargs['backend'] = libusb_backend
         devlist = []
         try:
             for id in idProduct:
                 if id:
-                    dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, **my_kwargs))
+                    dev = list(usb.core.find(idProduct=id, **my_kwargs))
                 else:
-                    dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, **my_kwargs))
+                    dev = list(usb.core.find(**my_kwargs))
                 if len(dev) > 0:
                     if len(dev) == 1:
                         devlist.extend(dev)
