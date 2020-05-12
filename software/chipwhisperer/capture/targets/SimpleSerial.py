@@ -1,11 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2020, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
-# project, http://www.assembla.com/spaces/chipwhisperer
+# project, https://github.com/newaetech/chipwhisperer
 #
 #    This file is part of chipwhisperer.
 #
@@ -786,8 +786,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             cmd (str): String to start the simpleserial command with. For
                 'p'.
             num (bytearray): Number to write as part of command. For example,
-                the 16 byte plaintext for the 'p' command. Converted to ascii
-                before being sent.
+                the 16 byte plaintext for the 'p' command. Converted to hex-ascii
+                before being sent. If set to 'none' is omitted.
             end (str, optional): String to end the simpleserial command with.
                 Defaults to '\\n'.
 
@@ -804,7 +804,9 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Added target.simpleserial_write()
         """
         self.ser.flush()
-        cmd += binascii.hexlify(num).decode() + end
+        if cmd:
+            cmd += binascii.hexlify(num).decode()
+        cmd += end
         self.write(cmd)
 
     def simpleserial_read(self, cmd, pay_len, end='\n', timeout=250, ack=True):
@@ -874,6 +876,45 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             self.simpleserial_wait_ack(timeout)
 
         return payload
+
+    def get_response_catch_invalid(self, cmd, pay_len, end="\n", timeout=250, glitch_timeout=8000, ack=True):
+
+        cmd_len = len(cmd)
+        ascii_len = pay_len * 2
+        recv_len = cmd_len + ascii_len + len(end)
+        response = self.read(recv_len, timeout=timeout)
+
+        payload = bytearray(pay_len)
+        valid = False
+        rv = None
+
+        if len(response) != recv_len or response[0:cmd_len] != cmd:
+            # Switch to robust mode - likely a glitch happened. Get all response first...
+            response += self.read(1000, timeout=glitch_timeout)
+            payload = None
+        else:
+            valid = True
+            idx = cmd_len
+            for i in range(0, pay_len):
+                try:
+                    payload[i] = int(response[idx:(idx + 2)], 16)
+                except ValueError as e:
+                    payload = None
+                    logging.warning("ValueError: {}".format(e))
+
+                idx += 2
+
+            if len(end) > 0:
+                if response[(idx):(idx + len(end))] != end:
+                    logging.warning("Unexpected end to command: {}".format(
+                        response[(idx):(idx + len(end))]))
+                    payload = None
+
+            if ack:
+                rv = self.simpleserial_wait_ack(timeout)
+
+        # return payload, valid, response
+        return {'valid': valid, 'payload': payload, 'full_response': response, 'rv': rv}
 
     def set_key(self, key, ack=True, timeout=250):
         """Checks if key is different than the last one sent. If so, send it.
