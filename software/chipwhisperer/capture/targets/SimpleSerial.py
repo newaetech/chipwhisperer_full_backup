@@ -911,7 +911,11 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
                 >= 1.1. Defaults to True.
 
         Returns:
-            A dictionary.
+            A dictionary with these elements:
+                valid (bool): Did response look valid?
+                payload: Bytearray of decoded data (only if valid is 'True', otherwise None)
+                full_response: Raw output of serial port.
+                rv: If 'ack' in command, includes return value
 
         Example:
             Reading the output of one of the glitch tests when no error:
