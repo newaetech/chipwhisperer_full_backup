@@ -212,6 +212,16 @@ void aes_indep_init(void)
 	mbedtls_aes_init(&ctx);
 }
 
+void aes_indep_enc_pretrigger(uint8_t * pt)
+{
+    ;
+}
+
+void aes_indep_enc_posttrigger(uint8_t * pt)
+{
+    ;
+}
+
 void aes_indep_key(uint8_t * key)
 {
 	mbedtls_aes_setkey_enc(&ctx, key, 128);
