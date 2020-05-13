@@ -458,6 +458,10 @@ Simple Serial Target
 
     .. autoattribute:: output_len
 
+    .. autoattribute:: simpleserial_last_sent
+
+    .. autoattribute:: simpleserial_last_read
+
 
 .. _api-target-cw305:
 
