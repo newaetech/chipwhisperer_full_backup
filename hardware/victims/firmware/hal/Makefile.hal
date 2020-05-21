@@ -184,7 +184,7 @@ else ifeq ($(PLATFORM),CW308_NRF52)
  PLTNAME = NRF52840 Target
 else ifeq ($(PLATFORM),CWNANO)
  HAL = stm32f0_nano
- PLTNAME = CWNANO Built-in Target (STM32F030)
+ PLTNAME = CWNANO Built-in Target STM32F030
 else ifeq ($(PLATFORM),CW308_AURIX)
  HAL = aurix
  PLTNAME = CW308T: AURIX TC233A Target
