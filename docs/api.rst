@@ -444,6 +444,8 @@ Simple Serial Target
 
     .. automethod:: simpleserial_read
 
+    .. automethod:: simpleserial_read_witherrors
+
     .. automethod:: set_key
 
     .. automethod:: in_waiting
