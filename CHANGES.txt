@@ -7,6 +7,13 @@ V5.2.0
   * Targets: Add FE310 HAL (RISC-V)
   * Targets: Add STM32L5 HAL (NXP M33)
   * Add option to allow more specific hardware AES engine triggers
+  * Add SAD section to SPA_1
+  * Small fixes to SPA_2
+  * SimpleSerial additions:
+    - simpleserial_read_witherrors
+    - Define return for simpleserial_wait_ack
+    - simpleserial_last_sent
+    - simpleserial_last_read
  Fixes:
   * CW-Lite/Pro: Fix glitch logic which was not correctly gating output - start and end edge were slightly off
   * Fix HW float being used on STM32F3 instead of software float
