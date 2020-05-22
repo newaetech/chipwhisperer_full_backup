@@ -68,11 +68,12 @@ the correct extension pack is installed.
 Next, we'll need to update some passwords for the VM. Boot the virtual
 machine then:
 
- * Log in (user: vagrant pass: vagrant). You will be asked to update your
-   password. Do so (make sure to record this password).
+ * Log in (user: vagrant pass: vagrant).
 
- * Setup a new password for Jupyter. This can be done by typing jupyter
-   notebook password, then entering and verifying your new password. Note
+ * Setup a new password for Jupyter. As of release 5.2.0, you will be prompted
+   to set a password on startup if one doesn't exist for Jupyter. For older
+   releases, simply type :code:`jupyter notebook password` in the command prompt,
+   then set a password. Note
    that Jupyter will not start until this is done. This password will be
    needed to log into Jupyter, so make sure you record it as well.
 
