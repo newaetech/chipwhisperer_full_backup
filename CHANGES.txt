@@ -1,10 +1,11 @@
 V5.2.0
  New Features:  
   * CW-Lite/Pro: Increase maximum glitch repeat to 8192
-  * CW-Lite/Pro:Add nRESET as trigger input
+  * CW-Lite/Pro: Add nRESET as trigger input
   * Targets: Add RT1062 HAL (NXP Cross-over MCU)
   * Targets: Add EFR32MG21 HAL (SiLabs with 'secure element')
   * Targets: Add FE310 HAL (RISC-V)
+  * Targets: Add STM32L5 HAL (NXP M33)
   * Add option to allow more specific hardware AES engine triggers
  Fixes:
   * CW-Lite/Pro: Fix glitch logic which was not correctly gating output - start and end edge were slightly off
