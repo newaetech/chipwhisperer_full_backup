@@ -548,7 +548,7 @@ class STM32FSerial(object):
         if smallblocks:
             block_size = 64
         else:
-            block_size = 256
+            block_size = 128
 
         lng = len(fdata)
 
@@ -672,7 +672,7 @@ class STM32FSerial(object):
         if smallblocks:
             block_size = 64
         else:
-            block_size = 256
+            block_size = 128
 
         offs = 0
         while lng > block_size:
