@@ -194,6 +194,7 @@ class STM32FSerial(object):
         logfunc("STM32F Programming %s..." % memtype)
         if waitfunc: waitfunc()
         self.writeMemory(startaddr, fdata)  # , erasePage=True
+        #self.write_verify(startaddr, fdata)
 
         logfunc("STM32F Reading %s..." % memtype)
         if waitfunc: waitfunc()
@@ -531,6 +532,15 @@ class STM32FSerial(object):
             # Complex commands section
 
     @close_on_fail
+    def simple_verify(self, addr, fdata, smallblocks=False):
+        lng = len(fdata)
+        data = self.readMemory(addr, lng, smallblocks)
+        for i in range(len(data)):
+            if fdata[i] != data[i]:
+                raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i], data[i]))
+
+
+    @close_on_fail
     def verifyMemory(self, addr, fdata, smallblocks=False):
 
         fdata_idx = 0
@@ -555,9 +565,9 @@ class STM32FSerial(object):
             for i in range(0, len(data)):
                 if fdata[i+fdata_idx] != data[i]:
                     fails += 1
-                    logging.info("Verify failed at 0x%04x, %x != %x" % (i, fdata[i+fdata_idx], data[i]))
+                    logging.info("Verify failed at 0x%04x, %x != %x" % (i+fdata_idx, fdata[i+fdata_idx], data[i]))
                     if fails > 3:
-                        raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i+fdata_idx], data[i]))
+                        raise IOError("Verify failed at 0x%04x, %x != %x" % (i+fdata_idx, fdata[i+fdata_idx], data[i]))
                     else:
                         #Redo this block
                         logging.info("Read error - attempting retry")
@@ -624,6 +634,31 @@ class STM32FSerial(object):
         if lng:
             data += self.cmdReadMemory(addr, lng)
         return data
+
+    @close_on_fail
+    def write_verify(self, addr, data, smallblocks=False):
+        lng = len(data)
+        data = list(data)
+        if smallblocks:
+            block_size=64
+        else:
+            block_size=256
+        offs = 0
+        while lng > block_size:
+            self.cmdWriteMemory(addr, data[offs:offs+block_size])
+            rdata = self.cmdReadMemory(addr, block_size)
+            for i in range(len(rdata)):
+                if rdata[i] != data[offs+i]:
+                    raise IOError("Verify failed at {:04X}, {} != {}".format(offs+i, rdata[i], data[offs+i]))
+            offs += block_size
+            addr += block_size
+            lng -= block_size
+        if lng:
+            self.cmdWriteMemory(addr, data[offs:])
+            rdata = self.cmdReadMemory(addr, lng)
+            for i in range(len(rdata)):
+                if rdata[i] != data[offs+i]:
+                    raise IOError("Verify failed at {:04X}, {} != {}".format(offs+i, rdata[i], data[offs+i]))
 
     @close_on_fail
     def writeMemory(self, addr, data, smallblocks=False):
