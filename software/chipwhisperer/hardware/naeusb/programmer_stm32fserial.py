@@ -51,11 +51,11 @@ class STM32FDummy(object):
 
 class STM32F03xx4(object):
     signature = 0x444
-    name = "STM32F03xx4"
+    name = "STM32F03xx4/03xx6"
 
-class STM32F030xx5(object):
+class STM32F04xxx(object):
     signature = 0x445
-    name = "STM32F03xx5"
+    name = "STM32F04xxx"
 
 class STM32F071(object):
     signature = 0x448
@@ -97,7 +97,7 @@ class STM32F40xxx(object):
     signature = 0x413
     name = "STM32F40xxx/41xxx"
 
-supported_stm32f = [STM32F030xC, STM32F030xC_alt, STM32F071(), STM32F10xxx_LD(), STM32F10xxx_MD(), STM32F10xxx_HD(), STM32F10xxx_XL(), STM32F10xxx_MDV(),
+supported_stm32f = [STM32F03xx4(), STM32F04xxx(), STM32F071(), STM32F10xxx_LD(), STM32F10xxx_MD(), STM32F10xxx_HD(), STM32F10xxx_XL(), STM32F10xxx_MDV(),
                     STM32F10xxx_HDV(), STM32F2(), STM32F303cBC(), STM32F40xxx()]
 
 def print_fun(s):
