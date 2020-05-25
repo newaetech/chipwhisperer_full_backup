@@ -49,13 +49,13 @@ class STM32FDummy(object):
     signature = 0x000
     name = "Unknown STM32F"
 
-class STM32F030xC(object):
+class STM32F03xx4(object):
     signature = 0x444
-    name = "STM32F030xC"
+    name = "STM32F03xx4"
 
-class STM32F030xC_alt(object):
+class STM32F030xx5(object):
     signature = 0x445
-    name = "STM32F030xC"
+    name = "STM32F03xx5"
 
 class STM32F071(object):
     signature = 0x448
