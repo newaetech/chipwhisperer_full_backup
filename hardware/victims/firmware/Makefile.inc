@@ -336,9 +336,9 @@ begin:
 
 end:
 	@echo   +--------------------------------------------------------
-	@echo   + Built for platform $(PLTNAME) with:
-	@echo   +      CRYPTO_TARGET  = $(CRYPTO_TARGET)
-	@echo   +      CRYPTO_OPTIONS = $(CRYPTO_OPTIONS)
+	@echo   + Built for platform "$(PLTNAME)" with:
+	@echo   +      CRYPTO_TARGET  = "$(CRYPTO_TARGET)"
+	@echo   +      CRYPTO_OPTIONS = "$(CRYPTO_OPTIONS)"
 	@echo   +--------------------------------------------------------
 
 fastnote:
