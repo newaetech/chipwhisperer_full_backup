@@ -51,6 +51,7 @@ void platform_init(void);
 #define CW308_FE310    29
 #define CW308_EFR32MG21A  30
 #define CW308_EFM32GG11  31
+#define CW308_STM32L5  32
 
 //HAL_TYPE Define Types
 #define HAL_avr      1
@@ -76,6 +77,7 @@ void platform_init(void);
 #define HAL_fe310    21
 #define HAL_efr32mg21a 22
 #define HAL_efm32gg11 23
+#define HAL_stm32l5 24
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
@@ -133,6 +135,8 @@ void platform_init(void);
     #include "efr32mg21a/efr32mg21a_hal.h"
 #elif HAL_TYPE == HAL_efm32gg11
     #include "efm32gg11/efm32gg11_hal.h"
+    #elif HAL_TYPE == HAL_stm32l5
+    #include "stm32l5/stm32l5_hal.h"
 #else
     #error "Unsupported HAL Type"
 #endif
