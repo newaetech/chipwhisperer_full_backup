@@ -97,8 +97,12 @@ class STM32F40xxx(object):
     signature = 0x413
     name = "STM32F40xxx/41xxx"
 
+class STM32L56xxx(object):
+    signature = 0x472
+    name = "STM32L56xxx"
+
 supported_stm32f = [STM32F03xx4(), STM32F04xxx(), STM32F071(), STM32F10xxx_LD(), STM32F10xxx_MD(), STM32F10xxx_HD(), STM32F10xxx_XL(), STM32F10xxx_MDV(),
-                    STM32F10xxx_HDV(), STM32F2(), STM32F303cBC(), STM32F40xxx()]
+                    STM32F10xxx_HDV(), STM32F2(), STM32F303cBC(), STM32F40xxx(), STM32L56xxx()]
 
 def print_fun(s):
     print(s)
