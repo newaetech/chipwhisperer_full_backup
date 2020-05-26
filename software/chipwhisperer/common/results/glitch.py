@@ -37,6 +37,11 @@ class GlitchResults(object):
         self.groups = groups
         self.parameters = parameters
         
+    def clear(self):
+        '''
+        Clears stored statistics in preperation for a new run.
+        '''
+        
         self.result_dict = {}
         
         for k in self.groups:
@@ -92,8 +97,13 @@ class GlitchResults(object):
         return counts
     
     def plot_2d(self, plotdots, x_index=0, y_index=1, x_units=None, y_units=None, mask=True):
-        """Generate a 2D plot of glitch success rate.            
-        """
+        '''
+        Generate a 2D plot of glitch success rate using matplotlib.
+        
+        Plotting is done in the default figure - you may need to call plt.figure() before and
+        plt.show() after calling this function if you want more control (or the figure does
+        not show by default).
+        '''
         
         data = self.calc()
         
@@ -104,19 +114,20 @@ class GlitchResults(object):
         for p in data:
             #Plot based on non-zero priority if possible
             for g in self.groups:
-                if p[g] > 0:
-                    if g in legs:
-                        leg = g.title()
-                        #No need to show this one anymore
-                        legs.remove(g)
-                    else:
-                        leg = None
-                
-                    sr = float(p[g]) / float(p['_total'])
-                    plt.plot(p['_parameter'][x_index], p['_parameter'][y_index], plotdots[g], alpha=sr, label=leg)
-                    
-                    if mask:
-                        break
+                if plotdots[g]:
+                    if p[g] > 0:
+                        if g in legs:
+                            leg = g.title()
+                            #No need to show this one anymore
+                            legs.remove(g)
+                        else:
+                            leg = None
+
+                        sr = float(p[g]) / float(p['_total'])
+                        plt.plot(p['_parameter'][x_index], p['_parameter'][y_index], plotdots[g], alpha=sr, label=leg)
+
+                        if mask:
+                            break
                         
         xlabel = self.parameters[x_index].title()
         if x_units:
