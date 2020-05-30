@@ -90,6 +90,8 @@ define KNOWN_PLATFORMS
 +-------------------------------------------------------+
 | CW308_STM32F4 | CW308T-STM32F4HWC (ST Micro STM32F415)|
 +-------------------------------------------------------+
+| CW308_STM32L4 | CW308T-STM32L4 (ST Micro STM32L443)   |
++-------------------------------------------------------+
 | CW308_STM32L5 | CW308T-STM32L5HWC (ST Micro STM32L562)|
 +-------------------------------------------------------+
 +=======================================================+
@@ -214,6 +216,9 @@ else ifeq ($(PLATFORM),CW308_EFR32MG21A)
 else ifeq ($(PLATFORM),CW308_EFM32GG11)
  HAL = efm32gg11
  PLTNAME = CW308T: EFM32GG11 Target
+ else ifeq ($(PLATFORM),CW308_STM32L4)
+ HAL = stm32l4
+ PLTNAME = CW308T: STM32L5 Target
 else ifeq ($(PLATFORM),CW308_STM32L5)
  HAL = stm32l5
  PLTNAME = CW308T: STM32L5 Target
