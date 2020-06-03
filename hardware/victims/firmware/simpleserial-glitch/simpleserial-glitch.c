@@ -42,6 +42,20 @@ uint8_t glitch_loop(uint8_t* in)
     return (cnt != 2500);
 }
 
+uint8_t glitch_comparison1(uint8_t* in)
+{
+    uint8_t ok = 5;    
+    trigger_high();
+    if (*in == 0xA2){
+        ok = 1;
+    } else {
+        ok = 0;
+    }
+    trigger_low();
+    simpleserial_put('r', 1, (uint8_t*)&ok);
+    return ok;
+}
+
 uint8_t password(uint8_t* pw)
 {
     char passwd[] = "touch";
@@ -134,6 +148,7 @@ int main(void)
     
     simpleserial_init();
     simpleserial_addcmd('g', 0, glitch_loop);
+    simpleserial_addcmd('c', 1, glitch_comparison1);
     simpleserial_addcmd('p', 8, password);
     simpleserial_addcmd('i', 0, infinite_loop);
     while(1)
