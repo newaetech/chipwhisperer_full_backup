@@ -222,10 +222,13 @@ class GlitchSettings(util.DisableNewAttr):
         A pulse may begin anywhere from -49.8% to 49.8% away from a rising
         edge, allowing glitches to be swept over the entire clock cycle.
 
+        .. warning:: very large negative offset <-45 may result in double glitches
+
         :Getter: Return a float with the current glitch offset.
 
         :Setter: Set the glitch offset. The new value is rounded to the nearest
             possible offset.
+
 
         Raises:
            TypeError: offset not an integer
@@ -237,6 +240,9 @@ class GlitchSettings(util.DisableNewAttr):
     def offset(self, value):
         if value < self.cwg._min_offset or value > self.cwg._max_offset:
             raise UserWarning("Can't use glitch offset %s - rounding into [%s, %s]" % (value, self.cwg._min_offset, self.cwg._max_offset))
+
+        if value < -45:
+            logging.warning("Negative offsets <-45 may result in double glitches!")
         self.cwg.setGlitchOffset(value)
 
     @property
