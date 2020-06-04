@@ -23,7 +23,10 @@ SRC += cycfg_clocks.c \
        cycfg_routing.c \
        cycfg.c
        
+# Only 1 of these gets actually included
+SRC += psoc6_01_cm0p_crypto.c
 SRC += psoc6_02_cm0p_crypto.c
+SRC += psoc6_03_cm0p_crypto.c
        
 SRC += cy_crypto_core_hw.c \
        cy_crypto_core_hw_v1.c \
@@ -77,5 +80,7 @@ LDFLAGS += -specs=nano.specs -T $(HALPATH)/psoc62/cy8c6xx7_cm4_dual.ld -Xlinker 
 ### Special signing needed for image to actually load 
 MCUELFTOOL = $(HALPATH)/psoc62/tools/win_x64/cymcuelftool.exe
 
-signed: all
-	$(MCUELFTOOL) --sign $(TARGET-PLAT).elf --output $(TARGET-PLAT)_cm4_signed.elf
+#Check if still needed
+#signed: all
+#	$(MCUELFTOOL) --sign $(TARGET-PLAT).elf --output $(TARGET-PLAT)_cm4_signed.elf
+#	$(MCUELFTOOL) --merge $(TARGET-PLAT)_cm4_signed.elf $(HALPATH)/psoc62/psoc6_01_cm0p_sleep_signed.elf --output $(TARGET-PLAT)_cm4_final.elf

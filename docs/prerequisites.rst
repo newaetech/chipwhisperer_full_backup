@@ -194,7 +194,7 @@ a couple of ways you can install make:
 
  * Install WinAVR. If you're running Windows 8 or later, this will require
     replacing a .dll file in WinAVR.
- * Install MinGW and add :code:`MinGW\msys\1.0\bin\` to your path.
+ * Install MinGW and add :code:`MinGW\msys\1.0\bin` to your path.
  * Install Cygwin, install make, and add :code:`cygwin/bin` to your path.
 
 
