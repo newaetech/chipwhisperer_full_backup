@@ -59,6 +59,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
       * :meth:`target.simpleserial_wait_ack <.SimpleSerial.simpleserial_wait_ack>`
       * :meth:`target.simpleserial_write <.SimpleSerial.simpleserial_write>`
       * :meth:`target.simpleserial_read <.SimpleSerial.simpleserial_read>`
+      * :meth:`target.simpleserial_read_witherrors <.SimpleSerial.simpleserial_read_witherrors>`
       * :meth:`target.set_key <.SimpleSerial.set_key>`
       * :meth:`target.close <.SimpleSerial.close>`
       * :meth:`target.con <.SimpleSerial.con>`
