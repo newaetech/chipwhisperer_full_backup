@@ -64,6 +64,11 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
       * :meth:`target.close <.SimpleSerial.close>`
       * :meth:`target.con <.SimpleSerial.con>`
 
+    .. warning::
+        The CWLite, CW1200, and CWNano have a 128 byte read buffer and a 128 
+        byte send buffer. If the read buffer overflows, a warning message
+        will be printed. Currently, if the send buffer overflows,
+        no message is printed.
     """
     _name = "Simple Serial"
 
