@@ -451,17 +451,19 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
                     payload[i] = int(response[idx:(idx + 2)], 16)
                 except ValueError as e:
                     payload = None
-                    logging.warning("ValueError: {}".format(e))
+                    valid = False
+                    break
+                    #logging.warning("ValueError: {}".format(e))
 
                 idx += 2
 
-            if len(end) > 0:
+            if valid and (len(end) > 0):
                 if response[(idx):(idx + len(end))] != end:
                     logging.warning("Unexpected end to command: {}".format(
                         response[(idx):(idx + len(end))]))
                     payload = None
 
-            if ack:
+            if ack and valid:
                 rv = self.simpleserial_wait_ack(timeout)
 
         # return payload, valid, response
