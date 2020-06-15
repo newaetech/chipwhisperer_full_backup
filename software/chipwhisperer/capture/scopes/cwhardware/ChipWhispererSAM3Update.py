@@ -82,21 +82,20 @@ class SAMFWLoader(object):
 
         Two methods:
 
-         #. Using the firmware_path:
+         #. Using the firmware_path::
 
-                # the firmware file is included with chipwhisperer
-                # and is in the .bin file in the
-                # (ChipWhisperer Lite) chipwhisperer\hardware\capture\chipwhisperer-lite\sam3u_fw\SAM3U_VendorExample\Debug
-                # (ChipWhisperer Pro)
-                # directory.
+                # the firmware file is included with chipwhisperer 
+                # and is in the .bin file in the 
+                # (ChipWhisperer Lite) chipwhisperer\hardware\capture\chipwhisperer-lite\sam3u_fw\SAM3U_VendorExample\Debug 
+                # (ChipWhisperer Pro) 
+                # directory. 
                 programmer.program(<port>, <path to firmware file>)
 
          #. Using the hardware_type::
 
                 programmer.program(<port>, hardware_type='cwlite')
 
-        On linux instead of 'COM#' use the linux equivalent to a port
-        'ttyASM#' or equivalent.
+        On Linux instead of 'COM#' use the Linux equivalent (usually /dev/ttyACM# or /dev/ttyUSB#)
 
      #. Once the programming is done. Unplug then plug in the hardware into your
         computer again. The device should show up as a ChipWhisperer again.
