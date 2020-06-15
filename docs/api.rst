@@ -268,13 +268,13 @@ OpenADC Scope
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger.rx_baud
             :annotation: scope.DecodeIO.rx_baud
 
-    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.default_setup
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.default_setup
 
-    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.arm
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.arm
 
-    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.capture
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.capture
 
-    .. automethod:: chipwhisperer.capture.scopes.OpenADC.OpenADC.get_last_trace
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.get_last_trace
 
     .. method:: dis()
 
