@@ -61,19 +61,6 @@ The Arm Toolchain can be installed using:
 
     sudo apt install gcc-arm-none-eabi
 
-.. note::
-
-    Some versions of Ubuntu (Ubuntu Bionic Beaver and likely before) provide
-    a GNU Arm toolchain that links to incorrect files during the build process.
-    To install a working version of the toolchain.
-
-    .. code:: bash
-
-        wget https://mirrors.kernel.org/ubuntu/pool/universe/n/newlib/libnewlib-dev_3.0.0.20180802-2_all.deb
-        wget https://mirrors.kernel.org/ubuntu/pool/universe/n/newlib/libnewlib-arm-none-eabi_3.0.0.20180802-2_all.deb
-        sudo dpkg -i libnewlib-arm-none-eabi_3.0.0.20180802-2_all.deb libnewlib-dev_3.0.0.20180802-2_all.deb
-
-
 Hardware Drivers
 ================
 
