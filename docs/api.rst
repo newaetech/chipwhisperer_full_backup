@@ -777,7 +777,7 @@ syntax.
 
         .. autoattribute:: sbox_output_successive
 
-        .. autoattribute:: shift_columns_output
+        .. autoattribute:: shift_rows_output
 
         .. automethod:: new_model
 

@@ -48,47 +48,47 @@ class EightBitAES128LeakageModels:
 
     @property
     def plaintext_key_xor(self):
-        """Plain text key XOR."""
+        """Hamming weight of 1st round key mix (pt ^ key)"""
         return AES128_8bit(aes128_leakage.PtKey_XOR)
 
     @property
     def sbox_output(self):
-        """SBox Output."""
+        """Hamming weight of 1st round SBox output"""
         return AES128_8bit(aes128_leakage.SBox_output)
 
     @property
     def inverse_sbox_output(self):
-        """Inverse Sbox output."""
+        """Hamming weight of 1st round InvSBox (for decryption)"""
         return AES128_8bit(aes128_leakage.InvSBox_output)
 
     @property
     def last_round_state(self):
-        """Last round state."""
+        """Hamming weight of 9th round state (InvSBox output)"""
         return AES128_8bit(aes128_leakage.LastroundHW)
 
     @property
     def after_key_mix(self):
-        """After key mix operation."""
+        """Hamming weight of 1st round key mix (pt ^ key)"""
         return AES128_8bit(aes128_leakage.AfterKeyMixin)
 
     @property
     def mix_columns_output(self):
-        """Output of the mix columns operation."""
+        """Hamming weight of 1st round mix columns"""
         return AES128_8bit(aes128_leakage.Mixcolumns_output)
 
     @property
-    def shift_columns_output(self):
-        """Output of the shift columns operation."""
+    def shift_rows_output(self):
+        """Hamming weight of shift rows output"""
         return AES128_8bit(aes128_leakage.ShiftColumns_output)
 
     @property
     def last_round_state_diff(self):
-        """Last round state using hamming distance."""
+        """Hamming distance between rounds 9 and 10"""
         return AES128_8bit(aes128_leakage.LastroundStateDiff)
 
     @property
     def last_round_state_diff_alternate(self):
-        """Last round state using hamming distance, alternate."""
+        """Hamming distance between rounds 9 and 10 (alternate calculation)"""
         return AES128_8bit(aes128_leakage.LastroundStateDiffAlternate)
 
     @property
@@ -98,31 +98,27 @@ class EightBitAES128LeakageModels:
 
     @property
     def sbox_input_successive(self):
-        """Successive Sbox input."""
+        """Hamming distance between 2 AES sbox inputs"""
         return AES128_8bit(aes128_leakage.SBoxInputSuccessive)
 
     @property
     def sbox_output_successive(self):
-        """Successive SBox output."""
+        """Hamming distance between 2 AES sbox outputs"""
         return AES128_8bit(aes128_leakage.SBoxOutputSuccessive)
 
     @property
     def round_1_2_state_diff_text(self):
-        """Hamming distance between round 1 and 2 state using plain text."""
+        """Hamming distance between AES input and mix columns output"""
         return AES128_8bit(aes128_leakage.Round1Round2StateDiff_Text)
 
     @property
     def round_1_2_state_diff_key_mix(self):
-        """Hamming distance between round 1 and 2 state during key mix
-        operation.
-        """
+        """Hamming distance between initial key mix and round 1 key mix"""
         return AES128_8bit(aes128_leakage.Round1Round2StateDiff_KeyMix)
 
     @property
     def round_1_2_state_diff_sbox(self):
-        """Hamming distance between round 1 and 2 state during sbox lookup
-        operation.
-        """
+        """Hamming distance between round 1 and round 2 sbox output"""
         return AES128_8bit(aes128_leakage.Round1Round2StateDiff_SBox)
 
     def __str__(self):
@@ -138,7 +134,7 @@ class EightBitAES128LeakageModels:
             'last_round_state',
             'after_key_mix',
             'mix_columns_output',
-            'shift_columns_output',
+            'shift_rows_output',
             'last_round_state_diff',
             'last_round_state_diff_alternate',
             'sbox_in_out_diff',
