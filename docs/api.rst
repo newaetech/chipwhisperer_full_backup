@@ -808,7 +808,7 @@ return a results object. There are a few methods for interacting with the result
 object.
 
 .. autoclass:: chipwhisperer.analyzer.attacks._stats.Results
-    :members: best_guesses, simple_PGE, set_known_key, find_maximums
+    :members: best_guesses, simple_PGE, set_known_key, find_maximums, key_guess
 
 
 .. _api-analyzer-utilities:

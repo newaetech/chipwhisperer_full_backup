@@ -42,6 +42,15 @@ class Results(object):
         self.known_key = None
         self.clear()
 
+    def key_guess(self):
+        """ Get best guess for key in a list.
+
+        Returns:
+            Guessed key as a list
+        """
+        best_guesses = self.best_guesses()
+        return [byte['guess'] for byte in best_guesses]
+
     def best_guesses(self):
         """ Gets best subkey guesses from attack results
 
