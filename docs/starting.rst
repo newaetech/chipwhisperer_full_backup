@@ -19,7 +19,24 @@ Recommended reading for using Jupyter notebooks:
 
 Here is a quick start guide based on you having finished the installation
 of **chipwhisperer**. It only covers steps unique to our chipwhisperer/Jupyter
-installation.
+installation. 
+
+If you've installed via the VirtualBox VM image:
+
+ #. Open VirtualBox and start the virtual machine
+
+ #. Open your browser outside the VM
+
+ #. Connect to localhost:8888 in your browser
+
+
+If you've installed via the Windows Installer:
+
+ #. Run the ChipWhisperer shortcut.
+      * This shortcut is available in the ChipWhisperer install folder,
+         the start menu, and optionally as a shortcut on the desktop.
+
+If you've installed natively:
 
  #. Make sure you are using a bash like terminal. Many of the jupyter
     notebooks use bash to run **make** or remove files for building
