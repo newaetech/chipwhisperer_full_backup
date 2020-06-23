@@ -1,5 +1,124 @@
 import matplotlib.pylab as plt
 
+# GlitchController will be part of ChipWhisperer core - just run this block
+# for now.
+
+try:
+    import ipywidgets as widgets          
+except ModuleNotFoundError:
+    widgets = None
+
+class GlitchController:
+    
+    def __init__(self, groups, parameters):
+        self.groups = groups
+        self.parameters = parameters
+        
+        self.results = GlitchResults(groups=groups, parameters=parameters)
+        
+        self.parameter_min = [0.0] * len(parameters)
+        self.parameter_max = [10.0] * len(parameters)
+        self.steps = [1]
+        
+        self.widget_list_parameter = None
+        self.widget_list_groups = None
+        
+        self.clear()
+        
+    def clear(self):
+        self.results.clear()        
+        self.group_counts = [0] * len(self.groups)
+        
+        if self.widget_list_groups:
+            for w in self.widget_list_groups:
+                w.value = 0
+        
+    def set_range(self, parameter, low, high):
+        
+        if high < low:
+            t = low
+            low = high
+            high = t
+        
+        i = self.parameters.index(parameter)
+        self.parameter_min[i] = low
+        self.parameter_max[i] = high
+        if not (widgets is None): 
+            if self.widget_list_parameter:
+                # When changing them, need to ensure we don't have min > max ever or will throw
+                # an error, so we set max to super-high first.
+                self.widget_list_parameter[i].max = 1E9
+                self.widget_list_parameter[i].min = low
+                self.widget_list_parameter[i].max = high
+    
+    def set_step(self, parameter, step):
+        '''Set size, can be either a single value or a list of step-sizes to iterate through'''
+        raise NotImplementedError("TODO")
+        
+    def set_global_step(self, steps):
+        '''Set step for all parameters (Eventually support per-parameter)'''
+        if hasattr(steps, "__iter__"):
+            self.steps = steps
+        else:
+            self.steps = [steps]
+    
+    def add(self, group, parameters, strdesc=None, metadata=None):
+        self.results.add(group, parameters, strdesc, metadata)    
+        
+        i = self.groups.index(group)        
+        #Basic count
+        self.group_counts[i] += 1
+        self.widget_list_groups[i].value =  self.group_counts[i]
+    
+    def display_stats(self):
+        if widgets is None:
+            raise ModuleNotFoundError("Could not load ipywidgets, display not available")
+        self.widget_list_groups = [widgets.IntText(value=0, description=group + " count:", disabled=True)
+                                   for group in self.groups]
+        
+        self.widget_list_parameter = [widgets.FloatSlider(
+                                            value=self.parameter_min[i],
+                                            min=self.parameter_min[i],
+                                            max=self.parameter_max[i],
+                                            step=0.01,
+                                            description=p + " setting:",
+                                            disabled=True,
+                                            continuous_update=False,
+                                            orientation='horizontal',
+                                            readout=True,
+                                            readout_format='.01f')
+                                          for i,p in enumerate(self.parameters)]
+            
+        display(*(self.widget_list_groups + self.widget_list_parameter))
+       
+        
+    def glitch_values(self, clear=True):
+        """Generator returning the given parameter values in order, using the step size (or step list)"""
+        
+        self.parameter_values = self.parameter_min[:]
+        
+        if clear:
+            self.clear()
+        
+        for stepsize in self.steps:
+            for val in self._loop_rec(0, len(self.parameter_values)-1, stepsize):
+                if self.widget_list_parameter:
+                    for i,v in enumerate(val):
+                        self.widget_list_parameter[i].value = v
+                yield val
+        
+    def _loop_rec(self, parameter_index, final_index, step):
+        self.parameter_values[parameter_index] = self.parameter_min[parameter_index]
+        if parameter_index == final_index:            
+            while self.parameter_values[parameter_index] <= self.parameter_max[parameter_index]:                                
+                yield self.parameter_values
+                self.parameter_values[parameter_index] += step
+        else:
+            while self.parameter_values[parameter_index] <= self.parameter_max[parameter_index]: 
+                yield from self._loop_rec(parameter_index+1, final_index, step)
+                self.parameter_values[parameter_index] += step
+                
+
 class GlitchResults(object):
     """GlitchResults tracks and plots fault injection attempts.
     
@@ -95,8 +214,56 @@ class GlitchResults(object):
                         counts[i][g] += 1
 
         return counts
-    
+
     def plot_2d(self, plotdots, x_index=0, y_index=1, x_units=None, y_units=None, mask=True):
+        '''
+        Generate a 2D plot of glitch success rate using matplotlib.
+
+        Plotting is done in the default figure - you may need to call plt.figure() before and
+        plt.show() after calling this function if you want more control (or the figure does
+        not show by default).
+        '''
+        data = self.calc()
+
+        #We only want legend to show for first element... bit of a hack here
+        legs = self.groups[:]
+
+        #Generate success rates
+        for p in data:
+            #Plot based on non-zero priority if possible
+            for g in self.groups:
+                if plotdots[g]:
+                    if p[g] > 0:
+                        if g in legs:
+                            leg = g.title()
+                            #No need to show this one anymore
+                            legs.remove(g)
+                        else:
+                            leg = None
+
+                        sr = float(p[g]) / float(p['_total']) + 0.5
+                        
+                        if sr > 1.0:
+                            sr = 1.0
+                        
+                        plt.plot(p['_parameter'][x_index], p['_parameter'][y_index], plotdots[g], alpha=sr, label=leg)
+
+                        if mask:
+                            break
+
+        xlabel = self.parameters[x_index].title()
+        if x_units:
+            xlabel += " (" + x_units + ")"
+        plt.xlabel(xlabel)
+
+        ylabel = self.parameters[y_index].title()
+        if y_units:
+            ylabel += " (" + y_units + ")"
+        plt.ylabel(ylabel)
+
+        plt.legend()
+
+    def _old_plot_2d(self, plotdots, x_index=0, y_index=1, x_units=None, y_units=None, mask=True):
         '''
         Generate a 2D plot of glitch success rate using matplotlib.
         
