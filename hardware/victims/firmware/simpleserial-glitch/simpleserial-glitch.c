@@ -149,7 +149,7 @@ int main(void)
     simpleserial_init();
     simpleserial_addcmd('g', 0, glitch_loop);
     simpleserial_addcmd('c', 1, glitch_comparison1);
-    simpleserial_addcmd('p', 8, password);
+    simpleserial_addcmd('p', 5, password);
     simpleserial_addcmd('i', 0, infinite_loop);
     while(1)
         simpleserial_get();
