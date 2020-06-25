@@ -162,6 +162,9 @@ OpenADC Scope
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.glitch_hp
             :annotation: scope.io.glitch_hp
 
+        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.glitch_lp
+            :annotation: scope.io.glitch_lp
+
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.extclk_src
             :annotation: scope.io.extclk_src
 
@@ -171,7 +174,7 @@ OpenADC Scope
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.target_pwr
             :annotation: scope.io.target_pwr
 
-        .. autodata:: chipwhisperer.capture.scope.cwhardware.ChipWhispererExtra.GPIOSettings.tio_states
+        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio_states
             :annotation: scope.io.tio_states
 
 

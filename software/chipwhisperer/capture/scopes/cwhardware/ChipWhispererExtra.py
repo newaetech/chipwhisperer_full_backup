@@ -125,10 +125,13 @@ class GPIOSettings(util.DisableNewAttr):
         Reads the logic level of the TIO pins (1-4) and
         returns them as a tuple of the logic levels. 
 
-        :getter: Getter only
+        .. warning:: ChipWhisperer firmware before release 5.2.1 does not support
+            reading the TIO pins!
+
+        :getter: Read TIO states
 
         Returns:
-            A tuple ist of 1's and 0's representing the logic levels
+            A tuple of 1's and 0's representing the logic levels
             of each TIO pin
 
         .. versionadded:: 5.3
@@ -494,6 +497,10 @@ class GPIOSettings(util.DisableNewAttr):
 
         This is the low-power version of glitch_hp - see that documentation
         for more details.
+
+        .. warning:: Use with caution - ensure that the glitch module is properly
+            configured before enabling this setting, as it is possible to
+            permanently damage hardware with this output.
         """
         return self.cwe.targetGlitchOut('B')
 
