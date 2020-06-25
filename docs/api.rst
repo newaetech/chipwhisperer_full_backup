@@ -171,6 +171,9 @@ OpenADC Scope
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.target_pwr
             :annotation: scope.io.target_pwr
 
+        .. autodata:: chipwhisperer.capture.scope.cwhardware.ChipWhispererExtra.GPIOSettings.tio_states
+            :annotation: scope.io.tio_states
+
 
     .. attribute:: trigger
         :annotation: scope.trigger

@@ -92,6 +92,10 @@ class GPIOSettings(util.DisableNewAttr):
         self.disable_newattr()
 
 
+    def read_tio_states(self):
+        bitmask = self.cwe.readTIOPins()
+        return tuple(((bitmask >> i) & 0x01) for i in range(4))
+
     def _dict_repr(self):
         dict = OrderedDict()
         dict['tio1'] = self.tio1
@@ -111,7 +115,26 @@ class GPIOSettings(util.DisableNewAttr):
 
         dict['target_pwr'] = self.target_pwr
 
+        dict['tio_states'] = self.tio_states
+
         return dict
+
+    @property
+    def tio_states(self):
+        """
+        Reads the logic level of the TIO pins (1-4) and
+        returns them as a tuple of the logic levels. 
+
+        :getter: Getter only
+
+        Returns:
+            A tuple ist of 1's and 0's representing the logic levels
+            of each TIO pin
+
+        .. versionadded:: 5.3
+            Add documented interface for the old method of reading TIO pins
+        """
+        return self.read_tio_states()
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
