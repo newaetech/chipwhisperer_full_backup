@@ -1909,7 +1909,6 @@ class OpenADCInterface(object):
         cap_delay = (7.37E6 * 4 * samples) / (adc_freq * 24400)
         cap_delay *= 0.0015
         time.sleep(cap_delay)
-        print(cap_delay)
         self.arm(False) # <------ ADC will stop reading after this
         return timeout
 
