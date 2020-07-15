@@ -1834,7 +1834,7 @@ class OpenADCInterface(object):
         timeout = False
         sleeptime = 0
         if offset:
-            sleeptime = (4*offset)//100000 #rougly 4ms per 100k offset
+            sleeptime = (29.53E6*8*offset)/(100000*adc_freq) #rougly 8ms per 100k offset
             sleeptime /= 1000
 
         if self._streammode:
@@ -1893,6 +1893,9 @@ class OpenADCInterface(object):
             #time.sleep(sleeptime*10)
 
             # If using large offsets, system doesn't know we are delaying api
+
+            # NOTE: This doesn't actually delay until adc starts reading
+            # so need to actually do the manual delay
             nosampletimeout = self._nosampletimeout * 10
             while (self.getBytesInFifo() == 0) and nosampletimeout:
                 logging.debug("Bytes in Fifo: {}".format(self.getBytesInFifo()))
@@ -1907,8 +1910,9 @@ class OpenADCInterface(object):
         # give time for ADC to finish reading data
         # may need to adjust delay
         cap_delay = (7.37E6 * 4 * samples) / (adc_freq * 24400)
-        cap_delay *= 0.0015
-        time.sleep(cap_delay)
+        cap_delay *= 0.001
+        time.sleep(cap_delay+sleeptime)
+        #time.sleep(sleeptime) #need to do this one as well
         self.arm(False) # <------ ADC will stop reading after this
         return timeout
 
