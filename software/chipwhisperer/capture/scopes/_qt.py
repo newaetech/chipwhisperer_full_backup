@@ -88,10 +88,14 @@ class OpenADCQt(object):
     def read(self, numberPoints=None, channelNr=0):
         if numberPoints == None:
             numberPoints = self.parm_trigger.samples
+        
+        logging.debug("Expecting {} points".format(numberPoints))
 
         try:
             self.datapoints = self.sc.readData(numberPoints)
-            if self.datapoints is None or len(self.datapoints) == 0:
+            logging.debug("Read {} datapoints".format(len(self.datapoints)))
+            if (self.datapoints is None) or (len(self.datapoints) != numberPoints):
+                logging.error("Received fewer points than expected! {} vs {}".format(len(self.datapoints), numberPoints))
                 return True #effectively a timeout for now
         except IndexError as e:
             raise IOError("Error reading data: %s" % str(e))
@@ -103,8 +107,8 @@ class OpenADCQt(object):
     def trigger_duration(self):
         return self.parm_trigger.duration()
 
-    def capture(self, offset=None):
-        timeout = self.sc.capture(offset)
+    def capture(self, offset=None, adc_freq=29.53E6, samples=24400):
+        timeout = self.sc.capture(offset, adc_freq, samples)
         timeout2 = self.read()
 
         return timeout or timeout2

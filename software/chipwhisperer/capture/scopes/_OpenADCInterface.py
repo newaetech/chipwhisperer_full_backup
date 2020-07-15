@@ -1007,7 +1007,8 @@ class ClockSettings(util.DisableNewAttr):
         """The CLKGEN output frequency in Hz.
 
         The CLKGEN module takes the input source and multiplies/divides it to
-        get a faster or slower clock as desired.
+        get a faster or slower clock as desired. Minimum clock in practice
+        is 3.2MHz.
 
         :Getter:
             Return the current calculated CLKGEN output frequency in Hz
@@ -1060,6 +1061,8 @@ class ClockSettings(util.DisableNewAttr):
         return (inpfreq * self._getClkgenMul()) / self._getClkgenDiv()
 
     def _autoMulDiv(self, freq):
+        if freq < 3.2E6: #practical min limit of clkgen
+            logging.warning("Requested clock value below minimum of 3.2MHz - DCM may not lock!")
         if self._get_clkgen_src() == "extclk":
             inpfreq = self._get_extclk_freq()
         else:
@@ -1827,11 +1830,13 @@ class OpenADCInterface(object):
             # Stream mode adds 500mS of extra timeout on USB traffic itself...
             self.serial.initStreamModeCapture(self._stream_len, self._sbuf, timeout_ms=int(self._timeout * 1000) + 500)
 
-    def capture(self, offset=None):
+    def capture(self, offset=None, adc_freq=29.53E6, samples=24400):
         timeout = False
         sleeptime = 0
         if offset:
-            sleeptime = 4*offset/100000 #rougly 4ms per 100k offset
+            sleeptime = (4*offset)//100000 #rougly 4ms per 100k offset
+            sleeptime /= 1000
+
         if self._streammode:
 
             # Wait for a trigger, letting the UI run when it can
@@ -1871,8 +1876,8 @@ class OpenADCInterface(object):
                 status = self.getStatus()
 
                 # Wait for a moment before re-running the loop
-                #time.sleep(0.01) ## <-- This causes the capture slowdown
-                util.better_delay(sleeptime) ## faster sleep method
+                #time.sleep(sleeptime) ## <-- This causes the capture slowdown
+                #util.better_delay(sleeptime) ## faster sleep method
                 diff = datetime.datetime.now() - starttime
 
                 # If we've timed out, don't wait any longer for a trigger
@@ -1884,13 +1889,14 @@ class OpenADCInterface(object):
                 # Give the UI a chance to update (does nothing if not using UI)
                 # util.updateUI()
 
-            self.arm(False)
+            #time.sleep(0.005)
+            #time.sleep(sleeptime*10)
 
             # If using large offsets, system doesn't know we are delaying api
             nosampletimeout = self._nosampletimeout * 10
             while (self.getBytesInFifo() == 0) and nosampletimeout:
                 logging.debug("Bytes in Fifo: {}".format(self.getBytesInFifo()))
-                time.sleep(0.005)
+                time.sleep(0.001)
                 nosampletimeout -= 1
 
             if nosampletimeout == 0:
@@ -1898,6 +1904,13 @@ class OpenADCInterface(object):
                                 'If you need such a long offset, increase "scope.qtadc.sc._nosampletimeout" limit.')
                 timeout = True
 
+        # give time for ADC to finish reading data
+        # may need to adjust delay
+        cap_delay = (7.37E6 * 4 * samples) / (adc_freq * 24400)
+        cap_delay *= 0.0015
+        time.sleep(cap_delay)
+        print(cap_delay)
+        self.arm(False) # <------ ADC will stop reading after this
         return timeout
 
     def flush(self):
