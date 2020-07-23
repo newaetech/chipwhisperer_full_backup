@@ -135,3 +135,47 @@ void putch(char c)
     uint8_t d  = c;
     HAL_UART_Transmit(&UartHandle,  &d, 1, 5000);
 }
+
+uint8_t hw_key[16];
+static CRYP_HandleTypeDef cryp;
+
+void HW_AES128_Init(void)
+{
+	cryp.Instance = AES;
+	cryp.Init.DataType = CRYP_DATATYPE_8B;
+	cryp.Init.KeySize = CRYP_KEYSIZE_128B;
+	cryp.Init.pKey = hw_key;
+	HW_AES128_LoadKey(hw_key);
+  __HAL_RCC_AES_CLK_ENABLE();
+	HAL_CRYP_Init(&cryp);
+}
+
+void HW_AES128_LoadKey(uint8_t* key)
+{
+	for(int i = 0; i < 16; i++)
+	{
+		hw_key[i] = key[i];
+		cryp.Init.pKey[i] = key[i];
+	}
+}
+
+void HW_AES128_Enc_pretrigger(uint8_t* pt)
+{
+    HAL_CRYP_Init(&cryp);
+}
+
+void HW_AES128_Enc(uint8_t* pt)
+{
+    HAL_CRYP_AESECB_Encrypt(&cryp, pt, 16, pt, 1000);
+}
+
+void HW_AES128_Enc_posttrigger(uint8_t* pt)
+{
+    ;
+}
+
+void HW_AES128_Dec(uint8_t *pt)
+{
+     HAL_CRYP_Init(&cryp);
+     HAL_CRYP_AESECB_Decrypt(&cryp, pt, 16, pt, 1000);
+}
