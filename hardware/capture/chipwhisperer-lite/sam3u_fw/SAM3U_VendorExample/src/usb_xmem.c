@@ -91,10 +91,10 @@ uint32_t unsafe_readuint32(uint16_t fpgaaddr)
 uint32_t safe_readuint32(uint16_t fpgaaddr)
 {	
 	//TODO - This timeout to make GUI responsive in case of USB errors, but data will be invalid
-	uint32_t timeout = 10000;
+	//uint32_t timeout = 10000;
 	do{
-		timeout--;
-		if(timeout == 0){return 0xffffffff;};
+		//timeout--;
+		//if(timeout == 0){return 0xffffffff;};
 	}while(!try_enter_cs());
 	uint32_t data;
 	
@@ -125,10 +125,10 @@ void unsafe_readbytes(uint16_t fpgaaddr, uint8_t* data, int numBytes)
 void safe_readbytes(uint16_t fpgaaddr, uint8_t* data, int numBytes)
 {
 	//TODO - This timeout to make GUI responsive in case of USB errors, but data will be invalid
-	uint32_t timeout = 10000;
+	//uint32_t timeout = 10000;
 	do{
-		timeout--;
-		if(timeout == 0){*data = 0xFF; return;};
+		//timeout--;
+		//if(timeout == 0){*data = 0xFF; return;};
 	}while(!try_enter_cs());
 	
 	FPGA_setaddr(fpgaaddr);
