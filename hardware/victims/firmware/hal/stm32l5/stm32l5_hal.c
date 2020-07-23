@@ -1,5 +1,6 @@
 
 #include "stm32l5_hal.h"
+#include "stm32l562xx.h"
 #include "stm32l5xx_hal_rcc.h"
 #include "stm32l5xx_hal_gpio.h"
 #include "stm32l5xx_hal_dma.h"
@@ -76,6 +77,7 @@ void platform_init(void)
     RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
     RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
     HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_ACR_LATENCY_5WS);
+    for (volatile int i = 0; i < 10000; i++); //firmware doesn't work unless this is here for some reason
 #endif
 
     //SysTick interrupt will cause power trace noise - it's also re-enabled elsewhere,
