@@ -109,7 +109,8 @@ void trigger_low(void)
 char getch(void)
 {
 	uint8_t d;
-	while(HAL_UART_Receive(&UartHandle, &d, 1, 5000) != HAL_OK);
+	while(HAL_UART_Receive(&UartHandle, &d, 1, 50) != HAL_OK)
+		USART1->ICR |= (1 << 3); // make sure overrun error is cleared, otherwise can stall here
 	return d;
 }
 
