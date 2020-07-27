@@ -67,6 +67,7 @@ class ADCSettings(util.DisableNewAttr):
     def __str__(self):
         return self.__repr__()
 
+
     @property
     def samples(self):
         """Number of samples to store."""
@@ -587,6 +588,16 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
     def _getNAEUSB(self):
         return self._cwusb
 
+    @property
+    def latest_fw(self):
+        from chipwhisperer.hardware.firmware.cwnano import fwver
+        return {"major": fwver[0], "minor": fwver[1]}
+
+    @property
+    def fw_version(self):
+        a = self._cwusb.readFwVersion()
+        return {"major": a[0], "minor": a[1], "debug": a[2]}
+
     def _con(self, sn=None):
         try:
             possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
@@ -651,6 +662,7 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
 
     def _dict_repr(self):
         dict = OrderedDict()
+        dict['fw_version'] = self.fw_version
         dict['io']    = self.io._dict_repr()
         dict['adc']   = self.adc._dict_repr()
         dict['glitch'] = self.glitch._dict_repr()

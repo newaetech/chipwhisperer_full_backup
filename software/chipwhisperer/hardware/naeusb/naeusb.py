@@ -39,6 +39,7 @@ import usb.util
 from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
 from chipwhisperer.hardware.firmware import cw1200 as fw_cw1200
 from chipwhisperer.hardware.firmware import cw305  as fw_cw305
+from chipwhisperer.hardware.firmware import cwnano  as fw_nano
 
 
 
@@ -71,6 +72,7 @@ NEWAE_PIDS = {
     0xACE2: {'name': "ChipWhisperer-Lite",     'fwver': fw_cwlite.fwver},
     0xACE3: {'name': "ChipWhisperer-CW1200",   'fwver': fw_cw1200.fwver},
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fw_cw305.fwver},
+    0xACE0: {'name': "ChipWhisperer-Nano", 'fwver': fw_nano.fwver},
 }
 
 class NAEUSB_Serializer_base(object):
@@ -606,7 +608,8 @@ class NAEUSB(object):
         latest = fwver[0] > fw_latest[0] or (fwver[0] == fw_latest[0] and fwver[1] >= fw_latest[1])
         if not latest:
             logging.warning('Your firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
-                            '. Suggested to update firmware, as you may experience errors')
+                            '. Suggested to update firmware, as you may experience errors' +
+                            '\nSee https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update')
         return foundId
 
     def usbdev(self):

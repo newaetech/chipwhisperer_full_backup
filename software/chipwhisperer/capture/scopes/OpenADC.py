@@ -94,6 +94,21 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
 
         self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
 
+    @property
+    def latest_fw(self):
+        cw_type = self._getCWType()
+        if cw_type == "cwlite":
+            from chipwhisperer.hardware.firmware.cwlite import fwver
+        elif cw_type == "cw1200":
+            from chipwhisperer.hardware.firmware.cw1200 import fwver
+        
+        ret = OrderedDict()
+        return {"major": fwver[0], "minor": fwver[1]}
+    @property
+    def fw_version(self):
+        a = self.qtadc.sc.serial.readFwVersion()
+        return {"major": a[0], "minor": a[1], "debug": a[2]}
+
     def _getNAEUSB(self):
         return self.scopetype.dev._cwusb
 
@@ -236,6 +251,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
 
             self.disable_newattr()
             self._is_connected = True
+
             return True
         return False
 
@@ -315,6 +331,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
 
     def _dict_repr(self):
         dict = OrderedDict()
+        dict['fw_version'] = self.fw_version
         dict['gain']    = self.gain._dict_repr()
         dict['adc']     = self.adc._dict_repr()
         dict['clock']   = self.clock._dict_repr()

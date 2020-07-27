@@ -24,12 +24,16 @@ cw1200_v = [1, 0]
 cw1200_files = [("cw1200_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/cw1200_firmware.zip")),
                 ]
 
+cwnano_v = [0, 11]
+#hardware\capture\chipwhisperer-nano\firmware\cwnano-firmware\Debug\cwnano-firmware.bin
+cwnano_files = [("SAM3U_CWNANO.bin", os.path.join(hwdir, r"capture/chipwhisperer-nano/firmware/cwnano-firmware/Debug/cwnano-firmware.bin"))]
 #List of files to generate
 file_list = [
+     ("cwnano.py" , cwnano_v , cwnano_files),
 #    ("cw305.py" , cw305_v , cw305_files),
 #    ("cwcr2.py" , cwcr2_v , cwcr2_files),
 #    ("cwlite.py", cwlite_v, cwlite_files),
-    ("cw1200.py", cw1200_v, cw1200_files),
+#    ("cw1200.py", cw1200_v, cw1200_files),
 ]
 
 for fdata in file_list:
