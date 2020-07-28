@@ -391,15 +391,14 @@ Firmware Update
 ===============
 
 On some occasions it is necessary to reprogram the scope of the ChipWhisperer Nano, Lite
-or Pro.
+or Pro. The easist way to both enter the bootloader and flash new firmware
+is through our SAMFWLoader class.
 
-.. warning::
-    This is not necessary most of the time. It should be only done if you know exactly
-    what you are doing. This process will erase the firmware on the scope and make it
-    unusable until reprogrammed.
-
-.. seealso:: The manual way of updating the SAM3U Firmware can be found on the
-    `wiki <https://wiki.newae.com/Manual_SAM3U_Firmware_Update>`_.
+.. seealso:: You can also use the BOSSA 
+    `BOSSA <https://www.shumatech.com/web/products/bossa>`_ utiltiy
+    to reflash the SAM3U firmware. If you need to build it from source,
+    NewAE keeps a slightly modified version of the source at
+    https://github.com/newaetech/BOSSA
 
 .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update.SAMFWLoader
 
