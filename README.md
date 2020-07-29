@@ -1,6 +1,6 @@
 # ChipWhisperer
 
-[Wiki](https://wiki.newae.com/V5:Main_Page) |[Documentation](https://chipwhisperer.readthedocs.io) |[Knowledge Base](https://wiki.newae.com/Category:Knowledge_Base) | [Forum](http://www.newae.com/forum) | [Store](https://store.newae.com) | [NewAE](http://newae.com)
+[Hardware Docs](https://rtfm.newae.com) |[Documentation](https://chipwhisperer.readthedocs.io) | [Forum](http://www.newae.com/forum) | [Store](https://store.newae.com) | [NewAE](http://newae.com)
 
 ChipWhisperer is an open source toolchain dedicated to hardware security research. This toolchain consists of several layers of open source components:
 * __Hardware__: The ChipWhisperer uses a _capture_ board and a _target_ board. Schematics and PCB layouts for the ChipWhisperer-Lite capture board and a number of target boards are freely available.
@@ -28,9 +28,9 @@ We highly recommend you switch to CW5 as all development since last year has bee
 
 ## Getting Started
 First time using ChipWhisperer? Check out these links:
-* [Getting Started](https://wiki.newae.com/V5:Getting_Started) if you have no idea where to start
-* [CW5 Information](https://wiki.newae.com/CW5) for information about ChipWhisperer 5 and Jupyter.
+* [Getting started](https://chipwhisperer.readthedocs.io/en/latest/getting-started.html)
 * [Installing ChipWhisperer](https://chipwhisperer.readthedocs.io/en/latest/installing.html) if you're trying to set up this software package
+* [Hardware Docs](https://rtfm.newae.com) for hardware information. Also has helpful comparison between different NewAE products.
 
 ## GIT Source
 Note all development occurs on the [develop](https://github.com/newaetech/chipwhisperer/tree/develop) branch. If you are looking for bleeding edge it's NOT on master - we push each release (and possibly any critical changes) to master. This means that "master" always gives you the latest known-working branch, but there may be new features on the "develop" branch.
