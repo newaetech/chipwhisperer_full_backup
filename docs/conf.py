@@ -71,7 +71,7 @@ html_theme_options = {
     'github_button': 'true',
     'github_type': 'watch',
     'extra_nav_links': {
-        'Hardware Docs': 'https://wiki.newae.com/Main_Page#Hardware_Documentation',
+        'Hardware Docs': 'https://rtfm.newae.com',
         'Our Source Code': 'https://github.com/newaetech/chipwhisperer',
     },
     'sidebar_width': '265px',

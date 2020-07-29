@@ -123,7 +123,8 @@ prerequisites for you. The steps for using the installar are as follows:
    ChipWhisperer and whether or not you want to install Git for updating 
    ChipWhisperer (recommended).
 
- * Finally, connect the ChipWhisperer to your computer and install the drivers for your device. Driver installation instructions can be found on the `newae-wiki`_
+ * Finally, connect the ChipWhisperer to your computer and install the drivers for your device. 
+   Instructions can be found in :ref:`prerequisites`.
 
  Once this is completed, you should have a fully functioning ChipWhisperer 
  install. However, you will still need to install compilers to build firmware for targets. To finish the installation:
@@ -148,8 +149,6 @@ prerequisites for you. The steps for using the installar are as follows:
 With this, you now have a fully functioning ChipWhisperer install. Run the 
 ChipWhisperer app, then navigate to the Jupyter folder, where tutorials for 
 running ChipWhisperer are located.
-
-.. _newae-wiki: https://wiki.newae.com/Main_Page
 
 .. _releases: https://github.com/newaetech/chipwhisperer/releases
 

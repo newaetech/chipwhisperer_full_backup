@@ -5,6 +5,8 @@ ChipWhisperer
 Welcome to the new home of the documentation for the ChipWhisperer software,
 following the release of ChipWhisperer 5.1.0.
 
+You can find installation instructions for 
+
 After :ref:`installing <install>` ChipWhisperer and setting up your
 `hardware`_ run:
 
@@ -40,7 +42,7 @@ If you are new to the latest major changes and other websites and resources
 related to side-channel analysis and the ChipWhisperer tool-chain, here is an
 :ref:`overview <getting_started>` page for you.
 
-.. _hardware: https://wiki.newae.com/Main_Page#Hardware_Documentation
+.. _hardware: https://rtfm.newae.com
 
 
 Documentation

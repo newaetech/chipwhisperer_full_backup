@@ -7,7 +7,7 @@ Contributing
 The ChipWhisperer `software`_ is documented using sphinx and lives on
 ReadTheDocs. However, NewAE Technology Inc. also develops hardware for
 side-channel analysis and embedded hardware security fun. The documentation
-for the hardware is on the `MediaWiki site`_. The tutorials are also
+for the hardware is on a `separate site`_. The tutorials are also
 located on this site and are auto-generated based on the jupyter notebooks.
 
 Contribution to the project is always welcome. We are a small team and
@@ -40,7 +40,7 @@ Here are some areas you can contribute in:
 :ref:`Hardware Docs <contributing-hardware_docs>`:
 
     If you find mistakes or think of corrections that would be helpful for
-    the hardware documentation on the `NewAE Wiki`_, this section is for you.
+    the hardware documentation on the `NewAE Hardware Docs`_, this section is for you.
 
 :ref:`Testing <contributing-testing>`:
 
@@ -51,8 +51,9 @@ Here are some areas you can contribute in:
 .. _GitHub repository: https://github.com/newaetech/chipwhisperer
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
 .. _software: https://github.com/newaetech/chipwhisperer
-.. _MediaWiki site: https://wiki.newae.com
-.. _NewAE Wiki: https://wiki.newae.com
+.. _separate site: https://rtfm.newae.com
+.. _NewAE Hardware Docs: https://rtfm.newae.com
+.. _forum: https:forum.newae.com
 
 
 .. _contributing-software_docs:
@@ -183,9 +184,8 @@ A few useful resources:
 Hardware Documentation
 **********************
 
-Found on the `NewAE Wiki`_ under the Hardware Documentation section. To
-contribute or make changes to the wiki contact **wiki@newae.com**.
-
+We're not currently accepting direct modifications to our hardware
+docs, but may in the future. For now, make a thread on our `forums <https://forum.newae.com>`_.
 
 .. _contributing-code_base:
 

@@ -46,9 +46,9 @@ Here are some of the major changes we are most excited about:
     not already done that will all of our changes.
 
   * We have this site now. The installation procedure, the software
-    documentation, and the tutorials are on this site. All other resources
-    stay on the `NewAE Wiki`_. This site will be version based on releases
-    of the software. Thank you `readthedocs`_!
+    documentation, and the tutorials are on this site. We've now
+    got a `separate site for hardware docs <https://rtfm.newae.com>`_ as well. This site will 
+    be version based on releases of the software. Thank you `readthedocs`_!
 
   * :ref:`Tutorials <tutorials>` are now auto-generated with our tutorial
     build system. The jupyter notebooks that are included in the
@@ -71,22 +71,11 @@ content. The question is how do you make sense of them all. Here is an
 attempt at an overview of the resources related to the ChipWhisperer
 tool-chain:
 
-`NewAE Wiki`_:
+`NewAE Hardware Documentation`_:
 
-    The home of all the documentation for ChipWhisperer hardware, and extra
-    wiki stuff from NewAE, including usage of ChipWhisperer in academics
-    papers, side-channel analysis theory and upcoming events. If you
+    The home of all the documentation for NewAE hardware. If you
     need to find out how to set up the board you have, this is a great place
-    to start. This is also where upcoming conferences are listed.
-
-    Ever since the release of ChipWhisperer software 5.0.0 this
-    site does **not** hold the most up to date tutorials for using the
-    ChipWhisperer software with your board, however, it holds the tutorials
-    for all previous version of the ChipWhisperer software.
-
-    The wiki hosts all the extra theory for learning some of the
-    side-channel attacks (Ex. `CPA theory`_) excluding what theory is
-    included in the :ref:`tutorials` on this readthedocs site.
+    to start.
 
 `ChipWhisperer ReadTheDocs`_:
 
@@ -149,11 +138,10 @@ tool-chain:
 .. _NewAE Store: https://store.newae.com/
 .. _Jupyter Notebook: https://jupyter.org/
 .. _readthedocs: http://readthedocs.org/
-.. _NewAE Wiki: https://wiki.newae.com/Main_Page
+.. _NewAE Hardware Documentation: https://rtfm.newae.com
 .. _ChipWhisperer ReadTheDocs: https://chipwhisperer.readthedocs.io
 .. _newaetech/chipwhisperer Github Repository: https://github.com/newaetech/chipwhisperer
 .. _Issue Tracker: https://github.com/newaetech/chipwhisperer/issues
-.. _CPA theory: https://wiki.newae.com/Correlation_Power_Analysis
 .. _ChipWhisperer GitHub repository: https://github.com/newaetech/chipwhisperer
 .. _NewAE Forum: https://forum.newae.com/
 .. _NewAE Website: https://newae.com/
