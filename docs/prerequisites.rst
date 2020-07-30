@@ -167,9 +167,11 @@ notebooks.
 Installing Hardware Drivers
 ===========================
 
-Details of driver installation are on specific pages for supported
-hardware (such as cwcapturerev2 and naecw1173_cwlite). Drivers are
-available from ChipWhisperer `releases`_ section.
+ * Plug in the ChipWhisperer to your computer
+ * If the "New Hardware Found" wizard doesn't prompt you for drivers,
+   go to the control panel, find your device, and select "Update Drivers"
+ * You can find drivers on the ChipWhisperer `releases`_ section. They
+   come as a zip file, so you'll need to extract them first.
 
 .. _releases: https://github.com/newaetech/chipwhisperer/releases
 
