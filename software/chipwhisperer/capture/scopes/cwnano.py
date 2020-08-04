@@ -645,6 +645,16 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
 
         self._lasttrace = self._cwusb.cmdReadMem(0, self.adc.samples)
 
+        # can just keep rerunning this until it works I think
+        i = 0
+        while len(self._lasttrace) < self.adc.samples:
+            logging.debug("couldn't read ADC data from Nano, retrying...")
+
+            self._lasttrace = self._cwusb.cmdReadMem(0, self.adc.samples)
+            i+= 1
+            if i > 20:
+                logging.warning("Couldn't read trace data back from Nano")
+                return True
         self._lasttrace = np.array(self._lasttrace) / 256.0 - 0.5
 
         #self.newDataReceived(0, self._lasttrace, 0, self.adc.clk_freq)
