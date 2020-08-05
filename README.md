@@ -26,6 +26,18 @@ An overview of the major changes can be found on the new ReadtheDocs [Overview P
 
 We highly recommend you switch to CW5 as all development since last year has been for CW5, and will continue this way. The final tagged version of CW4 is 4.0.5, it can be found in the **develop** branch if you insist. 
 
+## ChipWhisperer 5.3: Major tutorial/documentation overhaul
+
+ChipWhisperer 5.3 comes with a lot of tutorial and documentation changes! https://wiki.newae.com is now deprecated
+in favour of https://rtfm.newae.com. Beyond updated hardware documentation, this new website also has additional information
+about tools and starter kits, as well as helpful comparisons between different hardware (such as different capture hardware and different targets).
+
+Jupyter Notebook tutorials have been organized into different coureses which follow and compliment material
+at https://learn.chipwhisperer.io. In general, tutorials have been redeveloped to include new information, as well
+as better promote learning (less shift+enter). In addition, enitrely new tutorials are included.
+
+Don't have ChipWhisperer hardware yet? No problem! Many of the SCA101 labs allow you to use prerecorded traces.
+
 ## Getting Started
 First time using ChipWhisperer? Check out these links:
 * [Getting started](https://chipwhisperer.readthedocs.io/en/latest/getting-started.html)

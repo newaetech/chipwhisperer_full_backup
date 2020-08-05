@@ -1,3 +1,17 @@
+V5.3.0
+ New Features:
+  * Major tutorial overhaul
+    - Tutorials now built for https://learn.chipwhisperer.io
+    - Includes both remastered and all new tutorials
+  * New hardware documentation at https://rtfm.newae.com
+  * Add documented way to read state of TIO1-4 on Lite/Pro
+  * Add glitch controller for improved glitch recording
+ Fixes:
+  * Make Nano serial and capture more reliable
+  * Build fixes for STM32F3 and STM32L5
+  * Greatly improved reliablity OpenADC long offset captures
+  * Make target.SimpleSerial more robust
+
 V5.2.0
  New Features:  
   * CW-Lite/Pro: Increase maximum glitch repeat to 8192
