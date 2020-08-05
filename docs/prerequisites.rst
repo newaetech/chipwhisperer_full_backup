@@ -116,18 +116,12 @@ You are now ready to move on to :ref:`install-repo`.
 Windows Manual
 **************
 
-.. attention:: Installing ChipWhisperer prerequisites on Windows presents
-    additional challenges compared to other installation methods. It's
-    assumed that you're comfortable with modifying your path and
-    potentially replacing .dll files.
-
-
 Python
 ======
 
 For any of the other installation methods, you'll need to have Python
 3 installed on your computer. If you already a recent version of
-Python installed (3.5.x+), you can skip this step. Note that Python
+Python installed (3.6.x+), you can skip this step. Note that Python
 2.x will **not** work with this codebase. There's also a bit of setup
 that's needed to get other tools and prepare other drivers.
 
@@ -181,29 +175,23 @@ Make
 To build firmware for target boards, you'll need to install GNU Make. There's
 a couple of ways you can install make:
 
- * Install WinAVR. If you're running Windows 8 or later, this will require
-    replacing a .dll file in WinAVR.
  * Install MinGW and add :code:`MinGW\msys\1.0\bin` to your path.
- * Install Cygwin, install make, and add :code:`cygwin/bin` to your path.
+ * Install Cygwin, install make, and add :code:`cygwin\bin` to your path.
+ * Install `avr-gcc`_ and add :code:`avr-gcc-xx.x.x-x64-windows\\bin\\` to your path.
 
+.. _avr-gcc: https://blog.zakkemble.net/avr-gcc-builds/
 
 Compilers
 =========
 
 It assumed any time the :code:`make` command is run, that the
 appropriate compiler is on the path, whether that is the `ARM toolchain`_ or
-AVRGCC. AVRGCC can be installed:
+`avr-gcc`_. You'll need to add the :code:`bin` folder from your `avr-gcc`_ 
+installation to your path.
 
- * Through `AVRGCC standalone`_. You'll need to add
-   :code:`avr8-gnu-toolchain-win32_x88/bin` to your path
- * Through `WinAVR`_. If you're on Windows 8 or later, you'll need to replace
-   :code:`WinAVR/utils/bin/mysys0.dll` with an `updated version`_
 
 .. _ARM toolchain: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
-.. _AVRGCC standalone: https://www.microchip.com/mymicrochip/filehandler.aspx?ddocname=en607654
-.. _WinAVR: https://sourceforge.net/projects/winavr/
-.. _updated version: http://www.madwizard.org/download/electronics/msys-1.0-vista64.zip
-
+.. _avr-gcc: https://blog.zakkemble.net/avr-gcc-builds/
 
 ChipWhisperer
 =============
