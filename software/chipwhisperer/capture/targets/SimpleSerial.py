@@ -271,7 +271,13 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         if data[0] != 'z':
             logging.error("Ack error: {}".format(data))
             return None
-        return int(data[1:3], 16)
+        ret = None
+        try:
+            ret = int(data[1:3], 16)
+        except ValueError:
+            logging.error("Ack error, couldn't decode return {}".format(data))
+            return None
+        return ret
 
     def simpleserial_write(self, cmd, num, end='\n'):
         """ Writes a simpleserial command to the target over serial.
