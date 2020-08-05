@@ -124,7 +124,8 @@ def create_tutorial_files(app, config):
         shutil.copyfile(image_file, os.path.join(output_image_dir, image_name))
 
     # for tutorial identifier (pa_cpa_1), scope and target
-    p = re.compile(r'([A-Za-z_\d]*)-.*-([^-]*)-([^-]*)\.rst')
+    #p = re.compile(r'([A-Za-z_\d]*)-.*-([^-]*)-([^-]*)\.rst')
+    p = re.compile(r'([A-Za-z_ \d]*)-.*-([^-]*)-([^-]*)\.rst')
 
     generated_files = []
     for file in glob(os.path.join(tutorials_src_dir, "*.rst")):
