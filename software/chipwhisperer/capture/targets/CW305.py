@@ -25,10 +25,11 @@
 #=================================================
 import logging
 import time
+import random
 from datetime import datetime
 import os.path
 from ._base import TargetTemplate
-from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
+from chipwhisperer.hardware.naeusb.naeusb import NAEUSB,packuint32
 from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
 from chipwhisperer.hardware.naeusb.fpga import FPGA
 from chipwhisperer.common.utils import util
@@ -64,6 +65,9 @@ class CW305(TargetTemplate):
 
 
     _name = "ChipWhisperer CW305 (Artix-7)"
+    BATCHRUN_START = 0x1
+    BATCHRUN_RANDOM_KEY = 0x2
+    BATCHRUN_RANDOM_PT = 0x4
 
     def __init__(self):
         TargetTemplate.__init__(self)
@@ -75,6 +79,7 @@ class CW305(TargetTemplate):
         self.oa = None
 
         self._woffset = 0x400
+        self._woffset_sam3U = 0x000
 
         self._clksleeptime = 1
         self._clkusbautooff = True
@@ -329,3 +334,63 @@ class CW305(TargetTemplate):
         if self.last_key != key:
             self.last_key = key
             self.simpleserial_write('k', key)
+
+    def batchRun(self,batchsize=1024,random_key=True,random_pt=True,seed=None):
+        """
+            Run multiple encryptions on random data
+
+            Args:
+                batchsize (int): The number of encryption to run (default 1024).
+                random_key (bool): True if the key is random (default False).
+                random_pt (bool): True if the plaintext are random (default True).
+                seed (int): random int32 for the PRG.
+        """
+        if seed is None:
+            seed = random.randint(0,2**32)
+        
+        data = []
+        data.extend(packuint32(1|(random_key<<1)|(random_pt<<2)|(batchsize<<16)))
+        data.extend(packuint32(seed))
+        self.sam3u_write(0,data)
+
+        # generate the inputs
+        if random_key:
+            key = [[0 for x in range(16)] for y in range(batchsize)]
+        else:
+            key = None
+
+        if random_pt:
+            pt = [[0 for x in range(16)] for y in range(batchsize)]
+        else:
+            pt = None
+
+        for b in range(batchsize):
+            if random_key:
+                for j in range(16):
+                    key[b][15-j] = seed >> 24;
+                    seed += ((seed*seed)&0xffffffff) | 0x5
+                    seed &= 0xffffffff
+            if random_pt:
+                for j in range(16):
+                    pt[b][15-j] = seed >> 24;
+                    seed += ((seed*seed)&0xffffffff) | 0x5
+                    seed &= 0xffffffff
+        return key,pt
+
+    def sam3u_write(self, addr, data):
+        """Write to an address on the FPGA
+
+        Args:
+            addr (int): Address to write to
+            data (list): Data to write to addr
+
+        Raises:
+            IOError: User attempted to write to a read-only location
+        """
+        if addr < self._woffset_sam3U:
+            raise IOError("Write to read-only location: 0x%04x"%addr)
+        if len(data) > (256+addr):
+            raise IOError("Write will overflow at location: 0x%04x"%(256))
+
+        return self._naeusb.cmdWriteSam3U(addr, data)
+
