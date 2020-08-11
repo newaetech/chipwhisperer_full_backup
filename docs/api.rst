@@ -500,6 +500,21 @@ CW305 FPGA Target
         .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outfreq_get
             :annotation: target.pll.pll_outfreq_get
 
+        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outsource_set
+            :annotation: target.pll.pll_outsource_set
+
+        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outsource_get
+            :annotation: target.pll.pll_outsource_get
+
+        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_writedefaults
+            :annotation: target.pll.pll_writedefaults
+
+        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outslew_set
+            :annotation: target.pll.pll_outslew_set
+
+        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outslew_get
+            :annotation: target.pll.pll_outslew_get
+
 .. _api-target-program:
 
 Program

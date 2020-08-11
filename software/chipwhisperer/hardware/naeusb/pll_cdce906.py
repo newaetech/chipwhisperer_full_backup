@@ -49,7 +49,6 @@ class PLLCDCE906(object):
         """
         if freq is None or (freq < 630E3) or (freq > 167E6):
             raise ValueError("Illegal clock frequency = %d" % freq)
-            return
         best = self.calcMulDiv(freq, self.reffreq)
         self.pllwrite(outnum, N=best[0], M=best[1], outdiv=best[2])
         self.outputUpdateOutputs(outnum)
@@ -140,10 +139,15 @@ class PLLCDCE906(object):
 
     def pll_outslew_set(self, slew, outnum):
         """ Set clock slew rate for the selected clock output.
-            - outnum=0: specifies CLK-SMA X6 output.
-            - outnum=1: specifies FPGA pin N13 output.
-            - outnum=2: specifies FPGA pin E12 output.
-        Allowed values: '+3nS', '+2nS', '+1nS', '+0nS'.
+
+        Args:
+            slew (string): Desired slew rate. Allowed values: '+3nS', '+2nS', 
+                            '+1nS', '+0nS'.
+
+            outnum (int): PLL output
+
+        Raises:
+            ValueError: Invalid PLL output or invalid slew value
         """
         if slew in ['+3nS', '+2nS', '+1nS', '+0nS']:
             if   outnum == 0: self._pll0slew = slew
@@ -172,9 +176,20 @@ class PLLCDCE906(object):
 
     def pll_outsource_set(self, source, outnum):
         """Update clock source for the selected clock output.
-            - outnum=0: specifies CLK-SMA X6 source; allowed source values: 'PLL0', 'PLL1', 'PLL2'.
-            - outnum=1: specifies FPGA pin N13 source; allowed source values: 'PLL1'.
-            - outnum=2: specifies FPGA pin E12 source; allowed source values: 'PLL2'.
+
+        Output 0 can be configured for PLL0, PLL1, or PLL2.
+
+        Output 1 is restricted to PLL1.
+
+        Output 2 is restricted to PLL2.
+
+        Args:
+            source (String): Desired clock source ('PLL0', 'PLL1', 'PLL2')
+            outnum (int): Output to configure. 0 goes to CLK-SMA X6, 1 goes
+                          to FPGA pin N13, and 2 goes to FPGA pin E12.
+
+        Raises:
+            ValueError: Invalid source for specified clock output
         """
         if outnum==0 and source in ['PLL0', 'PLL1', 'PLL2']:
             self._pll0source = source

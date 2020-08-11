@@ -56,6 +56,29 @@ class CW305(TargetTemplate):
         target = cw.target(scope,
                 targets.CW305, bsfile=<valid FPGA bitstream file>)
 
+    If you're using the reference designs, typical configuration
+    requires you to set the FPGA VCC-INT voltage and enable and 
+    set the clock via the PLL. You'll probably also want to
+    disable the USB clock during encryption to reduce noise::
+
+        target.vccint_set(1.0) #set VCC-INT to 1V
+        
+        target.pll.pll_enable_set(True) #Enable PLL chip
+        target.pll.pll_outenable_set(False, 0) # Disable unused PLL0
+        target.pll.pll_outenable_set(True, 1)  # Enable PLL 
+        target.pll.pll_outenable_set(False, 2) # Disable unused PLL2
+
+        # optional, but reduces power trace noise
+        target.clkusbautoofff = True
+        target.clksleeptime = 1 # 1ms typically good for sleep
+
+
+    Don't forget to clock the ChipWhisperer ADC off the FPGA instead
+    of the internal clock::
+
+        scope.clock.adc_src = "extclk_x4"
+        scope.clock.reset_adc() # make sure the DCM is locked
+
     Note that connecting to the CW305 includes programming the CW305 FPGA.
     For more help about CW305 settings, try help() on this CW305 submodule:
 
