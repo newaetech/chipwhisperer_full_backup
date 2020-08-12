@@ -18,9 +18,9 @@ Advanced
      * :ref:`prerequisites-mac`
 
  * :ref:`Installation <install>`
-     * :ref:`install-repo-releases`
-     * :ref:`install-repo-pypi`
      * :ref:`install-repo-git`
+     * :ref:`install-repo-pypi`
+     * :ref:`install-repo-releases`
 
  * :ref:`install-wm-ware`
 
@@ -183,68 +183,6 @@ repository/package using one of:
 	Install the latest features and bugs from our GitHub repository.
 
 
-.. _install-repo-releases:
-
-GitHub Releases
-===============
-
-Once you have a working Python 3 installation, you're ready to install and run ChipWhisperer.
-
-First, download a ChipWhisperer release. You can get these from the `releases`_ page.
-Generally, the latest release is a good choice, but you might need an older version
-for various reasons. You want the source code in .zip or .tar.gz format - not a VBox
-image.
-
-Next, uncompress your downloaded source code somewhere. Generally, 'somewhere' will
-become your ChipWhisperer working directory. For example, on Windows, you might
-want to use *C:\\chipwhisperer\\*.
-
-Once you've got the file, install the python dependencies and run the Python
-install procedure (setup.py) using pip. Use the -e flag for develop mode to indicate
-that the files will probably be changing frequently. To do this, open a terminal and run
-the following, adjusting paths as needed:
-
-.. code:: bash
-
-    cd chipwhisperer
-    python -m pip install -e . --user
-
-    # to be able to run jupyter and the tutorials
-    pip install -r jupyter/requirements.txt --user
-
-    # enable jpyter interactive widgets
-    jupyter nbextension enable --py widgetsnbextension
-
-
-To test, run python and try importing the **chipwhisperer** module:
-
-.. code:: python
-
-    >>> import chipwhisperer as cw
-
-If you want to run the tutorials you can now start the
-:ref:`Jupyter Notebook server <starting>`.
-
-
-.. _releases: https://github.com/newaetech/chipwhisperer/releases
-
-.. _install-repo-pypi:
-
-PyPi
-====
-
-If you want to use **chipwhisperer** as a standalone python package and are not
-interested in having all the tutorials and extra jupyter notebook stuff, this
-installation method is for you::
-
-    pip install chipwhisperer
-
-Will install the *chipwhisperer/software/chipwhisperer* python package in your
-site packages. Now you can go play around with the :ref:`Python API <api>`, or
-take a look at some example :ref:`tutorials <tutorials>` The tutorials are all
-written in jupyter notebook, which you don't have using this installation
-method. However, you can still take a look at the procedure and the code, and
-use it as an example of what can be accomplished using **chipwhisperer**.
 
 
 .. _install-repo-git:
@@ -252,8 +190,9 @@ use it as an example of what can be accomplished using **chipwhisperer**.
 Git
 ===
 
-If you want the cutting-edge version of ChipWhisperer, you can clone the
-repository.
+The recommended way to install ChipWhisperer natively is by cloning it from 
+Git. By default this will pull in the develop version, which has all the 
+latest features/bug fixes, but we also keep each major release on master.
 
 .. note::
 
@@ -296,6 +235,71 @@ you need it:
     python -m pip install -e . --user
 
 Once ChipWhisperer is installed, you can :ref:`run chipwhisperer <starting>`.
+
+.. _install-repo-pypi:
+
+PyPi
+====
+
+If you want to use **chipwhisperer** as a standalone python package and are not
+interested in having all the tutorials and extra jupyter notebook stuff, this
+installation method is for you::
+
+    pip install chipwhisperer
+
+Will install the *chipwhisperer/software/chipwhisperer* python package in your
+site packages. Now you can go play around with the :ref:`Python API <api>`, or
+take a look at some example :ref:`tutorials <tutorials>` The tutorials are all
+written in jupyter notebook, which you don't have using this installation
+method. However, you can still take a look at the procedure and the code, and
+use it as an example of what can be accomplished using **chipwhisperer**.
+
+.. _install-repo-releases:
+
+GitHub Releases
+===============
+
+ChipWhisperer is also available as a Github release. This version won't come with
+Jupyter tutorials and will be more difficult to update, so it isn't recommended.
+
+First, download a ChipWhisperer release. You can get these from the `releases`_ page.
+Generally, the latest release is a good choice, but you might need an older version
+for various reasons. You want the source code in .zip or .tar.gz format - not a VBox
+image.
+
+Next, uncompress your downloaded source code somewhere. Generally, 'somewhere' will
+become your ChipWhisperer working directory. For example, on Windows, you might
+want to use *C:\\chipwhisperer\\*.
+
+Once you've got the file, install the python dependencies and run the Python
+install procedure (setup.py) using pip. Use the -e flag for develop mode to indicate
+that the files will probably be changing frequently. To do this, open a terminal and run
+the following, adjusting paths as needed:
+
+.. code:: bash
+
+    cd chipwhisperer
+    python -m pip install -e . --user
+
+    # to be able to run jupyter and the tutorials
+    pip install -r jupyter/requirements.txt --user
+
+    # enable jpyter interactive widgets
+    jupyter nbextension enable --py widgetsnbextension
+
+
+To test, run python and try importing the **chipwhisperer** module:
+
+.. code:: python
+
+    >>> import chipwhisperer as cw
+
+If you want to run the tutorials you can now start the
+:ref:`Jupyter Notebook server <starting>`.
+
+
+.. _releases: https://github.com/newaetech/chipwhisperer/releases
+
 
 .. _install-wm-ware:
 
