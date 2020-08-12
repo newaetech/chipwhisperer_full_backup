@@ -69,7 +69,7 @@ class CW305(TargetTemplate):
         target.pll.pll_outenable_set(False, 2) # Disable unused PLL2
 
         # optional, but reduces power trace noise
-        target.clkusbautoofff = True
+        target.clkusbautooff = True
         target.clksleeptime = 1 # 1ms typically good for sleep
 
 
@@ -102,6 +102,9 @@ class CW305(TargetTemplate):
         self._clksleeptime = 1
         self._clkusbautooff = True
         self.last_key = bytearray([0]*16)
+
+    def _getNAEUSB(self):
+        return self._naeusb
 
 
     def fpga_write(self, addr, data):
@@ -252,6 +255,10 @@ class CW305(TargetTemplate):
         """ If set, the USB clock is automatically disabled on capture.
 
         The USB clock is re-enabled after self.clksleeptime milliseconds.
+
+        Reads/Writes to the FPGA will not be possible until after
+        the USB clock is reenabled, meaning :code:`usb_trigger_toggle()`
+        must be used to trigger the FPGA to perform an encryption.
 
         :Getter: Gets whether to turn off the USB clock on capture
 

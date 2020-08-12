@@ -10,7 +10,7 @@ hwdir = r"../../../../hardware/"
 
 #List of versions, file-names, and object name
 cw305_v = [0, 11]
-cw305_files = []
+cw305_files = [("SAM3U_CW305.bin", os.path.join(hwdir, r"victims/cw305_artixtarget/fw/sam3u/CW305_SAM3U_FW/build/CW305_SAM3UFW.bin") )]
 
 cwcr2_v = [0, 11]
 cwcr2_files = [("cwrev2_firmware.zip",  os.path.join(hwdir, r"capture/chipwhisperer-rev2/cwrev2_firmware.zip")),
@@ -29,8 +29,8 @@ cwnano_v = [0, 11]
 cwnano_files = [("SAM3U_CWNANO.bin", os.path.join(hwdir, r"capture/chipwhisperer-nano/firmware/cwnano-firmware/Debug/cwnano-firmware.bin"))]
 #List of files to generate
 file_list = [
-     ("cwnano.py" , cwnano_v , cwnano_files),
-#    ("cw305.py" , cw305_v , cw305_files),
+     #("cwnano.py" , cwnano_v , cwnano_files),
+    ("cw305.py" , cw305_v , cw305_files),
 #    ("cwcr2.py" , cwcr2_v , cwcr2_files),
 #    ("cwlite.py", cwlite_v, cwlite_files),
 #    ("cw1200.py", cw1200_v, cw1200_files),

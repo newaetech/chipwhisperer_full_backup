@@ -36,7 +36,6 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
 
 #The firmware files, may still be useful
-from chipwhisperer.hardware.firmware.cwlite import getsome as cwlite_getsome
 
 from chipwhisperer.common.utils.util import camel_case_deprecated
 
@@ -45,7 +44,8 @@ class SAMFWLoader(object):
 
     Despite the name of the file, this will work with the Lite, the Pro, and
     the Nano. If the ChipWhisperer has already been erased, pass None instead
-    of the scope object and skip the enter_bootloader() call.
+    of the scope object and skip the enter_bootloader() call. Will also work
+    for the CW305.
 
     Example:
 
@@ -55,16 +55,20 @@ class SAMFWLoader(object):
 
             import chipwhisperer as cw
 
-            # For the ChipWhisperer Lite or Pro
-            scope = cw.scope(scope_type=cw.scopes.OpenADC)
+            # Connect to scope
+            scope = cw.scope()
 
-            # For the ChipWhisperer Nano
-            scope = cw.scope(scope_type=cw.scopes.CWNano)
+            # If using CW305, connect to target as well
+            # Can ignore msg about no bitstream
+            target = cw.target(scope, cw.targets.CW305)
 
      #. Place the hardware in bootloader mode using::
 
             # use created scope object from previous step
             programmer = cw.SAMFWLoader(scope=scope)
+
+            # or CW305 target object
+            programmer = cw.SAMFWLoader(scope=target)
 
             # WARNING: this will erase the firmware on the device
             # and make it unusable until reprogrammed.
@@ -85,15 +89,16 @@ class SAMFWLoader(object):
          #. Using the firmware_path::
 
                 # the firmware file is included with chipwhisperer 
-                # and is in the .bin file in the 
+                # and is the .bin file from the FW build
                 # (ChipWhisperer Lite) chipwhisperer\hardware\capture\chipwhisperer-lite\sam3u_fw\SAM3U_VendorExample\Debug 
-                # (ChipWhisperer Pro) 
                 # directory. 
                 programmer.program(<port>, <path to firmware file>)
 
-         #. Using the hardware_type::
+         #. Using the hardware_type (recommended)::
 
                 programmer.program(<port>, hardware_type='cwlite')
+                programmer.program(<port>, hardware_type='cwnano')
+                programmer.program(<port>, hardware_type='cw305')
 
         On Linux instead of 'COM#' use the Linux equivalent (usually /dev/ttyACM# or /dev/ttyUSB#)
 
@@ -153,7 +158,9 @@ class SAMFWLoader(object):
 
         """
         type_whitelist = [
-            'cwlite'
+            'cwlite',
+            'cwnano',
+            'cw305'
         ]
 
         if fw_path and hardware_type:
@@ -167,12 +174,22 @@ class SAMFWLoader(object):
                 message = 'Invalid hardware type {}, needs to be one of: ({})'
                 raise TypeError(message.format(hardware_type, ', '.join(type_whitelist)))
             else:
+                if hardware_type == 'cwlite':
+                    from chipwhisperer.hardware.firmware.cwlite import getsome as getsome
+                    name = 'SAM3U_CW1173.bin'
+                elif hardware_type == 'cwnano':
+                    from chipwhisperer.hardware.firmware.cwnano import getsome as getsome
+                    name = 'SAM3U_CWNANO.bin'
+                elif hardware_type == 'cw305':
+                    from chipwhisperer.hardware.firmware.cw305 import getsome as getsome
+                    name = 'SAM3U_CW305.bin'
                 print('Loading {} firmware...'.format(hardware_type))
-                fw_data = cwlite_getsome('SAM3U_CW1173.bin').read()
+                fw_data = getsome(name).read()
 
         if fw_path:
             print("Opening firmware...")
             fw_data = open(fw_path, "rb").read()
+            name = fw_path
 
         sam = Samba()
 
@@ -180,7 +197,7 @@ class SAMFWLoader(object):
         sam.con(port)
         print("Connected!\nErasing...")
         sam.erase()
-        print("Erased!\nProgramming file {}...".format(fw_path))
+        print("Erased!\nProgramming file {}...".format(name))
         sam.write(fw_data)
         print("Programmed!\nVerifying...")
         if sam.verify(fw_data):
