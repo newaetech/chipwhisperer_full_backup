@@ -92,6 +92,7 @@ class NAEUSB_Serializer_base(object):
     GET_POSSIBLE_DEVICES = 0xF6
     WRITE_BULK = 0xF7
     READ_BULK = 0xF8
+    CMD_WRITE_MEM_SAM3U = 0xF9
 
 
     ACK = 0xA0
@@ -212,6 +213,19 @@ class NAEUSB_Serializer(NAEUSB_Serializer_base):
         cmdpacket = self.make_cmd(self.CMD_WRITE_MEM, payload)
         return self.process_rx(self.txrx(tx=cmdpacket))
 
+    def cmdWriteSam3U(self, addr, data):
+        """
+        Send command to write memory over the SAM3U. 
+        """
+
+        dlen = len(data)
+
+        payload = [addr]
+        payload.extend(data)
+        cmdpacket = self.make_cmd(self.CMD_WRITE_MEM_SAM3U, payload)
+        return self.process_rx(self.txrx(tx=cmdpacket))
+
+
     def writeBulk(self, data):
         """
         Low-level function.
@@ -243,6 +257,7 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
     CMD_READMEM_CTRL = 0x12
     CMD_WRITEMEM_CTRL = 0x13
     CMD_MEMSTREAM = 0x14
+    CMD_WRITEMEM_CTRL_SAM3U = 0x15
 
     def __init__(self):
         self._usbdev = None
@@ -291,6 +306,10 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
                 addr = payload[0]
                 data = payload[1:]
                 self.cmdWriteMem(addr, data)
+            elif cmd == self.CMD_WRITE_MEM_SAM3U:
+                addr = payload[0]
+                data = payload[1:]
+                self.cmdWriteSam3U(addr, data)
             elif cmd == self.GET_POSSIBLE_DEVICES:
                 response = self.get_possible_devices(payload)
             elif cmd == self.OPEN:
@@ -507,6 +526,29 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
 
         return data
 
+    def cmdWriteSam3U(self, addr, data):
+        """
+        Send command to write memory over memory of SAMU3. 
+        """
+
+        dlen = len(data)
+
+        if dlen < 48:
+            cmd = self.CMD_WRITEMEM_CTRL_SAM3U
+        else:
+            cmd = self.ERROR
+
+        # ADDR/LEN written LSB first
+        pload = packuint32(dlen)
+        pload.extend(packuint32(addr))
+
+        if cmd == self.CMD_WRITEMEM_CTRL_SAM3U:
+            pload.extend(data)
+
+        self.sendCtrl(cmd, data=pload)
+        
+        return data
+
 
     def cmdWriteBulk(self, data):
         """
@@ -542,6 +584,7 @@ class NAEUSB(object):
     CMD_READMEM_CTRL = 0x12
     CMD_WRITEMEM_CTRL = 0x13
     CMD_MEMSTREAM = 0x14
+    CMD_WRITEMEM_CTRL_SAM3U = 0x15
 
     stream = False
 
@@ -656,6 +699,14 @@ class NAEUSB(object):
         """
 
         return self.usbseralizer.cmdWriteMem(addr, data)
+
+    def cmdWriteSam3U(self, addr, data):
+        """
+        Send command to write memory over external memory interface to FPGA. Automatically
+        decides to use control-transfer or bulk-endpoint transfer based on data length.
+        """
+
+        return self.usbseralizer.cmdWriteSam3U(addr, data)
 
     def writeBulkEP(self, data):
         """
