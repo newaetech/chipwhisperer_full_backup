@@ -14,7 +14,7 @@ MBATCHSIZE = 2048
 # Benchmark settings
 TESTED_BATCHSIZE = 2**np.arange(1,11) 
 
-bitstream_path = "../../hardware/victims/cw305_artixtarget/fpga/vivado_examples/aes128_verilog/aes128_verilog.runs/impl_100t/cw305_top.bit"
+bitstream_path = "../hardware/victims/cw305_artixtarget/fpga/vivado_examples/aes128_verilog/aes128_verilog.runs/impl_35t/cw305_top.bit"
 
 print("####################")
 print("# Programming the target with default bitsteam")
