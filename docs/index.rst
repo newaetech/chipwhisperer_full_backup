@@ -5,7 +5,9 @@ ChipWhisperer
 Welcome to the new home of the documentation for the ChipWhisperer software,
 following the release of ChipWhisperer 5.1.0.
 
-You can find installation instructions for 
+If you're new to ChipWhisperer, or haven't been following the project recently,
+you may want to check out :ref:`overview <getting_started>` to learn a little
+about the project and its recent changes.
 
 After :ref:`installing <install>` ChipWhisperer and setting up your
 `hardware`_ run:
@@ -33,14 +35,11 @@ hardware. To see what is possible with this interface check out the
 :ref:`scope section <api-scope>` of the API documentation.
 
 To see longer, more in-depth examples of what the tool-chain can do, take a look
-at the `Using the ChipWhisperer Analyzer for a Correlation Power Analysis Attack <tutorial-pa_cpa_1-openadc-cwlitearm>`_
-tutorial. Check out all the other :ref:`tutorials <tutorials>` to see what is possible. The
+at :ref:`tutorials-sca101` for completed versions of power analysis tutorials, as well as
+:ref:`tutorials-fault101` for completed versions of voltage and clock glitching tutorials.
+Check out all the other :ref:`tutorials <tutorials>` to see what is possible. The
 content is generated from Jupyter notebooks included with the project. It
 includes interactive plots.
-
-If you are new to the latest major changes and other websites and resources
-related to side-channel analysis and the ChipWhisperer tool-chain, here is an
-:ref:`overview <getting_started>` page for you.
 
 .. _hardware: https://rtfm.newae.com
 

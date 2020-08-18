@@ -171,19 +171,18 @@ ChipWhisperer
 After satisfying prerequisites for your system, install the ChipWhisperer
 repository/package using one of:
 
-:ref:`install-repo-releases` (Recommended)
-	Get the latest stable release from the GitHub repository. The release includes
-	repository and zipped drivers.
+:ref:`install-repo-git` (Recommended)
+  The best way to get the ChipWhisperer software, as well as
+  drivers, hardware source code, and Jupyter Notebook tutorials.
+
 
 :ref:`install-repo-pypi`
 	The classic :code:`pip install chipwhisperer`. Does not install
 	the drivers, or hardware source code currently.
 
-:ref:`install-repo-git`
-	Install the latest features and bugs from our GitHub repository.
-
-
-
+:ref:`install-repo-releases`
+	Get the latest stable release from the GitHub repository. The release includes
+	repository and zipped drivers.
 
 .. _install-repo-git:
 
