@@ -20,6 +20,8 @@ setup(
         'numpy',
         'pyusb',
         'scipy',
+        'fastdtw',
+        'Cython',
     ],
     project_urls={
         'Documentation': 'https://chipwhisperer.readthedocs.io',
