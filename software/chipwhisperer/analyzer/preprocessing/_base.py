@@ -33,6 +33,7 @@ from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api.ProjectFormat import Project
 from chipwhisperer.common.traces import Trace
 
+from tqdm import trange
 class PreprocessingBase(TraceSource, PassiveTraceObserver):
     """
     Base Class for all preprocessing modules
@@ -196,7 +197,7 @@ class PreprocessingBase(TraceSource, PassiveTraceObserver):
         """
         proj = Project()
 
-        for i in range(self.num_traces()):
+        for i in trange(self.num_traces()):
             if self.get_trace(i) is None:
                 logging.warn("Wave {} ({}) is invalid. Skipping ".format(i, self.get_trace(i)))
                 continue

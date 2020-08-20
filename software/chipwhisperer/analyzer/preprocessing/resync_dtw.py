@@ -107,7 +107,7 @@ class ResyncDTW(PreprocessingBase):
         # cython fastdtw can't take numpy.memmap inputs, so we convert them to arrays:
         aref = np.array(list(ref))
         atrace = np.array(list(trace))
-        dist, path = fastdtw(ref, trace, radius=r, dist=None)
+        dist, path = fastdtw(aref, atrace, radius=r, dist=None)
         #except:
         #    return None
         px = [x for x, y in path]
