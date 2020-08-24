@@ -28,6 +28,7 @@ from collections import OrderedDict
 import inspect
 
 from chipwhisperer.analyzer.attacks.models.aes.funcs import sbox, inv_sbox, subbytes, inv_subbytes, mixcolumns, inv_mixcolumns, shiftrows, inv_shiftrows
+from chipwhisperer.common.utils.aes_tables import t_table_hw, t_table_hw_dec
 
 from .base import ModelsBase
 from chipwhisperer.analyzer.attacks.models.aes.key_schedule import key_schedule_rounds
@@ -269,6 +270,7 @@ class Round1Round2StateDiff_SBox(AESLeakageHelper):
 enc_list = [SBox_output, PtKey_XOR, SBoxInputSuccessive, SBoxInOutDiff, LastroundStateDiff, LastroundStateDiffAlternate, SBoxOutputSuccessive, ShiftColumns_output, Mixcolumns_output, Round1Round2StateDiff_Text, Round1Round2StateDiff_KeyMix, Round1Round2StateDiff_SBox]
 dec_list = [InvSBox_output]
 
+
 class AES128_8bit(ModelsBase):
     """Leakage model for AES128 attacks.
 
@@ -361,3 +363,76 @@ class AES128_8bit(ModelsBase):
         return key_schedule_rounds(inputkey, inputround, desiredround)
 
     keyScheduleRounds = camel_case_deprecated(key_schedule_rounds)
+
+
+class AES128_ttable(AES128_8bit):
+    def leakage(self, pt, ct, guess, bnum, state):
+        """ Leakage as set by model
+
+        Args:
+            pt (list): Plaintext/textin
+            ct (list): Ciphertext/textout
+            guess (list): Key guess
+            bnum (list): Subkey Byte Number
+            state (list): The state of the key finding
+
+        Returns:
+            A hamming weight (int)
+        """
+        try:
+            #Make a copy so we don't screw with anything...
+            key = list(state['knownkey'])
+        except:
+            #We don't log due to time-sensitive nature... but if state doesn't have "knownkey" will result in
+            #unknown knownkey which causes some attacks to fail. Possibly should make this some sort of
+            #flag to indicate we want to ignore the problem?
+            key = [None]*16
+
+        #Guess can be 'none' if we want to use original key as-is
+        if guess is not None:
+            key[bnum] = guess
+
+        #Get intermediate value
+        intermediate_value = self.modelobj.leakage(pt, ct, key, bnum)
+
+        #For bit-wise attacks, mask off specific bit value
+        intermediate_value = self._mask & intermediate_value
+
+        #Return HW of guess
+        return t_table_hw[intermediate_value]
+
+class AES128_ttable_dec(AES128_8bit):
+    def leakage(self, pt, ct, guess, bnum, state):
+        """ Leakage as set by model
+
+        Args:
+            pt (list): Plaintext/textin
+            ct (list): Ciphertext/textout
+            guess (list): Key guess
+            bnum (list): Subkey Byte Number
+            state (list): The state of the key finding
+
+        Returns:
+            A hamming weight (int)
+        """
+        try:
+            #Make a copy so we don't screw with anything...
+            key = list(state['knownkey'])
+        except:
+            #We don't log due to time-sensitive nature... but if state doesn't have "knownkey" will result in
+            #unknown knownkey which causes some attacks to fail. Possibly should make this some sort of
+            #flag to indicate we want to ignore the problem?
+            key = [None]*16
+
+        #Guess can be 'none' if we want to use original key as-is
+        if guess is not None:
+            key[bnum] = guess
+
+        #Get intermediate value
+        intermediate_value = self.modelobj.leakage(pt, ct, key, bnum)
+
+        #For bit-wise attacks, mask off specific bit value
+        intermediate_value = self._mask & intermediate_value
+
+        #Return HW of guess
+        return t_table_hw_dec[intermediate_value]

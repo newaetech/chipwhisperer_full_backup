@@ -165,3 +165,8 @@ gal14=(
 0xd7,0xd9,0xcb,0xc5,0xef,0xe1,0xf3,0xfd,0xa7,0xa9,0xbb,0xb5,0x9f,0x91,0x83,0x8d)
 galI=gal14,gal11,gal13,gal9
 galNI=gal2,gal3,gal1,gal1
+
+hw = [bin(i).count('1') for i in range(256)]
+
+t_table_hw = [2*hw[sbox[i]] + hw[gal2[sbox[i]]] + hw[gal3[sbox[i]]] for i in range(256)]
+t_table_hw_dec = [hw[gal9[sbox[i]]] + hw[gal11[sbox[i]]] + hw[gal13[sbox[i]]] + hw[gal14[sbox[i]]] for i in range(256)]

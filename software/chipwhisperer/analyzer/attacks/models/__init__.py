@@ -1,5 +1,7 @@
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128_leakage
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit as AES128_8bit
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_ttable
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_ttable_dec
 import textwrap
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AESLeakageHelper
 
@@ -45,6 +47,16 @@ class EightBitAES128LeakageModels:
 
         """
         return AES128_8bit(model)
+
+    @property
+    def t_table(self):
+        """Hamming weight of t-table"""
+        return AES128_ttable(aes128_leakage.PtKey_XOR)
+
+    @property
+    def t_table_dec(self):
+        """Hamming weight of inverse t-table"""
+        return AES128_ttable_dec(aes128_leakage.PtKey_XOR)
 
     @property
     def plaintext_key_xor(self):
