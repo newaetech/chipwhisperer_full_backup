@@ -77,7 +77,6 @@ class TestTraces(unittest.TestCase):
         # allow slicing
         self.assertEqual(self.fake_trace_2[1], textins[-2:][-1])
 
-
 class TestProject(unittest.TestCase):
 
     def setUp(self):
@@ -175,6 +174,20 @@ class TestProject(unittest.TestCase):
             self.assertEqual(traces[index].key, key)
             self.assertEqual(traces[index].wave, wave)
             index += 1
+
+        self.assertEqual(index, len(self.project.textins))
+    
+    def test_numpy_conversion(self):
+        self.project = cw.create_project(self.project_name)
+
+        traces = create_random_traces(100, 1000)
+        self.project.traces.extend(traces)
+
+        np_waves = np.array(self.project.waves)
+        self.assertEqual(np.shape(np_waves), (len(traces), len(traces[0].wave)))
+        self.assertEqual(np_waves.dtype, 'float64')
+        for i in range(len(np_waves)):
+            self.assertEqual((np_waves[i,:] == self.project.waves[i]).all(), True)
 
 
     def test_project_openable(self):

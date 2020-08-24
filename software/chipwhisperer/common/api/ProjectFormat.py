@@ -849,6 +849,9 @@ class IndividualIterable:
 
         self.n += 1
         return self.getter(self.n - 1)
+    
+    def __len__(self):
+        return self.trace_num_func()
 
     def __getitem__(self, item):
         if isinstance(item, int):
@@ -870,3 +873,11 @@ class IndividualIterable:
         else:
             raise TypeError('Indexing by integer or slice only')
 
+    def __array__(self):
+        # to make converting to numpy arrays much easier
+        dtype = self.getter(0).dtype
+        num_traces = self.trace_num_func()
+        len_trace = len(self.getter(0))
+        arr = np.zeros((num_traces, len_trace), dtype=dtype)
+        arr[:,:] = np.array([self.getter(i) for i in range(num_traces)])[:,:]
+        return arr
