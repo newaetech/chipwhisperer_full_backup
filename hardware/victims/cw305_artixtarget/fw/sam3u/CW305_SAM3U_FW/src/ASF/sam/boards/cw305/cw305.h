@@ -213,6 +213,11 @@
 #define PIN_FPGA_DO_GPIO		PIO_PA14_IDX
 #define PIN_FPGA_INITB_GPIO     PIO_PC29_IDX
 
+/* SPARE0, 1, 2 - SPARE 0/1 used to program SPI flash chip on-board*/
+#define PIN_SPARE0                 PIO_PB17_IDX
+#define PIN_SPARE1                 PIO_PB18_IDX
+#define PIN_SPARE2                 PIO_PB22_IDX
+
 //#define PIN_TARG_NRST_GPIO      PIO_PA17_IDX
 
 /** SPI MISO pin definition */

@@ -21,6 +21,7 @@
 #include "ui.h"
 #include "genclk.h"
 #include "fpga_program.h"
+#include "fpgaspi_program.h"
 #include "pdi/XPROGNewAE.h"
 #include "pdi/XPROGTimeout.h"
 #include "pdi/XPROGTarget.h"
@@ -110,6 +111,9 @@ void main_vendor_disable(void)
 
 /* Set VCC-INT Voltage */
 #define REQ_VCCINT 0x31
+
+/* Send SPI commands to chip on FPGA */
+#define REQ_FPGASPI_PROGRAM 0x33
 
 
 COMPILER_WORD_ALIGNED static uint8_t ctrlbuffer[64];
@@ -380,6 +384,47 @@ static void ctrl_vccint_cb(void)
     return;
 }
 
+static uint8_t fpgaspi_data_buffer[64];
+static int fpga_spi_databuffer_len = 0;
+
+void ctrl_progfpgaspi(void){
+	
+	switch(udd_g_ctrlreq.req.wValue){
+		case 0xA0:
+			fpgaspi_program_init();			
+			break;
+			
+		case 0xA1:
+			fpgaspi_program_deinit();
+			break;
+			
+		case 0xA2:
+			fpgaspi_cs_low();
+			break;
+
+		case 0xA3:
+			fpgaspi_cs_high();
+			break;
+
+		case 0xA4:
+			//Catch heartbleed-style error
+			if (udd_g_ctrlreq.req.wLength > udd_g_ctrlreq.payload_size){
+				return;
+			}
+
+			if (udd_g_ctrlreq.req.wLength > sizeof(fpgaspi_data_buffer)){
+				return;
+			}
+			fpga_spi_databuffer_len = udd_g_ctrlreq.req.wLength;
+			for (int i = 0; i < udd_g_ctrlreq.req.wLength; i++){
+				fpgaspi_data_buffer[i] = fpgaspi_xferbyte(udd_g_ctrlreq.payload[i]);
+			}
+			break;
+
+		default:
+			break;
+	}
+}
 
 bool main_setup_out_received(void)
 {
@@ -440,6 +485,11 @@ bool main_setup_out_received(void)
             udd_g_ctrlreq.callback = ctrl_vccint_cb;
             return true;
 
+		/* Send SPI commands to FPGA-attached SPI flash */
+		case REQ_FPGASPI_PROGRAM:
+			udd_g_ctrlreq.callback = ctrl_progfpgaspi;
+			return true;
+
         default:
             return false;
     }					
@@ -480,7 +530,7 @@ bool main_setup_in_received(void)
        */
 
     static uint8_t  respbuf[64];
-    //unsigned int cnt;
+    unsigned int cnt;
 
     switch(udd_g_ctrlreq.req.bRequest){
         case REQ_MEMREAD_CTRL:
@@ -534,6 +584,16 @@ bool main_setup_in_received(void)
             udd_g_ctrlreq.payload_size = 3;
             return true;
             break;	
+
+		case REQ_FPGASPI_PROGRAM:						
+			if (udd_g_ctrlreq.req.wLength > sizeof(fpgaspi_data_buffer))
+            {
+                return false;
+            }
+			udd_g_ctrlreq.payload = fpgaspi_data_buffer;
+			udd_g_ctrlreq.payload_size = udd_g_ctrlreq.req.wLength;
+			return true;
+			break;
 
         default:
             return false;

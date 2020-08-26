@@ -130,6 +130,7 @@ C_SRCS +=  \
 ../src/cdce906.c \
 ../src/circbuffer.c \
 ../src/fpga_program.c \
+../src/fpgaspi_program.c \
 ../src/pdi/XMEGANVM.c \
 ../src/pdi/XPROGNewAE.c \
 ../src/pdi/XPROGTarget.c \
@@ -183,6 +184,7 @@ src/ASF/sam/drivers/usart/usart.o \
 src/cdce906.o \
 src/circbuffer.o \
 src/fpga_program.o \
+src/fpgaspi_program.o \
 src/pdi/XMEGANVM.o \
 src/pdi/XPROGNewAE.o \
 src/pdi/XPROGTarget.o \
@@ -229,6 +231,7 @@ src/ASF/sam/drivers/usart/usart.o \
 src/cdce906.o \
 src/circbuffer.o \
 src/fpga_program.o \
+src/fpgaspi_program.o \
 src/pdi/XMEGANVM.o \
 src/pdi/XPROGNewAE.o \
 src/pdi/XPROGTarget.o \
@@ -275,6 +278,7 @@ src/ASF/sam/drivers/usart/usart.d \
 src/cdce906.d \
 src/circbuffer.d \
 src/fpga_program.d \
+src/fpgaspi_program.d \
 src/pdi/XMEGANVM.d \
 src/pdi/XPROGNewAE.d \
 src/pdi/XPROGTarget.d \
@@ -321,6 +325,7 @@ src/ASF/sam/drivers/usart/usart.d \
 src/cdce906.d \
 src/circbuffer.d \
 src/fpga_program.d \
+src/fpgaspi_program.d \
 src/pdi/XMEGANVM.d \
 src/pdi/XPROGNewAE.d \
 src/pdi/XPROGTarget.d \
