@@ -537,7 +537,7 @@ class FPGASPI:
         * Reads can cross page boundaries (though read() and verify() will only read 256 bytes at a time)
         * Writes that don't begin on a page bound will wrap if a page boundary is crossed
 
-        The user is responsible for ensuring that their writes being on page boundaries.
+        The user is responsible for ensuring that their writes begin on page boundaries.
     """
 
     REQ_FPGASPI_PROGRAM = 0x33
