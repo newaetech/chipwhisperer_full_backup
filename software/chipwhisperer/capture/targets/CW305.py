@@ -512,7 +512,7 @@ class FPGASPI:
         
         spi.program(bitstream) # also verifies by default
 
-    ..warning::
+    .. warning::
 
         The AT25DF321A has the following behaviour:
 

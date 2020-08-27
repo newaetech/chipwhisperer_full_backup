@@ -1,12 +1,33 @@
 V5.3.0
+ New CW305 USB Firmware!
  New Features:
   * Major tutorial overhaul
     - Tutorials now built for https://learn.chipwhisperer.io
     - Includes both remastered and all new tutorials
+    - Add prerecorded traces to power analysis labs
+  * New tutorials (SCA101):
+    - Lab 3_1 - Recovering Data from a Single Bit
+    - Lab 6_4 - Jittery Triggering on UART
+  * New tutorials (Fault101):
+    - Voltage glitch versions of clock glitch tutorials
+  * New tutorials (SCA201):
+    - Dynamic Time Warp resync
+    - Hardware AES lab
+  * New tutorials (Fault201):
+    - Introduction to AES Fault Attacks
+    - AES Loop Skip Fault attack
+    - 1.5 Round AES Attack
+    - DFA Attack Against Final MixColumns
   * New hardware documentation at https://rtfm.newae.com
   * Add documented way to read state of TIO1-4 on Lite/Pro
   * Add glitch controller for improved glitch recording
   * Add API reprogramming supports for Nano and CW305
+  * Add T-Table enc/dec leakage models
+  * Add __array__() function to IndividualIterable (allows conversion to numpy array)
+  * Add tqdm to preprocessing
+  * Add batch run for CW305 for fast capture
+  * Add SPI Programming for CW305
+  * Add default FPGA programming for CW305
  Fixes:
   * Make Nano serial and capture more reliable
   * Improve Nano reliablity in VM

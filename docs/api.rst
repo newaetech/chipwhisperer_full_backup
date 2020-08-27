@@ -481,6 +481,10 @@ CW305 FPGA Target
 
     .. automethod:: simpleserial_write
 
+    .. automethod:: spi_mode
+
+    .. automethod:: _con
+
     .. autoattribute:: clksleeptime
 
     .. autoattribute:: clkusbautooff
@@ -514,6 +518,24 @@ CW305 FPGA Target
 
         .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outslew_get
             :annotation: target.pll.pll_outslew_get
+
+.. _cw305-spi-program:
+
+CW305 SPI Program
+=================
+
+.. autoclass:: chipwhisperer.capture.targets.CW305.FPGASPI
+
+    .. automethod:: erase_chip
+
+    .. automethod:: erase_block
+
+    .. automethod:: program
+
+    .. automethod:: verify
+
+    .. automethod:: read
+
 
 .. _api-target-program:
 
