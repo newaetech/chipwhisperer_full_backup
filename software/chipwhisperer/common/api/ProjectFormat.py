@@ -875,7 +875,10 @@ class IndividualIterable:
 
     def __array__(self):
         # to make converting to numpy arrays much easier
-        dtype = self.getter(0).dtype
+        if hasattr(self.getter(0), "dtype"):
+            dtype = self.getter(0).dtype
+        else:
+            dtype = 'uint8'
         num_traces = self.trace_num_func()
         len_trace = len(self.getter(0))
         arr = np.zeros((num_traces, len_trace), dtype=dtype)

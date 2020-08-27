@@ -526,8 +526,9 @@ class FPGASPI:
         spi = fpga.spi_mode()
         
         spi.erase_chip() # can also use spi.erase_block() for smaller/faster erases
-        
-        spi.program(bitstream) # also verifies by default
+        with open('bitfile.bit', 'rb') as f:
+            data = list(f.read())
+            spi.program(data) # also verifies by default
 
     .. warning::
 
