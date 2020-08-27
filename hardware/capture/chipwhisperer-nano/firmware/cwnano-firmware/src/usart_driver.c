@@ -40,6 +40,7 @@
 #define USART_WVREQ_ENABLE  0x0011
 #define USART_WVREQ_DISABLE 0x0012
 #define USART_WVREQ_NUMWAIT 0x0014
+#define USART_WVREQ_NUMWAIT_TX 0x0018
 
 #define word2buf(buf, word)   do{buf[0] = LSB0W(word); buf[1] = LSB1W(word); buf[2] = LSB2W(word); buf[3] = LSB3W(word);}while (0)
 #define buf2word(word, buf)   do{word = *((uint32_t *)buf);}while (0)
@@ -266,6 +267,37 @@ bool ctrl_usart(Usart * usart, bool directionIn)
 #ifdef USART2
 					else if (usart == USART2){
 						cnt = circ_buf_count(&rx2buf);
+					}
+#endif
+#ifdef USART3
+					else if (usart == USART3){
+						cnt = circ_buf_count(&rx3buf);
+					}			
+#endif
+					
+					word2buf(ctrlbuffer, cnt);
+			
+					return true;
+				}
+			}
+			break;		
+
+		case USART_WVREQ_NUMWAIT_TX:		
+			if (directionIn){
+				if (udd_g_ctrlreq.req.wLength == 4){
+		
+					udd_g_ctrlreq.payload = ctrlbuffer;
+					udd_g_ctrlreq.payload_size = 4;
+
+					if (usart == USART0){
+						cnt = circ_buf_count(&tx0buf);
+					} else if (usart == USART1){
+						cnt = circ_buf_count(&tx1buf);
+				
+					} 
+#ifdef USART2
+					else if (usart == USART2){
+						cnt = circ_buf_count(&tx2buf);
 					}
 #endif
 #ifdef USART3

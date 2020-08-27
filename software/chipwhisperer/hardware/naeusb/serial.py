@@ -26,6 +26,7 @@
 import time
 import os
 from .naeusb import packuint32
+from chipwhisperer.common.utils.util import fw_ver_required
 
 class USART(object):
     """
@@ -39,6 +40,7 @@ class USART(object):
     USART_CMD_ENABLE = 0x0011
     USART_CMD_DISABLE = 0x0012
     USART_CMD_NUMWAIT = 0x0014
+    USART_CMD_NUMWAIT_TX = 0x0018
 
     def __init__(self, usb, timeout=200):
         """
@@ -51,6 +53,11 @@ class USART(object):
         self._baud = 38400
         self._stopbits = 1
         self._parity = "none"
+        
+        # could warn users about this,
+        # but this obj gets created a lot,
+        # and don't want to spam them
+        self.tx_buf_in_wait = False
 
     def init(self, baud=115200, stopbits=1, parity="none"):
         """
@@ -92,6 +99,14 @@ class USART(object):
         self._usartTxCmd(self.USART_CMD_ENABLE)
         print("Serial baud rate = {}".format(baud))
 
+        try:
+            self.tx_buf_in_wait = False
+            a = self.fw_version
+            if a["major"] > 0 or a["minor"] >= 20:
+                self.tx_buf_in_wait = True
+        except OSError:
+            pass
+
     def write(self, data, slow=False):
         """
         Send data to serial port.
@@ -112,10 +127,14 @@ class USART(object):
         while datasent < len(data):
             datatosend = len(data) - datasent
             datatosend = min(datatosend, 58)
-            if datasent > 0:
-                # give CW some time to process the last request
-                # TODO fix CW firmware to process large UART data without loss
-                time.sleep(.05)
+
+            # need to make sure we don't write too fast
+            # and overrun the internal buffer...
+            # Can probably elimiate some USB communication
+            # to make this faster, but okay for now...
+            if self.tx_buf_in_wait:
+                while (datatosend + self.in_waiting_tx()) > 128:
+                    pass
             self._usb.sendCtrl(self.CMD_USART0_DATA, 0, data[datasent:(datasent + datatosend)])
             datasent += datatosend
 
@@ -135,6 +154,14 @@ class USART(object):
         # print "Checking Waiting..."
         data = self._usartRxCmd(self.USART_CMD_NUMWAIT, dlen=4)
         # print data
+        return data[0]
+
+    @fw_ver_required(0, 20)
+    def in_waiting_tx(self):
+        """
+        Get number of bytes in tx buffer
+        """
+        data = self._usartRxCmd(self.USART_CMD_NUMWAIT_TX, dlen=4)
         return data[0]
 
     def read(self, dlen=0, timeout=0):
@@ -179,3 +206,8 @@ class USART(object):
         """
         # windex selects interface, set to 0
         return self._usb.readCtrl(self.CMD_USART0_CONFIG, cmd, dlen)
+
+    @property
+    def fw_version(self):
+        a = self._usb.readFwVersion()
+        return {"major": a[0], "minor": a[1], "debug": a[2]}

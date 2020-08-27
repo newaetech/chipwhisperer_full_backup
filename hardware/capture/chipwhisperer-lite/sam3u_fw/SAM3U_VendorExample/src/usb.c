@@ -34,7 +34,7 @@
 #include <string.h>
 
 #define FW_VER_MAJOR 0
-#define FW_VER_MINOR 11
+#define FW_VER_MINOR 20
 #define FW_VER_DEBUG 0
 
 static volatile bool main_b_vendor_enable = true;
@@ -307,11 +307,6 @@ void ctrl_avr_program_void(void)
 	V2Protocol_ProcessCommand();
 }
 
-void ctrl_cc_program_void(void)
-{
-	CCProtocol_ProcessCommand();
-}
-
 static void ctrl_usart2_enabledump(void)
 {
 	switch(udd_g_ctrlreq.req.wValue & 0xFF){
@@ -509,10 +504,6 @@ bool main_setup_out_received(void)
 			udd_g_ctrlreq.callback = ctrl_sam3ucfg_cb;
 			return true;
 			
-		/* ChipCon (TI) Programming */
-		case REQ_CC_PROGRAM:
-			udd_g_ctrlreq.callback = ctrl_cc_program_void;
-			return true;
 			
 		default:
 			return false;
@@ -621,9 +612,6 @@ bool main_setup_in_received(void)
 			return V2Protocol_ProcessCommand();
 			break;
 			
-		case REQ_CC_PROGRAM:
-			return CCProtocol_ProcessCommand();
-			break;
 			
 		case REQ_USART0_CONFIG:
 			return ctrl_usart(USART_TARGET, true);
