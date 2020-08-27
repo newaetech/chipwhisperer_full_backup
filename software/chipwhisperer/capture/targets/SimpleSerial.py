@@ -67,8 +67,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     .. warning::
         The CWLite, CW1200, and CWNano have a 128 byte read buffer and a 128 
         byte send buffer. If the read buffer overflows, a warning message
-        will be printed. Currently, if the send buffer overflows,
-        no message is printed.
+        will be printed. Prior to firmware 0.20, the send buffer can silently
+        overflow.
     """
     _name = "Simple Serial"
 

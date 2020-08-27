@@ -21,7 +21,7 @@ cwcr2_v = [0, 11]
 cwcr2_files = [("cwrev2_firmware.zip",  os.path.join(hwdir, r"capture/chipwhisperer-rev2/cwrev2_firmware.zip")),
                ("OpenADC.ihx", os.path.join(hwdir, r"capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"))]
 
-cwlite_v = [0, 11]
+cwlite_v = [0, 20]
 cwlite_files = [("cwlite_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-lite/cwlite_firmware.zip")),
                 ("SAM3U_CW1173.bin", os.path.join(hwdir, r"capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin"))]
 
@@ -29,13 +29,13 @@ cw1200_v = [1, 0]
 cw1200_files = [("cw1200_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/cw1200_firmware.zip")),
                 ]
 
-cwnano_v = [0, 11]
+cwnano_v = [0, 20]
 #hardware\capture\chipwhisperer-nano\firmware\cwnano-firmware\Debug\cwnano-firmware.bin
 cwnano_files = [("SAM3U_CWNANO.bin", os.path.join(hwdir, r"capture/chipwhisperer-nano/firmware/cwnano-firmware/Debug/cwnano-firmware.bin"))]
 #List of files to generate
 file_list = [
-     #("cwnano.py" , cwnano_v , cwnano_files),
-    ("cw305.py" , cw305_v , cw305_files),
+     ("cwnano.py" , cwnano_v , cwnano_files),
+    #("cw305.py" , cw305_v , cw305_files),
 #    ("cwcr2.py" , cwcr2_v , cwcr2_files),
 #    ("cwlite.py", cwlite_v, cwlite_files),
 #    ("cw1200.py", cw1200_v, cw1200_files),
