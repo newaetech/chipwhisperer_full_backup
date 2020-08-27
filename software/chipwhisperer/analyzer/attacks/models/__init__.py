@@ -154,7 +154,9 @@ class EightBitAES128LeakageModels:
             'sbox_output_successive',
             'round_1_2_state_diff_text',
             'round_1_2_state_diff_key_mix',
-            'round_1_2_state_diff_sbox'
+            'round_1_2_state_diff_sbox',
+            't_table',
+            't_table_dec'
         ]
         models = [x for x in dir(self) if x in include]
         doc_strings = [getattr(self.__class__, x).__doc__ for x in models]
@@ -170,4 +172,3 @@ class EightBitAES128LeakageModels:
                 items.append(':\n'.join([model, indented_doc_string]))
 
         return '\n\n'.join(items)
-

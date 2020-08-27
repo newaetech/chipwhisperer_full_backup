@@ -27,7 +27,10 @@
 
 from ._base import PreprocessingBase
 from chipwhisperer.common.utils.util import camel_case_deprecated
-from fastdtw import fastdtw
+try:
+    from fastdtw import fastdtw
+except ModuleNotFoundError:
+    from chipwhisperer.analyzer.utils.fasterdtw import fastdtw
 import numpy as np
 
 class ResyncDTW(PreprocessingBase):
