@@ -500,7 +500,7 @@ class FPGASPI:
     
     To program the SPI, the CW305 must be loaded with a special bitstream
     (will be done automatically if you specify fpga_id when connecting to the CW305) 
-    and have FW version > 0.20 for its USB microcontroller.
+    and have FW version > 0.30 for its USB microcontroller.
     
     Basic usage::
     
