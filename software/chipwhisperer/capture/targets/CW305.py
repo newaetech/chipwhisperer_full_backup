@@ -33,7 +33,7 @@ from chipwhisperer.hardware.naeusb.naeusb import NAEUSB,packuint32
 from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
 from chipwhisperer.hardware.naeusb.fpga import FPGA
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.util import camel_case_deprecated
+from chipwhisperer.common.utils.util import camel_case_deprecated, fw_ver_required
 
 
 class CW305_USB(object):
@@ -283,6 +283,22 @@ class CW305(TargetTemplate):
         return data
 
     @property
+    def latest_fw(self):
+        cw_type = self._getCWType()
+        if cw_type == "cwlite":
+            from chipwhisperer.hardware.firmware.cwlite import fwver
+        elif cw_type == "cw1200":
+            from chipwhisperer.hardware.firmware.cw1200 import fwver
+        
+        ret = OrderedDict()
+        return {"major": fwver[0], "minor": fwver[1]}
+
+    @property
+    def fw_version(self):
+        a = self._naeusb.readFwVersion()
+        return {"major": a[0], "minor": a[1], "debug": a[2]}
+
+    @property
     def clkusbautooff(self):
         """ If set, the USB clock is automatically disabled on capture.
 
@@ -451,6 +467,7 @@ class CW305(TargetTemplate):
 
         return self._naeusb.cmdWriteSam3U(addr, data)
 
+    @fw_ver_required(0, 30)
     def spi_mode(self, enable=True, timeout=200, bsfile=None):
         """Enter programming mode for the onboard SPI chip
         

@@ -422,6 +422,23 @@ class NoneTypeTarget(object):
     def __getattr__(self, item):
         raise AttributeError('Target has not been connected')
 
+def fw_ver_required(major, minor):
+    def decorator(func):
+        @wraps(func)
+        def func_wrapper(self, *args, **kwargs):
+            fw_ver = self.fw_version
+            good = False
+            if fw_ver["major"] > major:
+                good = True
+            elif (fw_ver["major"] == major) and (fw_ver["minor"] >= minor):
+                good = True
+
+            if good:
+                return func(self, *args, **kwargs)
+            else:
+                raise IOError(f"This function requires newer firmware: ({major}.{minor}) vs ({fw_ver['major']}.{fw_ver['minor']})")
+        return func_wrapper
+    return decorator
 
 def camel_case_deprecated(func):
     """Wrapper function to deprecate camel case functions.
