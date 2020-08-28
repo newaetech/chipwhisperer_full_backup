@@ -15,11 +15,6 @@ jobs:
         - name: Build ChipWhisperer
           run: >-
             python setup.py sdist
-        - name: Publish to testpypi
-          uses: pypa/gh-action-pypi-publish@master
-          with:
-            password: ${{ secrets.test_py_pi }}
-            repository_url: https://test.pypi.org/legacy/
         - name: Publish to pypi
           if: startsWith(github.ref, 'refs/tags')
           uses: pypa/gh-action-pypi-publish@master
