@@ -1,6 +1,6 @@
 # ChipWhisperer
 
-[Hardware Docs](https://rtfm.newae.com) | [Documentation](https://chipwhisperer.readthedocs.io) | [Forum](http://www.newae.com/forum) | [Store](https://store.newae.com) | [NewAE](http://newae.com)
+[Hardware Docs](https://rtfm.newae.com) | [Documentation](https://chipwhisperer.readthedocs.io) | [Forum](http://forum.newae.com) | [Store](https://store.newae.com) | [NewAE](http://newae.com)
 
 ChipWhisperer is an open source toolchain dedicated to hardware security research. This toolchain consists of several layers of open source components:
 * __Hardware__: The ChipWhisperer uses a _capture_ board and a _target_ board. Schematics and PCB layouts for the ChipWhisperer-Lite capture board and a number of target boards are freely available.
