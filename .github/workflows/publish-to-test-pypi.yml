@@ -1,0 +1,22 @@
+name: Pub Python dist to TestPyPi
+
+on: push
+
+jobs:
+    build-n-publish:
+      name: Build/pub python to testpypi
+      runs-on: ubuntu-18.04
+      steps:
+        - uses: actions/checkout@develop
+        - name: Setup Python 3.7
+          uses: actions/setup-python@v1
+          with:
+            python-version: 3.7
+        - name: Build ChipWhisperer
+          run: >-
+            python setup.py sdist
+        - name: Publish to testpypi
+          uses: pypa/gh-action-pypi-publish@master
+          with:
+            password: ${{ secrets.test_py_pi }}
+            repository_url: https://test.pypi.org/legacy/
