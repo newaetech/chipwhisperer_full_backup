@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='chipwhisperer',
-    version='5.2.1-r1',
+    version='5.3.0',
     description="ChipWhisperer Side-Channel Analysis Tool",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
@@ -28,5 +28,5 @@ setup(
         'Source': 'https://github.com/newaetech/chipwhisperer',
         'Issue Tracker': 'https://github.com/newaetech/chipwhisperer/issues',
     },
-    python_requires='~=3.4',
+    python_requires='~=3.6',
 )
