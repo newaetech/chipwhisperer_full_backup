@@ -1,6 +1,6 @@
 [submodule "openadc"]
 	path = openadc
-	url = git://git.assembla.com/openadc.git
+	url = https://git.assembla.com/openadc.git
 [submodule "hardware/victims/firmware/crypto/secAES-ATmega8515"]
 	path = hardware/victims/firmware/crypto/secAES-ATmega8515
 	url = https://github.com/jmichelp/secAES-ATmega8515.git
