@@ -66,6 +66,10 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
             logging.warning('SAM3U Serial buffers OVERRUN - data loss has occurred.')
         return bwait
 
+    def hardware_inWaitingTX(self):
+        bwait = self.cwlite_usart.in_waiting_tx()
+        return bwait
+
     def hardware_write(self, string):
         self.cwlite_usart.write(string)
 

@@ -42,7 +42,7 @@ from chipwhisperer.common.utils.util import camel_case_deprecated
 class SAMFWLoader(object):
     """ Object for easy reprogramming of ChipWhisperers
 
-    Despite the name of the file, this will work with the Lite, the Pro, and
+    This will work with the Lite, the Pro, and
     the Nano. If the ChipWhisperer has already been erased, pass None instead
     of the scope object and skip the enter_bootloader() call. Will also work
     for the CW305.
@@ -160,7 +160,8 @@ class SAMFWLoader(object):
         type_whitelist = [
             'cwlite',
             'cwnano',
-            'cw305'
+            'cw305',
+            'cw1200'
         ]
 
         if fw_path and hardware_type:
@@ -183,6 +184,9 @@ class SAMFWLoader(object):
                 elif hardware_type == 'cw305':
                     from chipwhisperer.hardware.firmware.cw305 import getsome as getsome
                     name = 'SAM3U_CW305.bin'
+                elif hardware_type == 'cw1200':
+                    from chipwhisperer.hardware.firmware.cw1200 import getsome as getsome
+                    name = 'CW1200_SAM3UFW.bin'
                 print('Loading {} firmware...'.format(hardware_type))
                 fw_data = getsome(name).read()
 

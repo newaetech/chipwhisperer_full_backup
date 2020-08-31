@@ -1,4 +1,15 @@
 V5.3.0
+  New Features:
+    * New CWPro firmware
+      - Add in_waiting_tx for Pro
+    * Public target.in_waiting_tx()
+    * Add SAMFWLoader CWPro support
+    * Add CWPro USB binary
+  Fixes:
+    * Fix TIO state read on CWPro
+    * Fix tx buffer overrun on CWPro
+
+V5.3.0
  New Features:
   * New CW305 USB firmware
   * New CWLite/CWNano USB firmware

@@ -169,6 +169,9 @@ class SimpleSerialTemplate:
             logging.warning('Python SimpleSerial reader buffer OVERRUN - data loss has occurred.')
         return self.hardware_inWaiting() + bbuf
 
+    def inWaitingTX(self):
+        return self.hardware_inWaitingTX()
+
     def terminal_write(self, string):
         """
         Write a string to the device.
@@ -253,6 +256,17 @@ class SimpleSerialTemplate:
         return self.hardware_inWaiting() + bbuf
 
     def hardware_inWaiting(self):
+        """
+        Check how many bytes are in waiting on the device's hardware buffer.
+
+        This function needs to be implemented in child classes.
+
+        Returns:
+            int: number of bytes waiting to be read
+        """
+        raise NotImplementedError
+
+    def hardware_inWaitingTX(self):
         """
         Check how many bytes are in waiting on the device's hardware buffer.
 

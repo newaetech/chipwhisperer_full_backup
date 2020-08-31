@@ -455,6 +455,8 @@ Simple Serial Target
 
     .. automethod:: in_waiting
 
+    .. automethod:: in_waiting_tx
+
     .. automethod:: flush
 
     .. automethod:: close
