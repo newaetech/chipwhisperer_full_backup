@@ -288,7 +288,7 @@ bool ctrl_usart(Usart * usart, bool directionIn)
 					}
 #ifdef USART3
 					else if (usart == USART3){
-						cnt = circ_buf_count(&rx3buf);
+						cnt = circ_buf_count(&tx3buf);
 					}			
 #endif
 					
