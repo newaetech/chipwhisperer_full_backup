@@ -19,8 +19,8 @@ NM = arm-none-eabi-nm
 FORMAT = binary
 
 CFLAGS += -Os -g -DDEBUG -DCPU_MK82FN256VLL15 -w -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin 
-CFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -MMD -MP -static 
-CPPFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -MMD -MP -static 
+CFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -MMD -MP -static -mfloat-abi=soft
+CPPFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -MMD -MP -static -mfloat-abi=soft
 CPPFLAGS += -Os -g -DDEBUG -DCPU_MK82FN256VLL15 -DFRDM_K64F -DFREEDOM -w -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin 
 
 ifeq ($(ETM_ENABLE),1)
@@ -42,7 +42,7 @@ ifeq ($(CRYPTO_TARGET),HWAES)
 endif
 
 ASFLAGS += -g -DDEBUG -D__STARTUP_CLEAR_BSS -g -Wall -fno-common -ffunction-sections -fdata-sections -ffreestanding -fno-builtin
-ASFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16
+ASFLAGS += -mthumb -mapcs -std=gnu99 -mcpu=cortex-m4 -mfloat-abi=soft
 
 LDFLAGS += -Xlinker --gc-sections -Xlinker -static -Xlinker -z -Xlinker muldefs -T $(HALPATH)/k82f/MK82FN256xxx15_flash.ld 
 LDFLAGS += --specs=nano.specs --specs=nosys.specs -Wl,--start-group -L $(HALPATH)/k82f/ -l:lib_mmcau.a -lm -lc -lgcc -lnosys -Wl,--end-group 

@@ -28,9 +28,9 @@ NM = arm-none-eabi-nm
 #Output Format = Binary for this target
 FORMAT = binary
 
-CFLAGS += -mthumb -fmessage-length=0 -ffunction-sections
-CPPFLAGS += -mthumb -fmessage-length=0 -ffunction-sections
-ASFLAGS += -mthumb -fmessage-length=0 -ffunction-sections
+CFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
+CPPFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
+ASFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
 
 CDEFS += -DSTM32L562RGTx -DSTM32L5 -DSTM32 -DDEBUG -DSTM32L562xx
 CPPDEFS += -DSTM32F562RGTx -DSTM32L5 -DSTM32 -DDEBUG
