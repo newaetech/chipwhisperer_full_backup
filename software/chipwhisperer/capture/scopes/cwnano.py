@@ -68,6 +68,7 @@ class ADCSettings(util.DisableNewAttr):
         return self.__repr__()
 
 
+
     @property
     def samples(self):
         """Number of samples to store."""
@@ -587,6 +588,10 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
 
     def _getNAEUSB(self):
         return self._cwusb
+
+    @property
+    def sn(self):
+        return self._cwusb.snum
 
     @property
     def latest_fw(self):
