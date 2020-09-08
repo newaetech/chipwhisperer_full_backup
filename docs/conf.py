@@ -159,6 +159,18 @@ def create_tutorial_files(app, config):
     Path(tutorials_overview_file).touch()
     generated_files.append(tutorials_overview_file)
 
+def generate_contributing(app, config):
+    """Callback to convert the contributing.md to an rst file"""
+    import pypandoc
+
+    print('Downloading pandoc')
+    pypandoc.pandoc_download.download_pandoc()
+
+    print('Generating contributing.rst')
+    pypandoc.convert_file('../contributing.md', 'rst', outputfile='contributing.rst')
+            
+
 
 def setup(app):
     app.connect('config-inited', create_tutorial_files)
+    app.connect('config-inited', generate_contributing)
