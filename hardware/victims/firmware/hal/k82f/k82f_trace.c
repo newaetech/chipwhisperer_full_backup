@@ -27,12 +27,15 @@ static void KinetisTrace_ConfigureGPIO(void) {
     if ((value&(1<<12))==0) { /* Bit 12 enables the trace clock. Is the debug trace clock not already enabled? */
         SIM->SOPT2 |= (1<<12); /* Debug trace clock select = Core/system clock */
     }
-    /* Trace data (PTE1-4) and clock pin (PTE0), high drive strength */
-    PORTA->PCR[12] = PORT_PCR_CONFIG_FOR_TRACE; /* PTA12, trace clock pin, high drive strength */
-    PORTA->PCR[13] = PORT_PCR_CONFIG_FOR_TRACE; /* PTA13, trace data pin, high drive strength */
-    PORTA->PCR[14] = PORT_PCR_CONFIG_FOR_TRACE; /* PTA14, trace data pin, high drive strength */
-    PORTA->PCR[15] = PORT_PCR_CONFIG_FOR_TRACE; /* PTA15, trace data pin, high drive strength */
-    PORTA->PCR[16] = PORT_PCR_CONFIG_FOR_TRACE; /* PTA16, trace data pin, high drive strength */
+
+    CLOCK_EnableClock(kCLOCK_PortA); //enable port a clock
+    PORT_SetPinMux(PORTA, 16, kPORT_MuxAlt4);
+    PORT_SetPinMux(PORTA, 15, kPORT_MuxAlt4);
+    PORT_SetPinMux(PORTA, 14, kPORT_MuxAlt4);
+    PORT_SetPinMux(PORTA, 13, kPORT_MuxAlt4);
+    PORT_SetPinMux(PORTA, 12, kPORT_MuxAlt4);
+
+
 }
 
 void etmtrace_enable(void)
