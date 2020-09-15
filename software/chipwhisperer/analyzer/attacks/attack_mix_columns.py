@@ -102,7 +102,35 @@ def round_gen(plaintext, guesses, cmpgn, lut_in, lut_out, hd):
 leakage_cmpgns_col = []
 leakage_cmpgns_row = []
 
-class AttackMixCol:
+class AttackMixColumns:
+    """ Class for attacking after MixColumns using a variable vector plaintext
+
+    Will also successfully attack ARK1.
+
+    Please see https://eprint.iacr.org/2016/249.pdf for details behind the attack.
+
+    Runs 32 single bit CPA attacks on the mix columns outputs for a given pt/key byte
+    (i.e. all bits of 2sbox(pt^key), sbox(pt^key), 3sbox(pt^key)). If using hamming
+    distance, assumes a leakage between ARK0 and MixColumns/ARK1
+
+    Requires capture using cw.ktp.VarVec or equivalent. vec_type must
+    be the same as was used during the capture campaigns.
+
+    Args:
+        project (ChipWhisperer Projects): List of 4 projects for each capture campaign.
+                                            To skip analysis for a project, set as None in the list
+        vec_type (str): 'column' for variable column, or 'row' for variable row. Must be same as was used
+                        in the capture campaign. Defaults to column
+        hd (bool): Use hamming distance between pt input and mix columns/ARK output. Otherwise use hamming weight of mix columns/ARK output
+
+    Example hd attack::
+
+        # assuming projects captured as in cw.ktp.VarVec documentation
+        from chipwhisperer.analyzer.attacks.attack_mix_columns import AttackMixColumns
+        attack = AttackMixColumns(projects, hd=False)
+        results = attack.run()
+        print(bytearray(results['guess']))
+    """
     def __init__(self, projects, vec_type='column', hd=True):
         if vec_type not in ["column", "row"]:
             raise ValueError(f"Invalid vector type {vec_type}")
@@ -124,7 +152,16 @@ class AttackMixCol:
         self.leakage_cmpgns = leakage_cmpgns
         self.vec_type = vec_type
 
-    def run_attack(self, n_traces=None, trace_slice=None):
+    def run(self, n_traces=None, trace_slice=None):
+        """ Run attack on projects
+
+        Args:
+            n_traces (int): Number of traces to use. Leave as None if you want to use the full trace set. Defaults to None
+            trace_slice (slice): Slice of trace wave to use. Useful for windowing, since ghost peaks can be a problem.
+
+        Returns:
+            Dict with {'corr': correlation_data, '}
+        """
         results = {}
         projects = self.projects
         cs = [None] * 16

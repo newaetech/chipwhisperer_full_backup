@@ -34,14 +34,35 @@ from .basic import AcqKeyTextPattern_Basic
 class AcqKeyTextPattern_VarVec(AcqKeyTextPattern_Basic):
     """ Constant Text KTP with variable vector (aka single row/column)
 
+    A constant plaintext, except for one row or column. This will result
+    in a MixColumns with all bytes constant except 1 across all 4 columns.
+
     Useful for attacking AES after (Inv)MixColumns/ARK1. Must be analyzed
-    with appropriate method (sum of absolute single bit CPA/DPA for T-Table outputs)
+    with appropriate method (sum of absolute single bit CPA/DPA for MixColumns outputs).
+    An attack class is available in chipwhisperer.analyzer.attacks.attack_mix_columns,
+    but requires scared, which may be hard to install on Windows
 
     Args:
         var_vec (str): Which type of vector ('column' or 'row') to set as variable. Defaults
-                       'column'. 'row' is currently untested.
+                       'column'. 'row' isn't well tested, but should work.
 
-    Make sure to set var_vec as appropriate for your capture campaign.
+    Make sure to set var_vec as appropriate for your capture campaign::
+
+        # assuming setup scope
+        ktp = cw.ktp.VarVec()
+        projects = []
+        for cmpgn in range(4):
+            project = cw.create_project(f'var_vec_proj_{cmpgn}')
+            projects.append(project)
+            for i in range(N):
+                ktp.var_vec = cmpgn
+                key, text = ktp.next()
+                trace = cw.capture_trace(scope, target, text, key)
+                if trace is None:
+                    print('could not capture trace')
+                    continue
+                project.traces.append(trace)
+            project.save()
     """
     VEC_TYPE_COL = 0x00
     VEC_TYPE_ROW = 0x01
@@ -64,7 +85,7 @@ class AcqKeyTextPattern_VarVec(AcqKeyTextPattern_Basic):
 
     @property
     def var_vec(self):
-        """Which vector to set as variable
+        """Which vector to set as variable (aka which column/row)
         """
         return self._var_vec
 
