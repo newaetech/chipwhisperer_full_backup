@@ -27,6 +27,7 @@ import logging
 import time
 import re
 import math
+import pkg_resources
 import chipwhisperer as cw
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.traces import Trace
@@ -37,8 +38,9 @@ class TraceWhisperer():
 
     """ Trace interface object.
 
-    This class contains the public API for the trace sniffing hardware, which
-    may exist on either the CW305 or the CW610 (PhyWhisperer) platform.
+    This class contains the public API for the Arm Coresight trace sniffing
+    hardware, which may exist on either the CW305 or the CW610 (PhyWhisperer)
+    platform.
 
     To connect, the easiest method is::
 
@@ -91,25 +93,33 @@ class TraceWhisperer():
             defines_files (list of 2 strings): path to defines_trace.v and defines_pw.v
         """
         super().__init__()
+        self._trace_port_width = 4
         # Detect whether we exist on CW305 or CW610 based on the target we're given:
         if target._name == 'Simple Serial':
             self.platform = 'CW610'
             self._ss = target
             self._naeusb = NAEUSB()
             self._naeusb.con(idProduct=[0xC610])
-            fpga = FPGA(self._naeusb)
-            if not fpga.isFPGAProgrammed() or force_bitfile:
+            self._fpga = FPGA(self._naeusb)
+            if not self._fpga.isFPGAProgrammed() or force_bitfile:
                 if not bs:
-                    # TODO: find a good location for this
-                    bs = '../../DesignStartTrace/hardware/tracewhisperer/vivado/tracewhisperer.runs/impl_1/tracewhisperer_top.bit'
-                fpga.FPGAProgram(open(bs, 'rb'), exceptOnDoneFailure=False)
+                    bs = pkg_resources.resource_filename('chipwhisperer', 'hardware/firmware/tracewhisperer_top.bit')
+                self._fpga.FPGAProgram(open(bs, 'rb'), exceptOnDoneFailure=False)
         else:
             self.platform = 'CW305'
             self._ss = cw.target(scope)
             self._naeusb = target._naeusb
-        # should be sufficient; TODO-check:
-        self._clksleeptime = 200
+
         self.slurp_defines(defines_files)
+
+
+    def reset_fpga(self):
+        """ Reset FPGA registers to defaults, use liberally to clear incorrect states (CW610 only).
+        """
+        if self.platform == 'CW610':
+            self._fpga.sendCtrl(0x25, 0x00)
+        else:
+            logging.error('reset_fpga() is only supported on CW610 platform')
 
 
     def slurp_defines(self, defines_files=None):
@@ -117,11 +127,11 @@ class TraceWhisperer():
         definitions by name and avoid 'magic numbers'.
         """
         self.verilog_define_matches = 0
-        # TODO-later: move defines file to package?
-        # defines_file = pkg_resources.resource_filename('phywhisperer', 'firmware/defines.v')
         if not defines_files:
-            defines_files = ['../hardware/CW305_DesignStart/hdl/defines_trace.v',
-                             '../hardware/phywhisperer/software/phywhisperer/firmware/defines_pw.v']
+            #defines_files = ['../hardware/CW305_DesignStart/hdl/defines_trace.v',
+            #                 '../hardware/phywhisperer/software/phywhisperer/firmware/defines_pw.v']
+            defines_files = [pkg_resources.resource_filename('chipwhisperer', 'capture/trace/defines/defines_trace.v'),
+                             pkg_resources.resource_filename('chipwhisperer', 'capture/trace/defines/defines_pw.v')]
         for i,defines_file in enumerate(defines_files):
             defines = open(defines_file, 'r')
             define_regex_base  =   re.compile(r'`define')
@@ -161,7 +171,8 @@ class TraceWhisperer():
 
 
     def simpleserial_write(self, cmd, data, printresult=False):
-        """TODO-document!
+        """Convenience function to send a simpleserial command to the simpleserial target,
+        and optionally fetch and print the result.
         """
         self._ss.simpleserial_write(cmd, data)
         if printresult:
@@ -172,7 +183,7 @@ class TraceWhisperer():
     def set_reg(self, reg, data, printresult=False):
         """Set a Cortex debug register
         Args:
-            reg (string): one of self.regs
+            reg (string): Register to write. See self.regs for available registers.
             data (string): 8-character hex string, value to write to COMP0 (e.g. '1000F004')
         """
         if reg in self.regs:
@@ -188,7 +199,7 @@ class TraceWhisperer():
     def get_reg(self, reg):
         """Reads a Cortex debug register
         Args:
-            reg (string): one of self.regs
+            reg (string): Register to read. See self.regs for available registers.
         """
         if reg in self.regs:
             data = self.regs[reg] + '00000000'
@@ -221,57 +232,31 @@ class TraceWhisperer():
 
 
     def arm_trace(self):
+        """Arms trace sniffer for capture.
+        """
         self.fpga_write(self.REG_ARM, [1])
 
 
     def synced(self):
         """Checks that trace trigger module is synchronized.
-
-
         """
         assert self.fpga_read(self.REG_SYNCHRONIZED, 1)[0] == 1, 'Not synchronized!'
 
 
     def resync(self):
-        """Force trace sniffer to resynchronize.
+        """Force trace sniffer to resynchronize (using sync frames that are
+        continously emitted on the parallel trace port). Failure could be from
+        absence of a trace clock, or mis-sampling of trace data due to
+        setup/hold violations (clock edge too close to data edge).
         """
-        self.fpga_write(self.REG_TRACE_RESET_SYNC, [1]
-        self.fpga_write(self.REG_TRACE_RESET_SYNC, [0]
+        self.fpga_write(self.REG_TRACE_RESET_SYNC, [1])
+        self.fpga_write(self.REG_TRACE_RESET_SYNC, [0])
         self.synced()
 
 
-    def get_trace_match_address(self):
-        """Returns the address portion of a PC match.
-        TODO: obsolete
-
-        """
-        raw = self.fpga_read(self.REG_MATCHING_BUFFER, 7)
-        # first check that the matching packet is PC match packet:
-        assert raw[:3].tolist() == [5, 8, 32], "Hmm, this doesn't look like a PC match?"
-        # TODO: fix bit 0's as per TPI framing weirdness!
-        return (raw[-1] << 24) + (raw[-2] << 16) + (raw[-3] << 8) + raw[-4]
-
-
-    def print_match(self):
-        """Prints the last matching pattern.
-        TODO: obsolete
-
-        """
-        buf = 0
-        for i,b in enumerate(self.fpga_read(self.REG_MATCHING_BUFFER, 8)):
-            buf += (b<<8*(7-i))
-        print('0x%016x' % buf)
-
-
-
-    # TODO or remove or pass to SS?
-    def simpleserial_read(self, cmd, pay_len, end='\n', timeout=250, ack=True):
-        """Not defined for this target.
-        """
-        logging.warning('Why are you calling simpleserial_read???')
-
-
     def is_done(self):
+        """Calls SimpleSerial target's is_done().
+        """
         return self._ss.is_done()
 
 
@@ -359,25 +344,20 @@ class TraceWhisperer():
         return bytearray.fromhex(names).decode()
         
 
-    def test_itm(self, port):
-        """Returns date and time when target FW was compiled.
+    def test_itm(self, port=1):
+        """Print test string via ITM using specified port number.
+
+        Args:
+            port (int): ITM port number to use.
+
         """
         self._ss.simpleserial_write('t', bytearray([port]))
         time.sleep(0.1)
         print(self._ss.read().split('\n')[0])
 
 
-    # TODO:
-    def go(self):
-        pass
-
-
-    def read_capture_data(self, verbose=False, timeout=2):
-        """Read from capture memory.
-        
-        Args:
-            timeout (int, optional): timeout in seconds (ignored if 0, defaults to 2)
-            verbose (bool, optional): Print extra debug info.
+    def read_capture_data(self):
+        """Read captured trace data.
         
         Returns: List of captured entries. Each list element is itself a 3-element list,
         containing the 3 bytes that make up a capture entry. Can be parsed by get_rule_match_times()
@@ -391,6 +371,9 @@ class TraceWhisperer():
         # first check for FIFO to not be empty:
         assert self.fifo_empty() == False
 
+        # then check that no underflows or overflows occurred during capture:
+        self.check_fifo_errors()
+
         while not self.fifo_empty():
             data.append(self.fpga_read(self.REG_SNIFF_FIFO_RD, 4)[1:4])
 
@@ -402,6 +385,10 @@ class TraceWhisperer():
 
 
     def print_raw_data(self, rawdata):
+        """Prints collected raw data in hexadecimal. Raw data includes data
+        type, timestamp, and payload. See defines_trace.v for bitfield
+        definitions.
+        """
         for e in rawdata:
             entry = 0
             entry += (e[2] & 0x3) << 16
@@ -438,7 +425,7 @@ class TraceWhisperer():
                 if rawtimes:
                     adjust = 0
                 else:
-                    adjust = self.rule_length[rule]*2   # TODO: assuming trace width = 4
+                    adjust = self.rule_length[rule]*self._cycles_per_byte()
                 timecounter = timecounter - adjust + lastadjust
                 delta = timecounter - lasttime
                 lasttime = timecounter
@@ -455,10 +442,18 @@ class TraceWhisperer():
         return times
 
 
+    def _cycles_per_byte(self):
+        """Returns number of clock cycles needed to send one byte of trace
+        data over the trace port.
+        """
+        return 8/self._trace_port_width
+
+
     def get_raw_trace_packets(self, rawdata, removesyncs=True, verbose=False):
-        """Split raw capture data into pseudo-frames, suppressing sync frames (and using those
-        sync frames as marker which is separating pseudo-frames). It's the best we can do
-        without actually parsing the trace packets, which is best left to other tools!
+        """Split raw capture data into pseudo-frames, optionally suppressing
+        sync frames (and using those sync frames as marker which is separating
+        pseudo-frames). It's the best we can do without actually parsing the
+        trace packets, which is best left to other tools!
 
         Args:
             rawdata: raw capture data, list of lists, e.g. obtained from read_capture_data()
@@ -521,77 +516,75 @@ class TraceWhisperer():
         return pseudoframes
 
 
-    def capture_trace(self, scope, command, k, pcsamps=False, ack=True, verbose=False):
-        """Capture a trace, sending plaintext and key
-
-        Does all individual steps needed to capture a trace (arming the scope
-        sending the key/plaintext, getting the trace data back, etc.)
-
-        Args:
-            scope (ScopeTemplate): Scope object to use for capture.
-            command (string): AES or ECC
-            k (bytearray): k to send to target. Should be unencoded
-                bytearray.
-            pcsamps (bool, optional): enable PC sampling just prior to capture
-            ack (bool, optional): Check for ack when reading response from target.
-                Defaults to True.
-
-        Returns:
-            :class:`Trace <chipwhisperer.common.traces.Trace>` or None if capture
-            timed out.
-
-        Raises:
-            Warning or OSError: Error during capture.
-
+    def use_soft_trigger(self):
+        """ Use target-generated trigger to initiate trace capture.
         """
-        if command == 'AES':
-            command = 'p'
-        else:
-            command = 'f'
-        scope.arm()
-        time.sleep(0.1)
-
-        if pcsamps:
-            warnings.warn("Enabling PC sampling from Python means sampling will start BEFORE the trigger!")
-            # TODO: update!
-            self._ss.simpleserial_write('c', bytearray([1]))
-            if verbose:
-                time.sleep(0.1)
-                print(self._ss.read().split('\n')[0])
+        self.fpga_write(self.REG_SOFT_TRIG_ENABLE, [1])
+        self.fpga_write(self.REG_SOFT_TRIG_PASSTHRU, [1])
+        self.fpga_write(self.REG_PATTERN_TRIG_ENABLE, [0])
 
 
-        self._ss.simpleserial_write(command, k)
-        if verbose:
-            time.sleep(0.6) # ECC is slow!
-            print(self._ss.read().split('\n')[0])
+    def use_trace_trigger(self, rule=0):
+        """ Use matching trace data to initiate trace capture.
+        Args:
+            rule (int): rule number to use
+        """
+        self.fpga_write(self.REG_SOFT_TRIG_ENABLE, [0])
+        self.fpga_write(self.REG_SOFT_TRIG_PASSTHRU, [0])
+        self.fpga_write(self.REG_PATTERN_TRIG_ENABLE, [2**rule])
+        self.fpga_write(self.REG_TRIGGER_ENABLE, [1])
+        # these can be customized but let's start you off with simple default values:
+        self.fpga_write(self.REG_NUM_TRIGGERS, [1])
+        self.fpga_write(self.REG_TRIGGER_WIDTH, [16])
 
 
-        ret = scope.capture()
+    def set_isync_matches(self, addr0=0, addr1=0, match=None):
+        """ Set exact PC address matching rules.
+        Args:
+            addr0 (int): Matching address 0 (DWT_COMP0)
+            addr1 (int): Matching address 0 (DWT_COMP1)
+            match:
+                None: disable PC address match packets
+                0: enable addr0 matching only
+                1: enable addr1 matching only
+                "both": enable both addr0 and addr1 matching
+        """
+        self.set_reg('DWT_COMP0', '%08x' % addr0)
+        self.set_reg('DWT_COMP1', '%08x' % addr1)
+        if match == None:
+            self.set_reg('ETM_TEEVR', '00000000')
+        elif match == 0:
+            self.set_reg('ETM_TEEVR', '00000020')
+        elif match == 1:
+            self.set_reg('ETM_TEEVR', '00000021')
+        elif match == 'both':
+            self.set_reg('ETM_TEEVR', '000150a0')
 
-        i = 0
-        while not self.is_done():
-            i += 1
-            time.sleep(0.05)
-            if i > 100:
-                warnings.warn("Target did not finish operation")
-                return None
 
-        if ret:
-            warnings.warn("Timeout happened during capture")
-            return None
-
-        # TODO: get result and add to Trace
-        #response = target.simpleserial_read('r', 16, ack=ack)
-        response = None
-        wave = scope.get_last_trace()
-
-        if len(wave) >= 1:
-            return Trace(wave, None, response, k)
-        else:
-            return None
+    def set_periodic_pc_sampling(self, enable=1, cyctap=0, postinit=1, postreset=0):
+        """ Set periodic PC sampling parameters. Enabling PC sampling through
+        this method will start PC sampling *after* the target triggers, thereby
+        ensuring that the resulting trace data can be parsed without trouble.
+        Alternatively, you can set the DWT_CTRL register directly.
+        Args:
+            enable (int): enable or disable periodic PC sampling
+            cyctap (int): DWT_CTRL.CYCTAP bit
+            postinit (int): DWT_CTRL.POSTINIT bits
+            postreset (int): DWT_CTRL.POSTRESET bits
+        """
+        self.simpleserial_write('c', bytearray([enable, cyctap, postinit, postreset]), printresult=False)
 
 
     def write_raw_capture(self, raw, filename='raw.bin', presyncs=8):
+        """Writes raw trace data to a file (which can be read by orbuculum).
+        Prepends a number of sync frames to facilitate parsing.
+        Args:
+            raw (array): raw trace data as obtained from
+                get_raw_trace_packets()
+            filename (string): output file
+            presyncs (int): number of long syncronization frames which are
+                prepended to the collected trace data.
+        """
         binout = open(filename, "wb")
         for i in range(presyncs):
             binout.write(bytes(self.longsync))
