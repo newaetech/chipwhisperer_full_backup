@@ -11,7 +11,7 @@ typedef struct ss_cmd
 	uint8_t (*fp)(uint8_t*);
 } ss_cmd;
 
-#define MAX_SS_CMDS 10
+#define MAX_SS_CMDS 16
 static ss_cmd commands[MAX_SS_CMDS];
 static int num_commands = 0;
 
