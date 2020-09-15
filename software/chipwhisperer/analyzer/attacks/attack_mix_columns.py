@@ -146,7 +146,7 @@ class AttackMixColumns:
             tmp = []
             for j in range(4):
                 tmp.append(\
-                    scared.attack_selection_function(lambda plaintext, guesses: round_gen(plaintext, guesses, campaign, lut_in[j], lut_out[j], hd)))
+                    scared.attack_selection_function(lambda plaintext, guesses: round_gen(plaintext, guesses, campaign, lut_in, lut_out[j], hd)))
             leakage_cmpgns.append(tmp)
         self.projects = projects
         self.leakage_cmpgns = leakage_cmpgns
@@ -157,7 +157,8 @@ class AttackMixColumns:
 
         Args:
             n_traces (int): Number of traces to use. Leave as None if you want to use the full trace set. Defaults to None
-            trace_slice (slice): Slice of trace wave to use. Useful for windowing, since ghost peaks can be a problem.
+            trace_slice (slice): Slice of trace wave to use. Useful for windowing, since ghost peaks can be a problem. If None,
+                                use full trace. Defaults to None.
 
         Returns:
             Dict with {'corr': correlation_data, '}
