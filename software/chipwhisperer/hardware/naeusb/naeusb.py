@@ -418,7 +418,10 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
             #on windows, need to manually load libusb because of 64bit python loading the wrong one
             libusb_backend = None
             if backend == "libusb1":
-                libusb_backend = libusb1.get_backend()
+                import pathlib
+                libusb_dir = pathlib.Path(__file__).parent.absolute()
+                libusb_path = pathlib.Path(libusb_dir, "libusb-1.0.dll")
+                libusb_backend = libusb1.get_backend(find_library=lambda x: str(libusb_path))
             if not libusb_backend:
                 libusb_backend = libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll")
                 logging.info("Using libusb0 backend")
@@ -453,11 +456,15 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
                 devlist = [{'sn': d.serial_number, 'product': d.product, 'pid': d.idProduct, 'vid': d.idVendor} for d in devlist]
 
             try:
-                dev[0].serial_number
+                if len(devlist) > 0:
+                    if dictonly:
+                        devlist[0]['sn']
+                    else:
+                        devlist[0].serial_number
             except ValueError as e:
                 if backend == "libusb1":
                     return self.get_possible_devices(idProduct, dictonly, "libusb0")
-                else: raise
+                raise
             return devlist
         except ValueError as e:
             if "langid" not in str(e):

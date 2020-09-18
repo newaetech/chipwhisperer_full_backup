@@ -9,7 +9,7 @@ import binascii
 hwdir = r"../../../../hardware/"
 
 #List of versions, file-names, and object name
-cw305_v = [0, 30]
+cw305_v = [0, 31]
 cw305_files = [("SAM3U_CW305.bin", os.path.join(hwdir, r"victims/cw305_artixtarget/fw/sam3u/CW305_SAM3U_FW/build/CW305_SAM3UFW.bin")),
                 ("SPI_flash_100t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/spiflash_feedthrough/spiflash_feedthrough.runs/impl_100t/cw305_top.bit")),
                 ("SPI_flash_35t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/spiflash_feedthrough/spiflash_feedthrough.runs/impl_35t/cw305_top.bit")),
@@ -21,24 +21,24 @@ cwcr2_v = [0, 11]
 cwcr2_files = [("cwrev2_firmware.zip",  os.path.join(hwdir, r"capture/chipwhisperer-rev2/cwrev2_firmware.zip")),
                ("OpenADC.ihx", os.path.join(hwdir, r"capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"))]
 
-cwlite_v = [0, 20]
+cwlite_v = [0, 21]
 cwlite_files = [("cwlite_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-lite/cwlite_firmware.zip")),
                 ("SAM3U_CW1173.bin", os.path.join(hwdir, r"capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin"))]
 
-cw1200_v = [1, 2]
+cw1200_v = [1, 21]
 cw1200_files = [("cw1200_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/cw1200_firmware.zip")),
                 ("CW1200_SAM3UFW.bin", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/CW1200_SAM3UFW.bin"))]
 
-cwnano_v = [0, 20]
+cwnano_v = [0, 21]
 #hardware\capture\chipwhisperer-nano\firmware\cwnano-firmware\Debug\cwnano-firmware.bin
 cwnano_files = [("SAM3U_CWNANO.bin", os.path.join(hwdir, r"capture/chipwhisperer-nano/firmware/cwnano-firmware/Debug/cwnano-firmware.bin"))]
 #List of files to generate
 file_list = [
-     #("cwnano.py" , cwnano_v , cwnano_files),
-    #("cw305.py" , cw305_v , cw305_files),
+     ("cwnano.py" , cwnano_v , cwnano_files),
+    ("cw305.py" , cw305_v , cw305_files),
 #    ("cwcr2.py" , cwcr2_v , cwcr2_files),
     ("cwlite.py", cwlite_v, cwlite_files),
-    #("cw1200.py", cw1200_v, cw1200_files),
+    ("cw1200.py", cw1200_v, cw1200_files),
 ]
 
 for fdata in file_list:
