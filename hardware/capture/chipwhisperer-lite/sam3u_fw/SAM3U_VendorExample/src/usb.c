@@ -38,7 +38,7 @@
 #else
 #define FW_VER_MAJOR 0
 #endif
-#define FW_VER_MINOR 20
+#define FW_VER_MINOR 21
 #define FW_VER_DEBUG 0
 
 static volatile bool main_b_vendor_enable = true;
