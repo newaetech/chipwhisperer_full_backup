@@ -406,7 +406,7 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
             logging.info('USB Failure calling dispose_resources: %s' % str(e))
 
 
-    def get_possible_devices(self, idProduct=None, dictonly=True):
+    def get_possible_devices(self, idProduct=None, dictonly=True, backend="libusb1"):
         """
         Get a list of matching devices being based a list of PIDs. Returns list of usbdev that match (or empty if none)
         """
@@ -416,7 +416,9 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         my_kwargs = {'find_all': True, 'idVendor': 0x2B3E}
         if os.name == "nt":
             #on windows, need to manually load libusb because of 64bit python loading the wrong one
-            libusb_backend = libusb1.get_backend()
+            libusb_backend = None
+            if backend == "libusb1":
+                libusb_backend = libusb1.get_backend()
             if not libusb_backend:
                 libusb_backend = libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll")
                 logging.info("Using libusb0 backend")
@@ -450,10 +452,18 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
             if dictonly:
                 devlist = [{'sn': d.serial_number, 'product': d.product, 'pid': d.idProduct, 'vid': d.idVendor} for d in devlist]
 
+            try:
+                dev[0].serial_number
+            except ValueError as e:
+                if backend == "libusb1":
+                    return self.get_possible_devices(idProduct, dictonly, "libusb0")
+                else: raise
             return devlist
         except ValueError as e:
             if "langid" not in str(e):
                 raise
+            if backend == "libusb1":
+                return self.get_possible_devices(idProduct, dictonly, "libusb0")
             raise OSError("Unable to communicate with found ChipWhisperer. Check that another process isn't connected to it and that you have permission to communicate with it.")
 
     def sendCtrl(self, cmd, value=0, data=[]):

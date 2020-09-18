@@ -37,8 +37,8 @@ file_list = [
      #("cwnano.py" , cwnano_v , cwnano_files),
     #("cw305.py" , cw305_v , cw305_files),
 #    ("cwcr2.py" , cwcr2_v , cwcr2_files),
-#    ("cwlite.py", cwlite_v, cwlite_files),
-    ("cw1200.py", cw1200_v, cw1200_files),
+    ("cwlite.py", cwlite_v, cwlite_files),
+    #("cw1200.py", cw1200_v, cw1200_files),
 ]
 
 for fdata in file_list:
