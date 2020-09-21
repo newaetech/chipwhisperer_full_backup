@@ -133,8 +133,7 @@ class USART(object):
             # Can probably elimiate some USB communication
             # to make this faster, but okay for now...
             if self.tx_buf_in_wait:
-                while (datatosend + self.in_waiting_tx()) > 128:
-                    pass
+                datatosend = min(datatosend, 128-self.in_waiting_tx())
             self._usb.sendCtrl(self.CMD_USART0_DATA, 0, data[datasent:(datasent + datatosend)])
             datasent += datatosend
 

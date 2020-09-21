@@ -13,6 +13,7 @@ setup(
     license='GPLv3',
     url='https://www.chipwhisperer.com',
     packages=find_packages('software'),
+    data_files=[('chipwhisperer/hardware/naeusb', ['software/chipwhisperer/hardware/naeusb/libusb-1.0.dll', 'software/chipwhisperer/hardware/naeusb/libusb-master.zip'])],
     package_dir={'': 'software'},
     install_requires=[
         'configobj',

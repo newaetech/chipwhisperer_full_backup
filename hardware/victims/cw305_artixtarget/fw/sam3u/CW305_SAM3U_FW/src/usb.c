@@ -33,7 +33,7 @@
 #include <string.h>
 
 #define FW_VER_MAJOR 0
-#define FW_VER_MINOR 30
+#define FW_VER_MINOR 31
 #define FW_VER_DEBUG 0
 
 volatile bool g_captureinprogress = true;
