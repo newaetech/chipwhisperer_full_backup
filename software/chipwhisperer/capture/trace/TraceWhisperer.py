@@ -100,6 +100,13 @@ class TraceWhisperer():
             self._ss = target
             self._naeusb = NAEUSB()
             self._naeusb.con(idProduct=[0xC610])
+            # we're using the CW NAEUSB, which has no knowledge of PW firmware, so let's manually
+            # check the FW version here:
+            fw_latest = [1,0]
+            if self._naeusb.readFwVersion()[0] < fw_latest[0]:
+               logging.warning('Your PhyWhisperer firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
+                               '. Suggested to update firmware, as you may experience errors.')
+ 
             self._fpga = FPGA(self._naeusb)
             if not self._fpga.isFPGAProgrammed() or force_bitfile:
                 if not bs:
@@ -144,9 +151,9 @@ class TraceWhisperer():
                     match = define_regex_radix.search(define)
                     if reg:
                         if i == 0:
-                            block_offset = self.TRACE_REG_SELECT << 5
+                            block_offset = self.TRACE_REG_SELECT << 6
                         else:
-                            block_offset = self.MAIN_REG_SELECT << 5
+                            block_offset = self.MAIN_REG_SELECT << 6
                     else:
                         block_offset = 0
                     if match:
@@ -167,7 +174,7 @@ class TraceWhisperer():
                             logging.warning("Couldn't parse line: %s", define)
             defines.close()
         # make sure everything is cool:
-        assert self.verilog_define_matches == 93, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected 93, got %d" % (defines_file, self.verilog_define_matches)
+        assert self.verilog_define_matches == 94, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected 94, got %d" % (defines_file, self.verilog_define_matches)
 
 
     def simpleserial_write(self, cmd, data, printresult=False):
@@ -369,7 +376,7 @@ class TraceWhisperer():
         starttime = time.time()
 
         # first check for FIFO to not be empty:
-        assert self.fifo_empty() == False
+        assert self.fifo_empty() == False, 'FIFO is empty'
 
         # then check that no underflows or overflows occurred during capture:
         self.check_fifo_errors()
