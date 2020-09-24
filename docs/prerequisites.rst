@@ -104,6 +104,13 @@ Finally log out & in again for the group change to take effect.
 You can always find the latest version of this file on
 `Github <https://github.com/newaetech/chipwhisperer/blob/master/hardware/99-newae.rules>`_.
 
+You should also add your username to the dialout group, which will allow you to reprogram
+the USB firmware on your ChipWhisperer:
+
+.. code:: bash
+
+    sudo usermod -a -G dialout YOUR-USERNAME
+
 ChipWhisperer
 =============
 
