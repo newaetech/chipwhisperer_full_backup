@@ -22,9 +22,10 @@ from chipwhisperer.common.api import ProjectFormat as project
 from chipwhisperer.common.traces import Trace
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
+import logging
 import usb
 if usb.__version__ < '1.1.0':
-    raise ImportError("ChipWhisperer requires pyusb >= 1.1.0. Please update using: pip install --upgrade pyusb")
+    logging.warning(f"ChipWhisperer requires pyusb >= 1.1.0, but you have {usb.__version__}")
 
 # replace bytearray with inherited class with better repr and str.
 import builtins
