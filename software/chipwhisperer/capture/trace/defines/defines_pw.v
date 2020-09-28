@@ -19,23 +19,24 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-`define MAIN_REG_SELECT              3'b000
-`define USB_REG_SELECT               3'b001
+`define MAIN_REG_SELECT              2'b00
+`define USB_REG_SELECT               2'b01
 
-`define REG_BUILDTIME                5'h00
-`define REG_FE_SELECT                5'h01
-`define REG_SNIFF_FIFO_STAT          5'h02
-`define REG_SNIFF_FIFO_RD            5'h03
-`define REG_ARM                      5'h04
+`define REG_BUILDTIME                6'h00
+`define REG_FE_SELECT                6'h01
+`define REG_SNIFF_FIFO_STAT          6'h02
+`define REG_SNIFF_FIFO_RD            6'h03
+`define REG_ARM                      6'h04
 
-`define REG_TRIGGER_ENABLE           5'h05
-`define REG_NUM_TRIGGERS             5'h06
-`define REG_TRIGGER_DELAY            5'h07
-`define REG_TRIGGER_WIDTH            5'h08
-`define REG_TRIG_CLK_PHASE_SHIFT     5'h09
-`define REG_CAPTURE_LEN              5'h0a
-`define REG_COUNT_WRITES             5'h0b
-`define REG_COUNTER_QUICK_START      5'h0c
+`define REG_TRIGGER_ENABLE           6'h05
+`define REG_NUM_TRIGGERS             6'h06
+`define REG_TRIGGER_DELAY            6'h07
+`define REG_TRIGGER_WIDTH            6'h08
+`define REG_TRIG_CLK_PHASE_SHIFT     6'h09
+`define REG_CAPTURE_LEN              6'h0a
+`define REG_COUNT_WRITES             6'h0b
+`define REG_COUNTER_QUICK_START      6'h0c
+`define REG_BOARD_REV                6'h0d
 
 // front end select definitions
 `define FE_SELECT_WIDTH 2

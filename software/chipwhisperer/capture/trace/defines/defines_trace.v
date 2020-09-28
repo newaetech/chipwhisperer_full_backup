@@ -19,43 +19,43 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-`define TRACE_REG_SELECT        3'b010
+`define TRACE_REG_SELECT        2'b10
 
-`define REG_NAME                5'h00
-`define REG_REV                 5'h01
-`define REG_CLKSETTINGS         5'h02
+`define REG_NAME                6'h00
+`define REG_REV                 6'h01
+`define REG_CLKSETTINGS         6'h02
 
-`define REG_PATTERN_ENABLE      5'h03
-`define REG_PATTERN_TRIG_ENABLE 5'h04
-`define REG_TRACE_RESET_SYNC    5'h05
-`define REG_TRACE_WIDTH         5'h06
-`define REG_SOFT_TRIG_PASSTHRU  5'h07
-`define REG_SOFT_TRIG_ENABLE    5'h08
-`define REG_CAPTURE_RAW         5'h09
+`define REG_PATTERN_ENABLE      6'h03
+`define REG_PATTERN_TRIG_ENABLE 6'h04
+`define REG_TRACE_RESET_SYNC    6'h05
+`define REG_TRACE_WIDTH         6'h06
+`define REG_SOFT_TRIG_PASSTHRU  6'h07
+`define REG_SOFT_TRIG_ENABLE    6'h08
+`define REG_CAPTURE_RAW         6'h09
 
-`define REG_SYNCHRONIZED        5'h0c
+`define REG_SYNCHRONIZED        6'h0c
 
-`define REG_TRACE_PATTERN0      5'h0d
-`define REG_TRACE_PATTERN1      5'h0e
-`define REG_TRACE_PATTERN2      5'h0f
-`define REG_TRACE_PATTERN3      5'h10
-`define REG_TRACE_PATTERN4      5'h11
-`define REG_TRACE_PATTERN5      5'h12
-`define REG_TRACE_PATTERN6      5'h13
-`define REG_TRACE_PATTERN7      5'h14
+`define REG_TRACE_PATTERN0      6'h0d
+`define REG_TRACE_PATTERN1      6'h0e
+`define REG_TRACE_PATTERN2      6'h0f
+`define REG_TRACE_PATTERN3      6'h10
+`define REG_TRACE_PATTERN4      6'h11
+`define REG_TRACE_PATTERN5      6'h12
+`define REG_TRACE_PATTERN6      6'h13
+`define REG_TRACE_PATTERN7      6'h14
 
-`define REG_TRACE_MASK0         5'h15
-`define REG_TRACE_MASK1         5'h16
-`define REG_TRACE_MASK2         5'h17
-`define REG_TRACE_MASK3         5'h18
-`define REG_TRACE_MASK4         5'h19
-`define REG_TRACE_MASK5         5'h1a
-`define REG_TRACE_MASK6         5'h1b
-`define REG_TRACE_MASK7         5'h1c
+`define REG_TRACE_MASK0         6'h15
+`define REG_TRACE_MASK1         6'h16
+`define REG_TRACE_MASK2         6'h17
+`define REG_TRACE_MASK3         6'h18
+`define REG_TRACE_MASK4         6'h19
+`define REG_TRACE_MASK5         6'h1a
+`define REG_TRACE_MASK6         6'h1b
+`define REG_TRACE_MASK7         6'h1c
 
-`define REG_TRACE_COUNT         5'h1d
-`define REG_RECORD_SYNCS        5'h1e
-`define REG_MATCHED_DATA        5'h1f
+`define REG_TRACE_COUNT         6'h1d
+`define REG_RECORD_SYNCS        6'h1e
+`define REG_MATCHED_DATA        6'h1f
 
 // FIFO bitfields:
 //                   31 30 29 28 27 26 25 24   23 22 21 20 19 18 17 16   15 14 13 12 11 10  9  8   7  6  5  4  3  2  1  0
