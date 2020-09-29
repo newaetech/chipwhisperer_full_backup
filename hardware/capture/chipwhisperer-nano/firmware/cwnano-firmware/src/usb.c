@@ -52,7 +52,7 @@
 #include <string.h>
 
 #define FW_VER_MAJOR 0
-#define FW_VER_MINOR 21
+#define FW_VER_MINOR 22
 #define FW_VER_DEBUG 0
 
 static volatile bool main_b_vendor_enable = true;
