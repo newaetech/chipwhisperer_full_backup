@@ -285,6 +285,8 @@ class GlitchSettings(util.DisableNewAttr):
          * "ext_single": Use the trigger module. One glitch per scope arm.
          * "ext_continuous": Use the trigger module. Many glitches per arm.
 
+         ..warning:: calling :code:`scope.arm()` in manual gitch mode will cause a glitch to trigger.
+
         :Getter: Return the current trigger source.
 
         :Setter: Change the trigger source.
