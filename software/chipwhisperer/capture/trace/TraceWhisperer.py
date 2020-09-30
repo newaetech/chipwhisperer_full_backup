@@ -102,7 +102,7 @@ class TraceWhisperer():
             self._naeusb.con(idProduct=[0xC610])
             # we're using the CW NAEUSB, which has no knowledge of PW firmware, so let's manually
             # check the FW version here:
-            fw_latest = [1,0]
+            fw_latest = [1,1]
             if self._naeusb.readFwVersion()[0] < fw_latest[0]:
                logging.warning('Your PhyWhisperer firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
                                '. Suggested to update firmware, as you may experience errors.')
