@@ -72,26 +72,44 @@ void init_uart(void)
 	HAL_UART_Init(&UartHandle);
 }
 
+//#define STM32F4_WLCSP
+
 void trigger_setup(void)
 {
+#ifdef STM32F4_WLCSP
+ 	GPIO_InitTypeDef GpioInit;
+	GpioInit.Pin       = GPIO_PIN_4;
+	GpioInit.Mode      = GPIO_MODE_OUTPUT_PP;
+	GpioInit.Pull      = GPIO_NOPULL;
+	GpioInit.Speed     = GPIO_SPEED_FREQ_HIGH;
+    __GPIOD_CLK_ENABLE();
+    HAL_GPIO_Init(GPIOD, &GpioInit);   
+#else
 	GPIO_InitTypeDef GpioInit;
 	GpioInit.Pin       = GPIO_PIN_12;
 	GpioInit.Mode      = GPIO_MODE_OUTPUT_PP;
 	GpioInit.Pull      = GPIO_NOPULL;
 	GpioInit.Speed     = GPIO_SPEED_FREQ_HIGH;
 	HAL_GPIO_Init(GPIOA, &GpioInit);
+#endif
 }
-
 void trigger_high(void)
 {
+#ifdef STM32F4_WLCSP
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, SET);
+#else
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, SET);
+#endif
 }
 
 void trigger_low(void)
 {
+#ifdef STM32F4_WLCSP
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, RESET);
+#else
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, RESET);
+#endif
 }
-
 char getch(void)
 {
 	uint8_t d;
