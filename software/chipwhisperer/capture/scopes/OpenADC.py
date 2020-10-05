@@ -109,6 +109,10 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         a = self.qtadc.sc.serial.readFwVersion()
         return {"major": a[0], "minor": a[1], "debug": a[2]}
 
+    @property
+    def sn(self):
+        return self.scopetype.ser.snum
+
     def _getNAEUSB(self):
         return self.scopetype.dev._cwusb
 
@@ -317,7 +321,6 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
             return self.qtadc.capture(self.adc.offset, self.clock.adc_freq, self.adc.samples)
         else:
             return self.qtadc.capture(None)
-        return ret
 
     def get_last_trace(self):
         """Return the last trace captured with this scope.
@@ -331,6 +334,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
 
     def _dict_repr(self):
         dict = OrderedDict()
+        dict['sn'] = self.sn
         dict['fw_version'] = self.fw_version
         dict['gain']    = self.gain._dict_repr()
         dict['adc']     = self.adc._dict_repr()

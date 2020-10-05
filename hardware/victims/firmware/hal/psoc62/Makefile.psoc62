@@ -62,9 +62,9 @@ NM = arm-none-eabi-nm
 #Output Format = Binary for this target
 FORMAT = binary
 
-CFLAGS += -fdata-sections -ffunction-sections -mthumb -mlong-calls -mfpu=fpv4-sp-d16 -ffat-lto-objects
+CFLAGS += -fdata-sections -ffunction-sections -mthumb -mlong-calls -ffat-lto-objects -mfloat-abi=soft
 CPPFLAGS += $(CFLAGS)
-ASFLAGS += -mthumb
+ASFLAGS += -mthumb -mfloat-abi=soft
 
 CDEFS += -DCY8C6247BZI_D44
 CDEFS += -DAPP_NAME='"CustomApp_cm4"'

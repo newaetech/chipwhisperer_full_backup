@@ -1,3 +1,21 @@
+V5.3.2
+  New Features:
+    * AES MixColumns Attack and Variable Vector KTP (requires scared/estraces)
+    * Update FW for USB devices - auto configure as WinUSB
+    * Support both libusb0 and libusb1
+    
+
+V5.3.1
+  New Features:
+    * New CWPro firmware
+      - Add in_waiting_tx for Pro
+    * Public target.in_waiting_tx()
+    * Add SAMFWLoader CWPro support
+    * Add CWPro USB binary
+  Fixes:
+    * Fix TIO state read on CWPro
+    * Fix tx buffer overrun on CWPro
+
 V5.3.0
  New Features:
   * New CW305 USB firmware

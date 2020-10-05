@@ -42,7 +42,7 @@ from chipwhisperer.common.utils.util import camel_case_deprecated
 class SAMFWLoader(object):
     """ Object for easy reprogramming of ChipWhisperers
 
-    Despite the name of the file, this will work with the Lite, the Pro, and
+    This will work with the Lite, the Pro, and
     the Nano. If the ChipWhisperer has already been erased, pass None instead
     of the scope object and skip the enter_bootloader() call. Will also work
     for the CW305.
@@ -60,7 +60,7 @@ class SAMFWLoader(object):
 
             # If using CW305, connect to target as well
             # Can ignore msg about no bitstream
-            target = cw.target(scope, cw.targets.CW305)
+            target = cw.target(None, cw.targets.CW305)
 
      #. Place the hardware in bootloader mode using::
 
@@ -99,15 +99,19 @@ class SAMFWLoader(object):
                 programmer.program(<port>, hardware_type='cwlite')
                 programmer.program(<port>, hardware_type='cwnano')
                 programmer.program(<port>, hardware_type='cw305')
+                programmer.program(<port>, hardware_type='cw1200')
 
         On Linux instead of 'COM#' use the Linux equivalent (usually /dev/ttyACM# or /dev/ttyUSB#)
 
      #. Once the programming is done. Unplug then plug in the hardware into your
         computer again. The device should show up as a ChipWhisperer again.
     """
-    def __init__(self, scope=None):
+    def __init__(self, scope=None, logfunc=print):
         if scope:
             self.usb = scope._getNAEUSB()
+        if logfunc is None:
+            logfunc = lambda *args, **kwargs: None
+        self.logfunc = logfunc
         self._warning_seen = False
 
     def enter_bootloader(self, really_enter=False):
@@ -140,7 +144,7 @@ class SAMFWLoader(object):
 
 
         else:
-            print("""Entering bootloader mode...
+            self.logfunc("""Entering bootloader mode...
             Please wait until the ChipWhisperer shows up as a serial port. Once it has, call
             the program(COMPORT, FWPATH) to program the ChipWhisperer
 
@@ -156,11 +160,15 @@ class SAMFWLoader(object):
             hardware_type (str): The type of hardware that you want to program.
                 If specified leave out fw_path. Valid types: (cwlite, )
 
+        Returns:
+            True if programming succeeded, False if it didn't
+
         """
         type_whitelist = [
             'cwlite',
             'cwnano',
-            'cw305'
+            'cw305',
+            'cw1200'
         ]
 
         if fw_path and hardware_type:
@@ -183,29 +191,35 @@ class SAMFWLoader(object):
                 elif hardware_type == 'cw305':
                     from chipwhisperer.hardware.firmware.cw305 import getsome as getsome
                     name = 'SAM3U_CW305.bin'
-                print('Loading {} firmware...'.format(hardware_type))
+                elif hardware_type == 'cw1200':
+                    from chipwhisperer.hardware.firmware.cw1200 import getsome as getsome
+                    name = 'CW1200_SAM3UFW.bin'
+                self.logfunc('Loading {} firmware...'.format(hardware_type))
                 fw_data = getsome(name).read()
 
         if fw_path:
-            print("Opening firmware...")
+            self.logfunc("Opening firmware...")
             fw_data = open(fw_path, "rb").read()
             name = fw_path
 
         sam = Samba()
 
-        print("Opened!\nConnecting...")
+        self.logfunc("Opened!\nConnecting...")
         sam.con(port)
-        print("Connected!\nErasing...")
+        self.logfunc("Connected!\nErasing...")
         sam.erase()
-        print("Erased!\nProgramming file {}...".format(name))
+        self.logfunc("Erased!\nProgramming file {}...".format(name))
         sam.write(fw_data)
-        print("Programmed!\nVerifying...")
+        self.logfunc("Programmed!\nVerifying...")
         if sam.verify(fw_data):
-            print("Verify OK!")
+            self.logfunc("Verify OK!")
             sam.flash.setBootFlash(True)
-            print("Bootloader disabled. Please power cycle device.")
+            self.logfunc("Bootloader disabled. Please power cycle device.")
+            sam.ser.close()
+            return True
         else:
-            print("Verify FAILED!")
+            self.logfunc("Verify FAILED!")
+            sam.ser.close()
+            return False
 
-        sam.ser.close()
 

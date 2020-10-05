@@ -134,6 +134,8 @@ OpenADC Scope
         .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.clkgen_locked
             :annotation: scope.clock.clkgen_locked
 
+        .. automethod:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.reset_dcms
+
 
     .. attribute:: io
         :annotation: scope.io
@@ -454,6 +456,8 @@ Simple Serial Target
     .. automethod:: set_key
 
     .. automethod:: in_waiting
+
+    .. automethod:: in_waiting_tx
 
     .. automethod:: flush
 

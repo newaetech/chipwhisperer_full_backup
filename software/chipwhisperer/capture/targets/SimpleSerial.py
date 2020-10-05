@@ -56,6 +56,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
       * :attr:`target.baud <.SimpleSerial.baud>`
       * :meth:`target.write <.SimpleSerial.write>`
       * :meth:`target.read <.SimpleSerial.read>`
+      * :meth:`target.in_waiting <.SimpleSerial.in_waiting>`
+      * :meth:`target.in_waiting_tx <.SimpleSerial.in_waiting_tx>`
       * :meth:`target.simpleserial_wait_ack <.SimpleSerial.simpleserial_wait_ack>`
       * :meth:`target.simpleserial_write <.SimpleSerial.simpleserial_write>`
       * :meth:`target.simpleserial_read <.SimpleSerial.simpleserial_read>`
@@ -521,6 +523,22 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Added target.flush()
         """
         self.ser.flush()
+
+    def in_waiting_tx(self):
+        """Returns the number of characters waiting to be sent by the ChipWhisperer.
+
+        Requires firmware version >= 0.2 for the CWLite/Nano and firmware version and
+        firmware version >= 1.2 for the CWPro.
+
+        Used internally to avoid overflowing the TX buffer, since CW version 5.3
+
+        Returns:
+            The number of characters waiting to be sent to the target
+
+        .. versionadded:: 5.3.1
+            Added public method for in_waiting_tx().
+        """
+        return self.ser.inWaitingTX()
 
 
 

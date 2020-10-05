@@ -33,8 +33,12 @@
 #include "fpga_xmem.h"
 #include <string.h>
 
+#if BOARD == CW1200
+#define FW_VER_MAJOR 1
+#else
 #define FW_VER_MAJOR 0
-#define FW_VER_MINOR 20
+#endif
+#define FW_VER_MINOR 22
 #define FW_VER_DEBUG 0
 
 static volatile bool main_b_vendor_enable = true;
