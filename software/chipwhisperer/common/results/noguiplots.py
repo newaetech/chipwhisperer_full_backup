@@ -142,7 +142,7 @@ class NoGUIPlots(object):
 
         return [xrangelist, data[key], np.amax(wrong_results, 0), np.amin(wrong_results, 0)]
 
-    def plot_out_vs_time(self, bnum_it=None):
+    def plot_output_vs_time(self, bnum_it=None):
         import holoviews as hv
         from holoviews.operation import decimate
         import pandas as pd, numpy as np
