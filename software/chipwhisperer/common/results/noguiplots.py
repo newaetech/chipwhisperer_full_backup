@@ -135,13 +135,85 @@ class NoGUIPlots(object):
         attack_results = self._results
 
         key = attack_results.known_key[bnum]
-        data = attack_results.diffs[bnum]
+        data = np.array(attack_results.diffs[bnum])
 
         xrangelist = range(0, len(data[0]))
+        wrong_results = data[[i != key for i in range(256)]]
 
-        maxes = [np.amax(data[0:key-1], 0), np.amax(data[key+1:-1], 0)]
-        mins = [np.amin(data[0:key-1], 0), np.amin(data[key+1:-1], 0)]
+        return [xrangelist, data[key], np.amax(wrong_results, 0), np.amin(wrong_results, 0)]
 
-        return [xrangelist, data[key], np.amax(maxes, 0), np.amin(mins, 0)]
+    def plot_out_v_time(self, bnum_it=None):
+        import holoviews as hv
+        from holoviews.operation import decimate
+        import pandas as pd, numpy as np
+        def byte_to_color(idx):
+            return hv.Palette.colormaps['Category20'](idx/16.0)
+
+        if bnum_it is None:
+            bnum_it = range(16)
+        a = []
+        b = []
+        hv.extension('bokeh')
+        for i in range(16):
+            data = self.output_vs_time(i)
+            a.append(np.array(data[1]))
+            b.append(np.array(data[2]))
+            b.append(np.array(data[3]))
+            
+        #pda = pd.DataFrame(a).transpose().rename(str, axis='columns')
+        #pdb = pd.DataFrame(b).transpose().rename(str, axis='columns')
+        curve = hv.Curve(b[i], "Sample").options(color='black').options(title="Correlation Vs. Time")
+        for i in range(1, len(b)):
+            curve *= hv.Curve(b[i]).options(color='black', width=900, height=600)
+            
+        for i in bnum_it:
+            curve *= hv.Curve(a[i]).options(color=byte_to_color(i), width=900, height=600)
+        return decimate(curve)
+
+    def plot_pge_vs_trace(self, bnum_it=None):
+        import holoviews as hv
+        from holoviews.operation import decimate
+        import pandas as pd, numpy as np
+        hv.extension('bokeh')
+        def byte_to_color(idx):
+            return hv.Palette.colormaps['Category20'](idx/16.0)
+
+        if bnum_it is None:
+            bnum_it = range(16)
+        ret = self.pge_vs_trace(bnum_it[0])
+        curve = hv.Curve((ret[0],ret[1]), "Traces Used in Calculation", "Partial Guessing Entrop of Byte").options(title="PGE Vs. Traces")
+        for bnum in bnum_it[1:]:
+            ret = self.pge_vs_trace(bnum)
+            curve *= hv.Curve((ret[0],ret[1])).opts(color=byte_to_color(bnum)).opts(width=900, height=600)
+        return curve
+
+    def plot_corr_v_trace(self, bnum_it=None):
+        import holoviews as hv
+        from holoviews.operation import decimate
+        import pandas as pd, numpy as np
+        hv.extension('bokeh')
+        def byte_to_color(idx):
+            return hv.Palette.colormaps['Category20'](idx/16.0)
+
+        if bnum_it is None:
+            bnum_it = range(16)
+
+        curve = None
+        for bnum in bnum_it:
+            data = np.array(self.corr_vs_trace(bnum))[1]
+            xrangelist = self.corr_vs_trace(bnum)[0]
+            key = self._results.known_key[bnum]
+            wrong_results = data[[i != key for i in range(256)]]
+            plt = hv.Curve((xrangelist, data[key]), "Traces Used in Calculation", "Correlation").opts(color=byte_to_color(bnum)).\
+                        opts(width=900, height=600).options(title="Correlation Vs. Traces")
+
+            if curve is None:
+                curve = plt
+            else:
+                curve *= plt
+
+            curve *= hv.Curve((xrangelist, np.amax(wrong_results, 0))).opts(color='black')
+
+        return curve
 
     outputVsTime = output_vs_time
