@@ -142,7 +142,7 @@ class NoGUIPlots(object):
 
         return [xrangelist, data[key], np.amax(wrong_results, 0), np.amin(wrong_results, 0)]
 
-    def plot_out_v_time(self, bnum_it=None):
+    def plot_out_vs_time(self, bnum_it=None):
         import holoviews as hv
         from holoviews.operation import decimate
         import pandas as pd, numpy as np
@@ -187,7 +187,7 @@ class NoGUIPlots(object):
             curve *= hv.Curve((ret[0],ret[1])).opts(color=byte_to_color(bnum)).opts(width=900, height=600)
         return curve
 
-    def plot_corr_v_trace(self, bnum_it=None):
+    def plot_corr_vs_trace(self, bnum_it=None):
         import holoviews as hv
         from holoviews.operation import decimate
         import pandas as pd, numpy as np
