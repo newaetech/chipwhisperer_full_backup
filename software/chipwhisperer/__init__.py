@@ -313,4 +313,27 @@ def capture_trace(scope, target, plaintext, key=None, ack=True):
 
 captureTrace = camel_case_deprecated(capture_trace)
 
+def plot(*args, **kwargs):
+    """Get a plotting object for use in Jupyter.
+    
+    Uses a Holoviews/Bokeh plot with a width of 800 and
+    a height of 600. You must have Holoviews and Bokeh
+    installed, as well as be working in a Jupyter
+    environment.
 
+    args and kwargs are the same as a typical Holoviews plot.
+
+    Plotting a trace in a Jupyter environment::
+
+        import chipwhisperer as cw
+        scope = cw.scope()
+        ...
+        trace = cw.capture_trace(scope, target, text, key)
+        display(cw.plot(trace.wave))
+
+    Returns:
+        A holoviews Curve object
+    """
+    import holoviews as hv
+    hv.extension('bokeh')
+    return hv.Curve(*args, **kwargs).opts(width=800, height=600)
