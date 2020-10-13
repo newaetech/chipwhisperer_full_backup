@@ -335,5 +335,5 @@ def plot(*args, **kwargs):
         A holoviews Curve object
     """
     import holoviews as hv
-    hv.extension('bokeh')
+    hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
     return hv.Curve(*args, **kwargs).opts(width=800, height=600)

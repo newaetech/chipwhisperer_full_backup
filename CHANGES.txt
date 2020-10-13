@@ -6,6 +6,7 @@ V5.3.2
     * Add automated plotting functions for analyzer plots
     * Add TraceWhisperer
     * Improve CW305 AES implementation
+    * Add cw.plot()
     
 
 V5.3.1
