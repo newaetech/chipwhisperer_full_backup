@@ -105,10 +105,11 @@ class CW305(TargetTemplate):
     BATCHRUN_RANDOM_KEY = 0x2
     BATCHRUN_RANDOM_PT = 0x4
 
-    def __init__(self, defines_files=None):
+    def __init__(self, defines_files=None, registers=12):
         """
         Args:
-            defines_files (list): path to cw305_defines.v
+            defines_files (list, optional): path to cw305_defines.v
+            registers (int, optional): number of register definitions which should be found in defines_files
         """
         TargetTemplate.__init__(self)
         self._naeusb = NAEUSB()
@@ -123,14 +124,17 @@ class CW305(TargetTemplate):
         self._clksleeptime = 1
         self._clkusbautooff = True
         self.last_key = bytearray([0]*16)
-        self.slurp_defines(defines_files)
+        self.slurp_defines(defines_files, registers)
 
     def _getNAEUSB(self):
         return self._naeusb
 
-    def slurp_defines(self, defines_files=None):
+    def slurp_defines(self, defines_files=None, registers=12):
         """ Parse Verilog defines file so we can access register and bit
         definitions by name and avoid 'magic numbers'.
+        Args:
+            defines_files (list, optional): path to cw305_defines.v
+            registers (int, optional): number of register definitions which should be found in defines_files
         """
         self.verilog_define_matches = 0
         if not defines_files:
@@ -164,7 +168,9 @@ class CW305(TargetTemplate):
                             logging.warning("Couldn't parse line: %s", define)
             defines.close()
         # make sure everything is cool:
-        assert self.verilog_define_matches == 12, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected 12, got %d" % (defines_file, self.verilog_define_matches)
+        if self.verilog_define_matches != registers:
+            logging.warning("Trouble parsing Verilog defines files (%s): didn't find the right number of defines; expected %d, got %d.\n" % (defines_file, registers, self.verilog_define_matches) +
+                            "Ensure that the Verilog defines files above are the same that were used to build the bitfile.")
 
 
     def get_fpga_buildtime(self):

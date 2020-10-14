@@ -25,6 +25,15 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of NewAE Technology Inc.
 */
 
+// *** WARNING***  
+// Two identical copies are maintained in this repo: 
+// - one in software/chipwhisperer/capture/targets/defines/, used by CW305.py at runtime
+// - one in hardware/victims/cw305_artixtarget/fpga/common/, used by Vivado when building the bitfile
+// Ideally we could use a symlink but that doesn't work on Windows. There are solutions to that 
+// (https://stackoverflow.com/questions/5917249/git-symlinks-in-windows) but they have their own risks.
+// Since this is the only symlink candidate in this repo at this moment, it seems easier/less risky
+// to deal with having two files.
+
 `define REG_CLKSETTINGS                 'h00
 `define REG_USER_LED                    'h01
 `define REG_CRYPT_TYPE                  'h02
