@@ -19,7 +19,94 @@ static int num_commands = 0;
 
 #define SS_VER_1_0 0
 #define SS_VER_1_1 1
+#define SS_VER_2_0 2
 
+// Callback function for "v" command.
+// This can exist in v1.0 as long as we don't actually send back an ack ("z")
+uint8_t check_version(uint8_t* v)
+{
+	return SS_VER;
+}
+
+#if SS_VER == SS_VER_2_0
+
+// Set up the SimpleSerial module by preparing internal commands
+// This just adds the "v" command for now...
+void simpleserial_init()
+{
+	simpleserial_addcmd('v', 0, check_version);
+}
+
+int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t*))
+{
+	if(num_commands >= MAX_SS_CMDS)
+		return 1;
+
+	if(len >= MAX_SS_LEN)
+		return 1;
+
+	commands[num_commands].c   = c;
+	commands[num_commands].len = len;
+	commands[num_commands].fp  = fp;
+	num_commands++;
+
+	return 0;
+}
+
+void simpleserial_get(void)
+{
+	uint8_t data_buf[MAX_SS_LEN];
+	char c;
+
+	// Find which command we're receiving
+	c = getch();
+
+	int cmd;
+	for(cmd = 0; cmd < num_commands; cmd++)
+	{
+		if(commands[cmd].c == c)
+			break;
+	}
+
+	// If we didn't find a match, give up right away
+	if(cmd == num_commands)
+		return;
+
+	// Receive characters until we fill the ASCII buffer
+	for(int i = 0; i < commands[cmd].len; i++)
+	{
+		c = getch();
+
+		// CANT
+
+		data_buf[i] = c;
+	}
+
+
+
+	// Callback
+	uint8_t ret[1];
+	ret[0] = commands[cmd].fp(data_buf);
+	
+	// Acknowledge (if version is 1.1)
+	simpleserial_put('z', 1, ret);
+}
+
+void simpleserial_put(char c, int size, uint8_t* output)
+{
+	// Write first character
+	putch(c);
+
+	// Write each byte as two nibbles
+	for(int i = 0; i < size; i++)
+	{
+		putch(output[i]);
+	}
+
+	// Write trailing '\n'
+	putch('\n');
+}
+#else
 static char hex_lookup[16] =
 {
 	'0', '1', '2', '3', '4', '5', '6', '7',
@@ -55,12 +142,6 @@ int hex_decode(int len, char* ascii_buf, uint8_t* data_buf)
 	return 0;
 }
 
-// Callback function for "v" command.
-// This can exist in v1.0 as long as we don't actually send back an ack ("z")
-uint8_t check_version(uint8_t* v)
-{
-	return SS_VER;
-}
 
 // Set up the SimpleSerial module by preparing internal commands
 // This just adds the "v" command for now...
@@ -152,3 +233,5 @@ void simpleserial_put(char c, int size, uint8_t* output)
 	// Write trailing '\n'
 	putch('\n');
 }
+
+#endif
