@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2015-2019, NewAE Technology Inc
+# Copyright (c) 2015-2020, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -28,6 +28,8 @@ import time
 import random
 from datetime import datetime
 import os.path
+import pkg_resources
+import re
 from ._base import TargetTemplate
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB,packuint32
 from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
@@ -103,7 +105,11 @@ class CW305(TargetTemplate):
     BATCHRUN_RANDOM_KEY = 0x2
     BATCHRUN_RANDOM_PT = 0x4
 
-    def __init__(self):
+    def __init__(self, defines_files=None):
+        """
+        Args:
+            defines_files (list): path to cw305_defines.v
+        """
         TargetTemplate.__init__(self)
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6)
@@ -112,15 +118,66 @@ class CW305(TargetTemplate):
         self.hw = None
         self.oa = None
 
-        self._woffset = 0x400
         self._woffset_sam3U = 0x000
 
         self._clksleeptime = 1
         self._clkusbautooff = True
         self.last_key = bytearray([0]*16)
+        self.slurp_defines(defines_files)
 
     def _getNAEUSB(self):
         return self._naeusb
+
+    def slurp_defines(self, defines_files=None):
+        """ Parse Verilog defines file so we can access register and bit
+        definitions by name and avoid 'magic numbers'.
+        """
+        self.verilog_define_matches = 0
+        if not defines_files:
+            defines_files = [pkg_resources.resource_filename('chipwhisperer', 'capture/targets/defines/cw305_defines.v')]
+        for i,defines_file in enumerate(defines_files):
+            defines = open(defines_file, 'r')
+            define_regex_base  =   re.compile(r'`define')
+            define_regex_reg   =   re.compile(r'`define\s+?REG_')
+            define_regex_radix =   re.compile(r'`define\s+?(\w+).+?\'([bdh])([0-9a-fA-F]+)')
+            define_regex_noradix = re.compile(r'`define\s+?(\w+?)\s+?(\d+?)')
+            block_offset = 0
+            for define in defines:
+                if define_regex_base.search(define):
+                    reg = define_regex_reg.search(define)
+                    match = define_regex_radix.search(define)
+                    if match:
+                        self.verilog_define_matches += 1
+                        if match.group(2) == 'b':
+                            radix = 2
+                        elif match.group(2) == 'h':
+                            radix = 16
+                        else:
+                            radix = 10
+                        setattr(self, match.group(1), int(match.group(3),radix) + block_offset)
+                    else:
+                        match = define_regex_noradix.search(define)
+                        if match:
+                            self.verilog_define_matches += 1
+                            setattr(self, match.group(1), int(match.group(2),10) + block_offset)
+                        else:
+                            logging.warning("Couldn't parse line: %s", define)
+            defines.close()
+        # make sure everything is cool:
+        assert self.verilog_define_matches == 12, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected 12, got %d" % (defines_file, self.verilog_define_matches)
+
+
+    def get_fpga_buildtime(self):
+        """Returns date and time when FPGA bitfile was generated.
+        """
+        raw = self.fpga_read(self.REG_BUILDTIME, 4)
+        # definitions: Xilinx XAPP1232
+        day = raw[3] >> 3
+        month = ((raw[3] & 0x7) << 1) + (raw[2] >> 7)
+        year = ((raw[2] >> 1) & 0x3f) + 2000
+        hour = ((raw[2] & 0x1) << 4) + (raw[1] >> 4)
+        minute = ((raw[1] & 0xf) << 2) + (raw[0] >> 6)
+        return "FPGA build time: {}/{}/{}, {}:{}".format(month, day, year, hour, minute)
 
 
     def fpga_write(self, addr, data):
@@ -130,12 +187,8 @@ class CW305(TargetTemplate):
             addr (int): Address to write to
             data (list): Data to write to addr
 
-        Raises:
-            IOError: User attempted to write to a read-only location
         """
-        if addr < self._woffset:
-            raise IOError("Write to read-only location: 0x%04x"%addr)
-
+        addr = addr << 7 # pBYTECNT_SIZE in cw305_reg_aes.v
         return self._naeusb.cmdWriteMem(addr, data)
 
     def fpga_read(self, addr, readlen):
@@ -148,9 +201,7 @@ class CW305(TargetTemplate):
         Returns:
             Requested data as a list
         """
-        if addr > self._woffset:
-            logging.info('Read from write address, confirm this is not an error')
-
+        addr = addr << 7 # pBYTECNT_SIZE in cw305_reg_aes.v
         data = self._naeusb.cmdReadMem(addr, readlen)
         return data
 
@@ -237,7 +288,6 @@ class CW305(TargetTemplate):
                 else:
                     logging.warning('FPGA Done pin failed to go high, check bitstream is for target device.')
         self.usb_clk_setenabled(True)
-        self.fpga_write(0x100+self._woffset, [0])
         self.pll.cdce906init()
 
     def _dis(self):
@@ -252,32 +302,28 @@ class CW305(TargetTemplate):
         """Write encryption key to FPGA"""
         self.key = key
         key = key[::-1]
-        self.fpga_write(0x100+self._woffset, key)
+        self.fpga_write(self.REG_CRYPT_KEY, key)
 
     def loadInput(self, inputtext):
         """Write input to FPGA"""
         self.input = inputtext
         text = inputtext[::-1]
-        self.fpga_write(0x200+self._woffset, text)
+        self.fpga_write(self.REG_CRYPT_TEXTIN, text)
 
     def is_done(self):
         """Check if FPGA is done"""
-        result = self.fpga_read(0x50, 1)[0]
-
-        if result == 0x00:
+        result = self.fpga_read(self.REG_CRYPT_GO, 1)[0]
+        if result == 0x01:
             return False
         else:
-            # Clear trigger
-            self.fpga_write(0x40+self._woffset, [0])
-            # LED Off
-            self.fpga_write(0x10+self._woffset, [0])
+            self.fpga_write(self.REG_USER_LED, [0])
             return True
 
     isDone = camel_case_deprecated(is_done)
 
     def readOutput(self):
         """"Read output from FPGA"""
-        data = self.fpga_read(0x200, 16)
+        data = self.fpga_read(self.REG_CRYPT_CIPHEROUT, 16)
         data = data[::-1]
         #self.newInputData.emit(util.list2hexstr(data))
         return data
@@ -334,13 +380,13 @@ class CW305(TargetTemplate):
         if self.clkusbautooff:
             self.usb_clk_setenabled(False)
 
-        #LED On
-        self.fpga_write(0x10+self._woffset, [0x01])
+        self.fpga_write(self.REG_USER_LED, [0x01])
 
         time.sleep(0.001)
         self.usb_trigger_toggle()
-        # self.FPGAWrite(0x100, [1])
-        # self.FPGAWrite(0x100, [0])
+        # it's also possible to 'go' via register write but that won't take if
+        # the USB clock was turned off:
+        #self.fpga_write(self.REG_CRYPT_GO, [1])
 
         if self.clkusbautooff:
             time.sleep(self.clksleeptime/1000.0)
@@ -804,4 +850,6 @@ class FPGASPI:
         self.set_cs_pin(True)
         
         self.wait_busy(timeout)
+
+
 

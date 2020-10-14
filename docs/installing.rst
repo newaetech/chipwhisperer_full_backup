@@ -314,7 +314,8 @@ from the provided image using VirtualBox
  * Install `VirtualBox`_
 
  * Download a ChipWhisperer virtual machine image release or build it
-   yourself using Vagrant.
+   yourself using Vagrant. Virtual machine images can be found on our Github
+   `releases`_
 
  * Add the VM image to VirtualBox
 

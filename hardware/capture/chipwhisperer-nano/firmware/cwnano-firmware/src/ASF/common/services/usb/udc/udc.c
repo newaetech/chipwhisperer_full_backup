@@ -3,35 +3,42 @@
  *
  * \brief USB Device Controller (UDC)
  *
- * Copyright (c) 2009-2018 Microchip Technology Inc. and its subsidiaries.
+ * Copyright (c) 2009 - 2014 Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
  * \page License
  *
- * Subject to your compliance with these terms, you may use Microchip
- * software and any derivatives exclusively with Microchip products.
- * It is your responsibility to comply with third party license terms applicable
- * to your use of third party software (including open source software) that
- * may accompany Microchip software.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- * THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES,
- * WHETHER EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE,
- * INCLUDING ANY IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY,
- * AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT WILL MICROCHIP BE
- * LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE, INCIDENTAL OR CONSEQUENTIAL
- * LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND WHATSOEVER RELATED TO THE
- * SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP HAS BEEN ADVISED OF THE
- * POSSIBILITY OR THE DAMAGES ARE FORESEEABLE.  TO THE FULLEST EXTENT
- * ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN ANY WAY
- * RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
- * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. The name of Atmel may not be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. This software may only be redistributed and used in connection with an
+ *    Atmel microcontroller product.
+ *
+ * THIS SOFTWARE IS PROVIDED BY ATMEL "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT ARE
+ * EXPRESSLY AND SPECIFICALLY DISCLAIMED. IN NO EVENT SHALL ATMEL BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  *
  * \asf_license_stop
  *
- */
-/*
- * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
  */
 
 #include "conf_usb.h"
@@ -56,12 +63,7 @@
 //! Device status state (see enum usb_device_status in usb_protocol.h)
 static le16_t udc_device_status;
 
-COMPILER_WORD_ALIGNED
-//! Device interface setting value
-static uint8_t udc_iface_setting = 0;
-
 //! Device Configuration number selected by the USB host
-COMPILER_WORD_ALIGNED
 static uint8_t udc_num_configuration = 0;
 
 //! Pointer on the selected speed device configuration
@@ -653,17 +655,14 @@ static bool udc_req_std_dev_get_str_desc(void)
 
 	return true;
 }
+//0xC0 bRequestType, 0x01 bRequest, 0x00 wValue, 0x07 wIndex
 
 /**
  * \brief Standard device request to get descriptors about USB device
  *
  * \return true if success
  */
-static bool udc_req_std_dev_get_descriptor(void)
-{
-	uint8_t conf_num;
-
-	uint8_t ret[] = {
+	const uint8_t BOS_DESC[] = {
 		//bos descriptor, technically a USB3 thing, but also 2.1 which kind of exists
 		0x05,  // bos length
 		0x0F,  // bos request type
@@ -689,6 +688,9 @@ static bool udc_req_std_dev_get_descriptor(void)
 		0x01, // when asking for MS 2.0 descriptor, will do bmRequestType = 0xC0, bRequest = this (0x01)
 		0x00  // if non 0, Windows will send this before asking for the next descriptor
 		};
+static bool udc_req_std_dev_get_descriptor(void)
+{
+	uint8_t conf_num;
 
 
 	conf_num = udd_g_ctrlreq.req.wValue & 0xff;
@@ -699,6 +701,7 @@ static bool udc_req_std_dev_get_descriptor(void)
 		// Device descriptor requested
 #ifdef USB_DEVICE_HS_SUPPORT
 		if (!udd_is_high_speed()) {
+			//(udc_config.confdev_hs)->bcdUSB = 0x0210;
 			udd_set_setup_payload(
 				(uint8_t *) udc_config.confdev_hs,
 				udc_config.confdev_hs->bLength);
@@ -773,9 +776,9 @@ static bool udc_req_std_dev_get_descriptor(void)
 				USB_DT_OTHER_SPEED_CONFIGURATION;
 		break;
 #endif
-	case USB_DT_BOS:
-		udd_set_setup_payload( (uint8_t *) ret,
-			ret[2]);
+	case USB_DT_BOS: //bos descriptor
+		udd_set_setup_payload( (uint8_t *) BOS_DESC,
+			0x21);
 		break;
 
 	case USB_DT_STRING:
@@ -883,6 +886,7 @@ static bool udc_req_std_dev_set_configuration(void)
  */
 static bool udc_req_std_iface_get_setting(void)
 {
+	static uint8_t udc_iface_setting;
 	uint8_t iface_num;
 	udi_api_t UDC_DESC_STORAGE *udi_api;
 
@@ -1140,6 +1144,7 @@ uint8_t winusb_20_desc[WINUSB_PLATFORM_DESCRIPTOR_LENGTH] = {
     '-', 0x00, '2', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, '7', 0x00, 'a', 0x00, '5', 0x00, // 64
     '1', 0x00, 'a', 0x00, 'd', 0x00, 'e', 0x00, '9', 0x00, '}', 0x00, 0x00, 0x00 // 78 bytes
 };
+
 /**
  * \brief Main routine to manage the USB SETUP request.
  *
@@ -1165,6 +1170,7 @@ bool udc_process_setup(void)
 		udd_set_setup_payload(winusb_20_desc, WINUSB_PLATFORM_DESCRIPTOR_LENGTH);
 		return true;
 	}
+
 	if (Udd_setup_is_in()) {
 		if (udd_g_ctrlreq.req.wLength == 0) {
 			return false; // Error from USB host

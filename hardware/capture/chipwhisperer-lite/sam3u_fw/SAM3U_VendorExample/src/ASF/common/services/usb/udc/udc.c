@@ -662,10 +662,7 @@ static bool udc_req_std_dev_get_str_desc(void)
  *
  * \return true if success
  */
-static bool udc_req_std_dev_get_descriptor(void)
-{
-	uint8_t conf_num;
-	uint8_t ret[] = {
+	const uint8_t BOS_DESC[] = {
 		//bos descriptor, technically a USB3 thing, but also 2.1 which kind of exists
 		0x05,  // bos length
 		0x0F,  // bos request type
@@ -691,6 +688,9 @@ static bool udc_req_std_dev_get_descriptor(void)
 		0x01, // when asking for MS 2.0 descriptor, will do bmRequestType = 0xC0, bRequest = this (0x01)
 		0x00  // if non 0, Windows will send this before asking for the next descriptor
 		};
+static bool udc_req_std_dev_get_descriptor(void)
+{
+	uint8_t conf_num;
 
 
 	conf_num = udd_g_ctrlreq.req.wValue & 0xff;
@@ -777,8 +777,8 @@ static bool udc_req_std_dev_get_descriptor(void)
 		break;
 #endif
 	case USB_DT_BOS: //bos descriptor
-		udd_set_setup_payload( (uint8_t *) ret,
-			ret[2]);
+		udd_set_setup_payload( (uint8_t *) BOS_DESC,
+			0x21);
 		break;
 
 	case USB_DT_STRING:
