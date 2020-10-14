@@ -827,10 +827,12 @@ class ChipWhispererGlitch(object):
 
     def armPreScope(self):
         """Called before scope trigger is armed"""
+        return
         if self.getArmTiming() == 1:
             self.glitchArm()
 
     def armPostScope(self):
         """Called after scope trigger is armed"""
+        return
         if self.getArmTiming() == 2:
             self.glitchArm()

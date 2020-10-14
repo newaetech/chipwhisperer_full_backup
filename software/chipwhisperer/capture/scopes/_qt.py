@@ -93,6 +93,8 @@ class OpenADCQt(object):
 
         try:
             self.datapoints = self.sc.readData(numberPoints)
+
+            # this stuff takes longer than you'd expect
             logging.debug("Read {} datapoints".format(len(self.datapoints)))
             if (self.datapoints is None) or (len(self.datapoints) != numberPoints):
                 logging.error("Received fewer points than expected! {} vs {}".format(len(self.datapoints), numberPoints))
@@ -100,7 +102,6 @@ class OpenADCQt(object):
         except IndexError as e:
             raise IOError("Error reading data: %s" % str(e))
 
-        self.dataUpdated.emit(channelNr, self.datapoints, -self.parm_trigger._get_presamples(True), self.parm_clock._adcSampleRate())
         return False
 
 
