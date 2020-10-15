@@ -30,6 +30,7 @@ from datetime import datetime
 import os.path
 import pkg_resources
 import re
+import io
 from ._base import TargetTemplate
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB,packuint32
 from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
@@ -105,12 +106,7 @@ class CW305(TargetTemplate):
     BATCHRUN_RANDOM_KEY = 0x2
     BATCHRUN_RANDOM_PT = 0x4
 
-    def __init__(self, defines_files=None, registers=12):
-        """
-        Args:
-            defines_files (list, optional): path to cw305_defines.v
-            registers (int, optional): number of register definitions which should be found in defines_files
-        """
+    def __init__(self):
         TargetTemplate.__init__(self)
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6)
@@ -120,27 +116,34 @@ class CW305(TargetTemplate):
         self.oa = None
 
         self._woffset_sam3U = 0x000
+        self.default_verilog_defines = 'cw305_defines.v'
+        self.default_verilog_defines_full_path = '../../hardware/victims/cw305_artixtarget/fpga/common/' + self.default_verilog_defines
+        self.registers = 12 # number of registers we expect to find
 
         self._clksleeptime = 1
         self._clkusbautooff = True
         self.last_key = bytearray([0]*16)
-        self.slurp_defines(defines_files, registers)
 
     def _getNAEUSB(self):
         return self._naeusb
 
-    def slurp_defines(self, defines_files=None, registers=12):
+    def slurp_defines(self, defines_files=None):
         """ Parse Verilog defines file so we can access register and bit
         definitions by name and avoid 'magic numbers'.
         Args:
-            defines_files (list, optional): path to cw305_defines.v
-            registers (int, optional): number of register definitions which should be found in defines_files
+            defines_files (list): list of Verilog define files to parse
         """
         self.verilog_define_matches = 0
-        if not defines_files:
-            defines_files = [pkg_resources.resource_filename('chipwhisperer', 'capture/targets/defines/cw305_defines.v')]
+        if type(defines_files) != list:
+            logging.error('defines_files must be provided as a list (even it it contains a single element)')
         for i,defines_file in enumerate(defines_files):
-            defines = open(defines_file, 'r')
+            if type(defines_file) == io.BytesIO:
+                defines = io.TextIOWrapper(defines_file)
+            else:
+                if not os.path.isfile(defines_file):
+                    logging.error('Cannot find %s. Please specify the location of %s on your filesystem.' % 
+                                   (defines_files, self.default_verilog_defines))
+                defines = open(defines_file, 'r')
             define_regex_base  =   re.compile(r'`define')
             define_regex_reg   =   re.compile(r'`define\s+?REG_')
             define_regex_radix =   re.compile(r'`define\s+?(\w+).+?\'([bdh])([0-9a-fA-F]+)')
@@ -168,8 +171,8 @@ class CW305(TargetTemplate):
                             logging.warning("Couldn't parse line: %s", define)
             defines.close()
         # make sure everything is cool:
-        if self.verilog_define_matches != registers:
-            logging.warning("Trouble parsing Verilog defines files (%s): didn't find the right number of defines; expected %d, got %d.\n" % (defines_file, registers, self.verilog_define_matches) +
+        if self.verilog_define_matches != self.registers:
+            logging.warning("Trouble parsing Verilog defines files (%s): didn't find the right number of defines; expected %d, got %d.\n" % (defines_file, self.registers, self.verilog_define_matches) +
                             "Ensure that the Verilog defines files above are the same that were used to build the bitfile.")
 
 
@@ -249,7 +252,7 @@ class CW305(TargetTemplate):
         resp = self._naeusb.readCtrl(CW305_USB.REQ_VCCINT, dlen=3)
         return float(resp[1] | (resp[2] << 8)) / 1000.0
 
-    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None):
+    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None):
         """Connect to CW305 board, and download bitstream.
 
         If the target has already been programmed it skips reprogramming
@@ -261,6 +264,7 @@ class CW305(TargetTemplate):
             force (bool): Whether or not to force reprogramming.
             fpga_id (string): '100t', '35t', or None. If bsfile is None and fpga_id specified,
                               program with AES firmware for fpga_id
+            defines_files (list, optional): path to cw305_defines.v
         """
 
         from datetime import datetime
@@ -293,8 +297,20 @@ class CW305(TargetTemplate):
                     logging.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
                 else:
                     logging.warning('FPGA Done pin failed to go high, check bitstream is for target device.')
+
         self.usb_clk_setenabled(True)
         self.pll.cdce906init()
+
+        if defines_files is None:
+            if fpga_id is None:
+                verilog_defines = [self.default_verilog_defines_full_path]
+            else:
+                from chipwhisperer.hardware.firmware.cw305 import getsome
+                verilog_defines = [getsome(self.default_verilog_defines)]
+        else:
+            verilog_defines = defines_files
+        self.slurp_defines(verilog_defines)
+
 
     def _dis(self):
         if self._naeusb:
