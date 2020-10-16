@@ -119,6 +119,7 @@ class CW305(TargetTemplate):
         self.default_verilog_defines = 'cw305_defines.v'
         self.default_verilog_defines_full_path = '../../hardware/victims/cw305_artixtarget/fpga/common/' + self.default_verilog_defines
         self.registers = 12 # number of registers we expect to find
+        self.bytecount_size = 7 # pBYTECNT_SIZE in Verilog
 
         self._clksleeptime = 1
         self._clkusbautooff = True
@@ -197,7 +198,7 @@ class CW305(TargetTemplate):
             data (list): Data to write to addr
 
         """
-        addr = addr << 7 # pBYTECNT_SIZE in cw305_reg_aes.v
+        addr = addr << self.bytecount_size
         return self._naeusb.cmdWriteMem(addr, data)
 
     def fpga_read(self, addr, readlen):
@@ -210,7 +211,7 @@ class CW305(TargetTemplate):
         Returns:
             Requested data as a list
         """
-        addr = addr << 7 # pBYTECNT_SIZE in cw305_reg_aes.v
+        addr = addr << self.bytecount_size
         data = self._naeusb.cmdReadMem(addr, readlen)
         return data
 
