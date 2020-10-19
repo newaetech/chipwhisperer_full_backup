@@ -57,17 +57,17 @@ class CW305_ECC(CW305):
 
     def __init__(self):
         super().__init__()
-        self._clksleeptime = 500 # need lots of idling time
+        self._clksleeptime = 150 # need lots of idling time
         self.curve = Curve.get_curve('NIST-P256')
         self.pmul_cycles = 1124157
         # Verilog defines file(s):
         self.default_verilog_defines = 'cw305_pmul_defines.v'
-        self.default_verilog_defines_full_path = '../../hardware/victims/cw305_artixtarget/fpga/common/' + self.default_verilog_defines
+        self.default_verilog_defines_full_path = '../../hardware/victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/hdl/' + self.default_verilog_defines
         self.registers = 12 # number of registers we expect to find
         self.bytecount_size = 8 # pBYTECNT_SIZE in Verilog
 
 
-    def capture_trace(self, scope, operation="pmult", Px=None, Py=None, k=0, check=True):
+    def capture_trace(self, scope, k, operation="pmult", Px=None, Py=None, check=True):
         """Capture a trace, running the specified test vector or operation (pmult or siggen).
     
         Does all individual steps needed to capture a trace (arming the scope,
@@ -75,13 +75,13 @@ class CW305_ECC(CW305):
     
         Args:
             scope (ScopeTemplate): Scope object to use for capture.
+            k (int): multiplier for pmult
             operation (string, optional): Operation to run.
                 'pmult': run a point multiplication. Requires Px, Py, and k be supplied.
             check: if set, verify the result (using ecpy)
 
             Px (int, optional): X coordinate of curve point for pmult. Generator point is used if not given.
             Py (int, optional): Y coordinate of curve point for pmult. Generator point is used if not given.
-            k (int, optional): multiplier for pmult
 
         Returns:
             :class:`Trace <chipwhisperer.common.traces.Trace>` or None if capture
@@ -95,7 +95,7 @@ class CW305_ECC(CW305):
         start_cycles = scope.adc.trig_count
 
         if operation == 'pmult':
-            textout = self.run_pmult(Px, Py, k, check=check, verbose=False)
+            textout = self.run_pmult(k, Px, Py, check=check, verbose=False)
         else:
             logging.error("Please supply a valid operation to run.")
 
@@ -123,7 +123,7 @@ class CW305_ECC(CW305):
             return None
 
 
-    def run_pmult(self, Px, Py, k, check=True, verbose=False):
+    def run_pmult(self, k, Px=None, Py=None, check=True, verbose=False):
         """Run an arbitrary pmult.
         Args:
             Px (int): X coordinate of curve point
