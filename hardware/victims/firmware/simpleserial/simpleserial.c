@@ -177,7 +177,7 @@ void simpleserial_get(void)
 		goto ERROR;
 	}
 
-	uint8_t rtn = commands[c].fp(data_buf[1], data_buf[2], data_buf[3], data_buf+4);
+	err = commands[c].fp(data_buf[1], data_buf[2], data_buf[3], data_buf+4);
 
 ERROR:
 	simpleserial_put('e', 0x01, &err);

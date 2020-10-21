@@ -41,6 +41,8 @@ class SimpleSerial2(TargetTemplate):
         return buf
 
     def _unstuff_data(self, buf):
+        if len(buf) == 0:
+            return 0x00
         n = buf[0]
         buf[0] = 0
         l = len(buf) - 1
@@ -69,13 +71,30 @@ class SimpleSerial2(TargetTemplate):
             self.send_cmd(0x01, 0x02, data)
 
     def simpleserial_read(self, cmd=None, pay_len=None, end='\n', timeout=250, ack=True):
-        rtn =  self.read_cmd(cmd, pay_len, end, timeout, ack)[3:-2]
+        rtn = self.read_cmd(cmd, pay_len, end, timeout, ack)
+        if not rtn:
+            return None
+        else:
+            rtn = rtn[3:-2]
         try:
             if ack:
-                self.read_cmd('e')
+                self.simpleserial_wait_ack(timeout)
         except:
             pass
         return bytearray(rtn)
+    
+    def is_done(self):
+        return True
+
+    def simpleserial_wait_ack(self, timeout=500):
+        rtn = self.read_cmd('e')
+        if not rtn:
+            logging.warning(f"Device did not ack")
+            return
+        if rtn[3] != 0x00:
+            logging.warning(f"Device reported error {hex(rtn[3])}")
+            print(bytearray(rtn))
+        return rtn
 
     def simpleserial_read_witherrors(self):
         pass
@@ -88,8 +107,8 @@ class SimpleSerial2(TargetTemplate):
         else:
             recv_len = 5 + pay_len #cmd, len, data, crc
         response = self.read(recv_len, timeout=timeout)
-        if response is None:
-            print("Read timed out")
+        if response is None or len(response) < recv_len:
+            print("Read timed out" + response)
             return
         response = bytearray(response.encode('latin-1'))
         if self._frame_byte in response and len(response) == 3:
@@ -196,13 +215,6 @@ class SimpleSerial2(TargetTemplate):
         else:
             raise AttributeError("Can't access baud rate")
 
-    def simpleserial_wait_ack(self, timeout=500):
-        data = self.read(1, timeout=timeout)
-        if len(data) < 1:
-            logging.warning("Read timed out")
-        if data[0] != 0x00:
-            logging.warning(f"Simpleserial error {data[0]}")
-        return data[0]
 
     def set_key(self, key, ack=True, timeout=250):
         """Checks if key is different than the last one sent. If so, send it.
