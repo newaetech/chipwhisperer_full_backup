@@ -114,8 +114,8 @@ class CW305_ECC(CW305):
         textout['cycles'] = cycles
         wave = scope.get_last_trace()
 
-        if check:
-            assert cycles == self.pmul_cycles, "Operation took %d cycles (%d more than we expect it to)" % (cycles, cycles-self.pmul_cycles)
+        if check and cycles != self.pmul_cycles:
+            logging.warning ("Operation took %d cycles (%d more than we expect it to)" % (cycles, cycles-self.pmul_cycles))
 
         if len(wave) >= 1:
             return Trace(wave, textin, textout, None)
