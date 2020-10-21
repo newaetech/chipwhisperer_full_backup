@@ -623,6 +623,7 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
 
     def _dis(self):
         self.enable_newattr()
+        self.usbdev.close()
         self._is_connected = False
         return True
 
