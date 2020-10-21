@@ -23,7 +23,7 @@ uint8_t ss_crc(uint8_t *buf, uint8_t len)
 	while (len--) {
 		crc ^= *buf++;
 		for (k = 0; k < 8; k++) {
-			crc = crc & 80 ? (crc << 1) ^ 0xA6: crc << 1;
+			crc = crc & 0x80 ? (crc << 1) ^ 0xA6: crc << 1;
 		}
 	}
 	return crc;
@@ -35,6 +35,13 @@ uint8_t ss_crc(uint8_t *buf, uint8_t len)
 #define SS_VER SS_VER_2_0
 
 #if SS_VER == SS_VER_2_0
+
+void my_puts(char *x)
+{
+	do {
+		putch(*x);
+	} while (*++x);
+}
 
 #define FRAME_BYTE 0x00
 
@@ -48,12 +55,10 @@ uint8_t check_version(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *data)
 uint8_t stuff_data(uint8_t *buf, uint8_t len)
 {
 	uint8_t i = 1;
-	uint8_t ptr = 0;
 	uint8_t last = 0;
 	for (; i < len; i++) {
 		if (buf[i] == FRAME_BYTE) {
-			if (i != (len - 1))
-				buf[last] = ptr - last;
+			buf[last] = i - last;
 			last = i;
 		}
 	}
@@ -63,6 +68,7 @@ uint8_t stuff_data(uint8_t *buf, uint8_t len)
 uint8_t unstuff_data(uint8_t *buf, uint8_t len)
 {
 	uint8_t next = buf[0];
+	buf[0] = 0x00;
 	len -= 1;
 	while (next < len) {
 		uint8_t tmp = buf[next];
@@ -78,7 +84,7 @@ uint8_t unstuff_data(uint8_t *buf, uint8_t len)
 // This just adds the "v" command for now...
 void simpleserial_init()
 {
-	simpleserial_addcmd('v', 0, check_version);
+	//simpleserial_addcmd('v', 0, check_version);
 }
 
 typedef struct ss_cmd
@@ -112,12 +118,13 @@ int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t, uint8_t
 void simpleserial_get(void)
 {
 	uint8_t data_buf[MAX_SS_LEN];
+	uint8_t err = 0;
 
 	for (int i = 0; i < 4; i++) {
 		data_buf[i] = getch(); //PTR, cmd, scmd, len
 		if (data_buf[i] == FRAME_BYTE) {
-			putch(SS_ERR_FRAME_BYTE);
-			return;
+			err = SS_ERR_FRAME_BYTE;
+			goto ERROR;
 		}
 	}
 	uint8_t next_frame = unstuff_data(data_buf, 4);
@@ -126,19 +133,20 @@ void simpleserial_get(void)
 	uint8_t c = 0; 
 	for(c = 0; c < num_commands; c++)
 	{
-		if(commands[c].c == data_buf[0])
+		if(commands[c].c == data_buf[1])
 			break;
 	}
 
 	if (c == num_commands) {
-		putch(SS_ERR_CMD);
-		return;
+		err = SS_ERR_CMD;
+		goto ERROR;
 	}
 
 	//check that next frame not beyond end of message
-	if ((data_buf[3] + 2) <= next_frame) {
-		putch(SS_ERR_LEN);
-		return;
+	// account for cmd, scmd, len, data, crc, end of frame
+	if ((data_buf[3] + 5) < next_frame) {
+		err = SS_ERR_LEN;
+		goto ERROR;
 	}
 
 	// read in data
@@ -147,42 +155,51 @@ void simpleserial_get(void)
 	for (; i < data_buf[3] + 5; i++) {
 		data_buf[i] = getch();
 		if (data_buf[i] == FRAME_BYTE) {
-			putch(SS_ERR_FRAME_BYTE);
-			return;
+			err = SS_ERR_FRAME_BYTE;
+			goto ERROR;
 		}
 	}
 
 	//check that final byte is the FRAME_BYTE
-	data_buf[i + 1] = getch();
-	if (data_buf[i + 1] != FRAME_BYTE) {
-		putch(SS_ERR_LEN);
-		return;
+	data_buf[i] = getch();
+	if (data_buf[i] != FRAME_BYTE) {
+		err = SS_ERR_LEN;
+		goto ERROR;
 	}
 
-	uint8_t crc = ss_crc(data_buf, i-1);
-	if (crc != data_buf[i]) {
-		putch(SS_ERR_CRC);
-		return;
+	//fully unstuff data now
+	unstuff_data(data_buf + next_frame, i - next_frame + 1);
+
+	//calc crc excluding original frame offset and frame end and crc
+	uint8_t crc = ss_crc(data_buf+1, i-2);
+	if (crc != data_buf[i-1]) {
+		err = SS_ERR_CRC;
+		goto ERROR;
 	}
 
 	uint8_t rtn = commands[c].fp(data_buf[1], data_buf[2], data_buf[3], data_buf+4);
-	putch(rtn);
+
+ERROR:
+	simpleserial_put('e', 0x01, &err);
+	return;
 }
 
 void simpleserial_put(char c, uint8_t size, uint8_t* output)
 {
 	uint8_t data_buf[MAX_SS_LEN];
-	data_buf[0] = c;
-	data_buf[1] = size;
-	for (int i = 0; i < size; i++) {
-		data_buf[i + 2] = output[i];
+	data_buf[0] = 0x00;
+	data_buf[1] = c;
+	data_buf[2] = size;
+	int i = 0;
+	for (; i < size; i++) {
+		data_buf[i + 3] = output[i];
 	}
-	for (int i = 0; i < size + 2; i++) {
+	data_buf[i + 3] = ss_crc(data_buf+1, size+2);
+	data_buf[i + 4] = 0x00;
+	stuff_data(data_buf, i + 5);
+	for (int i = 0; i < size + 5; i++) {
 		putch(data_buf[i]);
 	}
-	uint8_t crc = ss_crc(data_buf, size + 2);
-
-	putch(crc);
 }
 
 

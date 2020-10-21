@@ -1,4 +1,5 @@
 import logging
+import chipwhisperer as cw
 
 from chipwhisperer.common.utils import util
 from ._base import TargetTemplate
@@ -28,33 +29,36 @@ class SimpleSerial2(TargetTemplate):
                     crc &= 0xFF
         return crc
 
+
     def _stuff_data(self, buf):
         l = len(buf)
         ptr = 0
         last = 0
         for i in range(1, l):
             if (buf[i] == self._frame_byte):
-                if (i != (l - 1)):
-                    buf[last] = ptr - last
+                buf[last] = i - last
                 last = i
         return buf
 
     def _unstuff_data(self, buf):
         n = buf[0]
+        buf[0] = 0
         l = len(buf) - 1
         while n < l:
             tmp = buf[n]
             buf[n] = self._frame_byte
             n += tmp
+            if (n == 0) and (tmp == 0):
+                logging.error("Infinite loop in unstuff data")
+                return
         if n > l:
-            return next
+            return n
         return 0x00
-
-
 
     def con(self, scope=None):
         self.ser.con(scope)
         #self.write("xxxxxxxxxxxxxxxxxx")
+        self.reset_comms()
         self.baud = 230400
         self.flush()
 
@@ -65,25 +69,72 @@ class SimpleSerial2(TargetTemplate):
             self.send_cmd(0x01, 0x02, data)
 
     def simpleserial_read(self, cmd=None, pay_len=None, end='\n', timeout=250, ack=True):
-        recv_len = 3 + pay_len #cmd, len, data, crc
-        response = self.read(recv_len, timeout=timeout)
-        if cmd and response[0] != cmd:
-            logging.warning(f"Unexpected start to command {cmd}")
+        rtn =  self.read_cmd(cmd, pay_len, end, timeout, ack)[3:-2]
+        try:
+            if ack:
+                self.read_cmd('e')
+        except:
+            pass
+        return bytearray(rtn)
 
-        l = response[1]
+    def simpleserial_read_witherrors(self):
+        pass
+
+    def read_cmd(self, cmd=None, pay_len=None, end='\n', timeout=250, ack=True):
+        if isinstance(cmd, str):
+            cmd = ord(cmd[0])
+        if pay_len is None:
+            recv_len = 3
+        else:
+            recv_len = 5 + pay_len #cmd, len, data, crc
+        response = self.read(recv_len, timeout=timeout)
+        if response is None:
+            print("Read timed out")
+            return
+        response = bytearray(response.encode('latin-1'))
+        if self._frame_byte in response and len(response) == 3:
+            logging.warning(f"Unexpected frame byte in {response}")
+            self.flush()
+            return
+        next_frame = self._unstuff_data(response)
+        if cmd and response[1] != cmd:
+            logging.warning(f"Unexpected start to command {response[1]}")
+
+        l = response[2]
 
         if not pay_len:
-            # user didn't specify
-            response.extend(self.read(l+1, timeout=timeout))
-            pay_len = len(response) - 3
+            # user didn't specify, do second read based on sent length
+            x = self.read(l+2, timeout=timeout)
+            if x is None:
+                print("Read timed out")
+                return
+            if len(x) != (l + 2):
+                print(f"Didn't get all data {len(x)}, {l+2}")
+                print(bytearray(x.encode('latin-1')))
+                print(response)
+            response.extend(bytearray(x.encode('latin-1')))
+            pay_len = len(response) - 5
+
+            # need to do second unstuff since we read stuff after last one
+            if self._frame_byte in response[3:-1]:
+                logging.warning(f"Unexpected frame byte in {response}")
+                self.flush()
+            resp_cpy = response[next_frame:]
+            self._unstuff_data(resp_cpy)
+            response[next_frame:] = resp_cpy[:]
         if pay_len and l != pay_len:
-            logging.warning(f"Unexpected length {l}")
+            logging.warning(f"Unexpected length {l}, {pay_len}")
+            self.flush()
+            return
 
-        crc = self._calc_crc(response[:-1]) #calc crc for all bytes except last (crc)
-        if crc != response[-1]:
-            logging.warning(f"Invalid CRC. Expected {crc} got {response[-1]}")
+        crc = self._calc_crc(response[1:-2]) #calc crc for all bytes except last (crc)
+        if crc != response[-2]:
+            logging.warning(f"Invalid CRC. Expected {crc} got {response[-2]}")
 
-        return bytearray(response[2:-1])
+        if response[-1] != self._frame_byte:
+            logging.warning(f"Did not receive end of frame, got {response[-1]}")
+
+        return response
 
     def read(self, num_char = 0, timeout = 250):
         """ Reads data from the target over serial.
@@ -105,11 +156,18 @@ class SimpleSerial2(TargetTemplate):
         return self.ser.read(num_char, timeout)
 
     def send_cmd(self, cmd, scmd, data):
-        buf = [cmd, scmd]
+        buf = [0x00, cmd, scmd, len(data)]
         buf.extend(data)
-        crc = self._calc_crc(buf)
+        crc = self._calc_crc(buf[1:])
         buf.append(crc)
-        self.write(data)
+        buf.append(0x00)
+        buf = self._stuff_data(buf)
+        self.write(buf)
+        #print(bytearray(buf))
+        #print(bytearray(self._unstuff_data(buf)))
+
+    def reset_comms(self):
+        self.write([0x00]*10) # make sure target not processing a command
 
     def write(self, data):
         self.ser.write(data)

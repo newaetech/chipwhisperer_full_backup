@@ -88,7 +88,7 @@ uint8_t aes(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *buf)
         if (req_len > len) {
             return SS_ERR_LEN;
         }
-        err = get_key(buf + req_len - 16);
+        err = get_pt(buf + req_len - 16);
         if (err)
             return err;
     }
@@ -115,12 +115,14 @@ int main(void)
 
     /* Uncomment this to get a HELLO message for debug */
 
+/*  
     putch('h');
     putch('e');
     putch('l');
     putch('l');
     putch('o');
     putch('\n');
+    */
 
 	simpleserial_init();
     #if SS_VER == SS_VER_2_0
