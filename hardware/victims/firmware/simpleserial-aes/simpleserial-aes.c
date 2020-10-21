@@ -59,6 +59,49 @@ uint8_t reset(uint8_t* x)
 	return 0x00;
 }
 
+#if SS_VER == SS_VER_2_0
+uint8_t aes(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *buf)
+{
+    uint8_t req_len = 0;
+    uint8_t err = 0;
+    if (scmd & 0x04) {
+        req_len += 16;
+        if (req_len > len) {
+            return SS_ERR_LEN;
+        }
+        err = get_mask(buf + req_len - 16);
+        if (err)
+            return err;
+    }
+
+    if (scmd & 0x02) {
+        req_len += 16;
+        if (req_len > len) {                
+            return SS_ERR_LEN;
+        }
+        err = get_key(buf + req_len - 16);
+        if (err)
+            return err;
+    }
+    if (scmd & 0x01) {
+        req_len += 16;
+        if (req_len > len) {
+            return SS_ERR_LEN;
+        }
+        err = get_key(buf + req_len - 16);
+        if (err)
+            return err;
+    }
+
+    if (len != req_len) {
+        return SS_ERR_LEN;
+    }
+
+    return 0x00;
+
+}
+#endif
+
 int main(void)
 {
 	uint8_t tmp[KEY_LENGTH] = {DEFAULT_KEY};
@@ -80,10 +123,14 @@ int main(void)
     putch('\n');
 
 	simpleserial_init();
+    #if SS_VER == SS_VER_2_0
+    simpleserial_addcmd(0x01, 16, aes);
+    #else
     simpleserial_addcmd('k', 16, get_key);
     simpleserial_addcmd('p', 16,  get_pt);
     simpleserial_addcmd('x',  0,   reset);
     simpleserial_addcmd('m', 18, get_mask);
+    #endif
     while(1)
         simpleserial_get();
 }

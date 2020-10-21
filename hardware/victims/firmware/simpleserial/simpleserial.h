@@ -24,7 +24,11 @@ void simpleserial_init(void);
 // - Returns 1 if either of these fail; otherwise 0
 // - The callback function returns a number in [0x00, 0xFF] as a status code;
 //   in protocol v1.1, this status code is returned through a "z" message
+#if SS_VER == SS_VER_2_0
+int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t, uint8_t, uint8_t, uint8_t*));
+#else
 int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t*));
+#endif
 
 // Attempt to process a command 
 // If a full string is found, the relevant callback function is called
@@ -37,6 +41,15 @@ void simpleserial_get(void);
 // Write some data to the serial port
 // Prepends the character c to the start of the line
 // Example: simpleserial_put('r', 16, ciphertext)
-void simpleserial_put(char c, int size, uint8_t* output);
+void simpleserial_put(char c, uint8_t size, uint8_t* output);
+
+typedef enum ss_err_cmd {
+	SS_ERR_OK,
+	SS_ERR_CMD,
+	SS_ERR_CRC,
+	SS_ERR_TIMEOUT,
+    SS_ERR_LEN,
+    SS_ERR_FRAME_BYTE
+} ss_err_cmd;
 
 #endif // SIMPLESERIAL_H

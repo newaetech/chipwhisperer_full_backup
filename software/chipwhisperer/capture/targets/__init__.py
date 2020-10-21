@@ -10,6 +10,7 @@ Targets:
 """
 from .SimpleSerial import SimpleSerial
 from .CW305 import CW305 #check works
+from .SimpleSerial2 import SimpleSerial2
 
 try:
     from .SAKURAG import SakuraG #needs ftdi module
