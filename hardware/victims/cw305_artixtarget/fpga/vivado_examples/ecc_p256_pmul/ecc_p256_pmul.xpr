@@ -55,77 +55,77 @@
   <FileSets Version="1" Minor="31">
     <FileSet Name="sources_1" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1">
       <Filter Type="Srcs"/>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/lowlevel/generic/adder32_generic.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/lowlevel/generic/adder32_generic.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/lowlevel/adder32_wrapper.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/lowlevel/adder32_wrapper.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/lowlevel/generic/adder47_generic.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/lowlevel/generic/adder47_generic.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/lowlevel/adder47_wrapper.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/lowlevel/adder47_wrapper.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/util/bram_1rw_1ro_readfirst.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/util/bram_1rw_1ro_readfirst.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/rom/brom_p256_delta.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/rom/brom_p256_delta.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/rom/brom_p256_h_x.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/rom/brom_p256_h_x.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/rom/brom_p256_h_y.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/rom/brom_p256_h_y.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/rom/brom_p256_one.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/rom/brom_p256_one.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/rom/brom_p256_q.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/rom/brom_p256_q.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/rom/brom_p256_zero.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/rom/brom_p256_zero.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -146,14 +146,14 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/curve_dbl_add_256.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/curve_dbl_add_256.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/curve_mul_256.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/curve_mul_256.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -174,154 +174,154 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/lowlevel/generic/mac16_generic.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/lowlevel/generic/mac16_generic.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/lowlevel/mac16_wrapper.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/lowlevel/mac16_wrapper.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_invertor/helper/modinv_helper_copy.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_invertor/helper/modinv_helper_copy.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_invertor/helper/modinv_helper_init.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_invertor/helper/modinv_helper_init.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_invertor/helper/modinv_helper_invert_compare.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_invertor/helper/modinv_helper_invert_compare.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_invertor/helper/modinv_helper_invert_precalc.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_invertor/helper/modinv_helper_invert_precalc.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_invertor/helper/modinv_helper_invert_update.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_invertor/helper/modinv_helper_invert_update.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_invertor/helper/modinv_helper_reduce_precalc.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_invertor/helper/modinv_helper_reduce_precalc.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_invertor/helper/modinv_helper_reduce_update.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_invertor/helper/modinv_helper_reduce_update.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_adder.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_adder.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_invertor/modular_invertor.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_invertor/modular_invertor.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_multiplier_256.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_multiplier_256.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_reductor_256.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_reductor_256.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_subtractor.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_subtractor.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/multiword/mw_comparator.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/multiword/mw_comparator.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/multiword/mw_mover.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/multiword/mw_mover.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/lowlevel/generic/subtractor32_generic.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/lowlevel/generic/subtractor32_generic.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/lowlevel/subtractor32_wrapper.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/lowlevel/subtractor32_wrapper.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/uop/uop_add_rom.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/uop/uop_add_rom.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/uop/uop_conv_rom.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/uop/uop_conv_rom.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/uop/uop_dbl_rom.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/uop/uop_dbl_rom.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/uop/uop_init_rom.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/uop/uop_init_rom.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -335,7 +335,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/rom/brom_p256_g_x.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/rom/brom_p256_g_x.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -343,7 +343,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve/rom/brom_p256_g_y.v">
+      <File Path="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/rom/brom_p256_g_y.v">
         <FileInfo>
           <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -356,9 +356,9 @@
         <Option Name="TopModule" Val="cw305_ecc_p256_pmul_top"/>
         <Option Name="TopAutoSet" Val="TRUE"/>
         <Option Name="VerilogDir" Val="$PPRDIR/../../common"/>
-        <Option Name="VerilogDir" Val="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/curve"/>
-        <Option Name="VerilogDir" Val="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/lowlevel"/>
-        <Option Name="VerilogDir" Val="$PPRDIR/../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_invertor"/>
+        <Option Name="VerilogDir" Val="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve"/>
+        <Option Name="VerilogDir" Val="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/lowlevel"/>
+        <Option Name="VerilogDir" Val="$PPRDIR/../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_invertor"/>
         <Option Name="VerilogDir" Val="$PPRDIR/hdl"/>
         <Define Name="ILA_REG"/>
         <Define Name="ILA_CRYPTO"/>

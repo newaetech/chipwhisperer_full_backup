@@ -15,9 +15,9 @@ compile:
 	-I../../../common/ \
 	-I../hdl/ \
 	-I. \
-	-I../../../cryptosrc/cryptech/ecdsa256/rtl/curve/ \
-	-I../../../cryptosrc/cryptech/ecdsa256/rtl/lowlevel/ \
-	-I../../../cryptosrc/cryptech/ecdsa256/rtl/modular/modular_invertor/ \
+	-I../../../cryptosrc/cryptech/ecdsa256-v1/rtl/curve/ \
+	-I../../../cryptosrc/cryptech/ecdsa256-v1/rtl/lowlevel/ \
+	-I../../../cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_invertor/ \
 	-P tb.pVERBOSE=$(VERBOSE) \
 	-P tb.pDUMP=$(DUMP) \
 	-P tb.pSEED=$(SEED) \

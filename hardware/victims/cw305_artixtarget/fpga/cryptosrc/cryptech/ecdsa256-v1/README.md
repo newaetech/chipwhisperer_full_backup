@@ -83,7 +83,13 @@ Note, that the core is supplemented by a reference model written in C, that has 
 Cryptech Alpha platform is based on Xilinx Artix-7 200T FPGA, so this core takes advantage of Xilinx-specific DSP slices to carry out math-intensive operations. All vendor-specific math primitives are placed under /rtl/lowlevel/artix7, the core also offers generic replacements under /rtl/lowlevel/generic, they can be used for simulation with 3rd party tools, that are not aware of Xilinx-specific stuff. Selection of vendor/generic primitives is done in ecdsa_lowlevel_settings.v, when porting to other architectures, only those four low-level modules need to be ported.
 
 
-# NewAE Changes
+# NewAE Notes and Changes
+
+Note that there are *two* different repositories named "ecdsa256" on
+https://wiki.cryptech.is/wiki/GitRepositories.
+
+The source code used here is from:
+https://wiki.cryptech.is/browser/user/shatov/ecdsa256/?rev=180949c2d91d9e82a896c8d9f46f3b7541506f52
 
 Some minor changes were made to the Verilog source for integration into the
 NewAE CW305 platform. These can easily be found by grepping for XXX in the
