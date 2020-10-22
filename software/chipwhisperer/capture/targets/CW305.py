@@ -124,6 +124,7 @@ class CW305(TargetTemplate):
         self._clksleeptime = 1
         self._clkusbautooff = True
         self.last_key = bytearray([0]*16)
+        self.target_name = 'AES'
 
     def _getNAEUSB(self):
         return self._naeusb
@@ -278,7 +279,10 @@ class CW305(TargetTemplate):
             if bsfile is None:
                 if not fpga_id is None:
                     from chipwhisperer.hardware.firmware.cw305 import getsome
-                    bsdata = getsome(f"AES_{fpga_id}.bit")
+                    if self.target_name == 'AES':
+                        bsdata = getsome(f"AES_{fpga_id}.bit")
+                    elif self.target_name == 'Cryptech ecdsa256-v1 pmul':
+                        bsdata = getsome(f"ECDSA256v1_pmul_{fpga_id}.bit")
                     starttime = datetime.now()
                     status = self.fpga.FPGAProgram(bsdata, exceptOnDoneFailure=False)
                     stoptime = datetime.now()

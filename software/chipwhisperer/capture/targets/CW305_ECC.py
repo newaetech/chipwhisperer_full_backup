@@ -65,6 +65,7 @@ class CW305_ECC(CW305):
         self.default_verilog_defines_full_path = '../../hardware/victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/hdl/' + self.default_verilog_defines
         self.registers = 12 # number of registers we expect to find
         self.bytecount_size = 8 # pBYTECNT_SIZE in Verilog
+        self.target_name = 'Cryptech ecdsa256-v1 pmul'
 
 
     def capture_trace(self, scope, k, operation="pmult", Px=None, Py=None, check=True):
