@@ -81,7 +81,7 @@ module tb();
 
    reg [255:0] read_data;
    reg [255:0] k = 256'h70a12c2db16845ed56ff68cfc21a472b3f04d7d6851bf6349f2d7d5b3452b38a;
-   //reg [255:0] k = 256'hffff0000ffff0000ffffffff000000003f04d7d6851bf6349f2d7d5b3452b38a;
+   //reg [255:0] k = 256'h000f0000ffff0000ffffffff000000003f04d7d6851bf6349f2d7d5b3452b38a;
    reg [255:0] gx = 256'h6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296;
    reg [255:0] gy = 256'h4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5;
    reg [255:0] expected_rx = 256'h8101ece47464a6ead70cf69a6e2bd3d88691a3262d22cba4f7635eaff26680a8;
@@ -93,7 +93,7 @@ module tb();
       errors = 0;
       warnings = 0;
       $display("Running with seed=%0d", seed);
-      $urandom(seed);
+      //$urandom(seed);
       if (pDUMP) begin
          $dumpfile("results/tb.fst");
          $dumpvars(0, tb);
