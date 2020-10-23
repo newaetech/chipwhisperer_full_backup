@@ -105,14 +105,106 @@ class SimpleSerial2(TargetTemplate):
             print(bytearray(rtn))
         return rtn
 
-    def simpleserial_read_witherrors(self):
-        pass
+
+    # very ugly since we're decoding stuff as we read it back
+    # need to decode bytearray to give raw serial back
+    # TODO: Improve this
+    def simpleserial_read_witherrors(self, cmd=None, pay_len=None, end='\n',\
+                                    timeout=250, glitch_timeout=1000, ack=True):
+
+        if isinstance(cmd, str):
+            cmd = ord(cmd[0])
+        if pay_len is None:
+            recv_len = 3
+        else:
+            recv_len = 5 + pay_len #cmd, len, data, crc
+        response = self.read(recv_len, timeout=timeout)
+
+
+        if response is None or len(response) < recv_len:
+            # got nothing or less than requested back
+            response += self.read(1000, timeout=glitch_timeout)
+            return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
+
+        response = bytearray(response.encode('latin-1'))
+        if self._frame_byte in response and len(response) == 3:
+            # invalid response
+            response = response.decode('latin-1')
+            response += self.read(1000, timeout=glitch_timeout)
+            return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
+
+
+        next_frame = self._unstuff_data(response)
+        if cmd and response[1] != cmd:
+            logging.warning(f"Unexpected start to command {response[1]}")
+
+        l = response[2]
+
+        if not pay_len:
+            # user didn't specify, do second read based on sent length
+            x = self.read(l+2, timeout=timeout)
+            if x is None:
+                print("Read timed out")
+                response = response.decode('latin-1')
+                response += self.read(1000, timeout=glitch_timeout)
+                return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
+            if len(x) != (l + 2):
+                print(f"Didn't get all data {len(x)}, {l+2}")
+                print(bytearray(x.encode('latin-1')))
+                print(response)
+                response = response.decode('latin-1')
+                response += self.read(1000, timeout=glitch_timeout)
+                return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
+
+            response.extend(bytearray(x.encode('latin-1')))
+            pay_len = len(response) - 5
+
+            # need to do second unstuff since we read stuff after last one
+            if self._frame_byte in response[3:-1]:
+                #logging.warning(f"Unexpected frame byte in {response}")
+                response = response.decode('latin-1')
+                response += self.read(1000, timeout=glitch_timeout)
+                return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
+            resp_cpy = response[next_frame:]
+            self._unstuff_data(resp_cpy)
+            response[next_frame:] = resp_cpy[:]
+        if pay_len and l != pay_len:
+            logging.warning(f"Unexpected length {l}, {pay_len}")
+            response = response.decode('latin-1')
+            response += self.read(1000, timeout=glitch_timeout)
+            return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
+
+        crc = self._calc_crc(response[1:-2]) #calc crc for all bytes except last (crc)
+        if crc != response[-2]:
+            logging.warning(f"Invalid CRC. Expected {crc} got {response[-2]}")
+            response = response.decode('latin-1')
+            response += self.read(1000, timeout=glitch_timeout)
+            return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
+
+        if response[-1] != self._frame_byte:
+            logging.warning(f"Did not receive end of frame, got {response[-1]}")
+            response = response.decode('latin-1')
+            response += self.read(1000, timeout=glitch_timeout)
+            return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
+        
+        try:
+            rv = self.simpleserial_wait_ack()
+            if rv is None:
+                response = response.decode('latin-1')
+                response += self.read(1000, timeout=glitch_timeout)
+                return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
+        except:
+            response = response.decode('latin-1')
+            response += self.read(1000, timeout=glitch_timeout)
+            return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
+
+        return {'valid': True, 'payload': bytearray(response[3:-2]), 'full_response': response, 'rv': rv}
 
     def read_cmd(self, cmd=None, pay_len=None, timeout=250, flush_on_err=None):
         """Read a simpleserial-v2 command
         """
         tmp = None
-        if flush_on_err:
+        if not flush_on_err is None:
             tmp = self._flush_on_err
             self._flush_on_err = flush_on_err
         if isinstance(cmd, str):
@@ -171,7 +263,7 @@ class SimpleSerial2(TargetTemplate):
         if response[-1] != self._frame_byte:
             logging.warning(f"Did not receive end of frame, got {response[-1]}")
 
-        if flush_on_err:
+        if not flush_on_err is None:
             self._flush_on_err = tmp
 
         return response
