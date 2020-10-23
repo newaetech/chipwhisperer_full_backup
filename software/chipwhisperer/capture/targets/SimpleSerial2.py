@@ -1,4 +1,5 @@
 import logging
+import time
 import chipwhisperer as cw
 
 from chipwhisperer.common.utils import util
@@ -11,6 +12,7 @@ class SimpleSerial2(TargetTemplate):
     def __init__(self):
         TargetTemplate.__init__(self)
         self.ser = SimpleSerial_ChipWhispererLite()
+        self.ser._baud = 230400
         self._protver = 'auto'
         self.protformat = 'hex'
         self.last_key = bytearray(16)
@@ -57,11 +59,11 @@ class SimpleSerial2(TargetTemplate):
             return n
         return 0x00
 
-    def con(self, scope=None):
+    def con(self, scope=None, flush_on_err=True):
         self.ser.con(scope)
-        #self.write("xxxxxxxxxxxxxxxxxx")
+        self._flush_on_err = flush_on_err
         self.reset_comms()
-        self.baud = 230400
+        #self.baud = 230400
         self.flush()
 
     def simpleserial_write(self, cmd, data, end='\n'):
@@ -71,7 +73,7 @@ class SimpleSerial2(TargetTemplate):
             self.send_cmd(0x01, 0x02, data)
 
     def simpleserial_read(self, cmd=None, pay_len=None, end='\n', timeout=250, ack=True):
-        rtn = self.read_cmd(cmd, pay_len, end, timeout, ack)
+        rtn = self.read_cmd(cmd, pay_len, timeout)
         if not rtn:
             return None
         else:
@@ -86,6 +88,12 @@ class SimpleSerial2(TargetTemplate):
     def is_done(self):
         return True
 
+    def flush_on_error(self):
+        if self._flush_on_err:
+            self.reset_comms()
+            time.sleep(0.05)
+            self.flush()
+
     def simpleserial_wait_ack(self, timeout=500):
         rtn = self.read_cmd('e')
         if not rtn:
@@ -93,13 +101,20 @@ class SimpleSerial2(TargetTemplate):
             return
         if rtn[3] != 0x00:
             logging.warning(f"Device reported error {hex(rtn[3])}")
+            self.flush_on_error()
             print(bytearray(rtn))
         return rtn
 
     def simpleserial_read_witherrors(self):
         pass
 
-    def read_cmd(self, cmd=None, pay_len=None, end='\n', timeout=250, ack=True):
+    def read_cmd(self, cmd=None, pay_len=None, timeout=250, flush_on_err=None):
+        """Read a simpleserial-v2 command
+        """
+        tmp = None
+        if flush_on_err:
+            tmp = self._flush_on_err
+            self._flush_on_err = flush_on_err
         if isinstance(cmd, str):
             cmd = ord(cmd[0])
         if pay_len is None:
@@ -108,12 +123,14 @@ class SimpleSerial2(TargetTemplate):
             recv_len = 5 + pay_len #cmd, len, data, crc
         response = self.read(recv_len, timeout=timeout)
         if response is None or len(response) < recv_len:
+            self.flush_on_error()
             print("Read timed out" + response)
             return
+
         response = bytearray(response.encode('latin-1'))
         if self._frame_byte in response and len(response) == 3:
             logging.warning(f"Unexpected frame byte in {response}")
-            self.flush()
+            self.flush_on_error()
             return
         next_frame = self._unstuff_data(response)
         if cmd and response[1] != cmd:
@@ -126,6 +143,7 @@ class SimpleSerial2(TargetTemplate):
             x = self.read(l+2, timeout=timeout)
             if x is None:
                 print("Read timed out")
+                self.flush_on_error()
                 return
             if len(x) != (l + 2):
                 print(f"Didn't get all data {len(x)}, {l+2}")
@@ -137,13 +155,13 @@ class SimpleSerial2(TargetTemplate):
             # need to do second unstuff since we read stuff after last one
             if self._frame_byte in response[3:-1]:
                 logging.warning(f"Unexpected frame byte in {response}")
-                self.flush()
+                self.flush_on_error()
             resp_cpy = response[next_frame:]
             self._unstuff_data(resp_cpy)
             response[next_frame:] = resp_cpy[:]
         if pay_len and l != pay_len:
             logging.warning(f"Unexpected length {l}, {pay_len}")
-            self.flush()
+            self.flush_on_error()
             return
 
         crc = self._calc_crc(response[1:-2]) #calc crc for all bytes except last (crc)
@@ -152,6 +170,9 @@ class SimpleSerial2(TargetTemplate):
 
         if response[-1] != self._frame_byte:
             logging.warning(f"Did not receive end of frame, got {response[-1]}")
+
+        if flush_on_err:
+            self._flush_on_err = tmp
 
         return response
 

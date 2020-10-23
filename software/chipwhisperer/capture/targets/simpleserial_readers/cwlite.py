@@ -54,9 +54,13 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
 
         if hasattr(scope, 'qtadc'):
             ser = scope.qtadc.ser
+            
+            # if we don't do this, we get multiple serial objects kicking around
+            # making it hard to save +  restore the baud
+            self.cwlite_usart = scope.scopetype.dev.serialstm32f._cwserial
         else:
             ser = scope._cwusb
-        self.cwlite_usart = CWL_USART(ser)
+            self.cwlite_usart = CWL_USART(ser)
         self.cwlite_usart.init(baud=self._baud)
 
 
