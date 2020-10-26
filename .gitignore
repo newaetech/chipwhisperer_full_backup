@@ -33,6 +33,8 @@ hardware/victims/firmware/basic-passwdcheck/basic-passwdcheck-CW*
 *py.bak
 docs/_build
 docs/make.bat
+*.vcd
+*.fst
 
 # Explicit listing of the build artifacts so that they are not included in
 # commits
