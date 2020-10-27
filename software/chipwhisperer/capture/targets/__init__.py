@@ -9,7 +9,7 @@ Targets:
 * SmartCard - Currently unavailable (tied to GUI)
 """
 from .SimpleSerial import SimpleSerial
-from .CW305 import CW305 #check works
+from .CW305 import CW305
 from .SimpleSerial2 import SimpleSerial2
 
 try:
