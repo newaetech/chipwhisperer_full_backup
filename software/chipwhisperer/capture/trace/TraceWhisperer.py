@@ -174,7 +174,7 @@ class TraceWhisperer():
                             logging.warning("Couldn't parse line: %s", define)
             defines.close()
         # make sure everything is cool:
-        assert self.verilog_define_matches == 94, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected 94, got %d" % (defines_file, self.verilog_define_matches)
+        assert self.verilog_define_matches == 96, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected 96, got %d" % (defines_file, self.verilog_define_matches)
 
 
     def simpleserial_write(self, cmd, data, printresult=False):
