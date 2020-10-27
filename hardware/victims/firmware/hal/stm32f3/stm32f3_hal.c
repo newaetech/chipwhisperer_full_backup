@@ -76,7 +76,7 @@ void init_uart(void)
   HAL_GPIO_Init(GPIOA, &GpioInit);
 
   UartHandle.Instance        = USART1;
-  UartHandle.Init.BaudRate   = 230400;
+  UartHandle.Init.BaudRate   = 115200;
   UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
   UartHandle.Init.StopBits   = UART_STOPBITS_1;
   UartHandle.Init.Parity     = UART_PARITY_NONE;

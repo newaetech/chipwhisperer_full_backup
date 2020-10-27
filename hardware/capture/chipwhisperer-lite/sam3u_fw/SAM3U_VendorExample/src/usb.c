@@ -171,7 +171,7 @@ void USART2_Handler(void)
 		}
 				
 		bufidx++;
-		if (bufidx >= 128){
+		if (bufidx >= CIRCBUFSIZE){
 			udi_vendor_bulk_in_run(
 				usartbuffer[bufnum],
 				bufidx,
@@ -558,7 +558,7 @@ bool main_setup_in_received(void)
 			sizeof(main_buf_loopback) );
 	*/
 	
-	static uint8_t  respbuf[128];
+	static uint8_t  respbuf[CIRCBUFSIZE];
 	unsigned int cnt;
 	
 	if (udd_g_ctrlreq.req.wLength > sizeof(respbuf)){

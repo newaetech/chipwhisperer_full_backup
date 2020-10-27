@@ -32,7 +32,7 @@ uint8_t ss_crc(uint8_t *buf, uint8_t len)
 
 // [B_STUFF, CMD, SCMD, LEN, B_STUFF, DATA..., CRC, TERM]
 
-#define SS_VER SS_VER_2_0
+//#define SS_VER SS_VER_2_0
 
 #if SS_VER == SS_VER_2_0
 
@@ -211,9 +211,10 @@ typedef struct ss_cmd
 	unsigned int len;
 	uint8_t (*fp)(uint8_t*);
 } ss_cmd;
+static ss_cmd commands[MAX_SS_CMDS];
 // Callback function for "v" command.
 // This can exist in v1.0 as long as we don't actually send back an ack ("z")
-uint8_t check_version(uint8_t cmd, uint8_t scmd, uint8_t *v)
+uint8_t check_version(uint8_t *v)
 {
 	return SS_VER;
 }

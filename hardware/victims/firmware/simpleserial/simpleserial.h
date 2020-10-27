@@ -6,6 +6,10 @@
 
 #include <stdint.h>
 
+#define SS_VER_1_0 0
+#define SS_VER_1_1 1
+#define SS_VER_2_0 2
+
 // Set up the SimpleSerial module
 // This prepares any internal commands
 void simpleserial_init(void);
