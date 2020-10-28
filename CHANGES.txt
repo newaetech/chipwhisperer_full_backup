@@ -1,12 +1,25 @@
-V5.3.2
+V5.4
   New Features:
     * AES MixColumns Attack and Variable Vector KTP (requires scared/estraces)
     * Update FW for USB devices - auto configure as WinUSB
+    * Update FW to increase serial buffer
     * Support both libusb0 and libusb1
     * Add automated plotting functions for analyzer plots
     * Add TraceWhisperer
     * Improve CW305 AES implementation
     * Add cw.plot()
+    * Add scope.sn
+    * Major CWNano speedup
+    * Analyzer autoplots
+    * Add SimpleSerialV2 (not used by default) binary serial protocol
+        - Use 230400bps for SSV2 baud
+        - Major capture speedup when using SSV2
+    * New experiment/target class: CW305 HW ECC
+    * Add CW305 register name autodetect
+    * Add glitch arm timing of "no_glitch" (moderate speedup for SSV2)
+  Fixes:
+    * target.baud not being reset correctly after programming STM32
+    * Turn of STM32 HW floating point
     
 
 V5.3.1

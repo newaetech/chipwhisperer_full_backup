@@ -317,6 +317,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         Raises:
            IOError: Unknown failure.
         """
+        # need adc offset, adc_freq, samples cached
         if not self.adc.stream_mode:
             return self.qtadc.capture(self.adc.offset, self.clock.adc_freq, self.adc.samples)
         else:

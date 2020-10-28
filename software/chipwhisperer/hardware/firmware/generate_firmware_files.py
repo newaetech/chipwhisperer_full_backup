@@ -16,21 +16,24 @@ cw305_files = [("SAM3U_CW305.bin", os.path.join(hwdir, r"victims/cw305_artixtarg
                 ("AES_100t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_verilog/aes128_verilog.runs/impl_100t/cw305_top.bit")),
                 ("AES_35t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_verilog/aes128_verilog.runs/impl_35t/cw305_top.bit")),
                 ("cw305_defines.v", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/common/cw305_defines.v")),
+                ("ECDSA256v1_pmul_100t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/ecc_p256_pmul.runs/impl_100t/cw305_ecc_p256_pmul_top.bit")),
+                ("ECDSA256v1_pmul_35t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/ecc_p256_pmul.runs/impl_35t/cw305_ecc_p256_pmul_top.bit")),
+                ("cw305_pmul_defines.v", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/hdl/cw305_pmul_defines.v")),
                 ]
 
 cwcr2_v = [0, 11]
 cwcr2_files = [("cwrev2_firmware.zip",  os.path.join(hwdir, r"capture/chipwhisperer-rev2/cwrev2_firmware.zip")),
                ("OpenADC.ihx", os.path.join(hwdir, r"capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"))]
 
-cwlite_v = [0, 22]
+cwlite_v = [0, 23]
 cwlite_files = [("cwlite_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-lite/cwlite_firmware.zip")),
                 ("SAM3U_CW1173.bin", os.path.join(hwdir, r"capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin"))]
 
-cw1200_v = [1, 22]
+cw1200_v = [1, 23]
 cw1200_files = [("cw1200_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/cw1200_firmware.zip")),
                 ("CW1200_SAM3UFW.bin", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/CW1200_SAM3UFW.bin"))]
 
-cwnano_v = [0, 22]
+cwnano_v = [0, 23]
 #hardware\capture\chipwhisperer-nano\firmware\cwnano-firmware\Debug\cwnano-firmware.bin
 cwnano_files = [("SAM3U_CWNANO.bin", os.path.join(hwdir, r"capture/chipwhisperer-nano/firmware/cwnano-firmware/Debug/cwnano-firmware.bin"))]
 #List of files to generate

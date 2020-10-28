@@ -7,6 +7,8 @@ except:
 
 import numpy as np
 from tqdm.autonotebook import trange
+
+gal1=np.array(range(0,256), dtype='uint8')
 gal2=np.array((
 0x00,0x02,0x04,0x06,0x08,0x0a,0x0c,0x0e,0x10,0x12,0x14,0x16,0x18,0x1a,0x1c,0x1e,
 0x20,0x22,0x24,0x26,0x28,0x2a,0x2c,0x2e,0x30,0x32,0x34,0x36,0x38,0x3a,0x3c,0x3e,
@@ -61,6 +63,13 @@ def inc_vec(x):
 
     return x
 
+def wrap_inc(x):
+    if x >= 3:
+        x = 0
+    else:
+        x += 1
+    return x
+
 base_lut_mix_column_col = [[0, 13, 10, 7],
                      [4, 1, 14, 11],
                      [8, 5, 2, 15],
@@ -86,7 +95,10 @@ for i in range(3):
 
 # scared leakage generator
 # 
-def round_gen(plaintext, guesses, cmpgn, lut_in, lut_out, hd):
+
+gal_lut = [gal2, gal3, gal1, gal1]
+def round_gen(plaintext, guesses, cmpgn, lut_in, lut_out, hd, gal):
+    global gal_lut
     res = np.empty((plaintext.shape[0], len(guesses), plaintext.shape[1]), dtype='uint8')
     if hd:
         new_pt = np.repeat(plaintext[:,lut_out[cmpgn][0]][:, np.newaxis], 16, axis=1)
@@ -96,7 +108,7 @@ def round_gen(plaintext, guesses, cmpgn, lut_in, lut_out, hd):
     else:
         new_pt = 0
     for i, guess in enumerate(guesses):
-        res[:,i,:] = np.bitwise_xor(new_pt, gal2[scared.aes.sub_bytes(np.bitwise_xor(plaintext, guess))])
+        res[:,i,:] = np.bitwise_xor(new_pt, gal_lut[gal][scared.aes.sub_bytes(np.bitwise_xor(plaintext, guess))])
     return res
 
 leakage_cmpgns_col = []
@@ -143,10 +155,12 @@ class AttackMixColumns:
 
         leakage_cmpgns = []
         for campaign in range(4):
-            tmp = []
+            tmp=[]
+            def make_leakage(j, campaign):
+                return lambda plaintext, guesses: round_gen(plaintext, guesses, campaign, lut_in, lut_out[j], hd, j)
             for j in range(4):
                 tmp.append(\
-                    scared.attack_selection_function(lambda plaintext, guesses: round_gen(plaintext, guesses, campaign, lut_in, lut_out[j], hd)))
+                    scared.attack_selection_function(make_leakage(j, campaign)))
             leakage_cmpgns.append(tmp)
         self.projects = projects
         self.leakage_cmpgns = leakage_cmpgns
@@ -200,7 +214,80 @@ class AttackMixColumns:
         results["guess"] = key_guess
         return results
 
+    def run_alt(self, n_traces=None, trace_slice=None, campaign=0):
+        results = {}
+        projects = self.projects
+        cs = [None] * 4
+        key_guess = [0] * 16
+        if trace_slice is None:
+            trace_slice = slice(None, None)
+        b = None
+        cw_traces = estraces.read_ths_from_ram(np.array(projects[campaign].waves)[:n_traces, trace_slice],
+                    plaintext=np.array([textin for textin in projects[campaign].textins], dtype='uint8')[:n_traces])
+        for t in trange(4, leave=False):
+            for i in trange(8, leave=False):
+                container = scared.Container(cw_traces)
+                a = scared.CPAAttack(selection_function=self.leakage_cmpgns[campaign][t], 
+                                    model=scared.Monobit(i), discriminant=scared.maxabs)
+                a.run(container)
+                if b is None:
+                    b = abs(a.results)
+                else:
+                    b += abs(a.results)
+        r = None
+        if self.vec_type == "column":
+            r = range(0+4*campaign, 4+4*campaign)
+        else:
+            r = range(campaign, 16, 4)
+        x = 0
+        for i in r:
+            c = np.nan_to_num(b[:,i,:])
+            cs[x] = c
+            x += 1
+            maxes = np.max(c, axis=1)
+            guess = np.argsort(maxes)[-1]
+            key_guess[i] = guess
 
+        # get byte with highest correlation
+        cs = np.array(cs)
+        maxes = np.max(cs, axis=1)
+        maxes2 = np.max(maxes, axis=1)
+        best_byte = np.argmax(maxes2)
+
+        # get guess with best correlation
+        maxes = np.max(cs[best_byte], axis=1)
+        guess = np.argsort(maxes)[-1]
+
+        # select best point to do analysis
+        best_point = np.argmax(cs[best_byte][guess])
+
+
+        corr_signs = np.zeros([4, 4, 8], dtype='uint8')
+
+        for t in trange(4, leave=False):
+            for i in trange(8, leave=False):
+                container = scared.Container(cw_traces)
+                a = scared.CPAAttack(selection_function=self.leakage_cmpgns[campaign][t], 
+                                    model=scared.Monobit(i), discriminant=scared.maxabs)
+                a.run(container)
+                if self.vec_type == "column":
+                    r = range(0+4*campaign, 4+4*campaign)
+                else:
+                    r = range(campaign, 16, 4)
+                x = 0
+                for key_byte in r:
+                    # if > 0, correlation flipped by constant XOR
+                    corr_signs[x, t, i] = a.results[key_guess[key_byte], key_byte, best_point] > 0
+                    x += 1
+
+                print("")
+        results["corr"] = cs
+        results["guess"] = key_guess
+        return results, corr_signs
+
+
+def test_lut():
+    assert lut_mix_column_col[0][0] == 0
 
 
 if __name__ == "__main__":

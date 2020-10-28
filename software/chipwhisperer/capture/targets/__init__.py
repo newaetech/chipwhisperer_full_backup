@@ -9,7 +9,9 @@ Targets:
 * SmartCard - Currently unavailable (tied to GUI)
 """
 from .SimpleSerial import SimpleSerial
-from .CW305 import CW305 #check works
+from .CW305 import CW305
+from .SimpleSerial2 import SimpleSerial2
+from .CW305_ECC import CW305_ECC
 
 try:
     from .SAKURAG import SakuraG #needs ftdi module

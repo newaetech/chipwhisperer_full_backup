@@ -20,6 +20,7 @@ setup(
         'pyserial',
         'numpy',
         'pyusb',
+        'ECpy',
         'scipy',
         'fastdtw',
         'Cython',

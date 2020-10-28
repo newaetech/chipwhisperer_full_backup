@@ -2,7 +2,7 @@ SRC += simpleserial.c
 VPATH += :$(FIRMWAREPATH)/simpleserial/
 EXTRAINCDIRS += $(FIRMWAREPATH)/simpleserial/
 
-SS_VERS_ALLOWED = SS_VER_1_0 SS_VER_1_1
+SS_VERS_ALLOWED = SS_VER_1_0 SS_VER_1_1 SS_VER_2_0
 
 define SS_VERS_LIST
 
@@ -11,6 +11,7 @@ define SS_VERS_LIST
   +---------+--------------+
   | V1.0    | SS_VER_1_0   |
   | V1.1    | SS_VER_1_1   |
+  | V2.0    | SS_VER_2_0   |
   +---------+--------------+
 
 endef
