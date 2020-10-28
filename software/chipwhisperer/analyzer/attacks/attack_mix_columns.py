@@ -107,7 +107,6 @@ def round_gen(plaintext, guesses, cmpgn, lut_in, lut_out, hd, gal):
         new_pt[:,lut_in[cmpgn][3]] = plaintext[:,lut_out[cmpgn][3]]
     else:
         new_pt = 0
-    # god this is so fucked
     for i, guess in enumerate(guesses):
         res[:,i,:] = np.bitwise_xor(new_pt, gal_lut[gal][scared.aes.sub_bytes(np.bitwise_xor(plaintext, guess))])
     return res
@@ -156,15 +155,12 @@ class AttackMixColumns:
 
         leakage_cmpgns = []
         for campaign in range(4):
-            tmp = [
-                scared.attack_selection_function(lambda plaintext, guesses: round_gen(plaintext, guesses, campaign, lut_in, lut_out[0], hd, 0)),
-                scared.attack_selection_function(lambda plaintext, guesses: round_gen(plaintext, guesses, campaign, lut_in, lut_out[1], hd, 1)),
-                scared.attack_selection_function(lambda plaintext, guesses: round_gen(plaintext, guesses, campaign, lut_in, lut_out[2], hd, 2)),
-                scared.attack_selection_function(lambda plaintext, guesses: round_gen(plaintext, guesses, campaign, lut_in, lut_out[3], hd, 3)),
-            ]
-            #for j in range(4):
-            #    tmp.append(\
-            #        scared.attack_selection_function(lambda plaintext, guesses: round_gen(plaintext, guesses, campaign, lut_in, lut_out[j], hd, j)))
+            tmp=[]
+            def make_leakage(j, campaign):
+                return lambda plaintext, guesses: round_gen(plaintext, guesses, campaign, lut_in, lut_out[j], hd, j)
+            for j in range(4):
+                tmp.append(\
+                    scared.attack_selection_function(make_leakage(j, campaign)))
             leakage_cmpgns.append(tmp)
         self.projects = projects
         self.leakage_cmpgns = leakage_cmpgns
@@ -281,9 +277,7 @@ class AttackMixColumns:
                 x = 0
                 for key_byte in r:
                     # if > 0, correlation flipped by constant XOR
-                    print(key_byte, key_guess[key_byte])
                     corr_signs[x, t, i] = a.results[key_guess[key_byte], key_byte, best_point] > 0
-                    print(a.results[key_guess[key_byte], key_byte, best_point])
                     x += 1
 
                 print("")
@@ -292,6 +286,8 @@ class AttackMixColumns:
         return results, corr_signs
 
 
+def test_lut():
+    assert lut_mix_column_col[0][0] == 0
 
 
 if __name__ == "__main__":
