@@ -581,6 +581,22 @@ class CW305(TargetTemplate):
         spi.enable_interface(enable)
         return spi
 
+    @fw_ver_required(0, 40)
+    def gpio_mode(self, timeout=200):
+        """Allow arbitrary GPIO access on SAM3U
+        
+        Allows low-level IO access to SAM3U GPIO, and also SPI transfers.
+        (see documentation on the returned object for more info)
+
+        Args:
+            timeout (int): USB timeout in ms. Defaults to 200.
+
+        Returns:
+            A FPGAIO object which can be used to access IO on the CW305.
+        """
+        io = FPGAIO(self._naeusb, timeout)
+        return io
+
 class FPGASPI:
     """ Programmer for the CW305's onboard SPI flash
     
@@ -878,5 +894,385 @@ class FPGASPI:
         
         self.wait_busy(timeout)
 
+class FPGAIO:
+    """ User IO to override external bus.
+    
+    Allows you to use any pin on the SAM3U as a user IO. This includes pins
+    such as the external IO interface, and basically anything else you can find.
+
+    Also includes a SPI interface that you can define on any of the pins.
+    
+    Basic usage::
+    
+        fpga = cw.target(None, cw.targets.CW305, fpga_id='100t') #for CW305_100t
+        fpga = cw.target(None, cw.targets.CW305, fpga_id='35t') #for CW305_35t
+        spi = fpga.spi_mode()
+        
+        spi.erase_chip() # can also use spi.erase_block() for smaller/faster erases
+        with open('bitfile.bit', 'rb') as f:
+            data = list(f.read())
+            spi.program(data) # also verifies by default
+
+    .. warning::
+
+        The AT25DF321A has the following behaviour:
+
+        * Writes longer than a page (256 bytes) will use only the last 256 bytes
+        * Reads can cross page boundaries (though read() and verify() will only read 256 bytes at a time)
+        * Writes that don't begin on a page bound will wrap if a page boundary is crossed
+
+        The user is responsible for ensuring that their writes begin on page boundaries.
+    """
+
+    REQ_FPGAIO_UTIL      = 0x34
+    REQ_IO_CONFIG        = 0xA0
+    REQ_IO_RELEASE       = 0xA1
+    REQ_IO_OUTPUT        = 0xA2
 
 
+    CONFIG_PIN_INPUT     =  0x01
+    CONFIG_PIN_OUTPUT    =  0x02
+    CONFIG_PIN_SPI1_MOSI = 0x10
+    CONFIG_PIN_SPI1_MISO = 0x11
+    CONFIG_PIN_SPI1_SCK  = 0x12
+    CONFIG_PIN_SPI1_CS   = 0x13
+
+    REQ_FPGASPI1_XFER    = 0x35
+    REQ_ENABLE_SPI       = 0xA0
+    REQ_DISABLE_SPI      = 0xA1    
+    REQ_CS_LOW           = 0xA2
+    REQ_CS_HIGH          = 0xA3
+    REQ_SEND_DATA        = 0xA4
+    
+    SAM3U_PIN_NAMES = { "PA0": 0,
+                        "PA1": 1,
+                        "PA2": 2,
+                        "PA3": 3,
+                        "PA4": 4,
+                        "PA5": 5,
+                        "PA6": 6,
+                        "PA7": 7,
+                        "PA8": 8,
+                        "PA9": 9,
+                        "PA10": 10,
+                        "PA11": 11,
+                        "PA12": 12,
+                        "PA13": 13,
+                        "PA14": 14,
+                        "PA15": 15,
+                        "PA16": 16,
+                        "PA17": 17,
+                        "PA18": 18,
+                        "PA19": 19,
+                        "PA20": 20,
+                        "PA21": 21,
+                        "PA22": 22,
+                        "PA23": 23,
+                        "PA24": 24,
+                        "PA25": 25,
+                        "PA26": 26,
+                        "PA27": 27,
+                        "PA28": 28,
+                        "PA29": 29,
+                        "PA30": 30,
+                        "PA31": 31,
+                        "PB0": 32,
+                        "PB1": 33,
+                        "PB2": 34,
+                        "PB3": 35,
+                        "PB4": 36,
+                        "PB5": 37,
+                        "PB6": 38,
+                        "PB7": 39,
+                        "PB8": 40,
+                        "PB9": 41,
+                        "PB10": 42,
+                        "PB11": 43,
+                        "PB12": 44,
+                        "PB13": 45,
+                        "PB14": 46,
+                        "PB15": 47,
+                        "PB16": 48,
+                        "PB17": 49,
+                        "PB18": 50,
+                        "PB19": 51,
+                        "PB20": 52,
+                        "PB21": 53,
+                        "PB22": 54,
+                        "PB23": 55,
+                        "PB24": 56,
+                        "PB25": 57,
+                        "PB26": 58,
+                        "PB27": 59,
+                        "PB28": 60,
+                        "PB29": 61,
+                        "PB30": 62,
+                        "PB31": 63,
+                        "PC0":  64,
+                        "PC1":  65,
+                        "PC2":  66,
+                        "PC3":  67,
+                        "PC4":  68,
+                        "PC5":  69,
+                        "PC6":  70,
+                        "PC7":  71,
+                        "PC8":  72,
+                        "PC9":  73,
+                        "PC10": 74,
+                        "PC11": 75,
+                        "PC12": 76,
+                        "PC13": 77,
+                        "PC14": 78,
+                        "PC15": 79,
+                        "PC16": 80,
+                        "PC17": 81,
+                        "PC18": 82,
+                        "PC19": 83,
+                        "PC20": 84,
+                        "PC21": 85,
+                        "PC22": 86,
+                        "PC23": 87,
+                        "PC24": 88,
+                        "PC25": 89,
+                        "PC26": 90,
+                        "PC27": 91,
+                        "PC28": 92,
+                        "PC29": 93,
+                        "PC30": 94,
+                        "PC31": 95}
+
+    FPGA_PIN_NAMES = {"A7":"USB_D0",
+                    "B6":"USB_D1",
+                    "D3":"USB_D2",
+                    "E3":"USB_D3",
+                    "F3":"USB_D4",
+                    "B5":"USB_D5",
+                    "K1":"USB_D6",
+                    "K2":"USB_D7",
+                    "F4":"USB_A0",
+                    "G5":"USB_A1",
+                    "J1":"USB_A2",
+                    "H1":"USB_A3",
+                    "H2":"USB_A4",
+                    "G1":"USB_A5",
+                    "G2":"USB_A6",
+                    "F2":"USB_A7",
+                    "E1":"USB_A8",
+                    "E2":"USB_A9",
+                    "D1":"USB_A10",
+                    "C1":"USB_A11",
+                    "K3":"USB_A12",
+                    "L2":"USB_A13",
+                    "J3":"USB_A14",
+                    "B2":"USB_A15",
+                    "C7":"USB_A16",
+                    "C6":"USB_A17",
+                    "D6":"USB_A18",
+                    "C4":"USB_A19",
+                    "D5":"USB_A20",
+                    "A4":"USBRD",
+                    "C2":"USBWR",
+                    "A3":"USBCE",
+                    "A2":"USBALE",
+                    "A5":"USBSPARE0",
+                    "B4":"USBSPARE1",
+                    "B1":"USBSPARE2"}
+
+    SCHEMATIC_PIN_NAMES = {"USBSPARE0":"PB17",
+                        "USBSPARE1":"PB18",
+                        "USBSPARE2":"PB22",
+                        "USBRD":"PB19",
+                        "USBWR":"PB23",
+                        "USBCE":"PB20",
+                        "USBALE":"PB21",
+                        "USBCK0":"PA27",
+                        "USBCK1":"PB24",
+                        "USB_A0":"PB7",
+                        "USB_A1":"PB8",
+                        "USB_A2":"PC0",
+                        "USB_A3":"PC1",
+                        "USB_A4":"PC2",
+                        "USB_A5":"PC3",
+                        "USB_A6":"PC4",
+                        "USB_A7":"PC5",
+                        "USB_A8":"PC6",
+                        "USB_A9":"PC7",
+                        "USB_A10":"PC8",
+                        "USB_A11":"PC9",
+                        "USB_A12":"PC10",
+                        "USB_A13":"PC11",
+                        "USB_A14":"PC20",
+                        "USB_A15":"PC21",
+                        "USB_A16":"PC22",
+                        "USB_A17":"PC23",
+                        "USB_A18":"PC24",
+                        "USB_A19":"PC25",
+                        "USB_A20":"PC26",
+                        "USB_D0":"PB9",
+                        "USB_D1":"PB10",
+                        "USB_D2":"PB11",
+                        "USB_D3":"PB12",
+                        "USB_D4":"PB13",
+                        "USB_D5":"PB14",
+                        "USB_D6":"PB15",
+                        "USB_D7":"PB16",
+                        "SWSTATE":"PB30",
+                        "PWRON":"PB31",
+                        "FPGA_INITB":"PC29",
+                        "FPGA_DONE":"PA7",
+                        "FPGA_PROGRAM":"PA8",
+                        "SAM_MISO":"PA13",
+                        "SAM_MOSI":"PA14",
+                        "SAM_SCK":"PA15",
+                        "PWR_SDA":"PA9",
+                        "PWR_SCL":"PA10",
+                        "XMEGA_PDIC":"PA17",
+                        "XMEGA_PDID1":"PA18",
+                        "XMEGA_PDID2":"PA19",
+                        "LED_RED":"PC15",
+                        "LED_GREEN":"PC16",
+                        "LED_BLUE":"PC17"}
+
+
+    def __init__(self, usb, timeout=200):
+        self.sendCtrl = usb.sendCtrl
+        self.readCtrl = usb.readCtrl
+        self._usb = usb
+        self._timeout = timeout
+
+    def pin_name_to_number(self, pinname):
+        """Convert from a user-friendly pin name to the number.
+
+        This function can be passed a name from the schematic (such as "USB_A20"),
+        a name from the SAM3U peripherals (such as "PB22"), or a FPGA pin location
+        (such as "M2"). It will attempt to auto-detect which one you passed.
+
+        Args:
+            pinname (str): Name such as "PB22", "USB_A20", or "M2".
+        """      
+        if isinstance(pinname, int):
+            return datain
+
+        pinname = pinname.upper()
+
+        if pinname in self.SCHEMATIC_PIN_NAMES:
+            return self.SAM3U_PIN_NAMES[self.SCHEMATIC_PIN_NAMES[pinname]]
+
+        if pinname in self.FPGA_PIN_NAMES:
+            return self.SAM3U_PIN_NAMES[self.SCHEMATIC_PIN_NAMES[self.FPGA_PIN_NAMES[pinname]]]
+
+        if pinname in self.SAM3U_PIN_NAMES:
+            return self.SAM3U_PIN_NAMES[pinname]
+        
+        raise ValueError("I don't know what pin this is (sorry): %s"%(pinname))
+        
+    def pin_set_output(self, pinname):
+        """Set a given pin as an output.
+        
+        Args:
+            pinname (str): Name such as "PB22", "USB_A20", or "M2".   
+        """
+        pinnum = self.pin_name_to_number(pinname)
+        self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_CONFIG, [pinnum, self.CONFIG_PIN_OUTPUT])
+
+    def pin_set_state(self, pinname, state):
+        """Set the state of a pin (must have been set as output previously).
+        
+        Args:
+            pinname (str): Name such as "PB22", "USB_A20", or "M2".   
+            state (bool): Set pin high (True) or low (False)
+        """
+        pinnum = self.pin_name_to_number(pinname)
+        if state:
+            state = 1
+        else:
+            state = 0
+        self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_OUTPUT, [pinnum, state])
+
+    def spi1_setpins(self, mosi, miso, sck, cs):
+        """Set the pins to be used for the SPI1 interface.
+
+         Args:
+            mosi (str): Name such as "PB22", "USB_A20", or "M2".       
+            miso (str): Name such as "PB22", "USB_A20", or "M2".  
+            sck (str): Name such as "PB22", "USB_A20", or "M2".  
+            cs (str): Name such as "PB22", "USB_A20", or "M2".  
+        """
+
+        mosi = self.pin_name_to_number(mosi)
+        miso = self.pin_name_to_number(miso)
+        sck = self.pin_name_to_number(sck)
+        cs = self.pin_name_to_number(cs)
+
+        self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_CONFIG, [mosi, self.CONFIG_PIN_SPI1_MOSI])
+        self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_CONFIG, [miso, self.CONFIG_PIN_SPI1_MISO])
+        self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_CONFIG, [sck, self.CONFIG_PIN_SPI1_SCK])
+        self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_CONFIG, [cs, self.CONFIG_PIN_SPI1_CS])
+
+        
+    def spi1_enable(self, enable):
+        """Enable or disable the SPI interface.
+        
+        Args:
+            enable (bool): Enable (True) or disable (False) SPI interface
+        """
+        if enable:
+            self.sendCtrl(self.REQ_FPGASPI1_XFER, 0xA0)
+        else:
+            self.sendCtrl(self.REQ_FPGASPI1_XFER, 0xA1)
+        
+    def spi1_set_cs_pin(self, status):
+        """Set the SPI pin high or low
+        
+        Args:
+            status (bool): Set CS pin high (True) or low (False)
+        """
+        if status:
+            self.sendCtrl(self.REQ_FPGASPI1_XFER, 0xA3)
+        else:
+            self.sendCtrl(self.REQ_FPGASPI1_XFER, 0xA2)        
+
+    def spi1_tx_rx(self, data):
+        """Write up to 64 bytes of data to the SPI interface (no CS action).
+        
+        This is a low-level function that performs a single transfer. Does not
+        affect the CS pin.
+
+        Args:
+            data (list): Write data over the SPI interface
+
+        Raises:
+            ValueError: len(data) > 64
+        """
+        if len(data) > 64:
+            raise ValueError("Data is tooooooo long!")
+        self.sendCtrl(self.REQ_FPGASPI1_XFER, 0xA4, data)
+        readdata = self.readCtrl(self.REQ_FPGASPI1_XFER, dlen=len(data))
+        return readdata
+    
+    def spi1_transfer(self, data):
+        """Writes data, dropping CS before and raising after.
+
+        Args:
+            data (list): Write data over the SPI interface
+        """
+
+        resp = []
+
+        datalen = len(data)
+
+        self.spi1_set_cs_pin(False)
+
+        for i in range(0, datalen, 64):
+            dataend = i+64
+            
+            if dataend > datalen:
+                dataend = datalen
+                
+            resp.append(self.spi1_tx_rx(data[i:(i+dataend)]))
+
+        self.spi1_set_cs_pin(True)
+
+        return resp
+
+        

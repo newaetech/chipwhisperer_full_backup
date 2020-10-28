@@ -131,6 +131,7 @@ C_SRCS +=  \
 ../src/circbuffer.c \
 ../src/fpga_program.c \
 ../src/fpgaspi_program.c \
+../src/fpgautil_io.c \
 ../src/pdi/XMEGANVM.c \
 ../src/pdi/XPROGNewAE.c \
 ../src/pdi/XPROGTarget.c \
@@ -185,6 +186,7 @@ src/cdce906.o \
 src/circbuffer.o \
 src/fpga_program.o \
 src/fpgaspi_program.o \
+src/fpgautil_io.o \
 src/pdi/XMEGANVM.o \
 src/pdi/XPROGNewAE.o \
 src/pdi/XPROGTarget.o \
@@ -232,6 +234,7 @@ src/cdce906.o \
 src/circbuffer.o \
 src/fpga_program.o \
 src/fpgaspi_program.o \
+src/fpgautil_io.o \
 src/pdi/XMEGANVM.o \
 src/pdi/XPROGNewAE.o \
 src/pdi/XPROGTarget.o \
@@ -279,6 +282,7 @@ src/cdce906.d \
 src/circbuffer.d \
 src/fpga_program.d \
 src/fpgaspi_program.d \
+src/fpgautil_io.d \
 src/pdi/XMEGANVM.d \
 src/pdi/XPROGNewAE.d \
 src/pdi/XPROGTarget.d \
@@ -326,6 +330,7 @@ src/cdce906.d \
 src/circbuffer.d \
 src/fpga_program.d \
 src/fpgaspi_program.d \
+src/fpgautil_io.d \
 src/pdi/XMEGANVM.d \
 src/pdi/XPROGNewAE.d \
 src/pdi/XPROGTarget.d \

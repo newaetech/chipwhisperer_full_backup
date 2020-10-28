@@ -22,6 +22,7 @@
 #include "genclk.h"
 #include "fpga_program.h"
 #include "fpgaspi_program.h"
+#include "fpgautil_io.h"
 #include "pdi/XPROGNewAE.h"
 #include "pdi/XPROGTimeout.h"
 #include "pdi/XPROGTarget.h"
@@ -33,7 +34,7 @@
 #include <string.h>
 
 #define FW_VER_MAJOR 0
-#define FW_VER_MINOR 32
+#define FW_VER_MINOR 40
 #define FW_VER_DEBUG 0
 
 volatile bool g_captureinprogress = true;
@@ -115,6 +116,11 @@ void main_vendor_disable(void)
 /* Send SPI commands to chip on FPGA */
 #define REQ_FPGASPI_PROGRAM 0x33
 
+/* Configure IO */
+#define REQ_FPGAIO_UTIL 0x34
+
+/* SPI1 Utility */
+#define FREQ_FPGASPI1_XFER 0x35
 
 COMPILER_WORD_ALIGNED static uint8_t ctrlbuffer[64];
 #define CTRLBUFFER_WORDPTR ((uint32_t *) ((void *)ctrlbuffer))
@@ -387,7 +393,7 @@ static void ctrl_vccint_cb(void)
 static uint8_t fpgaspi_data_buffer[64];
 static int fpga_spi_databuffer_len = 0;
 
-void ctrl_progfpgaspi(void){
+static void ctrl_progfpgaspi(void){
 	
 	switch(udd_g_ctrlreq.req.wValue){
 		case 0xA0:
@@ -418,6 +424,136 @@ void ctrl_progfpgaspi(void){
 			fpga_spi_databuffer_len = udd_g_ctrlreq.req.wLength;
 			for (int i = 0; i < udd_g_ctrlreq.req.wLength; i++){
 				fpgaspi_data_buffer[i] = fpgaspi_xferbyte(udd_g_ctrlreq.payload[i]);
+			}
+			break;
+
+		default:
+			break;
+	}
+}
+
+#define CONFIG_PIN_INPUT     0x01
+#define CONFIG_PIN_OUTPUT    0x02
+#define CONFIG_PIN_SPI1_MOSI 0x10
+#define CONFIG_PIN_SPI1_MISO 0x11
+#define CONFIG_PIN_SPI1_SCK  0x12
+#define CONFIG_PIN_SPI1_CS   0x13
+
+static void ctrl_fpgaioutil(void){
+	
+    if (udd_g_ctrlreq.req.wLength != 2){
+        return;
+    }
+
+    int pin = udd_g_ctrlreq.payload[0];
+    int config = udd_g_ctrlreq.payload[1];
+
+    if ((pin < 0) || (pin > 95)){
+        return;
+    }
+
+	switch(udd_g_ctrlreq.req.wValue){
+		case 0xA0: /* Configure IO Pin */
+			fpgaspi_program_init();
+
+            switch(config)
+            {
+                case CONFIG_PIN_INPUT:
+                    gpio_configure_pin(pin, PIO_INPUT);
+                    break;
+                case CONFIG_PIN_OUTPUT:
+                    gpio_configure_pin(pin, PIO_OUTPUT_1);
+                    break;
+                case CONFIG_PIN_SPI1_MOSI:
+                    if(pin_spi1_mosi > -1){
+                        gpio_configure_pin(pin_spi1_mosi, PIO_DEFAULT);
+                    }
+                    gpio_configure_pin(pin, PIO_OUTPUT_0);
+                    pin_spi1_mosi = pin;
+                    break;
+                case CONFIG_PIN_SPI1_MISO:
+                    if(pin_spi1_miso > -1){
+                        gpio_configure_pin(pin_spi1_miso, PIO_DEFAULT);
+                    }
+                    gpio_configure_pin(pin, PIO_INPUT);
+                    pin_spi1_miso = pin;
+                    break;
+                case CONFIG_PIN_SPI1_SCK:
+                    if(pin_spi1_sck > -1){
+                        gpio_configure_pin(pin_spi1_sck, PIO_DEFAULT);
+                    }
+                    gpio_configure_pin(pin, PIO_OUTPUT_0);
+                    pin_spi1_sck = pin;
+                    break;
+                case CONFIG_PIN_SPI1_CS:
+                    if(pin_spi1_cs > -1){
+                        gpio_configure_pin(pin_spi1_cs, PIO_DEFAULT);
+                    }
+                    gpio_configure_pin(pin, PIO_OUTPUT_1);
+                    pin_spi1_cs = pin;                    
+                    break;
+                default:
+                    //oops?
+                    gpio_configure_pin(pin, PIO_DEFAULT);
+                    break;
+            }
+			break;
+			
+		case 0xA1: /* Release IO Pin */
+			//todo?
+            gpio_configure_pin(pin, PIO_DEFAULT);
+			break;
+
+        case 0xA2: /* Set IO Pin state */
+            if (config == 0){
+                gpio_set_pin_low(pin);
+            }
+
+            if (config == 1){
+                gpio_set_pin_high(pin);
+            }
+            break;
+
+		default:
+			break;
+	}
+}
+
+static uint8_t spi1util_data_buffer[64];
+static int spi1util_databuffer_len = 0;
+
+static void ctrl_spi1util(void){
+	
+    
+	switch(udd_g_ctrlreq.req.wValue){
+		case 0xA0:
+			spi1util_init();			
+			break;
+			
+		case 0xA1:
+			spi1util_deinit();
+			break;
+			
+		case 0xA2:
+			spi1util_cs_low();
+			break;
+
+		case 0xA3:
+			spi1util_cs_high();
+			break;
+
+		case 0xA4:
+			//Catch heartbleed-style error
+			if (udd_g_ctrlreq.req.wLength > udd_g_ctrlreq.payload_size){
+				return;
+			}
+
+			if (udd_g_ctrlreq.req.wLength > sizeof(fpgaspi_data_buffer)){
+				return;
+			}
+			spi1util_databuffer_len = udd_g_ctrlreq.req.wLength;
+			for (int i = 0; i < udd_g_ctrlreq.req.wLength; i++){
+				spi1util_data_buffer[i] = spi1util_xferbyte(udd_g_ctrlreq.payload[i]);
 			}
 			break;
 
@@ -489,6 +625,15 @@ bool main_setup_out_received(void)
 		case REQ_FPGASPI_PROGRAM:
 			udd_g_ctrlreq.callback = ctrl_progfpgaspi;
 			return true;
+
+        /* IO Util Setup */
+        case REQ_FPGAIO_UTIL:
+            udd_g_ctrlreq.callback = ctrl_fpgaioutil;
+            return true;
+
+        case FREQ_FPGASPI1_XFER:
+            udd_g_ctrlreq.callback = ctrl_spi1util;
+            return true;
 
         default:
             return false;
@@ -594,6 +739,16 @@ bool main_setup_in_received(void)
 			udd_g_ctrlreq.payload_size = udd_g_ctrlreq.req.wLength;
 			return true;
 			break;
+
+        case FREQ_FPGASPI1_XFER:
+ 			if (udd_g_ctrlreq.req.wLength > sizeof(spi1util_data_buffer))
+            {
+                return false;
+            }
+			udd_g_ctrlreq.payload = spi1util_data_buffer;
+			udd_g_ctrlreq.payload_size = udd_g_ctrlreq.req.wLength;
+			return true;
+			break;           
 
         default:
             return false;
