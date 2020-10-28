@@ -904,24 +904,30 @@ class FPGAIO:
     
     Basic usage::
     
-        fpga = cw.target(None, cw.targets.CW305, fpga_id='100t') #for CW305_100t
-        fpga = cw.target(None, cw.targets.CW305, fpga_id='35t') #for CW305_35t
-        spi = fpga.spi_mode()
+        fpga = cw.target(None, cw.targets.CW305)
+        io = target.gpio_mode()
         
-        spi.erase_chip() # can also use spi.erase_block() for smaller/faster erases
-        with open('bitfile.bit', 'rb') as f:
-            data = list(f.read())
-            spi.program(data) # also verifies by default
+        # Take over the SAM3U blue LED (normally controlled by firmware, won't be after this)
+        import time
+        io.pin_set_output("LED_BLUE")
+        io.pin_set_state("LED_BLUE", 0)
+        time.sleep(0.5)
+        io.pin_set_state("LED_BLUE", 1)
 
-    .. warning::
+        #Example - toggle pin associated with FPGA pin C1 (would be USB_A11)
+        import time
+        io.pin_set_output("C1")
+        io.pin_set_state("C1", 0)
+        time.sleep(0.1)
+        io.pin_set_state("C1", 1)
 
-        The AT25DF321A has the following behaviour:
+        io.spi1_setpins(mosi="USB_A20", miso="USB_A19", sck="USB_A18", cs="USB_A17")
+        io.spi1_enable(True)
 
-        * Writes longer than a page (256 bytes) will use only the last 256 bytes
-        * Reads can cross page boundaries (though read() and verify() will only read 256 bytes at a time)
-        * Writes that don't begin on a page bound will wrap if a page boundary is crossed
+        somedata = [0x11, 0x22, 0x33]
 
-        The user is responsible for ensuring that their writes begin on page boundaries.
+        response = io.spi1_transfer(somedata)
+        print(response)
     """
 
     REQ_FPGAIO_UTIL      = 0x34
