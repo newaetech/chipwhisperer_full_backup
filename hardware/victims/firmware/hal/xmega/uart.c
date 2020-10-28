@@ -29,7 +29,11 @@ void												init_uart0
 	 * Baudrate select = (1/(16*(((I/O clock frequency)/Baudrate)-1)
 	 *                 = 12
 	 */
+	#if SS_VER==SS_VER_2_0
+	USART_Baudrate_Set(&USART, 1, 0);
+	#else
 	USART_Baudrate_Set(&USART, 11, 0);
+	#endif
 
 	/* Enable both RX and TX. */
 	USART_Rx_Enable(&USART);
