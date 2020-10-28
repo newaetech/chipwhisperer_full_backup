@@ -540,6 +540,22 @@ CW305 SPI Program
 
     .. automethod:: read
 
+.. _cw305-fpga-io:
+
+CW305 SAM3U IO Control
+======================
+
+.. autoclass:: chipwhisperer.capture.targets.CW305.FPGAIO
+
+    .. automethod:: pin_set_output
+
+    .. automethod:: pin_set_state
+
+    .. automethod:: spi1_setpins
+
+    .. automethod:: spi1_enable
+
+    .. automethod:: sp1_transfer
 
 .. _api-target-program:
 
