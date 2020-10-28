@@ -58,6 +58,7 @@ class USART(object):
         # but this obj gets created a lot,
         # and don't want to spam them
         self.tx_buf_in_wait = False
+        self.fw_read = None
 
     def init(self, baud=115200, stopbits=1, parity="none"):
         """
@@ -208,5 +209,6 @@ class USART(object):
 
     @property
     def fw_version(self):
-        a = self._usb.readFwVersion()
-        return {"major": a[0], "minor": a[1], "debug": a[2]}
+        if not self.fw_read:
+            self.fw_read = self._usb.readFwVersion()
+        return {"major": self.fw_read[0], "minor": self.fw_read[1], "debug": self.fw_read[2]}

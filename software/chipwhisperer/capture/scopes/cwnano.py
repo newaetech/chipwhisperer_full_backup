@@ -641,7 +641,7 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
         starttime = datetime.datetime.now()
         while self._cwusb.readCtrl(self.REQ_ARM, dlen=1)[0] == 0:
             # Wait for a moment before re-running the loop
-            time.sleep(0.05)
+            time.sleep(0.001)
             diff = datetime.datetime.now() - starttime
 
             # If we've timed out, don't wait any longer for a trigger

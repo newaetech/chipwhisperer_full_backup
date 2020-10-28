@@ -335,21 +335,29 @@ void rsa_init(void)
  */
 uint8_t buf[128];
 uint8_t hash[32];
+#if SS_VER == SS_VER_2_0
+uint8_t real_dec(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *pt)
+#else
 uint8_t real_dec(uint8_t *pt)
+#endif
 {
-     int ret = 0;
+    int ret = 0;
 
-     //first need to hash our message
-     memset(buf, 0, 128);
-     mbedtls_sha256(MESSAGE, 12, hash, 0);
+    //first need to hash our message
+    memset(buf, 0, 128);
+    mbedtls_sha256(MESSAGE, 12, hash, 0);
 
-     trigger_high();
-     ret = simpleserial_mbedtls_rsa_rsassa_pkcs1_v15_sign(&rsa_ctx, NULL, NULL, MBEDTLS_RSA_PRIVATE, MBEDTLS_MD_SHA256, 32, hash, buf);
-     trigger_low();
+    trigger_high();
+    ret = simpleserial_mbedtls_rsa_rsassa_pkcs1_v15_sign(&rsa_ctx, NULL, NULL, MBEDTLS_RSA_PRIVATE, MBEDTLS_MD_SHA256, 32, hash, buf);
+    trigger_low();
 
-     //send back first 48 bytes
-     simpleserial_put('r', 48, buf);
-     return ret;
+    //send back first 48 bytes
+#if SS_VER == SS_VER_2_0
+    simpleserial_put('r', 128, buf);
+#else
+    simpleserial_put('r', 48, buf);
+#endif
+    return ret;
 }
 
 uint8_t sig_chunk_1(uint8_t *pt)
