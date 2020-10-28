@@ -555,7 +555,7 @@ CW305 SAM3U IO Control
 
     .. automethod:: spi1_enable
 
-    .. automethod:: sp1_transfer
+    .. automethod:: spi1_transfer
 
 .. _api-target-program:
 
