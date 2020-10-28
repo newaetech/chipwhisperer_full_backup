@@ -76,7 +76,7 @@ void init_uart(void)
   HAL_GPIO_Init(GPIOA, &GpioInit);
 
   UartHandle.Instance        = USART1;
-  UartHandle.Init.BaudRate   = 115200;
+  UartHandle.Init.BaudRate   = 230400;
   UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
   UartHandle.Init.StopBits   = UART_STOPBITS_1;
   UartHandle.Init.Parity     = UART_PARITY_NONE;
@@ -113,7 +113,7 @@ void trigger_low(void)
 char getch(void)
 {
   uint8_t d;
-  while (HAL_UART_Receive(&UartHandle, &d, 1, 5000) != HAL_OK);
+  while (HAL_UART_Receive(&UartHandle, &d, 1, 5000) != HAL_OK)
     USART1->ICR |= (1 << 3);
   //putch(d);
   return d;

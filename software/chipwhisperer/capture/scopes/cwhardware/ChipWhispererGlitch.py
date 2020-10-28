@@ -313,6 +313,7 @@ class GlitchSettings(util.DisableNewAttr):
         If the glitch module is in "ext_single" trigger mode, it must be armed
         when the scope is armed. There are two timings for this event:
 
+         * "no_glitch": The glitch module is not armed. Gives a moderate speedup to capture.
          * "before_scope": The glitch module is armed first.
          * "after_scope": The scope is armed first. This is the default.
 
@@ -329,7 +330,9 @@ class GlitchSettings(util.DisableNewAttr):
            ValueError: if value not listed above
         """
         timing = self.cwg.getArmTiming()
-        if timing == 1:
+        if timing == 0:
+            return "no_glitch"
+        elif timing == 1:
             return "before_scope"
         elif timing == 2:
             return "after_scope"
@@ -338,12 +341,14 @@ class GlitchSettings(util.DisableNewAttr):
 
     @arm_timing.setter
     def arm_timing(self, value):
-        if value == "before_scope":
+        if value == "no_glitch":
+            int_val = 0
+        elif value == "before_scope":
             int_val = 1
         elif value == "after_scope":
             int_val = 2
         else:
-            raise ValueError("Can't set glitch arm timing to %s; valid values: ('before_scope', 'after_scope')" % value, value)
+            raise ValueError("Can't set glitch arm timing to %s; valid values: ('no_glitch', 'before_scope', 'after_scope')" % value, value)
 
         self.cwg.setArmTiming(int_val)
 
@@ -827,12 +832,10 @@ class ChipWhispererGlitch(object):
 
     def armPreScope(self):
         """Called before scope trigger is armed"""
-        return
         if self.getArmTiming() == 1:
             self.glitchArm()
 
     def armPostScope(self):
         """Called after scope trigger is armed"""
-        return
         if self.getArmTiming() == 2:
             self.glitchArm()

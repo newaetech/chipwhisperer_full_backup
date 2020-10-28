@@ -67,10 +67,14 @@ class SimpleSerial2(TargetTemplate):
         self.flush()
 
     def simpleserial_write(self, cmd, data, end='\n'):
+        if data == []:
+            data = [0x00] #cannot send 0 length stuff
         if cmd == 'p':
             self.send_cmd(0x01, 0x01, data)
         elif cmd == 'k':
             self.send_cmd(0x01, 0x02, data)
+        else:
+            self.send_cmd(cmd, 0x00, data)
 
     def simpleserial_read(self, cmd=None, pay_len=None, end='\n', timeout=250, ack=True):
         rtn = self.read_cmd(cmd, pay_len, timeout)
@@ -288,6 +292,8 @@ class SimpleSerial2(TargetTemplate):
         return self.ser.read(num_char, timeout)
 
     def send_cmd(self, cmd, scmd, data):
+        if isinstance(cmd, str):
+            cmd = ord(cmd[0])
         buf = [0x00, cmd, scmd, len(data)]
         buf.extend(data)
         crc = self._calc_crc(buf[1:])
