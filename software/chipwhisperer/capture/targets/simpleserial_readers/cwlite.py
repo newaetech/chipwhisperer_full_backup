@@ -60,7 +60,7 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
             self.cwlite_usart = scope.scopetype.dev.serialstm32f._cwserial
         else:
             ser = scope._cwusb
-            self.cwlite_usart = CWL_USART(ser)
+            self.cwlite_usart = scope.usart
         self.cwlite_usart.init(baud=self._baud)
 
 
