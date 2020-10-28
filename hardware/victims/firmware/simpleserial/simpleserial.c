@@ -8,11 +8,11 @@
 #define MAX_SS_CMDS 16
 static int num_commands = 0;
 
-#define MAX_SS_LEN 134
+#define MAX_SS_LEN 192
 
-#define SS_VER_1_0 0
-#define SS_VER_1_1 1
-#define SS_VER_2_0 2
+//#define SS_VER_1_0 0
+//#define SS_VER_1_1 1
+//#define SS_VER_2_0 2
 
 
 #define CRC 0xA6
