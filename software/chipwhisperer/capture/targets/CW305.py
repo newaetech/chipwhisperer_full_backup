@@ -942,6 +942,11 @@ class FPGAIO:
 
         response = io.spi1_transfer(somedata)
         print(response)
+
+    If you want to see all possible pin names, you can access them with:
+        io.SAM3U_PIN_NAMES.keys()
+        io.SCHEMATIC_PIN_NAMES.keys()
+        io.FPGA_PIN_NAMES.keys()
     """
 
     REQ_FPGAIO_UTIL      = 0x34
