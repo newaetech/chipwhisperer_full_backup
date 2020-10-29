@@ -1289,7 +1289,7 @@ class FPGAIO:
             dataend = i+64
             
             if dataend > datalen:
-                dataend = i+datalen
+                dataend = datalen
             
             tx = data[i:dataend]
             rx = self.spi1_tx_rx(tx)
