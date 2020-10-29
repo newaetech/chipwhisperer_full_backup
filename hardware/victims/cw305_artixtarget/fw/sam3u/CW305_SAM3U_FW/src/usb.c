@@ -454,8 +454,6 @@ static void ctrl_fpgaioutil(void){
 
 	switch(udd_g_ctrlreq.req.wValue){
 		case 0xA0: /* Configure IO Pin */
-			fpgaspi_program_init();
-
             switch(config)
             {
                 case CONFIG_PIN_INPUT:
