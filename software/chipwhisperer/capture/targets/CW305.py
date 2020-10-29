@@ -1273,9 +1273,11 @@ class FPGAIO:
             dataend = i+64
             
             if dataend > datalen:
-                dataend = datalen
-                
-            resp.append(self.spi1_tx_rx(data[i:(i+dataend)]))
+                dataend = i+datalen
+            
+            tx = data[i:dataend]
+            rx = self.spi1_tx_rx(tx)
+            resp.append(rx)
 
         self.spi1_set_cs_pin(True)
 
