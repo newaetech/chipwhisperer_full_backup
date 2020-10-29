@@ -957,8 +957,8 @@ class FPGAIO:
 
     CONFIG_PIN_INPUT     = 0x01
     CONFIG_PIN_OUTPUT    = 0x02
-    CONFIG_PIN_SPI1_MOSI = 0x10
-    CONFIG_PIN_SPI1_MISO = 0x11
+    CONFIG_PIN_SPI1_SDO  = 0x10
+    CONFIG_PIN_SPI1_SDI  = 0x11
     CONFIG_PIN_SPI1_SCK  = 0x12
     CONFIG_PIN_SPI1_CS   = 0x13
 
@@ -1213,23 +1213,23 @@ class FPGAIO:
             state = 0
         self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_OUTPUT, [pinnum, state])
 
-    def spi1_setpins(self, mosi, miso, sck, cs):
+    def spi1_setpins(self, sdo, sdi, sck, cs):
         """Set the pins to be used for the SPI1 interface.
 
          Args:
-            mosi (str): Name such as "PB22", "USB_A20", or "M2".       
-            miso (str): Name such as "PB22", "USB_A20", or "M2".  
-            sck (str): Name such as "PB22", "USB_A20", or "M2".  
-            cs (str): Name such as "PB22", "USB_A20", or "M2".  
+            sdo (str): Serial Data Out pin name such as "PB22", "USB_A20", or "M2".       
+            sdi (str): Serial Data In pin name such as "PB22", "USB_A20", or "M2".  
+            sck (str): Serial Clock pin name such as "PB22", "USB_A20", or "M2".  
+            cs (str): Chip Select name such as "PB22", "USB_A20", or "M2".  
         """
 
-        mosi = self.pin_name_to_number(mosi)
-        miso = self.pin_name_to_number(miso)
+        sdo = self.pin_name_to_number(sdo)
+        sdi = self.pin_name_to_number(sdi)
         sck = self.pin_name_to_number(sck)
         cs = self.pin_name_to_number(cs)
 
-        self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_CONFIG, [mosi, self.CONFIG_PIN_SPI1_MOSI])
-        self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_CONFIG, [miso, self.CONFIG_PIN_SPI1_MISO])
+        self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_CONFIG, [sdo, self.CONFIG_PIN_SPI1_SDO])
+        self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_CONFIG, [sdi, self.CONFIG_PIN_SPI1_SDI])
         self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_CONFIG, [sck, self.CONFIG_PIN_SPI1_SCK])
         self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_CONFIG, [cs, self.CONFIG_PIN_SPI1_CS])
 
