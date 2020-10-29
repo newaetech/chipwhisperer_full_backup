@@ -935,7 +935,7 @@ class FPGAIO:
         io.pin_set_state("C1", 1)
 
         # Setup a SPI interface based on schematic net names
-        io.spi1_setpins(mosi="USB_A20", miso="USB_A19", sck="USB_A18", cs="USB_A17")
+        io.spi1_setpins(sdo="USB_A20", sdi="USB_A19", sck="USB_A18", cs="USB_A17")
         io.spi1_enable(True)
 
         somedata = [0x11, 0x22, 0x33]
@@ -1217,10 +1217,10 @@ class FPGAIO:
         """Set the pins to be used for the SPI1 interface.
 
          Args:
-            sdo (str): Serial Data Out pin name such as "PB22", "USB_A20", or "M2".       
-            sdi (str): Serial Data In pin name such as "PB22", "USB_A20", or "M2".  
-            sck (str): Serial Clock pin name such as "PB22", "USB_A20", or "M2".  
-            cs (str): Chip Select name such as "PB22", "USB_A20", or "M2".  
+            sdo (str): Serial Data Out (output from SAM3U) pin name such as "PB22", "USB_A20", or "M2".       
+            sdi (str): Serial Data In (input to SAM3U) pin name such as "PB22", "USB_A20", or "M2".  
+            sck (str): Serial Clock (output from SAM3U) pin name such as "PB22", "USB_A20", or "M2".  
+            cs (str): Chip Select (output from SAM3U) name such as "PB22", "USB_A20", or "M2".  
         """
 
         sdo = self.pin_name_to_number(sdo)
