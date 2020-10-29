@@ -899,8 +899,21 @@ class FPGAIO:
     
     Allows you to use any pin on the SAM3U as a user IO. This includes pins
     such as the external IO interface, and basically anything else you can find.
+    
+    The pin names are strings, and come from one of three sources:
+        * SAM3U pin names, such as "PC11", "PB9", etc.
+        * Net names from the CW305 schematic such as "USB_A20".
+        * The FPGA ball location that is connected to the SAM3U pin, such as "M2".
+    
+    Any function taking a pin name assumes you pass a string with one of those. You
+    do not need to specify your source - it will autodetect the pin name (if possible).
+    The SAM3U pin names allow access to every pin, including those which are not actually
+    connected on the PCB itself.
 
-    Also includes a SPI interface that you can define on any of the pins.
+    Beyond simple GPIO toggling, a bit-banged SPI interface can be defined and connected
+    to any of the SAM3U pins. The bit-banged interface is done on the SAM3U microcontroller,
+    so transfer speed is "not terrible". You can additionally define waitstates to slow
+    down this SPI interface.
     
     Basic usage::
     
@@ -914,13 +927,14 @@ class FPGAIO:
         time.sleep(0.5)
         io.pin_set_state("LED_BLUE", 1)
 
-        #Example - toggle pin associated with FPGA pin C1 (would be USB_A11)
+        # Example - toggle pin associated with FPGA pin C1 (would be USB_A11)
         import time
         io.pin_set_output("C1")
         io.pin_set_state("C1", 0)
         time.sleep(0.1)
         io.pin_set_state("C1", 1)
 
+        # Setup a SPI interface based on schematic net names
         io.spi1_setpins(mosi="USB_A20", miso="USB_A19", sck="USB_A18", cs="USB_A17")
         io.spi1_enable(True)
 
@@ -936,8 +950,8 @@ class FPGAIO:
     REQ_IO_OUTPUT        = 0xA2
 
 
-    CONFIG_PIN_INPUT     =  0x01
-    CONFIG_PIN_OUTPUT    =  0x02
+    CONFIG_PIN_INPUT     = 0x01
+    CONFIG_PIN_OUTPUT    = 0x02
     CONFIG_PIN_SPI1_MOSI = 0x10
     CONFIG_PIN_SPI1_MISO = 0x11
     CONFIG_PIN_SPI1_SCK  = 0x12
@@ -950,16 +964,16 @@ class FPGAIO:
     REQ_CS_HIGH          = 0xA3
     REQ_SEND_DATA        = 0xA4
     
-    SAM3U_PIN_NAMES = { "PA0": 0,
-                        "PA1": 1,
-                        "PA2": 2,
-                        "PA3": 3,
-                        "PA4": 4,
-                        "PA5": 5,
-                        "PA6": 6,
-                        "PA7": 7,
-                        "PA8": 8,
-                        "PA9": 9,
+    SAM3U_PIN_NAMES = { "PA0":  0,
+                        "PA1":  1,
+                        "PA2":  2,
+                        "PA3":  3,
+                        "PA4":  4,
+                        "PA5":  5,
+                        "PA6":  6,
+                        "PA7":  7,
+                        "PA8":  8,
+                        "PA9":  9,
                         "PA10": 10,
                         "PA11": 11,
                         "PA12": 12,
@@ -982,16 +996,16 @@ class FPGAIO:
                         "PA29": 29,
                         "PA30": 30,
                         "PA31": 31,
-                        "PB0": 32,
-                        "PB1": 33,
-                        "PB2": 34,
-                        "PB3": 35,
-                        "PB4": 36,
-                        "PB5": 37,
-                        "PB6": 38,
-                        "PB7": 39,
-                        "PB8": 40,
-                        "PB9": 41,
+                        "PB0":  32,
+                        "PB1":  33,
+                        "PB2":  34,
+                        "PB3":  35,
+                        "PB4":  36,
+                        "PB5":  37,
+                        "PB6":  38,
+                        "PB7":  39,
+                        "PB8":  40,
+                        "PB9":  41,
                         "PB10": 42,
                         "PB11": 43,
                         "PB12": 44,
@@ -1139,7 +1153,6 @@ class FPGAIO:
                         "LED_GREEN":"PC16",
                         "LED_BLUE":"PC17"}
 
-
     def __init__(self, usb, timeout=200):
         self.sendCtrl = usb.sendCtrl
         self.readCtrl = usb.readCtrl
@@ -1216,7 +1229,7 @@ class FPGAIO:
         self.sendCtrl(self.REQ_FPGAIO_UTIL, self.REQ_IO_CONFIG, [cs, self.CONFIG_PIN_SPI1_CS])
 
         
-    def spi1_enable(self, enable):
+    def spi1_enable(self, enable, waitcycles=0):
         """Enable or disable the SPI interface.
         
         Args:
@@ -1227,8 +1240,11 @@ class FPGAIO:
         else:
             self.sendCtrl(self.REQ_FPGASPI1_XFER, 0xA1)
         
+        if waitcycles > 0:
+            raise NotImplementedError("💩 - Colin was lazy")
+        
     def spi1_set_cs_pin(self, status):
-        """Set the SPI pin high or low
+        """Set the SPI pin high or low.
         
         Args:
             status (bool): Set CS pin high (True) or low (False)
@@ -1257,7 +1273,7 @@ class FPGAIO:
         return readdata
     
     def spi1_transfer(self, data):
-        """Writes data, dropping CS before and raising after.
+        """Writes data, dropping CS before and raising after, returns read data.
 
         Args:
             data (list): Write data over the SPI interface
@@ -1283,4 +1299,3 @@ class FPGAIO:
 
         return resp
 
-        
