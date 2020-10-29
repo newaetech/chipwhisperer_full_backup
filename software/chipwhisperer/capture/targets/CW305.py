@@ -912,8 +912,8 @@ class FPGAIO:
 
     Beyond simple GPIO toggling, a bit-banged SPI interface can be defined and connected
     to any of the SAM3U pins. The bit-banged interface is done on the SAM3U microcontroller,
-    so transfer speed is "not terrible". You can additionally define waitstates to slow
-    down this SPI interface.
+    with a default SCK frequency of around 1.5 MHz. You can additionally define waitstates
+    to slow down this clock.
     
     Basic usage::
     
