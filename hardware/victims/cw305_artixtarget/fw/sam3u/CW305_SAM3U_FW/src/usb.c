@@ -35,7 +35,7 @@
 
 #define FW_VER_MAJOR 0
 #define FW_VER_MINOR 40
-#define FW_VER_DEBUG 0
+#define FW_VER_DEBUG 1
 
 volatile bool g_captureinprogress = true;
 
@@ -432,6 +432,7 @@ static void ctrl_progfpgaspi(void){
 	}
 }
 
+/* Commands for GPIO config mode */
 #define CONFIG_PIN_INPUT     0x01
 #define CONFIG_PIN_OUTPUT    0x02
 #define CONFIG_PIN_SPI1_MOSI 0x10
@@ -629,6 +630,7 @@ bool main_setup_out_received(void)
             udd_g_ctrlreq.callback = ctrl_fpgaioutil;
             return true;
 
+        /* Bit-Banged SPI1 */
         case FREQ_FPGASPI1_XFER:
             udd_g_ctrlreq.callback = ctrl_spi1util;
             return true;
