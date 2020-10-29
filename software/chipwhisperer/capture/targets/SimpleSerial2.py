@@ -6,8 +6,70 @@ from chipwhisperer.common.utils import util
 from ._base import TargetTemplate
 from .simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
 
+class SimpleSerial2_Err:
+    OK = 0
+    ERR_CMD = 1
+    ERR_CRC = 2
+    ERR_TIMEOUT = 3
+    ERR_LEN = 4
+    ERR_FRAME_BYTE = 5
+
+
 class SimpleSerial2(TargetTemplate):
-    "AHHHHHHHHH"
+    """Target object for new SimpleSerial V2 protocol.
+
+    .. versionadded:: 5.4
+        Added SimpleSerial V2 (not on by default)
+
+    Currently, the easiest way to use it is::
+
+        scope = cw.scope()
+        target = cw.target(scope, cw.targets.SimpleSerial2, flush_on_err=False)
+
+    For more help, use the help() function with one of the submodules
+    (target.baud, target.write, target.read, ...).
+
+      * :attr:`target.baud <.SimpleSerial2.baud>`
+      * :meth:`target.write <.SimpleSerial2.write>`
+      * :meth:`target.read <.SimpleSerial2.read>`
+      * :meth:`target.in_waiting <.SimpleSerial2.in_waiting>`
+      * :meth:`target.in_waiting_tx <.SimpleSerial2.in_waiting_tx>`
+      * :meth:`target.send_cmd <.SimpleSerial2.send_cmd>`
+      * :meth:`target.read_cmd <.SimpleSerial2.read_cmd>`
+      * :meth:`target.simpleserial_wait_ack <.SimpleSerial2.simpleserial_wait_ack>`
+      * :meth:`target.simpleserial_write <.SimpleSerial2.simpleserial_write>`
+      * :meth:`target.simpleserial_read <.SimpleSerial2.simpleserial_read>`
+      * :meth:`target.simpleserial_read_witherrors <.SimpleSerial2.simpleserial_read_witherrors>`
+      * :meth:`target.set_key <.SimpleSerial2.set_key>`
+      * :meth:`target.close <.SimpleSerial2.close>`
+      * :meth:`target.con <.SimpleSerial2.con>`
+
+    The protocol is as follows:
+
+    [cmd, subcmd, data_len, data_0, ..., data_n, crc (poly=0xA6)]
+
+    The frame is then consistant overhead byte stuffed (COBS) to remove
+    all 0x00 bytes. An 0x00 byte is then appended to the end of the frame.
+
+    Uses 230400bps by default.
+
+    Return packets have the form:
+
+    [cmd, data_len, data_0, ..., data_n, crc (poly=0xA6)]
+
+    All commands sent to the target will be responded to with an
+    ack/error packet.
+
+    Allows us to send more information in the same number of bytes. Also
+    should be more robust and a bit easier to work with:
+
+    1. It's easy to reset communications by sending frame bytes (0x00)
+    2. We have many ways of checking the validity of a packet:
+        -Frame byte where it shouldn't be
+        -No frame byte at end of message
+        -CRC
+    3. No need to specify length of return message
+    """
     _frame_byte = 0x00
     def __init__(self):
         TargetTemplate.__init__(self)
@@ -18,7 +80,25 @@ class SimpleSerial2(TargetTemplate):
         self.last_key = bytearray(16)
         self._output_len = 16
 
+    def strerror(self, e):
+        """Get string error message based on integer error e
+        """
+        if e == SimpleSerial2_Err.OK:
+            return "No error"
+        if e == SimpleSerial2_Err.ERR_CMD:
+            return "Invalid comand"
+        if e == SimpleSerial2_Err.ERR_CRC:
+            return "Bad CRC"
+        if e == SimpleSerial2_Err.ERR_TIMEOUT:
+            return "Read timed out"
+        if e == SimpleSerial2_Err.ERR_LEN:
+            return "Invalid frame length"
+        if e == SimpleSerial2_Err.ERR_FRAME_BYTE:
+            return "Frame byte in expected spot"
+
     def _calc_crc(self, buf):
+        """Calculate CRC (0xA6) for buf
+        """
         crc = 0x00
         for b in buf:
             crc ^= b
@@ -33,6 +113,8 @@ class SimpleSerial2(TargetTemplate):
 
 
     def _stuff_data(self, buf):
+        """Apply COBS to buf
+        """
         l = len(buf)
         ptr = 0
         last = 0
@@ -43,17 +125,26 @@ class SimpleSerial2(TargetTemplate):
         return buf
 
     def _unstuff_data(self, buf):
+        """Removes COBS from buf
+
+        Can currently get into an infinite loop, don't know why
+        """
         if len(buf) == 0:
             return 0x00
         n = buf[0]
         buf[0] = 0
         l = len(buf) - 1
+        sentinel = 0
         while n < l:
             tmp = buf[n]
             buf[n] = self._frame_byte
             n += tmp
             if (n == 0) and (tmp == 0):
                 logging.error("Infinite loop in unstuff data")
+                return
+            sentinel += 1
+            if sentinel > 30:
+                print(buf, n, tmp)
                 return
         if n > l:
             return n
@@ -67,8 +158,27 @@ class SimpleSerial2(TargetTemplate):
         self.flush()
 
     def simpleserial_write(self, cmd, data, end='\n'):
-        if data == []:
-            data = [0x00] #cannot send 0 length stuff
+        """Mimic SimpleSerial v1 behaviour with new firmware
+
+        Internal/firmware details may change
+
+        Special cases for 'p' and 'k' to use sub command
+        to select what to do with simpleserial-aes
+
+        Args:
+            cmd (str): If 'p', SSV2 cmd=0x01, scmd=0x01. If 'k', SSV2 cmd=0x01, scmd=0x02.
+                        Otherwise, SSV2 cmd=cmd, scmd=0x00.
+            data (bytearray): Number to write as part of command. For example,
+                the 16 byte plaintext for the 'p' command. If an empty list is given,
+                [0x00] is sent.
+            end (str, optional): Unused
+
+        Example:
+            Sending a 'p' command::
+
+                key, pt = ktp.new_pair()
+                target.simpleserial_write('p', pt)
+        """
         if cmd == 'p':
             self.send_cmd(0x01, 0x01, data)
         elif cmd == 'k':
@@ -77,6 +187,21 @@ class SimpleSerial2(TargetTemplate):
             self.send_cmd(cmd, 0x00, data)
 
     def simpleserial_read(self, cmd=None, pay_len=None, end='\n', timeout=250, ack=True):
+        """Reads back response from target and ack packet.
+
+        Args:
+            cmd (str, optional): Expected start of the command. Will warn the user if
+                the received command does not start with this string. Defaults to None
+            pay_len (int, optional): Expected length of the returned bytearray in number
+                of bytes. If None, uses the length field of the packet to
+                determine how much data to read
+            end (str, optional): Unused
+            timeout (int, optional): Value to use for timeouts during initial
+                read of expected data in ms. If 0, block until all expected
+                data is returned. Defaults to 250.
+            ack (bool, optional): Expect an ack packet at the end for SimpleSerial
+                2. Defaults to True.
+        """
         rtn = self.read_cmd(cmd, pay_len, timeout)
         if not rtn:
             return None
@@ -90,15 +215,29 @@ class SimpleSerial2(TargetTemplate):
         return bytearray(rtn)
     
     def is_done(self):
+        """Required on other platforms
+        """
         return True
 
     def flush_on_error(self):
+        """Internally used to reset comms and flush serial buffer when we get an error.
+        """
         if self._flush_on_err:
             self.reset_comms()
             time.sleep(0.05)
             self.flush()
 
     def simpleserial_wait_ack(self, timeout=500):
+        """Waits for an ack/error packet from the target for timeout ms
+
+        Args:
+            timeout (int, optional): Time to wait for an ack in ms. If 0, block
+                until we get an ack. Defaults to 500.
+
+        Returns:
+            The return code from the ChipWhisperer command or None if the target
+            failed to ack
+        """
         rtn = self.read_cmd('e')
         if not rtn:
             logging.warning(f"Device did not ack")
@@ -107,7 +246,7 @@ class SimpleSerial2(TargetTemplate):
             logging.warning(f"Device reported error {hex(rtn[3])}")
             self.flush_on_error()
             print(bytearray(rtn))
-        return rtn
+        return rtn[3:-2]
 
 
     # very ugly since we're decoding stuff as we read it back
@@ -115,6 +254,59 @@ class SimpleSerial2(TargetTemplate):
     # TODO: Improve this
     def simpleserial_read_witherrors(self, cmd=None, pay_len=None, end='\n',\
                                     timeout=250, glitch_timeout=1000, ack=True):
+        r""" Reads a simpleserial command from the target over serial, but returns invalid responses.
+
+        Reads a command starting with <start> with a COBS encoded bytearray
+        payload of length pay_len (i.e. pay_len=16 for an AES128 key) and
+        ending with 0x00. Does normal read_cmd() stuff (decoding, etc).
+        If an error is found (timeout, frame issues, etc), a single
+        read of 1000 character with glitch_timeout as a timeout is done, and the raw
+        response is returned.
+
+        The packet will be valid if:
+
+            * All requested reads return the requested characters 
+            * No frame bytes except the terminator are read
+            * The packet doesn't end with a frame byte
+            * If an ack packet isn't received
+
+        Args:
+            cmd (str, optional): Expected start of the command. Will warn the user if
+                the received command does not start with this string. Defaults to None
+            pay_len (int, optional): Expected length of the returned bytearray in number
+                of bytes. If None, uses the length field of the packet to
+                determine how much data to read
+            end (str, optional): Unused
+            timeout (int, optional): Value to use for timeouts during initial
+                read of expected data in ms. If 0, block until all expected
+                data is returned. Defaults to 250.
+            glitch_timeout (int, optional): Value to wait for additional data
+                if expected data isn't returned. Useful to have a longer
+                timeout for a reset or other unexpected event. Defaults to 1000
+            ack (bool, optional): Expect an ack packet at the end for SimpleSerial
+                >= 2. Defaults to True.
+
+        Returns:
+            A dictionary with these elements:
+                valid (bool): Did response look valid?
+                payload: Bytearray of decoded data (only if valid is 'True', otherwise None)
+                full_response: Raw output of serial port.
+                rv: If 'ack' in command, includes return value
+
+        Example:
+            Reading the output of one of the glitch tests when no error:
+                resp = target.simpleserial_read_witherrors('r', 4)
+                print(resp)
+                >{'valid': True, 'payload': CWbytearray(b'c4 09 00 00'), 'full_response': 'rC4090000\n', 'rv': 0}
+
+            Reading the output of one of the glitch tests when an error happened:
+                resp = target.simpleserial_read_witherrors('r', 4)
+                print(resp)
+                >{'valid': False, 'payload': None, 'full_response': '\x00\x00\x00\x00\x00\x00\x00rRESET   \n', 'rv': None}
+
+        Raises:
+            Warning: Device did not ack or error during read.
+        """
 
         if isinstance(cmd, str):
             cmd = ord(cmd[0])
@@ -205,7 +397,20 @@ class SimpleSerial2(TargetTemplate):
         return {'valid': True, 'payload': bytearray(response[3:-2]), 'full_response': response, 'rv': rv}
 
     def read_cmd(self, cmd=None, pay_len=None, timeout=250, flush_on_err=None):
-        """Read a simpleserial-v2 command
+        """Read and decode simpleserial-v2 command
+
+        Args:
+            cmd (str, optional): Expected start of the command. Will warn the user if
+                the received command does not start with this string. Defaults to None
+            pay_len (int, optional): Expected length of the returned bytearray in number
+                of bytes. If None, uses the length field of the packet to
+                determine how much data to read
+            timeout (int, optional): Value to use for timeouts during initial
+                read of expected data in ms. If 0, block until all expected
+                data is returned. Defaults to 250.
+            flush_on_err (bool/None, optional): If True, reset/flush the serial lines.
+                If False, don't. If None, determine via whether or not flush_on_err
+                was True or False when passed to con()
         """
         tmp = None
         if not flush_on_err is None:
@@ -305,7 +510,10 @@ class SimpleSerial2(TargetTemplate):
         #print(bytearray(self._unstuff_data(buf)))
 
     def reset_comms(self):
+        import time
         self.write([0x00]*10) # make sure target not processing a command
+        time.sleep(0.05)
+        self.flush()
 
     def write(self, data):
         self.ser.write(data)
@@ -349,9 +557,6 @@ class SimpleSerial2(TargetTemplate):
 
         Raises:
             Warning: Device did not ack or error during read.
-
-        .. versionadded:: 5.1
-            Added target.set_key()
         """
         if self.last_key != key:
             self.last_key = key
@@ -365,18 +570,12 @@ class SimpleSerial2(TargetTemplate):
 
         Returns:
             The number of characters available via a target.read() call.
-
-        .. versionadded:: 5.1
-            Added target.in_waiting()
         """
         return self.ser.inWaiting()
 
 
     def flush(self):
         """Removes all data from the serial buffer.
-
-        .. versionadded:: 5.1
-            Added target.flush()
         """
         self.ser.flush()
 
@@ -390,8 +589,5 @@ class SimpleSerial2(TargetTemplate):
 
         Returns:
             The number of characters waiting to be sent to the target
-
-        .. versionadded:: 5.3.1
-            Added public method for in_waiting_tx().
         """
         return self.ser.inWaitingTX()
