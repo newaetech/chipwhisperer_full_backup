@@ -254,7 +254,7 @@ class CW305(TargetTemplate):
         resp = self._naeusb.readCtrl(CW305_USB.REQ_VCCINT, dlen=3)
         return float(resp[1] | (resp[2] << 8)) / 1000.0
 
-    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None):
+    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True):
         """Connect to CW305 board, and download bitstream.
 
         If the target has already been programmed it skips reprogramming
@@ -267,6 +267,7 @@ class CW305(TargetTemplate):
             fpga_id (string): '100t', '35t', or None. If bsfile is None and fpga_id specified,
                               program with AES firmware for fpga_id
             defines_files (list, optional): path to cw305_defines.v
+            slurp (bool, optional): Whether or not to slurp the Verilog defines.
         """
 
         from datetime import datetime
@@ -314,7 +315,8 @@ class CW305(TargetTemplate):
                 verilog_defines = [getsome(self.default_verilog_defines)]
         else:
             verilog_defines = defines_files
-        self.slurp_defines(verilog_defines)
+        if slurp:
+            self.slurp_defines(verilog_defines)
 
 
     def _dis(self):
