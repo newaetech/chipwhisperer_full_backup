@@ -497,6 +497,15 @@ class SimpleSerial2(TargetTemplate):
         return self.ser.read(num_char, timeout)
 
     def send_cmd(self, cmd, scmd, data):
+        """Send a SSV2 command to the target.
+
+        Does all the CRC/Byte stuffing for you
+
+        Args:
+            cmd (char or int): The command to use
+            scmd (int): The subcommand to use
+            data (bytearray): The data to send
+        """
         if isinstance(cmd, str):
             cmd = ord(cmd[0])
         buf = [0x00, cmd, scmd, len(data)]
@@ -510,6 +519,11 @@ class SimpleSerial2(TargetTemplate):
         #print(bytearray(self._unstuff_data(buf)))
 
     def reset_comms(self):
+        """ Try to reset communication with the target and put it in
+        a state to read commands
+
+        Sends 10 0x00 bytes, sleeps for 0.05 seconds, then flushes the serial buffer
+        """
         import time
         self.write([0x00]*10) # make sure target not processing a command
         time.sleep(0.05)
