@@ -25,6 +25,9 @@ from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMF
 import logging
 import usb
 if usb.__version__ < '1.1.0':
+    print(f"---------------------------------------------------------")
+    print(f"ChipWhisperer requires pyusb >= 1.1.0, but you have {usb.__version__}")
+    print(f"---------------------------------------------------------")
     logging.warning(f"ChipWhisperer requires pyusb >= 1.1.0, but you have {usb.__version__}")
 
 # replace bytearray with inherited class with better repr and str.

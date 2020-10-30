@@ -488,9 +488,6 @@ class SimpleSerial2(TargetTemplate):
 
         Returns:
             String of received data.
-
-        .. versionadded:: 5.1
-            Added target.read()
         """
         if num_char == 0:
             num_char = self.ser.inWaiting()
