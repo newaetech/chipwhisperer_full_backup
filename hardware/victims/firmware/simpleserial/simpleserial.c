@@ -69,13 +69,14 @@ uint8_t unstuff_data(uint8_t *buf, uint8_t len)
 {
 	uint8_t next = buf[0];
 	buf[0] = 0x00;
-	len -= 1;
-	while (next < len) {
+	//len -= 1;
+	uint8_t tmp = buf[next];
+	while ((next < len) && tmp != 0) {
 		uint8_t tmp = buf[next];
 		buf[next] = FRAME_BYTE;
 		next += tmp;
 	}
-	if (next > len)
+	if (next > (len-1))
 		return next;
 	return 0x00;
 }
