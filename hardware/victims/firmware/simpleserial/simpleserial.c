@@ -36,7 +36,7 @@ uint8_t ss_crc(uint8_t *buf, uint8_t len)
 
 #if SS_VER == SS_VER_2_0
 
-void my_puts(char *x)
+void ss_puts(char *x)
 {
 	do {
 		putch(*x);
