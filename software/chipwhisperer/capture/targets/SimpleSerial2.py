@@ -574,8 +574,8 @@ class SimpleSerial2(TargetTemplate):
         Raises:
             Warning: Device did not ack or error during read.
         """
-        self.reset_comms()
         if self.last_key != key:
+            self.reset_comms()
             self.last_key = key
             self.simpleserial_write('k', key)
             if ack:
