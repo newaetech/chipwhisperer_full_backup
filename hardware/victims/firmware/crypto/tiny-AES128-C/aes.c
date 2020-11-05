@@ -443,7 +443,7 @@ static void InvShiftRows(void)
 // Cipher is the main function that encrypts the PlainText.
 static void Cipher(void)
 {
-  volatile uint8_t round = 0;
+  uint8_t round = 0;
 
   // Add the First round key to the state before starting the rounds.
   AddRoundKey(0); 
