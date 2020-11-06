@@ -28,7 +28,6 @@ import time
 import random
 from datetime import datetime
 import os.path
-import pkg_resources
 import re
 import io
 from ._base import TargetTemplate
@@ -107,6 +106,7 @@ class CW305(TargetTemplate):
     BATCHRUN_RANDOM_PT = 0x4
 
     def __init__(self):
+        import chipwhisperer as cw
         TargetTemplate.__init__(self)
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6)
@@ -117,7 +117,7 @@ class CW305(TargetTemplate):
 
         self._woffset_sam3U = 0x000
         self.default_verilog_defines = 'cw305_defines.v'
-        self.default_verilog_defines_full_path = '../../hardware/victims/cw305_artixtarget/fpga/common/' + self.default_verilog_defines
+        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/../../hardware/victims/cw305_artixtarget/fpga/common/' + self.default_verilog_defines
         self.registers = 12 # number of registers we expect to find
         self.bytecount_size = 7 # pBYTECNT_SIZE in Verilog
 

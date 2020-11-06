@@ -26,7 +26,7 @@
 import logging
 import time
 import re
-import pkg_resources
+import os.path
 import random
 from chipwhisperer.common.traces import Trace
 from .CW305 import CW305, CW305_USB
@@ -56,13 +56,14 @@ class CW305_ECC(CW305):
 
 
     def __init__(self):
+        import chipwhisperer as cw
         super().__init__()
         self._clksleeptime = 150 # need lots of idling time
         self.curve = Curve.get_curve('NIST-P256')
         self.pmul_cycles = 1124157
         # Verilog defines file(s):
         self.default_verilog_defines = 'cw305_pmul_defines.v'
-        self.default_verilog_defines_full_path = '../../hardware/victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/hdl/' + self.default_verilog_defines
+        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/../../hardware/victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/hdl/' + self.default_verilog_defines
         self.registers = 12 # number of registers we expect to find
         self.bytecount_size = 8 # pBYTECNT_SIZE in Verilog
         self.target_name = 'Cryptech ecdsa256-v1 pmul'
