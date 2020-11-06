@@ -473,6 +473,44 @@ Simple Serial Target
 
     .. autoattribute:: simpleserial_last_read
 
+.. _api-target-simpleserial2:
+
+Simple Serial V2 Target
+=======================
+
+.. autoclass:: chipwhisperer.targets.SimpleSerial2
+
+    .. automethod:: write
+
+    .. automethod:: read
+
+    .. automethod:: send_cmd
+
+    .. automethod:: read_cmd
+
+    .. automethod:: reset_comms
+
+    .. automethod:: simpleserial_wait_ack
+
+    .. automethod:: simpleserial_write
+
+    .. automethod:: simpleserial_read
+
+    .. automethod:: simpleserial_read_witherrors
+
+    .. automethod:: set_key
+
+    .. automethod:: in_waiting
+
+    .. automethod:: in_waiting_tx
+
+    .. automethod:: flush
+
+    .. automethod:: close
+
+    .. automethod:: con
+
+    .. autoattribute:: baud
 
 .. _api-target-cw305:
 

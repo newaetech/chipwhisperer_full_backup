@@ -28,7 +28,6 @@ import time
 import random
 from datetime import datetime
 import os.path
-import pkg_resources
 import re
 import io
 from ._base import TargetTemplate
@@ -107,6 +106,7 @@ class CW305(TargetTemplate):
     BATCHRUN_RANDOM_PT = 0x4
 
     def __init__(self):
+        import chipwhisperer as cw
         TargetTemplate.__init__(self)
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6)
@@ -117,7 +117,7 @@ class CW305(TargetTemplate):
 
         self._woffset_sam3U = 0x000
         self.default_verilog_defines = 'cw305_defines.v'
-        self.default_verilog_defines_full_path = '../../hardware/victims/cw305_artixtarget/fpga/common/' + self.default_verilog_defines
+        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/../../hardware/victims/cw305_artixtarget/fpga/common/' + self.default_verilog_defines
         self.registers = 12 # number of registers we expect to find
         self.bytecount_size = 7 # pBYTECNT_SIZE in Verilog
 
@@ -254,7 +254,7 @@ class CW305(TargetTemplate):
         resp = self._naeusb.readCtrl(CW305_USB.REQ_VCCINT, dlen=3)
         return float(resp[1] | (resp[2] << 8)) / 1000.0
 
-    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None):
+    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True):
         """Connect to CW305 board, and download bitstream.
 
         If the target has already been programmed it skips reprogramming
@@ -267,6 +267,7 @@ class CW305(TargetTemplate):
             fpga_id (string): '100t', '35t', or None. If bsfile is None and fpga_id specified,
                               program with AES firmware for fpga_id
             defines_files (list, optional): path to cw305_defines.v
+            slurp (bool, optional): Whether or not to slurp the Verilog defines.
         """
 
         from datetime import datetime
@@ -314,7 +315,8 @@ class CW305(TargetTemplate):
                 verilog_defines = [getsome(self.default_verilog_defines)]
         else:
             verilog_defines = defines_files
-        self.slurp_defines(verilog_defines)
+        if slurp:
+            self.slurp_defines(verilog_defines)
 
 
     def _dis(self):

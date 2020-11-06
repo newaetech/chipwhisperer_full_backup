@@ -36,7 +36,7 @@ uint8_t ss_crc(uint8_t *buf, uint8_t len)
 
 #if SS_VER == SS_VER_2_0
 
-void my_puts(char *x)
+void ss_puts(char *x)
 {
 	do {
 		putch(*x);
@@ -69,15 +69,14 @@ uint8_t unstuff_data(uint8_t *buf, uint8_t len)
 {
 	uint8_t next = buf[0];
 	buf[0] = 0x00;
-	len -= 1;
-	while (next < len) {
-		uint8_t tmp = buf[next];
+	//len -= 1;
+	uint8_t tmp = next;
+	while ((next < len) && tmp != 0) {
+		tmp = buf[next];
 		buf[next] = FRAME_BYTE;
 		next += tmp;
 	}
-	if (next > len)
-		return next;
-	return 0x00;
+	return next;
 }
 
 // Set up the SimpleSerial module by preparing internal commands

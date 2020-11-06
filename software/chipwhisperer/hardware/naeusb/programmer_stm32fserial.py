@@ -28,7 +28,6 @@ import time
 import traceback
 from datetime import datetime
 from chipwhisperer.capture.utils.IntelHex import IntelHex
-from chipwhisperer.common.utils.timer import nonBlockingDelay
 from functools import reduce, wraps
 
 def close_on_fail(func):

@@ -262,12 +262,10 @@ class AVRISP(object):
                 "File %s appears to be %d bytes, larger than %s size of %d" % (filename, fsize, memtype, maxsize))
 
         logfunc("AVR Programming %s..." % memtype)
-        util.updateUI()
         fdata = f.tobinarray(start=0)
         self.writeMemory(0, fdata, memtype)
 
         logfunc("AVR Reading %s..." % memtype)
-        util.updateUI()
         # Do verify run
         rdata = self.readMemory(0, len(fdata))  # memtype ?
 

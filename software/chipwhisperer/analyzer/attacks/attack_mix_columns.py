@@ -102,6 +102,10 @@ def round_gen(plaintext, guesses, cmpgn, lut_in, lut_out, hd, gal):
     res = np.empty((plaintext.shape[0], len(guesses), plaintext.shape[1]), dtype='uint8')
     if hd:
         new_pt = np.repeat(plaintext[:,lut_out[cmpgn][0]][:, np.newaxis], 16, axis=1)
+        #print(np.shape(new_pt))
+        new_pt = np.zeros(np.shape(new_pt), dtype='uint8')
+        #print(np.shape(new_pt))
+        new_pt[:,lut_in[cmpgn][0]] = plaintext[:,lut_out[cmpgn][0]]
         new_pt[:,lut_in[cmpgn][1]] = plaintext[:,lut_out[cmpgn][1]]
         new_pt[:,lut_in[cmpgn][2]] = plaintext[:,lut_out[cmpgn][2]]
         new_pt[:,lut_in[cmpgn][3]] = plaintext[:,lut_out[cmpgn][3]]

@@ -26,7 +26,7 @@ copyright = "2020, NewAE Technology Inc."
 author = "NewAE Technology Inc."
 
 # The full version, including alpha/beta/rc tags
-release = '5.3.1'
+release = '5.4.0'
 
 
 # -- General configuration ---------------------------------------------------

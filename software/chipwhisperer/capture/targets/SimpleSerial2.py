@@ -100,15 +100,18 @@ class SimpleSerial2(TargetTemplate):
         """Calculate CRC (0xA6) for buf
         """
         crc = 0x00
-        for b in buf:
-            crc ^= b
-            for _ in range(8):
-                if crc & 0x80:
-                    crc = (crc << 1) ^ 0xA6
-                    crc &= 0xFF
-                else:
-                    crc <<= 1
-                    crc &= 0xFF
+        try:
+            for b in buf:
+                crc ^= b
+                for _ in range(8):
+                    if crc & 0x80:
+                        crc = (crc << 1) ^ 0xA6
+                        crc &= 0xFF
+                    else:
+                        crc <<= 1
+                        crc &= 0xFF
+        except:
+            print(buf)
         return crc
 
 
@@ -141,10 +144,11 @@ class SimpleSerial2(TargetTemplate):
             n += tmp
             if (n == 0) and (tmp == 0):
                 logging.error("Infinite loop in unstuff data")
+                logging.error(buf)
                 return
             sentinel += 1
             if sentinel > 30:
-                print(buf, n, tmp)
+                logging.error(f"{buf}, {n}, {tmp}")
                 return
         if n > l:
             return n
@@ -224,7 +228,7 @@ class SimpleSerial2(TargetTemplate):
         """
         if self._flush_on_err:
             self.reset_comms()
-            time.sleep(0.05)
+            time.sleep(0.15)
             self.flush()
 
     def simpleserial_wait_ack(self, timeout=500):
@@ -429,7 +433,8 @@ class SimpleSerial2(TargetTemplate):
             return
 
         response = bytearray(response.encode('latin-1'))
-        if self._frame_byte in response and len(response) == 3:
+        if (self._frame_byte in response and len(response) == 3) or \
+            (self._frame_byte in response[:-1] and len(response) != 3):
             logging.warning(f"Unexpected frame byte in {response}")
             self.flush_on_error()
             return
@@ -488,15 +493,21 @@ class SimpleSerial2(TargetTemplate):
 
         Returns:
             String of received data.
-
-        .. versionadded:: 5.1
-            Added target.read()
         """
         if num_char == 0:
             num_char = self.ser.inWaiting()
         return self.ser.read(num_char, timeout)
 
     def send_cmd(self, cmd, scmd, data):
+        """Send a SSV2 command to the target.
+
+        Does all the CRC/Byte stuffing for you
+
+        Args:
+            cmd (char or int): The command to use
+            scmd (int): The subcommand to use
+            data (bytearray): The data to send
+        """
         if isinstance(cmd, str):
             cmd = ord(cmd[0])
         buf = [0x00, cmd, scmd, len(data)]
@@ -510,8 +521,13 @@ class SimpleSerial2(TargetTemplate):
         #print(bytearray(self._unstuff_data(buf)))
 
     def reset_comms(self):
+        """ Try to reset communication with the target and put it in
+        a state to read commands
+
+        Sends 10 0x00 bytes, sleeps for 0.05 seconds, then flushes the serial buffer
+        """
         import time
-        self.write([0x00]*10) # make sure target not processing a command
+        self.write([0x00]*2) # make sure target not processing a command
         time.sleep(0.05)
         self.flush()
 
@@ -559,11 +575,12 @@ class SimpleSerial2(TargetTemplate):
             Warning: Device did not ack or error during read.
         """
         if self.last_key != key:
+            self.reset_comms()
             self.last_key = key
             self.simpleserial_write('k', key)
             if ack:
                 if self.simpleserial_wait_ack(timeout) is None:
-                    raise Warning("Device failed to ack")
+                    self.reset_comms()
 
     def in_waiting(self):
         """Returns the number of characters available from the serial buffer.
