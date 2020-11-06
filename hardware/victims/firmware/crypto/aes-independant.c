@@ -266,6 +266,7 @@ void aes_indep_enc_pretrigger(uint8_t * pt)
 
 void aes_indep_enc_posttrigger(uint8_t * pt)
 {
+    int i;
   for (i = 0; i < AESOutputSize; i++)
     pt[i] = input[i];
 }
