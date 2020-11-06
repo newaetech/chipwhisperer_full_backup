@@ -515,6 +515,9 @@ class TriggerSettings(util.DisableNewAttr):
     def basic_mode(self):
         """The type of event to use as a trigger.
 
+        Only applies to the ADC capture - the glitch module
+        is always a rising edge trigger.
+
         There are four possible types of trigger events:
          * "low": triggers when line is low (logic 0)
          * "high": triggers when line is high (logic 1)
