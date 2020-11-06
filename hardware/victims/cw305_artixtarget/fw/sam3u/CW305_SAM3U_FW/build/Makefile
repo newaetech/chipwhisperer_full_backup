@@ -7,6 +7,8 @@
 # It 
 #
 
+.DEFAULT_GOAL := all
+
 #Uncomment for Linux
 SHELL := bash     
 CC := "arm-none-eabi-gcc"
