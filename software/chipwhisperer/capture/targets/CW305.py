@@ -1300,7 +1300,7 @@ class FPGAIO:
             
             tx = data[i:dataend]
             rx = self.spi1_tx_rx(tx)
-            resp.append(rx)
+            resp.extend(rx)
 
         self.spi1_set_cs_pin(True)
 
