@@ -15,6 +15,7 @@ function test()
                 for l in "${SSVER[@]}"; do
                     make PLATFORM=$j CRYPTO_TARGET=$i CRYPTO_OPTIONS=$k SS_VER=$l
                     retVal=$?
+                    make PLATFORM=$j CRYPTO_TARGET=$i CRYPTO_OPTIONS=$k SS_VER=$l clean
                     echo $retVal
                     if [ $retVal -ne 0 ]; then
                         echo "Firmware build failed"
