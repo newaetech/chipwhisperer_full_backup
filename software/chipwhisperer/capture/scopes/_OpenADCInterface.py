@@ -1900,7 +1900,6 @@ class OpenADCInterface(object):
                     self.triggerNow()
 
                 # Give the UI a chance to update (does nothing if not using UI)
-                # util.updateUI()
 
             #time.sleep(0.005)
             #time.sleep(sleeptime*10)

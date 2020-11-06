@@ -152,24 +152,13 @@ def bytearray2binarylist(bytes, nrBits=8):
     return init
 
 
-def getPyFiles(dir, extension=False):
-    scriptList = []
-    if os.path.isdir(dir):
-        for fn in os.listdir(dir):
-            fnfull = dir + '/' + fn
-            if os.path.isfile(fnfull) and fnfull.lower().endswith('.py') and (not fnfull.endswith('__init__.py')) and (not fn.startswith('_')):
-                if extension:
-                    scriptList.append(fn)
-                else:
-                    scriptList.append(os.path.splitext(fn)[0])
-    return scriptList
-
 def _make_id(target):
     if hasattr(target, '__func__'):
         return (id(target.__self__))
     return id(target)
 
 
+# all over analyzer stuff
 class Signal(object):
     class Cleanup(object):
         def __init__(self, key, d):
@@ -249,6 +238,8 @@ class DelayedKeyboardInterrupt:
         signal.signal(signal.SIGINT, self.old_handler)
         if self.signal_received:
             self.old_handler(*self.signal_received)
+
+# removing breaks projects
 class Observable(Signal):
     def __init__(self, value):
         super(Observable, self).__init__()
@@ -272,25 +263,7 @@ class ConsoleBreakException(BaseException):
     """
     pass
 
-def requestConsoleBreak():
-    global _consoleBreakRequested
-    _consoleBreakRequested = True
-
 _uiupdateFunction = None
-
-def setUIupdateFunction(func):
-    global _uiupdateFunction
-    _uiupdateFunction= func
-
-def updateUI():
-    if _uiupdateFunction:
-        _uiupdateFunction()
-
-    # If an event handler has asked for a console break, raise an exception now
-    global _consoleBreakRequested
-    if _consoleBreakRequested:
-        _consoleBreakRequested = False
-        raise ConsoleBreakException()
 
 class WeakMethod(object):
     """A callable object. Takes one argument to init: 'object.method'.

@@ -28,7 +28,7 @@ import time
 import zipfile
 import os.path
 
-from chipwhisperer.capture.scopes.cwhardware.ztex_fwloader import Ztex1v1, IhxFile
+#from chipwhisperer.capture.scopes.cwhardware.ztex_fwloader import Ztex1v1, IhxFile
 from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.firmware.cwlite import getsome as cwlite_getsome
 from chipwhisperer.hardware.firmware.cwcr2 import getsome as cwcr2_getsome
@@ -114,57 +114,6 @@ class CW_Loader(object):
         self.write_setting("fpga-bitstream-mode", release_mode)
         self._release_mode = release_mode
 
-
-class CWCRev2_Loader(CW_Loader):
-    name = "cwcrev2"
-    def __init__(self):
-        super(CWCRev2_Loader, self).__init__()
-        self.driver = Ztex1v1()
-        self._fwFLoc = self.read_setting('firmware-location', os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx")))
-        self._bsZipLoc = self.read_setting('zipbitstream-location',os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/cwrev2_firmware.zip")))
-        self._bsZipLoc_filename = "interface.bit"
-        self._bsLoc = self.read_setting('debugbitstream-location',os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/hdl/ztex_rev2_1.11c_ise/interface.bit")))
-        self._bsBuiltinData = cwcr2_getsome("cwrev2_firmware.zip", filelike=True)
-        self._fwBuiltinData = cwcr2_getsome("OpenADC.ihx", filelike=True)
-    
-    def loadRequired(self, callback, forceFirmware=False):
-        self.driver.probe(True)
-
-        if self.driver.firmwareProgrammed == False or forceFirmware:
-            self.loadFirmware()
-        else:
-            logging.info('EZ-USB Microcontroller: Skipped firmware download (already done)')
-
-        if self.driver.deviceInfo["interfaceVersion"] != 1:
-            raise IOError("Unknown interface version, invalid ZTEX Firmware?. Device info: %s" % str(self.driver.deviceInfo))
-
-        if self.driver.deviceInfo["productId"] != [10, 12, 0, 0]:
-            raise IOError("Unknown productId, invalid ZTEX Firmware/Module?. Device info: %s" % str(self.driver.deviceInfo))
-
-        self.driver.getFpgaState()
-        if self.driver.fpgaConfigured == False:
-            callback()
-            self.driver.getFpgaState()
-            logging.info('FPGA: Programmed bitstream successfully')
-        else:
-            logging.info('FPGA: Skipped configuration (already done)')
-
-    def loadFirmware(self):
-        if self._release_mode != "builtin":
-            if not os.path.isfile(self._fwFLoc):
-                raise IOError("Firmware ihx-File NOT set to valid value - check paths or reconfigure. Path='%s'"%self._fwFLoc)
-            f = IhxFile(self._fwFLoc)
-        else:
-            f = IhxFile(self._fwBuiltinData)
-
-        self.driver.uploadFirmware(f)
-        time.sleep(1)
-        self.driver.probe()
-
-    def loadFPGA(self):
-        self.save_bsLoc()
-        self.save_bsZipLoc()
-        self.driver.configureFpgaLS(self.fpga_bitstream())
 
 class CWLite_Loader(CW_Loader):
     name = "cwlite"

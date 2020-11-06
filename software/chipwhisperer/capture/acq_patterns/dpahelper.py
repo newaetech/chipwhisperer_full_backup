@@ -38,11 +38,6 @@ class AcqKeyTextPattern_DPA(AcqKeyTextPattern_Base):
         self.initkey = '2B 7E 15 16 28 AE D2 A6 AB F7 15 88 09 CF 4F 3C'
         self._key = util.hexStrToByteArray(self.initkey)
         self._mask = util.hexStrToByteArray(self.initmask)
-
-        self.getParams().addChildren([
-            {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'get':self.getInitialKey, 'set':self.setInitialKey, 'visible':True},
-            {'name':'Plaintext Mask', 'key':'initmask', 'type':'str', 'get':self.getInitialMask, 'set':self.setInitialMask, 'visible':True},
-        ])
         self.setTarget(target)
 
     def getInitialKey(self):

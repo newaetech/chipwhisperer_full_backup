@@ -25,7 +25,7 @@
 import logging
 
 from . import _OpenADCInterface as openadc
-from chipwhisperer.common.utils import util, timer
+from chipwhisperer.common.utils import util
 
 
 class OpenADCQt(object):
@@ -45,8 +45,6 @@ class OpenADCQt(object):
 
         self.datapoints = []
 
-        self.timerStatusRefresh = timer.Timer()
-        self.timerStatusRefresh.timeout.connect(self.statusRefresh)
 
     def setEnabled(self, enabled):
         pass

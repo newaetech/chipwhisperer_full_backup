@@ -30,7 +30,7 @@ import numpy as np
 from usb import USBError
 from .base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.utils import util, timer
+from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import dict_to_str
 from collections import OrderedDict
 

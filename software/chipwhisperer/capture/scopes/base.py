@@ -85,7 +85,6 @@ class ScopeTemplate(object):
         #
         # while self.done() == False:
         #     time.sleep(0.05)
-        #     util.updateUI()
         pass
 
     def get_name(self):
