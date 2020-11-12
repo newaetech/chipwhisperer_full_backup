@@ -28,14 +28,65 @@
 
 uint8_t cipher_buf[0x08 + 0x10 + 0x01] = {HASH_KEY};
 uint8_t key[] = {DEFAULT_KEY};
+uint8_t IV[16] = {0};
+uint8_t plaintext[16] = {0};
+uint32_t mem_addr = 0;
+uint8_t initialized = 0;
+
 // HASH(key, ciphertext) = MAC
 // buf[:16] = ciphertext
 // buf[16] = MAC
 void AES128_ECB_decrypt(uint8_t* input, uint8_t* key, uint8_t *output);
 uint8_t ss_crc(uint8_t *, uint8_t);
 
+//basically just getting IV
+uint8_t init_bootloader(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *buf)
+{
+    if (initialized) {
+        return 0x12;
+    }
+
+    if (len != 16) {
+        return SS_ERR_LEN;
+    }
+
+    for (uint8_t i = 0; i < 16; i++) {
+        IV[i] = buf[i];
+    }
+    initialized = 1;
+    return 0;
+}
+
+uint8_t set_addr(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *buf)
+{
+    if (len != 4) {
+        return SS_ERR_LEN;
+    }
+    mem_addr = buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
+    return 0;
+}
+
+uint8_t read_mem(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *buf)
+{
+    return 0x20; //permission error
+}
+
+uint8_t write_plaintext(uint8_t len, uint8_t *plaintext)
+{
+    mem_addr += len;
+    return 0;
+}
+
 uint8_t bootloader_recv(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *buf)
 {
+    if (!initialized) {
+        return 0x12;
+    }
+
+    if (len != 0x11) {
+        return SS_ERR_LEN;
+    }
+
     for (int i = 0; i < 16; i++) {
         cipher_buf[0x08 + i] = buf[i];
     }
@@ -44,18 +95,23 @@ uint8_t bootloader_recv(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *buf)
     trigger_high();
     uint8_t crc = ss_crc(cipher_buf, 0x08 + 0x10);
 
+    // check that MAC is correct
     if (crc != buf[16]) {
-        // MAC is different than what was sent
-        // but don't tell the user that
         trigger_low();
         return 0x11;
     }
-
     trigger_low();
-    AES128_ECB_decrypt(buf, key, buf);
-    // normally, we would decrypt + write, but that's a pain, so just
-    // return a different error code
 
+    //decrypt
+    AES128_ECB_decrypt(buf, key, plaintext);
+
+    //and do CBC
+    for (int i = 0; i < 16; i++) {
+        plaintext[i] ^= IV[i];
+        IV[i] = buf[i];
+    }
+
+    write_plaintext(16, plaintext);
     return 0x00;
 }
 
@@ -71,19 +127,12 @@ int main(void)
 	aes_indep_init();
 	aes_indep_key(tmp);
 
-    /* Uncomment this to get a HELLO message for debug */
-
-/*  
-    putch('h');
-    putch('e');
-    putch('l');
-    putch('l');
-    putch('o');
-    putch('\n');
-    */
-
 	simpleserial_init();
+
+    simpleserial_addcmd(0x00, 0x10, init_bootloader);
     simpleserial_addcmd(0x01, 0x11, bootloader_recv);
+    simpleserial_addcmd(0x02, 0x04, set_addr);
+    simpleserial_addcmd(0x03, 0x01, read_mem);
     while(1)
         simpleserial_get();
 }
