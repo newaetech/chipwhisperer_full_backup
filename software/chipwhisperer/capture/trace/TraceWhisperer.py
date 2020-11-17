@@ -94,6 +94,7 @@ class TraceWhisperer():
         """
         super().__init__()
         self._trace_port_width = 4
+        self.expected_verilog_defines = 102
         # Detect whether we exist on CW305 or CW610 based on the target we're given:
         if target._name == 'Simple Serial':
             self.platform = 'CW610'
@@ -118,6 +119,10 @@ class TraceWhisperer():
             self._naeusb = target._naeusb
 
         self.slurp_defines(defines_files)
+        # TODO- temporary for development:
+        self.fpga_write(self.REG_REVERSE_TRACEDATA, [0])
+        self.fpga_write(self.REG_BOARD_REV, [3])
+        self.set_reg('TPI_ACPR', '00000000')
 
 
     def reset_fpga(self):
@@ -174,7 +179,25 @@ class TraceWhisperer():
                             logging.warning("Couldn't parse line: %s", define)
             defines.close()
         # make sure everything is cool:
-        assert self.verilog_define_matches == 96, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected 96, got %d" % (defines_file, self.verilog_define_matches)
+        assert self.verilog_define_matches == self.expected_verilog_defines, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected %d, got %d" % (defines_file, self.expected_verilog_defines, self.verilog_define_matches)
+
+
+    def set_mode(self, mode, swo_div=8):
+        """Set trace or SWO mode
+        Args:
+            mode (string): 'trace' or 'swo'
+            swo_div (int): number of 96 MHz clock cycles per SWO bit
+        """
+        if mode == 'trace':
+            self.set_reg('TPI_SPPR', '00000000')
+            self.fpga_write(self.REG_SWO_ENABLE, [0])
+        elif mode == 'swo':
+            self.set_reg('TPI_SPPR', '00000002')
+            self.fpga_write(self.REG_SWO_BITRATE_DIV, [swo_div-1])
+            self.fpga_write(self.REG_SWO_ENABLE, [1])
+            # TODO: bit-bang into SWD mode?
+        else:
+            logging.error('Invalid mode %s: specify "trace" or "swo"', mode)
 
 
     def simpleserial_write(self, cmd, data, printresult=False):
@@ -239,9 +262,10 @@ class TraceWhisperer():
 
 
     def arm_trace(self):
-        """Arms trace sniffer for capture.
+        """Arms trace sniffer for capture; also checks sync status.
         """
         self.fpga_write(self.REG_ARM, [1])
+        self.synced()
 
 
     def synced(self):
@@ -257,7 +281,6 @@ class TraceWhisperer():
         setup/hold violations (clock edge too close to data edge).
         """
         self.fpga_write(self.REG_TRACE_RESET_SYNC, [1])
-        self.fpga_write(self.REG_TRACE_RESET_SYNC, [0])
         self.synced()
 
 

@@ -41,6 +41,8 @@
 `define REG_USERIO_DATA              6'h0e
 `define REG_USERIO_PWDRIVEN          6'h0f
 
+`define REG_MMCM_LOCKED              6'h10
+
 
 // front end select definitions
 `define FE_SELECT_WIDTH 2
