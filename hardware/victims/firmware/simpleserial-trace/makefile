@@ -37,7 +37,8 @@ TARGET = simpleserial-trace
 SRC += simpleserial-trace.c
 
 # -----------------------------------------------------------------------------
-EXTRA_OPTS = ETM_ENABLE
+#EXTRA_OPTS = ETM_ENABLE
+EXTRA_OPTS = NO_EXTRA_OPTS
 CFLAGS += -D$(EXTRA_OPTS)
 
 

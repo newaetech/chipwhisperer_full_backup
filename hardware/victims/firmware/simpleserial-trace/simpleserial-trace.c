@@ -25,6 +25,11 @@
 #include "core_cm4.h"
 #endif
 
+#if HAL_TYPE == HAL_stm32f3
+#include "stm32f303x8.h"
+#include "core_cm4.h"
+#endif
+
 #include "arm_etm.h"
 #include <stdint.h>
 #include <stdlib.h>
@@ -83,6 +88,7 @@ uint8_t getreg(uint8_t* x)
         else if  (x[0] == 10)   {val = TPI->FFCR;}
         else if  (x[0] == 11)   {val = TPI->CSPSR;}
         else if  (x[0] == 12)   {val = ITM->TCR;}
+        else {val = 0;}
 
         x[3] = val & 0xff;
         x[2] = (val >> 8) & 0xff;
@@ -92,16 +98,24 @@ uint8_t getreg(uint8_t* x)
 	return 0x00;
 }
 
-void enable_trace()
+void enable_trace(void)
 {
+    // Enable SWO pin (not required on K82)
+    #if HAL_TYPE == HAL_stm32f3
+       DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN_Msk;
+    #endif
+
     // Configure TPI
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // Enable access to registers
-    TPI->ACPR = 1; // SWO Trace clock = HCLK/(x+1) = 8MHz = UART 's baudrate
-                   // The HCLK of F105 is 8MHz so x is 0, and the F103 is 72MHz so x is 8
-                   // (not needed for parallel mode)
-    TPI->SPPR = 0; // parallel trace mode
-    //TPI->SPPR = 1; // SWO with Manchester encoding
-    //TPI->SPPR = 2; // SWO with NRZ encoding
+    TPI->ACPR = 0; // SWO trace baud rate = cpu clock / (ACPR+1)
+
+    #if HAL_TYPE == HAL_stm32f3
+       TPI->SPPR = 2; // default to SWO with NRZ encoding
+       //TPI->SPPR = 1; // SWO with Manchester encoding
+    #else
+       TPI->SPPR = 0; // default to parallel trace mode
+    #endif
+
     TPI->FFCR = 0x102; // packet framing enabled
     //TPI->FFCR = 0x100; // no framing: for DWT/ITM only, no ETM
     TPI->CSPSR =0x00000008; // 4 trace lanes
@@ -149,8 +163,8 @@ void enable_trace()
     ETM->TRACEIDR = 1; // Trace bus ID for TPIU
     ETM->FFLR = 0; // Stall processor when FIFO is full
     ETM->TEEVR = 0x000150a0;    // EmbeddedICE comparator 0 or 1 (DWT->COMP0 or DWT->COMP1)
-    //ETM->TEEVR = 0x00000020;    // EmbeddedICE comparator 0
-    //ETM->TEEVR = 0x00000021;    // EmbeddedICE comparator 1
+    //ETM->TEEVR = 0x00000020;    // EmbeddedICE comparator 0 only
+    //ETM->TEEVR = 0x00000021;    // EmbeddedICE comparator 1 only
     ETM->TESSEICR = 0xf; // set EmbeddedICE watchpoint 0 as a TraceEnable start resource. 
     ETM->TECR1 = 0; // tracing is unaffected by the trace start/stop logic
     ETM_TraceMode();
@@ -217,7 +231,7 @@ uint8_t set_pcsample_params(uint8_t* x)
 
 // in order for PC sample packets to be easily parsed, PC sampling must
 // begin *after* we start capturing trace data
-void trigger_high_pcsamp()
+void trigger_high_pcsamp(void)
 {
     if (pcsamp_enable == 1)
     {
@@ -227,7 +241,7 @@ void trigger_high_pcsamp()
 }
 
 
-void trigger_low_pcsamp()
+void trigger_low_pcsamp(void)
 {
     trigger_low();
     DWT->CTRL &= ~(1 << DWT_CTRL_PCSAMPLENA_Pos); // disable PC sampling
