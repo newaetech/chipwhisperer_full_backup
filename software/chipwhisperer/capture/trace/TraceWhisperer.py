@@ -95,6 +95,7 @@ class TraceWhisperer():
         super().__init__()
         self._trace_port_width = 4
         self.expected_verilog_defines = 102
+        self.swo_mode = False
         # Detect whether we exist on CW305 or CW610 based on the target we're given:
         if target._name == 'Simple Serial':
             self.platform = 'CW610'
@@ -122,6 +123,7 @@ class TraceWhisperer():
         # TODO- temporary for development:
         self.fpga_write(self.REG_REVERSE_TRACEDATA, [0])
         self.fpga_write(self.REG_BOARD_REV, [3])
+        self.board_rev = 3
         self.set_reg('TPI_ACPR', '00000000')
 
 
@@ -183,21 +185,73 @@ class TraceWhisperer():
 
 
     def set_mode(self, mode, swo_div=8):
-        """Set trace or SWO mode
+        """Set trace or SWO mode.
         Args:
             mode (string): 'trace' or 'swo'
             swo_div (int): number of 96 MHz clock cycles per SWO bit
         """
         if mode == 'trace':
+            self.swo_mode = False
             self.set_reg('TPI_SPPR', '00000000')
             self.fpga_write(self.REG_SWO_ENABLE, [0])
         elif mode == 'swo':
+            self.swo_mode = True
             self.set_reg('TPI_SPPR', '00000002')
-            self.fpga_write(self.REG_SWO_BITRATE_DIV, [swo_div-1])
+            self.fpga_write(self.REG_SWO_BITRATE_DIV, [swo_div-1]) # not a typo: hardware requires -1
             self.fpga_write(self.REG_SWO_ENABLE, [1])
-            # TODO: bit-bang into SWD mode?
+            logging.info("Ensure target is in SWD mode, e.g. using jtag_to_swd().")
         else:
             logging.error('Invalid mode %s: specify "trace" or "swo"', mode)
+
+
+    def jtag_to_swd(self, board_rev=3): # TODO- board_rev=3 is temporary, for development
+        """Switch to SWD mode by driving the JTAG-to-SWD sequence on TMS/TCK.
+        (reference: https://developer.arm.com/documentation/ka001179/1-0/)
+        Args: none
+        """
+        self.board_rev = board_rev
+        if self.board_rev == 3:
+            self.tms_bit = 0
+            self.tck_bit = 2
+        elif self.board_rev == 4:
+            self.tms_bit = 0
+            self.tck_bit = 1
+        self.fpga_write(self.REG_USERIO_PWDRIVEN, [(1<<self.tms_bit) + (1<<self.tck_bit)])
+        self.fpga_write(self.REG_USERIO_DATA, [1<<self.tms_bit])
+        self._line_reset()
+        self._send_tms_byte(0x9e)
+        self._send_tms_byte(0xe7)
+        self._line_reset()
+        self.fpga_write(self.REG_USERIO_DATA, [1<<self.tms_bit])
+        self.fpga_write(self.REG_USERIO_PWDRIVEN, [0])
+
+
+    def _send_tms_byte(self, data):
+        """Bit-bang 8 bits of data on TMS/TCK (LSB first).
+        Args: 
+            data (int): 8 bits data to send.
+        """
+        for i in range(8):
+            bit = (data & 2**i) >> i
+            self.fpga_write(self.REG_USERIO_DATA, [bit<<self.tms_bit])
+            self.fpga_write(self.REG_USERIO_DATA, [(1<<self.tck_bit) + (bit<<self.tms_bit)])
+
+
+    def _line_reset(self, num_bytes=8):
+        """Bit-bang a line reset on TMS/TCK.
+        Args: none
+        """
+        for i in range(num_bytes): self._send_tms_byte(0xff)
+
+
+    def check_clocks(self):
+        """Check that PLLs are locked.
+        Args: none
+        """
+        locks = self.fpga_read(self.REG_MMCM_LOCKED, 1)[0]
+        assert (locks & 2) == 2, 'Trigger/UART clock not locked!'
+        if not self.swo_mode:
+           assert (locks & 1) == 1, 'Trace clock not locked!'
 
 
     def simpleserial_write(self, cmd, data, printresult=False):
