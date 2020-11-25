@@ -221,7 +221,9 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         if self.scopetype is not None:
             self.scopetype.con(sn)
 
-            self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
+            if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
+                self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
+            #self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
 
             cwtype = self._getCWType()
             if cwtype != "":

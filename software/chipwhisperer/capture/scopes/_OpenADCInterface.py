@@ -336,7 +336,7 @@ class TriggerSettings(util.DisableNewAttr):
         self._is_pro = False
         self._cached_samples = None
         self._cached_offset = None
-
+        self._is_sakura_g = None
 
         self.disable_newattr()
 
@@ -442,6 +442,11 @@ class TriggerSettings(util.DisableNewAttr):
 
     @samples.setter
     def samples(self, samples):
+        if self._is_sakura_g:
+            diff = (12 - (samples % 12)) % 12
+            samples += diff
+            if diff > 0:
+                logging.warning("Sakura G samples must be divisible by 12, rounding up to {}...".format(samples))
         self._cached_samples = samples
         self._set_num_samples(samples)
 
@@ -1611,7 +1616,7 @@ class OpenADCInterface(object):
             message = message + pba
 
             # ## Send out serial port
-            self.serial.write(str(message))
+            self.serial.write(message)
 
             # for b in message: print "%02x "%b,
             # print ""
@@ -2022,6 +2027,7 @@ class OpenADCInterface(object):
                 # print "bytes = %d"%self.getBytesInFifo()
 
                 bytesToRead = self.getBytesInFifo()
+                #print(bytesToRead)
 
                 # print bytesToRead
 
@@ -2037,6 +2043,7 @@ class OpenADCInterface(object):
 
                 # +1 for sync byte
                 data = self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, bytesToRead + 1)  # BytesPerPackage)
+                #print(data)
 
                 # for p in data:
                 #       print "%x "%p,
@@ -2054,6 +2061,8 @@ class OpenADCInterface(object):
             # for point in datapoints:
             #       print "%3x"%(int((point+0.5)*1024))
 
+            if datapoints is None:
+                return []
             if len(datapoints) > NumberPoints:
                 datapoints = datapoints[0:NumberPoints]
 
@@ -2066,6 +2075,7 @@ class OpenADCInterface(object):
     def processData(self, data, pad=float('NaN'), debug=False):
         if data[0] != 0xAC:
             logging.warning('Unexpected sync byte in processData(): 0x%x' % data[0])
+            #print(data)
             return None
 
         orig_data = copy.copy(data)

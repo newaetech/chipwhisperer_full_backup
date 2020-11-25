@@ -14,8 +14,7 @@ from .SimpleSerial2 import SimpleSerial2
 from .CW305_ECC import CW305_ECC
 
 try:
-    from .SAKURAG import SakuraG #needs ftdi module
-    from .SASEBOGII import SaseboGII
+    from .sakura_g import SakuraG #needs ftdi module
 except ImportError:
     pass
 
