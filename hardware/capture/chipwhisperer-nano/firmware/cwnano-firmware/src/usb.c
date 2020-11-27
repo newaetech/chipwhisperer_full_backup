@@ -52,7 +52,7 @@
 #include <string.h>
 
 #define FW_VER_MAJOR 0
-#define FW_VER_MINOR 23
+#define FW_VER_MINOR 24
 #define FW_VER_DEBUG 0
 
 static volatile bool main_b_vendor_enable = true;
@@ -545,7 +545,7 @@ bool main_setup_out_received(void)
 bool main_setup_in_received(void)
 {
 	
-	static uint8_t  respbuf[128];
+	static uint8_t  respbuf[CIRCBUFSIZE];
 	unsigned int cnt;
 	
 	if (udd_g_ctrlreq.req.wLength > sizeof(respbuf)){
