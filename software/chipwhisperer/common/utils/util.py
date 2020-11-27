@@ -409,17 +409,21 @@ class NoneTypeTarget(object):
     def __getattr__(self, item):
         raise AttributeError('Target has not been connected')
 
+def fw_ver_compare(a, b):
+    #checks that a is newer or as new as b
+    if a["major"] > b["major"]:
+        return True
+    elif (a["major"] == b["major"]) and (a["minor"] >= b["minor"]):
+        return True
+    return False
+
+
 def fw_ver_required(major, minor):
     def decorator(func):
         @wraps(func)
         def func_wrapper(self, *args, **kwargs):
             fw_ver = self.fw_version
-            good = False
-            if fw_ver["major"] > major:
-                good = True
-            elif (fw_ver["major"] == major) and (fw_ver["minor"] >= minor):
-                good = True
-
+            good = fw_ver_compare(fw_ver, {"major": major, "minor": minor})
             if good:
                 return func(self, *args, **kwargs)
             else:

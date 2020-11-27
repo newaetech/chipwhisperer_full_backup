@@ -46,6 +46,7 @@ class USART(object):
         """
         Set the USB communications instance.
         """
+        self._max_read = 256
 
         self._usb = usb
         self.timeout = timeout
@@ -183,7 +184,7 @@ class USART(object):
 
         while dlen and (timeout * 10) > 0:
             if waiting > 0:
-                newdata = self._usb.readCtrl(self.CMD_USART0_DATA, 0, min(waiting, dlen))
+                newdata = self._usb.readCtrl(self.CMD_USART0_DATA, 0, min(min(waiting, dlen), self._max_read))
                 resp.extend(newdata)
                 dlen -= len(newdata)
             waiting = self.inWaiting()

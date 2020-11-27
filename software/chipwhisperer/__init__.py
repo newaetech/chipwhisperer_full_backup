@@ -9,7 +9,7 @@
 Main module for ChipWhisperer.
 """
 
-__version__ = '5.3.1'
+__version__ = '5.4.0'
 import os, os.path, time
 import warnings
 from zipfile import ZipFile
@@ -17,7 +17,7 @@ from zipfile import ZipFile
 from chipwhisperer.capture import scopes, targets
 from chipwhisperer.capture.api import programmers
 from chipwhisperer.capture import acq_patterns as key_text_patterns
-from chipwhisperer.common.utils.util import camel_case_deprecated
+from chipwhisperer.common.utils.util import camel_case_deprecated, fw_ver_compare
 from chipwhisperer.common.api import ProjectFormat as project
 from chipwhisperer.common.traces import Trace
 from chipwhisperer.common.utils import util
@@ -238,6 +238,12 @@ def target(scope, target_type=targets.SimpleSerial, **kwargs):
     """
     target = target_type()
     target.con(scope, **kwargs)
+
+    # need to check 
+    if scope and (isinstance(target, targets.SimpleSerial) or isinstance(target, targets.SimpleSerial2)):
+        if isinstance(scope, scopes.CWNano) and not fw_ver_compare(scope.fw_version, {"major": 0, "minor": 24}):
+            target.ser.cwlite_usart._max_read = 128
+            print("Limiting max read")
     return target
 
 def capture_trace(scope, target, plaintext, key=None, ack=True):
