@@ -80,6 +80,7 @@ class SimpleSerial2(TargetTemplate):
         self.last_key = bytearray(16)
         self._output_len = 16
 
+    @staticmethod
     def strerror(self, e):
         """Get string error message based on integer error e
         """
@@ -96,7 +97,8 @@ class SimpleSerial2(TargetTemplate):
         if e == SimpleSerial2_Err.ERR_FRAME_BYTE:
             return "Frame byte in expected spot"
 
-    def _calc_crc(self, buf):
+    @staticmethod
+    def _calc_crc(buf):
         """Calculate CRC (0xA6) for buf
         """
         crc = 0x00
