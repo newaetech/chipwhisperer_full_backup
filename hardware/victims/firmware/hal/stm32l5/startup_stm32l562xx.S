@@ -91,6 +91,10 @@ LoopFillZerobss:
 	bcc	FillZerobss
 
 /* Call the clock system intitialization function.*/
+/* this is dumb */
+	ldr r0, =__init_array_start
+	ldr r1, =SystemInit
+	str r1, [r0]
     bl  SystemInit
 	bl _start
 	bx lr
