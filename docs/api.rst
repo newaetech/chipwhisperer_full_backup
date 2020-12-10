@@ -186,7 +186,10 @@ OpenADC Scope
         .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.TriggerSettings.triggers
             :annotation: scope.trigger.triggers
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.TriggerSettings.module
+        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.ProTrigger.module
+            :annotation: scope.trigger.module
+
+        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.ProTrigger.aux_out
             :annotation: scope.trigger.module
 
 

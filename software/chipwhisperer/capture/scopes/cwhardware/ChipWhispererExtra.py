@@ -734,33 +734,16 @@ class ProTrigger(TriggerSettings):
 
         Available trigger modules:
          * 'basic': Trigger on a logic level or edge
-         * 'SAD':   Trigger from SAD module
-         * 'DECODEIO': Trigger from decode_IO module
-
+         * 'SAD':   Trigger from SAD module (CWPro only)
+         * 'DECODEIO': Trigger from decode_IO module (CWPro only)
 
         :Getter: Return the active trigger module
 
         :Setter: Sets the active trigger module
 
-        .. todo:: add support for CW1200 serial data trigger
-        .. todo:: Fix getter so that we don't have to store the module anymore
-
         Raises:
             ValueError: module isn't one of the available strings
         """
-        '''
-        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
-                                       Validate=False, maxResp=1)
-        module = resp[0] & 0xF8
-        if module == self.cwe.MODULE_BASIC:
-            return "basic"
-        elif module == self.cwe.MODULE_SADPATTERN:
-            return "SAD"
-        elif module == self.cwe.MODULE_DECODEIO:
-            return "DECODEIO"
-        else:
-            return "Unknown"
-        '''
         return self.last_module
 
     @module.setter
@@ -785,6 +768,8 @@ class ProTrigger(TriggerSettings):
     @property
     def aux_out(self):
         """Controls AUX out on the CWPro
+
+        CWPro only
 
         :Getter: Returns True if yes, False if no
 
