@@ -721,6 +721,7 @@ class ProTrigger(TriggerSettings):
     def _dict_repr(self):
         dict = super()._dict_repr()
         dict['module'] = self.module
+        dict['aux_out'] = self.aux_out
         return dict
 
     @property
@@ -780,6 +781,26 @@ class ProTrigger(TriggerSettings):
         resp = self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD,
                                        resp)
         self.last_module = mode
+
+    @property
+    def aux_out(self):
+        """Controls AUX out on the CWPro
+
+        :Getter: Returns True if yes, False if no
+
+        :Setter: Set True to enable aux_out, False to disable
+        """
+        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        return bool(resp[0] & 0x08)
+
+    @aux_out.setter
+    def aux_out(self, enabled):
+        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        resp[0] &= 0xE7
+        if enabled:
+            resp[0] |= 0x08
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+
 
 
 
