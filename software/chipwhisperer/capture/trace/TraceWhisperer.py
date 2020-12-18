@@ -94,7 +94,7 @@ class TraceWhisperer():
         """
         super().__init__()
         self._trace_port_width = 4
-        self.expected_verilog_defines = 102
+        self.expected_verilog_defines = 105
         self.swo_mode = False
         # Detect whether we exist on CW305 or CW610 based on the target we're given:
         if target._name == 'Simple Serial':
@@ -128,12 +128,11 @@ class TraceWhisperer():
 
 
     def reset_fpga(self):
-        """ Reset FPGA registers to defaults, use liberally to clear incorrect states (CW610 only).
+        """ Reset FPGA registers to defaults, use liberally to clear incorrect states.
+            On the CW305, this resets the full FPGA, including the Arm core.
         """
-        if self.platform == 'CW610':
-            self._fpga.sendCtrl(0x25, 0x00)
-        else:
-            logging.error('reset_fpga() is only supported on CW610 platform')
+        self.fpga_write(self.REG_RESET_REG, [1])
+        self.fpga_write(self.REG_RESET_REG, [0])
 
 
     def slurp_defines(self, defines_files=None):
@@ -204,12 +203,11 @@ class TraceWhisperer():
             logging.error('Invalid mode %s: specify "trace" or "swo"', mode)
 
 
-    def jtag_to_swd(self, board_rev=3): # TODO- board_rev=3 is temporary, for development
+    def jtag_to_swd(self):
         """Switch to SWD mode by driving the JTAG-to-SWD sequence on TMS/TCK.
         (reference: https://developer.arm.com/documentation/ka001179/1-0/)
         Args: none
         """
-        self.board_rev = board_rev
         if self.board_rev == 3:
             self.tms_bit = 0
             self.tck_bit = 2
@@ -250,7 +248,7 @@ class TraceWhisperer():
         """
         locks = self.fpga_read(self.REG_MMCM_LOCKED, 1)[0]
         assert (locks & 2) == 2, 'Trigger/UART clock not locked!'
-        if not self.swo_mode:
+        if not self.swo_mode and self.platform == 'CW610':
            assert (locks & 1) == 1, 'Trace clock not locked!'
 
 
@@ -415,7 +413,7 @@ class TraceWhisperer():
         """
         self._ss.simpleserial_write('i', b'')
         time.sleep(0.1)
-        print(self._ss.read().split('\n')[0])
+        return self._ss.read().split('\n')[0]
 
 
     def get_target_name(self):
