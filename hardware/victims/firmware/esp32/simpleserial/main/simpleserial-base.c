@@ -55,6 +55,12 @@ void app_main()
 {
 	platform_init();
 	init_uart();	
+	putch('h');
+	putch('e');
+	putch('l');
+	putch('l');
+	putch('o');
+	putch('\n');
 	trigger_setup();
 	
  	/* Uncomment this to get a HELLO message for debug */
