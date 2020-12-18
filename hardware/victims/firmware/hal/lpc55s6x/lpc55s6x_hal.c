@@ -161,7 +161,8 @@ void BOARD_InitPins(void)
     IOCON_PinMuxSet(IOCON, 0U, 30U, port0_pin30_config);
 
 
-    const uint32_t port1_pin24_config = (
+    /* Trigger/GPIO4 PIN on NAE-CW308T-LPC55S6X-02 is wired into PIO0_24 */
+    const uint32_t port0_pin24_config = (
 										 /* Standard mode, output slew rate control is enabled */
                                          IOCON_PIO_SLEW_STANDARD |
                                          /* Input function is not inverted */
@@ -170,7 +171,7 @@ void BOARD_InitPins(void)
                                          IOCON_PIO_DIGITAL_EN |
                                          /* Open drain is disabled */
                                          IOCON_PIO_OPENDRAIN_DI);
-    IOCON_PinMuxSet(IOCON, 1U, 24U, port1_pin24_config);
+    IOCON_PinMuxSet(IOCON, 0U, 24U, port0_pin24_config);
 
 
     const uint32_t port1_pin27_config = (
@@ -189,17 +190,17 @@ void BOARD_InitPins(void)
 void trigger_setup(void)
 {
     gpio_pin_config_t pinconfig = { kGPIO_DigitalOutput,  0, };
-    GPIO_PinInit(GPIO, 1, 24, &pinconfig);
+    GPIO_PinInit(GPIO, 0, 24, &pinconfig);
 }
 
 void trigger_low(void)
 {
-    GPIO_PinWrite(GPIO, 1, 24, 0);
+    GPIO_PinWrite(GPIO, 0, 24, 0);
 }
 
 void trigger_high(void)
 {
-    GPIO_PinWrite(GPIO, 1, 24, 1);
+    GPIO_PinWrite(GPIO, 0, 24, 1);
 }
 
 void HW_AES128_Init(void)
