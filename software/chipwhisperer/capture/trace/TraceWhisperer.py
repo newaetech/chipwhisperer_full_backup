@@ -122,8 +122,7 @@ class TraceWhisperer():
         self.slurp_defines(defines_files)
         # TODO- temporary for development:
         self.fpga_write(self.REG_REVERSE_TRACEDATA, [0])
-        self.fpga_write(self.REG_BOARD_REV, [3])
-        self.board_rev = 3
+        self.set_board_rev(3)
         self.set_reg('TPI_ACPR', '00000000')
 
 
@@ -201,6 +200,18 @@ class TraceWhisperer():
             logging.info("Ensure target is in SWD mode, e.g. using jtag_to_swd().")
         else:
             logging.error('Invalid mode %s: specify "trace" or "swo"', mode)
+
+
+    def set_board_rev(self, rev):
+        """For development only - the rev3 board has different pin assignments. 
+        The board revision must be set correctly both here and in the FPGA. This convenience
+        function ensures both are set properly.
+        Args: 
+            rev (int): 3 or 4
+        """
+        assert rev in [3,4]
+        self.board_rev = rev
+        self.fpga_write(self.REG_BOARD_REV, [rev])
 
 
     def jtag_to_swd(self):
