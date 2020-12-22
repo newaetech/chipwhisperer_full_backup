@@ -222,6 +222,9 @@ else ifeq ($(PLATFORM),CW308_EFM32GG11)
 else ifeq ($(PLATFORM),CW308_STM32L5)
  HAL = stm32l5
  PLTNAME = CW308T: STM32L5 Target
+else ifeq ($(PLATFORM),CW308_RX65N)
+ HAL = rx65n
+ PLTNAME = CW308T: RX65N
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
 endif
