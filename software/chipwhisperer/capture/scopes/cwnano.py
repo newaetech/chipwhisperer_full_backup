@@ -117,6 +117,8 @@ class ADCSettings(util.DisableNewAttr):
 
         self.usb.sendCtrl(self.USB_ADCLK_SET, 0, 5)
 
+    def _getCWType(self):
+        return 'cwnano'
     @property
     def clk_freq(self):
         """Set the frequency for CLKOUT. Will be rounded to nearest possible values, check results to see

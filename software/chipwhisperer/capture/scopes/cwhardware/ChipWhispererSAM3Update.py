@@ -107,8 +107,10 @@ class SAMFWLoader(object):
         computer again. The device should show up as a ChipWhisperer again.
     """
     def __init__(self, scope=None, logfunc=print):
+        self._hw_type = None
         if scope:
             self.usb = scope._getNAEUSB()
+            self._hw_type = scope._getCWType()
         if logfunc is None:
             logfunc = lambda *args, **kwargs: None
         self.logfunc = logfunc
@@ -151,7 +153,7 @@ class SAMFWLoader(object):
             Default firmware can be found at chipwhisperer/hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin""")
             self.usb.enterBootloader(True)
 
-    def program(self, port, fw_path=None, hardware_type=None):
+    def program(self, port, fw_path=None, hardware_type=None, bypass_warning=False):
         """ Program the ChipWhisperer with new firmware.
 
         Args:
@@ -171,11 +173,17 @@ class SAMFWLoader(object):
             'cw1200'
         ]
 
+
         if fw_path and hardware_type:
             raise TypeError('Only one or the other can be specified for fw_path, and hardware_type.')
 
         if not fw_path and not hardware_type:
             TypeError('Either the fw_path or the hardware_type needs to be given.')
+
+        if hardware_type and (not bypass_warning):
+            if self._hw_type and self._hw_type != hardware_type:
+                raise ValueError("ChipWhisperer hardware type mismatch (expected {}, got {}). If you're sure you have the correct hardware_type, call this again with bypass_warning=True".format(self._hw_type, hardware_type))
+
 
         if hardware_type:
             if hardware_type not in type_whitelist:

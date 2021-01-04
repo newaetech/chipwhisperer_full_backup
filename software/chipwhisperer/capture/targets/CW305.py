@@ -357,6 +357,9 @@ class CW305(TargetTemplate):
         #self.newInputData.emit(util.list2hexstr(data))
         return data
 
+    def _getCWType(self):
+        return 'cw305'
+
     @property
     def latest_fw(self):
         cw_type = self._getCWType()
