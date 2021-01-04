@@ -47,6 +47,31 @@ class SAMFWLoader(object):
     of the scope object and skip the enter_bootloader() call. Will also work
     for the CW305.
 
+    Can autoprogram if the ChipWhisperer's firmware has not already been erased.
+
+    Autoprogram Example:
+
+     #. Attach the scope part of the hardware to your computer.
+
+     #. Connect to the scope using::
+
+            import chipwhisperer as cw
+
+            # Connect to scope
+            scope = cw.scope()
+
+            # If using CW305, connect to target as well
+            # Can ignore msg about no bitstream
+            target = cw.target(None, cw.targets.CW305)
+
+    #. Call the auto_program() method::
+
+            programmer = cw.SAMFWLoader(scope=scope)
+            # if CW305
+            # programmer = cw.SAMFWLoader(scope=target)
+
+            programmer.auto_program()
+
     Example:
 
      #. Attach the scope part of the hardware to your computer.
@@ -153,6 +178,29 @@ class SAMFWLoader(object):
             Default firmware can be found at chipwhisperer/hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin""")
             self.usb.enterBootloader(True)
 
+    def auto_program(self):
+        """Erase and program firmware of ChipWhisperer
+
+        Autodetects comport and hardware type.
+        """
+        import time, serial.tools.list_ports
+        if not self._hw_type:
+            raise OSError("Unable to detect chipwhisperer hardware type")
+        before = serial.tools.list_ports.comports()
+        before = [b.device for b in before]
+        time.sleep(0.5)
+        self.enter_bootloader(True)
+        time.sleep(0.5)
+        after = serial.tools.list_ports.comports()
+        after = [a.device for a in after]
+        candidate = list(set(before) ^ set(after))
+        if len(candidate) == 0:
+            raise OSError("Could not detect COMPORT. Continue using programmer.program()")
+        com = candidate[0]
+        print("Detected com port {}".format(com))
+        self.program(com, hardware_type=self._hw_type)
+
+
     def program(self, port, fw_path=None, hardware_type=None, bypass_warning=False):
         """ Program the ChipWhisperer with new firmware.
 
@@ -160,7 +208,7 @@ class SAMFWLoader(object):
             port (str): Serial port that the ChipWhisperer bootloader is on
             fw_path (str): Path to firmware, if specified leave out hardware type.
             hardware_type (str): The type of hardware that you want to program.
-                If specified leave out fw_path. Valid types: (cwlite, )
+                If specified leave out fw_path. Valid types: (cwlite, cwnano, cw305, cw1200)
 
         Returns:
             True if programming succeeded, False if it didn't
