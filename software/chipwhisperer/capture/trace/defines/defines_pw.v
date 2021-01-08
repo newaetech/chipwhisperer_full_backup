@@ -46,6 +46,8 @@
 `define REG_RESET_REG                6'h11
 `define REG_FAST_FIFO_RD_EN          6'h12
 `define REG_TIMESTAMPS_DISABLE       6'h13
+`define REG_CAPTURE_WHILE_TRIG       6'h14
+`define REG_MAX_TIMESTAMP            6'h15
 
 
 // front end select definitions

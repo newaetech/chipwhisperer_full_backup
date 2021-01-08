@@ -94,8 +94,9 @@ class TraceWhisperer():
         """
         super().__init__()
         self._trace_port_width = 4
-        self.expected_verilog_defines = 105
+        self.expected_verilog_defines = 107
         self.swo_mode = False
+        self.board_rev = 4
         # Detect whether we exist on CW305 or CW610 based on the target we're given:
         if target._name == 'Simple Serial':
             self.platform = 'CW610'
@@ -120,10 +121,17 @@ class TraceWhisperer():
             self._naeusb = target._naeusb
 
         self.slurp_defines(defines_files)
+        self._set_defaults()
+
+
+    def _set_defaults(self):
+        """ Set some registers which for various reasons don't reset to what we want them to.
+        """
+        self.fpga_write(self.REG_CAPTURE_WHILE_TRIG, [1])
         # TODO- temporary for development:
         self.fpga_write(self.REG_REVERSE_TRACEDATA, [0])
-        self.set_board_rev(3)
-        self.set_reg('TPI_ACPR', '00000000')
+        #self.set_board_rev(3)
+        #self.set_reg('TPI_ACPR', '00000000')
 
 
     def reset_fpga(self):
@@ -132,6 +140,7 @@ class TraceWhisperer():
         """
         self.fpga_write(self.REG_RESET_REG, [1])
         self.fpga_write(self.REG_RESET_REG, [0])
+        self._set_defaults()
 
 
     def slurp_defines(self, defines_files=None):
@@ -510,9 +519,7 @@ class TraceWhisperer():
         for raw in rawdata:
             command = raw[2] & 0x3
             if command == self.FE_FIFO_CMD_DATA:
-                #hardware reports the number of cycles between events, so to
-                #obtain elapsed time we add one:
-                timecounter += raw[0] + 1
+                timecounter += raw[0]
                 data = raw[1]
                 rule = int(math.log2(data))
                 if rawtimes:
@@ -538,6 +545,7 @@ class TraceWhisperer():
     def _cycles_per_byte(self):
         """Returns number of clock cycles needed to send one byte of trace
         data over the trace port.
+        TODO: adjust for SWO!
         """
         return 8/self._trace_port_width
 
@@ -562,9 +570,7 @@ class TraceWhisperer():
         for raw in rawdata:
             command = raw[2] & 0x3
             if command == self.FE_FIFO_CMD_STAT:
-                #hardware reports the number of cycles between events, so to
-                #obtain elapsed time we add one:
-                timecounter += raw[0] + 1
+                timecounter += raw[0]
                 data = raw[1]
                 if not len(pseudoframe):
                     starttime = timecounter
