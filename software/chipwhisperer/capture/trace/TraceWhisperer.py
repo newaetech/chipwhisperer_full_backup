@@ -84,19 +84,25 @@ class TraceWhisperer():
     longsync = [255, 255, 255, 127]
     shortsync = [255, 127]
 
-    def __init__(self, target, scope=None, defines_files=None, bs='', force_bitfile=False):
+    def __init__(self, target, scope, defines_files=None, bs='', force_bitfile=False):
         """
         Args:
             target: SimpleSerial target
+            scope: CW scope
             naeusb: NewAE USB interface
             platform (string): CW305 or CW610 (PhyWhisperer)
             defines_files (list of 2 strings): path to defines_trace.v and defines_pw.v
         """
         super().__init__()
         self._trace_port_width = 4
+        self._base_target_clock = 7.384e6
+        self._base_baud = 38400
+        self._usb_clock = 96e6
+        self._uart_clock = self._usb_clock * 2
         self.expected_verilog_defines = 107
         self.swo_mode = False
         self.board_rev = 4
+        self._scope = scope
         # Detect whether we exist on CW305 or CW610 based on the target we're given:
         if target._name == 'Simple Serial':
             self.platform = 'CW610'
@@ -130,7 +136,6 @@ class TraceWhisperer():
         self.fpga_write(self.REG_CAPTURE_WHILE_TRIG, [1])
         # TODO- temporary for development:
         self.fpga_write(self.REG_REVERSE_TRACEDATA, [0])
-        #self.set_board_rev(3)
         #self.set_reg('TPI_ACPR', '00000000')
 
 
@@ -191,24 +196,55 @@ class TraceWhisperer():
         assert self.verilog_define_matches == self.expected_verilog_defines, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected %d, got %d" % (defines_file, self.expected_verilog_defines, self.verilog_define_matches)
 
 
-    def set_mode(self, mode, swo_div=8):
-        """Set trace or SWO mode.
+    def set_trace_mode(self, mode, swo_div=8, acpr=0):
+        """Set trace or SWO mode. SWO mode is only available on CW610 platform.
+        For SWO mode, we also adjust the target clock to match the SWO parameters.
         Args:
             mode (string): 'trace' or 'swo'
-            swo_div (int): number of 96 MHz clock cycles per SWO bit
+            swo_div (int): number of 96 MHz clock cycles per SWO bit (SWO mode only)
+            acpr (int): value for TPI.ACPR register (SWO mode only)
         """
         if mode == 'trace':
             self.swo_mode = False
             self.set_reg('TPI_SPPR', '00000000')
             self.fpga_write(self.REG_SWO_ENABLE, [0])
         elif mode == 'swo':
+            if self.platform == 'CW305':
+                raise ValueError('CW305 does not support SWO mode')
             self.swo_mode = True
             self.set_reg('TPI_SPPR', '00000002')
+            self.set_reg('TPI_ACPR', '%08x' % acpr)
             self.fpga_write(self.REG_SWO_BITRATE_DIV, [swo_div-1]) # not a typo: hardware requires -1
             self.fpga_write(self.REG_SWO_ENABLE, [1])
+            # Next we set the target clock and update CW baud rate accordingly:
+            new_target_clock = int(self._uart_clock / (swo_div * (acpr+1)))
+            self._scope.clock.clkgen_freq = new_target_clock
+            self._ss.baud = int(self._base_baud * (new_target_clock/self._base_target_clock))
+            self.swo_target_clock_ratio = self._usb_clock / new_target_clock
             logging.info("Ensure target is in SWD mode, e.g. using jtag_to_swd().")
         else:
             logging.error('Invalid mode %s: specify "trace" or "swo"', mode)
+
+
+    def set_capture_mode(self, mode, counts=0):
+        """Determine the duration of the trace capture.
+        Args:
+            mode (string): 'while_trig' or 'count_cycles' or 'count_writes'
+            counts (int): number of cycles (mode == 'count_cycles') or writes (mode == 'count_writes') to capture for
+                          (0 = capture until full)
+        """
+        if mode == 'while_trig':
+            self.fpga_write(self.REG_CAPTURE_WHILE_TRIG, [1])
+        elif mode == 'count_cycles':
+            self.fpga_write(self.REG_CAPTURE_WHILE_TRIG, [0])
+            self.fpga_write(self.REG_COUNT_WRITES, [0])
+            self.fpga_write(self.REG_CAPTURE_LEN, int.to_bytes(counts, length=4, byteorder='little'))
+        elif mode == 'count_writes':
+            self.fpga_write(self.REG_CAPTURE_WHILE_TRIG, [0])
+            self.fpga_write(self.REG_COUNT_WRITES, [1])
+            self.fpga_write(self.REG_CAPTURE_LEN, int.to_bytes(counts, length=4, byteorder='little'))
+        else:
+            logging.error('Invalid mode %s')
 
 
     def set_board_rev(self, rev):
@@ -505,8 +541,8 @@ class TraceWhisperer():
         Args:
             rawdata: raw capture data, list of lists, e.g. obtained from read_capture_data()
             rawtimes:
-                True: return reported times. 
-                False: roll back times to when matching trace packets started coming out
+                True: return reported times (obtained at the *end* of the pattern match)
+                False: roll back times to the *start* of the pattern match
             verbose: print timestamped rules
         Returns:
             list of [time, rule index] tuples
@@ -531,7 +567,7 @@ class TraceWhisperer():
                 lasttime = timecounter
                 lastadjust = adjust
                 if verbose:
-                    print("%8d rule # %d, delta = %d, adjust = %d" % (timecounter, rule, delta, adjust))
+                    print("%8d rule # %d, delta = %d" % (timecounter, rule, delta))
                 times.append([timecounter, rule])
             elif command == self.FE_FIFO_CMD_TIME:
                 timecounter += raw[0] + (raw[1] << 8)
@@ -544,10 +580,13 @@ class TraceWhisperer():
 
     def _cycles_per_byte(self):
         """Returns number of clock cycles needed to send one byte of trace
-        data over the trace port.
+        data over the trace or SWO port.
         TODO: adjust for SWO!
         """
-        return 8/self._trace_port_width
+        if self.swo_mode:
+            return 8
+        else:
+            return 8/self._trace_port_width
 
 
     def get_raw_trace_packets(self, rawdata, removesyncs=True, verbose=False):
