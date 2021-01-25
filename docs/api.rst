@@ -48,44 +48,44 @@ OpenADC Scope
     .. attribute:: gain
         :annotation: scope.gain
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.GainSettings.db
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.GainSettings.db
             :annotation: scope.gain.db
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.GainSettings.mode
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.GainSettings.mode
             :annotation: scope.gain.mode
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.GainSettings.gain
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.GainSettings.gain
             :annotation: scope.gain.gain
 
 
     .. attribute:: adc
         :annotation: scope.adc
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.state
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.state
             :annotation: scope.adc.state
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.stream_mode
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.stream_mode
             :annotation: scope.adc.stream_mode
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.decimate
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.decimate
             :annotation: scope.adc.decimate
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.samples
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.samples
             :annotation: scope.adc.samples
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.timeout
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.timeout
             :annotation: scope.adc.timeout
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.offset
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.offset
             :annotation: scope.adc.offset
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.presamples
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.presamples
             :annotation: scope.adc.presamples
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.basic_mode
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.basic_mode
             :annotation: scope.adc.basic_mode
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.trig_count
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.trig_count
             :annotation: scope.adc.trig_count
 
 
@@ -95,43 +95,43 @@ OpenADC Scope
     
         :annotation: scope.clock
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.adc_src
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.adc_src
             :annotation: scope.clock.adc_src
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.adc_phase
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.adc_phase
             :annotation: scope.clock.adc_phase
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.adc_freq
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.adc_freq
             :annotation: scope.clock.adc_freq
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.adc_rate
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.adc_rate
             :annotation: scope.clock.adc_rate
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.adc_locked
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.adc_locked
             :annotation: scope.clock.adc_locked
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.freq_ctr
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.freq_ctr
             :annotation: scope.clock.freq_ctr
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.freq_ctr_src
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.freq_ctr_src
             :annotation: scope.clock.freq_ctr_src
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.clkgen_src
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.clkgen_src
             :annotation: scope.clock.clkgen_src
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.extclk_freq
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.extclk_freq
             :annotation: scope.clock.extclk_freq
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.clkgen_mul
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.clkgen_mul
             :annotation: scope.clock.clkgen_mul
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.clkgen_div
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.clkgen_div
             :annotation: scope.clock.clkgen_div
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.clkgen_freq
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.clkgen_freq
             :annotation: scope.clock.clkgen_freq
 
-        .. autodata:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.clkgen_locked
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.clkgen_locked
             :annotation: scope.clock.clkgen_locked
 
         .. automethod:: chipwhisperer.capture.scopes._OpenADCInterface.ClockSettings.reset_dcms
@@ -140,56 +140,56 @@ OpenADC Scope
     .. attribute:: io
         :annotation: scope.io
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio1
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio1
             :annotation: scope.io.tio1
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio2
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio2
             :annotation: scope.io.tio2
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio3
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio3
             :annotation: scope.io.tio3
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio4
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio4
             :annotation: scope.io.tio4
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.pdid
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.pdid
             :annotation: scope.io.pdid
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.pdic
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.pdic
             :annotation: scope.io.pdic
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.nrst
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.nrst
             :annotation: scope.io.nrst
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.glitch_hp
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.glitch_hp
             :annotation: scope.io.glitch_hp
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.glitch_lp
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.glitch_lp
             :annotation: scope.io.glitch_lp
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.extclk_src
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.extclk_src
             :annotation: scope.io.extclk_src
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.hs2
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.hs2
             :annotation: scope.io.hs2
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.target_pwr
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.target_pwr
             :annotation: scope.io.target_pwr
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio_states
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio_states
             :annotation: scope.io.tio_states
 
 
     .. attribute:: trigger
         :annotation: scope.trigger
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.TriggerSettings.triggers
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.TriggerSettings.triggers
             :annotation: scope.trigger.triggers
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.ProTrigger.module
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.ProTrigger.module
             :annotation: scope.trigger.module
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.ProTrigger.aux_out
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.ProTrigger.aux_out
             :annotation: scope.trigger.module
 
 
@@ -199,37 +199,37 @@ OpenADC Scope
     
         :annotation: scope.glitch
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.clk_src
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.clk_src
             :annotation: scope.glitch.clk_src
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.width
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.width
             :annotation: scope.glitch.width
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.width_fine
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.width_fine
             :annotation: scope.glitch.width_fine
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.offset
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.offset
             :annotation: scope.glitch.offset
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.offset_fine
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.offset_fine
             :annotation: scope.glitch.offset_fine
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.trigger_src
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.trigger_src
             :annotation: scope.glitch.trigger_src
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.manual_trigger
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.manual_trigger
             :annotation: scope.glitch.manual_trigger
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.arm_timing
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.arm_timing
             :annotation: scope.glitch.arm_timing
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.ext_offset
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.ext_offset
             :annotation: scope.glitch.ext_offset
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.repeat
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.repeat
             :annotation: scope.glitch.repeat
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.output
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.output
             :annotation: scope.glitch.output
 
     .. attribute:: SAD
@@ -248,10 +248,10 @@ OpenADC Scope
             #can now capture as normal
             trace = cw.capture_trace(scope, target, text, key)
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.ChipWhispererSAD.threshold
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.ChipWhispererSAD.threshold
             :annotation: scope.SAD.threshold
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.ChipWhispererSAD.reference
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.ChipWhispererSAD.reference
             :annotation: scope.SAD.reference
 
         .. method:: SAD.start()
@@ -273,10 +273,10 @@ OpenADC Scope
             scope.decode_IO.decode_type = 'USART'
             scope.decode_IO.trigger_pattern = ['r', '\n']
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger.trigger_pattern
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger.trigger_pattern
             :annotation: scope.DecodeIO.trigger_pattern
 
-        .. autodata:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger.rx_baud
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger.rx_baud
             :annotation: scope.DecodeIO.rx_baud
 
     .. automethod:: chipwhisperer.capture.scopes.OpenADC.default_setup
@@ -317,49 +317,49 @@ ChipWhisperer Nano Scope
     .. attribute:: adc
         :annotation: scope.adc
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.ADCSettings.samples
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.ADCSettings.samples
             :annotation: scope.adc.samples
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.ADCSettings.clk_src
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.ADCSettings.clk_src
             :annotation: scope.adc.clk_src
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.ADCSettings.clk_freq
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.ADCSettings.clk_freq
             :annotation: scope.adc.clk_freq
 
     .. attribute:: io
         :annotation: scope.io
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.tio1
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.tio1
             :annotation: scope.io.tio1
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.tio2
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.tio2
             :annotation: scope.io.tio2
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.tio3
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.tio3
             :annotation: scope.io.tio3
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.tio4
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.tio4
             :annotation: scope.io.tio4
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.pdid
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.pdid
             :annotation: scope.io.pdid
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.pdic
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.pdic
             :annotation: scope.io.pdic
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.nrst
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.nrst
             :annotation: scope.io.nrst
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.clkout
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.clkout
             :annotation: scope.io.clkout
 
     .. attribute:: glitch
         :annotation: scope.glitch
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.GlitchSettings.ext_offset
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GlitchSettings.ext_offset
             :annotation: scope.glitch.ext_offset
 
-        .. autodata:: chipwhisperer.capture.scopes.cwnano.GlitchSettings.repeat
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GlitchSettings.repeat
             :annotation: scope.glitch.repeat
 
     .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.default_setup
@@ -537,31 +537,31 @@ CW305 FPGA Target
     .. attribute:: pll
         :annotation: target.pll
 
-        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outenable_set
+        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outenable_set
             :annotation: target.pll.pll_outenable_set
 
-        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outenable_get
+        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outenable_get
             :annotation: target.pll.pll_outenable_get
 
-        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outfreq_set
+        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outfreq_set
             :annotation: target.pll.pll_outfreq_set
 
-        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outfreq_get
+        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outfreq_get
             :annotation: target.pll.pll_outfreq_get
 
-        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outsource_set
+        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outsource_set
             :annotation: target.pll.pll_outsource_set
 
-        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outsource_get
+        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outsource_get
             :annotation: target.pll.pll_outsource_get
 
-        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_writedefaults
+        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_writedefaults
             :annotation: target.pll.pll_writedefaults
 
-        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outslew_set
+        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outslew_set
             :annotation: target.pll.pll_outslew_set
 
-        .. autodata:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outslew_get
+        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outslew_get
             :annotation: target.pll.pll_outslew_get
 
 .. _cw305-spi-program:
@@ -792,7 +792,7 @@ run the attack.
 
 .. automodule:: chipwhisperer.analyzer
 
-    .. autodata:: chipwhisperer.analyzer.cpa
+    .. autoattribute:: chipwhisperer.analyzer.cpa
         :annotation: cpa(proj, leak_model, algorithm=cpa_algorithms.Progressive)
 
     .. data:: leakage_models
