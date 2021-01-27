@@ -411,6 +411,8 @@ is through our SAMFWLoader class.
 
     .. automethod:: program
 
+    .. automethod:: auto_program
+
 
 .. _api-target:
 
