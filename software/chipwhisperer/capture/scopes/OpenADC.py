@@ -35,6 +35,7 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import dict_to_str, DelayedKeyboardInterrupt
 from collections import OrderedDict
 import time
+import numpy as np
 
 class OpenADC(ScopeTemplate, util.DisableNewAttr):
     """OpenADC scope object.
@@ -332,9 +333,47 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         Returns:
            Numpy array of the last capture trace.
         """
-        return self.qtadc.datapoints
+        return self.qtadc.datapoints    
 
     getLastTrace = util.camel_case_deprecated(get_last_trace)
+
+    def capture_segmented(self):
+        """Captures trace in segment mode, returns as many segments as buffer holds.
+
+        Timeouts not handled yet properly (function will lock). Be sure you are generating
+        enough triggers for segmented mode.
+
+        Returns:
+           True if capture timed out, false if it didn't.
+
+        Raises:
+           IOError: Unknown failure.
+        """
+
+        if self.adc.fifo_fill_mode != "segment":
+            raise IOError("ADC is not in 'segment' mode - aborting.")
+
+        with DelayedKeyboardInterrupt():
+            max_fifo_size = self.adc.oa.hwMaxSamples
+            #self.adc.offset should maybe be ignored - passing for now but untested
+            timeout = self.qtadc.sc.capture(self.adc.offset, self.clock.adc_freq, max_fifo_size)
+            timeout2 = self.qtadc.read(max_fifo_size-256)
+
+            return timeout or timeout2 
+
+    def get_last_trace_segmented(self):
+        """Return last trace assuming it was captued with segmented mode.
+
+        NOTE: The length of each returned trace is 1 less sample than requested.
+
+        Returns:
+            2-D numpy array of the last captured traces.
+        """
+
+        seg_len = self.adc.samples-1
+        num_seg = int(len(self.qtadc.datapoints) / seg_len)
+
+        return np.reshape(self.qtadc.datapoints[:num_seg*seg_len], (num_seg, seg_len))
 
     def _dict_repr(self):
         dict = OrderedDict()

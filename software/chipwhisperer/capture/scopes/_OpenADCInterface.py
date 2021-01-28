@@ -350,6 +350,7 @@ class TriggerSettings(util.DisableNewAttr):
         dict['samples']    = self.samples
         dict['decimate']   = self.decimate
         dict['trig_count'] = self.trig_count
+        dict['fifo_fill_mode'] = self.fifo_fill_mode
         if self._is_pro:
             dict['stream_mode'] = self.stream_mode
 
@@ -447,6 +448,13 @@ class TriggerSettings(util.DisableNewAttr):
             samples += diff
             if diff > 0:
                 logging.warning("Sakura G samples must be divisible by 12, rounding up to {}...".format(samples))
+
+        if self._get_fifo_fill_mode() == "segment":
+            diff = (3 - (samples - 1) % 3)
+            samples += diff
+            if diff > 0:
+                logging.warning("segment mode requires (samples-1) divisible by 3, rounding up to {}...".format(samples))
+
         self._cached_samples = samples
         self._set_num_samples(samples)
 
@@ -575,6 +583,86 @@ class TriggerSettings(util.DisableNewAttr):
         :Getter: Return the last trigger duration (integer)
         """
         return self._get_duration()
+
+    @property
+    def fifo_fill_mode(self):
+        """The ADC buffer fill strategy - allows segmented usage.
+
+        .. warning:: THIS REQUIRES NEW FPGA BITSTREAM - NOT YET IN THE PYTHON.
+
+        Only the 'Normal' mode is well supported, the other modes can
+        be used carefully.
+
+        There are four possible modes:
+         * "normal": Trigger line & logic work as expected.
+         * "enable": Capture starts with rising edge, but writing samples
+                     is enabled by active-high state of trigger line.
+         * "segment": Capture starts with rising edge, and writes `trigger.samples`
+                     to buffer on each rising edge, stopping when the buffer
+                     is full. For this to work adc.samples must be a multiple
+                     of 3 (will be enforced by API).
+
+        .. warning:: The "enable" and "segment" modes requires you to fill
+                    the **full buffer** (~25K on CW-Lite, ~100K on CW-Pro).
+                    This requires you to ensure the physical trigger line will
+                    be high (enable mode) or toggle (segment mode) enough. The
+                    ChipWhisperer hardware will currently stall until the
+                    internal buffer is full, and future commands will fail.
+
+        .. warning:: adc.basic_mode must be set to "rising_edge" if a fill_mode other than
+                    "normal" is used. Bad things happen if not.
+
+        :Getter: Return the current fifo fill mode (one of the 3 above strings)
+
+        :Setter: Set the fifo fill mode
+
+        Raises:
+           ValueError: if value is not one of the allowed strings
+        """
+
+        return self._get_fifo_fill_mode()
+
+    @fifo_fill_mode.setter
+    def fifo_fill_mode(self, mode):
+        known_modes = ["normal", "enable", "segment"]
+        if mode not in known_modes:
+            raise ValueError("Invalid fill mode %s. Valid modes: %s" % (mode, known_modes), mode)
+
+        self._set_fifo_fill_mode(mode)
+
+        # Segment mode requires samples have an odd divisability to work
+        if mode == "segment":
+            self.samples = self.samples
+
+    def _get_fifo_fill_mode(self):
+        result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
+        mode = result[3] & 0x30
+
+        if mode == 0x00:
+            return "normal"
+
+        if mode == 0x10:
+            return "enable"
+
+        if mode == 0x20:
+            return "segment"
+
+        return "????"
+
+    def _set_fifo_fill_mode(self, mode):
+        if mode == "normal":
+            mask = 0
+        elif mode == "enable":
+            mask = 1
+        elif mode == "segment":
+            mask = 2
+        else:
+            raise ValueError("Invalid option for fifo mode: {}".format(mask))
+
+        result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
+        result[3] &= ~(0x30)
+        result[3] |= mask << 4
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask= [0x3f, 0xff, 0xff, 0xfd])
 
     def _set_stream_mode(self, enabled):
         self._stream_mode = enabled
