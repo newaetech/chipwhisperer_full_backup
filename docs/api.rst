@@ -88,6 +88,8 @@ OpenADC Scope
         .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.trig_count
             :annotation: scope.adc.trig_count
 
+        .. autoattribute:: chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.fifo_fill_mode
+            :annotation: scope.adc.fifo_fill_mode
 
     .. attribute:: clock
     
@@ -286,6 +288,10 @@ OpenADC Scope
     .. automethod:: chipwhisperer.capture.scopes.OpenADC.capture
 
     .. automethod:: chipwhisperer.capture.scopes.OpenADC.get_last_trace
+
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.capture_segmented
+
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.get_last_trace_segmented
 
     .. method:: dis()
 
