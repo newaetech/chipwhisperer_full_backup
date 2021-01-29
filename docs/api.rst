@@ -293,6 +293,8 @@ OpenADC Scope
 
     .. automethod:: chipwhisperer.capture.scopes.OpenADC.get_last_trace_segmented
 
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.reload_fpga
+
     .. method:: dis()
 
         Disconnects the current scope object.

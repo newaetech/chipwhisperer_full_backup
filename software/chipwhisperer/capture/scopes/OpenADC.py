@@ -114,6 +114,15 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
     def sn(self):
         return self.scopetype.ser.snum
 
+    def reload_fpga(self, bitstream=None):
+        """(Re)loads a FPGA bitstream (even if already configured).
+
+        Will cause a reconnect event, all settings become default again.
+        If no bitstream specified default is used based on current
+        configuration settings.
+        """        
+        self.scopetype.reload_fpga(bitstream)
+
     def _getNAEUSB(self):
         return self.scopetype.dev._cwusb
 
