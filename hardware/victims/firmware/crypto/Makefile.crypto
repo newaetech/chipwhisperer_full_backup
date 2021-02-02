@@ -66,6 +66,9 @@ else ifeq ($(CRYPTO_TARGET),HWAES)
   CPPFLAGS += -DHWCRYPTO=1
   SRC += aes-independant.c
 
+else ifeq ($(CRYPTO_TARGET),MICROECC)
+  include $(FIRMWAREPATH)/crypto/Makefile.micro-ecc
+
 else ifeq ($(CRYPTO_TARGET),NONE)
   #Nothing to do :)
 
