@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020, NewAE Technology Inc
+# Copyright (c) 2020-2021, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -154,8 +154,6 @@ class TraceWhisperer():
         """
         self.verilog_define_matches = 0
         if not defines_files:
-            #defines_files = ['../hardware/CW305_DesignStart/hdl/defines_trace.v',
-            #                 '../hardware/phywhisperer/software/phywhisperer/firmware/defines_pw.v']
             defines_files = [pkg_resources.resource_filename('chipwhisperer', 'capture/trace/defines/defines_trace.v'),
                              pkg_resources.resource_filename('chipwhisperer', 'capture/trace/defines/defines_pw.v')]
         for i,defines_file in enumerate(defines_files):
@@ -214,7 +212,7 @@ class TraceWhisperer():
             self.swo_mode = True
             self.set_reg('TPI_SPPR', '00000002')
             self.set_reg('TPI_ACPR', '%08x' % acpr)
-            self.fpga_write(self.REG_SWO_BITRATE_DIV, [swo_div-1]) # not a typo: hardware requires -1
+            self.fpga_write(self.REG_SWO_BITRATE_DIV, [swo_div-1]) # not a typo: hardware requires -1; doing this is easier than fixing the hardware
             self.fpga_write(self.REG_SWO_ENABLE, [1])
             # Next we set the target clock and update CW baud rate accordingly:
             new_target_clock = int(self._uart_clock / (swo_div * (acpr+1)))
@@ -322,7 +320,8 @@ class TraceWhisperer():
         """Set a Cortex debug register
         Args:
             reg (string): Register to write. See self.regs for available registers.
-            data (string): 8-character hex string, value to write to COMP0 (e.g. '1000F004')
+            data (string): 8-character hex string, value to write to
+                           specified register (e.g. '1000F004')
         """
         if reg in self.regs:
             data = self.regs[reg] + data
@@ -581,7 +580,6 @@ class TraceWhisperer():
     def _cycles_per_byte(self):
         """Returns number of clock cycles needed to send one byte of trace
         data over the trace or SWO port.
-        TODO: adjust for SWO!
         """
         if self.swo_mode:
             return 8
