@@ -1,3 +1,8 @@
+???
+ New Features:
+    * Segmented memory mode allows super-fast captures (>2000 traces/second) on short operations 
+    * API to reload bitstream on ChipWhisperer for debug
+
 V5.4
   New Features:
     * AES MixColumns Attack and Variable Vector KTP (requires scared/estraces)
