@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2020, NewAE Technology Inc
+# Copyright (c) 2020-2021, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -84,16 +84,25 @@ class TraceWhisperer():
     longsync = [255, 255, 255, 127]
     shortsync = [255, 127]
 
-    def __init__(self, target, scope=None, defines_files=None, bs='', force_bitfile=False):
+    def __init__(self, target, scope, defines_files=None, bs='', force_bitfile=False):
         """
         Args:
             target: SimpleSerial target
+            scope: CW scope
             naeusb: NewAE USB interface
             platform (string): CW305 or CW610 (PhyWhisperer)
             defines_files (list of 2 strings): path to defines_trace.v and defines_pw.v
         """
         super().__init__()
         self._trace_port_width = 4
+        self._base_target_clock = 7.384e6
+        self._base_baud = 38400
+        self._usb_clock = 96e6
+        self._uart_clock = self._usb_clock * 2
+        self.expected_verilog_defines = 107
+        self.swo_mode = False
+        self.board_rev = 4
+        self._scope = scope
         # Detect whether we exist on CW305 or CW610 based on the target we're given:
         if target._name == 'Simple Serial':
             self.platform = 'CW610'
@@ -118,15 +127,25 @@ class TraceWhisperer():
             self._naeusb = target._naeusb
 
         self.slurp_defines(defines_files)
+        self._set_defaults()
+
+
+    def _set_defaults(self):
+        """ Set some registers which for various reasons don't reset to what we want them to.
+        """
+        self.fpga_write(self.REG_CAPTURE_WHILE_TRIG, [1])
+        # TODO- temporary for development:
+        self.fpga_write(self.REG_REVERSE_TRACEDATA, [0])
+        #self.set_reg('TPI_ACPR', '00000000')
 
 
     def reset_fpga(self):
-        """ Reset FPGA registers to defaults, use liberally to clear incorrect states (CW610 only).
+        """ Reset FPGA registers to defaults, use liberally to clear incorrect states.
+            On the CW305, this resets the full FPGA, including the Arm core.
         """
-        if self.platform == 'CW610':
-            self._fpga.sendCtrl(0x25, 0x00)
-        else:
-            logging.error('reset_fpga() is only supported on CW610 platform')
+        self.fpga_write(self.REG_RESET_REG, [1])
+        self.fpga_write(self.REG_RESET_REG, [0])
+        self._set_defaults()
 
 
     def slurp_defines(self, defines_files=None):
@@ -135,8 +154,6 @@ class TraceWhisperer():
         """
         self.verilog_define_matches = 0
         if not defines_files:
-            #defines_files = ['../hardware/CW305_DesignStart/hdl/defines_trace.v',
-            #                 '../hardware/phywhisperer/software/phywhisperer/firmware/defines_pw.v']
             defines_files = [pkg_resources.resource_filename('chipwhisperer', 'capture/trace/defines/defines_trace.v'),
                              pkg_resources.resource_filename('chipwhisperer', 'capture/trace/defines/defines_pw.v')]
         for i,defines_file in enumerate(defines_files):
@@ -174,7 +191,119 @@ class TraceWhisperer():
                             logging.warning("Couldn't parse line: %s", define)
             defines.close()
         # make sure everything is cool:
-        assert self.verilog_define_matches == 94, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected 94, got %d" % (defines_file, self.verilog_define_matches)
+        assert self.verilog_define_matches == self.expected_verilog_defines, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected %d, got %d" % (defines_file, self.expected_verilog_defines, self.verilog_define_matches)
+
+
+    def set_trace_mode(self, mode, swo_div=8, acpr=0):
+        """Set trace or SWO mode. SWO mode is only available on CW610 platform.
+        For SWO mode, we also adjust the target clock to match the SWO parameters.
+        Args:
+            mode (string): 'trace' or 'swo'
+            swo_div (int): number of 96 MHz clock cycles per SWO bit (SWO mode only)
+            acpr (int): value for TPI.ACPR register (SWO mode only)
+        """
+        if mode == 'trace':
+            self.swo_mode = False
+            self.set_reg('TPI_SPPR', '00000000')
+            self.fpga_write(self.REG_SWO_ENABLE, [0])
+        elif mode == 'swo':
+            if self.platform == 'CW305':
+                raise ValueError('CW305 does not support SWO mode')
+            self.swo_mode = True
+            self.set_reg('TPI_SPPR', '00000002')
+            self.set_reg('TPI_ACPR', '%08x' % acpr)
+            self.fpga_write(self.REG_SWO_BITRATE_DIV, [swo_div-1]) # not a typo: hardware requires -1; doing this is easier than fixing the hardware
+            self.fpga_write(self.REG_SWO_ENABLE, [1])
+            # Next we set the target clock and update CW baud rate accordingly:
+            new_target_clock = int(self._uart_clock / (swo_div * (acpr+1)))
+            self._scope.clock.clkgen_freq = new_target_clock
+            self._ss.baud = int(self._base_baud * (new_target_clock/self._base_target_clock))
+            self.swo_target_clock_ratio = self._usb_clock / new_target_clock
+            logging.info("Ensure target is in SWD mode, e.g. using jtag_to_swd().")
+        else:
+            logging.error('Invalid mode %s: specify "trace" or "swo"', mode)
+
+
+    def set_capture_mode(self, mode, counts=0):
+        """Determine the duration of the trace capture.
+        Args:
+            mode (string): 'while_trig' or 'count_cycles' or 'count_writes'
+            counts (int): number of cycles (mode == 'count_cycles') or writes (mode == 'count_writes') to capture for
+                          (0 = capture until full)
+        """
+        if mode == 'while_trig':
+            self.fpga_write(self.REG_CAPTURE_WHILE_TRIG, [1])
+        elif mode == 'count_cycles':
+            self.fpga_write(self.REG_CAPTURE_WHILE_TRIG, [0])
+            self.fpga_write(self.REG_COUNT_WRITES, [0])
+            self.fpga_write(self.REG_CAPTURE_LEN, int.to_bytes(counts, length=4, byteorder='little'))
+        elif mode == 'count_writes':
+            self.fpga_write(self.REG_CAPTURE_WHILE_TRIG, [0])
+            self.fpga_write(self.REG_COUNT_WRITES, [1])
+            self.fpga_write(self.REG_CAPTURE_LEN, int.to_bytes(counts, length=4, byteorder='little'))
+        else:
+            logging.error('Invalid mode %s')
+
+
+    def set_board_rev(self, rev):
+        """For development only - the rev3 board has different pin assignments. 
+        The board revision must be set correctly both here and in the FPGA. This convenience
+        function ensures both are set properly.
+        Args: 
+            rev (int): 3 or 4
+        """
+        assert rev in [3,4]
+        self.board_rev = rev
+        self.fpga_write(self.REG_BOARD_REV, [rev])
+
+
+    def jtag_to_swd(self):
+        """Switch to SWD mode by driving the JTAG-to-SWD sequence on TMS/TCK.
+        (reference: https://developer.arm.com/documentation/ka001179/1-0/)
+        Args: none
+        """
+        if self.board_rev == 3:
+            self.tms_bit = 0
+            self.tck_bit = 2
+        elif self.board_rev == 4:
+            self.tms_bit = 0
+            self.tck_bit = 1
+        self.fpga_write(self.REG_USERIO_PWDRIVEN, [(1<<self.tms_bit) + (1<<self.tck_bit)])
+        self.fpga_write(self.REG_USERIO_DATA, [1<<self.tms_bit])
+        self._line_reset()
+        self._send_tms_byte(0x9e)
+        self._send_tms_byte(0xe7)
+        self._line_reset()
+        self.fpga_write(self.REG_USERIO_DATA, [1<<self.tms_bit])
+        self.fpga_write(self.REG_USERIO_PWDRIVEN, [0])
+
+
+    def _send_tms_byte(self, data):
+        """Bit-bang 8 bits of data on TMS/TCK (LSB first).
+        Args: 
+            data (int): 8 bits data to send.
+        """
+        for i in range(8):
+            bit = (data & 2**i) >> i
+            self.fpga_write(self.REG_USERIO_DATA, [bit<<self.tms_bit])
+            self.fpga_write(self.REG_USERIO_DATA, [(1<<self.tck_bit) + (bit<<self.tms_bit)])
+
+
+    def _line_reset(self, num_bytes=8):
+        """Bit-bang a line reset on TMS/TCK.
+        Args: none
+        """
+        for i in range(num_bytes): self._send_tms_byte(0xff)
+
+
+    def check_clocks(self):
+        """Check that PLLs are locked.
+        Args: none
+        """
+        locks = self.fpga_read(self.REG_MMCM_LOCKED, 1)[0]
+        assert (locks & 2) == 2, 'Trigger/UART clock not locked!'
+        if not self.swo_mode and self.platform == 'CW610':
+           assert (locks & 1) == 1, 'Trace clock not locked!'
 
 
     def simpleserial_write(self, cmd, data, printresult=False):
@@ -191,7 +320,8 @@ class TraceWhisperer():
         """Set a Cortex debug register
         Args:
             reg (string): Register to write. See self.regs for available registers.
-            data (string): 8-character hex string, value to write to COMP0 (e.g. '1000F004')
+            data (string): 8-character hex string, value to write to
+                           specified register (e.g. '1000F004')
         """
         if reg in self.regs:
             data = self.regs[reg] + data
@@ -239,9 +369,10 @@ class TraceWhisperer():
 
 
     def arm_trace(self):
-        """Arms trace sniffer for capture.
+        """Arms trace sniffer for capture; also checks sync status.
         """
         self.fpga_write(self.REG_ARM, [1])
+        self.synced()
 
 
     def synced(self):
@@ -257,7 +388,6 @@ class TraceWhisperer():
         setup/hold violations (clock edge too close to data edge).
         """
         self.fpga_write(self.REG_TRACE_RESET_SYNC, [1])
-        self.fpga_write(self.REG_TRACE_RESET_SYNC, [0])
         self.synced()
 
 
@@ -338,7 +468,7 @@ class TraceWhisperer():
         """
         self._ss.simpleserial_write('i', b'')
         time.sleep(0.1)
-        print(self._ss.read().split('\n')[0])
+        return self._ss.read().split('\n')[0]
 
 
     def get_target_name(self):
@@ -410,8 +540,8 @@ class TraceWhisperer():
         Args:
             rawdata: raw capture data, list of lists, e.g. obtained from read_capture_data()
             rawtimes:
-                True: return reported times. 
-                False: roll back times to when matching trace packets started coming out
+                True: return reported times (obtained at the *end* of the pattern match)
+                False: roll back times to the *start* of the pattern match
             verbose: print timestamped rules
         Returns:
             list of [time, rule index] tuples
@@ -424,9 +554,7 @@ class TraceWhisperer():
         for raw in rawdata:
             command = raw[2] & 0x3
             if command == self.FE_FIFO_CMD_DATA:
-                #hardware reports the number of cycles between events, so to
-                #obtain elapsed time we add one:
-                timecounter += raw[0] + 1
+                timecounter += raw[0]
                 data = raw[1]
                 rule = int(math.log2(data))
                 if rawtimes:
@@ -438,7 +566,7 @@ class TraceWhisperer():
                 lasttime = timecounter
                 lastadjust = adjust
                 if verbose:
-                    print("%8d rule # %d, delta = %d, adjust = %d" % (timecounter, rule, delta, adjust))
+                    print("%8d rule # %d, delta = %d" % (timecounter, rule, delta))
                 times.append([timecounter, rule])
             elif command == self.FE_FIFO_CMD_TIME:
                 timecounter += raw[0] + (raw[1] << 8)
@@ -451,9 +579,12 @@ class TraceWhisperer():
 
     def _cycles_per_byte(self):
         """Returns number of clock cycles needed to send one byte of trace
-        data over the trace port.
+        data over the trace or SWO port.
         """
-        return 8/self._trace_port_width
+        if self.swo_mode:
+            return 8
+        else:
+            return 8/self._trace_port_width
 
 
     def get_raw_trace_packets(self, rawdata, removesyncs=True, verbose=False):
@@ -476,9 +607,7 @@ class TraceWhisperer():
         for raw in rawdata:
             command = raw[2] & 0x3
             if command == self.FE_FIFO_CMD_STAT:
-                #hardware reports the number of cycles between events, so to
-                #obtain elapsed time we add one:
-                timecounter += raw[0] + 1
+                timecounter += raw[0]
                 data = raw[1]
                 if not len(pseudoframe):
                     starttime = timecounter

@@ -57,6 +57,13 @@
 `define REG_RECORD_SYNCS        6'h1e
 `define REG_MATCHED_DATA        6'h1f
 
+`define REG_SWO_ENABLE          6'h20
+`define REG_SWO_BITRATE_DIV     6'h21
+`define REG_UART_STOP_BITS      6'h22
+`define REG_UART_DATA_BITS      6'h23
+
+`define REG_REVERSE_TRACEDATA   6'h24
+
 // FIFO bitfields:
 //                   31 30 29 28 27 26 25 24   23 22 21 20 19 18 17 16   15 14 13 12 11 10  9  8   7  6  5  4  3  2  1  0
 //                 +------------------------++------------------+-----++------------------------++------------------------+
