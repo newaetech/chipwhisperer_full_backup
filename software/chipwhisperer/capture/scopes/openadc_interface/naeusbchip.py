@@ -21,11 +21,14 @@
 import logging
 import sys
 import traceback
+import time
+import os.path
 # import chipwhisperer.capture.scopes._qt as openadc_qt
 from .. import _qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.common.utils.util import DictType, camel_case_deprecated
+
 
 try:
     from chipwhisperer.capture.scopes.cwhardware import ChipWhispererLite as CWL
@@ -100,6 +103,32 @@ class OpenADCInterface_NAEUSBChip(object):
                 self.dev.usbdev().close()
                 raise
             self.ser = self.dev.usbdev()
+
+        try:
+            self.scope.con(self.ser)
+            logging.info('OpenADC Found, Connecting')
+        except IOError as e:
+            exctype, value = sys.exc_info()[:2]
+            raise IOError("OpenADC: " + (str(exctype) + str(value)))
+
+    def reload_fpga(self, bitstream):
+
+        if bitstream is None:
+            raise NotImplementedError("Oops I forgot about that")
+        
+        bsdate = time.ctime(os.path.getmtime(bitstream))
+        logging.debug("FPGA: Using file %s"%bitstream)
+        logging.debug("FPGA: File modification date %s"%bsdate)
+
+        bsdata = open(bitstream, "rb")
+
+        try:
+            self.dev.fpga.FPGAProgram(bsdata)
+        except:
+            self.dev.dis()
+            self.dev.usbdev().close()
+            raise
+        self.ser = self.dev.usbdev()
 
         try:
             self.scope.con(self.ser)

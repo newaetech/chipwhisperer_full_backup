@@ -1,0 +1,888 @@
+Archive member included to satisfy reference by file (symbol)
+
+c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-errno.o)
+                              objdir/stm32f3_sysmem.o (__errno)
+c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o)
+                              c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o (exit)
+c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+                              c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o) (_global_impure_ptr)
+c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+                              c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o (__libc_init_array)
+c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-memset.o)
+                              c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o (memset)
+c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libnosys.a(_exit.o)
+                              c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o) (_exit)
+
+Allocating common symbols
+Common symbol       size              file
+
+pcsamp_enable       0x1               objdir/simpleserial-ecc.o
+Q                   0x40              objdir/simpleserial-ecc.o
+UartHandle          0x70              objdir/stm32f3_hal.o
+P                   0x40              objdir/simpleserial-ecc.o
+
+Discarded input sections
+
+ .text          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crti.o
+ .data          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crti.o
+ .bss           0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crti.o
+ .data          0x00000000        0x4 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+ .text          0x00000000       0x74 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+ .data          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+ .bss           0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+ .ARM.extab     0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+ .ARM.exidx     0x00000000        0x8 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+ .ARM.attributes
+                0x00000000       0x1c c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+ .text          0x00000000        0x0 objdir/simpleserial-ecc.o
+ .data          0x00000000        0x0 objdir/simpleserial-ecc.o
+ .bss           0x00000000        0x4 objdir/simpleserial-ecc.o
+ .text.HMAC_init
+                0x00000000       0x46 objdir/simpleserial-ecc.o
+ .text.HMAC_update
+                0x00000000        0x4 objdir/simpleserial-ecc.o
+ .text.HMAC_finish
+                0x00000000       0x62 objdir/simpleserial-ecc.o
+ .text.update_V
+                0x00000000       0x24 objdir/simpleserial-ecc.o
+ .text.uECC_set_rng
+                0x00000000        0xc objdir/simpleserial-ecc.o
+ .text.uECC_get_rng
+                0x00000000        0xc objdir/simpleserial-ecc.o
+ .text.uECC_curve_private_key_size
+                0x00000000        0xe objdir/simpleserial-ecc.o
+ .text.uECC_curve_public_key_size
+                0x00000000        0x8 objdir/simpleserial-ecc.o
+ .text.uECC_vli_equal
+                0x00000000       0x24 objdir/simpleserial-ecc.o
+ .text.uECC_vli_cmp
+                0x00000000       0x32 objdir/simpleserial-ecc.o
+ .text.uECC_vli_square
+                0x00000000        0x8 objdir/simpleserial-ecc.o
+ .text.uECC_vli_mmod
+                0x00000000      0x134 objdir/simpleserial-ecc.o
+ .text.uECC_vli_modMult
+                0x00000000       0x22 objdir/simpleserial-ecc.o
+ .text.uECC_vli_modSquare
+                0x00000000       0x12 objdir/simpleserial-ecc.o
+ .text.EccPoint_compute_public_key
+                0x00000000       0x54 objdir/simpleserial-ecc.o
+ .text.uECC_secp256r1
+                0x00000000        0x8 objdir/simpleserial-ecc.o
+ .text.uECC_vli_nativeToBytes
+                0x00000000       0x28 objdir/simpleserial-ecc.o
+ .text.uECC_vli_bytesToNative
+                0x00000000       0x40 objdir/simpleserial-ecc.o
+ .text.bits2int
+                0x00000000       0x86 objdir/simpleserial-ecc.o
+ .text.uECC_generate_random_int
+                0x00000000       0x74 objdir/simpleserial-ecc.o
+ .text.uECC_sign_with_k
+                0x00000000      0x17c objdir/simpleserial-ecc.o
+ .text.uECC_make_key
+                0x00000000       0x7c objdir/simpleserial-ecc.o
+ .text.uECC_shared_secret
+                0x00000000       0xbc objdir/simpleserial-ecc.o
+ .text.uECC_compress
+                0x00000000       0x2c objdir/simpleserial-ecc.o
+ .text.uECC_decompress
+                0x00000000       0x70 objdir/simpleserial-ecc.o
+ .text.uECC_valid_point
+                0x00000000       0x6a objdir/simpleserial-ecc.o
+ .text.uECC_valid_public_key
+                0x00000000       0x32 objdir/simpleserial-ecc.o
+ .text.uECC_compute_public_key
+                0x00000000       0x7e objdir/simpleserial-ecc.o
+ .text.uECC_sign
+                0x00000000       0x52 objdir/simpleserial-ecc.o
+ .text.uECC_sign_deterministic
+                0x00000000      0x192 objdir/simpleserial-ecc.o
+ .text.uECC_verify
+                0x00000000      0x2d2 objdir/simpleserial-ecc.o
+ .text.uECC_curve_num_words
+                0x00000000        0x6 objdir/simpleserial-ecc.o
+ .text.uECC_curve_num_bytes
+                0x00000000        0x6 objdir/simpleserial-ecc.o
+ .text.uECC_curve_num_bits
+                0x00000000        0x8 objdir/simpleserial-ecc.o
+ .text.uECC_curve_num_n_words
+                0x00000000        0xe objdir/simpleserial-ecc.o
+ .text.uECC_curve_num_n_bytes
+                0x00000000        0xe objdir/simpleserial-ecc.o
+ .text.uECC_curve_num_n_bits
+                0x00000000        0x6 objdir/simpleserial-ecc.o
+ .text.uECC_curve_p
+                0x00000000        0x4 objdir/simpleserial-ecc.o
+ .text.uECC_curve_n
+                0x00000000        0x4 objdir/simpleserial-ecc.o
+ .text.uECC_curve_G
+                0x00000000        0x4 objdir/simpleserial-ecc.o
+ .text.uECC_curve_b
+                0x00000000        0x4 objdir/simpleserial-ecc.o
+ .text.uECC_vli_mod_sqrt
+                0x00000000        0x6 objdir/simpleserial-ecc.o
+ .text.uECC_vli_mmod_fast
+                0x00000000        0x6 objdir/simpleserial-ecc.o
+ .text          0x00000000        0x0 objdir/simpleserial.o
+ .data          0x00000000        0x0 objdir/simpleserial.o
+ .text          0x00000000        0x0 objdir/stm32f3_hal.o
+ .data          0x00000000        0x0 objdir/stm32f3_hal.o
+ .bss           0x00000000        0x0 objdir/stm32f3_hal.o
+ .text.change_err_led
+                0x00000000       0x18 objdir/stm32f3_hal.o
+ .text.change_ok_led
+                0x00000000       0x18 objdir/stm32f3_hal.o
+ .text          0x00000000        0x0 objdir/stm32f3_hal_lowlevel.o
+ .data          0x00000000        0x4 objdir/stm32f3_hal_lowlevel.o
+ .text.HAL_NVIC_SetPriority
+                0x00000000       0x68 objdir/stm32f3_hal_lowlevel.o
+ .text.HAL_InitTick
+                0x00000000        0xc objdir/stm32f3_hal_lowlevel.o
+ .text.HAL_IncTick
+                0x00000000        0x2 objdir/stm32f3_hal_lowlevel.o
+ .text.HAL_RCC_GetSysClockFreq
+                0x00000000        0x6 objdir/stm32f3_hal_lowlevel.o
+ .text.HAL_RCC_GetPCLK1Freq
+                0x00000000        0x6 objdir/stm32f3_hal_lowlevel.o
+ .text.HAL_RCC_GetPCLK2Freq
+                0x00000000        0x6 objdir/stm32f3_hal_lowlevel.o
+ .text          0x00000000        0x0 objdir/stm32f3_sysmem.o
+ .data          0x00000000        0x0 objdir/stm32f3_sysmem.o
+ .bss           0x00000000        0x4 objdir/stm32f3_sysmem.o
+ .text._sbrk    0x00000000       0x34 objdir/stm32f3_sysmem.o
+ .debug_info    0x00000000      0xa2d objdir/stm32f3_sysmem.o
+ .debug_abbrev  0x00000000      0x201 objdir/stm32f3_sysmem.o
+ .debug_loc     0x00000000       0x6a objdir/stm32f3_sysmem.o
+ .debug_aranges
+                0x00000000       0x20 objdir/stm32f3_sysmem.o
+ .debug_ranges  0x00000000       0x10 objdir/stm32f3_sysmem.o
+ .debug_line    0x00000000      0x15b objdir/stm32f3_sysmem.o
+ .debug_str     0x00000000      0x605 objdir/stm32f3_sysmem.o
+ .comment       0x00000000       0x80 objdir/stm32f3_sysmem.o
+ .debug_frame   0x00000000       0x2c objdir/stm32f3_sysmem.o
+ .ARM.attributes
+                0x00000000       0x33 objdir/stm32f3_sysmem.o
+ .text          0x00000000       0x14 objdir/stm32f3_startup.o
+ .data          0x00000000        0x0 objdir/stm32f3_startup.o
+ .bss           0x00000000        0x0 objdir/stm32f3_startup.o
+ .text          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-errno.o)
+ .data          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-errno.o)
+ .bss           0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-errno.o)
+ .text.__errno  0x00000000        0xc c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-errno.o)
+ .debug_frame   0x00000000       0x20 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-errno.o)
+ .ARM.attributes
+                0x00000000       0x2e c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-errno.o)
+ .text          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o)
+ .data          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o)
+ .bss           0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o)
+ .text.exit     0x00000000       0x28 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o)
+ .debug_frame   0x00000000       0x28 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o)
+ .ARM.attributes
+                0x00000000       0x2e c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o)
+ .text          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+ .data          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+ .bss           0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+ .data._impure_ptr
+                0x00000000        0x4 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+ .data.impure_data
+                0x00000000       0x60 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+ .rodata._global_impure_ptr
+                0x00000000        0x4 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+ .ARM.attributes
+                0x00000000       0x2e c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+ .text          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+ .data          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+ .bss           0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+ .text          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-memset.o)
+ .data          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-memset.o)
+ .bss           0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-memset.o)
+ .text          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libnosys.a(_exit.o)
+ .data          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libnosys.a(_exit.o)
+ .bss           0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libnosys.a(_exit.o)
+ .text._exit    0x00000000        0x4 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libnosys.a(_exit.o)
+ .debug_frame   0x00000000       0x20 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libnosys.a(_exit.o)
+ .ARM.attributes
+                0x00000000       0x2e c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libnosys.a(_exit.o)
+ .text          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtend.o
+ .data          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtend.o
+ .bss           0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtend.o
+ .eh_frame      0x00000000        0x4 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtend.o
+ .ARM.attributes
+                0x00000000       0x2e c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtend.o
+ .text          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtn.o
+ .data          0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtn.o
+ .bss           0x00000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtn.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+RAM              0x20000000         0x00003000         xrw
+ROM              0x08000000         0x00010000         xr
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crti.o
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+LOAD objdir/simpleserial-ecc.o
+LOAD objdir/simpleserial.o
+LOAD objdir/stm32f3_hal.o
+LOAD objdir/stm32f3_hal_lowlevel.o
+LOAD objdir/stm32f3_sysmem.o
+LOAD objdir/stm32f3_startup.o
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libm.a
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libm.a
+START GROUP
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m\libgcc.a
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libc_nano.a
+END GROUP
+START GROUP
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m\libgcc.a
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libc_nano.a
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libnosys.a
+END GROUP
+START GROUP
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m\libgcc.a
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libc_nano.a
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libnosys.a
+END GROUP
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtend.o
+LOAD c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtn.o
+                0x20003000                _estack = 0x20003000
+                0x00000000                _Min_Heap_Size = 0x0
+                0x00000400                _Min_Stack_Size = 0x400
+
+.isr_vector     0x08000000      0x188
+                0x08000000                . = ALIGN (0x4)
+ *(.isr_vector)
+ .isr_vector    0x08000000      0x188 objdir/stm32f3_startup.o
+                0x08000000                g_pfnVectors
+                0x08000188                . = ALIGN (0x4)
+
+.text           0x08000188     0x2348
+                0x08000188                . = ALIGN (0x4)
+ *(.text)
+ .text          0x08000188       0x40 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+ *(.text*)
+ .text.uECC_vli_cmp_unsafe
+                0x080001c8       0x2a objdir/simpleserial-ecc.o
+ *fill*         0x080001f2        0x2 
+ .text.setreg   0x080001f4       0xe0 objdir/simpleserial-ecc.o
+                0x080001f4                setreg
+ .text.set_px   0x080002d4       0x38 objdir/simpleserial-ecc.o
+                0x080002d4                set_px
+ .text.set_py   0x0800030c       0x38 objdir/simpleserial-ecc.o
+                0x0800030c                set_py
+ .text.reset    0x08000344        0x4 objdir/simpleserial-ecc.o
+                0x08000344                reset
+ .text.getreg   0x08000348       0xb4 objdir/simpleserial-ecc.o
+                0x08000348                getreg
+ .text.set_pcsample_params
+                0x080003fc       0x50 objdir/simpleserial-ecc.o
+                0x080003fc                set_pcsample_params
+ .text.get_qx   0x0800044c       0x3c objdir/simpleserial-ecc.o
+                0x0800044c                get_qx
+ .text.get_qy   0x08000488       0x3c objdir/simpleserial-ecc.o
+                0x08000488                get_qy
+ .text.uECC_vli_add
+                0x080004c4       0x4a objdir/simpleserial-ecc.o
+                0x080004c4                uECC_vli_add
+ .text.uECC_vli_sub
+                0x0800050e       0x4e objdir/simpleserial-ecc.o
+                0x0800050e                uECC_vli_sub
+ .text.uECC_vli_mult
+                0x0800055c      0x212 objdir/simpleserial-ecc.o
+                0x0800055c                uECC_vli_mult
+ .text.uECC_vli_clear
+                0x0800076e       0x16 objdir/simpleserial-ecc.o
+                0x0800076e                uECC_vli_clear
+ .text.uECC_vli_isZero
+                0x08000784       0x1e objdir/simpleserial-ecc.o
+                0x08000784                uECC_vli_isZero
+ .text.uECC_vli_testBit
+                0x080007a2       0x14 objdir/simpleserial-ecc.o
+                0x080007a2                uECC_vli_testBit
+ .text.regularize_k
+                0x080007b6       0x58 objdir/simpleserial-ecc.o
+ .text.uECC_vli_numBits
+                0x0800080e       0x3e objdir/simpleserial-ecc.o
+                0x0800080e                uECC_vli_numBits
+ .text.uECC_vli_set
+                0x0800084c       0x18 objdir/simpleserial-ecc.o
+                0x0800084c                uECC_vli_set
+ .text.vli_mmod_fast_secp256r1
+                0x08000864      0x1ac objdir/simpleserial-ecc.o
+ .text.uECC_vli_rshift1
+                0x08000a10       0x1a objdir/simpleserial-ecc.o
+                0x08000a10                uECC_vli_rshift1
+ .text.vli_modInv_update
+                0x08000a2a       0x38 objdir/simpleserial-ecc.o
+ .text.uECC_vli_modAdd
+                0x08000a62       0x32 objdir/simpleserial-ecc.o
+                0x08000a62                uECC_vli_modAdd
+ .text.uECC_vli_modSub
+                0x08000a94       0x24 objdir/simpleserial-ecc.o
+                0x08000a94                uECC_vli_modSub
+ .text.uECC_vli_modMult_fast
+                0x08000ab8       0x20 objdir/simpleserial-ecc.o
+                0x08000ab8                uECC_vli_modMult_fast
+ .text.uECC_vli_modSquare_fast
+                0x08000ad8        0x8 objdir/simpleserial-ecc.o
+                0x08000ad8                uECC_vli_modSquare_fast
+ .text.x_side_default
+                0x08000ae0       0x62 objdir/simpleserial-ecc.o
+ .text.mod_sqrt_default
+                0x08000b42       0x76 objdir/simpleserial-ecc.o
+ .text.double_jacobian_default
+                0x08000bb8      0x152 objdir/simpleserial-ecc.o
+ .text.XYcZ_addC
+                0x08000d0a      0x118 objdir/simpleserial-ecc.o
+ .text.XYcZ_add
+                0x08000e22       0xca objdir/simpleserial-ecc.o
+ .text.apply_z  0x08000eec       0x3e objdir/simpleserial-ecc.o
+ .text.uECC_vli_modInv
+                0x08000f2a      0x106 objdir/simpleserial-ecc.o
+                0x08000f2a                uECC_vli_modInv
+ .text.EccPoint_mult
+                0x08001030      0x19e objdir/simpleserial-ecc.o
+ .text.uECC_point_mult
+                0x080011ce       0x40 objdir/simpleserial-ecc.o
+                0x080011ce                uECC_point_mult
+ *fill*         0x0800120e        0x2 
+ .text.enable_trace
+                0x08001210       0xc4 objdir/simpleserial-ecc.o
+                0x08001210                enable_trace
+ .text.reenable_trace
+                0x080012d4        0xa objdir/simpleserial-ecc.o
+                0x080012d4                reenable_trace
+ *fill*         0x080012de        0x2 
+ .text.trigger_high_pcsamp
+                0x080012e0       0x20 objdir/simpleserial-ecc.o
+                0x080012e0                trigger_high_pcsamp
+ .text.trigger_low_pcsamp
+                0x08001300       0x18 objdir/simpleserial-ecc.o
+                0x08001300                trigger_low_pcsamp
+ .text.run_pmul
+                0x08001318       0x54 objdir/simpleserial-ecc.o
+                0x08001318                run_pmul
+ .text.run_pmul_fixed
+                0x0800136c       0x50 objdir/simpleserial-ecc.o
+                0x0800136c                run_pmul_fixed
+ .text.print    0x080013bc       0x12 objdir/simpleserial-ecc.o
+                0x080013bc                print
+ *fill*         0x080013ce        0x2 
+ .text.info     0x080013d0       0x38 objdir/simpleserial-ecc.o
+                0x080013d0                info
+ .text.startup.main
+                0x08001408       0xc4 objdir/simpleserial-ecc.o
+                0x08001408                main
+ .text.check_version
+                0x080014cc        0x4 objdir/simpleserial.o
+                0x080014cc                check_version
+ .text.hex_decode
+                0x080014d0       0x76 objdir/simpleserial.o
+                0x080014d0                hex_decode
+ *fill*         0x08001546        0x2 
+ .text.simpleserial_addcmd
+                0x08001548       0x2c objdir/simpleserial.o
+                0x08001548                simpleserial_addcmd
+ .text.simpleserial_init
+                0x08001574       0x10 objdir/simpleserial.o
+                0x08001574                simpleserial_init
+ .text.simpleserial_put
+                0x08001584       0x3c objdir/simpleserial.o
+                0x08001584                simpleserial_put
+ .text.simpleserial_get
+                0x080015c0       0x8c objdir/simpleserial.o
+                0x080015c0                simpleserial_get
+ .text.platform_init
+                0x0800164c       0x80 objdir/stm32f3_hal.o
+                0x0800164c                platform_init
+ .text.init_uart
+                0x080016cc       0x7c objdir/stm32f3_hal.o
+                0x080016cc                init_uart
+ .text.trigger_setup
+                0x08001748       0x48 objdir/stm32f3_hal.o
+                0x08001748                trigger_setup
+ .text.trigger_high
+                0x08001790        0xe objdir/stm32f3_hal.o
+                0x08001790                trigger_high
+ .text.trigger_low
+                0x0800179e        0xe objdir/stm32f3_hal.o
+                0x0800179e                trigger_low
+ .text.getch    0x080017ac       0x24 objdir/stm32f3_hal.o
+                0x080017ac                getch
+ .text.putch    0x080017d0       0x20 objdir/stm32f3_hal.o
+                0x080017d0                putch
+ .text.HAL_GetTick
+                0x080017f0       0x10 objdir/stm32f3_hal_lowlevel.o
+                0x080017f0                HAL_GetTick
+ .text.HAL_RCC_OscConfig
+                0x08001800      0x4d4 objdir/stm32f3_hal_lowlevel.o
+                0x08001800                HAL_RCC_OscConfig
+ .text.HAL_RCC_ClockConfig
+                0x08001cd4      0x14c objdir/stm32f3_hal_lowlevel.o
+                0x08001cd4                HAL_RCC_ClockConfig
+ .text.HAL_GPIO_Init
+                0x08001e20      0x184 objdir/stm32f3_hal_lowlevel.o
+                0x08001e20                HAL_GPIO_Init
+ .text.HAL_GPIO_WritePin
+                0x08001fa4        0xa objdir/stm32f3_hal_lowlevel.o
+                0x08001fa4                HAL_GPIO_WritePin
+ *fill*         0x08001fae        0x2 
+ .text.UART_SetConfig
+                0x08001fb0      0x1cc objdir/stm32f3_hal_lowlevel.o
+                0x08001fb0                UART_SetConfig
+ .text.UART_WaitOnFlagUntilTimeout
+                0x0800217c       0x58 objdir/stm32f3_hal_lowlevel.o
+                0x0800217c                UART_WaitOnFlagUntilTimeout
+ .text.UART_CheckIdleState
+                0x080021d4       0x64 objdir/stm32f3_hal_lowlevel.o
+                0x080021d4                UART_CheckIdleState
+ .text.HAL_UART_Init
+                0x08002238       0x56 objdir/stm32f3_hal_lowlevel.o
+                0x08002238                HAL_UART_Init
+ .text.HAL_UART_Transmit
+                0x0800228e       0xae objdir/stm32f3_hal_lowlevel.o
+                0x0800228e                HAL_UART_Transmit
+ .text.HAL_UART_Receive
+                0x0800233c       0xd8 objdir/stm32f3_hal_lowlevel.o
+                0x0800233c                HAL_UART_Receive
+ .text.Reset_Handler
+                0x08002414       0x48 objdir/stm32f3_startup.o
+                0x08002414                Reset_Handler
+ .text.Default_Handler
+                0x0800245c        0x2 objdir/stm32f3_startup.o
+                0x0800245c                DebugMon_Handler
+                0x0800245c                HardFault_Handler
+                0x0800245c                SysTick_Handler
+                0x0800245c                PendSV_Handler
+                0x0800245c                NMI_Handler
+                0x0800245c                UsageFault_Handler
+                0x0800245c                Default_Handler
+                0x0800245c                MemManage_Handler
+                0x0800245c                SVC_Handler
+                0x0800245c                BusFault_Handler
+ *fill*         0x0800245e        0x2 
+ .text.__libc_init_array
+                0x08002460       0x48 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+                0x08002460                __libc_init_array
+ .text.memset   0x080024a8       0x10 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-memset.o)
+                0x080024a8                memset
+ *(.glue_7)
+ .glue_7        0x080024b8        0x0 linker stubs
+ *(.glue_7t)
+ .glue_7t       0x080024b8        0x0 linker stubs
+ *(.eh_frame)
+ .eh_frame      0x080024b8        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+ *(.init)
+ .init          0x080024b8        0x4 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crti.o
+                0x080024b8                _init
+ .init          0x080024bc        0x8 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtn.o
+ *(.fini)
+ .fini          0x080024c4        0x4 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crti.o
+                0x080024c4                _fini
+ .fini          0x080024c8        0x8 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtn.o
+                0x080024d0                . = ALIGN (0x4)
+                0x080024d0                _etext = .
+
+.vfp11_veneer   0x080024d0        0x0
+ .vfp11_veneer  0x080024d0        0x0 linker stubs
+
+.v4_bx          0x080024d0        0x0
+ .v4_bx         0x080024d0        0x0 linker stubs
+
+.iplt           0x080024d0        0x0
+ .iplt          0x080024d0        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+
+.rodata         0x080024d0      0x114
+                0x080024d0                . = ALIGN (0x4)
+ *(.rodata)
+ .rodata        0x080024d0       0xb4 objdir/simpleserial-ecc.o
+ .rodata        0x08002584       0x10 objdir/simpleserial.o
+ .rodata        0x08002594        0x4 objdir/stm32f3_hal_lowlevel.o
+ *(.rodata*)
+ .rodata.str1.1
+                0x08002598       0x4a objdir/simpleserial-ecc.o
+                0x080025e4                . = ALIGN (0x4)
+ *fill*         0x080025e2        0x2 
+
+.rel.dyn        0x080025e4        0x0
+ .rel.iplt      0x080025e4        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+
+.ARM.extab      0x080025e4        0x0
+                0x080025e4                . = ALIGN (0x4)
+ *(.ARM.extab* .gnu.linkonce.armextab.*)
+                0x080025e4                . = ALIGN (0x4)
+
+.ARM            0x080025e4        0x0
+                0x080025e4                . = ALIGN (0x4)
+                0x080025e4                __exidx_start = .
+ *(.ARM.exidx*)
+                0x080025e4                __exidx_end = .
+                0x080025e4                . = ALIGN (0x4)
+
+.preinit_array  0x080025e4        0x0
+                0x080025e4                . = ALIGN (0x4)
+                0x080025e4                PROVIDE (__preinit_array_start = .)
+ *(.preinit_array*)
+                0x080025e4                PROVIDE (__preinit_array_end = .)
+                0x080025e4                . = ALIGN (0x4)
+
+.init_array     0x080025e4        0x4
+                0x080025e4                . = ALIGN (0x4)
+                0x080025e4                PROVIDE (__init_array_start = .)
+ *(SORT_BY_NAME(.init_array.*))
+ *(.init_array*)
+ .init_array    0x080025e4        0x4 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+                0x080025e8                PROVIDE (__init_array_end = .)
+                0x080025e8                . = ALIGN (0x4)
+
+.fini_array     0x080025e8        0x4
+                0x080025e8                . = ALIGN (0x4)
+                [!provide]                PROVIDE (__fini_array_start = .)
+ *(SORT_BY_NAME(.fini_array.*))
+ *(.fini_array*)
+ .fini_array    0x080025e8        0x4 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+                [!provide]                PROVIDE (__fini_array_end = .)
+                0x080025ec                . = ALIGN (0x4)
+                0x080025ec                _sidata = LOADADDR (.data)
+
+.data           0x20000000        0x0 load address 0x080025ec
+                0x20000000                . = ALIGN (0x4)
+                0x20000000                _sdata = .
+ *(.data)
+ *(.data*)
+                0x20000000                . = ALIGN (0x4)
+                0x20000000                _edata = .
+
+.igot.plt       0x20000000        0x0 load address 0x080025ec
+ .igot.plt      0x20000000        0x0 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+                0x20000000                . = ALIGN (0x4)
+
+.bss            0x20000000      0x1dc load address 0x080025ec
+                0x20000000                _sbss = .
+                0x20000000                __bss_start__ = _sbss
+ *(.bss)
+ .bss           0x20000000       0x1c c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+ .bss           0x2000001c       0xc4 objdir/simpleserial.o
+ .bss           0x200000e0        0x8 objdir/stm32f3_hal_lowlevel.o
+                0x200000e0                hal_sys_tick
+                0x200000e4                uwTick
+ *(.bss*)
+ *(COMMON)
+ COMMON         0x200000e8       0x84 objdir/simpleserial-ecc.o
+                0x200000e8                pcsamp_enable
+                0x200000ec                Q
+                0x2000012c                P
+ COMMON         0x2000016c       0x70 objdir/stm32f3_hal.o
+                0x2000016c                UartHandle
+                0x200001dc                . = ALIGN (0x4)
+                0x200001dc                _ebss = .
+                0x200001dc                __bss_end__ = _ebss
+
+._user_heap_stack
+                0x200001dc      0x404 load address 0x080025ec
+                0x200001e0                . = ALIGN (0x8)
+ *fill*         0x200001dc        0x4 
+                0x200001e0                PROVIDE (end = .)
+                [!provide]                PROVIDE (_end = .)
+                0x200001e0                . = (. + _Min_Heap_Size)
+                0x200005e0                . = (. + _Min_Stack_Size)
+ *fill*         0x200001e0      0x400 
+                0x200005e0                . = ALIGN (0x8)
+
+/DISCARD/
+ libc.a(*)
+ libm.a(*)
+ libgcc.a(*)
+
+.ARM.attributes
+                0x00000000       0x2a
+ *(.ARM.attributes)
+ .ARM.attributes
+                0x00000000       0x1e c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crti.o
+ .ARM.attributes
+                0x0000001e       0x2e c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+ .ARM.attributes
+                0x0000004c       0x33 objdir/simpleserial-ecc.o
+ .ARM.attributes
+                0x0000007f       0x33 objdir/simpleserial.o
+ .ARM.attributes
+                0x000000b2       0x33 objdir/stm32f3_hal.o
+ .ARM.attributes
+                0x000000e5       0x33 objdir/stm32f3_hal_lowlevel.o
+ .ARM.attributes
+                0x00000118       0x21 objdir/stm32f3_startup.o
+ .ARM.attributes
+                0x00000139       0x2e c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+ .ARM.attributes
+                0x00000167       0x2e c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-memset.o)
+ .ARM.attributes
+                0x00000195       0x1e c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtn.o
+OUTPUT(simpleserial-ecc-CW308_STM32F3.elf elf32-littlearm)
+
+.debug_info     0x00000000     0xaf91
+ .debug_info    0x00000000     0x6894 objdir/simpleserial-ecc.o
+ .debug_info    0x00006894      0x416 objdir/simpleserial.o
+ .debug_info    0x00006caa     0x1736 objdir/stm32f3_hal.o
+ .debug_info    0x000083e0     0x2bb1 objdir/stm32f3_hal_lowlevel.o
+
+.debug_abbrev   0x00000000      0xfe8
+ .debug_abbrev  0x00000000      0x6a6 objdir/simpleserial-ecc.o
+ .debug_abbrev  0x000006a6      0x1d2 objdir/simpleserial.o
+ .debug_abbrev  0x00000878      0x2a1 objdir/stm32f3_hal.o
+ .debug_abbrev  0x00000b19      0x4cf objdir/stm32f3_hal_lowlevel.o
+
+.debug_loc      0x00000000     0x4eda
+ .debug_loc     0x00000000     0x38a2 objdir/simpleserial-ecc.o
+ .debug_loc     0x000038a2      0x33b objdir/simpleserial.o
+ .debug_loc     0x00003bdd      0x186 objdir/stm32f3_hal.o
+ .debug_loc     0x00003d63     0x1177 objdir/stm32f3_hal_lowlevel.o
+
+.debug_aranges  0x00000000      0x400
+ .debug_aranges
+                0x00000000      0x2c8 objdir/simpleserial-ecc.o
+ .debug_aranges
+                0x000002c8       0x48 objdir/simpleserial.o
+ .debug_aranges
+                0x00000310       0x60 objdir/stm32f3_hal.o
+ .debug_aranges
+                0x00000370       0x90 objdir/stm32f3_hal_lowlevel.o
+
+.debug_ranges   0x00000000      0x700
+ .debug_ranges  0x00000000      0x3b0 objdir/simpleserial-ecc.o
+ .debug_ranges  0x000003b0       0xb0 objdir/simpleserial.o
+ .debug_ranges  0x00000460       0xb0 objdir/stm32f3_hal.o
+ .debug_ranges  0x00000510      0x1f0 objdir/stm32f3_hal_lowlevel.o
+
+.debug_line     0x00000000     0x20a7
+ .debug_line    0x00000000     0x10b7 objdir/simpleserial-ecc.o
+ .debug_line    0x000010b7      0x22d objdir/simpleserial.o
+ .debug_line    0x000012e4      0x37f objdir/stm32f3_hal.o
+ .debug_line    0x00001663      0xa44 objdir/stm32f3_hal_lowlevel.o
+
+.debug_str      0x00000000     0x211a
+ .debug_str     0x00000000     0x1156 objdir/simpleserial-ecc.o
+                               0x12d9 (size before relaxing)
+ .debug_str     0x00001156       0x83 objdir/simpleserial.o
+                                0x2a5 (size before relaxing)
+ .debug_str     0x000011d9      0x6d1 objdir/stm32f3_hal.o
+                                0xd7b (size before relaxing)
+ .debug_str     0x000018aa      0x870 objdir/stm32f3_hal_lowlevel.o
+                               0x15be (size before relaxing)
+
+.comment        0x00000000       0x7f
+ .comment       0x00000000       0x7f objdir/simpleserial-ecc.o
+                                 0x80 (size before relaxing)
+ .comment       0x0000007f       0x80 objdir/simpleserial.o
+ .comment       0x0000007f       0x80 objdir/stm32f3_hal.o
+ .comment       0x0000007f       0x80 objdir/stm32f3_hal_lowlevel.o
+
+.debug_frame    0x00000000      0xf60
+ .debug_frame   0x00000000      0xb40 objdir/simpleserial-ecc.o
+ .debug_frame   0x00000b40       0xd0 objdir/simpleserial.o
+ .debug_frame   0x00000c10       0xf4 objdir/stm32f3_hal.o
+ .debug_frame   0x00000d04      0x210 objdir/stm32f3_hal_lowlevel.o
+ .debug_frame   0x00000f14       0x2c c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+ .debug_frame   0x00000f40       0x20 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-memset.o)
+
+.stab           0x00000000      0x144
+ .stab          0x00000000      0x144 objdir/stm32f3_startup.o
+
+.stabstr        0x00000000       0x4e
+ .stabstr       0x00000000       0x4e objdir/stm32f3_startup.o
+
+Cross Reference Table
+
+Symbol                                            File
+BusFault_Handler                                  objdir/stm32f3_startup.o
+DebugMon_Handler                                  objdir/stm32f3_startup.o
+Default_Handler                                   objdir/stm32f3_startup.o
+HAL_GPIO_Init                                     objdir/stm32f3_hal_lowlevel.o
+                                                  objdir/stm32f3_hal.o
+HAL_GPIO_WritePin                                 objdir/stm32f3_hal_lowlevel.o
+                                                  objdir/stm32f3_hal.o
+HAL_GetTick                                       objdir/stm32f3_hal_lowlevel.o
+HAL_IncTick                                       objdir/stm32f3_hal_lowlevel.o
+HAL_InitTick                                      objdir/stm32f3_hal_lowlevel.o
+HAL_NVIC_SetPriority                              objdir/stm32f3_hal_lowlevel.o
+HAL_RCC_ClockConfig                               objdir/stm32f3_hal_lowlevel.o
+                                                  objdir/stm32f3_hal.o
+HAL_RCC_GetPCLK1Freq                              objdir/stm32f3_hal_lowlevel.o
+HAL_RCC_GetPCLK2Freq                              objdir/stm32f3_hal_lowlevel.o
+HAL_RCC_GetSysClockFreq                           objdir/stm32f3_hal_lowlevel.o
+HAL_RCC_OscConfig                                 objdir/stm32f3_hal_lowlevel.o
+                                                  objdir/stm32f3_hal.o
+HAL_UART_Init                                     objdir/stm32f3_hal_lowlevel.o
+                                                  objdir/stm32f3_hal.o
+HAL_UART_Receive                                  objdir/stm32f3_hal_lowlevel.o
+                                                  objdir/stm32f3_hal.o
+HAL_UART_Transmit                                 objdir/stm32f3_hal_lowlevel.o
+                                                  objdir/stm32f3_hal.o
+HardFault_Handler                                 objdir/stm32f3_startup.o
+MemManage_Handler                                 objdir/stm32f3_startup.o
+NMI_Handler                                       objdir/stm32f3_startup.o
+P                                                 objdir/simpleserial-ecc.o
+PendSV_Handler                                    objdir/stm32f3_startup.o
+Q                                                 objdir/simpleserial-ecc.o
+Reset_Handler                                     objdir/stm32f3_startup.o
+SVC_Handler                                       objdir/stm32f3_startup.o
+SysTick_Handler                                   objdir/stm32f3_startup.o
+SystemCoreClock                                   objdir/stm32f3_hal_lowlevel.o
+SystemInit                                        objdir/stm32f3_startup.o
+UART_CheckIdleState                               objdir/stm32f3_hal_lowlevel.o
+UART_SetConfig                                    objdir/stm32f3_hal_lowlevel.o
+UART_WaitOnFlagUntilTimeout                       objdir/stm32f3_hal_lowlevel.o
+UartHandle                                        objdir/stm32f3_hal.o
+UsageFault_Handler                                objdir/stm32f3_startup.o
+__bss_end__                                       c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+__bss_start__                                     c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+__call_exitprocs                                  c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o)
+__deregister_frame_info                           c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+__dso_handle                                      c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+__errno                                           c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-errno.o)
+                                                  objdir/stm32f3_sysmem.o
+__init_array_end                                  c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+__init_array_start                                c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+__libc_fini_array                                 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+__libc_init_array                                 c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+                                                  objdir/stm32f3_startup.o
+                                                  c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+__preinit_array_end                               c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+__preinit_array_start                             c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+__register_frame_info                             c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crtbegin.o
+__sf_fake_stderr                                  c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+__sf_fake_stdin                                   c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+__sf_fake_stdout                                  c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+__stack                                           c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+_ebss                                             objdir/stm32f3_startup.o
+_edata                                            objdir/stm32f3_startup.o
+_estack                                           objdir/stm32f3_startup.o
+_exit                                             c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libnosys.a(_exit.o)
+                                                  c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o)
+_fini                                             c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crti.o
+_global_impure_ptr                                c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+                                                  c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o)
+_impure_ptr                                       c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-impure.o)
+                                                  c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-errno.o)
+_init                                             c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/thumb/v7e-m/crti.o
+                                                  c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-init.o)
+_mainCRTStartup                                   c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+_sbrk                                             objdir/stm32f3_sysmem.o
+_sbss                                             objdir/stm32f3_startup.o
+_sdata                                            objdir/stm32f3_startup.o
+_sidata                                           objdir/stm32f3_startup.o
+_start                                            c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+atexit                                            c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+change_err_led                                    objdir/stm32f3_hal.o
+change_ok_led                                     objdir/stm32f3_hal.o
+check_version                                     objdir/simpleserial.o
+enable_trace                                      objdir/simpleserial-ecc.o
+end                                               objdir/stm32f3_sysmem.o
+exit                                              c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-exit.o)
+                                                  c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+g_pfnVectors                                      objdir/stm32f3_startup.o
+get_qx                                            objdir/simpleserial-ecc.o
+get_qy                                            objdir/simpleserial-ecc.o
+getch                                             objdir/stm32f3_hal.o
+                                                  objdir/simpleserial.o
+getreg                                            objdir/simpleserial-ecc.o
+hal_sys_tick                                      objdir/stm32f3_hal_lowlevel.o
+hardware_init_hook                                c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+hex_decode                                        objdir/simpleserial.o
+info                                              objdir/simpleserial-ecc.o
+init_uart                                         objdir/stm32f3_hal.o
+                                                  objdir/simpleserial-ecc.o
+main                                              objdir/simpleserial-ecc.o
+                                                  objdir/stm32f3_startup.o
+                                                  c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+memset                                            c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m\libg_nano.a(lib_a-memset.o)
+                                                  objdir/simpleserial-ecc.o
+                                                  c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+pcsamp_enable                                     objdir/simpleserial-ecc.o
+platform_init                                     objdir/stm32f3_hal.o
+                                                  objdir/simpleserial-ecc.o
+print                                             objdir/simpleserial-ecc.o
+putch                                             objdir/stm32f3_hal.o
+                                                  objdir/simpleserial.o
+                                                  objdir/simpleserial-ecc.o
+reenable_trace                                    objdir/simpleserial-ecc.o
+reset                                             objdir/simpleserial-ecc.o
+run_pmul                                          objdir/simpleserial-ecc.o
+run_pmul_fixed                                    objdir/simpleserial-ecc.o
+set_pcsample_params                               objdir/simpleserial-ecc.o
+set_px                                            objdir/simpleserial-ecc.o
+set_py                                            objdir/simpleserial-ecc.o
+setreg                                            objdir/simpleserial-ecc.o
+simpleserial_addcmd                               objdir/simpleserial.o
+                                                  objdir/simpleserial-ecc.o
+simpleserial_get                                  objdir/simpleserial.o
+                                                  objdir/simpleserial-ecc.o
+simpleserial_init                                 objdir/simpleserial.o
+                                                  objdir/simpleserial-ecc.o
+simpleserial_put                                  objdir/simpleserial.o
+                                                  objdir/simpleserial-ecc.o
+software_init_hook                                c:/program files (x86)/gnu tools arm embedded/7 2018-q2-update/bin/../lib/gcc/arm-none-eabi/7.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m/crt0.o
+trigger_high                                      objdir/stm32f3_hal.o
+                                                  objdir/simpleserial-ecc.o
+trigger_high_pcsamp                               objdir/simpleserial-ecc.o
+trigger_low                                       objdir/stm32f3_hal.o
+                                                  objdir/simpleserial-ecc.o
+trigger_low_pcsamp                                objdir/simpleserial-ecc.o
+trigger_setup                                     objdir/stm32f3_hal.o
+                                                  objdir/simpleserial-ecc.o
+uECC_compress                                     objdir/simpleserial-ecc.o
+uECC_compute_public_key                           objdir/simpleserial-ecc.o
+uECC_curve_G                                      objdir/simpleserial-ecc.o
+uECC_curve_b                                      objdir/simpleserial-ecc.o
+uECC_curve_n                                      objdir/simpleserial-ecc.o
+uECC_curve_num_bits                               objdir/simpleserial-ecc.o
+uECC_curve_num_bytes                              objdir/simpleserial-ecc.o
+uECC_curve_num_n_bits                             objdir/simpleserial-ecc.o
+uECC_curve_num_n_bytes                            objdir/simpleserial-ecc.o
+uECC_curve_num_n_words                            objdir/simpleserial-ecc.o
+uECC_curve_num_words                              objdir/simpleserial-ecc.o
+uECC_curve_p                                      objdir/simpleserial-ecc.o
+uECC_curve_private_key_size                       objdir/simpleserial-ecc.o
+uECC_curve_public_key_size                        objdir/simpleserial-ecc.o
+uECC_decompress                                   objdir/simpleserial-ecc.o
+uECC_generate_random_int                          objdir/simpleserial-ecc.o
+uECC_get_rng                                      objdir/simpleserial-ecc.o
+uECC_make_key                                     objdir/simpleserial-ecc.o
+uECC_point_mult                                   objdir/simpleserial-ecc.o
+uECC_secp256r1                                    objdir/simpleserial-ecc.o
+uECC_set_rng                                      objdir/simpleserial-ecc.o
+uECC_shared_secret                                objdir/simpleserial-ecc.o
+uECC_sign                                         objdir/simpleserial-ecc.o
+uECC_sign_deterministic                           objdir/simpleserial-ecc.o
+uECC_valid_point                                  objdir/simpleserial-ecc.o
+uECC_valid_public_key                             objdir/simpleserial-ecc.o
+uECC_verify                                       objdir/simpleserial-ecc.o
+uECC_vli_add                                      objdir/simpleserial-ecc.o
+uECC_vli_bytesToNative                            objdir/simpleserial-ecc.o
+uECC_vli_clear                                    objdir/simpleserial-ecc.o
+uECC_vli_cmp                                      objdir/simpleserial-ecc.o
+uECC_vli_equal                                    objdir/simpleserial-ecc.o
+uECC_vli_isZero                                   objdir/simpleserial-ecc.o
+uECC_vli_mmod                                     objdir/simpleserial-ecc.o
+uECC_vli_mmod_fast                                objdir/simpleserial-ecc.o
+uECC_vli_modAdd                                   objdir/simpleserial-ecc.o
+uECC_vli_modInv                                   objdir/simpleserial-ecc.o
+uECC_vli_modMult                                  objdir/simpleserial-ecc.o
+uECC_vli_modMult_fast                             objdir/simpleserial-ecc.o
+uECC_vli_modSquare                                objdir/simpleserial-ecc.o
+uECC_vli_modSquare_fast                           objdir/simpleserial-ecc.o
+uECC_vli_modSub                                   objdir/simpleserial-ecc.o
+uECC_vli_mod_sqrt                                 objdir/simpleserial-ecc.o
+uECC_vli_mult                                     objdir/simpleserial-ecc.o
+uECC_vli_nativeToBytes                            objdir/simpleserial-ecc.o
+uECC_vli_numBits                                  objdir/simpleserial-ecc.o
+uECC_vli_rshift1                                  objdir/simpleserial-ecc.o
+uECC_vli_set                                      objdir/simpleserial-ecc.o
+uECC_vli_square                                   objdir/simpleserial-ecc.o
+uECC_vli_sub                                      objdir/simpleserial-ecc.o
+uECC_vli_testBit                                  objdir/simpleserial-ecc.o
+uwTick                                            objdir/stm32f3_hal_lowlevel.o

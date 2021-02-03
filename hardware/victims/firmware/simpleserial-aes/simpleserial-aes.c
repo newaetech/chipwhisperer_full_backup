@@ -59,6 +59,30 @@ uint8_t reset(uint8_t* x)
 	return 0x00;
 }
 
+static uint16_t num_encryption_rounds = 10;
+
+uint8_t enc_multi_getpt(uint8_t* pt)
+{
+    aes_indep_enc_pretrigger(pt);
+
+    for(unsigned int i = 0; i < num_encryption_rounds; i++){
+        trigger_high();
+        aes_indep_enc(pt);
+        trigger_low();
+    }
+
+    aes_indep_enc_posttrigger(pt);    
+	simpleserial_put('r', 16, pt);
+}
+
+uint8_t enc_multi_setnum(uint8_t* t)
+{
+    //Assumes user entered a number like [0, 200] to mean "200"
+    //which is most sane looking for humans I think
+    num_encryption_rounds = t[1];
+    num_encryption_rounds |= t[0] << 8;
+}
+
 #if SS_VER == SS_VER_2_0
 uint8_t aes(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *buf)
 {
@@ -132,6 +156,8 @@ int main(void)
     simpleserial_addcmd('p', 16,  get_pt);
     simpleserial_addcmd('x',  0,   reset);
     simpleserial_addcmd('m', 18, get_mask);
+    simpleserial_addcmd('s', 2, enc_multi_setnum);
+    simpleserial_addcmd('f', 16, enc_multi_getpt);
     #endif
     while(1)
         simpleserial_get();

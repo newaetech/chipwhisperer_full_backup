@@ -1,7 +1,7 @@
 # Hey Emacs, this is a -*- makefile -*-
 #----------------------------------------------------------------------------
 #
-# Makefile for ChipWhisperer SimpleSerial-Trace Program
+# Makefile for ChipWhisperer SimpleSerial-AES Program
 #
 #----------------------------------------------------------------------------
 # On command line:
@@ -30,30 +30,20 @@
 
 # Target file name (without extension).
 # This is the base name of the compiled .hex file.
-TARGET = simpleserial-trace
+TARGET = simpleserial-ecc
 
 # List C source files here.
 # Header files (.h) are automatically pulled in.
-SRC += simpleserial-trace.c
+SRC += simpleserial-ecc.c
 
 # -----------------------------------------------------------------------------
-#EXTRA_OPTS = ETM_ENABLE
 EXTRA_OPTS = NO_EXTRA_OPTS
 CFLAGS += -D$(EXTRA_OPTS)
 
 
-ifeq ($(CRYPTO_TARGET),)
-  ${info No CRYPTO_TARGET passed - defaulting to TINYAES128C}
-  CRYPTO_TARGET = TINYAES128C
+ifeq ($(CRYPTO_OPTIONS),)
+CRYPTO_OPTIONS = AES128C
 endif
-
-ifeq ($(PLATFORM),)
-  ${info No PLATFORM passed - defaulting to CW308_K82F}
-  PLATFORM = CW308_K82F
-endif
-
-
-${info Building for platform ${PLATFORM} with CRYPTO_TARGET=$(CRYPTO_TARGET)}
 
 #Add simpleserial project to build
 include ../simpleserial/Makefile.simpleserial

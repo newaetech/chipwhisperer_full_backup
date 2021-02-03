@@ -5,75 +5,55 @@
 #include <stdio.h>
 #include <string.h>
 
-#if LPC11XX
+int main() {
+    int i, c;
+    uint8_t private[32] = {0};
+    uint8_t public[64] = {0};
+    uint8_t hash[32] = {0};
+    uint8_t sig[64] = {0};
 
-#include "/Projects/lpc11xx/peripherals/uart.h"
-#include "/Projects/lpc11xx/peripherals/time.h"
-
-static uint64_t g_rand = 88172645463325252ull;
-int fake_rng(uint8_t *p_dest, unsigned p_size)
-{
-    while(p_size)
-    {
-        g_rand ^= (g_rand << 13);
-        g_rand ^= (g_rand >> 7);
-        g_rand ^= (g_rand << 17);
-
-        unsigned l_amount = (p_size > 8 ? 8 : p_size);
-        memcpy(p_dest, &g_rand, l_amount);
-        p_size -= l_amount;
-    }
-    return 1;
-}
-
+    const struct uECC_Curve_t * curves[5];
+    int num_curves = 0;
+#if uECC_SUPPORTS_secp160r1
+    curves[num_curves++] = uECC_secp160r1();
 #endif
-
-int main()
-{
-#if LPC11XX
-    uartInit(BAUD_115200);
-	initTime();
-
-    uECC_set_rng(&fake_rng);
+#if uECC_SUPPORTS_secp192r1
+    curves[num_curves++] = uECC_secp192r1();
 #endif
-
-    uint8_t l_public[uECC_BYTES*2];
-    uint8_t l_private[uECC_BYTES];
-
-    uint8_t l_hash[uECC_BYTES];
-    
-    uint8_t l_sig[uECC_BYTES*2];
-    
-    int i;
+#if uECC_SUPPORTS_secp224r1
+    curves[num_curves++] = uECC_secp224r1();
+#endif
+#if uECC_SUPPORTS_secp256r1
+    curves[num_curves++] = uECC_secp256r1();
+#endif
+#if uECC_SUPPORTS_secp256k1
+    curves[num_curves++] = uECC_secp256k1();
+#endif
     
     printf("Testing 256 signatures\n");
-    
-    for(i=0; i<256; ++i)
-    {
-        printf(".");
-    #if !LPC11XX
-        fflush(stdout);
-    #endif
-        
-        if(!uECC_make_key(l_public, l_private))
-        {
-            printf("uECC_make_key() failed\n");
-            continue;
+    for (c = 0; c < num_curves; ++c) {
+        for (i = 0; i < 256; ++i) {
+            printf(".");
+            fflush(stdout);
+
+            if (!uECC_make_key(public, private, curves[c])) {
+                printf("uECC_make_key() failed\n");
+                return 1;
+            }
+            memcpy(hash, public, sizeof(hash));
+            
+            if (!uECC_sign(private, hash, sizeof(hash), sig, curves[c])) {
+                printf("uECC_sign() failed\n");
+                return 1;
+            }
+
+            if (!uECC_verify(public, hash, sizeof(hash), sig, curves[c])) {
+                printf("uECC_verify() failed\n");
+                return 1;
+            }
         }
-        memcpy(l_hash, l_public, uECC_BYTES);
-        
-        if(!uECC_sign(l_private, l_hash, l_sig))
-        {
-            printf("uECC_sign() failed\n");
-            continue;
-        }
-        
-        if(!uECC_verify(l_public, l_hash, l_sig))
-        {
-            printf("uECC_verify() failed\n");
-        }
+        printf("\n");
     }
-    printf("\n");
     
     return 0;
 }

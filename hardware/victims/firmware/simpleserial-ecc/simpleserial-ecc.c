@@ -1,6 +1,6 @@
 /*
     This file is part of the ChipWhisperer Example Targets
-    Copyright (C) 2012-2020 NewAE Technology Inc.
+    Copyright (C) 2021 NewAE Technology Inc.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,9 +16,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "aes-independant.h"
+#include "uECC.c"
+#include "uECC_vli.h"
+#include "types.h"
+
 #include "hal.h"
 #include "simpleserial.h"
+#include <stdint.h>
+#include <stdlib.h>
 
 #if HAL_TYPE == HAL_k82f
 #include "MK82F25615.h"
@@ -31,8 +36,6 @@
 #endif
 
 #include "arm_etm.h"
-#include <stdint.h>
-#include <stdlib.h>
 
 uint8_t pcsamp_enable;
 
@@ -170,39 +173,6 @@ void enable_trace(void)
     ETM_TraceMode();
 }
 
-void print(const char *ptr)
-{
-    while (*ptr != (char)0)
-    {
-        putch(*ptr);
-        ptr++;
-    }
-}
-
-
-// Print a given string to ITM with 8-bit writes.
-void ITM_Print(int port, const char *p)
-{
-    if ((ITM->TCR & ITM_TCR_ITMENA_Msk) && (ITM->TER & (1UL << port)))
-    {
-        while (*p)
-        {
-            while (ITM->PORT[port].u32 == 0);
-            ITM->PORT[port].u8 = *p++;
-        }
-        print("ITM alive!\n");
-    }
-    else {print("Couldn't print!\n");}
-}
-
-
-uint8_t test_itm(uint8_t* x)
-{
-    ITM_Print(x[0], "ITM alive!\n");
-    return 0x00;
-}
-
-
 uint8_t set_pcsample_params(uint8_t* x)
 {
     uint8_t postinit;
@@ -248,43 +218,128 @@ void trigger_low_pcsamp(void)
 }
 
 
-uint8_t get_mask(uint8_t* m)
+// Use globals for pmul input (P) and output (Q) points because
+// they're too big to transmit all in one simpleserial transfer:
+uECC_word_t P[uECC_MAX_WORDS * 2];
+uECC_word_t Q[uECC_MAX_WORDS * 2];
+
+void print(const char *ptr)
 {
-  aes_indep_mask(m);
-  return 0x00;
+   while (*ptr != (char)0) {
+      putch(*ptr);
+      ptr++;
+   }
 }
 
 
-uint8_t get_key(uint8_t* k)
+uint8_t set_px(uint8_t* x)
 {
-    aes_indep_key(k);
+   int i, j;
+   for (i = 0; i < 8; i++) {
+      P[7-i] = 0;
+      for (j = 0; j < 4; j++) {
+         P[7-i] |= x[i*4+j] << ((3-j)*8);
+      }
+   }
+   return 0x00;
+}
+
+
+uint8_t set_py(uint8_t* y)
+{
+   // TODO: this conversion is used in multiple places, move it to a function:
+   int i, j;
+   for (i = 0; i < 8; i++) {
+      P[15-i] = 0;
+      for (j = 0; j < 4; j++) {
+         P[15-i] |= y[i*4+j] << ((3-j)*8);
+      }
+   }
+   return 0x00;
+}
+
+
+uint8_t get_qx(uint8_t* x)
+{
+    int i, j;
+    for (i = 0; i < 8; i++) {
+       for (j = 0; j < 4; j++) {
+          x[i*4+j] = (int)((Q[7-i] >> (3-j)*8) & 255);
+       }
+    }
+    simpleserial_put('r', 32, x);
     return 0x00;
 }
 
 
-uint8_t get_pt(uint8_t* pt)
+uint8_t get_qy(uint8_t* y)
 {
-    aes_indep_enc_pretrigger(pt);
-    
+    int i, j;
+    for (i = 0; i < 8; i++) {
+       for (j = 0; j < 4; j++) {
+          y[i*4+j] = (int)((Q[15-i] >> (3-j)*8) & 255);
+       }
+    }
+    simpleserial_put('r', 32, y);
+    return 0x00;
+}
+
+
+
+uint8_t run_pmul(uint8_t* k)
+{
+    const struct uECC_Curve_t * curve;
+    uECC_word_t kwords[uECC_MAX_WORDS];
+    curve = uECC_secp256r1();
+
+    int i, j;
+    for (i = 0; i < 8; i++) {
+       kwords[7-i] = 0;
+       for (j = 0; j < 4; j++) {
+          kwords[7-i] |= k[i*4+j] << ((3-j)*8);
+       }
+    }
+
     trigger_high_pcsamp();
-
-    #ifdef ADD_JITTER
-    for (volatile uint8_t k = 0; k < (*pt & 0x0F); k++);
-    #endif
-
-    aes_indep_enc(pt); /* encrypting the data block */
+    uECC_point_mult(Q, P, kwords, curve);
     trigger_low_pcsamp();
-    
-    aes_indep_enc_posttrigger(pt);
-    
-    simpleserial_put('r', 16, pt);
     return 0x00;
+}
+
+
+uint8_t run_pmul_fixed(uint8_t* k)
+{
+    const struct uECC_Curve_t * curve;
+    uECC_word_t kwords[uECC_MAX_WORDS];
+    curve = uECC_secp256r1();
+
+    int i, j;
+    for (i = 0; i < 8; i++) {
+       kwords[7-i] = 0;
+       for (j = 0; j < 4; j++) {
+          kwords[7-i] |= k[i*4+j] << ((3-j)*8);
+       }
+    }
+
+    trigger_high_pcsamp();
+    uECC_point_mult(Q, curve->G, kwords, curve);
+    trigger_low_pcsamp();
+    return 0x00;
+}
+
+
+
+
+uint8_t reset(uint8_t* x)
+{
+    // Reset key here if needed
+	return 0x00;
 }
 
 
 uint8_t info(uint8_t* x)
 {
-        print("ChipWhisperer simpleserial-trace, compiled ");
+        print("ChipWhisperer simpleserial-trace-ecc, compiled ");
         print(__DATE__);
         print(", ");
         print(__TIME__);
@@ -300,31 +355,22 @@ uint8_t reenable_trace(uint8_t* x)
 }
 
 
-uint8_t reset(uint8_t* x)
-{
-    // Reset key here if needed
-    return 0x00;
-}
-
 int main(void)
 {
-    uint8_t tmp[KEY_LENGTH] = {DEFAULT_KEY};
-
     platform_init();
     init_uart();
     trigger_setup();
 
-    aes_indep_init();
-    aes_indep_key(tmp);
-
     simpleserial_init();
-    simpleserial_addcmd('k', 16, get_key);
-    simpleserial_addcmd('p', 16, get_pt);
-    simpleserial_addcmd('x', 0, reset);
-    simpleserial_addcmd('m', 18, get_mask);
-    simpleserial_addcmd('i', 0, info);
+    simpleserial_addcmd('k', 32, run_pmul);
+    simpleserial_addcmd('f', 32, run_pmul_fixed);
+    simpleserial_addcmd('a', 32, set_px);
+    simpleserial_addcmd('b', 32, set_py);
+    simpleserial_addcmd('p', 32, get_qx);
+    simpleserial_addcmd('q', 32, get_qy);
+    simpleserial_addcmd('x',  0, reset);
+    simpleserial_addcmd('i',  0, info);
     simpleserial_addcmd('e', 0, reenable_trace);
-    simpleserial_addcmd('t', 1, test_itm);
     simpleserial_addcmd('s', 5, setreg);
     simpleserial_addcmd('g', 5, getreg);
     simpleserial_addcmd('c', 4, set_pcsample_params);
@@ -334,4 +380,3 @@ int main(void)
     while(1)
         simpleserial_get();
 }
-
