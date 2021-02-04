@@ -1,4 +1,0 @@
-//define[@a@][1]
-//define[@ab@][@a@2] 
-//define[@abc@][@ab@3] 
-@abc@
