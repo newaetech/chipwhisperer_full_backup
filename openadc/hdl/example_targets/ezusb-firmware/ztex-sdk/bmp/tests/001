@@ -1,0 +1,47 @@
+//
+
+////
+//define
+//define[Test1]
+//define[Test2][zweiter Test]//define[Testa2][2a]
+//define[Test3][(#1,#2)][d##1r#1i#2t#bte#3r Test#]
+//define[Testa3][#1#2][d#0rit#1ter T#2estb]
+//define[Testb3][][[]]
+//define[Test4][;][viert#0er Te#1st]
+//define[/*][*/][]
+
+const bufmax      = 65535;
+      rbufmax     = 65535;
+      maxfiles    = 256;
+      maxmacros   = 4095;
+      matchlength = 3;
+
+const bc_pm : string = '//';
+      bc_ob : char = '[';
+      bc_cb : char = ']';
+      bc_pa : char = '#';
+      bc_sm : string = '';
+      bc_em : string = ';';
+      bc_lf : string = #10;
+      
+const bmp_exit : longint = 0;
+
+const debugoutput : boolean = true;
+
+{*********************************************************************}
+var main : tmainbmp;
+begin
+1-->Test1<--1
+main.init;
+2-->Test2<--2
+main.run;
+2a-->Testa2<--2a
+main.done;
+3-->Test3(abc,cde)<--3
+halt(bmp_exit);
+3a-->Testa3[123][]<--3a
+end.    
+3b-->Testb3<--3b
+4-->Test4123;<--4
+5-->/*123 */<--5
+      
