@@ -196,14 +196,14 @@ void ITM_Print(int port, const char *p)
 }
 
 
-uint8_t test_itm(uint8_t* x)
+uint8_t test_itm(uint8_t* x, uint8_t len)
 {
     ITM_Print(x[0], "ITM alive!\n");
     return 0x00;
 }
 
 
-uint8_t set_pcsample_params(uint8_t* x)
+uint8_t set_pcsample_params(uint8_t* x, uint8_t len)
 {
     uint8_t postinit;
     uint8_t postreset;
