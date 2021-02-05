@@ -27,8 +27,8 @@
 #define PLAIN 2
 
 void rsa_init(void);
-uint8_t real_dec(uint8_t * pt);
-uint8_t get_pt(uint8_t * pt);
+uint8_t real_dec(uint8_t * pt, uint8_t len);
+uint8_t get_pt(uint8_t * pt, uint8_t len);
 
 int main(void)
 {

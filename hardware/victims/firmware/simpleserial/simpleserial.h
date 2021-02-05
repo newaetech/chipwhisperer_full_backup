@@ -19,8 +19,10 @@ void simpleserial_init(void);
 // - c:   The character designating this command
 // - len: The number of bytes expected
 // - fp:  A pointer to a callback, which is called after receiving data
+// - fl:  Bitwise OR'd CMD_FLAG_* values. Defaults to CMD_FLAG_NONE when
+//        calling simpleserial_addcmd()
 // Example: simpleserial_addcmd('p', 16, encrypt_text)
-// - Calls encrypt_text() with a 16 byte array after receiving a line 
+// - Calls encrypt_text() with a 16 byte array after receiving a line
 //   like p00112233445566778899AABBCCDDEEFF\n
 // Notes:
 // - Maximum of 10 active commands
@@ -31,10 +33,17 @@ void simpleserial_init(void);
 #if SS_VER == SS_VER_2_0
 int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t, uint8_t, uint8_t, uint8_t*));
 #else
-int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t*));
+
+#define CMD_FLAG_NONE	0x00
+// If this flag is set, the command supports variable length payload.
+// The first byte (hex-encoded) indicates the length.
+#define CMD_FLAG_LEN	0x01
+
+int simpleserial_addcmd_flags(char c, unsigned int len, uint8_t (*fp)(uint8_t*, uint8_t), uint8_t);
+int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t*, uint8_t));
 #endif
 
-// Attempt to process a command 
+// Attempt to process a command
 // If a full string is found, the relevant callback function is called
 // Might return without calling a callback for several reasons:
 // - First character didn't match any known commands

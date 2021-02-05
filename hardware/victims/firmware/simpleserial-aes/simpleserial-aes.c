@@ -22,22 +22,22 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-uint8_t get_mask(uint8_t* m)
+uint8_t get_mask(uint8_t* m, uint8_t len)
 {
-  aes_indep_mask(m);
+  aes_indep_mask(m, len);
   return 0x00;
 }
 
-uint8_t get_key(uint8_t* k)
+uint8_t get_key(uint8_t* k, uint8_t len)
 {
 	aes_indep_key(k);
 	return 0x00;
 }
 
-uint8_t get_pt(uint8_t* pt)
+uint8_t get_pt(uint8_t* pt, uint8_t len)
 {
     aes_indep_enc_pretrigger(pt);
-    
+
 	trigger_high();
 
   #ifdef ADD_JITTER
@@ -46,14 +46,14 @@ uint8_t get_pt(uint8_t* pt)
 
 	aes_indep_enc(pt); /* encrypting the data block */
 	trigger_low();
-    
+
     aes_indep_enc_posttrigger(pt);
-    
+
 	simpleserial_put('r', 16, pt);
 	return 0x00;
 }
 
-uint8_t reset(uint8_t* x)
+uint8_t reset(uint8_t* x, uint8_t len)
 {
     // Reset key here if needed
 	return 0x00;
@@ -61,7 +61,7 @@ uint8_t reset(uint8_t* x)
 
 static uint16_t num_encryption_rounds = 10;
 
-uint8_t enc_multi_getpt(uint8_t* pt)
+uint8_t enc_multi_getpt(uint8_t* pt, uint8_t len)
 {
     aes_indep_enc_pretrigger(pt);
 
@@ -71,11 +71,11 @@ uint8_t enc_multi_getpt(uint8_t* pt)
         trigger_low();
     }
 
-    aes_indep_enc_posttrigger(pt);    
+    aes_indep_enc_posttrigger(pt);
 	simpleserial_put('r', 16, pt);
 }
 
-uint8_t enc_multi_setnum(uint8_t* t)
+uint8_t enc_multi_setnum(uint8_t* t, uint8_t len)
 {
     //Assumes user entered a number like [0, 200] to mean "200"
     //which is most sane looking for humans I think
@@ -88,22 +88,25 @@ uint8_t aes(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *buf)
 {
     uint8_t req_len = 0;
     uint8_t err = 0;
+    uint8_t mask_len = 0;
     if (scmd & 0x04) {
-        req_len += 16;
+        // Mask has variable length. First byte encodes the length
+        mask_len = buf[req_len];
+        req_len += 1 + mask_len;
         if (req_len > len) {
             return SS_ERR_LEN;
         }
-        err = get_mask(buf + req_len - 16);
+        err = get_mask(buf + req_len - mask_len, mask_len);
         if (err)
             return err;
     }
 
     if (scmd & 0x02) {
         req_len += 16;
-        if (req_len > len) {                
+        if (req_len > len) {
             return SS_ERR_LEN;
         }
-        err = get_key(buf + req_len - 16);
+        err = get_key(buf + req_len - 16, 16);
         if (err)
             return err;
     }
@@ -112,7 +115,7 @@ uint8_t aes(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *buf)
         if (req_len > len) {
             return SS_ERR_LEN;
         }
-        err = get_pt(buf + req_len - 16);
+        err = get_pt(buf + req_len - 16, 16);
         if (err)
             return err;
     }
@@ -139,7 +142,7 @@ int main(void)
 
     /* Uncomment this to get a HELLO message for debug */
 
-/*  
+/*
     putch('h');
     putch('e');
     putch('l');
@@ -155,7 +158,7 @@ int main(void)
     simpleserial_addcmd('k', 16, get_key);
     simpleserial_addcmd('p', 16,  get_pt);
     simpleserial_addcmd('x',  0,   reset);
-    simpleserial_addcmd('m', 18, get_mask);
+    simpleserial_addcmd_flags('m', 18, get_mask, CMD_FLAG_LEN);
     simpleserial_addcmd('s', 2, enc_multi_setnum);
     simpleserial_addcmd('f', 16, enc_multi_getpt);
     #endif
