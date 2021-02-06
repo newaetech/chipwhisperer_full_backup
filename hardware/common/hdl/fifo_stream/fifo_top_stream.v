@@ -11,7 +11,7 @@ module fifo_top(
 	 input wire [9:0]   adc_datain,
 	 input wire			adc_sampleclk,
 	 input wire			adc_or,
-	 input wire			adc_trig_status,
+	 input wire			adc_write_mask,
 	 input wire			adc_capture_go, //Set to '1' to start capture, keep at 1 until adc_capture_stop goes high
 	 output wire   	adc_capture_stop,
 	 input wire       adc_capture_armed,
@@ -24,7 +24,7 @@ module fifo_top(
 	 output wire  [7:0]	fifo_read_data,
 	 
 	 input wire  [31:0] presample_i,
-	 input wire  [31:0]	max_samples_i,
+	 input wire  [31:0]	max_samples_i, //This is only used for segmented mode now - captures
 	 output wire [31:0]	max_samples_o,
 	 output wire [31:0] samples_o,
 	 input wire	 [12:0] downsample_i, //Ignores this many samples inbetween captured measurements
@@ -88,7 +88,7 @@ module fifo_top(
 	assign downsample_max = (downsample_ctr == downsample_i) ? 1'b1 : 'b0;
 	
 	always @(posedge adc_sampleclk) begin
-		if (downsample_max) begin
+		if (downsample_max & adc_write_mask) begin
 			sample_wr_en <= 1'b1;
 		end else begin
 			sample_wr_en <= 1'b0;
@@ -131,7 +131,7 @@ module fifo_top(
 		if (~adc_capture_go)
 			presample_counter <= FIFO_FULL_SIZE-6; //max_samples_i
 		else 
-			if (downsample_max == 1'b1)
+			if ((downsample_max == 1'b1) && (adc_write_mask == 1'b1))
 				presample_counter <= presample_counter - 32'd1;		
 	end
 	
@@ -280,7 +280,7 @@ module fifo_top(
 	  .wr_clk(adc_sampleclk), // input wr_clk
 	  .rd_clk(fifo_read_fifoclk), // input rd_clk
 	  .din(adcfifo_in), // input [31 : 0] din
-	  .wr_en(adcfifo_wr_en & stream_write), // input wr_en
+	  .wr_en(adcfifo_wr_en & stream_write & adc_write_mask), // input wr_en
 	  .rd_en((fifo_read_fifoen & read_en) | drain), // input rd_en
 	  .dout(fifo_data), // output [127 : 0] dout
 	  .full(adcfifo_full), // output full

@@ -1,0 +1,6 @@
+//define[simgfp][single]
+//define[asm_single][dword]
+//define[single_asm][dword]
+
+asm_simgfp
+simgfp_asm

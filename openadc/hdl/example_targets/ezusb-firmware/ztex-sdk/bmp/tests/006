@@ -1,0 +1,10 @@
+//define[case][Groﬂ-/Kleinschreibung]
+//define[Case][egal]
+default: case
+//ignorecase
+ausschalten: case
+//exactcase
+anschalten: case
+//ignorecase
+ausschalten: case
+
