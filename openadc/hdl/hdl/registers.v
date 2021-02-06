@@ -120,7 +120,7 @@
 			     CLKOUT Frequency = ((MUL+1) / (DIV+1)) * CLKIN
 			     Note the DCM has certain allowed frequency ranges, see datasheet
 				  
-			[ X  X  X  X  FM R  D  L ] (Byte 3)
+			[ X  X  FS  FS  FM R  D  L ] (Byte 3)
 			     L = (Bit 0) Load bit 
 				    Must write this to '1' than '0' for the new MUL/DIV settings to take effect
 					 				  
@@ -138,7 +138,12 @@
 
 				  FM = (Bit 3) External Frequency Counter Source
 				    0 = EXTCLKIn Input
-					 1 = CLKGEN Output Block			
+					 1 = CLKGEN Output Block
+
+              FS = (Bit 5:4) FIFO Segmentation Mode
+				    00 = Normal
+					 01 = Enable Mode
+					 10 = Segment Mode
 			
 	 0x07 - System Clock (4 Bytes) - Read Only
 	    Clock frequency in Hz

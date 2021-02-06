@@ -550,6 +550,7 @@ module openadc_interface(
 	wire clkgen_reset;
 	
 	wire [15:0] downsample;
+	wire [1:0] fifo_mode;
 	
 	reg_openadc registers_openadc (
 		.reset_i(reset_i),
@@ -578,6 +579,7 @@ module openadc_interface(
 		.trigger_now(trigger_now),
 		.trigger_offset(trigger_offset),
 		.trigger_length(trigger_length),
+		.fifo_mode(fifo_mode),
 		.extclk_frequency(extclk_frequency),		
 		.extclk_measure_src(extmeasure_src),
 		.adcclk_frequency(adcclk_frequency),
@@ -749,6 +751,47 @@ module openadc_interface(
 
 	assign reg_status[4] = 1'b0;
 	assign reg_status[5] = 1'b0;
+		
+
+	/* Segment trigger counter - independant) */
+	reg [17:0] segment_trigger_count;
+	reg segment_trigger_go;
+	
+	//Used to detect trigger transition in segment mode (segment mode only supports rising edge)
+	reg DUT_trigger_i_old;
+	always @(posedge ADC_clk_sample) begin
+		DUT_trigger_i_old <= DUT_trigger_i;
+	end
+	
+	// Maxsamples will be limited to FIFO size. The addition of +18'd1 on the ending point
+	// is because the initial version of this had an off-by-one, to avoid API changes we just
+	// continue this. The returned segment size is still smaller than expected by 1 but we
+	// just let it ride baby!
+	always @(posedge ADC_clk_sample) begin
+		if ((DUT_trigger_i == 1'b1) && (DUT_trigger_i_old == 1'b0)) begin
+			segment_trigger_go <= 1'b1;
+		end else if (segment_trigger_count == (maxsamples[17:0]+18'd1)) begin
+			segment_trigger_go <= 1'b0;
+		end
+	end
+	
+	always @(posedge ADC_clk_sample)
+		if (segment_trigger_go == 1'b0)
+			segment_trigger_count <= 18'd0;
+		else
+			segment_trigger_count <= segment_trigger_count + 18'd1;
+			
+	wire adc_write_mask;
+	wire adc_write_mask_int;
+	
+	assign adc_write_mask_int = (fifo_mode == 2'b00) ? 1'b1 :
+	                            (fifo_mode == 2'b01) ? DUT_trigger_i :
+										 (fifo_mode == 2'b10) ? segment_trigger_go :
+										 1'b1;
+	
+	assign adc_write_mask = adc_write_mask_int | trigger_now;
+		
+		
 
 //`define CHIPSCOPE 1
 	fifo_top fifo_top_inst(
@@ -762,7 +805,7 @@ module openadc_interface(
 	 .adc_datain(ADC_Data_tofifo),
 	 .adc_sampleclk(ADC_clk_sample),
 	 .adc_or(ADC_OR),
-	 .adc_trig_status(DUT_trigger_i),
+	 .adc_write_mask(adc_write_mask),
 	 .adc_capture_go(adc_capture_go), //Set to '1' to start capture, keep at 1 until adc_capture_stop goes high
 	 .adc_capture_stop(adc_capture_done),
 	 .arm_i(armed),

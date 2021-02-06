@@ -67,6 +67,7 @@ module reg_openadc(
 	output 			trigger_now,
 	output [31:0]  trigger_offset,
 	input  [31:0]  trigger_length,
+	output [1:0]   fifo_mode,
 	
 	/* Measurement of external clock frequency */
 	input [31:0]	extclk_frequency,
@@ -206,6 +207,7 @@ module reg_openadc(
 	 assign clkblock_dcm_reset_o = registers_advclocksettings[4];
 	 assign clkblock_gen_reset_o = registers_advclocksettings[26];
 	 assign extclk_measure_src = registers_advclocksettings[27];
+	 assign fifo_mode[1:0] = registers_advclocksettings[29:28];
 	 
 	 assign downsample_o = registers_downsample[12:0];
 		
