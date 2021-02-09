@@ -80,28 +80,3 @@ class CW310(CW305):
     def _dis(self):
         if self._naeusb:
             self._naeusb.close()
-
-    def fpga_write(self, addr, data):
-        """Write to an address on the FPGA
-
-        Args:
-            addr (int): Address to write to
-            data (list): Data to write to addr
-
-        """
-        addr = addr << self.bytecount_size
-        return self._naeusb.cmdWriteMem(addr, data)
-
-    def fpga_read(self, addr, readlen):
-        """Read from an address on the FPGA
-
-        Args:
-            addr (int): Address to read from
-            readlen (int): Length of data to read
-
-        Returns:
-            Requested data as a list
-        """
-        addr = addr << self.bytecount_size
-        data = self._naeusb.cmdReadMem(addr, readlen)
-        return data
