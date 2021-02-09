@@ -21,15 +21,35 @@ class CW310(CW305):
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6)
 
-        self.bytecount_size = 7 # pBYTECNT_SIZE in Verilog
-
         self.hw = None
         self.oa = None
 
-    def _con(self, scope=None):
+        self._woffset_sam3U = 0x000
+        self.default_verilog_defines = 'cw305_defines.v'
+        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/../../hardware/victims/cw305_artixtarget/fpga/common/' + self.default_verilog_defines
+        self.registers = 12 # number of registers we expect to find
+        self.bytecount_size = 7 # pBYTECNT_SIZE in Verilog
+
+        self._clksleeptime = 1
+        self._clkusbautooff = True
+        self.last_key = bytearray([0]*16)
+        self.target_name = 'AES'
+
+    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True):
         # add more stuff later
         self._naeusb.con(idProduct=[0xC310])
         # self.pll.cdce906init()
+
+        if defines_files is None:
+            if fpga_id is None:
+                verilog_defines = [self.default_verilog_defines_full_path]
+            else:
+                from chipwhisperer.hardware.firmware.cw305 import getsome
+                verilog_defines = [getsome(self.default_verilog_defines)]
+        else:
+            verilog_defines = defines_files
+        if slurp:
+            self.slurp_defines(verilog_defines)
 
     def usb_set_voltage(self, pdo_num, voltage):
         if pdo_num not in [2, 3]:
