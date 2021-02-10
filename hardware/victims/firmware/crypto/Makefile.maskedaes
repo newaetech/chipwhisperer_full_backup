@@ -29,6 +29,9 @@ ifeq ($(implementation),ANSSI)
     ASFLAGS += -mthumb-interwork -fno-builtin
     LDFLAGS += -mthumb-interwork -fno-builtin
     CDEFS += -DUSE_KEIL_PLATFORM
+	ifneq ($(words $(filter-out UNROLLED KEYSCHEDULE,$(options))),0)
+      $(error Unsupported options for this target: $(options).)
+	endif
     ifeq ($(findstring UNROLLED,$(options)),UNROLLED)
       CDEFS += -DUSE_FULL_UNROLLING
     endif
