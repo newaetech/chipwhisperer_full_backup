@@ -214,7 +214,7 @@ typedef struct ss_cmd
 static ss_cmd commands[MAX_SS_CMDS];
 // Callback function for "v" command.
 // This can exist in v1.0 as long as we don't actually send back an ack ("z")
-uint8_t check_version(uint8_t *v)
+uint8_t check_version(uint8_t *v, uint8_t len)
 {
 	return SS_VER;
 }
