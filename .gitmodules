@@ -13,3 +13,9 @@
 [submodule "hardware/victims/firmware/crypto/SecAESSTM32"]
 	path = hardware/victims/firmware/crypto/SecAESSTM32
 	url = https://github.com/ANSSI-FR/SecAESSTM32.git
+[submodule "hardware/victims/firmware/crypto/masked-bit-sliced-aes-128"]
+	path = hardware/victims/firmware/crypto/masked-bit-sliced-aes-128
+	url = https://github.com/sebastien-riou/masked-bit-sliced-aes-128
+[submodule "hardware/victims/firmware/crypto/Higher-Order-Masked-AES-128"]
+	path = hardware/victims/firmware/crypto/Higher-Order-Masked-AES-128
+	url = https://github.com/knarfrank/Higher-Order-Masked-AES-128

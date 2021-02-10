@@ -63,6 +63,20 @@ ifeq ($(implementation),ANSSI)
 
   endif  # ANSSI
 
+else ifeq ($(implementation),RIOUBSAES)
+  CDEFS += -DRIOUBSAES
+  CRYPTOLIB = masked-bit-sliced-aes-128
+  VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTOLIB)/source
+  SRC += bitslice.c secure_aes_pbs.c
+  EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTOLIB)/include
+
+else ifeq ($(implementation),KNARFRANK)
+  CDEFS += -DKNARFRANKBSAES
+  CRYPTOLIB = Higher-Order-Masked-AES-128
+  VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTOLIB)
+  SRC += maths.c masked_combined.c
+  EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTOLIB)
+
 else
   $(error Unsupported implementation for masked AES crypto: $(implementation))
 

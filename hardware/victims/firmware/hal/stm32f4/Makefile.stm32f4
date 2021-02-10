@@ -1,5 +1,5 @@
 VPATH += :$(HALPATH)/stm32f4
-SRC += stm32f4_hal.c stm32f4_hal_lowlevel.c stm32f4_sysmem.c
+SRC += stm32f4_hal.c stm32f4_hal_lowlevel.c stm32f4_sysmem.c stm32f4xx_hal_rng.c
 EXTRAINCDIRS += $(HALPATH)/stm32f4 $(HALPATH)/stm32f4/CMSIS $(HALPATH)/stm32f4/CMSIS/core $(HALPATH)/stm32f4/CMSIS/device $(HALPATH)/stm32f4/Legacy
 
 ASRC += stm32f4_startup.S
