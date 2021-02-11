@@ -264,7 +264,7 @@ void simpleserial_init()
 
 int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t*, uint8_t))
 {
-	simpleserial_addcmd_flags(c, len, fp, CMD_FLAG_NONE);
+	return simpleserial_addcmd_flags(c, len, fp, CMD_FLAG_NONE);
 }
 
 int simpleserial_addcmd_flags(char c, unsigned int len, uint8_t (*fp)(uint8_t*, uint8_t), uint8_t fl)
