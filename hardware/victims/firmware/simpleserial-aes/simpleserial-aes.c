@@ -73,6 +73,7 @@ uint8_t enc_multi_getpt(uint8_t* pt, uint8_t len)
 
     aes_indep_enc_posttrigger(pt);
 	simpleserial_put('r', 16, pt);
+    return 0;
 }
 
 uint8_t enc_multi_setnum(uint8_t* t, uint8_t len)
@@ -81,6 +82,7 @@ uint8_t enc_multi_setnum(uint8_t* t, uint8_t len)
     //which is most sane looking for humans I think
     num_encryption_rounds = t[1];
     num_encryption_rounds |= t[0] << 8;
+    return 0;
 }
 
 #if SS_VER == SS_VER_2_0
