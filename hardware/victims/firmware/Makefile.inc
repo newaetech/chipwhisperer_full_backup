@@ -319,7 +319,7 @@ ALL_ASFLAGS = $(MCU_FLAGS) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 # Default target.
-all: clean_objs $(OBJDIR) .dep begin gccversion build sizeafter fastnote end
+all: clean_objs .dep begin gccversion build sizeafter fastnote end
 
 allquick: begin gccversion build sizeafter end
 
@@ -367,9 +367,9 @@ sizeafter: build
 	@echo $(MSG_SIZE_AFTER)
 	@$(ELFSIZE)
 
-$(OBJDIR): makeobjdir
+$(OBJ): | $(OBJDIR)
 
-makeobjdir:
+$(OBJDIR):
 	$(MAKEDIR) $(OBJDIR) $(call AdjustPath,$(OBJDIR),$(MKDIR_LIST) )
 
 .dep:
@@ -550,7 +550,7 @@ clean_list :
 .PHONY : all allquick begin finish end sizeafter gccversion \
 build elf hex eep lss sym coff extcoff \
 clean clean_list clean_print clean_objs program debug gdb-config \
-fastnote makeobjdir
+fastnote
 
 # saveplatform: Save the platform into the file Makefile.target
 saveplatform:
