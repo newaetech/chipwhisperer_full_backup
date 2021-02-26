@@ -1,68 +1,54 @@
 /**
  * \file
  *
- * \brief Default descriptors for a USB Device with a single vendor class
- * interface
+ * \brief Descriptors for an USB Composite Device
  *
- * Copyright (c) 2011-2012 Atmel Corporation. All rights reserved.
+ * Copyright (c) 2009-2018 Microchip Technology Inc. and its subsidiaries.
  *
  * \asf_license_start
  *
  * \page License
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * Subject to your compliance with these terms, you may use Microchip
+ * software and any derivatives exclusively with Microchip products.
+ * It is your responsibility to comply with third party license terms applicable
+ * to your use of third party software (including open source software) that
+ * may accompany Microchip software.
  *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * 3. The name of Atmel may not be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * 4. This software may only be redistributed and used in connection with an
- *    Atmel microcontroller product.
- *
- * THIS SOFTWARE IS PROVIDED BY ATMEL "AS IS" AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT ARE
- * EXPRESSLY AND SPECIFICALLY DISCLAIMED. IN NO EVENT SHALL ATMEL BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES,
+ * WHETHER EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE,
+ * INCLUDING ANY IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY,
+ * AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT WILL MICROCHIP BE
+ * LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE, INCIDENTAL OR CONSEQUENTIAL
+ * LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND WHATSOEVER RELATED TO THE
+ * SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP HAS BEEN ADVISED OF THE
+ * POSSIBILITY OR THE DAMAGES ARE FORESEEABLE.  TO THE FULLEST EXTENT
+ * ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN ANY WAY
+ * RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
+ * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
  *
  * \asf_license_stop
  *
+ */
+/*
+ * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
  */
 
 #include "conf_usb.h"
 #include "udd.h"
 #include "udc_desc.h"
-#include "udi_vendor.h"
-
 
 /**
- * \defgroup udi_vendor_group_single_desc USB device descriptors for a single interface
+ * \defgroup udi_group_desc Descriptors for a USB Device
+ * composite
  *
- * The following structures provide the USB device descriptors required for
- * USB Device with a single interface Vendor Class.
- *
- * It is ready to use and do not require more definition.
  * @{
  */
 
-//! Only one interface for this device
-#define  USB_DEVICE_NB_INTERFACE       1
+/**INDENT-OFF**/
 
 //! USB Device Descriptor
-UDC_DATA(4)
+COMPILER_WORD_ALIGNED
 UDC_DESC_STORAGE usb_dev_desc_t udc_device_desc = {
 	.bLength                   = sizeof(usb_dev_desc_t),
 	.bDescriptorType           = USB_DT_DEVICE,
@@ -80,12 +66,12 @@ UDC_DESC_STORAGE usb_dev_desc_t udc_device_desc = {
 #else
 	.iManufacturer             = 0,  // No manufacture string
 #endif
-#ifdef USB_DEVICE_PRODUCT_NAME 
+#ifdef USB_DEVICE_PRODUCT_NAME
 	.iProduct                  = 2,
 #else
 	.iProduct                  = 0,  // No product string
 #endif
-#if defined USB_DEVICE_SERIAL_NAME || defined USB_DEVICE_GET_SERIAL_NAME_POINTER
+#if (defined USB_DEVICE_SERIAL_NAME || defined USB_DEVICE_GET_SERIAL_NAME_POINTER)
 	.iSerialNumber             = 3,
 #else
 	.iSerialNumber             = 0,  // No serial string
@@ -96,7 +82,7 @@ UDC_DESC_STORAGE usb_dev_desc_t udc_device_desc = {
 
 #ifdef USB_DEVICE_HS_SUPPORT
 //! USB Device Qualifier Descriptor for HS
-UDC_DATA(4)
+COMPILER_WORD_ALIGNED
 UDC_DESC_STORAGE usb_dev_qual_desc_t udc_device_qual = {
 	.bLength                   = sizeof(usb_dev_qual_desc_t),
 	.bDescriptorType           = USB_DT_DEVICE_QUALIFIER,
@@ -113,12 +99,12 @@ UDC_DESC_STORAGE usb_dev_qual_desc_t udc_device_qual = {
 COMPILER_PACK_SET(1)
 typedef struct {
 	usb_conf_desc_t conf;
-	udi_vendor_desc_t udi_vendor;
+	UDI_COMPOSITE_DESC_T;
 } udc_desc_t;
 COMPILER_PACK_RESET()
 
 //! USB Device Configuration Descriptor filled for FS
-UDC_DATA(4)
+COMPILER_WORD_ALIGNED
 UDC_DESC_STORAGE udc_desc_t udc_desc_fs = {
 	.conf.bLength              = sizeof(usb_conf_desc_t),
 	.conf.bDescriptorType      = USB_DT_CONFIGURATION,
@@ -128,12 +114,12 @@ UDC_DESC_STORAGE udc_desc_t udc_desc_fs = {
 	.conf.iConfiguration       = 0,
 	.conf.bmAttributes         = USB_CONFIG_ATTR_MUST_SET | USB_DEVICE_ATTR,
 	.conf.bMaxPower            = USB_CONFIG_MAX_POWER(USB_DEVICE_POWER),
-	.udi_vendor                = UDI_VENDOR_DESC_FS,
+	UDI_COMPOSITE_DESC_FS
 };
 
 #ifdef USB_DEVICE_HS_SUPPORT
 //! USB Device Configuration Descriptor filled for HS
-UDC_DATA(4)
+COMPILER_WORD_ALIGNED
 UDC_DESC_STORAGE udc_desc_t udc_desc_hs = {
 	.conf.bLength              = sizeof(usb_conf_desc_t),
 	.conf.bDescriptorType      = USB_DT_CONFIGURATION,
@@ -143,7 +129,7 @@ UDC_DESC_STORAGE udc_desc_t udc_desc_hs = {
 	.conf.iConfiguration       = 0,
 	.conf.bmAttributes         = USB_CONFIG_ATTR_MUST_SET | USB_DEVICE_ATTR,
 	.conf.bMaxPower            = USB_CONFIG_MAX_POWER(USB_DEVICE_POWER),
-	.udi_vendor                = UDI_VENDOR_DESC_HS,
+	UDI_COMPOSITE_DESC_HS
 };
 #endif
 
@@ -155,7 +141,7 @@ UDC_DESC_STORAGE udc_desc_t udc_desc_hs = {
 
 //! Associate an UDI for each USB interface
 UDC_DESC_STORAGE udi_api_t *udi_apis[USB_DEVICE_NB_INTERFACE] = {
-	&udi_api_vendor,
+	UDI_COMPOSITE_API
 };
 
 //! Add UDI with USB Descriptors FS
@@ -184,4 +170,5 @@ UDC_DESC_STORAGE udc_config_t udc_config = {
 };
 
 //@}
+/**INDENT-ON**/
 //@}

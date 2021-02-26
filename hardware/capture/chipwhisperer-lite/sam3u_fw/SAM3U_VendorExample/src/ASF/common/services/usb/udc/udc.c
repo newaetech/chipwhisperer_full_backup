@@ -48,7 +48,7 @@
 #include "udi.h"
 #include "udc.h"
 
-#define WINUSB_PLATFORM_DESCRIPTOR_LENGTH 0x9E
+
 /**
  * \ingroup udc_group
  * \defgroup udc_group_interne Implementation of UDC
@@ -657,12 +657,147 @@ static bool udc_req_std_dev_get_str_desc(void)
 }
 //0xC0 bRequestType, 0x01 bRequest, 0x00 wValue, 0x07 wIndex
 
+#define WINUSB_PLATFORM_DESCRIPTOR_LENGTH (0x0A + (0x08 + 0x14 + 0xD2))//+ 0x08+0x14+0x80)// + 0x08+0x14+0x80 + 0x08+0x14+0x80)
+#define WINUSB_PLATFORM_DESCRIPTOR_LENGTH_HIGH (WINUSB_PLATFORM_DESCRIPTOR_LENGTH >> 8)
+#define WINUSB_PLATFORM_DESCRIPTOR_LENGTH_LOW (WINUSB_PLATFORM_DESCRIPTOR_LENGTH & 0xFF)
+// WinUSB 2.0 descriptor. This is what modern systems use
+// https://github.com/sowbug/weblight/blob/192ad7a0e903542e2aa28c607d98254a12a6399d/firmware/webusb.c
+// http://janaxelson.com/files/ms_os_20_descriptors.c
+// https://books.google.com/books?id=pkefBgAAQBAJ&pg=PA353&lpg=PA353
+// Taken from panda, this does something.
+static uint8_t winusb_20_desc[] = {
+	// Microsoft OS 2.0 descriptor set header (table 10)
+	0x0A, 0x00, // Descriptor size (10 bytes)
+	0x00, 0x00, // MS OS 2.0 descriptor set header
+
+	0x00, 0x00, 0x03, 0x06, // Windows version (8.1) (0x06030000)
+	WINUSB_PLATFORM_DESCRIPTOR_LENGTH_LOW, WINUSB_PLATFORM_DESCRIPTOR_LENGTH_HIGH, // Total size of MS OS 2.0 descriptor set
+	
+#if 0
+	0x14, 0x00, // Descriptor size (20 bytes)
+	0x03, 0x00, // MS OS 2.0 compatible ID descriptor
+	'W', 'I', 'N', 'U', 'B', 'B', 0x00, 0x00, // compatible ID (WINUSB)
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // Sub-compatible ID
+
+	// Registry property descriptor 0x80 + 0x4E + 0x02 + 2
+	0xD2, 0x00,
+	0x04, 0x00,
+	0x07, 0x00, // Strings are null-terminated Unicode
+	0x2A, 0x00, // Size of Property Name (40 bytes) "DeviceInterfaceGUID"
+
+	// bPropertyName (DeviceInterfaceGUIDs)
+	'D', 0x00, 'e', 0x00, 'v', 0x00, 'i', 0x00, 'c', 0x00, 'e', 0x00,
+	'I', 0x00, 'n', 0x00, 't', 0x00, 'e', 0x00, 'r', 0x00, 'f', 0x00, 'a', 0x00, 'c', 0x00, 'e', 0x00,
+	'G', 0x00, 'U', 0x00, 'I', 0x00, 'D', 0x00, 's', 0x00, 0x00, 0x00,
+
+	0x9E, 0x00,  // Size of Property Data (78 bytes)
+
+	// Vendor-defined property data: {CCE5291C-A69F-4995-A4C2-2AE57A51ADE9}
+	'{', 0x00, 'c', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, 'a', 0x00, 'a', 0x00, '1', 0x00, // 16
+		'c', 0x00, '-', 0x00, 'a', 0x00, '6', 0x00, '9', 0x00, 'a', 0x00, '-', 0x00, '4', 0x00, // 32
+		'9', 0x00, '9', 0x00, '5', 0x00, '-', 0x00, 'a', 0x00, 'b', 0x00, 'c', 0x00, '2', 0x00, // 48
+		'-', 0x00, '2', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, '7', 0x00, 'a', 0x00, '5', 0x00, // 64
+	'1', 0x00, 'a', 0x00, 'd', 0x00, 'e', 0x00, '9', 0x00, '}', 0x00, 0x00, 0x00, // 78 bytes,
+	
+	// Vendor-defined property data: {CCE5291C-A69F-4995-A4C2-2AE57A51ADE9}
+	'{', 0x00, 'a', 0x00, 'c', 0x00, 'c', 0x00, 'c', 0x00, 'a', 0x00, 'a', 0x00, '1', 0x00, // 16
+		'c', 0x00, '-', 0x00, 'a', 0x00, '6', 0x00, '9', 0x00, 'f', 0x00, '-', 0x00, '4', 0x00, // 32
+		'9', 0x00, '9', 0x00, '5', 0x00, '-', 0x00, 'a', 0x00, '4', 0x00, 'c', 0x00, '2', 0x00, // 48
+		'-', 0x00, '2', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, '7', 0x00, 'a', 0x00, '5', 0x00, // 64
+	'1', 0x00, 'a', 0x00, 'd', 0x00, 'e', 0x00, '9', 0x00, '}', 0x00, 0x00, 0x00, 0x00, 0x00,// 78 bytes,
+	
+#endif
+	
+#if 1
+	//FUNCTION SUBSET HEADER
+	0x08, 0x00, //len=8
+	0x02, 0x00, //descriptor type = function subset header
+	0x00,       //interface 0 (Vendor in our case)
+	0x00,       //reserved, set to 0
+	(0x08 + 0x14 + 0xD2), 0x00,     //total length of function subset, including this header
+#endif
+	// Microsoft OS 2.0 compatible ID descriptor
+	0x14, 0x00, // Descriptor size (20 bytes)
+	0x03, 0x00, // MS OS 2.0 compatible ID descriptor
+	'L', 'I', 'B', 'U', 'S', 'B', 'K', 0x00, // compatible ID (WINUSB)
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // Sub-compatible ID	
+	
+		// Registry property descriptor 0x80 + 0x4E + 0x02 + 2
+		0xD2, 0x00,
+		0x04, 0x00,
+		0x07, 0x00, // Strings are null-terminated Unicode
+		0x2A, 0x00, // Size of Property Name (40 bytes) "DeviceInterfaceGUID"
+
+		// bPropertyName (DeviceInterfaceGUIDs)
+		'D', 0x00, 'e', 0x00, 'v', 0x00, 'i', 0x00, 'c', 0x00, 'e', 0x00,
+		'I', 0x00, 'n', 0x00, 't', 0x00, 'e', 0x00, 'r', 0x00, 'f', 0x00, 'a', 0x00, 'c', 0x00, 'e', 0x00,
+		'G', 0x00, 'U', 0x00, 'I', 0x00, 'D', 0x00, 's', 0x00, 0x00, 0x00,
+
+		0x9E, 0x00,  // Size of Property Data (78 bytes)
+
+		// Vendor-defined property data: {CCE5291C-A69F-4995-A4C2-2AE57A51ADE9}
+		'{', 0x00, 'c', 0x00, 'a', 0x00, 'f', 0x00, '5', 0x00, 'a', 0x00, 'a', 0x00, '1', 0x00, // 16
+			'c', 0x00, '-', 0x00, 'a', 0x00, '6', 0x00, '9', 0x00, 'a', 0x00, '-', 0x00, '4', 0x00, // 32
+			'9', 0x00, '9', 0x00, '5', 0x00, '-', 0x00, 'a', 0x00, 'b', 0x00, 'c', 0x00, '2', 0x00, // 48
+			'-', 0x00, '2', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, '7', 0x00, 'a', 0x00, '5', 0x00, // 64
+		'1', 0x00, 'a', 0x00, 'd', 0x00, 'e', 0x00, '9', 0x00, '}', 0x00, 0x00, 0x00, // 78 bytes,
+		
+		// Vendor-defined property data: {CCE5291C-A69F-4995-A4C2-2AE57A51ADE9}
+		'{', 0x00, 'a', 0x00, 'c', 0x00, 'e', 0x00, 'c', 0x00, 'a', 0x00, 'a', 0x00, '1', 0x00, // 16
+			'c', 0x00, '-', 0x00, 'a', 0x00, '6', 0x00, '9', 0x00, 'f', 0x00, '-', 0x00, '4', 0x00, // 32
+			'9', 0x00, '9', 0x00, '5', 0x00, '-', 0x00, 'a', 0x00, '4', 0x00, 'c', 0x00, '2', 0x00, // 48
+			'-', 0x00, '2', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, '7', 0x00, 'a', 0x00, '5', 0x00, // 64
+		'1', 0x00, 'a', 0x00, 'd', 0x00, 'e', 0x00, '9', 0x00, '}', 0x00, 0x00, 0x00, 0x00, 0x00,// 78 bytes,
+	
+	#if 0
+	//FUNCTION SUBSET HEADER
+	0x08, 0x00, //len=8
+	0x02, 0x00, //descriptor type = function subset header
+	0x01,       //interface 0 (Vendor in our case)
+	0x00,       //reserved, set to 0
+	(0x08 + 0x14 + 0xD2), 0x00,     //total length of function subset, including this header
+	
+	// Microsoft OS 2.0 compatible ID descriptor
+	0x14, 0x00, // Descriptor size (20 bytes)
+	0x03, 0x00, // MS OS 2.0 compatible ID descriptor
+	'W', 'I', 'N', 'U', 'S', 'B', 0x00, 0x00, // compatible ID (WINUSB)
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // Sub-compatible ID
+	
+		// Registry property descriptor 0x80 + 0x4E + 0x02 + 2
+		0xD2, 0x00,
+		0x04, 0x00,
+		0x07, 0x00, // Strings are null-terminated Unicode
+		0x2A, 0x00, // Size of Property Name (40 bytes) "DeviceInterfaceGUID"
+
+		// bPropertyName (DeviceInterfaceGUIDs)
+		'D', 0x00, 'e', 0x00, 'v', 0x00, 'i', 0x00, 'c', 0x00, 'e', 0x00,
+		'I', 0x00, 'n', 0x00, 't', 0x00, 'e', 0x00, 'r', 0x00, 'f', 0x00, 'a', 0x00, 'c', 0x00, 'e', 0x00,
+		'G', 0x00, 'U', 0x00, 'I', 0x00, 'D', 0x00, 's', 0x00, 0x00, 0x00,
+
+		0x9E, 0x00,  // Size of Property Data (78 bytes)
+
+		// Vendor-defined property data: {CCE5291C-A69F-4995-A4C2-2AE57A51ADE9}
+		'{', 0x00, 'c', 0x00, 'a', 0x00, 'c', 0x00, '5', 0x00, 'a', 0x00, 'a', 0x00, '1', 0x00, // 16
+			'c', 0x00, '-', 0x00, 'a', 0x00, '6', 0x00, '9', 0x00, 'a', 0x00, '-', 0x00, '4', 0x00, // 32
+			'9', 0x00, '9', 0x00, '5', 0x00, '-', 0x00, 'a', 0x00, 'b', 0x00, 'c', 0x00, '2', 0x00, // 48
+			'-', 0x00, '2', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, '7', 0x00, 'a', 0x00, '5', 0x00, // 64
+		'1', 0x00, 'a', 0x00, 'd', 0x00, 'e', 0x00, '9', 0x00, '}', 0x00, 0x00, 0x00, // 78 bytes,
+		
+		// Vendor-defined property data: {CCE5291C-A69F-4995-A4C2-2AE57A51ADE9}
+		'{', 0x00, 'a', 0x00, 'c', 0x00, 'd', 0x00, 'c', 0x00, 'a', 0x00, 'a', 0x00, '1', 0x00, // 16
+			'c', 0x00, '-', 0x00, 'a', 0x00, '6', 0x00, '9', 0x00, 'f', 0x00, '-', 0x00, '4', 0x00, // 32
+			'9', 0x00, '9', 0x00, '5', 0x00, '-', 0x00, 'a', 0x00, '4', 0x00, 'c', 0x00, '2', 0x00, // 48
+			'-', 0x00, '2', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, '7', 0x00, 'a', 0x00, '5', 0x00, // 64
+		'1', 0x00, 'a', 0x00, 'd', 0x00, 'e', 0x00, '9', 0x00, '}', 0x00, 0x00, 0x00, 0x00, 0x00,// 78 bytes,
+		
+	#endif
+};
 /**
  * \brief Standard device request to get descriptors about USB device
  *
  * \return true if success
  */
-	const uint8_t BOS_DESC[] = {
+	static const uint8_t BOS_DESC[] = {
 		//bos descriptor, technically a USB3 thing, but also 2.1 which kind of exists
 		0x05,  // bos length
 		0x0F,  // bos request type
@@ -684,7 +819,7 @@ static bool udc_req_std_dev_get_str_desc(void)
 		0x00, 0x00, 0x03, 0x06, // Min Windows version, 8.1, so should work on that and above
 
 		// Windows will ask for another descriptor based on this info
-		WINUSB_PLATFORM_DESCRIPTOR_LENGTH, 0x00, //length of other descriptor
+		WINUSB_PLATFORM_DESCRIPTOR_LENGTH_LOW, WINUSB_PLATFORM_DESCRIPTOR_LENGTH_HIGH, //length of other descriptor
 		0x01, // when asking for MS 2.0 descriptor, will do bmRequestType = 0xC0, bRequest = this (0x01)
 		0x00  // if non 0, Windows will send this before asking for the next descriptor
 		};
@@ -1105,45 +1240,7 @@ static bool udc_req_ep(void)
 	}
 	return false;
 }
-// WinUSB 2.0 descriptor. This is what modern systems use
-// https://github.com/sowbug/weblight/blob/192ad7a0e903542e2aa28c607d98254a12a6399d/firmware/webusb.c
-// http://janaxelson.com/files/ms_os_20_descriptors.c
-// https://books.google.com/books?id=pkefBgAAQBAJ&pg=PA353&lpg=PA353
-// Taken from panda, this does something. 
-uint8_t winusb_20_desc[WINUSB_PLATFORM_DESCRIPTOR_LENGTH] = {
-  // Microsoft OS 2.0 descriptor set header (table 10)
-  0x0A, 0x00, // Descriptor size (10 bytes)
-  0x00, 0x00, // MS OS 2.0 descriptor set header
 
-  0x00, 0x00, 0x03, 0x06, // Windows version (8.1) (0x06030000)
-  WINUSB_PLATFORM_DESCRIPTOR_LENGTH, 0x00, // Total size of MS OS 2.0 descriptor set
-
-  // Microsoft OS 2.0 compatible ID descriptor
-    0x14, 0x00, // Descriptor size (20 bytes)
-    0x03, 0x00, // MS OS 2.0 compatible ID descriptor
-    'W', 'I', 'N', 'U', 'S', 'B', 0x00, 0x00, // compatible ID (WINUSB)
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // Sub-compatible ID
-
-  // Registry property descriptor
-  0x80, 0x00, // Descriptor size (130 bytes)
-  0x04, 0x00, // Registry Property descriptor
-  0x01, 0x00, // Strings are null-terminated Unicode
-  0x28, 0x00, // Size of Property Name (40 bytes) "DeviceInterfaceGUID"
-
-  // bPropertyName (DeviceInterfaceGUID)
-    'C', 0x00, 'h', 0x00, 'i', 0x00, 'p', 0x00, 'w', 0x00, 'h', 0x00, 'i', 0x00, 's', 0x00,
-    'p', 0x00, 'e', 0x00, 'r', 0x00, 'e', 0x00, 'r', 0x00, 'L', 0x00, 'i', 0x00, 't', 0x00,
-    'e', 0x00, 'G', 0x00, 'U', 0x00, 'I', 'D',
-
-  0x4E, 0x00, // Size of Property Data (78 bytes)
-
-  // Vendor-defined property data: {CCE5291C-A69F-4995-A4C2-2AE57A51ADE9}
-    '{', 0x00, 'c', 0x00, 'c', 0x00, 'e', 0x00, '5', 0x00, '2', 0x00, '9', 0x00, '1', 0x00, // 16
-    'c', 0x00, '-', 0x00, 'a', 0x00, '6', 0x00, '9', 0x00, 'f', 0x00, '-', 0x00, '4', 0x00, // 32
-    '9', 0x00, '9', 0x00, '5', 0x00, '-', 0x00, 'a', 0x00, '4', 0x00, 'c', 0x00, '2', 0x00, // 48
-    '-', 0x00, '2', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, '7', 0x00, 'a', 0x00, '5', 0x00, // 64
-    '1', 0x00, 'a', 0x00, 'd', 0x00, 'e', 0x00, '9', 0x00, '}', 0x00, 0x00, 0x00 // 78 bytes
-};
 
 /**
  * \brief Main routine to manage the USB SETUP request.
@@ -1158,6 +1255,7 @@ uint8_t winusb_20_desc[WINUSB_PLATFORM_DESCRIPTOR_LENGTH] = {
  *
  * \return true if the request is supported, else the request is stalled by UDD
  */
+static uint8_t null_mem[64] = {0};
 bool udc_process_setup(void)
 {
 	// By default no data (receive/send) and no callbacks registered
