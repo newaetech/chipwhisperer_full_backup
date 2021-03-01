@@ -34,7 +34,8 @@
 #include "circbuffer.h"
 #include "usart_driver.h"
 #include "usart.h"
-
+#include "usb_protocol_cdc.h"
+extern bool enable_cdc_transfer[2];
 
 #define USART_WVREQ_INIT    0x0010
 #define USART_WVREQ_ENABLE  0x0011
@@ -64,6 +65,7 @@ tcirc_buf rx0buf, tx0buf;
 tcirc_buf rx1buf, tx1buf;
 tcirc_buf rx2buf, tx2buf;
 tcirc_buf rx3buf, tx3buf;
+tcirc_buf usb_usart_circ_buf;
 
 static inline void usart0_enableIO(void)
 {
@@ -181,6 +183,7 @@ bool ctrl_usart(Usart * usart, bool directionIn)
 						if (usart == USART0)
 						{
 							sysclk_enable_peripheral_clock(ID_USART0);
+							init_circ_buf(&usb_usart_circ_buf);
 							init_circ_buf(&tx0buf);
 							init_circ_buf(&rx0buf);
 							printf("Enabling USART0\n");
@@ -342,6 +345,7 @@ uint8_t usart_driver_getchar(Usart * usart)
 	return get_from_circ_buf(rxbuf);
 }
 
+
 void generic_isr(Usart * usart, tcirc_buf * rxbuf, tcirc_buf * txbuf);
 void generic_isr(Usart * usart, tcirc_buf * rxbuf, tcirc_buf * txbuf)
 {
@@ -351,6 +355,8 @@ void generic_isr(Usart * usart, tcirc_buf * rxbuf, tcirc_buf * txbuf)
 		uint32_t temp;
 		temp = usart->US_RHR & US_RHR_RXCHR_Msk;
 		add_to_circ_buf(rxbuf, temp, false);
+		add_to_circ_buf(&usb_usart_circ_buf, temp, false);
+		//udi_cdc_multi_putc(0, temp);
 	}
 	
 	if (status & US_CSR_TXRDY){

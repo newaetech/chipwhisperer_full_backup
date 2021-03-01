@@ -59,7 +59,7 @@
 // (USB_CONFIG_ATTR_REMOTE_WAKEUP|USB_CONFIG_ATTR_BUS_POWERED)
 
 //! USB Device string definitions
-
+#define USB_DEVICE_HS_SUPPORT 1
 extern char usb_serial_number[33];
 
 #define  USB_DEVICE_MANUFACTURE_NAME      "NewAE Technology Inc."
@@ -86,13 +86,13 @@ extern char usb_serial_number[33];
 //#define  USB_DEVICE_HS_SUPPORT
 #endif
 //@}
-#if 1
+#if 0
 #define UDI_VENDOR_STRING_ID     0x10
 #define UDI_CDC_COMM_STRING_ID_0 0x11
 //#define UDI_CDC_COMM_STRING_ID_1 0x12
 
 
-#define VENDOR_STRING "CWLite libusbk Interface"
+#define VENDOR_STRING "CWLite Interface"
 #define CDC_DATA_STRING_0 "CWLite USART"
 //#define CDC_DATA_STRING_1 "CW310 USART Debug Interface"
 
@@ -228,8 +228,8 @@ extern void my_callback_rx_notify(uint8_t port);
  * @{
  */
 //! Endpoints' numbers used by single or first CDC port
-#define  UDI_CDC_DATA_EP_IN_0          (5 | USB_EP_DIR_IN)  // TX
-#define  UDI_CDC_DATA_EP_OUT_0         (6 | USB_EP_DIR_OUT) // RX
+#define  UDI_CDC_DATA_EP_IN_0          (1 | USB_EP_DIR_IN)  // TX
+#define  UDI_CDC_DATA_EP_OUT_0         (2 | USB_EP_DIR_OUT) // RX
 #define  UDI_CDC_COMM_EP_0             (3 | USB_EP_DIR_IN)  // Notify endpoint
 
 //! Interface numbers used by single or first CDC port
@@ -266,8 +266,8 @@ bool main_setup_in_received(void);
 #define UDI_VENDOR_EPS_SIZE_ISO_HS    0 /*64*/
 
 //! Endpoint numbers definition
-#define  UDI_VENDOR_EP_BULK_IN       (0x01 | USB_EP_DIR_IN)
-#define  UDI_VENDOR_EP_BULK_OUT      (0x02 | USB_EP_DIR_OUT)
+#define  UDI_VENDOR_EP_BULK_IN       (0x05 | USB_EP_DIR_IN)
+#define  UDI_VENDOR_EP_BULK_OUT      (0x06 | USB_EP_DIR_OUT)
 
 /**
  * \name UDD Configuration

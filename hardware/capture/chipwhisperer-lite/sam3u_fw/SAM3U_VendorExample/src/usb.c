@@ -745,14 +745,44 @@ void cdc_disable(uint8_t port)
 	enable_cdc_transfer[port] = false;
 }
 
-static uint8_t uart_buf[128] = {0};
+/*
+		case REQ_USART0_DATA:
+		for(cnt = 0; cnt < udd_g_ctrlreq.req.wLength; cnt++){
+			respbuf[cnt] = usart_driver_getchar(USART_TARGET);
+		}
+		udd_g_ctrlreq.payload = respbuf;
+		udd_g_ctrlreq.payload_size = cnt;
+		return true;
+		break;
+		
+			//Catch heartbleed-style error
+			if (udd_g_ctrlreq.req.wLength > udd_g_ctrlreq.payload_size){
+				return;
+			}
+			
+			for (int i = 0; i < udd_g_ctrlreq.req.wLength; i++){
+				usart_driver_putchar(USART_TARGET, NULL, udd_g_ctrlreq.payload[i]);
+			}
+*/
+static uint8_t uart_buf[512] = {0};
 void my_callback_rx_notify(uint8_t port)
 {
+	//iram_size_t udi_cdc_multi_get_nb_received_data
+	
 	if (enable_cdc_transfer[port]) {
+		iram_size_t num_char = udi_cdc_multi_get_nb_received_data(port);
+		num_char = (num_char > 512) ? 512 : num_char;
+		udi_cdc_multi_read_buf(port, uart_buf, num_char);
+		for (uint16_t i = 0; i < num_char; i++) { //num_char; num_char > 0; num_char--) {
+			//usart_driver_putchar(USART_TARGET, NULL, udi_cdc_multi_getc(port));
+			usart_driver_putchar(USART_TARGET, NULL, uart_buf[i]);
+		}
+		#if 0
 		udi_cdc_read_no_polling(uart_buf, 128);
 		uint8_t *st = uart_buf;
 		while (*st) {
 			udi_cdc_putc(*st++);
 		}
+		#endif
 	}
 }
