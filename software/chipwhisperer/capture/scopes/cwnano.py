@@ -592,6 +592,9 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
     def _getCWType(self):
         return 'cwnano'
 
+    def get_serial_ports(self):
+        return self._getNAEUSB().get_serial_ports()
+
     @property
     def sn(self):
         return self._cwusb.snum

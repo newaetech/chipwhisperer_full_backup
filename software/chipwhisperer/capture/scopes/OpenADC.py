@@ -126,6 +126,9 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
     def _getNAEUSB(self):
         return self.scopetype.dev._cwusb
 
+    def get_serial_ports(self):
+        return self._getNAEUSB().get_serial_ports()
+
     def default_setup(self):
         """Sets up sane capture defaults for this scope
 

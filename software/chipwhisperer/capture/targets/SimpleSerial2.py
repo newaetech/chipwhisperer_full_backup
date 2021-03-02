@@ -610,3 +610,65 @@ class SimpleSerial2(TargetTemplate):
             The number of characters waiting to be sent to the target
         """
         return self.ser.inWaitingTX()
+
+class SimpleSerial2_CDC(SimpleSerial2):
+    def __init__(self):
+        super().__init__()
+        self.ser = None
+
+    def con(self, scope, dev_path=None, interface=None):
+        import serial
+        if dev_path is None:
+            ports = scope.get_serial_ports()
+            if len(ports) == 0:
+                raise OSError("No port associated with scope found, please specify via dev_path")
+            final_port = None
+            if len(ports) > 1:
+                for port in ports:
+                    if port['interface'] == interface:
+                        final_port = port
+                        break
+                if final_port is None:
+                    raise ValueError("Invalid interface {}, found {}".format(interface, ports))
+                dev_path = final_port['port']
+            else:
+                dev_path = ports[0]['port']
+        self.dev_path = dev_path
+        self.ser = serial.Serial(dev_path, baudrate=230400, timeout=0.25)
+            
+                
+    def write(self, data):
+        self.ser.write(data)
+
+    def read(self, num_char = 0, timeout = 250):
+        self.ser.timeout = timeout/1000
+        if num_char == 0:
+            num_char = self.ser.in_waiting
+        return self.ser.read(num_char).decode('latin-1')
+
+    def in_waiting(self):
+        return self.ser.in_waiting
+    
+    def flush(self):
+        self.ser.reset_input_buffer()
+
+    def in_waiting_tx(self):
+        return self.ser.out_waiting
+
+    @property
+    def baud(self):
+        """The current baud rate of the serial connection.
+
+        :Getter: Return the current baud rate.
+
+        :Setter: Set a new baud rate. Valid baud rates are any integer in the
+            range [500, 2000000].
+
+        Raises:
+            AttributeError: Target doesn't allow baud to be changed.
+        """
+        return self.ser.baud
+
+    @baud.setter
+    def baud(self, new_baud):
+        self.ser.baud = new_baud
