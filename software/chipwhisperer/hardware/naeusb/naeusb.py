@@ -369,7 +369,7 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
                 pass #test
             dev.set_configuration()
         except ValueError:
-            raise pass
+            pass
 
         # Get serial number
         try:
