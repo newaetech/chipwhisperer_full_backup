@@ -616,8 +616,9 @@ class SimpleSerial2_CDC(SimpleSerial2):
         super().__init__()
         self.ser = None
 
-    def con(self, scope, dev_path=None, interface=None):
+    def con(self, scope, dev_path=None, interface=None, flush_on_err=True):
         import serial
+        self._flush_on_err = flush_on_err
         if dev_path is None:
             ports = scope.get_serial_ports()
             if len(ports) == 0:

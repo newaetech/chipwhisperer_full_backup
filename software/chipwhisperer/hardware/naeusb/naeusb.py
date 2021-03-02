@@ -617,7 +617,7 @@ class NAEUSB(object):
             raise OSError("Pyserial >= 3.5 (found {}) required for this method".format(serial.__version__))
         devices = []
         for port in serial.tools.list_ports.comports():
-            if port.serial_number == self.usbtx._usbdev.serial_number:
+            if port.serial_number == self.usbtx._usbdev.serial_number.upper():
                 devices.append({"port": port.device, "interface": port.location.split('.')[-1]})
         return devices
 
