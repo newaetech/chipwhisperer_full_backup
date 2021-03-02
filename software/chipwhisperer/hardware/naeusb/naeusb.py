@@ -369,7 +369,7 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
                 pass #test
             dev.set_configuration()
         except ValueError:
-            raise OSError("NAEUSB: Could not configure USB device")
+            raise pass
 
         # Get serial number
         try:
@@ -614,6 +614,20 @@ class NAEUSB(object):
 
     def get_possible_devices(self, idProduct):
         return self.usbseralizer.get_possible_devices(idProduct)
+
+    def get_serial_ports(self):
+        """May have multiple com ports associated with one device, so returns a list
+        """
+        if not self.usbtx._usbdev:
+            raise OSError("Connect to device before calling this")
+        import serial.tools.list_ports
+        if serial.__version__ < '3.5':
+            raise OSError("Pyserial >= 3.5 (found {}) required for this method".format(serial.__version__))
+        devices = []
+        for port in serial.tools.list_ports.comports():
+            if port.serial_number == self.usbtx._usbdev.serial_number:
+                devices.append(port.name)
+        return devices
 
     def con(self, idProduct=[0xACE2], connect_to_first=False, serial_number=None):
         """
