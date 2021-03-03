@@ -262,7 +262,7 @@ extern "C" {
  * Define this to one of the \c USBCLK_SRC_xxx settings. Leave it undefined if
  * USB is not required.
  */
-#ifdef __DOXYGEN__
+ #ifdef __DOXYGEN__
 # define CONFIG_USBCLK_SOURCE
 #endif
 

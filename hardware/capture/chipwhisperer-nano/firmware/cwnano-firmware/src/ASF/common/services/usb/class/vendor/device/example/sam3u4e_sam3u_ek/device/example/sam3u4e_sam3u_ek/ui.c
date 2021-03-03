@@ -1,9 +1,9 @@
 /**
  * \file
  *
- * \brief USB Vendor class protocol definitions.
+ * \brief User Interface
  *
- * Copyright (c) 2011 Atmel Corporation. All rights reserved.
+ * Copyright (c) 2012 Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -41,26 +41,50 @@
  *
  */
 
-#ifndef _USB_PROTOCOL_VENDOR_H_
-#define _USB_PROTOCOL_VENDOR_H_
+#include <asf.h>
+#include "ui.h"
+
+void ui_init(void)
+{
+	// Initialize LEDs
+	LED_Off(LED0_GPIO);
+	LED_Off(LED1_GPIO);
+}
+
+void ui_powerdown(void)
+{
+	LED_Off(LED0_GPIO);
+	LED_Off(LED1_GPIO);
+}
+
+void ui_wakeup(void)
+{
+	LED_On(LED0_GPIO);
+}
+
+void ui_loop_back_state(bool b_started)
+{
+	if (b_started) {
+		LED_On(LED1_GPIO);
+	} else {
+		LED_Off(LED1_GPIO);
+	}
+}
+
+void ui_process(uint16_t framenumber)
+{
+	if ((framenumber % 1000) == 0) {
+		LED_On(LED0_GPIO);
+	}
+	if ((framenumber % 1000) == 500) {
+		LED_Off(LED0_GPIO);
+	}
+}
 
 /**
- * \ingroup usb_protocol_group
- * \defgroup usb_vendor_protocol USB Vendor Class definitions
+ * \defgroup UI User Interface
  *
- * @{
+ * Human interface on SAM3U-EK:
+ * - Led 0 (D2) blinks when USB host has checked and enabled vendor interface
+ * - Led 1 (D3) is on when loopback is running
  */
-
-/**
- * \name Vendor class values
- */
-//@{
-#define  VENDOR_CLASS                  0xFF
-#define  VENDOR_SUBCLASS               0xFF
-#define  VENDOR_PROTOCOL               0xFF
-//@}
-
-
-//@}
-
-#endif // _USB_PROTOCOL_VENDOR_H_

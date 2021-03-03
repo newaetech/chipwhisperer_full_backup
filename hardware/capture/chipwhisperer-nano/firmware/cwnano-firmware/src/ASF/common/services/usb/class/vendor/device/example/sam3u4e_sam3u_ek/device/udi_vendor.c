@@ -116,7 +116,7 @@ void udi_vendor_disable(void)
 		UDI_VENDOR_DISABLE_EXT();
 	}
 }
-
+/*
 bool udi_vendor_setup(void)
 {
 	if (Udd_setup_is_in()) {
@@ -126,6 +126,24 @@ bool udi_vendor_setup(void)
 	}
 	if (Udd_setup_is_out()) {
 		if (Udd_setup_type() == USB_REQ_TYPE_VENDOR) {
+			return UDI_VENDOR_SETUP_OUT_RECEIVED();
+		}
+	}
+	return false; // Not supported request
+}
+*/
+bool udi_vendor_setup(void)
+{
+	if (Udd_setup_is_in()) {
+		if ((Udd_setup_type() == USB_REQ_TYPE_VENDOR)
+		&& (udd_g_ctrlreq.req.bRequest == 0)) {
+			return UDI_VENDOR_SETUP_IN_RECEIVED();
+		}
+	}
+	if (Udd_setup_is_out()) {
+		if ((Udd_setup_type() == USB_REQ_TYPE_VENDOR)
+		&& (udd_g_ctrlreq.req.bRequest == 0)
+		&& (0 != udd_g_ctrlreq.req.wLength)) {
 			return UDI_VENDOR_SETUP_OUT_RECEIVED();
 		}
 	}

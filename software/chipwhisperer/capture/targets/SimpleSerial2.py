@@ -639,6 +639,7 @@ class SimpleSerial2_CDC(SimpleSerial2):
             
                 
     def write(self, data):
+        #data = bytearray(data)
         self.ser.write(data)
 
     def read(self, num_char = 0, timeout = 250):

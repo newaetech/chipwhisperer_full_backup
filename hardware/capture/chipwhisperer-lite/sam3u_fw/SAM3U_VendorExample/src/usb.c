@@ -831,6 +831,7 @@ void my_callback_config(uint8_t port, usb_cdc_line_coding_t * cfg)
 		}
 		if (port == 0)
 		{
+			//completely restart USART - otherwise breaks tx or stalls
 			sysclk_enable_peripheral_clock(ID_USART0);
 			init_circ_buf(&usb_usart_circ_buf);
 			init_circ_buf(&tx0buf);
