@@ -140,19 +140,23 @@ int main(void)
 	
 	// The main loop manages only the power mode
 	// because the USB management is done by interrupt
-	extern bool enable_cdc_transfer[2];
+	extern volatile bool enable_cdc_transfer[2];
+	extern volatile bool usart_x_enabled[4];
 	extern tcirc_buf usb_usart_circ_buf;
 	init_circ_buf(&usb_usart_circ_buf);
 	while (true) {
-		sleepmgr_enter_sleep();
-		if (enable_cdc_transfer[0]) {
-			uint8_t chr_buf[512];
+		//sleepmgr_enter_sleep();
+		if (enable_cdc_transfer[0] && usart_x_enabled[0]) {
+			//uint8_t chr_buf[512];
 			while (circ_buf_has_char(&usb_usart_circ_buf)) {
 				uint16_t i = 0;
+				udi_cdc_multi_putc(0, get_from_circ_buf(&usb_usart_circ_buf));
+				#if 0
 				for (i = 0; circ_buf_has_char(&usb_usart_circ_buf) && (i < 512); i++) {
 					chr_buf[i] = get_from_circ_buf(&usb_usart_circ_buf);
 				}
-				udi_cdc_multi_write_buf(0, chr_buf, i);
+				#endif
+				//udi_cdc_multi_write_buf(0, chr_buf, i);
 				//udi_cdc_multi_putc(0, get_from_circ_buf(&usb_usart_circ_buf));
 			}
 				//
