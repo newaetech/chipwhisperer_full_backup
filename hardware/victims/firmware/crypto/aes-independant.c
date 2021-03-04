@@ -406,7 +406,7 @@ void aes_indep_mask(uint8_t * m, uint8_t len)
 
 uint8_t encKey[16];
 
-uint32_t rand(void)
+int rand(void)
 {
   return get_rand();
 }
