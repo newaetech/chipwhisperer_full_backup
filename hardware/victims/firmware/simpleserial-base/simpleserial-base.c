@@ -22,7 +22,7 @@
 
 #include "simpleserial.h"
 
-uint8_t get_key(uint8_t* k)
+uint8_t get_key(uint8_t* k, uint8_t len)
 {
 	// Load key here
 	return 0x00;
@@ -31,20 +31,20 @@ uint8_t get_key(uint8_t* k)
 #if SS_VER == SS_VER_2_0
 uint8_t get_pt(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t* pt)
 #else
-uint8_t get_pt(uint8_t* pt)
+uint8_t get_pt(uint8_t* pt, uint8_t len)
 #endif
 
 {
 	/**********************************
 	* Start user-specific code here. */
 	trigger_high();
-	
+
 	//16 hex bytes held in 'pt' were sent
 	//from the computer. Store your response
 	//back into 'pt', which will send 16 bytes
 	//back to computer. Can ignore of course if
 	//not needed
-	
+
 	trigger_low();
 	/* End user-specific code here. *
 	********************************/
@@ -52,7 +52,7 @@ uint8_t get_pt(uint8_t* pt)
 	return 0x00;
 }
 
-uint8_t reset(uint8_t* x)
+uint8_t reset(uint8_t* x, uint8_t len)
 {
 	// Reset key here if needed
 	return 0x00;
@@ -62,9 +62,9 @@ uint8_t reset(uint8_t* x)
 int main(void)
 {
     platform_init();
-	init_uart();	
+	init_uart();
 	trigger_setup();
-	
+
  	/* Uncomment this to get a HELLO message for debug */
 	/*
 	putch('h');
@@ -74,8 +74,8 @@ int main(void)
 	putch('o');
 	putch('\n');
 	*/
-		
-	simpleserial_init();		
+
+	simpleserial_init();
 	simpleserial_addcmd('p', 16, get_pt);
 #if SS_VER != SS_VER_2_0
 	simpleserial_addcmd('k', 16, get_key);

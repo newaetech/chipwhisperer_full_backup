@@ -129,7 +129,7 @@ void simpleserial_get(void)
 	uint8_t next_frame = unstuff_data(data_buf, 4);
 
 	// check for valid command
-	uint8_t c = 0; 
+	uint8_t c = 0;
 	for(c = 0; c < num_commands; c++)
 	{
 		if(commands[c].c == data_buf[1])
@@ -208,12 +208,13 @@ typedef struct ss_cmd
 {
 	char c;
 	unsigned int len;
-	uint8_t (*fp)(uint8_t*);
+	uint8_t (*fp)(uint8_t*, uint8_t);
+	uint8_t flags;
 } ss_cmd;
 static ss_cmd commands[MAX_SS_CMDS];
 // Callback function for "v" command.
 // This can exist in v1.0 as long as we don't actually send back an ack ("z")
-uint8_t check_version(uint8_t *v)
+uint8_t check_version(uint8_t *v, uint8_t len)
 {
 	return SS_VER;
 }
@@ -261,7 +262,12 @@ void simpleserial_init()
 	simpleserial_addcmd('v', 0, check_version);
 }
 
-int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t*))
+int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t*, uint8_t))
+{
+	return simpleserial_addcmd_flags(c, len, fp, CMD_FLAG_NONE);
+}
+
+int simpleserial_addcmd_flags(char c, unsigned int len, uint8_t (*fp)(uint8_t*, uint8_t), uint8_t fl)
 {
 	if(num_commands >= MAX_SS_CMDS)
 		return 1;
@@ -272,6 +278,7 @@ int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t*))
 	commands[num_commands].c   = c;
 	commands[num_commands].len = len;
 	commands[num_commands].fp  = fp;
+	commands[num_commands].flags = fl;
 	num_commands++;
 
 	return 0;
@@ -297,6 +304,18 @@ void simpleserial_get(void)
 	if(cmd == num_commands)
 		return;
 
+	// If flag CMD_FLAG_LEN is set, the next byte indicates the sent length
+	if ((commands[cmd].flags & CMD_FLAG_LEN) != 0)
+	{
+		uint8_t l = 0;
+		char buff[2];
+		buff[0] = getch();
+		buff[1] = getch();
+		if (hex_decode(1, buff, &l))
+			return;
+		commands[cmd].len = l;
+	}
+
 	// Receive characters until we fill the ASCII buffer
 	for(int i = 0; i < 2*commands[cmd].len; i++)
 	{
@@ -314,15 +333,15 @@ void simpleserial_get(void)
 	if(c != '\n' && c != '\r')
 		return;
 
-	// ASCII buffer is full: convert to bytes 
+	// ASCII buffer is full: convert to bytes
 	// Check for illegal characters here
 	if(hex_decode(commands[cmd].len, ascii_buf, data_buf))
 		return;
 
 	// Callback
 	uint8_t ret[1];
-	ret[0] = commands[cmd].fp(data_buf);
-	
+	ret[0] = commands[cmd].fp(data_buf, commands[cmd].len);
+
 	// Acknowledge (if version is 1.1)
 #if SS_VER == SS_VER_1_1
 	simpleserial_put('z', 1, ret);

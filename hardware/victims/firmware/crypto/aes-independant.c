@@ -46,7 +46,7 @@ void aes_indep_enc(uint8_t * pt)
     HW_AES128_Enc(pt);
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
 }
 
@@ -81,7 +81,7 @@ void aes_indep_enc_posttrigger(uint8_t * pt)
     ;
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
 }
 
@@ -119,7 +119,7 @@ void aes_indep_enc_posttrigger(uint8_t * pt)
     ;
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
 }
 
@@ -163,7 +163,7 @@ void aes_indep_enc_posttrigger(uint8_t * pt)
     ;
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
 }
 
@@ -198,7 +198,7 @@ void aes_indep_enc_posttrigger(uint8_t * pt)
     ;
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
 }
 
@@ -232,7 +232,7 @@ void aes_indep_enc(uint8_t * pt)
 	mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT, pt, pt); /* encrypting the data block */
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
 }
 
@@ -271,7 +271,7 @@ void aes_indep_enc_posttrigger(uint8_t * pt)
     pt[i] = input[i];
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
   int i;
   for (i = 0; i < AESMaskSize; i++)
