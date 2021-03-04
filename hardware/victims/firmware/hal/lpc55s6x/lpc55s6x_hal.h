@@ -81,4 +81,6 @@ void trigger_setup(void);
 void trigger_low(void);
 void trigger_high(void);
 
+uint32_t get_rand(void);
+
 #endif /* _LPC55S6X_HAL_H_ */
