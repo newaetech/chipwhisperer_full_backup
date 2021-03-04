@@ -16,6 +16,11 @@ void platform_init(void)
 {
 	//HAL_Init();
 
+#ifdef STM32F4FPU
+     /* set CP10 and CP11 Full Access */
+     SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2)); // SCB->CPACR |= 0x00f00000;
+#endif
+
 #ifdef USE_INTERNAL_CLK
      RCC_OscInitTypeDef RCC_OscInitStruct;
      RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
