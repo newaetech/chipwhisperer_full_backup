@@ -14,7 +14,7 @@ $(info Options=$(options))
 
 ifeq ($(implementation),ANSSI)
   # ARM Cortex-M4 targets
-  ifeq ($(HAL),$(filter $(HAL),sam4l stm32f3 stm32f4 cc2538 k24f k82f nrf52840 saml11 efm32tg11b lpc55s6x psoc62))
+  ifeq ($(HAL),$(filter $(HAL),sam4l stm32f3 stm32f4 stm32l4 stm32l5 cc2538 k24f k82f nrf52840 efm32tg11b lpc55s6x psoc62))
     CDEFS += -DANSSI_CM4
     CRYPTO_LIB = SecAESSTM32/src
     SRC += platform.c aes.c
