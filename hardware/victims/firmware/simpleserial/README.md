@@ -22,6 +22,8 @@ that it is done its operation:
 
 Where status is an 8-bit binary number indicating the result/status of the operation. For example, most functions use 0x00 to indicate success.
 
+The default baud rate is 38400bps.
+
 ### SimpleSerial v1.0
 
 The same as SimpleSerial v1.1, except the ack packet is not included.
@@ -66,6 +68,12 @@ The following standard errors are used:
 0x03 - Timeout
 0x04 - Invalid length
 0x05 - Unexpected frame byte (0x00)
+0x06 - Reserved
+...
+
+0x0F - Reserved
 ```
 
 Commands may use additional error codes to indicate the result of an operation.
+
+The default baud rate is 230400bps.

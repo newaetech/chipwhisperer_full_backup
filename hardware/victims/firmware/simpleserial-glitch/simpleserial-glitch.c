@@ -43,7 +43,11 @@ uint8_t glitch_loop(uint8_t* in, uint8_t len)
     }
     trigger_low();
     simpleserial_put('r', 4, (uint8_t*)&cnt);
+#if SS_VER == SS_VER_2_0
+    return (cnt != 2500) ? 0x10 : 0x00;
+#else
     return (cnt != 2500);
+#endif
 }
 
 #if SS_VER == SS_VER_2_0
