@@ -46,7 +46,7 @@ void aes_indep_enc(uint8_t * pt)
     HW_AES128_Enc(pt);
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
 }
 
@@ -81,7 +81,7 @@ void aes_indep_enc_posttrigger(uint8_t * pt)
     ;
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
 }
 
@@ -119,7 +119,7 @@ void aes_indep_enc_posttrigger(uint8_t * pt)
     ;
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
 }
 
@@ -163,7 +163,7 @@ void aes_indep_enc_posttrigger(uint8_t * pt)
     ;
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
 }
 
@@ -198,7 +198,7 @@ void aes_indep_enc_posttrigger(uint8_t * pt)
     ;
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
 }
 
@@ -232,11 +232,13 @@ void aes_indep_enc(uint8_t * pt)
 	mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT, pt, pt); /* encrypting the data block */
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
 }
 
 #elif defined(MASKEDAES)
+
+#if defined(ANSSI_AVR)
 
 #include "aesTables.h"
 #include "maskedAES128enc.h"
@@ -271,14 +273,100 @@ void aes_indep_enc_posttrigger(uint8_t * pt)
     pt[i] = input[i];
 }
 
-void aes_indep_mask(uint8_t * m)
+void aes_indep_mask(uint8_t * m, uint8_t len)
 {
   int i;
   for (i = 0; i < AESMaskSize; i++)
     mask[i] = m[i];
 }
 
+#elif defined(ANSSI_CM4)
 
+#include "platform.h"
+#include "string.h"
+#include "aes.h"
+
+#ifndef NULL
+#define NULL 0
+#endif
+
+#define AESKeySize 16
+#define AESMaskSize 19
+#define AESBlockSize 16
+
+STRUCT_AES aes_ctx;
+uint8_t key_mask[AESMaskSize];
+uint8_t aes_mask[AESMaskSize];
+uint8_t temp_key[AESKeySize];
+uint8_t mask_modes;
+
+void aes_indep_init(void)
+{
+  local_memset(&aes_ctx, 0, sizeof(aes_ctx));
+  mask_modes = 0;
+}
+
+void aes_indep_key(uint8_t* key)
+{
+#ifdef TRIG_BEFORE_KS
+  int i;
+  for (i = 0; i < AESKeySize; i++)
+    temp_key[i] = key[i];
+#else
+  aes(MODE_KEYINIT | mask_modes, &aes_ctx, key,
+      NULL /* plaintext */, NULL /* encrypted text */,
+      aes_mask, key_mask);
+#endif
+}
+
+void aes_indep_enc_pretrigger(uint8_t * pt)
+{
+}
+
+void aes_indep_enc_posttrigger(uint8_t * pt)
+{
+}
+
+void aes_indep_enc(uint8_t* pt)
+{
+#ifdef TRIG_BEFORE_KS
+  aes(MODE_KEYINIT | MODE_AESINIT_ENC | MODE_ENC | mask_modes,
+      &aes_ctx, temp_key,
+      pt /* plaintext */, pt /* encrypted text */,
+      aes_mask, key_mask);
+#else
+  aes(MODE_AESINIT_ENC | MODE_ENC | mask_modes, &aes_ctx, NULL /* key */,
+      pt /* plaintext */, pt /* encryted text */,
+      aes_mask, key_mask);
+#endif
+}
+
+void aes_indep_mask(uint8_t* m, uint8_t len)
+{
+  int i;
+  if (len >= AESMaskSize) {
+    for (i = 0; i < AESMaskSize; i++)
+      key_mask[i] = m[i];
+    mask_modes |= MODE_RANDOM_KEY_EXT;
+  } else {
+    mask_modes &= ~MODE_RANDOM_KEY_EXT;
+  }
+
+  if (len == (2 * AESMaskSize)) {
+    for (i = 0; i < AESMaskSize; i++)
+      aes_mask[i] = m[i + AESMaskSize];
+    mask_modes |= MODE_RANDOM_AES_EXT;
+  } else {
+    mask_modes &= ~MODE_RANDOM_AES_EXT;
+  }
+}
+
+
+#else
+
+#error "Unsupported MASKEDAES implementation"
+
+#endif // MASKEDAES
 
 #else
 

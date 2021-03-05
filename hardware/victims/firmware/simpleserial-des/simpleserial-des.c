@@ -28,7 +28,7 @@
 
 static uint8_t key[KEY_LENGTH] = {DEFAULT_KEY};
 
-void update_key(uint8_t* k)
+void update_key(uint8_t* k, uint8_t len)
 {
 	for(int i = 0; i < KEY_LENGTH; i++)
 	{
@@ -36,14 +36,14 @@ void update_key(uint8_t* k)
 	}
 }
 
-void encrypt(uint8_t* pt)
+void encrypt(uint8_t* pt, uint8_t len)
 {
-	/* Do Encryption */					
-	//NOTE: Setup for DES is huge - about 15000(!) clock cycles. This results in 
-	// a large and annoying offset. 
+	/* Do Encryption */
+	//NOTE: Setup for DES is huge - about 15000(!) clock cycles. This results in
+	// a large and annoying offset.
 	// Instead trigger_high() is called within the DES algorithm.
 	//trigger_high();
-	
+
 	uint8_t ct[8];
 	des_enc(ct, pt, key); /* encrypting the data block */
 	trigger_low();
@@ -51,16 +51,16 @@ void encrypt(uint8_t* pt)
 	simpleserial_put('r', 8, ct);
 }
 
-void no_op(uint8_t* x)
+void no_op(uint8_t* x, uint8_t len)
 {
 }
 
 int main(void)
 {
     platform_init();
-	init_uart();	
+	init_uart();
 	trigger_setup();
-	
+
  	/* Uncomment this to get a HELLO message for debug */
 	/*
 	putch('h');
@@ -78,5 +78,5 @@ int main(void)
 		simpleserial_get();
 }
 
-	
-	
+
+

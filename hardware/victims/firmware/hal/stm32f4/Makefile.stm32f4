@@ -16,9 +16,18 @@ NM = arm-none-eabi-nm
 #Output Format = Binary for this target
 FORMAT = binary
 
-CFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
-CPPFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
-ASFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
+#FPUUSE=AAAAA
+ifeq ($(FPUUSE),)
+  CFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
+  CPPFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
+  ASFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
+else
+  CDEFS += -DSTM32F4FPU
+  CFLAGS += -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fmessage-length=0 -ffunction-sections
+  CPPFLAGS += -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fmessage-length=0 -ffunction-sections
+  ASFLAGS += -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fmessage-length=0 -ffunction-sections
+endif
+
 
 CDEFS += -DSTM32F415RGTx -DSTM32F4 -DSTM32 -DDEBUG -DSTM32F415xx
 CPPDEFS += -DSTM32F415RGTx -DSTM32F4 -DSTM32 -DDEBUG
