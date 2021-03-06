@@ -10,6 +10,8 @@ void init_uart(void);
 void putch(char c);
 char getch(void);
 
+uint32_t get_rand(void);
+
 void trigger_setup(void);
 void trigger_low(void);
 void trigger_high(void);

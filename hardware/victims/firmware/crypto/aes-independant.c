@@ -361,6 +361,87 @@ void aes_indep_mask(uint8_t* m, uint8_t len)
   }
 }
 
+#elif defined(RIOUBSAES)
+
+#include "secure_aes_pbs.h"
+
+uint8_t encKey[16];
+
+bitslice_t get_random_bitslice(void)
+{
+  return get_rand();
+}
+
+void aes_indep_init(void)
+{
+}
+
+void aes_indep_key(uint8_t * key)
+{
+  for (uint8_t i = 0; i < 16; i++) {
+    encKey[i] = key[i];
+  }
+}
+
+void aes_indep_enc_pretrigger(uint8_t * pt)
+{
+}
+
+void aes_indep_enc_posttrigger(uint8_t * pt)
+{
+}
+
+void aes_indep_enc(uint8_t * pt)
+{
+  sec_aes128_enc_packed_bitslice_wrapper(pt, pt, encKey);
+}
+
+void aes_indep_mask(uint8_t * m, uint8_t len)
+{
+}
+
+#elif defined(KNARFRANKBSAES)
+
+#include "masked_combined.h"
+
+uint8_t encKey[16];
+
+int rand(void)
+{
+  return get_rand();
+}
+
+void aes_indep_init(void)
+{
+}
+
+void aes_indep_key(uint8_t * key)
+{
+  for (uint8_t i = 0; i < 16; i++) {
+    encKey[i] = key[i];
+  }
+}
+
+void aes_indep_enc_pretrigger(uint8_t * pt)
+{
+}
+
+void aes_indep_enc_posttrigger(uint8_t * pt)
+{
+}
+
+void aes_indep_enc(uint8_t * pt)
+{
+  uint8_t result[16];
+  Encrypt(result, pt, encKey);
+  for (uint8_t i = 0; i < 16; i++) {
+    pt[i] = result[i];
+  }
+}
+
+void aes_indep_mask(uint8_t * m, uint8_t len)
+{
+}
 
 #else
 
