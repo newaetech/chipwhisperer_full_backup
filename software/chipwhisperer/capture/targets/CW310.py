@@ -100,3 +100,11 @@ class CW310(CW305):
     def _dis(self):
         if self._naeusb:
             self._naeusb.close()
+
+    def go_reg(self):
+        """Disable USB clock (if requested), perform encryption, re-enable clock"""
+        self.fpga_write(self.REG_USER_LED, [0x01])
+
+        self.fpga_write(self.REG_CRYPT_GO, [1])
+        time.sleep(0.2)
+        self.fpga_write(self.REG_CRYPT_GO, [0])
