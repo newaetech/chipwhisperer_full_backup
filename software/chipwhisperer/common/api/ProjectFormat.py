@@ -488,7 +488,7 @@ class Project(Parameterized):
 
         if file_type == 'zip':
             file_path = os.path.abspath(file_path)
-            with zipfile.ZipFile(file_path, 'w') as zip:
+            with zipfile.ZipFile(file_path, 'w', zipfile.ZIP_DEFLATED) as zip:
                 common_path = os.path.commonpath(file_paths)
                 for file in file_paths:
                     relative_path = os.path.relpath(file, common_path)
