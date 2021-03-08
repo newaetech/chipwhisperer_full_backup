@@ -56,13 +56,23 @@ def program_target(scope, prog_type, fw_path, **kwargs):
     if prog_type is None: #[makes] automating notebooks much easier
         return
     prog = prog_type(**kwargs)
-    prog.scope = scope
-    prog._logging = None
-    prog.open()
-    prog.find()
-    prog.erase()
-    prog.program(fw_path, memtype="flash", verify=True)
-    prog.close()
+
+    try:
+        prog.scope = scope
+        prog._logging = None
+        prog.open()
+        prog.find()
+        prog.erase()
+        prog.program(fw_path, memtype="flash", verify=True)
+        prog.close()
+    except:
+        if isinstance(prog, programmers.XMEGAProgrammer) and isinstance(scope, scopes.OpenADC):
+            scope.io.pdic = 0
+            time.sleep(0.05)
+            scope.io.pdic = None
+            time.sleep(0.05)
+        raise
+
 
 
 programTarget = camel_case_deprecated(program_target)
