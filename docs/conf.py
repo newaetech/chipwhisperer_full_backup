@@ -168,6 +168,9 @@ def generate_contributing(app, config):
 
     print('Generating contributing.rst')
     pypandoc.convert_file('../contributing.md', 'rst', outputfile='contributing.rst')
+
+    print('Generating simpleserial.rst')
+    pypandoc.convert_file('../hardware/victims/firmware/simpleserial/README.md', 'rst', outputfile='simpleserial.rst')
             
 
 
