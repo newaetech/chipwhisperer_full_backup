@@ -417,7 +417,7 @@ class SimpleSerial2(TargetTemplate):
                 True.
 
         Returns:
-            List of dics with fields {'cmd': command_byte, 'len': 0x00, 'flags': 0x00}
+            List of dics with fields 'cmd' command_byte, 'len' 0x00, 'flags' 0x00
         """
         self.flush()
         self.simpleserial_write('w', [])

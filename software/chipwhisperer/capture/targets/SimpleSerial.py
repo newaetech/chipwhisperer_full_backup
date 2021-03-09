@@ -203,7 +203,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
                 True.
 
         Returns:
-            List of dics with fields {'cmd': command_byte, 'len': command_length, 'flags': command_flags}
+            List of dics with fields 'cmd' command_byte, 'len' command_length, 'flags' command_flags
         """
         self.flush()
         self.simpleserial_write('y', bytearray())
