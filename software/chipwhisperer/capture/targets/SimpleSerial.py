@@ -65,6 +65,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
       * :meth:`target.set_key <.SimpleSerial.set_key>`
       * :meth:`target.close <.SimpleSerial.close>`
       * :meth:`target.con <.SimpleSerial.con>`
+      * :meth:`target.get_simpleserial_commands <.SimpleSerial.get_simpleserial_commands>`
 
     .. warning::
         The CWLite, CW1200, and CWNano have a 128 byte read buffer and a 128 

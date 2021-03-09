@@ -43,6 +43,7 @@ class SimpleSerial2(TargetTemplate):
       * :meth:`target.set_key <.SimpleSerial2.set_key>`
       * :meth:`target.close <.SimpleSerial2.close>`
       * :meth:`target.con <.SimpleSerial2.con>`
+      * :meth:`target.get_simpleserial_commands <.SimpleSerial2.get_simpleserial_commands>`
 
     The protocol is as follows:
 

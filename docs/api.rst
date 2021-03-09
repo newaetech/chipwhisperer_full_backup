@@ -478,6 +478,8 @@ Simple Serial Target
 
     .. automethod:: con
 
+    .. automethod:: get_simpleserial_commands
+
     .. autoattribute:: baud
 
     .. autoattribute:: output_len
@@ -522,6 +524,8 @@ Simple Serial V2 Target
     .. automethod:: close
 
     .. automethod:: con
+
+    .. automethod:: get_simpleserial_commands
 
     .. autoattribute:: baud
 
