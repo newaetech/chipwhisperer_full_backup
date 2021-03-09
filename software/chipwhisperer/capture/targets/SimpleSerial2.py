@@ -402,6 +402,36 @@ class SimpleSerial2(TargetTemplate):
 
         return {'valid': True, 'payload': bytearray(response[3:-2]), 'full_response': response, 'rv': rv}
 
+    def get_simpleserial_commands(self, timeout=250, flush_on_err=None, ack=True):
+        """Gets available simpleserial commands for target
+
+        Args:
+            timeout (int, optional): Value to use for timeouts during initial
+                read of expected data in ms. If 0, block until all expected
+                data is returned. Defaults to 250.
+            flush_on_err (bool/None, optional): If True, reset/flush the serial lines.
+                If False, don't. If None, determine via whether or not flush_on_err
+                was True or False when passed to con()
+            ack (bool, optional): Wait for ack after sending key. Defaults to
+                True.
+
+        Returns:
+            List of dics with fields {'cmd': command_byte, 'len': 0x00, 'flags': 0x00}
+        """
+        self.flush()
+        self.simpleserial_write('w', [])
+        cmd_packet = self.read_cmd('r', None, timeout, flush_on_err)
+        if ack:
+            self.read_cmd('e')
+
+        num_commands = cmd_packet[2]
+        command_list = []
+        for i in range(num_commands):
+            command_list.append({"cmd": bytes([cmd_packet[3+i]]), "len": 0x00, "flags": 0x00})
+
+        return command_list
+
+
     def read_cmd(self, cmd=None, pay_len=None, timeout=250, flush_on_err=None):
         """Read and decode simpleserial-v2 command
 

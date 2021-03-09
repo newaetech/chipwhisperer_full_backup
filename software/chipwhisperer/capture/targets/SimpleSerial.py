@@ -191,6 +191,32 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         """Always returns True"""
         return True
 
+    def get_simpleserial_commands(self, timeout=250, ack=True):
+        """Gets available simpleserial commands for target
+
+        Args:
+            timeout (int, optional): Value to use for timeouts during initial
+                read of expected data in ms. If 0, block until all expected
+                data is returned. Defaults to 250.
+            ack (bool, optional): Wait for ack after sending key. Defaults to
+                True.
+
+        Returns:
+            List of dics with fields {'cmd': command_byte, 'len': command_length, 'flags': command_flags}
+        """
+        self.flush()
+        self.simpleserial_write('y', bytearray())
+        num_commands = self.simpleserial_read('r', 1, timeout=timeout, ack=ack)
+        self.simpleserial_write('w', bytearray())
+        
+        cmd_packet = self.simpleserial_read('r', num_commands[0]*3, timeout=timeout, ack=ack)
+        command_list = []
+        for i in range(num_commands[0]):
+            command_list.append({"cmd": bytes([cmd_packet[3*i]]), "len": cmd_packet[1+3*i], "flags": cmd_packet[2+3*i]})
+
+        return command_list
+
+
 
 
     def write(self, data):
