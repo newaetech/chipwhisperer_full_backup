@@ -35,6 +35,14 @@ of a variable length command, the send command will instead be:
 
 `[cmd, len, data_0, data_1, ..., data_n, '\n']`
 
+### Reserved Commands
+
+The following commands are reserved by SimpleSerial v1:
+
+* `'v'`: Get simpleserial version (len=0)
+* `'y'`: Get the number of simpleserial commands on the target
+* `'w'`: Get simpleserial commands
+
 ## SimpleSerial v2.0
 
 All communication is initiated by the capture board. The capture board begins communication by sending a packet:
@@ -77,3 +85,10 @@ The following standard errors are used:
 Commands may use additional error codes to indicate the result of an operation.
 
 The default baud rate is 230400bps.
+
+### Reserved Commands
+
+The following commands are reserved by SimpleSerial v2:
+
+* `'v'`: Get simpleserial version (len=0)
+* `'w'`: Get simpleserial commands
