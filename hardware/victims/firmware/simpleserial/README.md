@@ -72,7 +72,7 @@ it is done its operation:
 
 `['e', 0x01, error, CRC (poly=0xA6)]`
 
-Before being sent, all packets are [Consistant Overhead Byte Stuffing
+Before being sent, all packets are [Consistent Overhead Byte Stuffing
 (COBS)](https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing) and
 null terminated:
 
@@ -103,3 +103,160 @@ The following commands are reserved by SimpleSerial v2:
 
 * `'v'`: Get simpleserial version (len=0)
 * `'w'`: Get simpleserial commands
+
+## Usage from C
+
+You can use the C SimpleSerial library to listen to and send packets containing
+commands, data, etc.
+
+There are four exposed methods in the C library.
+
+### `simpleserial_init`
+
+This sets up the SimpleSerial module and prepares any internal commands. It
+mostly there for future usage.
+
+Calling it is as simple as:
+
+```c
+#include "simpleserial.h"
+
+// ..snip
+
+simpleserial_init();
+```
+
+### `simpleserial_addcmd`
+
+Adds a listener on the target for a specific command. Depending on the version
+of SimpleSerial you are using, the arguments are different.
+
+> __Note:__ the C implementation of the SimpleSerial can only hold a maximum of
+> 16 active command.
+
+#### Arguments
+
+Depending on whether we are using V1.\* or V2, it takes the following ordered
+arguments:
+
+##### SimpleSerial V1.\*
+
+* `char` - the __command__ the target needs to listen for.
+* `unsigned int` - the __amount of data bytes__ expected. The maximum is 64 bytes.
+* `(uint8_t*, uint8_t) -> uint8_t` - the __handler__ for the command taking the
+  __data buffer__ and the __actual data buffer length__ in bytes and returning a
+  status code.
+
+##### SimpleSerial V2
+
+* `char` - the __command__ the target needs to listen for.
+* `unsigned int` - the __amount of data bytes__ expected. The maximum is 192 bytes.
+* `(uint8_t, uint8_t, uint8_t, uint8_t*) -> uint8_t` - the __handler__ for the
+  command taking the arguments __command__, __sub-command__, __actual data buffer
+  length__ and the __data buffer__ in bytes, in that order, and returning a
+  status code.
+
+#### Return value
+
+Returns an `int` which is `1` if the maximum expected data buffer length is
+exceeded and if the maximum number of commands has been reached. Will return `0`
+otherwise.
+
+#### Notes
+
+* The callbacks function return value will be returned to the capture board. In
+  SimpleSerial V1.1 this will be through a `'z'` message, as described above.
+
+#### Example
+
+The following is a SimpleSerial V2 example.
+
+```c
+#include "simpleserial.h"
+
+uint8_t set_key(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t* data)
+{
+    // ...snip
+
+    return 0;
+}
+
+uint8_t encrypt_plaintext(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t* data)
+{
+    // ...snip
+
+    return 0;
+}
+
+// ... snip
+
+simpleserial_addcmd('k', 16, set_key);
+simpleserial_addcmd('p', 16, encrypt_plaintext);
+```
+
+### `simpleserial_put`
+
+Write some data to the serial port, which should send a packet from the target
+board to the capture board.
+
+#### Arguments
+
+This function takes the following ordered arguments:
+
+* `char` - the __command__ for the capture board (e.g. `'z'` for ack, or `'e'`
+  for error).
+* `uint8_t` - the __size of the data buffer__.
+* `uint8_t*` - the __data buffer__ of the packet send.
+
+#### Example
+
+The following is a SimpleSerial V2 example (although this has no impact on the
+usage of the `simpleserial_put` function).
+
+```c
+#include "simpleserial.h"
+
+uint8_t encrypt_plaintext(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t* data)
+{
+    // ...snip (do the actual encryption).
+
+    // Send the result back to the capture board.
+    simpleserial_put('r', 16, result_buffer);
+
+    return 0;
+}
+
+// ... snip
+
+simpleserial_addcmd('p', 16, encrypt_plaintext);
+```
+
+### `simpleserial_get`
+
+Attempt to process a received command. If a packet from the capture board is
+found relevant callback function(s) are called.
+
+This is mostly used at the end of binaries to keep checking for commands being
+check.
+
+It might return without calling a callback for several reasons:
+
+* There are no handler listening to the command send.
+* The send packet is invalid. e.g. in SimpleSerial this could be due to data
+  bytes not being in HexASCII format.
+* The data buffer has an unexpected length.
+
+#### Example
+
+```c
+#include "simpleserial.h"
+
+// ...snip
+
+// Add a listener
+simpleserial_addcmd('p', 16, encrypt);
+
+// Keep check if a command was send fitting one of the listeners.
+while(1)
+    simpleserial_get();
+```
