@@ -232,7 +232,7 @@ class CW305(TargetTemplate):
 
         # print "vccint = " + str(vccint)
 
-        if (vccint < 0.6) or (vccint > 1.15):
+        if (vccint < 0.6) or (vccint > 1.1):
             raise ValueError("VCC-Int out of range 0.6V-1.1V")
 
         # Convert to mV
