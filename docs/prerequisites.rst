@@ -68,30 +68,11 @@ The driver for Linux is built in; however, you need to allow your user account t
 
 .. code::
 
-    # CW-Lite
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace2", MODE="0664", GROUP="plugdev"
-
-    # CW-1200
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace3", MODE="0664", GROUP="plugdev"
-
-    # CW-Nano
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace0", MODE="0664", GROUP="plugdev"
-
-    # CW-305 (Artix Target)
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="c305", MODE="0664", GROUP="plugdev"
-
-    # CW-CR2
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="8613", MODE="0664", GROUP="plugdev"
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="221a", ATTRS{idProduct}=="0100", MODE="0664", GROUP="plugdev"
+    # Match all CW devices
+    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace[0-9]|c[3-6][0-9][0-9]", TAG+="uaccess"
 
 Alternatively, you can just copy :code:`chipwhisperer/hardware/99-newae.rules`
 to :code:`/etc/udev/rules.d/`.
-
-Then add your username to the plugdev group:
-
-.. code:: bash
-
-    sudo usermod -a -G plugdev YOUR-USERNAME
 
 And reset the udev system:
 
@@ -102,7 +83,7 @@ And reset the udev system:
 Finally log out & in again for the group change to take effect.
 
 You can always find the latest version of this file on
-`Github <https://github.com/newaetech/chipwhisperer/blob/master/hardware/99-newae.rules>`_.
+`Github <https://github.com/newaetech/chipwhisperer/blob/develop/hardware/99-newae.rules>`_.
 
 You should also add your username to the dialout group, which will allow you to reprogram
 the USB firmware on your ChipWhisperer:

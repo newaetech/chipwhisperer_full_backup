@@ -10,8 +10,5 @@
 # 5) Log in/out again for changes to take effect
 # 6) Connect hardware
 #
-# CW-Capture
-SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace[0-9]", TAG+="uaccess"
-
-# CW-Targets
-SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="C[0-9]*", TAG+="uaccess"
+# Match all CW devices
+SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace[0-9]|c[3-6][0-9][0-9]", TAG+="uaccess"
