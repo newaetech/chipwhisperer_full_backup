@@ -73,6 +73,7 @@ NEWAE_PIDS = {
     0xACE3: {'name': "ChipWhisperer-CW1200",   'fwver': fw_cw1200.fwver},
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fw_cw305.fwver},
     0xACE0: {'name': "ChipWhisperer-Nano", 'fwver': fw_nano.fwver},
+    0xACE5: {'name': "ChipWhisperer-CW1200",   'fwver': fw_cw1200.fwver},
 }
 
 class NAEUSB_Serializer_base(object):
@@ -362,6 +363,14 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
             else:
                 #User did not help us out - throw it in their face
                 raise Warning("Found multiple potential USB devices. Please specify device to use. Possible S/Ns:\n" + snlist)
+        try:
+            try:
+                dev.set_configuration(0)
+            except:
+                pass #test
+            dev.set_configuration()
+        except ValueError:
+            raise OSError("NAEUSB: Could not configure USB device")
 
         # Get serial number
         try:
@@ -384,8 +393,13 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         logging.info('Found %s, Serial Number = %s' % (name, self.snum))
 
         self._usbdev = dev
-        self.rep = 0x81
-        self.wep = 0x02
+        # TODO: how to tell if we're Husky at this point? maybe a try block?
+        # for husky:
+        self.rep = 0x85
+        self.wep = 0x06
+        # for older capture HW:
+        #self.rep = 0x81
+        #self.wep = 0x02
         self._timeout = 200
 
         return foundId

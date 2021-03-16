@@ -62,7 +62,8 @@ class OpenADCInterface_NAEUSBChip(object):
         else:
             self.cwFirmwareConfig = {
                 0xACE2:FWLoaderConfig(CWLite_Loader()),
-                0xACE3:FWLoaderConfig(CW1200_Loader())
+                0xACE3:FWLoaderConfig(CW1200_Loader()),
+                0xACE5:FWLoaderConfig(CW1200_Loader())
             }
             self.scope = oadcInstance
 
@@ -71,7 +72,7 @@ class OpenADCInterface_NAEUSBChip(object):
             self.dev = CWL.CWLiteUSB()
 
             try:
-                nae_products = [0xACE2, 0xACE3]
+                nae_products = [0xACE2, 0xACE3, 0xACE5]
                 possible_sn = self.dev.get_possible_devices(nae_products)
                 serial_numbers = []
                 if len(possible_sn) > 1:
@@ -96,6 +97,7 @@ class OpenADCInterface_NAEUSBChip(object):
             self.last_id = found_id
 
             self.getFWConfig().setInterface(self.dev.fpga)
+            # XXX: need to comment this out?
             try:
                 self.getFWConfig().loadRequired()
             except:

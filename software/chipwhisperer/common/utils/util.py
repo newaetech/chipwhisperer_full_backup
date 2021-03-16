@@ -494,7 +494,7 @@ def get_cw_type(sn=None):
     """
     from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
     from chipwhisperer.capture import scopes
-    possible_ids = [0xace0, 0xace2, 0xace3]
+    possible_ids = [0xace0, 0xace2, 0xace3, 0xace5]
 
     cwusb = NAEUSB()
     possible_sn = cwusb.get_possible_devices(idProduct=possible_ids)
@@ -516,7 +516,7 @@ def get_cw_type(sn=None):
         name = possible_sn[0]['product']
 
     #print(name)
-    if (name == "ChipWhisperer Lite") or (name == "ChipWhisperer CW1200"):
+    if (name == "ChipWhisperer Lite") or (name == "ChipWhisperer CW1200") or (name == "ChipWhisperer Husky"):
         return scopes.OpenADC
     elif name == "ChipWhisperer Nano":
         return scopes.CWNano

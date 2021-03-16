@@ -503,10 +503,14 @@ class ChipWhispererGlitch(object):
                 settingprefix = "cw1200"
                 partialbasename = "cw1200"
                 self.glitchPR = pr.PartialReconfigDataMulti()
+            elif cwtype == "cwhusky":
+                settingprefix = "cwhusky"
+                partialbasename = "cwhusky"
+                self.glitchPR = None
             else:
                 raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
 
-            if scope.getFWConfig().loader._release_mode != "debug":
+            if scope.getFWConfig().loader._release_mode != "debug" and cwtype != "cwhusky": # TODO- temporary
 
                 if scope.getFWConfig().loader._release_mode == "builtin":
                     filelike = scope.getFWConfig().loader._bsBuiltinData

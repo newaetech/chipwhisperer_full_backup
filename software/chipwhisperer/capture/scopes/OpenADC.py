@@ -211,6 +211,8 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
                 return "cwlite"
             elif "CW1200" in hwInfoVer:
                 return "cw1200"
+            elif "Husky" in hwInfoVer:
+                return "cwhusky"
             else:
                 return "cwrev2"
         return ""
@@ -237,7 +239,8 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
 
             cwtype = self._getCWType()
             if cwtype != "":
-                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.qtadc.sc)
+                if cwtype != "Husky":
+                    self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.qtadc.sc)
 
                 util.chipwhisperer_extra = self.advancedSettings
 
@@ -260,6 +263,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
             if self.advancedSettings:
                 self.io = self.advancedSettings.cwEXTRA.gpiomux
                 self.trigger = self.advancedSettings.cwEXTRA.triggermux
+                #if cwtype != "cwhusky":
                 self.glitch = self.advancedSettings.glitch.glitchSettings
                 if cwtype == "cw1200":
                     self.trigger = self.advancedSettings.cwEXTRA.protrigger
