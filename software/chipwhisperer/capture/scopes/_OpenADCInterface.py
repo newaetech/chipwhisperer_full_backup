@@ -1781,7 +1781,7 @@ class OpenADCInterface(object):
     def triggerNow(self):
         initial = self.settings()
         self.setSettings(initial | SETTINGS_TRIG_NOW)
-        time.sleep(0.001)
+        time.sleep(0.05)
         self.setSettings(initial & ~SETTINGS_TRIG_NOW)
 
     def getStatus(self):
@@ -1957,7 +1957,7 @@ class OpenADCInterface(object):
 
                 # If we've timed out, don't wait any longer for a trigger
                 if (diff.total_seconds() > self._timeout):
-                    logging.warning('Timeout in OpenADC capture(), trigger FORCED')
+                    logging.warning('Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid. Status: %02x'%status)
                     timeout = True
                     self.triggerNow()
                     break
@@ -1991,9 +1991,13 @@ class OpenADCInterface(object):
 
                 # If we've timed out, don't wait any longer for a trigger
                 if (diff.total_seconds() > self._timeout):
-                    logging.warning('Timeout in OpenADC capture(), trigger FORCED')
+                    logging.warning('Timeout in OpenADC capture(), trigger no trigger seen! Trigger forced, data is invalid. Status: %02x'%status)
                     timeout = True
                     self.triggerNow()
+
+                    #Once in timeout mode we can't rely on STATUS_ARM_MASK anymore - just wait for FIFO to fill up
+                    if (status & STATUS_FIFO_MASK) == 0:
+                        break
 
                 # Give the UI a chance to update (does nothing if not using UI)
 

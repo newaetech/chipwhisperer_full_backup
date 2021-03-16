@@ -363,14 +363,6 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
             else:
                 #User did not help us out - throw it in their face
                 raise Warning("Found multiple potential USB devices. Please specify device to use. Possible S/Ns:\n" + snlist)
-        try:
-            try:
-                dev.set_configuration(0)
-            except:
-                pass #test
-            dev.set_configuration()
-        except ValueError:
-            raise OSError("NAEUSB: Could not configure USB device")
 
         # Get serial number
         try:
