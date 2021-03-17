@@ -34,6 +34,8 @@ ADDR_PRESAMPLES = 17
 ADDR_BYTESTORX  = 18
 ADDR_TRIGGERDUR = 20
 ADDR_MULTIECHO  = 34
+ADDR_DRP_ADDR   = 30
+ADDR_DRP_DATA   = 31
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -101,7 +103,6 @@ class HWInformation(util.DisableNewAttr):
     def is_cw1200(self):
         if self.vers is None:
             self.versions()
-
         if self.vers[1] == 9:
             return True
         else:
@@ -110,11 +111,19 @@ class HWInformation(util.DisableNewAttr):
     def is_cwlite(self):
         if self.vers is None:
             self.versions()
-
         if self.vers[1] == 8:
             return True
         else:
             return False
+
+    def is_cwhusky(self):
+        if self.vers is None:
+            self.versions()
+        if self.vers[1] == 10:
+            return True
+        else:
+            return False
+
 
     def synthDate(self):
         return "unknown"
@@ -1171,10 +1180,14 @@ class ClockSettings(util.DisableNewAttr):
             inpfreq = self._get_extclk_freq()
         else:
             inpfreq = self._hwinfo.sysFrequency()
-        sets = self._calculateClkGenMulDiv(freq, inpfreq)
+        if self.oa.hwInfo.is_cwhusky():
+            sets = self._calculateHuskyClkGenMulDiv(freq, inpfreq)
+        else:
+            sets = self._calculateClkGenMulDiv(freq, inpfreq)
         self._setClkgenMulWrapper(sets[0])
-        self._setClkgenDivWrapper(sets[1])
+        self._setClkgenDivWrapper(sets[1:])
         self._reset_dcms(False, True)
+
 
     def _calculateClkGenMulDiv(self, freq, inpfreq=30E6):
         """Calculate Multiply & Divide settings based on input frequency"""
@@ -1201,6 +1214,28 @@ class ClockSettings(util.DisableNewAttr):
 
         return best
 
+
+    def _calculateHuskyClkGenMulDiv(self, freq, inpfreq=96e6, vcomin=600e6, vcomax=1200e6):
+        """Calculate Multiply & Divide settings based on input frequency"""
+        lowerror = 1e99
+        best = (0,0,0)
+        for maindiv in range(1,6):
+            mmin = int(np.ceil(vcomin/inpfreq*maindiv))
+            mmax = int(np.ceil(vcomax/inpfreq*maindiv))
+            for mul in range(mmin,mmax+1):
+                if mul/maindiv < vcomin/inpfreq or mul/maindiv > vcomax/inpfreq:
+                    continue
+                for secdiv in range(1,127):
+                    calcfreq = inpfreq*mul/maindiv/secdiv
+                    err = abs(freq - calcfreq)
+                    if err < lowerror:
+                        lowerror = err
+                        best = (mul, maindiv, secdiv)
+        if best == (0,0,0):
+            raise ValueError("Couldn't find a legal div/mul combination")
+        return best
+
+
     @property
     def clkgen_mul(self):
         """The multiplier in the CLKGEN DCM.
@@ -1216,19 +1251,23 @@ class ClockSettings(util.DisableNewAttr):
     def _getClkgenMul(self):
         timeout = 2
         while timeout > 0:
-            result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
-            val = result[1]
-            if val == 0:
-                val = 1  # Fix incorrect initialization on FPGA
-                self._setClkgenMul(2)
-            val += 1
+            if self.oa.hwInfo.is_cwhusky():
+                return self._get_husky_clkgen_mul()
 
-            if (result[3] & 0x02):
-                return val
+            else:
+                result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
+                val = result[1]
+                if val == 0:
+                    val = 1  # Fix incorrect initialization on FPGA
+                    self._setClkgenMul(2)
+                val += 1
 
-            self._clkgenLoad()
+                if (result[3] & 0x02):
+                    return val
 
-            timeout -= 1
+                self._clkgenLoad()
+
+                timeout -= 1
 
         # raise IOError("clkgen never loaded value?")
         return 0
@@ -1238,10 +1277,13 @@ class ClockSettings(util.DisableNewAttr):
         self._setClkgenMulWrapper(mul)
 
     def _setClkgenMulWrapper(self, mul):
-        # TODO: raise ValueError?
-        if mul < 2:
-            mul = 2
-        self._setClkgenMul(mul)
+        if self.oa.hwInfo.is_cwhusky():
+            self._set_husky_clkgen_mul(mul)
+        else:
+            # TODO: raise ValueError?
+            if mul < 2:
+                mul = 2
+            self._setClkgenMul(mul)
 
     def _setClkgenMul(self, mul):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
@@ -1251,6 +1293,24 @@ class ClockSettings(util.DisableNewAttr):
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
         result[3] &= ~(0x01)
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
+
+
+    def _set_husky_clkgen_mul(self, mul):
+        # calculate register value:
+        if type(mul) != int:
+            raise ValueError("Only integers are supported")
+        muldiv2 = int(mul/2)
+        lo = muldiv2
+        if mul%2:
+            hi = lo+1
+        else:
+            hi = lo
+        raw = list(int.to_bytes(lo + (hi<<6) + 0x1000, length=2, byteorder='little'))
+        # data to write:
+        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_DATA, raw)
+        # write data to addres 0x14:
+        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x94])
+
 
     @property
     def clkgen_div(self):
@@ -1269,17 +1329,21 @@ class ClockSettings(util.DisableNewAttr):
             return 2
         timeout = 2
         while timeout > 0:
-            result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
-            val = result[2]
-            val += 1
+            if self.oa.hwInfo.is_cwhusky():
+                return self._get_husky_clkgen_div()
 
-            if (result[3] & 0x02):
-                # Done loading value yet
-                return val
+            else:
+                result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
+                val = result[2]
+                val += 1
 
-            self._clkgenLoad()
+                if (result[3] & 0x02):
+                    # Done loading value yet
+                    return val
 
-            timeout -= 1
+                self._clkgenLoad()
+
+                timeout -= 1
 
         logging.error("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
                       " source settings. CLKGEN clock results are currently invalid.")
@@ -1287,20 +1351,122 @@ class ClockSettings(util.DisableNewAttr):
 
     @clkgen_div.setter
     def clkgen_div(self, div):
-        self._setClkgenDivWrapper(div)
+        if self.oa.hwInfo.is_cwhusky():
+            # Husky PLL takes two dividers; if only one was provided, set the other to 1
+            if type(div) == int:
+                div = [div, 1]
+            self._set_husky_clkgen_div(div)
+        else:
+            self._setClkgenDivWrapper(div)
+
+
+    def _set_husky_clkgen_div(self, div):
+        main_div = div[0]
+        sec_div = div[1]
+        if type(main_div) != int or type(sec_div) != int:
+            raise ValueError("Only integers are supported")
+        # 1. Set main divider:
+        if main_div == 1:
+            raw = list(int.to_bytes(0x1000, length=2, byteorder='little'))
+        else:
+            div2 = int(main_div/2)
+            lo = div2
+            if main_div % 2:
+                hi = lo+1
+            else:
+                hi = lo
+            raw = list(int.to_bytes(lo + (hi<<6), length=2, byteorder='little'))
+        # data to write:
+        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_DATA, raw)
+        # write data to addres 0x16:
+        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x96])
+
+        # 2. Set clkout0 secondary divider:
+        if sec_div == 1:
+            raw = list(int.to_bytes(0x0040, length=2, byteorder='little'))
+            # data to write:
+            self.oa.sendMessage(CODE_WRITE, ADDR_DRP_DATA, raw)
+            # write data to address 0x09:
+            self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x89])
+        else:
+            div2 = int(sec_div/2)
+            lo = div2
+            if sec_div%2:
+                hi = lo+1
+            else:
+                hi = lo
+            raw = list(int.to_bytes(lo + (hi<<6) + 0x1000, length=2, byteorder='little'))
+            # data to write:
+            self.oa.sendMessage(CODE_WRITE, ADDR_DRP_DATA, raw)
+            # write data to address 0x08:
+            self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x88])
+
 
     def _setClkgenDivWrapper(self, div):
-        # TODO: valueerror
-        if div < 1:
-            div = 1
+        if self.oa.hwInfo.is_cwhusky():
+            self._set_husky_clkgen_div(div)
+        else:
+            # TODO: valueerror
+            if div < 1:
+                div = 1
 
-        result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
-        div -= 1
-        result[2] = div
-        result[3] |= 0x01
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
-        result[3] &= ~(0x01)
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
+            result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
+            div -= 1
+            result[2] = div
+            result[3] |= 0x01
+            self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
+            result[3] &= ~(0x01)
+            self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
+
+
+    def _get_husky_clkgen_div(self):
+        # 1. read DIVREG to get main divider:
+        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x16])
+        raw = self.oa.sendMessage(CODE_READ, ADDR_DRP_DATA, maxResp=2)
+        if raw[1] & 0x10:
+            maindiv = 1
+        else:
+            # extract high time and low time
+            lo = (raw[0] & 0x3f)
+            hi = (raw[0]>>6) + ((raw[1] & 0x0f)<<2)
+            maindiv = lo + hi
+        # 2. read CLKOUT2 to ensure fractional mode is disabled and check NO_COUNT bit for CLKOUT divider:
+        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x9])
+        raw = self.oa.sendMessage(CODE_READ, ADDR_DRP_DATA, maxResp=2)
+        if raw[1] & 0x08:
+            logging.error('CLKGEN fractional mode is enabled. This is unexpected.')
+        if raw[0] & 0x40:
+            secdiv = 1
+        else:
+            # 3. read CLKOUT divider:
+            self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x8])
+            raw = self.oa.sendMessage(CODE_READ, ADDR_DRP_DATA, maxResp=2)
+            # extract high time and low time
+            lo = (raw[0] & 0x3f)
+            hi = (raw[0]>>6) + ((raw[1] & 0x0f)<<2)
+            secdiv = lo + hi
+        return maindiv*secdiv
+
+
+    def _get_husky_clkgen_mul(self):
+        # 1. read CLKFBOUT2 to ensure fractional mode is disabled:
+        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x11])
+        raw = self.oa.sendMessage(CODE_READ, ADDR_DRP_DATA, maxResp=2)
+        if raw[1] & 0x08:
+            print('WARNING: fractional mode is enabled. This is unexpected. Reported multiplier value will be incorrect.')
+        # 2. check "NO COUNT" bit:
+        if raw[0] & 0x04:
+            mul = 1
+        else:
+            # 3. read CLKFBOUT:
+            self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x14])
+            raw = self.oa.sendMessage(CODE_READ, ADDR_DRP_DATA, maxResp=2)
+            # extract high time and low time
+            lo = (raw[0] & 0x3f)
+            hi = (raw[0]>>6) + ((raw[1] & 0x0f)<<2)
+            mul = lo + hi
+            #if lo != hi: print('WARNING: high and low times unequal (%d, %d) ! Duty cycle is not 50/50. This is unexpected. % (hi, lo))
+        return mul
 
     def reset_adc(self):
         """Reset the ADC DCM.
