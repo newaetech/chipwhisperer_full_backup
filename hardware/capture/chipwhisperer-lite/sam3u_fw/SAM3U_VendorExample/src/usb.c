@@ -796,7 +796,8 @@ extern tcirc_buf usb_usart_circ_buf;
 
 void my_callback_config(uint8_t port, usb_cdc_line_coding_t * cfg)
 {
-	if (enable_cdc_transfer[port] && usart_x_enabled[0]) {
+	if (enable_cdc_transfer[port]) {
+        usart_x_enabled[0] = true;
 		sam_usart_opt_t usartopts;
 		if (port != 0){
 			return;
