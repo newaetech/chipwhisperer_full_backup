@@ -643,6 +643,29 @@ class SimpleSerial2(TargetTemplate):
         return self.ser.inWaitingTX()
 
 class SimpleSerial2_CDC(SimpleSerial2):
+    """Target Option for Using SSV2 with a CDC Port
+
+    .. versionadded:: 5.5
+        Added CDC SSV2
+
+    Currently, the easiest way to use it is::
+
+        scope = cw.scope()
+        target = cw.target(scope, cw.targets.SimpleSerial2_CDC)
+
+    Upon connection, this target object will using USB info from
+    the scope object to figure out which serial port to use. You 
+    can also specify the serial port manually using the dev_path
+    parameter. ::
+
+        target = cw.target(scope, cw.targets.SimpleSerial2_CDC, dev_path='COM5')
+
+    Other than that, usage is mostly the same as regular simpleserial
+    V2, except the read timeout is always fixed to 250ms.
+
+    It does offer better performance than the regular SSV2 object
+    if reading serial data back from the target.
+    """
     def __init__(self):
         super().__init__()
         self.ser = None

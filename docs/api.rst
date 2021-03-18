@@ -529,6 +529,11 @@ Simple Serial V2 Target
 
     .. autoattribute:: baud
 
+Simple Serial V2 Target
+=======================
+
+.. autoclass:: chipwhisperer.targets.SimpleSerial2_CDC
+
 .. _api-target-cw305:
 
 CW305 FPGA Target
