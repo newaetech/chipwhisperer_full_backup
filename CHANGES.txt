@@ -1,7 +1,28 @@
-???
- New Features:
-    * Segmented memory mode allows super-fast captures (>2000 traces/second) on short operations 
-    * API to reload bitstream on ChipWhisperer for debug
+V5.5
+  New Features:
+    * Re-add SAKURA-G support
+    * TraceWhisperer cleanup + convenience functions
+    * ChipWhisperer firmware `auto_program()`
+    * Add segmented capture to ChipWhisperer, allowing for super fast capture
+    * Add simpleserial-ecc
+    * New demo: uECC attack
+    * New ChipWhisperer Firmware: CDC serial ports for UART communication (i.e. communication with `"COMX"`/`"/dev/ttyACMX"`
+    * New target class: SimpleSerial2_CDC with automatic serial port detection (no need to figure out `"COMX"`/`"/dev/ttyACMX"`)
+    * Add simpleserial documentation (thanks @coastalwhite !)
+    * Add new simpleserial commands to get available commands
+    * Add maskedAES for more targets (thanks @jmichelp !)
+    * Add better method for loading new CW bitstream
+
+  Fixes:
+    * Add CWPro aux_out
+    * Update ESP32 build for newer build system version
+    * Reset Xmega if programming fails (should prevent programming from immediately failing next call)
+    * Setup script improvements
+    * Fix outdated 99-rules.newae
+    * Fix voltage range on CW305 VCCINT
+    * Fix STM32F4 HW floating point (thanks @mcsmonk !)
+    * Fix Nano crash when >128 bytes read from USART
+    * VM now supports uploading firmware to chipwhisperer
 
 V5.4
   New Features:

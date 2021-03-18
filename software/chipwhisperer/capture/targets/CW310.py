@@ -20,6 +20,7 @@ class CW310(CW305):
         import chipwhisperer as cw
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6)
+        self.fpga = FPGA(self._naeusb)
 
         self.hw = None
         self.oa = None
@@ -50,6 +51,9 @@ class CW310(CW305):
             verilog_defines = defines_files
         if slurp:
             self.slurp_defines(verilog_defines)
+
+        if bsfile:
+            status = self.fpga.FPGAProgram(open(bsfile, "rb"))
 
     def usb_set_voltage(self, pdo_num, voltage):
         if pdo_num not in [2, 3]:

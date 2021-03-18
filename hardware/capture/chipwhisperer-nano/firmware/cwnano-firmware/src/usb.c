@@ -52,7 +52,7 @@
 #include <string.h>
 
 #define FW_VER_MAJOR 0
-#define FW_VER_MINOR 24
+#define FW_VER_MINOR 30
 #define FW_VER_DEBUG 0
 
 static volatile bool main_b_vendor_enable = true;
@@ -726,4 +726,133 @@ void main_vendor_bulk_out_received(udd_ep_status_t status,
 	main_buf_loopback,
 	sizeof(main_buf_loopback),
 	main_vendor_bulk_out_received);
+}
+
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+// USB CDC
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+#include "usb_protocol_cdc.h"
+volatile bool enable_cdc_transfer[2] = {false, false};
+	extern volatile bool usart_x_enabled[4];
+bool cdc_enable(uint8_t port)
+{
+	enable_cdc_transfer[port] = true;
+	return true;
+}
+
+void cdc_disable(uint8_t port)
+{
+	enable_cdc_transfer[port] = false;
+}
+
+/*
+		case REQ_USART0_DATA:
+		for(cnt = 0; cnt < udd_g_ctrlreq.req.wLength; cnt++){
+			respbuf[cnt] = usart_driver_getchar(USART_TARGET);
+		}
+		udd_g_ctrlreq.payload = respbuf;
+		udd_g_ctrlreq.payload_size = cnt;
+		return true;
+		break;
+		
+			//Catch heartbleed-style error
+			if (udd_g_ctrlreq.req.wLength > udd_g_ctrlreq.payload_size){
+				return;
+			}
+			
+			for (int i = 0; i < udd_g_ctrlreq.req.wLength; i++){
+				usart_driver_putchar(USART_TARGET, NULL, udd_g_ctrlreq.payload[i]);
+			}
+*/
+static uint8_t uart_buf[64] = {0};
+void my_callback_rx_notify(uint8_t port)
+{
+	//iram_size_t udi_cdc_multi_get_nb_received_data
+	
+	if (enable_cdc_transfer[port] && usart_x_enabled[0]) {
+		iram_size_t num_char = udi_cdc_multi_get_nb_received_data(port);
+		while (num_char > 0) {
+			num_char = (num_char > 64) ? 64 : num_char;
+			udi_cdc_multi_read_buf(port, uart_buf, num_char);
+			for (uint16_t i = 0; i < num_char; i++) { //num_char; num_char > 0; num_char--) {
+				//usart_driver_putchar(USART_TARGET, NULL, udi_cdc_multi_getc(port));
+				usart_driver_putchar(USART_TARGET, NULL, uart_buf[i]);
+			}
+			num_char = udi_cdc_multi_get_nb_received_data(port);
+		}
+		#if 0
+		udi_cdc_read_no_polling(uart_buf, 128);
+		uint8_t *st = uart_buf;
+		while (*st) {
+			udi_cdc_putc(*st++);
+		}
+		#endif
+	}
+}
+
+extern tcirc_buf rx0buf, tx0buf;
+extern tcirc_buf usb_usart_circ_buf;
+
+void my_callback_config(uint8_t port, usb_cdc_line_coding_t * cfg)
+{
+	if (enable_cdc_transfer[port]) {
+        usart_x_enabled[0] = true;
+		sam_usart_opt_t usartopts;
+		if (port != 0){
+			return;
+		}
+		if (cfg->bDataBits < 5)
+			return;
+		if (cfg->bCharFormat > 2)
+			return;
+	
+		usartopts.baudrate = cfg->dwDTERate;
+		usartopts.channel_mode = US_MR_CHMODE_NORMAL;
+		usartopts.stop_bits = ((uint32_t)cfg->bCharFormat) << 12;
+		usartopts.char_length = ((uint32_t)cfg->bDataBits - 5) << 6;
+		switch(cfg->bParityType) {
+			case CDC_PAR_NONE:
+			usartopts.parity_type = US_MR_PAR_NO;
+			break;
+			case CDC_PAR_ODD:
+			usartopts.parity_type = US_MR_PAR_ODD;
+			break;
+			case CDC_PAR_EVEN:
+			usartopts.parity_type = US_MR_PAR_EVEN;
+			break;
+			case CDC_PAR_MARK:
+			usartopts.parity_type = US_MR_PAR_MARK;
+			break;
+			case CDC_PAR_SPACE:
+			usartopts.parity_type = US_MR_PAR_SPACE;
+			break;
+			default:
+			return;
+		}
+		if (port == 0)
+		{
+			//completely restart USART - otherwise breaks tx or stalls
+			sysclk_enable_peripheral_clock(ID_USART1);
+			init_circ_buf(&usb_usart_circ_buf);
+			init_circ_buf(&tx0buf);
+			init_circ_buf(&rx0buf);
+			usart_init_rs232(USART1, &usartopts,  sysclk_get_cpu_hz());
+			
+			usart_enable_rx(USART1);
+			usart_enable_tx(USART1);
+			
+			usart_enable_interrupt(USART1, UART_IER_RXRDY);
+			
+			gpio_configure_pin(PIN_USART1_RXD_IDX, PIN_USART1_RXD_FLAGS);
+			gpio_configure_pin(PIN_USART1_TXD_IDX, PIN_USART1_TXD_FLAGS);
+			irq_register_handler(USART1_IRQn, 5);
+		}
+	}
+		
 }

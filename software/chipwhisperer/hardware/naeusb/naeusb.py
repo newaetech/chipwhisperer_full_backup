@@ -607,6 +607,20 @@ class NAEUSB(object):
     def get_possible_devices(self, idProduct):
         return self.usbseralizer.get_possible_devices(idProduct)
 
+    def get_serial_ports(self):
+        """May have multiple com ports associated with one device, so returns a list of port + interface
+        """
+        if not self.usbtx._usbdev:
+            raise OSError("Connect to device before calling this")
+        import serial.tools.list_ports
+        if serial.__version__ < '3.5':
+            raise OSError("Pyserial >= 3.5 (found {}) required for this method".format(serial.__version__))
+        devices = []
+        for port in serial.tools.list_ports.comports():
+            if port.serial_number == self.usbtx._usbdev.serial_number.upper():
+                devices.append({"port": port.device, "interface": port.location.split('.')[-1]})
+        return devices
+
     def con(self, idProduct=[0xACE2], connect_to_first=False, serial_number=None):
         """
         Connect to device using default VID/PID

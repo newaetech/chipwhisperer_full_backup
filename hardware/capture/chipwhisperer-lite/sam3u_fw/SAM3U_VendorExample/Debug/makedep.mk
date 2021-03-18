@@ -2,9 +2,11 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
-src\ASF\sam\drivers\chipid\chipid.c
+src\ASF\common\services\usb\class\cdc\device\udi_cdc.c
 
-src\ccdebug\chipcon.c
+src\ASF\common\services\usb\class\composite\device\udi_composite_desc.c
+
+src\ASF\sam\drivers\chipid\chipid.c
 
 src\scard\at88sc102_highlevel.c
 
@@ -53,8 +55,6 @@ src\ASF\common\services\clock\sam3u\sysclk.c
 src\ASF\common\services\sleepmgr\sam\sleepmgr.c
 
 src\ASF\common\services\usb\class\vendor\device\udi_vendor.c
-
-src\ASF\common\services\usb\class\vendor\device\udi_vendor_desc.c
 
 src\ASF\common\services\usb\udc\udc.c
 

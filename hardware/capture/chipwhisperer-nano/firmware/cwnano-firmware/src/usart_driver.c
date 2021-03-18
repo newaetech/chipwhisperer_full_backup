@@ -64,7 +64,8 @@ tcirc_buf rx0buf, tx0buf;
 tcirc_buf rx1buf, tx1buf;
 tcirc_buf rx2buf, tx2buf;
 tcirc_buf rx3buf, tx3buf;
-
+tcirc_buf usb_usart_circ_buf;
+volatile bool usart_x_enabled[4] = {0};
 static inline void usart1_enableIO(void)
 {
 	gpio_configure_pin(PIN_USART1_RXD_IDX, PIN_USART1_RXD_FLAGS);
@@ -181,12 +182,15 @@ bool ctrl_usart(Usart * usart, bool directionIn)
 						if (usart == USART0)
 						{
 							sysclk_enable_peripheral_clock(ID_USART0);
+							init_circ_buf(&usb_usart_circ_buf);
 							init_circ_buf(&tx0buf);
 							init_circ_buf(&rx0buf);
 							;//printf("Enabling USART0\n");
 						} else if (usart == USART1)
 						{
 							sysclk_enable_peripheral_clock(ID_USART1);
+							init_circ_buf(&usb_usart_circ_buf);
+							usart_x_enabled[0] = true;
 							init_circ_buf(&tx1buf);
 							init_circ_buf(&rx1buf);
 						} 
@@ -338,6 +342,7 @@ void usart_driver_putchar(Usart * usart, tcirc_buf * txbuf, uint8_t data)
 	// This is determined by seeing if the TX complete interrupt is
 	// enabled.
 	if ((usart_get_interrupt_mask(usart) & US_CSR_TXRDY) == 0) {
+		if ((usart_get_status(usart) & US_CSR_TXRDY))
 		usart_putchar(usart, get_from_circ_buf(txbuf));
 		usart_enable_interrupt(usart, US_CSR_TXRDY);
 	}
@@ -369,6 +374,7 @@ void generic_isr(Usart * usart, tcirc_buf * rxbuf, tcirc_buf * txbuf)
 		uint32_t temp;
 		temp = usart->US_RHR & US_RHR_RXCHR_Msk;
 		add_to_circ_buf(rxbuf, temp, false);
+		add_to_circ_buf(&usb_usart_circ_buf, temp, false);
 	}
 	
 	if (status & US_CSR_TXRDY){

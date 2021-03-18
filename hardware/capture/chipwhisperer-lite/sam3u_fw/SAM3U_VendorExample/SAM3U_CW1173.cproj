@@ -35,7 +35,7 @@
           <option id="common.services.basic.gpio" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.services.ioport" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.services.basic.sleepmgr" value="Add" config="" content-id="Atmel.ASF" />
-          <option id="common.services.usb.class.device" value="Add" config="vendor_class" content-id="Atmel.ASF" />
+          <option id="common.services.usb.class.device" value="Add" config="composite" content-id="Atmel.ASF" />
           <option id="sam.drivers.chipid" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.drivers.smc" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.drivers.efc" value="Add" config="" content-id="Atmel.ASF" />
@@ -49,11 +49,19 @@
         </options>
         <configurations>
           <configuration key="config.board.sam3u_ek.led" value="yes" default="yes" content-id="Atmel.ASF" />
-          <configuration key="config.common.services.usb.class.device" value="vendor_class" default="vendor_class" content-id="Atmel.ASF" />
+          <configuration key="config.common.services.usb.class.device" value="composite" default="vendor_class" content-id="Atmel.ASF" />
           <configuration key="config.compiler.armgcc.printf" value="iprintf" default="iprintf" content-id="Atmel.ASF" />
           <configuration key="config.compiler.armgcc.scanf" value="iscanf" default="iscanf" content-id="Atmel.ASF" />
           <configuration key="config.sam.pio.pio_handler" value="yes" default="yes" content-id="Atmel.ASF" />
           <configuration key="config.sam.drivers.udphs.device.sleepmgr" value="with_sleepmgr" default="with_sleepmgr" content-id="Atmel.ASF" />
+          <configuration key="config.common.utils.stdio.stdio_usb.composite" value="disable" default="disable" content-id="Atmel.ASF" />
+          <configuration key="config.common.services.usb.class.cdc.device.composite" value="enable" default="disable" content-id="Atmel.ASF" />
+          <configuration key="config.common.services.usb.class.hid.device.generic.composite" value="disable" default="disable" content-id="Atmel.ASF" />
+          <configuration key="config.common.services.usb.class.hid.device.keyboard.composite" value="disable" default="disable" content-id="Atmel.ASF" />
+          <configuration key="config.common.services.usb.class.hid.device.mouse.composite" value="disable" default="disable" content-id="Atmel.ASF" />
+          <configuration key="config.common.services.usb.class.msc.device.composite" value="disable" default="disable" content-id="Atmel.ASF" />
+          <configuration key="config.common.services.usb.class.phdc.device.composite" value="disable" default="disable" content-id="Atmel.ASF" />
+          <configuration key="config.common.services.usb.class.vendor.device.composite" value="enable" default="disable" content-id="Atmel.ASF" />
         </configurations>
         <files>
           <file path="src/ASF/common/boards/board.h" framework="" version="" source="common/boards/board.h" changed="False" content-id="Atmel.ASF" />
@@ -73,7 +81,7 @@
           <file path="src/ASF/common/services/sleepmgr/sam/sleepmgr.c" framework="" version="" source="common/services/sleepmgr/sam/sleepmgr.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common/services/sleepmgr/sam/sleepmgr.h" framework="" version="" source="common/services/sleepmgr/sam/sleepmgr.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common/services/sleepmgr/sleepmgr.h" framework="" version="" source="common/services/sleepmgr/sleepmgr.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/config/conf_usb.h" framework="" version="" source="common/services/usb/class/vendor/device/example/conf_usb.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/Config/conf_usb.h" framework="" version="3.42.0" source="common\services\usb\class\composite\device\module_config\conf_usb.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/main.c" framework="" version="" source="common/services/usb/class/vendor/device/example/main.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/main.h" framework="" version="" source="common/services/usb/class/vendor/device/example/main.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/config/conf_board.h" framework="" version="" source="common/services/usb/class/vendor/device/example/sam3u4e_sam3u_ek/conf_board.h" changed="False" content-id="Atmel.ASF" />
@@ -83,8 +91,6 @@
           <file path="src/ui.h" framework="" version="" source="common/services/usb/class/vendor/device/example/ui.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common/services/usb/class/vendor/device/udi_vendor.c" framework="" version="" source="common/services/usb/class/vendor/device/udi_vendor.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common/services/usb/class/vendor/device/udi_vendor.h" framework="" version="" source="common/services/usb/class/vendor/device/udi_vendor.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/common/services/usb/class/vendor/device/udi_vendor_conf.h" framework="" version="" source="common/services/usb/class/vendor/device/udi_vendor_conf.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/common/services/usb/class/vendor/device/udi_vendor_desc.c" framework="" version="" source="common/services/usb/class/vendor/device/udi_vendor_desc.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common/services/usb/class/vendor/usb_protocol_vendor.h" framework="" version="" source="common/services/usb/class/vendor/usb_protocol_vendor.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common/services/usb/udc/udc.c" framework="" version="" source="common/services/usb/udc/udc.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common/services/usb/udc/udc.h" framework="" version="" source="common/services/usb/udc/udc.h" changed="False" content-id="Atmel.ASF" />
@@ -217,17 +223,24 @@
           <file path="src/ASF/sam/services/flash_efc/flash_efc.h" framework="" version="3.20.1" source="sam\services\flash_efc\flash_efc.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam/services/smart_card/iso7816.c" framework="" version="3.20.1" source="sam\services\smart_card\iso7816.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam/services/smart_card/iso7816.h" framework="" version="3.20.1" source="sam\services\smart_card\iso7816.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common/services/usb/class/cdc/usb_protocol_cdc.h" framework="" version="3.42.0" source="common\services\usb\class\cdc\usb_protocol_cdc.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common/services/usb/class/cdc/device/udi_cdc.c" framework="" version="3.42.0" source="common\services\usb\class\cdc\device\udi_cdc.c" changed="False" content-id="Atmel.ASF" />
+          <file path="atmel_devices_cdc.cat" framework="" version="3.42.0" source="common\services\usb\class\cdc\device\atmel_devices_cdc.cat" changed="False" content-id="Atmel.ASF" />
+          <file path="atmel_devices_cdc.inf" framework="" version="3.42.0" source="common\services\usb\class\cdc\device\atmel_devices_cdc.inf" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common/services/usb/class/cdc/device/udi_cdc.h" framework="" version="3.42.0" source="common\services\usb\class\cdc\device\udi_cdc.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common/services/usb/class/composite/device/udi_composite_desc.c" framework="" version="3.42.0" source="common\services\usb\class\composite\device\udi_composite_desc.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common/services/usb/class/composite/device/udi_composite_conf.h" framework="" version="3.42.0" source="common\services\usb\class\composite\device\udi_composite_conf.h" changed="False" content-id="Atmel.ASF" />
         </files>
         <documentation help="http://asf.atmel.com/docs/3.20.1/common.services.usb.class.vendor.device.example.sam3u_ek/html/index.html" />
         <offline-documentation help="" />
         <dependencies>
-          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.20.1" />
+          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.42.0" />
         </dependencies>
         <project id="common.services.usb.class.vendor.device.example.sam3u_ek" value="Add" config="" content-id="Atmel.ASF" />
         <board id="board.sam3u_ek" value="Add" config="" content-id="Atmel.ASF" />
       </framework-data>
     </AsfFrameworkConfig>
-    <avrtool>com.atmel.avrdbg.tool.samice</avrtool>
+    <avrtool>com.atmel.avrdbg.tool.atmelice</avrtool>
     <com_atmel_avrdbg_tool_samice>
       <ToolOptions>
         <InterfaceProperties>
@@ -243,15 +256,44 @@
           <JtagDaisyChainDevices>
           </JtagDaisyChainDevices>
         </InterfaceProperties>
-        <InterfaceName>JTAG</InterfaceName>
+        <InterfaceName>
+        </InterfaceName>
         <JlinkConfigFile>C:\E\Documents\academic\sidechannel\cwlitedev\cwlitedev-git\sam3u\SAM3U_VendorExample\SAM3U_VendorExample\jlink.config</JlinkConfigFile>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.samice</ToolType>
       <ToolNumber>28006436</ToolNumber>
       <ToolName>SAM-ICE</ToolName>
     </com_atmel_avrdbg_tool_samice>
-    <avrtoolinterface>
-    </avrtoolinterface>
+    <avrtoolinterface>SWD</avrtoolinterface>
+    <ResetRule>0</ResetRule>
+    <EraseKey />
+    <avrtoolserialnumber>J41800035206</avrtoolserialnumber>
+    <avrdeviceexpectedsignature>0x280A0760</avrdeviceexpectedsignature>
+    <com_atmel_avrdbg_tool_atmelice>
+      <ToolOptions>
+        <InterfaceProperties>
+          <SwdClock>2000000</SwdClock>
+        </InterfaceProperties>
+        <InterfaceName>SWD</InterfaceName>
+      </ToolOptions>
+      <ToolType>com.atmel.avrdbg.tool.atmelice</ToolType>
+      <ToolNumber>J41800035206</ToolNumber>
+      <ToolName>Atmel-ICE</ToolName>
+    </com_atmel_avrdbg_tool_atmelice>
+    <avrtoolinterfaceclock>2000000</avrtoolinterfaceclock>
+    <custom>
+      <ToolOptions>
+        <InterfaceProperties>
+          <SwdClock>2000000</SwdClock>
+        </InterfaceProperties>
+        <InterfaceName>
+        </InterfaceName>
+      </ToolOptions>
+      <ToolType>custom</ToolType>
+      <ToolNumber>
+      </ToolNumber>
+      <ToolName>Custom Programming Tool</ToolName>
+    </custom>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -311,6 +353,9 @@
       <Value>../src/ASF/sam/services/flash_efc</Value>
       <Value>../src/ASF/sam/drivers/usart</Value>
       <Value>../src/ASF/sam/services/smart_card</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
+      <Value>../src/ASF/common/services/usb/class/composite/device</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.level>Optimize for size (-Os)</armgcc.compiler.optimization.level>
@@ -332,6 +377,15 @@
   </armgcc.linker.libraries.LibrarySearchPaths>
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
   <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam/utils/linker_scripts/sam3u/sam3u4/gcc/flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
+  <armgcc.assembler.general.IncludePaths>
+    <ListValues>
+      <Value>../src/ASF/common/services/usb/class/cdc</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
+      <Value>../src/Config</Value>
+      <Value>../src/ASF/common/services/usb/class/composite/device</Value>
+      <Value>../src/ASF/common/services/usb/class/vendor/device</Value>
+    </ListValues>
+  </armgcc.assembler.general.IncludePaths>
   <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM3=true -DBOARD=SAM3U_EK -DUDD_ENABLE -D__SAM3U4E__ -Dprintf=iprintf -Dscanf=iscanf -DSMART_CARD_USING_GPIO</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.DefaultIncludePath>False</armgcc.preprocessingassembler.general.DefaultIncludePath>
   <armgcc.preprocessingassembler.general.IncludePaths>
@@ -371,6 +425,9 @@
       <Value>../src/ASF/sam/services/flash_efc</Value>
       <Value>../src/ASF/sam/drivers/usart</Value>
       <Value>../src/ASF/sam/services/smart_card</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
+      <Value>../src/ASF/common/services/usb/class/composite/device</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
 </ArmGcc>
@@ -437,6 +494,9 @@
       <Value>../src/ASF/sam/drivers/efc</Value>
       <Value>../src/ASF/sam/services/flash_efc</Value>
       <Value>../src/ASF/sam/services/smart_card</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
+      <Value>../src/ASF/common/services/usb/class/composite/device</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.level>Optimize (-O1)</armgcc.compiler.optimization.level>
@@ -460,6 +520,15 @@
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
   <armgcc.linker.memorysettings.ExternalRAM />
   <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam/utils/linker_scripts/sam3u/sam3u2/gcc/flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
+  <armgcc.assembler.general.IncludePaths>
+    <ListValues>
+      <Value>../src/ASF/common/services/usb/class/cdc</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
+      <Value>../src/Config</Value>
+      <Value>../src/ASF/common/services/usb/class/composite/device</Value>
+      <Value>../src/ASF/common/services/usb/class/vendor/device</Value>
+    </ListValues>
+  </armgcc.assembler.general.IncludePaths>
   <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
   <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM3=true -DBOARD=CWLITE -DUDD_ENABLE -D__SAM3U2C__ -Dprintf=iprintf -Dscanf=iscanf -DSMART_CARD_USING_GPIO</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.DefaultIncludePath>False</armgcc.preprocessingassembler.general.DefaultIncludePath>
@@ -500,6 +569,9 @@
       <Value>../src/ASF/sam/services/flash_efc</Value>
       <Value>../src/ASF/sam/drivers/usart</Value>
       <Value>../src/ASF/sam/services/smart_card</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
+      <Value>../src/ASF/common/services/usb/class/composite/device</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
   <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
@@ -524,6 +596,10 @@
     <Folder Include="src\ASF\common\services\sleepmgr\sam\" />
     <Folder Include="src\ASF\common\services\usb\" />
     <Folder Include="src\ASF\common\services\usb\class\" />
+    <Folder Include="src\ASF\common\services\usb\class\cdc\" />
+    <Folder Include="src\ASF\common\services\usb\class\cdc\device\" />
+    <Folder Include="src\ASF\common\services\usb\class\composite\" />
+    <Folder Include="src\ASF\common\services\usb\class\composite\device\" />
     <Folder Include="src\ASF\common\services\usb\class\vendor\" />
     <Folder Include="src\ASF\common\services\usb\class\vendor\device\" />
     <Folder Include="src\ASF\common\services\usb\class\vendor\device\example\" />
@@ -580,6 +656,27 @@
     <Folder Include="src\pdi" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="atmel_devices_cdc.cat">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="atmel_devices_cdc.inf">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\ASF\common\services\usb\class\cdc\usb_protocol_cdc.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\common\services\usb\class\cdc\device\udi_cdc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\common\services\usb\class\cdc\device\udi_cdc.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\ASF\common\services\usb\class\composite\device\udi_composite_conf.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\common\services\usb\class\composite\device\udi_composite_desc.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\ASF\sam\drivers\chipid\chipid.c">
       <SubType>compile</SubType>
     </Compile>
@@ -875,9 +972,6 @@
     <None Include="src\ASF\common\services\clock\sam3u\pll.h">
       <SubType>compile</SubType>
     </None>
-    <None Include="src\ASF\common\services\usb\class\vendor\device\udi_vendor_conf.h">
-      <SubType>compile</SubType>
-    </None>
     <None Include="src\ASF\sam\drivers\pio\pio.h">
       <SubType>compile</SubType>
     </None>
@@ -1053,9 +1147,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\ASF\common\services\usb\class\vendor\device\udi_vendor.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\ASF\common\services\usb\class\vendor\device\udi_vendor_desc.c">
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\sam\utils\status_codes.h">
