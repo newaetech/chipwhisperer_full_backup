@@ -24,20 +24,20 @@ static uint32_t nbAesBlocks;
 void platform_init(void)
 {
      trng_config_t trngConfig;
-     
+
 #if ETM_ENABLE
      etmtrace_enable();
 #endif
      BOARD_BootClockRUN();
 
-#if USE_TRUSTED_CRYPTO
      // Start TRNG
      TRNG_GetDefaultConfig(&trngConfig);
      TRNG_Init(TRNG0, &trngConfig);
-     TRNG_GetRandomData(TRNG0, maskSeed, sizeof(maskSeed));
 
+#if USE_TRUSTED_CRYPTO
      // Start Trusted Crypto module
      LTC_Init(LTC0);
+     TRNG_GetRandomData(TRNG0, &maskSeed, sizeof(maskSeed));
      LTC_SetDpaMaskSeed(LTC0, maskSeed);
      nbAesBlocks = 0;
 #endif
@@ -95,6 +95,13 @@ void putch(char c)
      LPUART_WriteBlocking(LPUART0, &c, 1);
 }
 
+uint32_t get_rand(void)
+{
+     uint32_t value;
+     TRNG_GetRandomData(TRNG0, &value, sizeof(value));
+     return value;
+}
+
 //nothing needed?
 void HW_AES128_Init(void)
 {
@@ -115,7 +122,14 @@ void HW_AES128_Enc_pretrigger(uint8_t* pt)
 
 void HW_AES128_Enc_posttrigger(uint8_t* pt)
 {
-    ;
+#if USE_TRUSTED_CRYPTO
+     nbAesBlocks++;
+     if (nbAesBlocks >= ROUNDS_BEFORE_RESEED) {
+       nbAesBlocks = 0;
+       TRNG_GetRandomData(TRNG0, &maskSeed, sizeof(maskSeed));
+       LTC_SetDpaMaskSeed(LTC0, maskSeed);
+     }
+#endif
 }
 
 void HW_AES128_Enc(uint8_t* pt)
@@ -123,12 +137,6 @@ void HW_AES128_Enc(uint8_t* pt)
 #if USE_TRUSTED_CRYPTO
      LTC_AES_EncryptEcb(LTC0, pt, pt, LTC_AES_BLOCK_SIZE, ltcAesKey,
                         AES_KEY_SIZE);
-     nbAesBlocks++;
-     if (nbAesBlocks >= ROUNDS_BEFORE_RESEED) {
-       nbAesBlocks = 0;
-       TRNG_GetRandomData(TRNG0, maskSeed, sizeof(maskSeed));
-       LTC_SetDpaMaskSeed(LTC0, maskSeed);
-     }
 #else
      MMCAU_AES_EncryptEcb(pt, AES_KEY_SCH, 10, pt);
 #endif
@@ -141,7 +149,7 @@ void HW_AES128_Dec(uint8_t *pt)
      nbAesBlocks++;
      if (nbAesBlocks >= ROUNDS_BEFORE_RESEED) {
        nbAesBlocks = 0;
-       TRNG_GetRandomData(TRNG0, maskSeed, sizeof(maskSeed));
+       TRNG_GetRandomData(TRNG0, &maskSeed, sizeof(maskSeed));
        LTC_SetDpaMaskSeed(LTC0, maskSeed);
      }
 #else

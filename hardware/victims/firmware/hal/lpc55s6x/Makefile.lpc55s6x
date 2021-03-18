@@ -1,16 +1,16 @@
 VPATH += :$(HALPATH)/lpc55s6x :$(HALPATH)/lpc55s6x/device
-SRC += lpc55s6x_hal.c startup_lpc55s69_cm33_core0.c system_LPC55S69_cm33_core0.c semihost_hardfault.c 
+SRC += lpc55s6x_hal.c startup_lpc55s69_cm33_core0.c system_LPC55S69_cm33_core0.c semihost_hardfault.c
 
 VPATH += :$(HALPATH)/lpc55s6x/utilities
 SRC += fsl_assert.c fsl_debug_console.c fsl_str.c
 
 VPATH += :$(HALPATH)/lpc55s6x/drivers
-SRC += fsl_clock.c fsl_common.c fsl_flexcomm.c fsl_gpio.c fsl_hashcrypt.c fsl_inputmux.c fsl_power.c fsl_puf.c fsl_reset.c fsl_usart.c
+SRC += fsl_clock.c fsl_common.c fsl_flexcomm.c fsl_gpio.c fsl_hashcrypt.c fsl_inputmux.c fsl_power.c fsl_puf.c fsl_reset.c fsl_rng.c fsl_usart.c
 
 VPATH += :$(HALPATH)/lpc55s6x/component
 SRC += fsl_generic_list.c fsl_serial_manager.c fsl_serial_port_uart.c fsl_usart_adapter.c
 
-EXTRAINCDIRS += $(HALPATH)/lpc55s6x $(HALPATH)/lpc55s6x/CMSIS 
+EXTRAINCDIRS += $(HALPATH)/lpc55s6x $(HALPATH)/lpc55s6x/CMSIS
 EXTRAINCDIRS += $(HALPATH)/lpc55s6x/utilities $(HALPATH)/lpc55s6x/drivers
 EXTRAINCDIRS += $(HALPATH)/lpc55s6x/device
 EXTRAINCDIRS += $(HALPATH)/lpc55s6x/component

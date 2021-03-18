@@ -30,13 +30,13 @@ void platform_init(void)
     BOARD_InitBootClocks();
     //BOARD_BootClockPLL100M();
 
-    
+    RNG_Init(RNG);
 }
 
 void init_uart(void)
 {
     BOARD_InitDebugConsole();
-}    
+}
 
 void putch(char c)
 {
@@ -203,6 +203,13 @@ void trigger_high(void)
     GPIO_PinWrite(GPIO, 0, 24, 1);
 }
 
+uint32_t get_rand(void)
+{
+    uint32_t value;
+    RNG_GetRandomData(RNG, &value, sizeof(value));
+    return value;
+}
+
 void HW_AES128_Init(void)
 {
 }
@@ -216,9 +223,17 @@ void HW_AES128_LoadKey(uint8_t* key)
     HASHCRYPT_AES_SetKey(HASHCRYPT, &hch, key, 16);
 }
 
+void HW_AES128_Enc_pretrigger(uint8_t* pt)
+{
+}
+
 void HW_AES128_Enc(uint8_t* pt)
 {
     HASHCRYPT_AES_EncryptEcb(HASHCRYPT, &hch, pt, pt, 16);
+}
+
+void HW_AES128_Enc_posttrigger(uint8_t* pt)
+{
 }
 
 void HW_AES128_Dec(uint8_t *pt)

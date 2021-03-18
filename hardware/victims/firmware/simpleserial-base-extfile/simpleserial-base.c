@@ -22,10 +22,10 @@
 
 #include "simpleserial.h"
 
-uint8_t process_secret_key(uint8_t* key);
-uint8_t process_input(uint8_t* pt);
+uint8_t process_secret_key(uint8_t* key, uint8_t len);
+uint8_t process_input(uint8_t* pt, uint8_t len);
 
-uint8_t reset(uint8_t* x)
+uint8_t reset(uint8_t* x, uint8_t len)
 {
 	// Reset key here if needed
 	return 0x00;
@@ -36,7 +36,7 @@ int main(void)
     platform_init();
 	init_uart();
 	trigger_setup();
-	
+
 	simpleserial_init();
 	simpleserial_addcmd('k', SECRET_KEY_LEN, process_secret_key);
 	simpleserial_addcmd('p', INPUT_LEN, process_input);

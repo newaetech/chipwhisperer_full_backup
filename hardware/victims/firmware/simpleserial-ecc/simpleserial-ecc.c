@@ -39,7 +39,7 @@
 
 uint8_t pcsamp_enable;
 
-uint8_t setreg(uint8_t* x)
+uint8_t setreg(uint8_t* x, uint8_t len)
 {
         uint32_t val;
         val = x[4] + (x[3] << 8) + (x[2] << 16) + (x[1] << 24);
@@ -75,7 +75,7 @@ uint8_t setreg(uint8_t* x)
 }
 
 
-uint8_t getreg(uint8_t* x)
+uint8_t getreg(uint8_t* x, uint8_t len)
 {
         uint32_t val;
         if       (x[0] == 0)    {val = DWT->CTRL;}
@@ -147,7 +147,7 @@ void enable_trace(void)
     DWT->MASK0 = 0;
     DWT->FUNCTION0 = (0 << DWT_FUNCTION_DATAVMATCH_Pos) // address match
                    | (0 << DWT_FUNCTION_CYCMATCH_Pos)
-                   | (0 << DWT_FUNCTION_EMITRANGE_Pos) 
+                   | (0 << DWT_FUNCTION_EMITRANGE_Pos)
                    | (8 << DWT_FUNCTION_FUNCTION_Pos); // Iaddr CMPMATCH event
 
     // Configure DWT PC comparator 1:
@@ -155,7 +155,7 @@ void enable_trace(void)
     DWT->MASK1 = 0;
     DWT->FUNCTION1 = (0 << DWT_FUNCTION_DATAVMATCH_Pos) // address match
                    | (0 << DWT_FUNCTION_CYCMATCH_Pos)
-                   | (0 << DWT_FUNCTION_EMITRANGE_Pos) 
+                   | (0 << DWT_FUNCTION_EMITRANGE_Pos)
                    | (8 << DWT_FUNCTION_FUNCTION_Pos); // Iaddr CMPMATCH event
 
 
@@ -168,12 +168,12 @@ void enable_trace(void)
     ETM->TEEVR = 0x000150a0;    // EmbeddedICE comparator 0 or 1 (DWT->COMP0 or DWT->COMP1)
     //ETM->TEEVR = 0x00000020;    // EmbeddedICE comparator 0 only
     //ETM->TEEVR = 0x00000021;    // EmbeddedICE comparator 1 only
-    ETM->TESSEICR = 0xf; // set EmbeddedICE watchpoint 0 as a TraceEnable start resource. 
+    ETM->TESSEICR = 0xf; // set EmbeddedICE watchpoint 0 as a TraceEnable start resource.
     ETM->TECR1 = 0; // tracing is unaffected by the trace start/stop logic
     ETM_TraceMode();
 }
 
-uint8_t set_pcsample_params(uint8_t* x)
+uint8_t set_pcsample_params(uint8_t* x, uint8_t len)
 {
     uint8_t postinit;
     uint8_t postreset;
@@ -232,7 +232,7 @@ void print(const char *ptr)
 }
 
 
-uint8_t set_px(uint8_t* x)
+uint8_t set_px(uint8_t* x, uint8_t len)
 {
    int i, j;
    for (i = 0; i < 8; i++) {
@@ -245,7 +245,7 @@ uint8_t set_px(uint8_t* x)
 }
 
 
-uint8_t set_py(uint8_t* y)
+uint8_t set_py(uint8_t* y, uint8_t len)
 {
    // TODO: this conversion is used in multiple places, move it to a function:
    int i, j;
@@ -259,7 +259,7 @@ uint8_t set_py(uint8_t* y)
 }
 
 
-uint8_t get_qx(uint8_t* x)
+uint8_t get_qx(uint8_t* x, uint8_t len)
 {
     int i, j;
     for (i = 0; i < 8; i++) {
@@ -272,7 +272,7 @@ uint8_t get_qx(uint8_t* x)
 }
 
 
-uint8_t get_qy(uint8_t* y)
+uint8_t get_qy(uint8_t* y, uint8_t len)
 {
     int i, j;
     for (i = 0; i < 8; i++) {
@@ -286,7 +286,7 @@ uint8_t get_qy(uint8_t* y)
 
 
 
-uint8_t run_pmul(uint8_t* k)
+uint8_t run_pmul(uint8_t* k, uint8_t len)
 {
     const struct uECC_Curve_t * curve;
     uECC_word_t kwords[uECC_MAX_WORDS];
@@ -307,7 +307,7 @@ uint8_t run_pmul(uint8_t* k)
 }
 
 
-uint8_t run_pmul_fixed(uint8_t* k)
+uint8_t run_pmul_fixed(uint8_t* k, uint8_t len)
 {
     const struct uECC_Curve_t * curve;
     uECC_word_t kwords[uECC_MAX_WORDS];
@@ -330,14 +330,14 @@ uint8_t run_pmul_fixed(uint8_t* k)
 
 
 
-uint8_t reset(uint8_t* x)
+uint8_t reset(uint8_t* x, uint8_t len)
 {
     // Reset key here if needed
 	return 0x00;
 }
 
 
-uint8_t info(uint8_t* x)
+uint8_t info(uint8_t* x, uint8_t len)
 {
         print("ChipWhisperer simpleserial-trace-ecc, compiled ");
         print(__DATE__);
@@ -348,7 +348,7 @@ uint8_t info(uint8_t* x)
 }
 
 
-uint8_t reenable_trace(uint8_t* x)
+uint8_t reenable_trace(uint8_t* x, uint8_t len)
 {
         enable_trace();
 	return 0x00;

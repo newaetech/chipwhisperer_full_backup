@@ -29,7 +29,7 @@
 #if SS_VER == SS_VER_2_0
 uint8_t glitch_loop(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t* in)
 #else
-uint8_t glitch_loop(uint8_t* in)
+uint8_t glitch_loop(uint8_t* in, uint8_t len)
 #endif
 {
     volatile uint16_t i, j;
@@ -43,16 +43,20 @@ uint8_t glitch_loop(uint8_t* in)
     }
     trigger_low();
     simpleserial_put('r', 4, (uint8_t*)&cnt);
+#if SS_VER == SS_VER_2_0
+    return (cnt != 2500) ? 0x10 : 0x00;
+#else
     return (cnt != 2500);
+#endif
 }
 
 #if SS_VER == SS_VER_2_0
 uint8_t glitch_comparison(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t* in)
 #else
-uint8_t glitch_comparison(uint8_t* in)
+uint8_t glitch_comparison(uint8_t* in, uint8_t len)
 #endif
 {
-    uint8_t ok = 5;    
+    uint8_t ok = 5;
     trigger_high();
     if (*in == 0xA2){
         ok = 1;
@@ -67,7 +71,7 @@ uint8_t glitch_comparison(uint8_t* in)
 #if SS_VER == SS_VER_2_0
 uint8_t password(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t* pw)
 #else
-uint8_t password(uint8_t* pw)
+uint8_t password(uint8_t* pw, uint8_t len)
 #endif
 {
     char passwd[] = "touch";
@@ -82,9 +86,9 @@ uint8_t password(uint8_t* pw)
             passok = 0;
         }
     }
-    
+
     trigger_low();
-    
+
     simpleserial_put('r', 1, (uint8_t*)&passok);
     return 0x00;
 }
@@ -92,7 +96,7 @@ uint8_t password(uint8_t* pw)
 #if SS_VER == SS_VER_2_0
 uint8_t infinite_loop(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t* in)
 #else
-uint8_t infinite_loop(uint8_t* in)
+uint8_t infinite_loop(uint8_t* in, uint8_t len)
 #endif
 {
     led_ok(1);
@@ -139,7 +143,7 @@ uint8_t infinite_loop(uint8_t* in)
     led_error(1);
     led_error(1);
     led_error(1);
-    
+
     return 0;
 }
 
@@ -148,7 +152,7 @@ int main(void)
     platform_init();
     init_uart();
     trigger_setup();
-    
+
     /* Device reset detected */
     putch('r');
     putch('R');
@@ -160,7 +164,7 @@ int main(void)
     putch(' ');
     putch(' ');
     putch('\n');
-    
+
     simpleserial_init();
     simpleserial_addcmd('g', 0, glitch_loop);
     simpleserial_addcmd('c', 1, glitch_comparison);

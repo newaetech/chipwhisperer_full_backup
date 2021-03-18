@@ -8,6 +8,7 @@
 #include "nrf_delay.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
+#include "nrf_rng.h"
 #include "nrf_drv_power.h"
 #include "nrf_serial.h"
 #include "app_timer.h"
@@ -42,32 +43,38 @@ void platform_init(void)
     APP_ERROR_CHECK(ret);
 
     //while (false == nrf_drv_clock_hfclk_is_running());
-    
+
     NRF_GPIOTE->CONFIG[0] = GPIOTE_CONFIG_MODE_Task << GPIOTE_CONFIG_MODE_Pos |
                             GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
-                            XTAL_OUT << GPIOTE_CONFIG_PSEL_Pos | 
+                            XTAL_OUT << GPIOTE_CONFIG_PSEL_Pos |
                             GPIOTE_CONFIG_OUTINIT_Low << GPIOTE_CONFIG_OUTINIT_Pos;
     NRF_TIMER1->PRESCALER = 0;
     NRF_TIMER1->CC[0] = 1;
     NRF_TIMER1->SHORTS = TIMER_SHORTS_COMPARE0_CLEAR_Enabled << TIMER_SHORTS_COMPARE0_CLEAR_Pos;
     NRF_TIMER1->TASKS_START = 1;
-    
+
     NRF_PPI->CH[0].EEP = (uint32_t) &NRF_TIMER1->EVENTS_COMPARE[0];
     NRF_PPI->CH[0].TEP = (uint32_t) &NRF_GPIOTE->TASKS_OUT[0];
-    
+
     NRF_PPI->CHENSET = PPI_CHENSET_CH0_Enabled << PPI_CHENSET_CH0_Pos;
-    
+
     NRF_CLOCK->TRACECONFIG = (CLOCK_TRACECONFIG_TRACEMUX_Parallel << CLOCK_TRACECONFIG_TRACEMUX_Pos);
 
     // Initialize LEDs and buttons.
     bsp_board_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS);
-    
+
     NVIC_EnableIRQ(CRYPTOCELL_IRQn);
 
     NRF_CRYPTOCELL->ENABLE = 1;
-    
+
+    // Start TRNG
+    nrf_rng_shorts_disable(NRF_RNG_SHORT_VALRDY_STOP_MASK);
+    nrf_rng_error_correction_enable();
+    nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
+    nrf_rng_task_trigger(NRF_RNG_TASK_START);
+
     SaSi_LibInit();
-    
+
 }
 
 
@@ -123,6 +130,20 @@ void putch(char c)
                  NRF_SERIAL_MAX_TIMEOUT);
 }
 
+uint32_t get_rand(void)
+{
+    uint32_t value;
+    int i;
+    for (i = 0; i < 4; i++)
+    {
+        while (!nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) ;
+        nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
+        value <<= 8;
+        value |= nrf_rng_random_value_get();
+    }
+    return value;
+}
+
 void HW_AES128_Init(void)
 {
     SaSi_AesInit(&ContextID,SASI_AES_ENCRYPT,SASI_AES_MODE_ECB,SASI_AES_PADDING_NONE);
@@ -136,9 +157,17 @@ void HW_AES128_LoadKey(uint8_t* key)
 	SaSi_AesSetKey(&ContextID, SASI_AES_USER_KEY, &keyData, sizeof(keyData) );
 }
 
+void HW_AES128_Enc_pretrigger(uint8_t* pt)
+{
+}
+
 void HW_AES128_Enc(uint8_t* pt)
 {
     SaSi_AesBlock(&ContextID, pt, 16, pt);
+}
+
+void HW_AES128_Enc_posttrigger(uint8_t* pt)
+{
 }
 
 void HW_AES128_Dec(uint8_t *pt)
