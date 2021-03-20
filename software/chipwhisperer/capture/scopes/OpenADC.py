@@ -239,8 +239,8 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
 
             cwtype = self._getCWType()
             if cwtype != "":
-                if cwtype != "Husky":
-                    self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.qtadc.sc)
+                #if cwtype != "cwhusky":
+                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.qtadc.sc)
 
                 util.chipwhisperer_extra = self.advancedSettings
 
@@ -254,12 +254,15 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
                 if cwtype == "cwcrev2":
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
 
+
             self.adc = self.qtadc.parm_trigger
             self.gain = self.qtadc.parm_gain
             self.clock = self.qtadc.parm_clock
 
             if cwtype == "cw1200":
                 self.adc._is_pro = True
+            if cwtype == "cwhusky":
+                self.ADS4128 = self.qtadc.parm_ads4128
             if self.advancedSettings:
                 self.io = self.advancedSettings.cwEXTRA.gpiomux
                 self.trigger = self.advancedSettings.cwEXTRA.triggermux
@@ -401,6 +404,8 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         if self._getCWType() == "cw1200":
             dict['SAD'] = self.SAD._dict_repr()
             dict['decode_IO'] = self.decode_IO._dict_repr()
+        if self._getCWType() == "cwhusky":
+            dict['ADS4128'] = self.ADS4128._dict_repr()
 
         return dict
 

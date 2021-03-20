@@ -37,6 +37,9 @@ ADDR_MULTIECHO  = 34
 ADDR_DRP_ADDR   = 30
 ADDR_DRP_DATA   = 31
 
+ADDR_HUSKY_ADC_CTRL = 60
+ADDR_HUSKY_VMAG_CTRL = 61
+
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
 
@@ -149,6 +152,117 @@ class HWInformation(util.DisableNewAttr):
 
     def __del__(self):
         self.oa.hwInfo = None
+
+
+
+class ADS4128Settings(util.DisableNewAttr):
+    _name = 'Husky ADS4128 ADC Setting'
+    ...
+    def __init__(self, oaiface):
+        self.oa = oaiface
+        self.adc_reset()
+        self.set_default_settings()
+        self.disable_newattr()
+
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['mode'] = self.mode
+        return dict
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
+    def adc_reset(self):
+        """Resets the ADC.
+        Note this is done by the FPGA - see reg_husky_adc.v
+        """
+        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
+        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0xc1])
+        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
+
+    def _adc_write(self, address, data):
+        """Write ADC configuration register.
+        Note this is done by the FPGA - see reg_husky_adc.v
+        """
+        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
+        for i in range(8):
+            bit = (address >> (7-i)) & 1
+            val = (bit << 4) + 1
+            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
+            val = (bit << 4) + 0
+            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
+        
+        for i in range(8):
+            bit = (data >> (7-i)) & 1
+            val = (bit << 4) + 1
+            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
+            val = (bit << 4) + 0
+            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
+        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
+
+    def _adc_read(self, address):
+        """Read ADC configuration register.
+        Note this is done by the FPGA - see reg_husky_adc.v
+        """
+        # first, enable readout:
+        self._adc_write(0x0, 0x1)
+        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
+        for i in range(8):
+            bit = (address >> (7-i)) & 1
+            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [(bit<<4) + 1])
+            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [(bit<<4) + 0])
+        for i in range(8):
+            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x01])
+            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x02])
+        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
+        data =  self.oa.sendMessage(CODE_READ, ADDR_HUSKY_ADC_CTRL, maxResp=1)[0]
+        # finished, disable readout:
+        self._adc_write(0x0, 0x0)
+        return data
+
+    def set_default_settings(self):
+        self._adc_write(0x42, 0x00) # enable low-latency mode
+        self._adc_write(0x25, 0x00) # disable test patterns
+        self._adc_write(0x03, 0x03) # set high performance mode
+        self._adc_write(0x4a, 0x01) # set high performance mode
+        self._adc_write(0x3d, 0xc0) # set offset binary output
+        self.mode_cached = "normal"
+
+    def set_test_settings(self):
+        self._adc_write(0x42, 0x08) # disable low-latency mode
+        self._adc_write(0x25, 0x04) # set test pattern to ramp
+        self._adc_write(0x3d, 0xc0) # set offset binary output
+        self.mode_cached = "test ramp"
+
+    @property
+    def mode(self):
+        """The current mode of the ADC.
+
+        :Getter: Return the current ADC operating mode ("normal" or "test ramp")
+
+        :Setter: Set the operating mode.
+
+        Raises:
+            ValueError: if mode not one of "normal" or "test ramp"
+        """
+        return self.mode_cached
+
+    @mode.setter
+    def mode(self, val):
+        return self.setMode(val)
+
+    def setMode(self, mode):
+        if mode == "normal":
+            self.set_default_settings()
+        elif mode == "test ramp":
+            self.set_test_settings()
+        else:
+            raise ValueError("Invalid mode, only 'normal' or 'test ramp' allowed")
+
+
 
 
 class GainSettings(util.DisableNewAttr):
