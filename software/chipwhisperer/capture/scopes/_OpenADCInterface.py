@@ -34,6 +34,7 @@ ADDR_PRESAMPLES = 17
 ADDR_BYTESTORX  = 18
 ADDR_TRIGGERDUR = 20
 ADDR_MULTIECHO  = 34
+ADDR_DATA_SOURCE = 27
 ADDR_DRP_ADDR   = 30
 ADDR_DRP_DATA   = 31
 
@@ -455,8 +456,10 @@ class TriggerSettings(util.DisableNewAttr):
         self.presampleTempMargin = 24
         self._timeout = 2
         self._stream_mode = False
+        self._test_mode = False
         self._support_get_duration = True
         self._is_pro = False
+        self._is_husky = False
         self._cached_samples = None
         self._cached_offset = None
         self._is_sakura_g = None
@@ -476,6 +479,8 @@ class TriggerSettings(util.DisableNewAttr):
         dict['fifo_fill_mode'] = self.fifo_fill_mode
         if self._is_pro:
             dict['stream_mode'] = self.stream_mode
+        if self._is_husky:
+            dict['test_mode'] = self.test_mode
 
 
 
@@ -803,6 +808,37 @@ class TriggerSettings(util.DisableNewAttr):
 
     def _get_stream_mode(self):
         return self._stream_mode
+
+
+    def _set_test_mode(self, enabled):
+        self._test_mode = enabled
+        if enabled:
+            val = 0
+        else:
+            val = 1
+        self.oa.sendMessage(CODE_WRITE, ADDR_DATA_SOURCE, [val])
+
+
+    def _get_test_mode(self):
+        return self._test_mode
+
+    @property
+    def test_mode(self):
+        """The ChipWhisperer's test mode. Only available on CW-Husky.
+
+        When test mode is enabled, an internally-generated count-up pattern is
+        captured, instead of the ADC sample data.
+
+        :Getter: Return True if test mode is enabled and False otherwise
+
+        :Setter: Enable or disable test mode
+        """
+        return self._get_test_mode()
+
+    @test_mode.setter
+    def test_mode(self, enabled):
+        self._set_test_mode(enabled)
+
 
     def fifoOverflow(self):
         return self.oa.getStatus() & STATUS_OVERFLOW_MASK

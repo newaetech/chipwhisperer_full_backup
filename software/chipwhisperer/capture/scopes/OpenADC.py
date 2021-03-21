@@ -262,6 +262,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
             if cwtype == "cw1200":
                 self.adc._is_pro = True
             if cwtype == "cwhusky":
+                self.adc._is_husky = True
                 self.ADS4128 = self.qtadc.parm_ads4128
             if self.advancedSettings:
                 self.io = self.advancedSettings.cwEXTRA.gpiomux
