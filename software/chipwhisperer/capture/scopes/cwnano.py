@@ -265,6 +265,8 @@ class GPIOSettings(util.DisableNewAttr):
 
         dict['clkout'] = self.clkout
 
+        dict['cdc_settings'] = self.cdc_settings
+
         return dict
 
     def __repr__(self):
@@ -503,6 +505,14 @@ class GPIOSettings(util.DisableNewAttr):
             state = None
 
         return state
+
+    @property
+    def cdc_settings(self):
+        return self.usb.get_cdc_settings()
+
+    @cdc_settings.setter
+    def cdc_settings(self, port):
+        return self.usb.set_cdc_settings(port)
 
 
 class CWNano(ScopeTemplate, util.DisableNewAttr):

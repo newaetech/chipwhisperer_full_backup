@@ -44,6 +44,9 @@
 static volatile bool main_b_vendor_enable = true;
 static bool active = false;
 
+//allow cdc mode to change USART settings
+static volatile bool cdc_settings_change[2] = {true, true};
+
 COMPILER_WORD_ALIGNED
 		static uint8_t main_buf_loopback[MAIN_LOOPBACK_SIZE];
 
@@ -113,6 +116,7 @@ bool usb_is_enabled(void)
 #define REQ_AVR_PROGRAM 0x21
 #define REQ_SAM3U_CFG 0x22
 #define REQ_CC_PROGRAM 0x23
+#define REQ_CDC_SETTINGS_EN 0x31
 
 COMPILER_WORD_ALIGNED static uint8_t ctrlbuffer[64];
 #define CTRLBUFFER_WORDPTR ((uint32_t *) ((void *)ctrlbuffer))
@@ -349,6 +353,20 @@ static void ctrl_usart2_enabledump(void)
 
 }
 
+static void ctrl_cdc_settings_cb(void)
+{
+    if (udd_g_ctrlreq.req.wValue & 0x01) {
+        cdc_settings_change[0] = 1;
+    } else {
+        cdc_settings_change[0] = 0;
+    }
+    if (udd_g_ctrlreq.req.wValue & 0x02) {
+        cdc_settings_change[1] = 1;
+    } else {
+        cdc_settings_change[1] = 0;
+    }
+}
+
 static void ctrl_sam3ucfg_cb(void)
 {
 	switch(udd_g_ctrlreq.req.wValue & 0xFF)
@@ -507,6 +525,9 @@ bool main_setup_out_received(void)
 		case REQ_SAM3U_CFG:
 			udd_g_ctrlreq.callback = ctrl_sam3ucfg_cb;
 			return true;
+        case REQ_CDC_SETTINGS_EN:
+			udd_g_ctrlreq.callback = ctrl_cdc_settings_cb;
+			return true;
 			
 			
 		default:
@@ -653,6 +674,14 @@ bool main_setup_in_received(void)
 			/* Auxiliary mode, used for special interfaces */
 			return ctrl_scardaux_req();
 			break;
+
+        case REQ_CDC_SETTINGS_EN:
+            respbuf[0] = cdc_settings_change[0];
+            respbuf[1] = cdc_settings_change[1];
+            udd_g_ctrlreq.payload = respbuf;
+            udd_g_ctrlreq.payload_size = 2;
+            return true;
+            break;
 			
 		default:
 			return false;
@@ -770,6 +799,8 @@ void my_callback_rx_notify(uint8_t port)
 {
 	//iram_size_t udi_cdc_multi_get_nb_received_data
 	
+    if (port > 0)
+        return;
 	if (enable_cdc_transfer[port] && usart_x_enabled[0]) {
 		iram_size_t num_char = udi_cdc_multi_get_nb_received_data(port);
 		while (num_char > 0) {
@@ -796,8 +827,10 @@ extern tcirc_buf usb_usart_circ_buf;
 
 void my_callback_config(uint8_t port, usb_cdc_line_coding_t * cfg)
 {
-	if (enable_cdc_transfer[port]) {
-        usart_x_enabled[0] = true;
+    if (port > 0)
+        return;
+	if (enable_cdc_transfer[port] && cdc_settings_change[port]) {
+        usart_x_enabled[port] = true;
 		sam_usart_opt_t usartopts;
 		if (port != 0){
 			return;

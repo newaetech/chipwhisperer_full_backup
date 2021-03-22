@@ -57,6 +57,7 @@
 
 static volatile bool main_b_vendor_enable = true;
 static bool active = false;
+static volatile bool cdc_settings_change[2] = {true, true};
 
 #define MAIN_LOOPBACK_SIZE 64
 
@@ -139,6 +140,7 @@ bool usb_is_enabled(void)
 #define REQ_BUFSIZE 0x2B
 #define REQ_GLITCHSET 0x2C
 #define REQ_GLITCHGO 0x2D
+#define REQ_CDC_SETTINGS_EN 0x31
 
 uint32_t max_buffer_size = SIZE_BUFF_RECEPT;
 
@@ -228,6 +230,20 @@ static void ctrl_sam3ucfg_cb(void)
 		default:
 			break;
 	}
+}
+
+static void ctrl_cdc_settings_cb(void)
+{
+    if (udd_g_ctrlreq.req.wValue & 0x01) {
+        cdc_settings_change[0] = 1;
+    } else {
+        cdc_settings_change[0] = 0;
+    }
+    if (udd_g_ctrlreq.req.wValue & 0x02) {
+        cdc_settings_change[1] = 1;
+    } else {
+        cdc_settings_change[1] = 0;
+    }
 }
 
 static void ctrl_usart_cb(void)
@@ -534,6 +550,9 @@ bool main_setup_out_received(void)
 			udd_g_ctrlreq.callback = ctrl_sam3ucfg_cb;
 			return true;
 			
+		case REQ_CDC_SETTINGS_EN:
+			udd_g_ctrlreq.callback = ctrl_cdc_settings_cb;
+			return true;
 		default:
 			return false;
 	}			
@@ -647,6 +666,14 @@ bool main_setup_in_received(void)
 			udd_g_ctrlreq.payload_size = 8;
 			return true;
 			break;		
+
+        case REQ_CDC_SETTINGS_EN:
+            respbuf[0] = cdc_settings_change[0];
+            respbuf[1] = cdc_settings_change[1];
+            udd_g_ctrlreq.payload = respbuf;
+            udd_g_ctrlreq.payload_size = 2;
+            return true;
+            break;
 			
 		default:
 			return false;
@@ -774,6 +801,8 @@ static uint8_t uart_buf[64] = {0};
 void my_callback_rx_notify(uint8_t port)
 {
 	//iram_size_t udi_cdc_multi_get_nb_received_data
+    if (port > 0)
+        return;
 	
 	if (enable_cdc_transfer[port] && usart_x_enabled[0]) {
 		iram_size_t num_char = udi_cdc_multi_get_nb_received_data(port);
@@ -786,13 +815,6 @@ void my_callback_rx_notify(uint8_t port)
 			}
 			num_char = udi_cdc_multi_get_nb_received_data(port);
 		}
-		#if 0
-		udi_cdc_read_no_polling(uart_buf, 128);
-		uint8_t *st = uart_buf;
-		while (*st) {
-			udi_cdc_putc(*st++);
-		}
-		#endif
 	}
 }
 
@@ -801,7 +823,9 @@ extern tcirc_buf usb_usart_circ_buf;
 
 void my_callback_config(uint8_t port, usb_cdc_line_coding_t * cfg)
 {
-	if (enable_cdc_transfer[port]) {
+    if (port > 0)
+        return;
+	if (enable_cdc_transfer[port] && cdc_settings_change[port]) {
         usart_x_enabled[0] = true;
 		sam_usart_opt_t usartopts;
 		if (port != 0){
@@ -811,7 +835,7 @@ void my_callback_config(uint8_t port, usb_cdc_line_coding_t * cfg)
 			return;
 		if (cfg->bCharFormat > 2)
 			return;
-	
+
 		usartopts.baudrate = cfg->dwDTERate;
 		usartopts.channel_mode = US_MR_CHMODE_NORMAL;
 		usartopts.stop_bits = ((uint32_t)cfg->bCharFormat) << 12;

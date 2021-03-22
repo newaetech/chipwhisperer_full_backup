@@ -155,6 +155,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         self.io.hs2 = "clkgen"
 
         self.clock.adc_src = "clkgen_x4"
+        self.io.cdc_settings = 0
 
         count = 0
         while not self.clock.clkgen_locked:            
