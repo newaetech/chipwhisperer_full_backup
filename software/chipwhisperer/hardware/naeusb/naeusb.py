@@ -387,11 +387,12 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         self._usbdev = dev
         # TODO: how to tell if we're Husky at this point? maybe a try block?
         # for husky:
-        self.rep = 0x85
-        self.wep = 0x06
+        # TEMPORARY: fix rep/wep in the notebook instead, so that the old values can be used for the CW305 target
+        #self.rep = 0x85
+        #self.wep = 0x06
         # for older capture HW:
-        #self.rep = 0x81
-        #self.wep = 0x02
+        self.rep = 0x81
+        self.wep = 0x02
         self._timeout = 200
 
         return foundId
@@ -506,6 +507,8 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         # Get data
         if cmd == self.CMD_READMEM_BULK:
             data = self.usbdev().read(self.rep, dlen, timeout=self._timeout)
+            # XXX Husky debug:
+            print('YYY BULK rep=%d, dlen=%d, got len=%d' % (self.rep, dlen, len(data)))
         else:
             data = self.readCtrl(cmd, dlen=dlen)
 

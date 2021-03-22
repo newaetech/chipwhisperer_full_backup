@@ -35,6 +35,7 @@ ADDR_BYTESTORX  = 18
 ADDR_TRIGGERDUR = 20
 ADDR_MULTIECHO  = 34
 ADDR_DATA_SOURCE = 27
+ADDR_ADC_LOW_RES = 29
 ADDR_DRP_ADDR   = 30
 ADDR_DRP_DATA   = 31
 
@@ -457,6 +458,7 @@ class TriggerSettings(util.DisableNewAttr):
         self._timeout = 2
         self._stream_mode = False
         self._test_mode = False
+        self._bits_per_sample = 10
         self._support_get_duration = True
         self._is_pro = False
         self._is_husky = False
@@ -481,6 +483,7 @@ class TriggerSettings(util.DisableNewAttr):
             dict['stream_mode'] = self.stream_mode
         if self._is_husky:
             dict['test_mode'] = self.test_mode
+            dict['bits_per_sample'] = self.bits_per_sample
 
 
 
@@ -838,6 +841,41 @@ class TriggerSettings(util.DisableNewAttr):
     @test_mode.setter
     def test_mode(self, enabled):
         self._set_test_mode(enabled)
+
+
+    def _set_bits_per_sample(self, bits):
+        self._bits_per_sample = bits
+        # update FPGA:
+        if bits == 10:
+            val = 1
+        else:
+            val = 0
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADC_LOW_RES, [val])
+        # Notify capture system:
+        self.oa.setBitsPerSample(bits)
+
+    def _get_bits_per_sample(self):
+        return self._bits_per_sample
+
+    @property
+    def bits_per_sample(self):
+        """Bits per ADC sample. Only available on CW-Husky.
+
+        Husky has a 12-bit ADC; optionally, we read back only 8 bits per
+        sample.  This does *not* allow for more samples to be collected; it
+        only allows for a faster sampling rate in streaming mode.
+
+        :Getter: return the number of bits per sample that will be received.
+
+        :Setter: set the number of bits per sample to receive.
+        """
+        return self._get_bits_per_sample()
+
+    @bits_per_sample.setter
+    def bits_per_sample(self, bits):
+        if bits not in [8,12]:
+            raise ValueError("Valid settings: 8 or 12.")
+        self._set_bits_per_sample(bits)
 
 
     def fifoOverflow(self):
@@ -1896,6 +1934,7 @@ class OpenADCInterface(object):
         self.ddrMode = False
         self.sysFreq = 0
         self._streammode = False
+        self._bits_per_sample = 10
         self._sbuf = []
         self.settings()
         self._support_decimate = True
@@ -1906,6 +1945,7 @@ class OpenADCInterface(object):
         self.presampleTempMargin = 24
         self._stream_mode = False
         self._support_get_duration = True
+        self._is_husky = False
 
         # Send clearing function if using streaming mode
         if hasattr(self.serial, "stream") and self.serial.stream == False:
@@ -1920,6 +1960,9 @@ class OpenADCInterface(object):
     def setStreamMode(self, stream):
         self._streammode = stream
         self.updateStreamBuffer()
+
+    def setBitsPerSample(self, bits):
+        self._bits_per_sample = bits
 
     def setTimeout(self, timeout):
         self._timeout = timeout
@@ -2352,6 +2395,8 @@ class OpenADCInterface(object):
 
     def readData(self, NumberPoints=None, progressDialog=None):
         logging.debug("Reading data fromm OpenADC...")
+        if self._is_husky: 
+            return self.readHuskyData(NumberPoints)
         if self._streammode:
             # Process data
             bsize = self.serial.cmdReadStream_size_of_fpgablock()
@@ -2479,6 +2524,60 @@ class OpenADCInterface(object):
             # print NumberPoints
 
             return datapoints
+
+
+
+    def readHuskyData(self, NumberPoints=None):
+        if self._streammode:
+            raise ValueError('Not implemented yet')
+        else:
+            if self._bits_per_sample == 12:
+                bytesToRead = int(NumberPoints*1.5)
+                if NumberPoints % 2:
+                    bytesToRead += 1
+            else:
+                bytesToRead = NumberPoints
+            data = self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, bytesToRead)
+            # XXX Husky debug:
+            print("XXX read %d bytes; NumberPoints=%d, bytesToRead=%d" % (len(data), NumberPoints, bytesToRead))
+            if data is not None:
+                data = np.array(data)
+                datapoints = self.processHuskyData(NumberPoints, data)
+            if datapoints is None:
+                return []
+            return datapoints[:NumberPoints]
+
+
+
+    def processHuskyData(self, NumberPoints, data):
+        # TODO: this numpy magic may be faster?
+        #data = np.reshape(data, (-1, 4))
+        #data = np.left_shift(data, [24, 16, 8, 0])
+        #data = np.sum(data, 1)
+        # Split words into samples and trigger bytes
+        #data = np.right_shift(np.reshape(data, (-1, 1)), [0, 10, 20, 30]) & 0x3FF
+        #fpData = np.reshape(data[:, [0, 1, 2]], (-1))
+
+        if self._bits_per_sample == 12:
+            samples = np.zeros(NumberPoints, dtype=np.int16)
+            for i in range(NumberPoints):
+                if (i%2 == 0):
+                    j = int(i*1.5)
+                    samples[i] = (data[j]<<4) + (data[j+1]>>4)
+                else:
+                    j = int((i-1)*1.5)
+                    samples[i] = ((data[j+1] & 0xf)<<8) + data[j+2]
+        else:
+            samples = data
+
+        fpData = samples / 2**self._bits_per_sample - self.offset
+
+        logging.debug("Processed data, ended up with %d samples total"%len(fpData))
+
+        #return fpData
+        return samples
+
+
 
     def processData(self, data, pad=float('NaN'), debug=False):
         if data[0] != 0xAC:
