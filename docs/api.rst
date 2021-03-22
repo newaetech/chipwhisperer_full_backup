@@ -181,6 +181,9 @@ OpenADC Scope
         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio_states
             :annotation: scope.io.tio_states
 
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.cdc_settings
+            :annotation: scope.io.cdc_settings
+
 
     .. attribute:: trigger
         :annotation: scope.trigger
@@ -360,6 +363,9 @@ ChipWhisperer Nano Scope
 
         .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.clkout
             :annotation: scope.io.clkout
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.cdc_settings
+            :annotation: scope.io.cdc_settings
 
     .. attribute:: glitch
         :annotation: scope.glitch
