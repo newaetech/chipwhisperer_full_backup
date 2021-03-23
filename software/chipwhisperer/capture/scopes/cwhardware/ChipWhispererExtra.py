@@ -117,6 +117,8 @@ class GPIOSettings(util.DisableNewAttr):
 
         dict['tio_states'] = self.tio_states
 
+        dict['cdc_settings'] = self.cdc_settings
+
         return dict
 
     @property
@@ -188,6 +190,22 @@ class GPIOSettings(util.DisableNewAttr):
                 return _tio_api_alias[tio_setting]
         except KeyError:
             return "?"
+
+    @property
+    def cdc_settings(self):
+        """Check or set whether USART settings can be changed via the USB CDC connection
+
+        i.e. whether you can change USART settings (baud rate, 8n1) via a serial client like PuTTY
+
+        :getter: An array of length two for two possible CDC serial ports (though only one is used)
+
+        :setter: Can set either via an integer (which sets both ports) or an array of length 2 (which sets each port)
+        """
+        return self.cwe.oa.serial.get_cdc_settings()
+
+    @cdc_settings.setter
+    def cdc_settings(self, port):
+        return self.cwe.oa.serial.set_cdc_settings(port)
 
     @property
     def tio1(self):

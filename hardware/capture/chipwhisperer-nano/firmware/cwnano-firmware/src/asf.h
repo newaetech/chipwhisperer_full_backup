@@ -99,10 +99,6 @@
 // From module: Part identification macros
 #include <parts.h>
 
-// From module: Sleep manager - SAM implementation
-#include <sam/sleepmgr.h>
-#include <sleepmgr.h>
-
 // From module: System Clock Control - SAM4S implementation
 #include <sysclk.h>
 
@@ -118,11 +114,17 @@
 // From module: USART - Univ. Syn Async Rec/Trans
 #include <usart.h>
 
+// From module: USB CDC Protocol
+#include <usb_protocol_cdc.h>
+
+// From module: USB Device CDC (Composite Device)
+#include <udi_cdc.h>
+
 // From module: USB Device Stack Core (Common API)
 #include <udc.h>
 #include <udd.h>
 
-// From module: USB Device Vendor Class (Single Interface Device)
+// From module: USB Device Vendor Class (Composite Device)
 #include <udi_vendor.h>
 
 // From module: USB Vendor Protocol

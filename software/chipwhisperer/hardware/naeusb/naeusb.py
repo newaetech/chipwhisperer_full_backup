@@ -362,14 +362,6 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
             else:
                 #User did not help us out - throw it in their face
                 raise Warning("Found multiple potential USB devices. Please specify device to use. Possible S/Ns:\n" + snlist)
-        try:
-            try:
-                dev.set_configuration(0)
-            except:
-                pass #test
-            dev.set_configuration()
-        except ValueError:
-            raise OSError("NAEUSB: Could not configure USB device")
 
         # Get serial number
         try:
@@ -566,7 +558,6 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         
         return data
 
-
     def cmdWriteBulk(self, data):
         """
         Write data directly to the bulk endpoint.
@@ -575,7 +566,6 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         """
 
         self.usbdev().write(self.wep, data, timeout=self._timeout)
-
 
     def flushInput(self):
         """Dump all the crap left over"""
@@ -595,6 +585,7 @@ class NAEUSB(object):
     """
 
     CMD_FW_VERSION = 0x17
+    CMD_CDC_SETTINGS_EN = 0x31
 
     CMD_READMEM_BULK = 0x10
     CMD_WRITEMEM_BULK = 0x11
@@ -614,6 +605,29 @@ class NAEUSB(object):
 
     def get_possible_devices(self, idProduct):
         return self.usbseralizer.get_possible_devices(idProduct)
+
+    def get_cdc_settings(self):
+        return self.usbtx.readCtrl(self.CMD_CDC_SETTINGS_EN, dlen=2)
+
+    def set_cdc_settings(self, port=[1, 1]):
+        if isinstance(port, int):
+            port = [port, port]
+        self.usbtx.sendCtrl(self.CMD_CDC_SETTINGS_EN, (port[0]) | (port[1] << 1))
+
+
+    def get_serial_ports(self):
+        """May have multiple com ports associated with one device, so returns a list of port + interface
+        """
+        if not self.usbtx._usbdev:
+            raise OSError("Connect to device before calling this")
+        import serial.tools.list_ports
+        if serial.__version__ < '3.5':
+            raise OSError("Pyserial >= 3.5 (found {}) required for this method".format(serial.__version__))
+        devices = []
+        for port in serial.tools.list_ports.comports():
+            if port.serial_number == self.usbtx._usbdev.serial_number.upper():
+                devices.append({"port": port.device, "interface": port.location.split('.')[-1]})
+        return devices
 
     def con(self, idProduct=[0xACE2], connect_to_first=False, serial_number=None):
         """
@@ -679,6 +693,13 @@ class NAEUSB(object):
         """Close USB connection."""
         self.usbseralizer.close(self.snum)
         self.snum = None
+
+    def readCDCSettings(self):
+        try:
+            data = self.readCtrl(self.CMD_FW_VERSION, dlen=3)
+            return data
+        except usb.USBError:
+            return [0, 0]
 
     def readFwVersion(self):
         try:

@@ -35,7 +35,7 @@
     <option id="common.services.delay" value="Add" config="" content-id="Atmel.ASF" />
     <option id="common.services.basic.gpio" value="Add" config="" content-id="Atmel.ASF" />
     <option id="common.services.basic.serial" value="Add" config="" content-id="Atmel.ASF" />
-    <option id="common.services.usb.class.device" value="Add" config="vendor_class" content-id="Atmel.ASF" />
+    <option id="common.services.usb.class.device" value="Add" config="composite" content-id="Atmel.ASF" />
     <option id="sam.drivers.chipid" value="Add" config="" content-id="Atmel.ASF" />
     <option id="sam.drivers.pdc" value="Add" config="" content-id="Atmel.ASF" />
     <option id="sam.drivers.pio" value="Add" config="" content-id="Atmel.ASF" />
@@ -47,12 +47,12 @@
     <configuration key="config.compiler.armgcc.printf" value="iprintf" default="iprintf" content-id="Atmel.ASF" />
     <configuration key="config.compiler.armgcc.scanf" value="iscanf" default="iscanf" content-id="Atmel.ASF" />
     <configuration key="config.common.utils.stdio.stdio_usb.composite" value="disable" default="disable" content-id="Atmel.ASF" />
-    <configuration key="config.common.services.usb.class.cdc.device.composite" value="disable" default="disable" content-id="Atmel.ASF" />
+    <configuration key="config.common.services.usb.class.cdc.device.composite" value="enable" default="disable" content-id="Atmel.ASF" />
     <configuration key="config.common.services.usb.class.hid.device.generic.composite" value="disable" default="disable" content-id="Atmel.ASF" />
     <configuration key="config.common.services.usb.class.hid.device.keyboard.composite" value="disable" default="disable" content-id="Atmel.ASF" />
     <configuration key="config.common.services.usb.class.hid.device.mouse.composite" value="disable" default="disable" content-id="Atmel.ASF" />
-    <configuration key="config.common.services.usb.class.msc.device.composite" value="enable" default="disable" content-id="Atmel.ASF" />
-    <configuration key="config.sam.drivers.udp.device.sleepmgr" value="with_sleepmgr" default="with_sleepmgr" content-id="Atmel.ASF" />
+    <configuration key="config.common.services.usb.class.msc.device.composite" value="disable" default="disable" content-id="Atmel.ASF" />
+    <configuration key="config.sam.drivers.udp.device.sleepmgr" value="without_sleepmgr" default="with_sleepmgr" content-id="Atmel.ASF" />
     <configuration key="config.sam.pio.pio_handler" value="yes" default="yes" content-id="Atmel.ASF" />
     <configuration key="config.common.services.usb.class.phdc.device.composite" value="disable" default="disable" content-id="Atmel.ASF" />
     <configuration key="config.common.services.usb.class.vendor.device.composite" value="enable" default="disable" content-id="Atmel.ASF" />
@@ -256,7 +256,7 @@
   <documentation help="http://asf.atmel.com/docs/3.40.0/common.applications.user_application.user_board.sam4s/html/index.html" />
   <offline-documentation help="" />
   <dependencies>
-    <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.40.0" />
+    <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.42.0" />
   </dependencies>
   <project id="common.applications.user_application.user_board.sam4s" value="Add" config="" content-id="Atmel.ASF" />
   <board id="board.user_board.sam4s" value="Add" config="" content-id="Atmel.ASF" />
@@ -269,15 +269,16 @@
       <ToolOptions>
         <InterfaceProperties>
           <JtagDbgClock>7500000</JtagDbgClock>
+          <SwdClock>2000000</SwdClock>
         </InterfaceProperties>
-        <InterfaceName>JTAG</InterfaceName>
+        <InterfaceName>SWD</InterfaceName>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.atmelice</ToolType>
       <ToolNumber>J41800035206</ToolNumber>
       <ToolName>Atmel-ICE</ToolName>
     </com_atmel_avrdbg_tool_atmelice>
-    <avrtoolinterface>JTAG</avrtoolinterface>
-    <avrtoolinterfaceclock>7500000</avrtoolinterfaceclock>
+    <avrtoolinterface>SWD</avrtoolinterface>
+    <avrtoolinterfaceclock>2000000</avrtoolinterfaceclock>
     <com_atmel_avrdbg_tool_samice>
       <ToolOptions>
         <InterfaceProperties>
@@ -328,6 +329,7 @@
       <Value>ARM_MATH_CM4=true</Value>
       <Value>printf=iprintf</Value>
       <Value>UDD_ENABLE</Value>
+      <Value>UDD_NO_SLEEP_MGR</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.IncludePaths>
@@ -351,7 +353,6 @@
       <Value>../src/ASF/common/services/ioport</Value>
       <Value>../src/ASF/common/services/serial/sam_uart</Value>
       <Value>../src/ASF/common/services/serial</Value>
-      <Value>../src/ASF/common/services/sleepmgr</Value>
       <Value>../src/ASF/common/services/usb</Value>
       <Value>../src/ASF/common/services/usb/class/vendor</Value>
       <Value>../src/ASF/common/services/usb/class/vendor/device</Value>
@@ -366,6 +367,9 @@
       <Value>../src/ASF/common/services/delay</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
       <Value>../src/ASF/sam/services/flash_efc</Value>
+      <Value>../src/ASF/common/services/usb/class/composite/device</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.level>Optimize for size (-Os)</armgcc.compiler.optimization.level>
@@ -407,7 +411,6 @@
       <Value>../src/ASF/common/services/ioport</Value>
       <Value>../src/ASF/common/services/serial/sam_uart</Value>
       <Value>../src/ASF/common/services/serial</Value>
-      <Value>../src/ASF/common/services/sleepmgr</Value>
       <Value>../src/ASF/common/services/usb</Value>
       <Value>../src/ASF/common/services/usb/class/vendor</Value>
       <Value>../src/ASF/common/services/usb/class/vendor/device</Value>
@@ -422,9 +425,12 @@
       <Value>../src/ASF/common/services/delay</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
       <Value>../src/ASF/sam/services/flash_efc</Value>
+      <Value>../src/ASF/common/services/usb/class/composite/device</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
-  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM4=true -DBOARD=USER_BOARD -Dprintf=iprintf -Dscanf=iscanf -DUDD_ENABLE</armgcc.preprocessingassembler.general.AssemblerFlags>
+  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM4=true -DBOARD=USER_BOARD -Dprintf=iprintf -Dscanf=iscanf -DUDD_ENABLE -DUDD_NO_SLEEP_MGR</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
       <Value>../src/ASF/common/boards</Value>
@@ -446,7 +452,6 @@
       <Value>../src/ASF/common/services/ioport</Value>
       <Value>../src/ASF/common/services/serial/sam_uart</Value>
       <Value>../src/ASF/common/services/serial</Value>
-      <Value>../src/ASF/common/services/sleepmgr</Value>
       <Value>../src/ASF/common/services/usb</Value>
       <Value>../src/ASF/common/services/usb/class/vendor</Value>
       <Value>../src/ASF/common/services/usb/class/vendor/device</Value>
@@ -461,6 +466,9 @@
       <Value>../src/ASF/common/services/delay</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
       <Value>../src/ASF/sam/services/flash_efc</Value>
+      <Value>../src/ASF/common/services/usb/class/composite/device</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
 </ArmGcc>
@@ -482,6 +490,7 @@
       <Value>ARM_MATH_CM4=true</Value>
       <Value>printf=iprintf</Value>
       <Value>UDD_ENABLE</Value>
+      <Value>UDD_NO_SLEEP_MGR</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.IncludePaths>
@@ -505,7 +514,6 @@
       <Value>../src/ASF/common/services/ioport</Value>
       <Value>../src/ASF/common/services/serial/sam_uart</Value>
       <Value>../src/ASF/common/services/serial</Value>
-      <Value>../src/ASF/common/services/sleepmgr</Value>
       <Value>../src/ASF/common/services/usb</Value>
       <Value>../src/ASF/common/services/usb/class/vendor</Value>
       <Value>../src/ASF/common/services/usb/class/vendor/device</Value>
@@ -520,6 +528,9 @@
       <Value>../src/ASF/common/services/delay</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
       <Value>../src/ASF/sam/services/flash_efc</Value>
+      <Value>../src/ASF/common/services/usb/class/composite/device</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.level>Optimize (-O1)</armgcc.compiler.optimization.level>
@@ -527,7 +538,9 @@
   <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
   <armgcc.compiler.optimization.DebugLevel>Maximum (-g3)</armgcc.compiler.optimization.DebugLevel>
   <armgcc.compiler.warnings.AllWarnings>True</armgcc.compiler.warnings.AllWarnings>
-  <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500</armgcc.compiler.miscellaneous.OtherFlags>
+  <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500</armgcc.compiler.miscellaneous.OtherFlags>
+  <armgcc.linker.general.UseNewlibNano>True</armgcc.linker.general.UseNewlibNano>
+  <armgcc.linker.general.AdditionalSpecs>Use syscall stubs (--specs=nosys.specs)</armgcc.linker.general.AdditionalSpecs>
   <armgcc.linker.libraries.Libraries>
     <ListValues>
       <Value>libarm_cortexM4l_math</Value>
@@ -540,6 +553,7 @@
     </ListValues>
   </armgcc.linker.libraries.LibrarySearchPaths>
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
+  <armgcc.linker.memorysettings.ExternalRAM />
   <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam/utils/linker_scripts/sam4s/sam4sa16/gcc/flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
   <armgcc.assembler.general.IncludePaths>
     <ListValues>
@@ -562,7 +576,6 @@
       <Value>../src/ASF/common/services/ioport</Value>
       <Value>../src/ASF/common/services/serial/sam_uart</Value>
       <Value>../src/ASF/common/services/serial</Value>
-      <Value>../src/ASF/common/services/sleepmgr</Value>
       <Value>../src/ASF/common/services/usb</Value>
       <Value>../src/ASF/common/services/usb/class/vendor</Value>
       <Value>../src/ASF/common/services/usb/class/vendor/device</Value>
@@ -577,10 +590,13 @@
       <Value>../src/ASF/common/services/delay</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
       <Value>../src/ASF/sam/services/flash_efc</Value>
+      <Value>../src/ASF/common/services/usb/class/composite/device</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
   <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
-  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM4=true -DBOARD=USER_BOARD -Dprintf=iprintf -Dscanf=iscanf -DUDD_ENABLE</armgcc.preprocessingassembler.general.AssemblerFlags>
+  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM4=true -DBOARD=USER_BOARD -Dprintf=iprintf -Dscanf=iscanf -DUDD_ENABLE -DUDD_NO_SLEEP_MGR</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
       <Value>../src/ASF/common/boards</Value>
@@ -602,7 +618,6 @@
       <Value>../src/ASF/common/services/ioport</Value>
       <Value>../src/ASF/common/services/serial/sam_uart</Value>
       <Value>../src/ASF/common/services/serial</Value>
-      <Value>../src/ASF/common/services/sleepmgr</Value>
       <Value>../src/ASF/common/services/usb</Value>
       <Value>../src/ASF/common/services/usb/class/vendor</Value>
       <Value>../src/ASF/common/services/usb/class/vendor/device</Value>
@@ -617,6 +632,9 @@
       <Value>../src/ASF/common/services/delay</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
       <Value>../src/ASF/sam/services/flash_efc</Value>
+      <Value>../src/ASF/common/services/usb/class/composite/device</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc</Value>
+      <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
   <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
@@ -648,6 +666,10 @@
     <Folder Include="src\ASF\common\services\sleepmgr\sam\" />
     <Folder Include="src\ASF\common\services\usb\" />
     <Folder Include="src\ASF\common\services\usb\class\" />
+    <Folder Include="src\ASF\common\services\usb\class\cdc\" />
+    <Folder Include="src\ASF\common\services\usb\class\cdc\device\" />
+    <Folder Include="src\ASF\common\services\usb\class\composite\" />
+    <Folder Include="src\ASF\common\services\usb\class\composite\device\" />
     <Folder Include="src\ASF\common\services\usb\class\vendor\" />
     <Folder Include="src\ASF\common\services\usb\class\vendor\device\" />
     <Folder Include="src\ASF\common\services\usb\udc\" />
@@ -718,6 +740,24 @@
     <None Include="src\ASF\common\services\delay\sam\cycle_counter.h">
       <SubType>compile</SubType>
     </None>
+    <Compile Include="src\ASF\common\services\usb\class\cdc\device\udi_cdc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\ASF\common\services\usb\class\cdc\device\udi_cdc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\ASF\common\services\usb\class\cdc\usb_protocol_cdc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\ASF\common\services\usb\class\composite\device\udi_composite_conf.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\ASF\common\services\usb\class\composite\device\udi_composite_desc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\ASF\common\services\usb\class\composite\udi_composite_conf.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\ASF\sam\drivers\efc\efc.c">
       <SubType>compile</SubType>
     </Compile>
@@ -793,16 +833,7 @@
     <None Include="src\ASF\common\services\gpio\gpio.h">
       <SubType>compile</SubType>
     </None>
-    <Compile Include="src\ASF\common\services\sleepmgr\sam\sleepmgr.c">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\ASF\common\services\usb\class\vendor\device\udi_vendor.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <None Include="src\ASF\common\services\usb\class\vendor\device\udi_vendor_conf.h">
-      <SubType>compile</SubType>
-    </None>
-    <Compile Include="src\ASF\common\services\usb\class\vendor\device\udi_vendor_desc.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\ASF\common\services\usb\udc\udc.c">
@@ -857,15 +888,6 @@
       <SubType>compile</SubType>
     </None>
     <None Include="src\ASF\common\services\usb\usb_atmel.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\config\conf_sleepmgr.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\ASF\common\services\sleepmgr\sam\sleepmgr.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\ASF\common\services\sleepmgr\sleepmgr.h">
       <SubType>compile</SubType>
     </None>
     <None Include="src\config\conf_uart_serial.h">

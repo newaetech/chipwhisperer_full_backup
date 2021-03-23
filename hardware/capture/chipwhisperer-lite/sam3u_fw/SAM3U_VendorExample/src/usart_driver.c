@@ -34,7 +34,8 @@
 #include "circbuffer.h"
 #include "usart_driver.h"
 #include "usart.h"
-
+#include "usb_protocol_cdc.h"
+extern bool enable_cdc_transfer[2];
 
 #define USART_WVREQ_INIT    0x0010
 #define USART_WVREQ_ENABLE  0x0011
@@ -64,6 +65,9 @@ tcirc_buf rx0buf, tx0buf;
 tcirc_buf rx1buf, tx1buf;
 tcirc_buf rx2buf, tx2buf;
 tcirc_buf rx3buf, tx3buf;
+struct usb_cdc_line_coding_t;
+tcirc_buf usb_usart_circ_buf;
+volatile bool usart_x_enabled[4] = {0};
 
 static inline void usart0_enableIO(void)
 {
@@ -181,19 +185,23 @@ bool ctrl_usart(Usart * usart, bool directionIn)
 						if (usart == USART0)
 						{
 							sysclk_enable_peripheral_clock(ID_USART0);
+							init_circ_buf(&usb_usart_circ_buf);
 							init_circ_buf(&tx0buf);
 							init_circ_buf(&rx0buf);
+							usart_x_enabled[0] = true;
 							printf("Enabling USART0\n");
 						} else if (usart == USART1)
 						{
 							sysclk_enable_peripheral_clock(ID_USART1);
 							init_circ_buf(&tx1buf);
 							init_circ_buf(&rx1buf);
+							usart_x_enabled[1] = true;
 						} else if (usart == USART2)
 						{
 							sysclk_enable_peripheral_clock(ID_USART2);
 							init_circ_buf(&tx2buf);
 							init_circ_buf(&rx2buf);
+							usart_x_enabled[2] = true;
 						}
 #ifdef USART3
 						else if (usart == USART3)
@@ -201,6 +209,7 @@ bool ctrl_usart(Usart * usart, bool directionIn)
 							sysclk_enable_peripheral_clock(ID_USART3);
 							init_circ_buf(&tx3buf);
 							init_circ_buf(&rx3buf);
+							usart_x_enabled[3] = true;
 						}
 #endif
 						usart_init_rs232(usart, &usartopts,  sysclk_get_cpu_hz());						 
@@ -322,7 +331,8 @@ void usart_driver_putchar(Usart * usart, tcirc_buf * txbuf, uint8_t data)
 	// This is determined by seeing if the TX complete interrupt is
 	// enabled.
 	if ((usart_get_interrupt_mask(usart) & US_CSR_TXRDY) == 0) {
-		usart_putchar(usart, get_from_circ_buf(txbuf));
+		if ((usart_get_status(usart) & US_CSR_TXRDY))
+			usart_putchar(usart, get_from_circ_buf(txbuf));
 		usart_enable_interrupt(usart, US_CSR_TXRDY);
 	}
 }
@@ -342,6 +352,7 @@ uint8_t usart_driver_getchar(Usart * usart)
 	return get_from_circ_buf(rxbuf);
 }
 
+
 void generic_isr(Usart * usart, tcirc_buf * rxbuf, tcirc_buf * txbuf);
 void generic_isr(Usart * usart, tcirc_buf * rxbuf, tcirc_buf * txbuf)
 {
@@ -351,6 +362,8 @@ void generic_isr(Usart * usart, tcirc_buf * rxbuf, tcirc_buf * txbuf)
 		uint32_t temp;
 		temp = usart->US_RHR & US_RHR_RXCHR_Msk;
 		add_to_circ_buf(rxbuf, temp, false);
+		add_to_circ_buf(&usb_usart_circ_buf, temp, false);
+		//udi_cdc_multi_putc(0, temp);
 	}
 	
 	if (status & US_CSR_TXRDY){

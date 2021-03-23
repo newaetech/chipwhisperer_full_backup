@@ -181,6 +181,9 @@ OpenADC Scope
         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio_states
             :annotation: scope.io.tio_states
 
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.cdc_settings
+            :annotation: scope.io.cdc_settings
+
 
     .. attribute:: trigger
         :annotation: scope.trigger
@@ -361,6 +364,9 @@ ChipWhisperer Nano Scope
         .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.clkout
             :annotation: scope.io.clkout
 
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.cdc_settings
+            :annotation: scope.io.cdc_settings
+
     .. attribute:: glitch
         :annotation: scope.glitch
 
@@ -478,6 +484,8 @@ Simple Serial Target
 
     .. automethod:: con
 
+    .. automethod:: get_simpleserial_commands
+
     .. autoattribute:: baud
 
     .. autoattribute:: output_len
@@ -523,7 +531,14 @@ Simple Serial V2 Target
 
     .. automethod:: con
 
+    .. automethod:: get_simpleserial_commands
+
     .. autoattribute:: baud
+
+Simple Serial V2 CDC Target
+=======================
+
+.. autoclass:: chipwhisperer.targets.SimpleSerial2_CDC
 
 .. _api-target-cw305:
 

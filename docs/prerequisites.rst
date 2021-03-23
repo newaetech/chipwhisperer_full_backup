@@ -68,30 +68,11 @@ The driver for Linux is built in; however, you need to allow your user account t
 
 .. code::
 
-    # CW-Lite
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace2", MODE="0664", GROUP="plugdev"
-
-    # CW-1200
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace3", MODE="0664", GROUP="plugdev"
-
-    # CW-Nano
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace0", MODE="0664", GROUP="plugdev"
-
-    # CW-305 (Artix Target)
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="c305", MODE="0664", GROUP="plugdev"
-
-    # CW-CR2
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="8613", MODE="0664", GROUP="plugdev"
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="221a", ATTRS{idProduct}=="0100", MODE="0664", GROUP="plugdev"
+    # Match all CW devices
+    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace[0-9]|c[3-6][0-9][0-9]", TAG+="uaccess"
 
 Alternatively, you can just copy :code:`chipwhisperer/hardware/99-newae.rules`
 to :code:`/etc/udev/rules.d/`.
-
-Then add your username to the plugdev group:
-
-.. code:: bash
-
-    sudo usermod -a -G plugdev YOUR-USERNAME
 
 And reset the udev system:
 
@@ -102,10 +83,10 @@ And reset the udev system:
 Finally log out & in again for the group change to take effect.
 
 You can always find the latest version of this file on
-`Github <https://github.com/newaetech/chipwhisperer/blob/master/hardware/99-newae.rules>`_.
+`Github <https://github.com/newaetech/chipwhisperer/blob/develop/hardware/99-newae.rules>`_.
 
 You should also add your username to the dialout group, which will allow you to reprogram
-the USB firmware on your ChipWhisperer:
+the USB firmware on your ChipWhisperer and use the ChipWhisperer's serial port:
 
 .. code:: bash
 
@@ -168,13 +149,24 @@ notebooks.
 Installing Hardware Drivers
 ===========================
 
+As of ChipWhisperer firmware *.23, your ChipWhisperer will automatically
+configure as a WinUSB device, meaning no manual driver installation is
+required.
+
+If your ChipWhisperer has older firmware, you can install older drivers
+as follows:
+
  * Plug in the ChipWhisperer to your computer
  * If the "New Hardware Found" wizard doesn't prompt you for drivers,
    go to the control panel, find your device, and select "Update Drivers"
  * You can find drivers on the ChipWhisperer `releases`_ section. They
    come as a zip file, so you'll need to extract them first.
 
+After which you can do a `firmware_update`_. Your ChipWhisperer
+should then configure as a WinUSB device.
+
 .. _releases: https://github.com/newaetech/chipwhisperer/releases
+.. _firmware_update: https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update
 
 
 Make

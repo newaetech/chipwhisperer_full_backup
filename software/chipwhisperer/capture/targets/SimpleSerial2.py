@@ -43,6 +43,7 @@ class SimpleSerial2(TargetTemplate):
       * :meth:`target.set_key <.SimpleSerial2.set_key>`
       * :meth:`target.close <.SimpleSerial2.close>`
       * :meth:`target.con <.SimpleSerial2.con>`
+      * :meth:`target.get_simpleserial_commands <.SimpleSerial2.get_simpleserial_commands>`
 
     The protocol is as follows:
 
@@ -402,6 +403,36 @@ class SimpleSerial2(TargetTemplate):
 
         return {'valid': True, 'payload': bytearray(response[3:-2]), 'full_response': response, 'rv': rv}
 
+    def get_simpleserial_commands(self, timeout=250, flush_on_err=None, ack=True):
+        """Gets available simpleserial commands for target
+
+        Args:
+            timeout (int, optional): Value to use for timeouts during initial
+                read of expected data in ms. If 0, block until all expected
+                data is returned. Defaults to 250.
+            flush_on_err (bool/None, optional): If True, reset/flush the serial lines.
+                If False, don't. If None, determine via whether or not flush_on_err
+                was True or False when passed to con()
+            ack (bool, optional): Wait for ack after sending key. Defaults to
+                True.
+
+        Returns:
+            List of dics with fields 'cmd' command_byte, 'len' 0x00, 'flags' 0x00
+        """
+        self.flush()
+        self.simpleserial_write('w', [])
+        cmd_packet = self.read_cmd('r', None, timeout, flush_on_err)
+        if ack:
+            self.read_cmd('e')
+
+        num_commands = cmd_packet[2]
+        command_list = []
+        for i in range(num_commands):
+            command_list.append({"cmd": bytes([cmd_packet[3+i]]), "len": 0x00, "flags": 0x00})
+
+        return command_list
+
+
     def read_cmd(self, cmd=None, pay_len=None, timeout=250, flush_on_err=None):
         """Read and decode simpleserial-v2 command
 
@@ -610,3 +641,90 @@ class SimpleSerial2(TargetTemplate):
             The number of characters waiting to be sent to the target
         """
         return self.ser.inWaitingTX()
+
+class SimpleSerial2_CDC(SimpleSerial2):
+    """Target Option for Using SSV2 with a CDC Port
+
+    .. versionadded:: 5.5
+        Added CDC SSV2
+
+    Currently, the easiest way to use it is::
+
+        scope = cw.scope()
+        target = cw.target(scope, cw.targets.SimpleSerial2_CDC)
+
+    Upon connection, this target object will using USB info from
+    the scope object to figure out which serial port to use. You 
+    can also specify the serial port manually using the dev_path
+    parameter. ::
+
+        target = cw.target(scope, cw.targets.SimpleSerial2_CDC, dev_path='COM5')
+
+    Other than that, usage is mostly the same as regular simpleserial
+    V2, except the read timeout is always fixed to 250ms.
+
+    It does offer better performance than the regular SSV2 object
+    if reading serial data back from the target.
+    """
+    def __init__(self):
+        super().__init__()
+        self.ser = None
+
+    def con(self, scope, dev_path=None, interface=None, flush_on_err=True):
+        import serial
+        self._flush_on_err = flush_on_err
+        if dev_path is None:
+            ports = scope.get_serial_ports()
+            if len(ports) == 0:
+                raise OSError("No port associated with scope found, please specify via dev_path")
+            final_port = None
+            if len(ports) > 1:
+                for port in ports:
+                    if port['interface'] == interface:
+                        final_port = port
+                        break
+                if final_port is None:
+                    raise ValueError("Invalid interface {}, found {}".format(interface, ports))
+                dev_path = final_port['port']
+            else:
+                dev_path = ports[0]['port']
+        self.dev_path = dev_path
+        self.ser = serial.Serial(dev_path, baudrate=230400, timeout=0.25)
+            
+                
+    def write(self, data):
+        #data = bytearray(data)
+        self.ser.write(data)
+
+    def read(self, num_char = 0, timeout = 250):
+        self.ser.timeout = timeout/1000
+        if num_char == 0:
+            num_char = self.ser.in_waiting
+        return self.ser.read(num_char).decode('latin-1')
+
+    def in_waiting(self):
+        return self.ser.in_waiting
+    
+    def flush(self):
+        self.ser.reset_input_buffer()
+
+    def in_waiting_tx(self):
+        return self.ser.out_waiting
+
+    @property
+    def baud(self):
+        """The current baud rate of the serial connection.
+
+        :Getter: Return the current baud rate.
+
+        :Setter: Set a new baud rate. Valid baud rates are any integer in the
+            range [500, 2000000].
+
+        Raises:
+            AttributeError: Target doesn't allow baud to be changed.
+        """
+        return self.ser.baud
+
+    @baud.setter
+    def baud(self, new_baud):
+        self.ser.baud = new_baud
