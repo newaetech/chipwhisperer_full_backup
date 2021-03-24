@@ -536,7 +536,7 @@ Simple Serial V2 Target
     .. autoattribute:: baud
 
 Simple Serial V2 CDC Target
-=======================
+===========================
 
 .. autoclass:: chipwhisperer.targets.SimpleSerial2_CDC
 
