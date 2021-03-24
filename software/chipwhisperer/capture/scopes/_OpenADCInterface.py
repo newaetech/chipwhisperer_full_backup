@@ -141,13 +141,8 @@ class HWInformation(util.DisableNewAttr):
             return self.sysFreq
 
         '''Return the system clock frequency in specific firmware version'''
-        freq = 0x00000000
-
         temp = self.oa.sendMessage(CODE_READ, ADDR_SYSFREQ, maxResp=4)
-        freq = freq | (temp[0] << 0)
-        freq = freq | (temp[1] << 8)
-        freq = freq | (temp[2] << 16)
-        freq = freq | (temp[3] << 24)
+        freq = int.from_bytes(temp, byteorder='little')
 
         self.sysFreq = int(freq)
         return self.sysFreq
@@ -461,6 +456,7 @@ class TriggerSettings(util.DisableNewAttr):
         self._bits_per_sample = 10
         self._support_get_duration = True
         self._is_pro = False
+        self._is_lite = False
         self._is_husky = False
         self._cached_samples = None
         self._cached_offset = None
@@ -560,6 +556,7 @@ class TriggerSettings(util.DisableNewAttr):
         The maximum number of samples is hardware-dependent:
         - cwlite: 24400
         - cw1200: 96000
+        - cwhusky: 131070
 
         :Getter: Return the current number of total samples (integer)
 
@@ -846,7 +843,7 @@ class TriggerSettings(util.DisableNewAttr):
     def _set_bits_per_sample(self, bits):
         self._bits_per_sample = bits
         # update FPGA:
-        if bits == 10:
+        if bits == 8:
             val = 1
         else:
             val = 0
@@ -917,35 +914,32 @@ class TriggerSettings(util.DisableNewAttr):
             raise ValueError("Offset must be a non-negative integer")
         if offset >= 2**32:
             raise ValueError("Offset must fit into a 32-bit unsigned integer")
-
-        cmd = bytearray(4)
-        cmd[0] = ((offset >> 0) & 0xFF)
-        cmd[1] = ((offset >> 8) & 0xFF)
-        cmd[2] = ((offset >> 16) & 0xFF)
-        cmd[3] = ((offset >> 24) & 0xFF)
-        self.oa.sendMessage(CODE_WRITE, ADDR_OFFSET, cmd)
+        self.oa.sendMessage(CODE_WRITE, ADDR_OFFSET, list(int.to_bytes(offset, length=4, byteorder='little')))
 
     def _get_offset(self):
         if self.oa is None:
             return 0
 
         cmd = self.oa.sendMessage(CODE_READ, ADDR_OFFSET, maxResp=4)
-        offset = cmd[0]
-        offset |= cmd[1] << 8
-        offset |= cmd[2] << 16
-        offset |= cmd[3] << 24
+        offset = int.from_bytes(cmd, byteorder='little')
         return offset
 
     def _set_presamples(self, samples):
-        if samples < 0:
-            raise ValueError("Number of pre-trigger samples must be non-negative")
-        if samples > self.samples:
-            raise ValueError("Number of pre-trigger samples cannot be larger than total number of samples")
+        if self._is_husky:
+            min_samples = 8
+            max_samples = min(self.samples, 32768)
+        else:
+            min_samples = 0
+            max_samples = self.samples
+        if samples < min_samples and samples != 0:
+            raise ValueError("Number of pre-trigger samples cannot be less than %d" % min_samples)
+        if samples > max_samples:
+            raise ValueError("Number of pre-trigger samples cannot be larger than %d" % max_samples)
 
         self.presamples_desired = samples
 
-        if self.oa.hwInfo.is_cw1200() or self.oa.hwInfo.is_cwlite():
-            #CW-1200 Hardware / CW-Lite
+        if self._is_pro or self._is_lite or self._is_husky:
+            #CW-1200 Hardware / CW-Lite / CW-Husky
             samplesact = samples
             self.presamples_actual = samples
         else:
@@ -963,12 +957,7 @@ class TriggerSettings(util.DisableNewAttr):
 
             self.presamples_actual = samplesact * 3
 
-        cmd = bytearray(4)
-        cmd[0] = ((samplesact >> 0) & 0xFF)
-        cmd[1] = ((samplesact >> 8) & 0xFF)
-        cmd[2] = ((samplesact >> 16) & 0xFF)
-        cmd[3] = ((samplesact >> 24) & 0xFF)
-        self.oa.sendMessage(CODE_WRITE, ADDR_PRESAMPLES, cmd)
+        self.oa.sendMessage(CODE_WRITE, ADDR_PRESAMPLES, list(int.to_bytes(samplesact, length=4, byteorder='little')))
 
 
         #print "Requested presamples: %d, actual: %d"%(samples, self.presamples_actual)
@@ -985,16 +974,11 @@ class TriggerSettings(util.DisableNewAttr):
         if cached:
             return self.presamples_desired
 
-        samples = 0x00000000
-
         temp = self.oa.sendMessage(CODE_READ, ADDR_PRESAMPLES, maxResp=4)
-        samples = samples | (temp[0] << 0)
-        samples = samples | (temp[1] << 8)
-        samples = samples | (temp[2] << 16)
-        samples = samples | (temp[3] << 24)
+        samples = int.from_bytes(temp, byteorder='little')
 
-        #CW1200/CW-Lite reports presamples using different method
-        if (self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 9) or (self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 8):
+        #CW1200/CW-Lite/Husky reports presamples using different method
+        if self._is_pro or self._is_lite or self._is_husky:
             self.presamples_actual = samples
 
         else:
@@ -1051,8 +1035,6 @@ class TriggerSettings(util.DisableNewAttr):
         if self.oa is None:
             return 0
 
-        samples = 0x00000000
-
         if self._support_get_duration:
 
             temp = self.oa.sendMessage(CODE_READ, ADDR_TRIGGERDUR, maxResp=4)
@@ -1062,11 +1044,7 @@ class TriggerSettings(util.DisableNewAttr):
                 self._support_get_duration = False
                 return -1
 
-            samples = samples | (temp[0] << 0)
-            samples = samples | (temp[1] << 8)
-            samples = samples | (temp[2] << 16)
-            samples = samples | (temp[3] << 24)
-
+            samples = int.from_bytes(temp, byteorder='little')
             return samples
 
         else:
@@ -1886,16 +1864,12 @@ class ClockSettings(util.DisableNewAttr):
         """Return frequency of clock measured on EXTCLOCK pin in Hz"""
         if self.oa is None:
             return 0
-        freq = 0x00000000
 
         #Get sample frequency
         samplefreq = float(self.oa.hwInfo.sysFrequency()) / float(pow(2,23))
 
         temp = self.oa.sendMessage(CODE_READ, ADDR_FREQ, maxResp=4)
-        freq |= temp[0] << 0
-        freq |= temp[1] << 8
-        freq |= temp[2] << 16
-        freq |= temp[3] << 24
+        freq = int.from_bytes(temp, byteorder='little')
 
         measured = freq * samplefreq
         return int(measured)
@@ -1905,16 +1879,12 @@ class ClockSettings(util.DisableNewAttr):
            is in Hz"""
         if self.oa is None:
             return 0
-        freq = 0x00000000
 
         #Get sample frequency
         samplefreq = float(self.oa.hwInfo.sysFrequency()) / float(pow(2,23))
 
         temp = self.oa.sendMessage(CODE_READ, ADDR_ADCFREQ, maxResp=4)
-        freq = freq | (temp[0] << 0)
-        freq = freq | (temp[1] << 8)
-        freq = freq | (temp[2] << 16)
-        freq = freq | (temp[3] << 24)
+        freq = int.from_bytes(temp, byteorder='little')
 
         measured = freq * samplefreq
 
@@ -2133,6 +2103,9 @@ class OpenADCInterface(object):
             self.setSettings(self.settings() | SETTINGS_RESET, validate=False)
             #TODO: Hack to adjust the hwMaxSamples since the number should be smaller than what is being returned
             self.hwMaxSamples = self.numSamples() - 45
+            #TODO: another hack... if reconnecting to Husky which was previously set to have a small number of samples, avoid feeding through a negative number... don't quite understand what's happening here and why...
+            if self.hwMaxSamples < 0:
+                self.hwMaxSamples = 0
             self.setNumSamples(self.hwMaxSamples)
         else:
             self.setSettings(self.settings() & ~SETTINGS_RESET)
@@ -2152,13 +2125,7 @@ class OpenADCInterface(object):
             return None
 
     def setNumSamples(self, samples):
-        cmd = bytearray(4)
-        cmd[0] = ((samples >> 0) & 0xFF)
-        cmd[1] = ((samples >> 8) & 0xFF)
-        cmd[2] = ((samples >> 16) & 0xFF)
-        cmd[3] = ((samples >> 24) & 0xFF)
-        self.sendMessage(CODE_WRITE, ADDR_SAMPLES, cmd)
-
+        self.sendMessage(CODE_WRITE, ADDR_SAMPLES, list(int.to_bytes(samples, length=4, byteorder='little')))
         self.updateStreamBuffer(samples)
 
     def updateStreamBuffer(self, samples=None):
@@ -2180,9 +2147,7 @@ class OpenADCInterface(object):
         if decsamples <= 0:
             raise ValueError("Decsamples is <= 0 (%d), makes no sense" % decsamples)
         decsamples -= 1
-        cmd[0] = ((decsamples >> 0) & 0xFF)
-        cmd[1] = ((decsamples >> 8) & 0xFF)
-        self.sendMessage(CODE_WRITE, ADDR_DECIMATE, cmd)
+        self.sendMessage(CODE_WRITE, ADDR_DECIMATE, list(int.to_bytes(decsamples, length=2, byteorder='little')))
 
 
     def decimate(self):
@@ -2203,22 +2168,13 @@ class OpenADCInterface(object):
 
     def numSamples(self):
         """Return the number of samples captured in one go. Returns max after resetting the hardware"""
-        samples = 0x00000000
         temp = self.sendMessage(CODE_READ, ADDR_SAMPLES, maxResp=4)
-        samples |= temp[0] << 0
-        samples |= temp[1] << 8
-        samples |= temp[2] << 16
-        samples |= temp[3] << 24
+        samples = int.from_bytes(temp, byteorder='little')
         return samples
 
     def getBytesInFifo(self):
-        samples = 0
         temp = self.sendMessage(CODE_READ, ADDR_BYTESTORX, maxResp=4)
-
-        samples |= temp[0] << 0
-        samples |= temp[1] << 8
-        samples |= temp[2] << 16
-        samples |= temp[3] << 24
+        samples = int.from_bytes(temp, byteorder='little')
         return samples
 
     def flushInput(self):
@@ -2531,15 +2487,17 @@ class OpenADCInterface(object):
         if self._streammode:
             raise ValueError('Not implemented yet')
         else:
+            # Husky hardware always captures a multiple of 6 samples. We want to read all the captured samples.
+            samplesToRead = (NumberPoints//6) * 6
+            if NumberPoints % 6:
+                samplesToRead += 6
             if self._bits_per_sample == 12:
-                bytesToRead = int(NumberPoints*1.5)
-                if NumberPoints % 2:
-                    bytesToRead += 1
+                bytesToRead = int(samplesToRead*1.5)
             else:
-                bytesToRead = NumberPoints
+                bytesToRead = samplesToRead
             data = self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, bytesToRead)
             # XXX Husky debug:
-            print("XXX read %d bytes; NumberPoints=%d, bytesToRead=%d" % (len(data), NumberPoints, bytesToRead))
+            #print("XXX read %d bytes; NumberPoints=%d, bytesToRead=%d" % (len(data), NumberPoints, bytesToRead))
             if data is not None:
                 data = np.array(data)
                 datapoints = self.processHuskyData(NumberPoints, data)
@@ -2568,13 +2526,14 @@ class OpenADCInterface(object):
                     j = int((i-1)*1.5)
                     samples[i] = ((data[j+1] & 0xf)<<8) + data[j+2]
         else:
+            print('QWERTY')
             samples = data
 
         fpData = samples / 2**self._bits_per_sample - self.offset
 
         logging.debug("Processed data, ended up with %d samples total"%len(fpData))
 
-        #return fpData
+        #return fpData # XXX Husky: temporary
         return samples
 
 

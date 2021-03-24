@@ -261,7 +261,9 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
 
             if cwtype == "cw1200":
                 self.adc._is_pro = True
-            if cwtype == "cwhusky":
+            if cwtype == "cwlite":
+                self.adc._is_lite = True
+            elif cwtype == "cwhusky":
                 self.adc._is_husky = True
                 self.adc.oa._is_husky = True
                 self.adc.bits_per_sample = 12
