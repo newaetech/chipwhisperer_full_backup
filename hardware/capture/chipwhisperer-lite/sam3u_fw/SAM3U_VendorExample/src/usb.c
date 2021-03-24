@@ -118,6 +118,7 @@ bool usb_is_enabled(void)
 #define REQ_CC_PROGRAM 0x23
 #define REQ_CDC_SETTINGS_EN 0x31
 
+
 COMPILER_WORD_ALIGNED static uint8_t ctrlbuffer[64];
 #define CTRLBUFFER_WORDPTR ((uint32_t *) ((void *)ctrlbuffer))
 
@@ -399,6 +400,13 @@ static void ctrl_sam3ucfg_cb(void)
 			RSTC->RSTC_CR |= RSTC_CR_KEY(0xA5) | RSTC_CR_PERRST | RSTC_CR_PROCRST;				
 			while(1);
 			break;
+			
+		case 0x10:
+			udc_detach();
+			while (RSTC->RSTC_SR & RSTC_SR_SRCMP);
+			RSTC->RSTC_CR |= RSTC_CR_KEY(0xA5) | RSTC_CR_PERRST | RSTC_CR_PROCRST;
+			while(1);
+			break;
 
 		/* Oh well, sucks to be you */
 		default:
@@ -528,7 +536,6 @@ bool main_setup_out_received(void)
         case REQ_CDC_SETTINGS_EN:
 			udd_g_ctrlreq.callback = ctrl_cdc_settings_cb;
 			return true;
-			
 			
 		default:
 			return false;

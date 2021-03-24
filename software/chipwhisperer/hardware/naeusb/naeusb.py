@@ -844,6 +844,11 @@ class NAEUSB(object):
         if forreal:
             self.sendCtrl(0x22, 3)
 
+    def reset(self):
+        """ Reset the SAM3U. Requires firmware 0.30 or later
+        """
+        self.sendCtrl(0x22, 0x10)
+
     def read(self, dlen, timeout=2000):
         self.usbserializer.read(dlen, timeout)
 

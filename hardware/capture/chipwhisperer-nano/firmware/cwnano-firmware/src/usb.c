@@ -225,6 +225,13 @@ static void ctrl_sam3ucfg_cb(void)
 			RSTC->RSTC_CR |= RSTC_CR_KEY_PASSWD | RSTC_CR_PERRST | RSTC_CR_PROCRST;
 			while(1);
 			break;
+			
+		case 0x10: // Reset Nano
+			udc_detach();
+			while (RSTC->RSTC_SR & RSTC_SR_SRCMP);
+			RSTC->RSTC_CR |= RSTC_CR_KEY_PASSWD | RSTC_CR_PERRST | RSTC_CR_PROCRST;
+			while(1);
+			break;
 		
 		/* Oh well, sucks to be you */
 		default:

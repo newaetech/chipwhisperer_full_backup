@@ -227,7 +227,14 @@ def scope(scope_type=None, sn=None):
     if scope_type is None:
         scope_type = get_cw_type(sn)
     scope = scope_type()
-    scope.con(sn)
+    try:
+        scope.con(sn)
+    except IOError:
+        logging.error("ChipWhisperer error state detected. Resetting and retrying connection...")
+        scope._getNAEUSB().reset()
+        time.sleep(2)
+        scope = scope_type()
+        scope.con(sn)
     return scope
 
 
@@ -344,10 +351,10 @@ def capture_trace(scope, target, plaintext, key=None, ack=True):
         response = target.simpleserial_read('r', target.output_len, ack=ack)
         wave = scope.get_last_trace()
 
-    if len(wave) >= 1:
-        return Trace(wave, plaintext, response, key)
-    else:
-        return None
+        if len(wave) >= 1:
+            return Trace(wave, plaintext, response, key)
+        else:
+            return None
 
 
 captureTrace = camel_case_deprecated(capture_trace)
