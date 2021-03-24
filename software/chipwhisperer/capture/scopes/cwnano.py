@@ -515,13 +515,22 @@ class GPIOSettings(util.DisableNewAttr):
         :getter: An array of length two for two possible CDC serial ports (though only one is used)
 
         :setter: Can set either via an integer (which sets both ports) or an array of length 2 (which sets each port)
+
+        Returns None if using firmware before the CDC port was added
         """
+        rawver = self.usb.readFwVersion()
+        ver = '{}.{}'.format(rawver[0], rawver[1])
+        if ver < '0.30':
+            return None
         return self.usb.get_cdc_settings()
 
     @cdc_settings.setter
     def cdc_settings(self, port):
+        rawver = self.usb.readFwVersion()
+        ver = '{}.{}'.format(rawver[0], rawver[1])
+        if ver < '0.30':
+            return None
         return self.usb.set_cdc_settings(port)
-
 
 class CWNano(ScopeTemplate, util.DisableNewAttr):
     """CWNano scope object.
