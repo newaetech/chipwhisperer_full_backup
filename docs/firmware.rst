@@ -11,6 +11,8 @@ new firmware.
 This page is only for ChipWhisperer capture devices and the CW305 target board **NOT**
 for target boards such as the CW308.
 
+You can find API documentation for our firmware updater at :ref:`api-scope-update`.
+
 .. _single_step_update:
 
 *******************
@@ -84,6 +86,8 @@ For example:
 
 It is most useful in the case where you're primarily using a VM, but are unable to flash new firmware
 from your VM.
+
+.. _driverless_windows:
 
 ********************************
 Special Case: Driverless Windows
