@@ -1,17 +1,18 @@
 V5.5
   New Features:
     * Re-add SAKURA-G support
-    * TraceWhisperer cleanup + convenience functions
+    * **TraceWhisperer cleanup + convenience functions**
     * ChipWhisperer firmware `auto_program()`
-    * Add segmented capture to ChipWhisperer, allowing for super fast capture
-    * Add simpleserial-ecc
-    * New demo: uECC attack
-    * New ChipWhisperer Firmware: CDC serial ports for UART communication (i.e. communication with `"COMX"`/`"/dev/ttyACMX"`
-    * New target class: SimpleSerial2_CDC with automatic serial port detection (no need to figure out `"COMX"`/`"/dev/ttyACMX"`)
+    * **Add segmented capture to ChipWhisperer, allowing for super fast capture**
+    * **Add simpleserial-ecc**
+    * **New demo: uECC attack**
+    * **New ChipWhisperer Firmware: CDC serial ports for UART communication (i.e. communication with `"COMX"`/`"/dev/ttyACMX"`**
+    * **New target class: SimpleSerial2_CDC with automatic serial port detection (no need to figure out `"COMX"`/`"/dev/ttyACMX"`)**
     * Add simpleserial documentation (thanks @coastalwhite !)
     * Add new simpleserial commands to get available commands
     * Add maskedAES for more targets (thanks @jmichelp !)
     * Add better method for loading new CW bitstream
+    * Add avr-gcc and arm-gcc to installer (optional)
 
   Fixes:
     * Add CWPro aux_out
@@ -23,6 +24,7 @@ V5.5
     * Fix STM32F4 HW floating point (thanks @mcsmonk !)
     * Fix Nano crash when >128 bytes read from USART
     * VM now supports uploading firmware to chipwhisperer
+    * Fix pipe error caused by interrupting USB communications
 
 V5.4
   New Features:
