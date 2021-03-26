@@ -309,20 +309,20 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         """
         if self.connectStatus is False:
             raise OSError("Scope is not connected. Connect it first...")
-        with DelayedKeyboardInterrupt():
-            try:
-                if self.advancedSettings:
-                    self.advancedSettings.armPreScope()
+        # with DelayedKeyboardInterrupt():
+        try:
+            if self.advancedSettings:
+                self.advancedSettings.armPreScope()
 
-                self.qtadc.arm()
+            self.qtadc.arm()
 
-                if self.advancedSettings:
-                    self.advancedSettings.armPostScope()
+            if self.advancedSettings:
+                self.advancedSettings.armPostScope()
 
-                self.qtadc.startCaptureThread()
-            except Exception:
-                self.dis()
-                raise
+            self.qtadc.startCaptureThread()
+        except Exception:
+            self.dis()
+            raise
 
     def capture(self):
         """Captures trace. Scope must be armed before capturing.
@@ -334,11 +334,11 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
            IOError: Unknown failure.
         """
         # need adc offset, adc_freq, samples cached
-        with DelayedKeyboardInterrupt():
-            if not self.adc.stream_mode:
-                return self.qtadc.capture(self.adc.offset, self.clock.adc_freq, self.adc.samples)
-            else:
-                return self.qtadc.capture(None)
+        # with DelayedKeyboardInterrupt():
+        if not self.adc.stream_mode:
+            return self.qtadc.capture(self.adc.offset, self.clock.adc_freq, self.adc.samples)
+        else:
+            return self.qtadc.capture(None)
 
     def get_last_trace(self):
         """Return the last trace captured with this scope.

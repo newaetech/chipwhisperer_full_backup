@@ -407,6 +407,10 @@ static void ctrl_sam3ucfg_cb(void)
 			RSTC->RSTC_CR |= RSTC_CR_KEY(0xA5) | RSTC_CR_PERRST | RSTC_CR_PROCRST;
 			while(1);
 			break;
+			
+		case 0x11: // use in case of pipe error emergency
+			FPGA_releaselock();
+			break;
 
 		/* Oh well, sucks to be you */
 		default:

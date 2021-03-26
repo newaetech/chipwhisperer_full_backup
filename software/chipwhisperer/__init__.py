@@ -325,36 +325,36 @@ def capture_trace(scope, target, plaintext, key=None, ack=True):
             signal.signal(signal.SIGINT, self.old_handler)
             if self.signal_received:
                 self.old_handler(*self.signal_received)
-    with DelayedKeyboardInterrupt():
-        if key:
-            target.set_key(key, ack=ack)
+    # with DelayedKeyboardInterrupt():
+    if key:
+        target.set_key(key, ack=ack)
 
-        scope.arm()
+    scope.arm()
 
-        if plaintext:
-            target.simpleserial_write('p', plaintext)
+    if plaintext:
+        target.simpleserial_write('p', plaintext)
 
-        ret = scope.capture()
+    ret = scope.capture()
 
-        i = 0
-        while not target.is_done():
-            i += 1
-            time.sleep(0.05)
-            if i > 100:
-                warnings.warn("Target did not finish operation")
-                return None
-
-        if ret:
-            warnings.warn("Timeout happened during capture")
+    i = 0
+    while not target.is_done():
+        i += 1
+        time.sleep(0.05)
+        if i > 100:
+            warnings.warn("Target did not finish operation")
             return None
 
-        response = target.simpleserial_read('r', target.output_len, ack=ack)
-        wave = scope.get_last_trace()
+    if ret:
+        warnings.warn("Timeout happened during capture")
+        return None
 
-        if len(wave) >= 1:
-            return Trace(wave, plaintext, response, key)
-        else:
-            return None
+    response = target.simpleserial_read('r', target.output_len, ack=ack)
+    wave = scope.get_last_trace()
+
+    if len(wave) >= 1:
+        return Trace(wave, plaintext, response, key)
+    else:
+        return None
 
 
 captureTrace = camel_case_deprecated(capture_trace)
