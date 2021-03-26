@@ -127,6 +127,11 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         return self.scopetype.dev._cwusb
 
     def get_serial_ports(self):
+        """ Get the CDC serial ports associated with this scope
+
+        Returns:
+            A list of a dict with elements {'port', 'interface'}
+        """
         return self._getNAEUSB().get_serial_ports()
 
     def default_setup(self):
@@ -140,6 +145,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
          *  4*7.37MHz ADC clock
          *  tio1 = serial rx
          *  tio2 = serial tx
+         *  CDC settings change off
 
         .. versionadded:: 5.1
             Added default setup for OpenADC

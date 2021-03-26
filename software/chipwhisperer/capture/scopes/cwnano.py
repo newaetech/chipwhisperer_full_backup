@@ -620,6 +620,11 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
         return 'cwnano'
 
     def get_serial_ports(self):
+        """ Get the CDC serial ports associated with this scope
+
+        Returns:
+            A list of a dict with elements {'port', 'interface'}
+        """
         return self._getNAEUSB().get_serial_ports()
 
     @property
