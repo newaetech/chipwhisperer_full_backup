@@ -559,6 +559,7 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
       * :meth:`scope.get_last_trace <.CWNano.get_last_trace>`
       * :meth:`scope.arm <.CWNano.arm>`
       * :meth:`scope.capture <.CWNano.capture>`
+      * :meth:`scope.get_serial_ports <.CWNano.get_serial_ports>`
     """
 
     _name = "ChipWhisperer Nano"

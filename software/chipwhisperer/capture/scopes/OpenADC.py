@@ -71,6 +71,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
      *  :meth:`scope.dis <.OpenADC.dis>`
      *  :meth:`scope.arm <.OpenADC.arm>`
      *  :meth:`scope.get_last_trace <.OpenADC.get_last_trace>`
+     *  :meth:`scope.get_serial_ports <.OpenADC.get_serial_ports>`
 
     If you have a CW1200 ChipWhisperer Pro, you have access to some additional features:
 
