@@ -934,7 +934,10 @@ class TriggerSettings(util.DisableNewAttr):
         if samples < min_samples and samples != 0:
             raise ValueError("Number of pre-trigger samples cannot be less than %d" % min_samples)
         if samples > max_samples:
-            raise ValueError("Number of pre-trigger samples cannot be larger than %d" % max_samples)
+            if self._is_husky:
+                raise ValueError("Number of pre-trigger samples cannot be larger than the lesser of [total number of samples, 32768] (%d)." % max_samples)
+            else:
+                raise ValueError("Number of pre-trigger samples cannot be larger than the total number of samples (%d)." % max_samples)
 
         self.presamples_desired = samples
 
@@ -2487,14 +2490,15 @@ class OpenADCInterface(object):
         if self._streammode:
             raise ValueError('Not implemented yet')
         else:
-            # Husky hardware always captures a multiple of 6 samples. We want to read all the captured samples.
-            samplesToRead = (NumberPoints//6) * 6
-            if NumberPoints % 6:
-                samplesToRead += 6
+            # Husky hardware always captures a multiple of 3 samples. We want to read all the captured samples.
+            samplesToRead = (NumberPoints//3) * 3
+            if NumberPoints % 3:
+                samplesToRead += 3
             if self._bits_per_sample == 12:
-                bytesToRead = int(samplesToRead*1.5)
+                bytesToRead = int(np.ceil(samplesToRead*1.5))
             else:
                 bytesToRead = samplesToRead
+            #print("XXX reading with NumberPoints=%d, bytesToRead=%d" % (NumberPoints, bytesToRead))
             data = self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, bytesToRead)
             # XXX Husky debug:
             #print("XXX read %d bytes; NumberPoints=%d, bytesToRead=%d" % (len(data), NumberPoints, bytesToRead))
