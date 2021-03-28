@@ -495,7 +495,15 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         # ADDR/LEN written LSB first
         pload = packuint32(dlen)
         pload.extend(packuint32(addr))
-        self.sendCtrl(cmd, data=pload)
+        try:
+            self.sendCtrl(cmd, data=pload)
+        except usb.USBError as e:
+            if "Pipe error" in str(e):
+                logging.warning("Attempting pipe error fix - typically safe to ignore")
+                self.sendCtrl(0x22, 0x11)
+                self.sendCtrl(cmd, data=pload)
+            else:
+                raise
 
         # Get data
         if cmd == self.CMD_READMEM_BULK:
@@ -843,6 +851,11 @@ class NAEUSB(object):
 
         if forreal:
             self.sendCtrl(0x22, 3)
+
+    def reset(self):
+        """ Reset the SAM3U. Requires firmware 0.30 or later
+        """
+        self.sendCtrl(0x22, 0x10)
 
     def read(self, dlen, timeout=2000):
         self.usbserializer.read(dlen, timeout)
