@@ -38,6 +38,8 @@ ADDR_DATA_SOURCE = 27
 ADDR_ADC_LOW_RES = 29
 ADDR_DRP_ADDR   = 30
 ADDR_DRP_DATA   = 31
+ADDR_SEGMENTS   = 32
+ADDR_SEGMENT_CYCLES = 33
 
 ADDR_HUSKY_ADC_CTRL = 60
 ADDR_HUSKY_VMAG_CTRL = 61
@@ -474,14 +476,15 @@ class TriggerSettings(util.DisableNewAttr):
         dict['samples']    = self.samples
         dict['decimate']   = self.decimate
         dict['trig_count'] = self.trig_count
-        dict['fifo_fill_mode'] = self.fifo_fill_mode
+        if self._is_pro or self._is_lite:
+            dict['fifo_fill_mode'] = self.fifo_fill_mode
         if self._is_pro:
             dict['stream_mode'] = self.stream_mode
         if self._is_husky:
             dict['test_mode'] = self.test_mode
             dict['bits_per_sample'] = self.bits_per_sample
-
-
+            dict['segments'] = self.segments
+            dict['segment_cycles'] = self.segment_cycles
 
         return dict
 
@@ -714,12 +717,14 @@ class TriggerSettings(util.DisableNewAttr):
 
     @property
     def fifo_fill_mode(self):
-        """The ADC buffer fill strategy - allows segmented usage.
+        """The ADC buffer fill strategy - allows segmented usage for CW-lite and CW-pro.
 
         .. warning:: THIS REQUIRES NEW FPGA BITSTREAM - NOT YET IN THE PYTHON.
 
         Only the 'Normal' mode is well supported, the other modes can
         be used carefully.
+
+        For segmenting on CW-Husky, see 'segments' instead.
 
         There are four possible modes:
          * "normal": Trigger line & logic work as expected.
@@ -791,6 +796,102 @@ class TriggerSettings(util.DisableNewAttr):
         result[3] &= ~(0x30)
         result[3] |= mask << 4
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask= [0x3f, 0xff, 0xff, 0xfd])
+
+
+    @property
+    def segments(self):
+        """Number of sample segments to capture.
+
+        .. warning:: Supported by CW-Husky only. For segmenting on CW-lite or
+        CW-pro, see 'fifo_fill_mode' instead.
+
+        This setting must be a 16-bit positive integer. 
+
+        In normal operation, segments=1. 
+
+        Multiple segments are useful in two scenarios:
+        (1) Capturing only subsections of a power trace, to allow longer effective captures.
+            After a trigger event, the requested number of samples is captured every 'segment_cycles' 
+            clock cycles.
+        (2) Speeding up capture times by capturing 'segments' power traces from a single arm + capture
+            event. Here, the requested number of samples is captured at every trigger event, without
+            having to re-arm and download trace data between every trigger event.
+
+        .. warning:: when capturing multiple segments with presamples, the total number of samples 
+        per segment must be a multiple of 3. Incorrect sample data will be obtained if this is not 
+        the case.
+
+        :Getter: Return the current number of presamples
+
+        :Setter: Set the number of presamples.
+
+        Raises:
+           ValueError: if segments is outside of range [1, 2^16-1]
+        """
+
+        return self._get_segments()
+
+    @segments.setter
+    def segments(self, num):
+        if num < 1 or num > 2**16-1:
+            raise ValueError("Number of segments must be in range [1, 2^16-1]")
+        self._set_segments(num)
+
+    def _get_segments(self):
+        if self.oa is None:
+            return 0
+
+        cmd = self.oa.sendMessage(CODE_READ, ADDR_SEGMENTS, maxResp=2)
+        segments = int.from_bytes(cmd, byteorder='little')
+        return segments
+
+
+    def _set_segments(self, num):
+        self.oa.sendMessage(CODE_WRITE, ADDR_SEGMENTS, list(int.to_bytes(num, length=2, byteorder='little')))
+
+
+
+    @property
+    def segment_cycles(self):
+        """Number of clock cycles separating segments.
+
+        .. warning:: Supported by CW-Husky only. For segmenting on CW-lite or
+        CW-pro, see 'fifo_fill_mode' instead.
+
+        This setting must be a 20-bit positive integer. 
+
+        When 'segments' is greater than one, set segment_cycles to a non-zero value to capture a new 
+        segment every 'segment_cycles' clock cycles.
+
+        :Getter: Return the current value of segment_cycles.
+
+        :Setter: Set segment_cycles.
+
+        Raises:
+           ValueError: if segments is outside of range [0, 2^16-1]
+        """
+
+        return self._get_segment_cycles()
+
+    @segment_cycles.setter
+    def segment_cycles(self, num):
+        if num < 0 or num > 2**20-1:
+            raise ValueError("Number of segments must be in range [0, 2^20-1]")
+        self._set_segment_cycles(num)
+
+    def _get_segment_cycles(self):
+        if self.oa is None:
+            return 0
+
+        cmd = self.oa.sendMessage(CODE_READ, ADDR_SEGMENT_CYCLES, maxResp=3)
+        segment_cycles = int.from_bytes(cmd, byteorder='little')
+        return segment_cycles
+
+
+    def _set_segment_cycles(self, num):
+        self.oa.sendMessage(CODE_WRITE, ADDR_SEGMENT_CYCLES, list(int.to_bytes(num, length=3, byteorder='little')))
+
+
 
     def _set_stream_mode(self, enabled):
         self._stream_mode = enabled
