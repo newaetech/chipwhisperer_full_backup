@@ -271,6 +271,9 @@ class GainSettings(util.DisableNewAttr):
         self.oa = oaiface
         self.gainlow_cached = False
         self.gain_cached = 0
+        self._is_husky = False
+        self._vmag_highgain = 0x1f
+        self._vmag_lowgain = 0
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -325,17 +328,33 @@ class GainSettings(util.DisableNewAttr):
         Raises:
            ValueError: gainmode not 'low' or 'high'
         """
-        if gainmode == "high":
-            self.oa.setSettings(self.oa.settings() | SETTINGS_GAIN_HIGH)
-            self.gainlow_cached = False
-        elif gainmode == "low":
-            self.oa.setSettings(self.oa.settings() & ~SETTINGS_GAIN_HIGH)
-            self.gainlow_cached = True
+        if self._is_husky:
+            if gainmode == "high":
+                self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_VMAG_CTRL, [self._vmag_highgain])
+                self.gainlow_cached = False
+            elif gainmode == "low":
+                self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_VMAG_CTRL, [self._vmag_lowgain])
+                self.gainlow_cached = True
+            else:
+                raise ValueError("Invalid Gain Mode, only 'low' or 'high' allowed")
         else:
-            raise ValueError("Invalid Gain Mode, only 'low' or 'high' allowed")
+            if gainmode == "high":
+                self.oa.setSettings(self.oa.settings() | SETTINGS_GAIN_HIGH)
+                self.gainlow_cached = False
+            elif gainmode == "low":
+                self.oa.setSettings(self.oa.settings() & ~SETTINGS_GAIN_HIGH)
+                self.gainlow_cached = True
+            else:
+                raise ValueError("Invalid Gain Mode, only 'low' or 'high' allowed")
 
     def getMode(self):
-        gain_high = self.oa.settings() & SETTINGS_GAIN_HIGH
+        if self._is_husky:
+            if self.oa.sendMessage(CODE_READ, ADDR_HUSKY_VMAG_CTRL)[0] == self._vmag_highgain:
+                gain_high = True
+            else:
+                gain_high = False
+        else:
+            gain_high = self.oa.settings() & SETTINGS_GAIN_HIGH
         if gain_high:
             return "high"
         else:
@@ -363,15 +382,15 @@ class GainSettings(util.DisableNewAttr):
         return self.setMode(val)
 
     def setGain(self, gain):
-        '''Set the Gain range 0-78'''
-        if (gain < 0) | (gain > 78):
-            raise ValueError("Invalid Gain, range 0-78 Only")
-
+        '''Set the Gain range: 0-78 for CW-Lite and CW-Pro; 0-109 for CW-Husky'''
+        if self._is_husky:
+            maxgain = 109
+        else:
+            maxgain = 78
+        if (gain < 0) | (gain > maxgain):
+            raise ValueError("Invalid Gain, range 0-%d only" % maxgain)
         self.gain_cached = gain
-
-        cmd = bytearray(1)
-        cmd[0] = gain
-        self.oa.sendMessage(CODE_WRITE, ADDR_GAIN, cmd)
+        self.oa.sendMessage(CODE_WRITE, ADDR_GAIN, [gain])
 
     def getGain(self, cached=False):
         if cached == False:
@@ -403,32 +422,58 @@ class GainSettings(util.DisableNewAttr):
         self.setGain(value)
 
     def _get_gain_db(self):
-        #GAIN (dB) = 50 (dB/V) * VGAIN - 6.5 dB, (HILO = LO)
-        # GAIN (dB) = 50 (dB/V) * VGAIN + 5.5 dB, (HILO = HI)
-
-        gainV = (float(self.gain_cached) / 256.0) * 3.3
-
-        if self.gainlow_cached:
-            gaindb = 50.0 * gainV - 6.5
+        rawgain = self.getGain()
+        if self._is_husky:
+            if self.gainlow_cached:
+                gaindb = -15 + 50.0*float(rawgain)/109
+            else:
+                gaindb = 15 + 50.0*float(rawgain)/109 
         else:
-            gaindb = 50.0 * gainV + 5.5
+            #GAIN (dB) = 50 (dB/V) * VGAIN - 6.5 dB, (HILO = LO)
+            #GAIN (dB) = 50 (dB/V) * VGAIN + 5.5 dB, (HILO = HI)
+            gainV = (float(rawgain) / 256.0) * 3.3
+            if self.gainlow_cached:
+                gaindb = 50.0 * gainV - 6.5
+            else:
+                gaindb = 50.0 * gainV + 5.5
 
         return gaindb
 
     def _set_gain_db(self, gain):
-        if gain < -6.5 or gain > 56:
-            raise ValueError("Gain " + gain + "out of range. Valid range: -6.5 to 56 dB")
+        if self._is_husky:
+            mingain = -15.0
+            maxgain = 65.0
+            use_low_thresh = 15
+            steps = 109
+            gainrange = 50.0
+        else:
+            mingain = -6.5
+            maxgain = 56.0
+            use_low_thresh = 5.5
+            steps = 78
+        if gain < mingain or gain > maxgain:
+            raise ValueError("Gain %f out of range. Valid range: %3.1f to %3.1f dB" % (gain, mingain, maxgain))
 
         use_low = False
-
-        if gain < 5.5:
+        if gain < use_low_thresh:
             use_low = True
-
-        if use_low:
-            gv = (float(gain) - (-6.5)) / 50.0
+            self.setMode("low")
         else:
-            gv = (float(gain) - (5.5) ) / 50.0
-        g = (gv / 3.3) * 256.0
+            self.setMode("high")
+
+        if self._is_husky:
+            if use_low:
+                bottom = mingain
+            else:
+                bottom = use_low_thresh
+            g = (gain - bottom) / gainrange * steps
+        else:
+            if use_low:
+                gv = (float(gain) - mingain) / 50.0
+            else:
+                gv = (float(gain) - use_low_thresh ) / 50.0
+            g = (gv / 3.3) * 256.0
+
         g = round(g)
         g = int(g)
         if g < 0:
@@ -436,10 +481,6 @@ class GainSettings(util.DisableNewAttr):
         if g > 0xFF:
             g = 0xFF
 
-        if use_low:
-            self.setMode("low")
-        else:
-            self.setMode("high")
         self.setGain(g)
 
 class TriggerSettings(util.DisableNewAttr):

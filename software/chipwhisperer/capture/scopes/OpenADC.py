@@ -265,6 +265,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
                 self.adc._is_lite = True
             elif cwtype == "cwhusky":
                 self.adc._is_husky = True
+                self.gain._is_husky = True
                 self.adc.oa._is_husky = True
                 self.adc.bits_per_sample = 12
                 self.ADS4128 = self.qtadc.parm_ads4128
