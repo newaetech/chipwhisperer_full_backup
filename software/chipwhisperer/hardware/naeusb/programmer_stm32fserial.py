@@ -485,7 +485,7 @@ class STM32FSerial(object):
             # Checksum
             self.sp.write(chr(0x00))
             tmp = self.sp.timeout
-            if self._chip.name == STM32F40xxx().name:
+            if (self._chip.name == STM32F40xxx().name) or (self._chip.name == STM32F2().name):
                 self.sp.timeout = 1000000 #TODO HACK - serial timeout is screwed up for some reason
             else:
                 self.sp.timeout = 30000
