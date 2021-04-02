@@ -62,7 +62,7 @@ module cw1200_interface(
 	 inout wire       target_PDIC,
 	 
 	 /* Spare Lines - AVR Programming */
-	 output wire 		target_nRST,
+	 inout wire 		target_nRST,
 	 input wire 		target_MISO,
 	 inout wire 		target_MOSI,
 	 inout wire 		target_SCK,
@@ -340,6 +340,7 @@ module cw1200_interface(
 		.trigger_io2_i(target_io2),
 		.trigger_io3_i(target_io3),
 		.trigger_io4_i(target_io4),
+		.trigger_nrst_i(target_nRST),
 		.trigger_ext_o(advio_trigger_line),
 		.trigger_advio_i(1'b0),
 		.trigger_anapattern_i(apatt_trigger),
