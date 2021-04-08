@@ -2,24 +2,22 @@ import matplotlib.pyplot as plt
 from tqdm import tnrange
 import numpy as np
 
-class CoeffecientVsTracesNumber:
+class CoefficientVsTracesNumber:
     """Calculate coefficient from increasing number of traces.
 
-    We can see the changes of specific subkey coefficient while number of traces increase.
+    We can see the changes of specific subkey coefficient while number of traces increases.
     And the time complexity is o(N).
 
-    coeffecient(X, Y) = cov(X, Y) / (std(X) * std(Y))
+    coefficient(X, Y) = cov(X, Y) / (std(X) * std(Y))
     cov(X, Y) = E(X * Y) - E(X) * E(Y)
     std(X) = sqrt(E(X**2) - E(X)**2)
     std(Y) = sqrt(E(Y**2) - E(Y)**2)
-    coeffecient(X, Y) = (E(X * Y) - E(X) * E(Y)) / ((sqrt(E(X**2) - E(X)**2)) * (sqrt(E(Y**2) - E(Y)**2)))
-
+    coefficient(X, Y) = (E(X * Y) - E(X) * E(Y)) / ((sqrt(E(X**2) - E(X)**2)) * (sqrt(E(Y**2) - E(Y)**2)))
     Let X = [X1, X2]
     E(X) = (E(X1) * len(X1) + E(X2) * len(X2)) / (len(X1) + len(X2))
     Store E(X1 * Y1), E(X1), E(Y1), E(X1**2), E(Y1**2),
     calculate coming E(X2 * Y2), E(X2), E(Y2), E(X2**2), E(Y2**2).
-    We can get the new coeffeicient([X1, X2], [Y1, Y2]) without overlapping coeffeicient(X1, Y1) that we have calculated.
-
+    We can get the new coefficient([X1, X2], [Y1, Y2]) without overlapping coefficient(X1, Y1) that we have calculated.
 
 
     Example:
@@ -30,9 +28,9 @@ class CoeffecientVsTracesNumber:
         leak_model = cwa.leakage_models.sbox_output
         interval = 100
         subkey_index = 0  # First subkey.
-        coeffecient = CoeffecientVsTracesNumber(proj.traces, subkey_index, interval, leak_model)
-        results = coeffecient.get_effecient()
-        coeffecient.plot_and_save(results, [20,8], 'your_path_saving_figure')
+        coefficient = CoefficientVsTracesNumber(proj.traces, subkey_index, interval, leak_model)
+        results = coefficient.get_effecient()
+        coefficient.plot_and_save(results, [20,8], 'your_path_saving_figure')
 
 
     Args:
