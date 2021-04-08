@@ -5,7 +5,7 @@ import numpy as np
 class CoeffecientVsTracesNumber:
     """Calculate coefficient from increasing number of traces.
 
-    We can see the changes of specific subkey coefficient while number of traces increase.
+    We can see the changes of specific subkey coefficient while number of traces increases.
     And the time complexity is o(N).
 
     coeffecient(X, Y) = cov(X, Y) / (std(X) * std(Y))
