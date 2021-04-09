@@ -25,7 +25,7 @@ import time
 import os.path
 # import chipwhisperer.capture.scopes._qt as openadc_qt
 from .. import _qt as openadc_qt
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader, CWHusky_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.common.utils.util import DictType, camel_case_deprecated
 
@@ -63,7 +63,7 @@ class OpenADCInterface_NAEUSBChip(object):
             self.cwFirmwareConfig = {
                 0xACE2:FWLoaderConfig(CWLite_Loader()),
                 0xACE3:FWLoaderConfig(CW1200_Loader()),
-                0xACE5:FWLoaderConfig(CW1200_Loader())
+                0xACE5:FWLoaderConfig(CWHusky_Loader())
             }
             self.scope = oadcInstance
 
@@ -104,6 +104,7 @@ class OpenADCInterface_NAEUSBChip(object):
                 self.dev.dis()
                 self.dev.usbdev().close()
                 raise
+
             self.ser = self.dev.usbdev()
 
         try:

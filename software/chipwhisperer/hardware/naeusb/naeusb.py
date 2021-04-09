@@ -388,11 +388,13 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         # TODO: how to tell if we're Husky at this point? maybe a try block?
         # for husky:
         # TEMPORARY: fix rep/wep in the notebook instead, so that the old values can be used for the CW305 target
-        #self.rep = 0x85
-        #self.wep = 0x06
+        # self.rep = 0x85
+        # self.wep = 0x06
         # for older capture HW:
-        self.rep = 0x81
-        self.wep = 0x02
+        # self.rep = 0x81
+        # self.wep = 0x02
+        self.rep = None
+        self.wep = None
         self._timeout = 200
 
         return foundId
@@ -537,6 +539,13 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         self.sendCtrl(cmd, data=pload)
 
         # Get data
+        if (self.rep is None) or (self.wep is None):
+            if self.usbdev().idProduct == 0xACE5: 
+                self.rep = 0x85
+                self.wep = 0x06
+            else:
+                self.rep = 0x81
+                self.wep = 0x02
         if cmd == self.CMD_WRITEMEM_BULK:
             data = self.usbdev().write(self.wep, data, timeout=self._timeout)
         else:
@@ -575,6 +584,13 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         :return:
         """
 
+        if (self.rep is None) or (self.wep is None):
+            if self.usbdev().idProduct == 0xACE5: 
+                self.rep = 0x85
+                self.wep = 0x06
+            else:
+                self.rep = 0x81
+                self.wep = 0x02
         self.usbdev().write(self.wep, data, timeout=self._timeout)
 
 
@@ -582,11 +598,25 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         """Dump all the crap left over"""
         try:
             # TODO: This probably isn't needed, and causes slow-downs on Mac OS X.
+            if (self.rep is None) or (self.wep is None):
+                if self.usbdev().idProduct == 0xACE5: 
+                    self.rep = 0x85
+                    self.wep = 0x06
+                else:
+                    self.rep = 0x81
+                    self.wep = 0x02
             self.usbdev().read(self.rep, 1000, timeout=0.010)
         except:
             pass
 
     def read(self, dbuf, timeout):
+        if (self.rep is None) or (self.wep is None):
+            if self.usbdev().idProduct == 0xACE5: 
+                self.rep = 0x85
+                self.wep = 0x06
+            else:
+                self.rep = 0x81
+                self.wep = 0x02
         return self.usbdev().read(self.rep, dbuf, timeout)
 
 class NAEUSB(object):
@@ -667,10 +697,10 @@ class NAEUSB(object):
         logging.info('SAM3U Firmware version = %d.%d b%d' % (fwver[0], fwver[1], fwver[2]))
 
         latest = fwver[0] > fw_latest[0] or (fwver[0] == fw_latest[0] and fwver[1] >= fw_latest[1])
-        if not latest:
-            logging.warning('Your firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
-                            '. Suggested to update firmware, as you may experience errors' +
-                            '\nSee https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update')
+        # if not latest:
+        #     logging.warning('Your firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
+        #                     '. Suggested to update firmware, as you may experience errors' +
+        #                     '\nSee https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update')
         return foundId
 
     def usbdev(self):

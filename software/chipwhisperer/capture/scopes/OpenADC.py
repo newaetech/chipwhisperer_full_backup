@@ -27,7 +27,7 @@
 #=================================================
 import logging
 from usb import USBError
-from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD
+from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD, ChipWhispererHuskyPLL
 from . import _qt as openadc_qt
 from .base import ScopeTemplate
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
@@ -238,6 +238,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
             #self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
 
             cwtype = self._getCWType()
+            self.pll = None
             if cwtype != "":
                 #if cwtype != "cwhusky":
                 self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.qtadc.sc)
@@ -254,7 +255,8 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
                 if cwtype == "cwcrev2":
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
 
-
+                if cwtype == "cwhusky":
+                    self.pll = ChipWhispererHuskyPLL.CDCI6214(self)
             self.adc = self.qtadc.parm_trigger
             self.gain = self.qtadc.parm_gain
             self.clock = self.qtadc.parm_clock
@@ -412,6 +414,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
             dict['decode_IO'] = self.decode_IO._dict_repr()
         if self._getCWType() == "cwhusky":
             dict['ADS4128'] = self.ADS4128._dict_repr()
+            dict['pll'] = self.pll._dict_repr()
 
         return dict
 
