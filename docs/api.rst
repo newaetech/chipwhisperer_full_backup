@@ -181,6 +181,9 @@ OpenADC Scope
         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio_states
             :annotation: scope.io.tio_states
 
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.cdc_settings
+            :annotation: scope.io.cdc_settings
+
 
     .. attribute:: trigger
         :annotation: scope.trigger
@@ -295,6 +298,8 @@ OpenADC Scope
 
     .. automethod:: chipwhisperer.capture.scopes.OpenADC.reload_fpga
 
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.get_serial_ports
+
     .. method:: dis()
 
         Disconnects the current scope object.
@@ -361,6 +366,9 @@ ChipWhisperer Nano Scope
         .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.clkout
             :annotation: scope.io.clkout
 
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.cdc_settings
+            :annotation: scope.io.cdc_settings
+
     .. attribute:: glitch
         :annotation: scope.glitch
 
@@ -377,6 +385,8 @@ ChipWhisperer Nano Scope
     .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.capture
 
     .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.get_last_trace
+
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.get_serial_ports
 
     .. method:: dis()
 
@@ -528,6 +538,11 @@ Simple Serial V2 Target
     .. automethod:: get_simpleserial_commands
 
     .. autoattribute:: baud
+
+Simple Serial V2 CDC Target
+===========================
+
+.. autoclass:: chipwhisperer.targets.SimpleSerial2_CDC
 
 .. _api-target-cw305:
 

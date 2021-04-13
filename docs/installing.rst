@@ -8,8 +8,8 @@ You get your choice of installing ChipWhisperer and its prerequisites: the easy 
 or the hard way.
 
 Basic
- * :ref:`install-virtual-machine` (Recommended)
  * :ref:`install-windows-exe` (Windows 10 recommended)
+ * :ref:`install-virtual-machine` (Recommended)
 
 Advanced
  * :ref:`prerequisites`
@@ -34,12 +34,7 @@ Virtual Machine (VirtualBox)
 If this is your first time using the ChipWhisperer toolchain, the easiest
 way to start is to use a virtual machine with everything already set up for
 you. Note that Linux users may find it easier to do a manual install (
-:ref:`prerequisites-linux`).
-
-These instructions are for the newest version of CW5 (v5.0.1+) and will not
-work with CW5's initial alpha release (v5.0.0). Virtualbox 6 is assumed
-here, but these instructions should work for Virtualbox 5 as well, provided
-the correct extension pack is installed.
+:ref:`prerequisites-linux`):
 
  * Install `VirtualBox`_. This program is freely available on Windows, Mac,
    and Linux.
@@ -99,60 +94,35 @@ the Jupyter Notebook server running in the virtual machine.
 *****************
 Windows Installer
 *****************
-.. note:: The installer only includes the ChipWhisperer software itself. It 
-  does not include compilers necessary for building firmware for ChipWhisperer 
-  targets. The easiest way to fulfill these requirements is through the Ubuntu 
-  Windows subsystem, which will be discussed later.
+.. note:: Beginning with ChipWhisperer 5.5, the Windows installer includes
+          everything you need to run ChipWhisperer!
 
 If you want to run a native Windows installation of ChipWhisperer, your best 
 bet is to run the Windows installer, which takes care of getting the 
-prerequisites for you. The steps for using the installar are as follows:
+prerequisites for you. The steps for using the installer are as follows:
 
  * Navigate to the ChipWhisperer release page on Github: `releases`_
 
  * Find the latest ChipWhisperer Windows install executable (currently 
-   :code:`Chipwhisperer.v5.1.3.Setup.64-bit.exe` for 64 bit Windows and 
-   :code:`Chipwhisperer.v5.1.3.Setup.32-bit.exe` for 32 bit Windows)
+   :code:`Chipwhisperer.v5.5.0.Setup.64-bit.exe`)
  
  * Run the executable and choose the path you want to install ChipWhisperer at. 
    You must have read/write permissions for the location you install to, so 
-   avoid installing in a location like C:\Program Files or the like. The 
+   avoid installing in a location like :code:`C:\Program Files` or the like. The 
    default install location (the user's home directory) will work for most users.
 
  * Choose whether or not you want to create a desktop shortcut for running 
-   ChipWhisperer and whether or not you want to install Git for updating 
-   ChipWhisperer (recommended).
+   ChipWhisperer and whether or not you want to install make and compilers (we recommend that you
+   do).
 
- * Finally, connect the ChipWhisperer to your computer and install the drivers for your device. 
-   Instructions can be found in :ref:`prerequisites`.
-
- Once this is completed, you should have a fully functioning ChipWhisperer 
- install. However, you will still need to install compilers to build firmware for targets. To finish the installation:
-
-  * Open powershell and run: :code:`Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux`
-
-  * Restart your computer
- 
-  * Install `Ubuntu-for-Windows`_ 
-  
-  * Run Ubuntu, which should be accessable via the start menu
-
-  * Run the following commands: 
-
-    .. code:: bash
-
-        sudo apt update
-        sudo apt upgrade
-        sudo apt install make avr-libc gcc-avr gcc-arm-none-eabi
- 
+If you're on firmware x.23 or newer, you're all set! Drivers will be automatically installed when you plug your ChipWhisperer in.
+Otherwise, you may need to upgrade your firmware before continuing. See our section :ref:`driverless_windows` for more information.
 
 With this, you now have a fully functioning ChipWhisperer install. Run the 
 ChipWhisperer app, then navigate to the Jupyter folder, where tutorials for 
 running ChipWhisperer are located.
 
 .. _releases: https://github.com/newaetech/chipwhisperer/releases
-
-.. _Ubuntu-for-Windows: https://www.microsoft.com/en-ca/p/ubuntu/9nblggh4msv6?activetab=pivot:overviewtab
 
 .. _install-repo:
 
@@ -178,11 +148,11 @@ repository/package using one of:
 
 :ref:`install-repo-pypi`
 	The classic :code:`pip install chipwhisperer`. Does not install
-	the drivers, or hardware source code currently.
+	the hardware source code or Jupyter Notebooks.
 
 :ref:`install-repo-releases`
 	Get the latest stable release from the GitHub repository. The release includes
-	repository and zipped drivers.
+	hardware source code, but no Jupyter Notebooks currently.
 
 .. _install-repo-git:
 
@@ -210,11 +180,8 @@ If you have Git already set up, this is easy to do:
     git submodule update --init jupyter
     python -m pip install -r jupyter/requirements.txt --user
 
-    # enable jpyter interactive widgets
+    # enable jupyter interactive widgets
     jupyter nbextension enable --py widgetsnbextension
-
-    # note the setup.py used to be in software, it was moved
-    # in version 5.1.0
 
     # use pip to install in develop mode
     python -m pip install -e . --user
@@ -268,7 +235,7 @@ image.
 
 Next, uncompress your downloaded source code somewhere. Generally, 'somewhere' will
 become your ChipWhisperer working directory. For example, on Windows, you might
-want to use *C:\\chipwhisperer\\*.
+want to use :code:`C:\\chipwhisperer\\`.
 
 Once you've got the file, install the python dependencies and run the Python
 install procedure (setup.py) using pip. Use the -e flag for develop mode to indicate

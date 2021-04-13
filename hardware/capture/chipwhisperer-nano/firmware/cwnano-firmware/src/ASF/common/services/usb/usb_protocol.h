@@ -6,35 +6,42 @@
  * This file contains the USB definitions and data structures provided by the
  * USB 2.0 specification.
  *
- * Copyright (c) 2009-2018 Microchip Technology Inc. and its subsidiaries.
+ * Copyright (c) 2009-2014 Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
  * \page License
  *
- * Subject to your compliance with these terms, you may use Microchip
- * software and any derivatives exclusively with Microchip products.
- * It is your responsibility to comply with third party license terms applicable
- * to your use of third party software (including open source software) that
- * may accompany Microchip software.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- * THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES,
- * WHETHER EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE,
- * INCLUDING ANY IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY,
- * AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT WILL MICROCHIP BE
- * LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE, INCIDENTAL OR CONSEQUENTIAL
- * LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND WHATSOEVER RELATED TO THE
- * SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP HAS BEEN ADVISED OF THE
- * POSSIBILITY OR THE DAMAGES ARE FORESEEABLE.  TO THE FULLEST EXTENT
- * ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN ANY WAY
- * RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
- * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. The name of Atmel may not be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. This software may only be redistributed and used in connection with an
+ *    Atmel microcontroller product.
+ *
+ * THIS SOFTWARE IS PROVIDED BY ATMEL "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT ARE
+ * EXPRESSLY AND SPECIFICALLY DISCLAIMED. IN NO EVENT SHALL ATMEL BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  *
  * \asf_license_stop
  *
- */
-/*
- * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
  */
 
 #ifndef _USB_PROTOCOL_H_
@@ -214,31 +221,38 @@ enum usb_capability_type {
  */
 enum usb_capability_extension_attr {
 	USB_DC_EXT_LPM  = 0x00000002,
+	USB_DC_EXT_BESL = 0x00000004,
+	USB_DC_EXT_BESL_BASELINE_VALID = 0x00000008,
+	USB_DC_EXT_BESL_DEEP_VALID = 0x00000010,
 };
+#define USB_DC_EXT_BESL_DEEP_OFFSET       8
+#define USB_DC_EXT_BESL_DEEP(besl)        ((besl & 0xF) << USB_DC_EXT_BESL_DEEP_OFFSET)
+#define USB_DC_EXT_BESL_BASELINE_OFFSET   12
+#define USB_DC_EXT_BESL_BASELINE(besl)    ((besl & 0xF) << USB_DC_EXT_BESL_BASELINE_OFFSET)
 
-#define HIRD_50_US    0
-#define HIRD_125_US   1
-#define HIRD_200_US   2
-#define HIRD_275_US   3
-#define HIRD_350_US   4
-#define HIRD_425_US   5
-#define HIRD_500_US   6
-#define HIRD_575_US  7
-#define HIRD_650_US  8
-#define HIRD_725_US  9
-#define HIRD_800_US  10
-#define HIRD_875_US  11
-#define HIRD_950_US  12
-#define HIRD_1025_US  13
-#define HIRD_1100_US  14
-#define HIRD_1175_US  15
+#define BESL_125_US   0
+#define BESL_150_US   1
+#define BESL_200_US   2
+#define BESL_300_US   3
+#define BESL_400_US   4
+#define BESL_500_US   5
+#define BESL_1000_US  6
+#define BESL_2000_US  7
+#define BESL_3000_US  8
+#define BESL_4000_US  9
+#define BESL_5000_US  10
+#define BESL_6000_US  11
+#define BESL_7000_US  12
+#define BESL_8000_US  13
+#define BESL_9000_US  14
+#define BESL_10000_US 15
 
 /** Fields definition from a LPM TOKEN  */
 #define  USB_LPM_ATTRIBUT_BLINKSTATE_MASK      (0xF << 0)
-#define  USB_LPM_ATTRIBUT_FIRD_MASK            (0xF << 4)
+#define  USB_LPM_ATTRIBUT_BESL_MASK            (0xF << 4)
 #define  USB_LPM_ATTRIBUT_REMOTEWAKE_MASK      (1 << 8)
 #define  USB_LPM_ATTRIBUT_BLINKSTATE(value)    ((value & 0xF) << 0)
-#define  USB_LPM_ATTRIBUT_FIRD(value)          ((value & 0xF) << 4)
+#define  USB_LPM_ATTRIBUT_BESL(value)          ((value & 0xF) << 4)
 #define  USB_LPM_ATTRIBUT_REMOTEWAKE(value)    ((value & 1) << 8)
 #define  USB_LPM_ATTRIBUT_BLINKSTATE_L1        USB_LPM_ATTRIBUT_BLINKSTATE(1)
 

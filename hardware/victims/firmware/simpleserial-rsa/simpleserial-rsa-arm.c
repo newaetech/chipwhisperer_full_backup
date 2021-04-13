@@ -27,8 +27,8 @@
 #include "mbedtls/rsa.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/oid.h"
-uint8_t sig_chunk_1(uint8_t *pt);
-uint8_t sig_chunk_2(uint8_t *pt);
+uint8_t sig_chunk_1(uint8_t *pt, uint8_t len);
+uint8_t sig_chunk_2(uint8_t *pt, uint8_t len);
 #define mbedtls_calloc calloc
 #define mbedtls_free free
 

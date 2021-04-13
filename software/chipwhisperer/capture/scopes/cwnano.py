@@ -265,6 +265,8 @@ class GPIOSettings(util.DisableNewAttr):
 
         dict['clkout'] = self.clkout
 
+        dict['cdc_settings'] = self.cdc_settings
+
         return dict
 
     def __repr__(self):
@@ -504,6 +506,31 @@ class GPIOSettings(util.DisableNewAttr):
 
         return state
 
+    @property
+    def cdc_settings(self):
+        """Check or set whether USART settings can be changed via the USB CDC connection
+
+        i.e. whether you can change USART settings (baud rate, 8n1) via a serial client like PuTTY
+
+        :getter: An array of length two for two possible CDC serial ports (though only one is used)
+
+        :setter: Can set either via an integer (which sets both ports) or an array of length 2 (which sets each port)
+
+        Returns None if using firmware before the CDC port was added
+        """
+        rawver = self.usb.readFwVersion()
+        ver = '{}.{}'.format(rawver[0], rawver[1])
+        if ver < '0.30':
+            return None
+        return self.usb.get_cdc_settings()
+
+    @cdc_settings.setter
+    def cdc_settings(self, port):
+        rawver = self.usb.readFwVersion()
+        ver = '{}.{}'.format(rawver[0], rawver[1])
+        if ver < '0.30':
+            return None
+        return self.usb.set_cdc_settings(port)
 
 class CWNano(ScopeTemplate, util.DisableNewAttr):
     """CWNano scope object.
@@ -532,6 +559,7 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
       * :meth:`scope.get_last_trace <.CWNano.get_last_trace>`
       * :meth:`scope.arm <.CWNano.arm>`
       * :meth:`scope.capture <.CWNano.capture>`
+      * :meth:`scope.get_serial_ports <.CWNano.get_serial_ports>`
     """
 
     _name = "ChipWhisperer Nano"
@@ -591,6 +619,14 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
 
     def _getCWType(self):
         return 'cwnano'
+
+    def get_serial_ports(self):
+        """ Get the CDC serial ports associated with this scope
+
+        Returns:
+            A list of a dict with elements {'port', 'interface'}
+        """
+        return self._getNAEUSB().get_serial_ports()
 
     @property
     def sn(self):

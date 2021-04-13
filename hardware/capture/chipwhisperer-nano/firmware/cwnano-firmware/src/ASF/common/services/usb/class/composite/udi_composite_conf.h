@@ -1,9 +1,9 @@
 /**
  * \file
  *
- * \brief SAM3/SAM4 Sleep manager implementation.
+ * \brief Descriptors for an USB Composite Device MSC and HID mouse
  *
- * Copyright (c) 2012-2018 Microchip Technology Inc. and its subsidiaries.
+ * Copyright (c) 2009-2018 Microchip Technology Inc. and its subsidiaries.
  *
  * \asf_license_start
  *
@@ -34,11 +34,7 @@
  * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
  */
 
-#include <compiler.h>
-#include <sleepmgr.h>
+#ifndef _UDI_COMPOSITE_CONF_H_
+#define _UDI_COMPOSITE_CONF_H_
 
-#if defined(CONFIG_SLEEPMGR_ENABLE) || defined(__DOXYGEN__)
-
-uint8_t sleepmgr_locks[SLEEPMGR_NR_OF_MODES];
-
-#endif /* CONFIG_SLEEPMGR_ENABLE */
+#endif // _UDI_COMPOSITE_CONF_H_

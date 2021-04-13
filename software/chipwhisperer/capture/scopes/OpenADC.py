@@ -71,6 +71,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
      *  :meth:`scope.dis <.OpenADC.dis>`
      *  :meth:`scope.arm <.OpenADC.arm>`
      *  :meth:`scope.get_last_trace <.OpenADC.get_last_trace>`
+     *  :meth:`scope.get_serial_ports <.OpenADC.get_serial_ports>`
 
     If you have a CW1200 ChipWhisperer Pro, you have access to some additional features:
 
@@ -126,6 +127,14 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
     def _getNAEUSB(self):
         return self.scopetype.dev._cwusb
 
+    def get_serial_ports(self):
+        """ Get the CDC serial ports associated with this scope
+
+        Returns:
+            A list of a dict with elements {'port', 'interface'}
+        """
+        return self._getNAEUSB().get_serial_ports()
+
     def default_setup(self):
         """Sets up sane capture defaults for this scope
 
@@ -137,6 +146,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
          *  4*7.37MHz ADC clock
          *  tio1 = serial rx
          *  tio2 = serial tx
+         *  CDC settings change off
 
         .. versionadded:: 5.1
             Added default setup for OpenADC
@@ -152,6 +162,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         self.io.hs2 = "clkgen"
 
         self.clock.adc_src = "clkgen_x4"
+        self.io.cdc_settings = 0
 
         count = 0
         while not self.clock.clkgen_locked:            
@@ -320,20 +331,20 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         """
         if self.connectStatus is False:
             raise OSError("Scope is not connected. Connect it first...")
-        with DelayedKeyboardInterrupt():
-            try:
-                if self.advancedSettings:
-                    self.advancedSettings.armPreScope()
+        # with DelayedKeyboardInterrupt():
+        try:
+            if self.advancedSettings:
+                self.advancedSettings.armPreScope()
 
-                self.qtadc.arm()
+            self.qtadc.arm()
 
-                if self.advancedSettings:
-                    self.advancedSettings.armPostScope()
+            if self.advancedSettings:
+                self.advancedSettings.armPostScope()
 
-                self.qtadc.startCaptureThread()
-            except Exception:
-                self.dis()
-                raise
+            self.qtadc.startCaptureThread()
+        except Exception:
+            self.dis()
+            raise
 
     def capture(self):
         """Captures trace. Scope must be armed before capturing.
@@ -345,11 +356,11 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
            IOError: Unknown failure.
         """
         # need adc offset, adc_freq, samples cached
-        with DelayedKeyboardInterrupt():
-            if not self.adc.stream_mode:
-                return self.qtadc.capture(self.adc.offset, self.clock.adc_freq, self.adc.samples)
-            else:
-                return self.qtadc.capture(None)
+        # with DelayedKeyboardInterrupt():
+        if not self.adc.stream_mode:
+            return self.qtadc.capture(self.adc.offset, self.clock.adc_freq, self.adc.samples)
+        else:
+            return self.qtadc.capture(None)
 
     def get_last_trace(self):
         """Return the last trace captured with this scope.

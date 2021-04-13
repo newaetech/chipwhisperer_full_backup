@@ -191,9 +191,12 @@ class SAMFWLoader(object):
         time.sleep(0.5)
         self.enter_bootloader(True)
         time.sleep(1.5)
-        after = serial.tools.list_ports.comports()
-        after = [a.device for a in after]
-        candidate = list((set(before) ^ set(after)) & set(after)) # make sure we only grab the serial ports from after
+        candidate = []
+        i = 0
+        while (candidate == []) and (i < 10):
+            after = serial.tools.list_ports.comports()
+            after = [a.device for a in after]
+            candidate = list((set(before) ^ set(after)) & set(after)) # make sure we only grab the serial ports from after
         if len(candidate) == 0:
             raise OSError("Could not detect COMPORT. Continue using programmer.program()")
         com = candidate[0]
