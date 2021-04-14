@@ -14,6 +14,35 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import camel_case_deprecated, fw_ver_required
 
 class CW310(CW305):
+    """CW310 Bergen Board target object.
+
+    This class contains the public API for the CW310 hardware.
+    To connect to the CW310, the easiest method is::
+
+        import chipwhisperer as cw
+        scope = cw.scope()
+
+        # scope can also be None here, unlike with the default SimpleSerial
+        target = cw.target(scope,
+                targets.CW310, bsfile=<valid FPGA bitstream file>)
+
+
+    Inherits the CW305 object, so you can use the same methods as the CW305, provided the register interface
+    in your FPGA build is the same.
+
+    You can also set the voltage and current settings for the USB-C Power port on the CW310
+
+        # set USB PDO 3 to 20V 5A
+        target.usb_set_voltage(3, 20)
+        target.usb.set_current(3, 5)
+
+        # renegotiate PDO (applies above settings)
+        target.usb_negotiate_pdo()
+
+    For more help about CW305 settings, try help() on this CW310 submodule:
+
+       * target.pll
+    """
     def __init__(self, *args, **kwargs):
         # maybe later can hijack cw305 stuff, but for now don't
         pass
@@ -56,6 +85,15 @@ class CW310(CW305):
             status = self.fpga.FPGAProgram(open(bsfile, "rb"))
 
     def usb_set_voltage(self, pdo_num, voltage):
+        """Set the voltage for one of the USBC PDOs.
+
+        PDO1 is always 5V 1A and cannot be changed.
+
+        Args:
+            pdo_num (int): The PDO to set the voltage for. Can be 2 or 3
+            voltage (float): The voltage to set. Must be between 5 and 20 inclusive. Has
+                            a resolution of 0.05V
+        """
         if pdo_num not in [2, 3]:
             raise ValueError("pdo_num must be 2 or 3, {}".format(pdo_num))
         if (voltage > 20 or voltage < 5):
@@ -75,10 +113,19 @@ class CW310(CW305):
         self._naeusb.sendCtrl(0x41, 0, snk_pdo)
 
     def usb_set_current(self, pdo_num, current):
+        """Set the current for one of the USBC PDOs.
+
+        PDO1 is always 5V 1A and cannot be changed.
+
+        Args:
+            pdo_num (int): The PDO to set the voltage for. Can be 2 or 3
+            voltage (float): The voltage to set. Must be between 0.5 and 5 inclusive. Has
+                            a resolution of 0.01A
+        """
         if pdo_num not in [2, 3]:
             raise ValueError("pdo_num must be 2 or 3, {}".format(pdo_num))
         if (current > 5 or current < 0.5):
-            raise ValueError("Voltage must be between 0.5 and 20, {}".format(voltage))
+            raise ValueError("Current must be between 0.5 and 5, {}".format(voltage))
         snk_pdo = self._naeusb.readCtrl(0x41, 0, 4)
         current *= 100
         current = int(current)
@@ -93,6 +140,8 @@ class CW310(CW305):
         self._naeusb.sendCtrl(0x41, 0, snk_pdo)
 
     def usb_negotiate_pdo(self):
+        """Renegotate the USBC PDOs. Must be done for new PDOs settings to take effect
+        """
         #soft reset
         self._naeusb.sendCtrl(0x40, 0, [0x28, 0x51])
         self._naeusb.sendCtrl(0x41, 0, [0x0D])

@@ -629,6 +629,21 @@ CW305 SAM3U IO Control
 
 .. _api-target-program:
 
+CW310
+=====
+
+.. autoclass:: chipwhisperer.capture.targets.CW310.CW310
+
+    .. automethod:: usb_set_voltage
+
+    .. automethod:: usb_set_current
+
+    .. automethod:: usb_negotiate_pdo
+
+    .. automethod:: gpio_mode
+
+    .. automethod:: _con
+
 Program
 =======
 
