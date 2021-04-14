@@ -559,6 +559,10 @@ CW305 FPGA Target
 
     .. automethod:: _con
 
+    .. automethod:: fpga_write
+
+    .. automethod:: fpga_read
+
     .. autoattribute:: clksleeptime
 
     .. autoattribute:: clkusbautooff
@@ -643,6 +647,10 @@ CW310
     .. automethod:: gpio_mode
 
     .. automethod:: _con
+
+    .. automethod:: fpga_write
+
+    .. automethod:: fpga_read
 
     .. autoattribute:: chipwhisperer.capture.targets.CW310.CW310.cdc_settings
         :annotation: target.cdc_settings
