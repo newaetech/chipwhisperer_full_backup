@@ -509,6 +509,15 @@ class FPGAIO:
             return self.SAM3X_PIN_NAMES[pinname]
         
         raise ValueError("I don't know what pin this is (sorry): %s"%(pinname))
+
+    def pin_get_state(self, pinname):
+        """Get the state of a pin
+
+        Args:
+            pinname (str): Name such as "PB22", "USB_A20", or "M2".   
+        """
+        pinnum = self.pin_name_to_number(pinname)
+        return self.readCtrl(self.REQ_FPGAIO_UTIL, pinnum, 1)
         
     def pin_set_output(self, pinname):
         """Set a given pin as an output.
