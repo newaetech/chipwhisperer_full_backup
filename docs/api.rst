@@ -644,6 +644,9 @@ CW310
 
     .. automethod:: _con
 
+    .. autoattribute:: chipwhisperer.capture.targets.CW310.CW310.cdc_settings
+        :annotation: target.cdc_settings
+
 Program
 =======
 
