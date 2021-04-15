@@ -517,7 +517,7 @@ class FPGAIO:
             pinname (str): Name such as "PB22", "USB_A20", or "M2".   
         """
         pinnum = self.pin_name_to_number(pinname)
-        return self.readCtrl(self.REQ_FPGAIO_UTIL, pinnum, 1)
+        return self.readCtrl(self.REQ_FPGAIO_UTIL, pinnum, 1)[0]
         
     def pin_set_output(self, pinname):
         """Set a given pin as an output.
@@ -632,3 +632,7 @@ class FPGAIO:
         self.spi1_set_cs_pin(True)
 
         return resp
+
+
+def test_cw310(fpgaio):
+    print("Testing")
