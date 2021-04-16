@@ -64,6 +64,7 @@ class CW310(CW305):
         self._clkusbautooff = True
         self.last_key = bytearray([0]*16)
         self.target_name = 'AES'
+        self._io = FPGAIO(self._naeusb, 200)
 
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True):
         # add more stuff later
@@ -162,6 +163,22 @@ class CW310(CW305):
         time.sleep(0.01)
         self.fpga_write(self.REG_CRYPT_GO, [0])
 
+    def temp_sensor_send(self, addr, data_byte):
+        self._naeusb.sendCtrl(0x42, addr & 0xFF, [data_byte & 0xFF])
+
+    def temp_sensor_read(self, addr):
+        return self._naeusb.readCtrl(0x42, addr & 0xFF, 1)[0]
+
+    @property
+    def fpga_temp(self):
+        return self.temp_sensor_read(0x01)
+
+    def reset_fpga_power(self):
+        self._naeusb.sendCtrl(0x22, 0x07) #kill power
+
+        time.sleep(0.5)
+        self._naeusb.sendCtrl(0x22, 0x08) #enable power
+
     def gpio_mode(self, timeout=200):
         """Allow arbitrary GPIO access on SAM3U
         
@@ -174,8 +191,8 @@ class CW310(CW305):
         Returns:
             A FPGAIO object which can be used to access IO on the CW305.
         """
-        io = FPGAIO(self._naeusb, timeout)
-        return io
+        self._io._timeout = timeout
+        return self._io
 
     @property
     def cdc_settings(self):
