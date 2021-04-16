@@ -27,7 +27,7 @@ import time
 import os
 from .naeusb import packuint32
 from chipwhisperer.common.utils.util import fw_ver_required
-
+from chipwhisperer.logging import *
 class USART(object):
     """
     USART Class communicates with NewAE USB Interface to read/write data over control endpoint.
@@ -99,7 +99,7 @@ class USART(object):
 
         self._usartTxCmd(self.USART_CMD_INIT, cmdbuf)
         self._usartTxCmd(self.USART_CMD_ENABLE)
-        print("Serial baud rate = {}".format(baud))
+        target_logger.info("Serial baud rate = {}".format(baud))
 
         try:
             self.tx_buf_in_wait = False
@@ -177,11 +177,12 @@ class USART(object):
             dlen = waiting
 
         if timeout == 0:
-            timeout = self.timeout
+            timeout = 1000000000
 
 
         resp = []
 
+        # * 10 does nothing
         while dlen and (timeout * 10) > 0:
             if waiting > 0:
                 newdata = self._usb.readCtrl(self.CMD_USART0_DATA, 0, min(min(waiting, dlen), self._max_read))

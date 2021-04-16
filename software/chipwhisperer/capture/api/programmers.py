@@ -31,6 +31,7 @@ from chipwhisperer.hardware.naeusb.programmer_stm32fserial import supported_stm3
 
 from functools import wraps
 
+from chipwhisperer.logging import *
 
 def save_and_restore_pins(func):
     """Decorator to save and restore pins needed to comunicate and program hardware
@@ -53,13 +54,13 @@ def save_and_restore_pins(func):
             'pdid': self.scope.io.pdid,
             'nrst': self.scope.io.nrst,
         }
-        logging.debug('Saving pdic, pdid, and nrst pin configuration')
+        target_logger.debug('Saving pdic, pdid, and nrst pin configuration')
         # setup the pins so that so communication to the target is possible
         # Important: during the execution of func, the pin values may change if
         # the function is related to reprogramming or resetting the device. Example:
         # the stm32f uses the toggling of the nrst and pdic pins for resetting
         # and boot mode setting respectively
-        logging.debug('Changing pdic, pdid, and nrst pin configuration')
+        target_logger.debug('Changing pdic, pdid, and nrst pin configuration')
         if pin_setup['pdic'] != 'high_z':
             self.scope.io.pdic = 'high_z'
         if pin_setup['pdid'] != 'high_z':
@@ -69,7 +70,7 @@ def save_and_restore_pins(func):
         try:
             val = func(self, *args, **kwargs)
         finally:
-            logging.debug('Restoring pdic, pdid, and nrst pin configuration')
+            target_logger.debug('Restoring pdic, pdid, and nrst pin configuration')
             if self.scope.io.pdic != pin_setup['pdic']:
                 self.scope.io.pdic = pin_setup['pdic']
             if self.scope.io.pdid != pin_setup['pdid']:
@@ -134,7 +135,7 @@ class Programmer(object):
 
     def log(self, text):
         """Logs the text and broadcasts it"""
-        logging.info(text)
+        target_logger.info(text)
         self.newTextLog.emit(text)
 
     def autoProgram(self, hexfile, erase, verify, logfunc, waitfunc):
@@ -202,7 +203,7 @@ class AVRProgrammer(Programmer):
         try:
             avr.enableISP(False)
         except AttributeError as e:
-            logging.info("AVR programmer: could not disable ISP - USB might be disconnected!")
+            target_logger.info("AVR programmer: could not disable ISP - USB might be disconnected!")
 
 
 class XMEGAProgrammer(Programmer):
@@ -237,7 +238,7 @@ class XMEGAProgrammer(Programmer):
         try:
             xmega.erase(memtype)
         except IOError:
-            logging.info("Full chip erase timed out. Reinitializing programmer and erasing only application memory")
+            target_logger.info("Full chip erase timed out. Reinitializing programmer and erasing only application memory")
             self.open()
             self.find()
             xmega.enablePDI(False)

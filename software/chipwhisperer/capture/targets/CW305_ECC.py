@@ -32,6 +32,7 @@ from chipwhisperer.common.traces import Trace
 from .CW305 import CW305, CW305_USB
 from ecpy.curves import Curve, Point
 
+from chipwhisperer.logging import *
 
 class CW305_ECC(CW305):
 
@@ -99,13 +100,13 @@ class CW305_ECC(CW305):
         if operation == 'pmult':
             textout = self.run_pmult(k, Px, Py, check=check, verbose=False)
         else:
-            logging.error("Please supply a valid operation to run.")
+            target_logger.error("Please supply a valid operation to run.")
 
         cycles = scope.adc.trig_count - start_cycles
         ret = scope.capture()
 
         if ret:
-            logging.warning("Timeout happened during capture")
+            target_logger.warning("Timeout happened during capture")
             return None
 
         textin = {'operation': operation,
@@ -117,7 +118,7 @@ class CW305_ECC(CW305):
         wave = scope.get_last_trace()
 
         if check and cycles != self.pmul_cycles:
-            logging.warning ("Operation took %d cycles (%d more than we expect it to)" % (cycles, cycles-self.pmul_cycles))
+            target_logger.warning ("Operation took %d cycles (%d more than we expect it to)" % (cycles, cycles-self.pmul_cycles))
 
         if len(wave) >= 1:
             return Trace(wave, textin, textout, None)
@@ -149,14 +150,14 @@ class CW305_ECC(CW305):
         self.go()
 
         if not self.is_done():
-            logging.warning ("Target not done yet, increase clksleeptime!")
+            target_logger.warning ("Target not done yet, increase clksleeptime!")
             #let's wait a bit more, see what happens:
             i = 0
             while not self.is_done():
                 i += 1
                 time.sleep(0.05)
                 if i > 100:
-                    logging.warning("Target still did not finish operation!")
+                    target_logger.warning("Target still did not finish operation!")
                     break
 
         Rx = int.from_bytes(self.fpga_read(self.REG_CRYPT_RX, 32), byteorder='little')
@@ -167,16 +168,16 @@ class CW305_ECC(CW305):
             P = Point(Px, Py, self.curve)
             Q = k*P
             if verbose:
-                print("Expecting Qx = %s" % hex(Q.x))
-                print("Expecting Qy = %s" % hex(Q.y))
+                print("Expecting Qx = %32x" % Q.x)
+                print("Expecting Qy = %32x" % Q.y)
             if Q.x != Rx:
-                print("Bad Rx!")
-                print("expected %32x" % hex(Q.x))
-                print("got      %32x" % hex(Rx))
+                target_logger.error("Bad Rx!")
+                target_logger.error("expected %32x" % Q.x)
+                target_logger.error("got      %32x" % Rx)
             if Q.y != Ry:
-                print("Bad Ry!")
-                print("expected %32y" % hex(Q.y))
-                print("got      %32y" % hex(Ry))
+                target_logger.error("Bad Ry!")
+                target_logger.error("expected %32x" % Q.y)
+                target_logger.error("got      %32x" % Ry)
         return {'Rx': Rx, 'Ry': Ry}
 
 

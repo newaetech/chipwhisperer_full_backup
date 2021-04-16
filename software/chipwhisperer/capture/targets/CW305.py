@@ -37,6 +37,7 @@ from chipwhisperer.hardware.naeusb.fpga import FPGA
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import camel_case_deprecated, fw_ver_required
 
+from chipwhisperer.logging import *
 
 class CW305_USB(object):
     REQ_SYSCFG = 0x22
@@ -137,13 +138,13 @@ class CW305(TargetTemplate):
         """
         self.verilog_define_matches = 0
         if type(defines_files) != list:
-            logging.error('defines_files must be provided as a list (even it it contains a single element)')
+            target_logger.error('defines_files must be provided as a list (even it it contains a single element)')
         for i,defines_file in enumerate(defines_files):
             if type(defines_file) == io.BytesIO:
                 defines = io.TextIOWrapper(defines_file)
             else:
                 if not os.path.isfile(defines_file):
-                    logging.error('Cannot find %s. Please specify the location of %s on your filesystem.' % 
+                    target_logger.error('Cannot find %s. Please specify the location of %s on your filesystem.' % 
                                    (defines_files, self.default_verilog_defines))
                 defines = open(defines_file, 'r')
             define_regex_base  =   re.compile(r'`define')
@@ -170,11 +171,11 @@ class CW305(TargetTemplate):
                             self.verilog_define_matches += 1
                             setattr(self, match.group(1), int(match.group(2),10) + block_offset)
                         else:
-                            logging.warning("Couldn't parse line: %s", define)
+                            target_logger.warning("Couldn't parse line: %s", define)
             defines.close()
         # make sure everything is cool:
         if self.verilog_define_matches != self.registers:
-            logging.warning("Trouble parsing Verilog defines files (%s): didn't find the right number of defines; expected %d, got %d.\n" % (defines_file, self.registers, self.verilog_define_matches) +
+            target_logger.warning("Trouble parsing Verilog defines files (%s): didn't find the right number of defines; expected %d, got %d.\n" % (defines_file, self.registers, self.verilog_define_matches) +
                             "Ensure that the Verilog defines files above are the same that were used to build the bitfile.")
 
 
@@ -288,34 +289,41 @@ class CW305(TargetTemplate):
                     status = self.fpga.FPGAProgram(bsdata, exceptOnDoneFailure=False)
                     stoptime = datetime.now()
                     if status:
-                        logging.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
+                        target_logger.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
                     else:
-                        logging.warning('FPGA Done pin failed to go high, check bitstream is for target device.')
+                        target_logger.error('FPGA Done pin failed to go high, check bitstream is for target device.')
                 else:
-                    print("No FPGA Bitstream file specified.")
+                    target_logger.warning("No FPGA Bitstream file specified.")
             elif not os.path.isfile(bsfile):
-                print(("FPGA Bitstream not configured or '%s' not a file." % str(bsfile)))
+                target_logger.warning(("FPGA Bitstream not configured or '%s' not a file." % str(bsfile)))
             else:
                 starttime = datetime.now()
                 status = self.fpga.FPGAProgram(open(bsfile, "rb"), exceptOnDoneFailure=False)
                 stoptime = datetime.now()
                 if status:
-                    logging.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
+                    target_logger.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
                 else:
-                    logging.warning('FPGA Done pin failed to go high, check bitstream is for target device.')
+                    target_logger.warning('FPGA Done pin failed to go high, check bitstream is for target device.')
 
         self.usb_clk_setenabled(True)
         self.pll.cdce906init()
 
-        if defines_files is None:
-            if fpga_id is None:
-                verilog_defines = [self.default_verilog_defines_full_path]
-            else:
-                from chipwhisperer.hardware.firmware.cw305 import getsome
-                verilog_defines = [getsome(self.default_verilog_defines)]
-        else:
-            verilog_defines = defines_files
         if slurp:
+            # If fpga_id is provided, Verilog defines are obtained from CW305.py.
+            # Otherwise, we look for it in a default location; if that doesn't exist, revert to CW305.py and warn user.
+            found_defines = False
+            if defines_files is None:
+                if fpga_id is None:
+                    verilog_defines = [self.default_verilog_defines_full_path]
+                    if os.path.isfile(verilog_defines[0]):
+                        found_defines = True
+                    else:
+                        target_logger.warning("Verilog defines not found in default location (%s).\nUsing defines from CW305.py.If this isn't what you want, either add 'slurp=False', or provide defines location in 'defines_files'" % verilog_defines[0])
+                if not found_defines:
+                    from chipwhisperer.hardware.firmware.cw305 import getsome
+                    verilog_defines = [getsome(self.default_verilog_defines)]
+            else:
+                verilog_defines = defines_files
             self.slurp_defines(verilog_defines)
 
 
@@ -566,7 +574,7 @@ class CW305(TargetTemplate):
         """
         from datetime import datetime
         if self._fpga_id is None and bsfile is None:
-            logging.warning("CW305 requires passthrough bitstream to program SPI chip, but file/chip not specified")
+            target_logger.warning("CW305 requires passthrough bitstream to program SPI chip, but file/chip not specified")
         else:
             bsdata = None
             if self._fpga_id:
@@ -578,9 +586,9 @@ class CW305(TargetTemplate):
             status = self.fpga.FPGAProgram(bsdata, exceptOnDoneFailure=False)
             stoptime = datetime.now()
             if status:
-                logging.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
+                target_logger.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
             else:
-                logging.warning('FPGA Done pin failed to go high, check bitstream is for target device.')
+                target_logger.warning('FPGA Done pin failed to go high, check bitstream is for target device.')
 
         spi = FPGASPI(self._naeusb, timeout)
         spi.enable_interface(enable)

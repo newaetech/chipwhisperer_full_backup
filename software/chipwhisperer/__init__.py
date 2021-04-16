@@ -24,11 +24,12 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 import logging
 import usb
+from chipwhisperer.logging import *
 if usb.__version__ < '1.1.0':
     print(f"---------------------------------------------------------")
     print(f"ChipWhisperer requires pyusb >= 1.1.0, but you have {usb.__version__}")
     print(f"---------------------------------------------------------")
-    logging.warning(f"ChipWhisperer requires pyusb >= 1.1.0, but you have {usb.__version__}")
+    scope_logger.warning(f"ChipWhisperer requires pyusb >= 1.1.0, but you have {usb.__version__}")
 
 # replace bytearray with inherited class with better repr and str.
 import builtins
@@ -37,7 +38,6 @@ builtins.bytearray = util.bytearray
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 
 ktp = key_text_patterns #alias
-
 
 def program_target(scope, prog_type, fw_path, **kwargs):
     """Program the target using the programmer <type>
@@ -67,6 +67,7 @@ def program_target(scope, prog_type, fw_path, **kwargs):
         prog.close()
     except:
         if isinstance(prog, programmers.XMEGAProgrammer) and isinstance(scope, scopes.OpenADC):
+            target_logger.info("XMEGA error detected, resetting XMEGA")
             scope.io.pdic = 0
             time.sleep(0.05)
             scope.io.pdic = None
@@ -230,7 +231,7 @@ def scope(scope_type=None, sn=None):
     try:
         scope.con(sn)
     except IOError:
-        logging.error("ChipWhisperer error state detected. Resetting and retrying connection...")
+        scope_logger.error("ChipWhisperer error state detected. Resetting and retrying connection...")
         scope._getNAEUSB().reset()
         time.sleep(2)
         scope = scope_type()
@@ -260,7 +261,7 @@ def target(scope, target_type=targets.SimpleSerial, **kwargs):
     if scope and (isinstance(target, targets.SimpleSerial) or isinstance(target, targets.SimpleSerial2)):
         if isinstance(scope, scopes.CWNano) and not fw_ver_compare(scope.fw_version, {"major": 0, "minor": 24}):
             target.ser.cwlite_usart._max_read = 128
-            print("Limiting max read")
+            target_logger.warning("Old firmware: limiting max serial read")
     return target
 
 def capture_trace(scope, target, plaintext, key=None, ack=True):
@@ -319,7 +320,7 @@ def capture_trace(scope, target, plaintext, key=None, ack=True):
 
         def handler(self, sig, frame):
             self.signal_received = (sig, frame)
-            logging.debug('SIGINT received. Delaying KeyboardInterrupt.')
+            scope_logger.debug('SIGINT received. Delaying KeyboardInterrupt.')
 
         def __exit__(self, type, value, traceback):
             signal.signal(signal.SIGINT, self.old_handler)
@@ -341,11 +342,11 @@ def capture_trace(scope, target, plaintext, key=None, ack=True):
         i += 1
         time.sleep(0.05)
         if i > 100:
-            warnings.warn("Target did not finish operation")
+            scope_logger.warning("Target did not finish operation")
             return None
 
     if ret:
-        warnings.warn("Timeout happened during capture")
+        scope_logger.warning("Timeout happened during capture")
         return None
 
     response = target.simpleserial_read('r', target.output_len, ack=ack)

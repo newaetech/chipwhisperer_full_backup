@@ -25,6 +25,7 @@ import logging, os, time
 from datetime import datetime
 from .naeusb import packuint32
 from chipwhisperer.capture.utils.programming_files import FileReader
+from chipwhisperer.logging import *
 
 XMEGAMEM_TYPE_APP = 1
 XMEGAMEM_TYPE_BOOT = 2
@@ -183,12 +184,12 @@ class XMEGAPDI(object):
                 (data[1] == t.signature[1]) and
                 (data[2] == t.signature[2])):
 
-                logging.debug("Detected known XMEGA: %s"%t.name)
+                target_logger.debug("Detected known XMEGA: %s"%t.name)
                 self.setChip(t)
                 return data, t
 
         #No known chip found?
-        logging.debug("Detected unknown XMEGA: %02x %02x %02x"%(data[0], data[1], data[2]))
+        target_logger.debug("Detected unknown XMEGA: %02x %02x %02x"%(data[0], data[1], data[2]))
         return data, None
 
     def erase(self, memtype="chip"):
@@ -420,7 +421,7 @@ class XMEGAPDI(object):
         pagesize = memspec["pagesize"]
 
         if addr % pagesize:
-            logging.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
+            target_logger.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
 
         while memwritten < len(data):
 

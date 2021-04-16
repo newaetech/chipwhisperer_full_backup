@@ -34,6 +34,7 @@ from chipwhisperer.common.utils import util
 from collections import OrderedDict
 from chipwhisperer.common.utils.util import camel_case_deprecated, dict_to_str
 
+from chipwhisperer.logging import *
 
 class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     """SimpleSerial target object.
@@ -251,7 +252,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             num_char (int, optional): Number of byte to read. If 0, read all
                 data available. Defaults to 0.
             timeout (int, optional): How long in ms to wait before returning.
-                If 0, block until data received. Defaults to 250.
+                If 0, block for a long time. Defaults to 250.
 
         Returns:
             String of received data.
@@ -295,16 +296,16 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         data = self.read(4, timeout = timeout)
         if len(data) < 4:
-            logging.error("Target did not ack")
+            target_logger.error("Target did not ack")
             return None
         if data[0] != 'z':
-            logging.error("Ack error: {}".format(data))
+            target_logger.error("Ack error: {}".format(data))
             return None
         ret = None
         try:
             ret = int(data[1:3], 16)
         except ValueError:
-            logging.error("Ack error, couldn't decode return {}".format(data))
+            target_logger.error("Ack error, couldn't decode return {}".format(data))
             return None
         return ret
 
@@ -339,6 +340,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         if cmd:
             cmd += binascii.hexlify(num).decode()
         cmd += end
+        target_logger.debug("Sending: {}".format(cmd))
         self.write(cmd)
         self._simpleserial_last_sent = cmd
 
@@ -388,7 +390,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         payload = bytearray(pay_len)
         if cmd_len > 0:
             if response[0:cmd_len] != cmd:
-                logging.warning("Unexpected start to command: {}".format(
+                target_logger.warning("Unexpected start to command: {}".format(
                     response[0:cmd_len]
                 ))
                 return None
@@ -397,12 +399,12 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             try:
                 payload[i] = int(response[idx:(idx + 2)], 16)
             except ValueError as e:
-                logging.warning("ValueError: {}".format(e))
+                target_logger.warning("ValueError: {}".format(e))
             idx += 2
 
         if len(end) > 0:
             if response[(idx):(idx + len(end))] != end:
-                logging.warning("Unexpected end to command: {}".format(
+                target_logger.warning("Unexpected end to command: {}".format(
                     response[(idx):(idx+len(end))]))
                 return None
 
@@ -488,13 +490,13 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
                     payload = None
                     valid = False
                     break
-                    #logging.warning("ValueError: {}".format(e))
+                    #target_logger.warning("ValueError: {}".format(e))
 
                 idx += 2
 
             if valid and (len(end) > 0):
                 if response[(idx):(idx + len(end))] != end:
-                    logging.warning("Unexpected end to command: {}".format(
+                    target_logger.warning("Unexpected end to command: {}".format(
                         response[(idx):(idx + len(end))]))
                     payload = None
 
@@ -529,6 +531,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             if ack:
                 if self.simpleserial_wait_ack(timeout) is None:
                     raise Warning("Device failed to ack")
+        else:
+            target_logger.debug("Key unchanged, skipping send")
 
     def in_waiting(self):
         """Returns the number of characters available from the serial buffer.

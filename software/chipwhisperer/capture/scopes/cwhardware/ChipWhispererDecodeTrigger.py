@@ -39,6 +39,7 @@ CODE_USART      = 0x01
 ADDR_DECODECFG = 57
 ADDR_DECODEDATA = 58
 
+from chipwhisperer.logging import *
 
 class ChipWhispererDecodeTrigger(object):
     """
@@ -137,17 +138,17 @@ class ChipWhispererDecodeTrigger(object):
             try:
                 tl = eval(tp)
             except Exception:
-                logging.error("IO Decode Trigger: could not evaluate string %s"%tp)
+                scope_logger.error("IO Decode Trigger: could not evaluate string %s"%tp)
                 return
         else:
             tl = tp
 
         # If we didn't get a list or it's too long, we can't use this trigger pattern
         if type(tl) is not list:
-            logging.error("Trigger pattern must be a list")
+            scope_logger.error("Trigger pattern must be a list")
             return
         if len(tl) > 8:
-            logging.error("Trigger pattern is of length %d, too long (max is 8)"%len(tl))
+            scope_logger.error("Trigger pattern is of length %d, too long (max is 8)"%len(tl))
             return
 
         #Reverse order
@@ -164,7 +165,7 @@ class ChipWhispererDecodeTrigger(object):
                 pass
             # Other strings need to be length 1
             elif (isinstance(tli, str)) and (len(tli) != 1):
-                logging.error("Trigger pattern with list of strings must have length = 1 for each string")
+                scope_logger.error("Trigger pattern with list of strings must have length = 1 for each string")
                 return
             else:
                 if isinstance(tl[i], str):

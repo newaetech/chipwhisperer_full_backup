@@ -26,6 +26,7 @@ from datetime import datetime
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 
+from chipwhisperer.logging import *
 from .naeusb import packuint32
 
 # NOTE: These objects are currently manually maintained. Eventually it will be automatically created
@@ -552,7 +553,7 @@ class AVRISP(object):
         pagesize = memspec["pagesize"]
 
         if addr % pagesize:
-            logging.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
+            target_logger.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
 
         self._avrDoWrite(self.ISP_CMD_LOAD_ADDRESS, data=[0, 0, 0, 0])
 

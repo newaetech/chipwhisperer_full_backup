@@ -13,6 +13,8 @@ from chipwhisperer.hardware.naeusb.fpga import FPGA
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import camel_case_deprecated, fw_ver_required
 
+from chipwhisperer.logging import *
+
 class CW310(CW305):
     """CW310 Bergen Board target object.
 
@@ -106,11 +108,11 @@ class CW310(CW305):
 
         snk_pdo[1] &= ~0xFC
         snk_pdo[2] &= ~0x0F
-        print(snk_pdo)
+        target_logger.info(snk_pdo)
         snk_pdo[1] |= ((voltage << 2) & 0xFC)
         snk_pdo[2] |= ((voltage >> 6) & 0x0F)
-        print(voltage)
-        print(snk_pdo)
+        target_logger.info(voltage)
+        target_logger.info(snk_pdo)
         self._naeusb.sendCtrl(0x41, 0, snk_pdo)
 
     def usb_set_current(self, pdo_num, current):
@@ -133,11 +135,11 @@ class CW310(CW305):
 
         snk_pdo[0] &= ~0xFF
         snk_pdo[1] &= ~0x03
-        print(snk_pdo)
+        target_logger.info(snk_pdo)
         snk_pdo[0] |= (current & 0xFF)
         snk_pdo[1] |= ((current >> 8) & 0x03)
-        print(current)
-        print(snk_pdo)
+        target_logger.info(current)
+        target_logger.info(snk_pdo)
         self._naeusb.sendCtrl(0x41, 0, snk_pdo)
 
     def usb_negotiate_pdo(self):

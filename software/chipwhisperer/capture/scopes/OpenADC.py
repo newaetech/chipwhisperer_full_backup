@@ -37,6 +37,8 @@ from collections import OrderedDict
 import time
 import numpy as np
 
+from chipwhisperer.logging import *
+
 class OpenADC(ScopeTemplate, util.DisableNewAttr):
     """OpenADC scope object.
 
@@ -171,7 +173,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
             count += 1
 
             if count == 5:
-                logging.info("Could not lock clock for scope. This is typically safe to ignore. Reconnecting and retrying...")
+                scope_logger.info("Could not lock clock for scope. This is typically safe to ignore. Reconnecting and retrying...")
                 self.dis()
                 time.sleep(0.25)
                 self.con()

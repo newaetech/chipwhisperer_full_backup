@@ -37,6 +37,7 @@ from chipwhisperer.hardware.firmware.cwhusky import getsome as husky_getsome
 
 from chipwhisperer.common.api.settings import Settings
 
+from chipwhisperer.logging import *
 
 class CW_Loader(object):
     """ Base class for ChipWhisperer targets that help loading of FPGA data """
@@ -79,23 +80,23 @@ class CW_Loader(object):
     def fpga_bitstream(self):
         """ Returns FPGA bitstream in use (either debug or release) """
         if self._release_mode == "builtin":
-            logging.debug('FPGA: Builtin mode')
+            scope_logger.debug('FPGA: Builtin mode')
             filelike = self._bsBuiltinData
             zfile = zipfile.ZipFile(filelike)
             return zfile.open(self._bsZipLoc_filename)
         elif self._release_mode == "zipfile":
-            logging.debug('FPGA: Zipfile mode')
+            scope_logger.debug('FPGA: Zipfile mode')
             if not os.path.isfile(self._bsZipLoc):
                 raise IOError("FPGA Zip-File NOT set to valid value - check paths or reconfigure. Path='%s'"%self._bsZipLoc)
             zfile = zipfile.ZipFile(self._bsZipLoc, "r")
-            logging.debug("FPGA: Using file %s"%self._bsZipLoc)
+            scope_logger.debug("FPGA: Using file %s"%self._bsZipLoc)
             return zfile.open(self._bsZipLoc_filename)
         elif self._release_mode == "debug":
-            logging.debug('FPGA: Raw bitstream mode')
+            scope_logger.debug('FPGA: Raw bitstream mode')
             if not os.path.isfile(self._bsLoc):
                 raise IOError("FPGA bit-File NOT set to valid value - check paths or reconfigure. Path='%s'"%self._bsLoc)
 
-            logging.debug("FPGA: Using file %s"%self._bsLoc)
+            scope_logger.debug("FPGA: Using file %s"%self._bsLoc)
             return open(self._bsLoc, "rb")
         else:
             raise ValueError("Internal Error - self._release_mode set to invalid value: %s"%str(self._release_mode))
@@ -109,7 +110,7 @@ class CW_Loader(object):
         """
 
         if (release_mode != "builtin") and (release_mode != "debug") and (release_mode != "zipfile"):
-            logging.warning('FPGA mode switched to \'builtin\' from invalid setting of \'%s\'' % release_mode)
+            scope_logger.warning('FPGA mode switched to \'builtin\' from invalid setting of \'%s\'' % release_mode)
             release_mode = "builtin"
 
         self.write_setting("fpga-bitstream-mode", release_mode)
@@ -142,7 +143,7 @@ class CWLite_Loader(CW_Loader):
         if self.driver.isFPGAProgrammed() == False:
             self.driver.FPGAProgram(self.fpga_bitstream())
         else:
-            logging.info("FPGA Configuration skipped - detected already programmed")
+            scope_logger.info("FPGA Configuration skipped - detected already programmed")
 
     def setInterface(self, driver):
         self.driver = driver
@@ -175,7 +176,7 @@ class CW1200_Loader(CW_Loader):
         if self.driver.isFPGAProgrammed() == False:
             self.driver.FPGAProgram(self.fpga_bitstream())
         else:
-            logging.info("FPGA Configuration skipped - detected already programmed")
+            scope_logger.info("FPGA Configuration skipped - detected already programmed")
 
     def setInterface(self, driver):
         self.driver = driver
@@ -226,7 +227,7 @@ class FWLoaderConfig(object):
 
         if hasattr(self.loader, 'loadFirmware'):
             self.loader.loadFirmware()
-            logging.info('Firmware loaded')
+            scope_logger.info('Firmware loaded')
 
     def setFPGAMode(self, fpgamode):
         self.loader.setFPGAMode(fpgamode)
@@ -244,10 +245,10 @@ class FWLoaderConfig(object):
         #Print if in debug mode
         if self.loader.fpga_bitstream_date():
             strdate = self.loader.fpga_bitstream_date()
-            logging.info('FPGA: DEBUG MODE: Using .bit file, date: %s' % strdate)
+            scope_logger.info('FPGA: DEBUG MODE: Using .bit file, date: %s' % strdate)
 
         self.loader.loadFPGA()
-        logging.info('FPGA programmed')
+        scope_logger.info('FPGA programmed')
 
     def setInterface(self, dev):
         self.loader.setInterface(dev)

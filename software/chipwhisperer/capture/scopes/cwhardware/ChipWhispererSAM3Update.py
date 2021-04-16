@@ -34,6 +34,7 @@ except ImportError:
             return ["pyserial not installed"]
 from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
+from chipwhisperer.logging import *
 
 #The firmware files, may still be useful
 

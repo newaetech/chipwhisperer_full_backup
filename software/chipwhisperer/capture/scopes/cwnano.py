@@ -26,6 +26,9 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
+
+from chipwhisperer.logging import *
+
 import numpy as np
 from usb import USBError
 from .base import ScopeTemplate
@@ -687,7 +690,7 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
 
                 # If we've timed out, don't wait any longer for a trigger
                 if (diff.total_seconds() > self._timeout):
-                    logging.warning('Timeout in cwnano capture()')
+                    scope_logger.warning('Timeout in cwnano capture()')
                     return True
 
             self._lasttrace = self._cwusb.cmdReadMem(0, self.adc.samples)
@@ -695,12 +698,12 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
             # can just keep rerunning this until it works I think
             i = 0
             while len(self._lasttrace) < self.adc.samples:
-                logging.debug("couldn't read ADC data from Nano, retrying...")
+                scope_logger.debug("couldn't read ADC data from Nano, retrying...")
 
                 self._lasttrace = self._cwusb.cmdReadMem(0, self.adc.samples)
                 i+= 1
                 if i > 20:
-                    logging.warning("Couldn't read trace data back from Nano")
+                    scope_logger.warning("Couldn't read trace data back from Nano")
                     return True
             self._lasttrace = np.array(self._lasttrace) / 256.0 - 0.5
 

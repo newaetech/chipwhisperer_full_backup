@@ -33,6 +33,8 @@ from ._base import TargetTemplate
 from chipwhisperer.common.utils import util
 #from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
+from chipwhisperer.logging import *
+
 try:
     import ftd2xx as ft
 except OSError:  # Also catches WindowsError
@@ -178,7 +180,7 @@ class SakuraG(TargetTemplate):
         self.hw = ChipWhispererComm(standalone=False)
 
         self.fixedStart = True
-        logging.warning("SAKURA-G support is currently in an alpha state - errors may occur")
+        target_logger.warning("SAKURA-G support is currently in an alpha state - errors may occur")
         # self.hw = None
 
     def getConn(self):
@@ -212,7 +214,7 @@ class SakuraG(TargetTemplate):
             # For SAKURA-G normally we use 'A' channel
             # ser = self.findParam('serno').getValue()
             # if ser.endswith('A') is False:
-            #     logging.warning('Normally SAKURA-G uses "A" ending in serial number')
+            #     target_logger.warning('Normally SAKURA-G uses "A" ending in serial number')
             self.hw.setSerial(ser)
 
         if self.hw.con(scope):

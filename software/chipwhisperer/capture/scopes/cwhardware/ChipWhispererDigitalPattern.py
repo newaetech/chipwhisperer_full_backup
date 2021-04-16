@@ -36,6 +36,7 @@ CODE_WRITE      = 0xC0
 ADDR_TRIGCLKDIV = 36
 ADDR_TRIGIOPROG = 37
 
+from chipwhisperer.logging import *
 
 class CWAdvTrigger(object):
     def __init__(self, oa):
@@ -219,7 +220,7 @@ class ChipWhispererDigitalPattern(Parameterized):
         patt = eval(patt, {}, {})
 
         if len(patt) > 1:
-            logging.warning('IO Pattern too large! Restricted.')
+            scope_logger.warning('IO Pattern too large! Restricted.')
             self.findParam('trigpatt').setValue(patt[0])
             return
 
