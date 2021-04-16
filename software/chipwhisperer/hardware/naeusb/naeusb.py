@@ -740,10 +740,10 @@ class NAEUSB(object):
         naeusb_logger.info('SAM3U Firmware version = %d.%d b%d' % (fwver[0], fwver[1], fwver[2]))
 
         latest = fwver[0] > fw_latest[0] or (fwver[0] == fw_latest[0] and fwver[1] >= fw_latest[1])
-        # if not latest:
+        if not latest:
             naeusb_logger.warning('Your firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
-        #                     '. Suggested to update firmware, as you may experience errors' +
-        #                     '\nSee https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update')
+                             '. Suggested to update firmware, as you may experience errors' +
+                             '\nSee https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update')
         return foundId
 
     def usbdev(self):

@@ -225,6 +225,68 @@ class CW310(CW305):
         self._naeusb.CMD_CDC_SETTINGS_EN = 0x41
         return self._naeusb.set_cdc_settings(port)
 
+    def _test(self):
+        print("Testing PGOOD/FPGA Power")
+        print("Turning off FPGA power...")
+        self._io.pin_set_state("PB27", 0)
+        time.sleep(0.5)
+        pgood_states = [self._io.pin_get_state("PC16") , self._io.pin_get_state("PC19") , 
+                        self._io.pin_get_state("PC20") , self._io.pin_get_state("PB11")]
+        if 1 in pgood_states:
+            print("ERROR: PGOOD high when power set to low: {}".format(pgood_states))
+        else:
+            print("OK: PGOOD low when power off")
+            
+        resp = input("Power LEDs off? [y/n]")
+        if resp == 'y' or resp == 'Y':
+            print("PGOOD LEDs ok")
+        
+        print("Turning on FPGA power...")
+        self._io.pin_set_state("PB27", 1)
+        time.sleep(0.5)
+        pgood_states = [self._io.pin_get_state("PC16") , self._io.pin_get_state("PC19") , 
+                        self._io.pin_get_state("PC20") , self._io.pin_get_state("PB11")]
+        
+        if 0 in pgood_states:
+            print("ERROR: PGOOD low when power set to high: {}".format(pgood_states))
+        else:
+            print("OK: PGOOD high when power high") 
+            
+        resp = input("Power LEDs on? [y/n]")
+        if resp == 'y' or resp == 'Y':
+            print("PGOOD LEDs ok")
+            
+        print("Testing reset power button - please press it")
+        
+        button_ok = False
+        for i in range(500):
+            if self._io.pin_get_state("PB23") == 0:
+                button_ok = True
+                break
+            time.sleep(0.01)
+        if not button_ok:
+            print("ERROR: Couldn't detect button press")
+        else:
+            print("OK: Button press detected")
+            
+        print("Setting temp LEDs high")
+        input("Press ENTER when ready to look")
+        self._io.pin_set_state("PA0", 1)
+        self._io.pin_set_state("PA1", 1)
+        
+        resp = input("Did both go or stay on? [y/n]")
+        if "y" == resp or "Y" == resp:
+            print("Temp LEDs ok")
+            
+        print("Setting temp LEDs low")
+        input("Press ENTER when ready to look")
+        self._io.pin_set_state("PA0", 0)
+        self._io.pin_set_state("PA1", 0)
+        
+        resp = input("Did both go or stay off? [y/n]")
+        if "y" == resp or "Y" == resp:
+            print("Temp LEDs ok")
+
 
 class FPGAIO:
     """ User IO to override external bus.
