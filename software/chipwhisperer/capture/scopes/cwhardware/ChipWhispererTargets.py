@@ -37,6 +37,7 @@ ADDR_TRIGSRC = 39
 ADDR_TRIGMOD = 40
 
 
+from chipwhisperer.logging import *
 class CWUniversalSerialProcessor(object):
     def bitsToTxPattern(self, bits, samplesperbit=1, idle=1):
         txpattern = []
@@ -118,7 +119,7 @@ class CWUniversalSerialProcessor(object):
                 
                 for n in range(1, startbits):
                     if self.averageBits(bits[bindex:(bindex+samplesperbit)]) != 0:
-                        logging.warning('USI Missing expected start bit')
+                        scope_logger.warning('USI Missing expected start bit')
                     bindex += samplesperbit
                 
                 byte = 0
@@ -140,16 +141,16 @@ class CWUniversalSerialProcessor(object):
                     if (onecnt % 2) == 0:
                         #Even number of 1's present
                         if (parity == "even" and paritystate == 1) or (parity == "odd" and paritystate == 0):
-                            logging.warning('USI parity error')
+                            scope_logger.warning('USI parity error')
                      
                     else:
                         #Even number of 1's present
                         if (parity == "even" and paritystate == 0) or (parity == "odd" and paritystate == 1):
-                            logging.warning('USI parity error')
+                            scope_logger.warning('USI parity error')
                                 
                 for n in range(0, stopbits):       
                     if self.averageBits(bits[bindex:(bindex+samplesperbit)]) != 1:
-                        logging.warning('USI Missing expected stop bit @ point=%d,byte=%d' % (bindex,len(bytelist)))
+                        scope_logger.warning('USI Missing expected stop bit @ point=%d,byte=%d' % (bindex,len(bytelist)))
                     #else:
                     #    print "found stop bit"
                     bindex += samplesperbit
@@ -308,7 +309,7 @@ class CWUniversalSerial(object):
         #    print "%02x "%result[t],
         #print ""
             
-        logging.info(self.proc.rxPatternToString(result, 4))
+        scope_logger.info(self.proc.rxPatternToString(result, 4))
 
     def setBaud(self, baud=9600, oversamplerate=None):        
         if oversamplerate:
@@ -476,7 +477,7 @@ class CWSCardIntegrated(object):
         cmd[0] = 0x00
         self.oa.sendMessage(CODE_WRITE, ADDR_STATUS, cmd, Validate=False)            
 
-        logging.info(stratr)
+        scope_logger.info(stratr)
         self.stratr = stratr
         return stratr
         
@@ -504,7 +505,7 @@ class CWSCardIntegrated(object):
         if (resp[0] & FLAG_ACKOK):            
             return True
         else:
-            logging.warning('No ACK from SCard?')
+            scope_logger.warning('No ACK from SCard?')
             return False
 
     def dis(self):
@@ -533,7 +534,7 @@ class CWSCardIntegrated(object):
     def APDUPayloadGo(self, payload=None):
         if payload:
             if len(payload) > 16:
-                logging.warning('APDU Payload must be < 16 bytes')
+                scope_logger.warning('APDU Payload must be < 16 bytes')
             payload = bytearray(payload)
             payload = payload + bytearray(list(range(16-len(payload))))
         else:
@@ -551,7 +552,7 @@ class CWSCardIntegrated(object):
         resp = self.readPayload()
 
         if len(resp) != 18:
-            logging.error('SASEBOW: USB Data Error, wrong Response Size')
+            scope_logger.error('SASEBOW: USB Data Error, wrong Response Size')
             return 0
 
         status = resp[16:18]
@@ -566,7 +567,7 @@ class CWSCardIntegrated(object):
         resp = self.readPayload()
 
         if len(resp) != 18:
-            logging.error('SASEBOW: USB Data Error, wrong Response Size')
+            scope_logger.error('SASEBOW: USB Data Error, wrong Response Size')
             return 0
 
         return bytearray(resp)
@@ -586,7 +587,7 @@ class CWSCardIntegrated(object):
         if key != None:
             resp = self.APDUSend(0x80, 0x12, 0x00, 0x00, key)
             if resp != 0x9000:
-                logging.warning('SCard returned 0x%x' % resp)
+                scope_logger.warning('SCard returned 0x%x' % resp)
                 return False
         return True
       
@@ -602,12 +603,12 @@ class CWSCardIntegrated(object):
         status = resp[16:18]
         status = (status[0] << 8) | status[1]
         if status != 0x9000:
-            logging.warning('In readOutput: SCard returned 0x%x' % status)
+            scope_logger.warning('In readOutput: SCard returned 0x%x' % status)
         return resp[:16]
 
     def go(self):
         resp = self.APDUSend(0x80, 0x04, 0x04, 0x00, self.input)
         if resp != 0x9F10:
-            logging.warning('In go: SCard returned 0x%x' % resp)
+            scope_logger.warning('In go: SCard returned 0x%x' % resp)
             return False
         return True   

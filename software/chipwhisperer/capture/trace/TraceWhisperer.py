@@ -34,6 +34,13 @@ from chipwhisperer.common.traces import Trace
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from chipwhisperer.hardware.naeusb.fpga import FPGA
 
+top_logger = logging.getLogger("Top level")
+target_logger = logging.getLogger("Target")
+scope_logger = logging.getLogger("Scope")
+naeusb_logger = logging.getLogger("NAEUSB")
+tracewhisperer_logger = logging.getLogger("TraceWhisperer")
+glitch_logger = logging.getLogger("Glitch")
+
 class TraceWhisperer():
 
     """ Trace interface object.
@@ -113,7 +120,7 @@ class TraceWhisperer():
             # check the FW version here:
             fw_latest = [1,1]
             if self._naeusb.readFwVersion()[0] < fw_latest[0]:
-               logging.warning('Your PhyWhisperer firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
+               tracewhisperer_logger.\\1fw_latest[0], fw_latest[1]) +
                                '. Suggested to update firmware, as you may experience errors.')
  
             self._fpga = FPGA(self._naeusb)
@@ -188,7 +195,7 @@ class TraceWhisperer():
                             self.verilog_define_matches += 1
                             setattr(self, match.group(1), int(match.group(2),10) + block_offset)
                         else:
-                            logging.warning("Couldn't parse line: %s", define)
+                            tracewhisperer_logger.\\1"Couldn't parse line: %s", define)
             defines.close()
         # make sure everything is cool:
         assert self.verilog_define_matches == self.expected_verilog_defines, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected %d, got %d" % (defines_file, self.expected_verilog_defines, self.verilog_define_matches)
@@ -219,9 +226,9 @@ class TraceWhisperer():
             self._scope.clock.clkgen_freq = new_target_clock
             self._ss.baud = int(self._base_baud * (new_target_clock/self._base_target_clock))
             self.swo_target_clock_ratio = self._usb_clock / new_target_clock
-            logging.info("Ensure target is in SWD mode, e.g. using jtag_to_swd().")
+            tracewhisperer_logger.\\1).")
         else:
-            logging.error('Invalid mode %s: specify "trace" or "swo"', mode)
+            tracewhisperer_logger.\\1'Invalid mode %s: specify "trace" or "swo"', mode)
 
 
     def set_capture_mode(self, mode, counts=0):
@@ -242,7 +249,7 @@ class TraceWhisperer():
             self.fpga_write(self.REG_COUNT_WRITES, [1])
             self.fpga_write(self.REG_CAPTURE_LEN, int.to_bytes(counts, length=4, byteorder='little'))
         else:
-            logging.error('Invalid mode %s')
+            tracewhisperer_logger.\\1'Invalid mode %s')
 
 
     def set_board_rev(self, rev):
@@ -330,7 +337,7 @@ class TraceWhisperer():
             if printresult:
                 print(self._ss.read().split('\n')[0])
         else:
-            logging.error('Register %s does not exist.', reg)
+            tracewhisperer_logger.\\1'Register %s does not exist.', reg)
 
 
     def get_reg(self, reg):
@@ -344,7 +351,7 @@ class TraceWhisperer():
             time.sleep(0.1)
             return self._ss.read().split('\n')[0][1:]
         else:
-            logging.error('Register %s does not exist.', reg)
+            tracewhisperer_logger.\\1'Register %s does not exist.', reg)
 
 
     def set_pattern_match(self, index, pattern, mask=[0xff]*8):
@@ -516,7 +523,7 @@ class TraceWhisperer():
 
         if len(data): # maybe we only got empty reads
             if data[-1][2] & 2**self.FE_FIFO_STAT_UNDERFLOW:
-                logging.warning("Capture FIFO underflowed!")
+                tracewhisperer_logger.\\1"Capture FIFO underflowed!")
 
         return data
 

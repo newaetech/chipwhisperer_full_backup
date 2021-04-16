@@ -27,6 +27,7 @@ import logging
 from . import _OpenADCInterface as openadc
 from chipwhisperer.common.utils import util
 
+from chipwhisperer.logging import *
 
 class OpenADCQt(object):
     _name= 'OpenADC'
@@ -56,12 +57,12 @@ class OpenADCQt(object):
         fpData = []
 
         if data[0] != 0xAC:
-            logging.warning("Unexpected sync byte: 0x%x" % data[0])
+            scope_logger.warning("Unexpected sync byte: 0x%x" % data[0])
             return None
 
         for i in range(2, len(data)-1, 2):
             if (0x80 & data[i + 1]) or ((0x80 & data[i + 0]) == 0):
-                logging.error('Error at byte ' + str(i) + '. Bytes: %x %x' % (data[i], data[i+1]))
+                scope_logger.error('Error at byte ' + str(i) + '. Bytes: %x %x' % (data[i], data[i+1]))
                 return None
 
             #Convert
@@ -87,15 +88,15 @@ class OpenADCQt(object):
         if numberPoints == None:
             numberPoints = self.parm_trigger.samples
         
-        logging.debug("Expecting {} points".format(numberPoints))
+        scope_logger.debug("Expecting {} points".format(numberPoints))
 
         try:
             self.datapoints = self.sc.readData(numberPoints)
 
             # this stuff takes longer than you'd expect
-            logging.debug("Read {} datapoints".format(len(self.datapoints)))
+            scope_logger.debug("Read {} datapoints".format(len(self.datapoints)))
             if (self.datapoints is None) or (len(self.datapoints) != numberPoints):
-                logging.error("Received fewer points than expected! {} vs {}".format(len(self.datapoints), numberPoints))
+                scope_logger.error("Received fewer points than expected! {} vs {}".format(len(self.datapoints), numberPoints))
                 return True #effectively a timeout for now
         except IndexError as e:
             raise IOError("Error reading data: %s" % str(e))

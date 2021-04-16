@@ -11,6 +11,8 @@ try:
 except:
     ft = None
 
+from chipwhisperer.logging import *
+
 class SakuraGScopeType:
     def __init__(self, oadcInstance):
         super().__init__()

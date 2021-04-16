@@ -29,6 +29,7 @@ import traceback
 from datetime import datetime
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 from functools import reduce, wraps
+from chipwhisperer.logging import *
 
 def close_on_fail(func):
     @wraps(func)
@@ -306,7 +307,7 @@ class STM32FSerial(object):
                 self.scope.io.pdic = 'low'
             else:
                 raise ValueError('requires either scope or api to be set')
-        logging.info("Assuming appropriate BOOT pins set HIGH on STM32F Hardware now")
+        target_logger.info("Assuming appropriate BOOT pins set HIGH on STM32F Hardware now")
 
 
 
@@ -345,7 +346,7 @@ class STM32FSerial(object):
                     raise AttributeError('sp attribute requires call to open_port')
                 return self._wait_for_ask("Syncro")
             except CmdException:
-                logging.info("Sync failed with error %s, retrying..." % traceback.format_exc())
+                target_logger.info("Sync failed with error %s, retrying..." % traceback.format_exc())
                 fails += 1
 
         self.releaseChip()
@@ -363,17 +364,17 @@ class STM32FSerial(object):
 
     def cmdGet(self):
         if self.cmdGeneric(0x00):
-            logging.info("*** Get command");
+            target_logger.info("*** Get command");
             len = self.sp.read(1)[0]
             version = self.sp.read(1)[0]
-            logging.info("    Bootloader version: " + hex(version))
+            target_logger.info("    Bootloader version: " + hex(version))
             #dat = map(lambda c: hex(self.sp.read(len))
             dat = list(map(hex, self.sp.read(len)))
             if '0x44' in dat:
                 self.extended_erase = 1
             else:
                 self.extended_erase = 0
-            logging.info("    Available commands: " + ", ".join(dat))
+            target_logger.info("    Available commands: " + ", ".join(dat))
             self._wait_for_ask("0x00 end")
             return version
         else:
@@ -381,18 +382,18 @@ class STM32FSerial(object):
 
     def cmdGetVersion(self):
         if self.cmdGeneric(0x01):
-            logging.debug("*** GetVersion command")
+            target_logger.debug("*** GetVersion command")
             version = self.sp.read(1)[0]
             self.sp.read(2)
             self._wait_for_ask("0x01 end")
-            logging.debug("    Bootloader version: " + hex(version))
+            target_logger.debug("    Bootloader version: " + hex(version))
             return version
         else:
             raise CmdException("GetVersion (0x01) failed")
 
     def cmdGetID(self):
         if self.cmdGeneric(0x02):
-            logging.debug("*** GetID command")
+            target_logger.debug("*** GetID command")
             len = self.sp.read(1)[0]
             id = self.sp.read(len + 1)
             self._wait_for_ask("0x02 end")
@@ -409,7 +410,7 @@ class STM32FSerial(object):
     def cmdReadMemory(self, addr, lng):
         assert (0 < lng <= 256)
         if self.cmdGeneric(0x11):
-            logging.debug("*** ReadMemory command")
+            target_logger.debug("*** ReadMemory command")
             self.sp.write(self._encode_addr(addr))
             self._wait_for_ask("0x11 address failed")
             N = (lng - 1) & 0xFF
@@ -422,7 +423,7 @@ class STM32FSerial(object):
 
     def cmdGo(self, addr):
         if self.cmdGeneric(0x21):
-            logging.debug("*** Go command")
+            target_logger.debug("*** Go command")
             self.sp.write(self._encode_addr(addr))
             self._wait_for_ask("0x21 go failed")
         else:
@@ -434,12 +435,12 @@ class STM32FSerial(object):
             data += [0xff, 0xff, 0xff, 0xff][padding:]
         assert (0 < len(data) <= 256)
         if self.cmdGeneric(0x31):
-            logging.debug("*** Write memory command")
+            target_logger.debug("*** Write memory command")
             self.sp.write(self._encode_addr(addr))
             self._wait_for_ask("0x31 address failed")
             # map(lambda c: hex(ord(c)), data)
             lng = (len(data) - 1) & 0xFF
-            logging.debug("    %s bytes to write" % [lng + 1])
+            target_logger.debug("    %s bytes to write" % [lng + 1])
             self.sp.write(chr(lng))  # len really
             crc = lng
             for c in data:
@@ -449,7 +450,7 @@ class STM32FSerial(object):
                     self.delay_func(5)
             self.sp.write(chr(crc))
             self._wait_for_ask("0x31 programming failed")
-            logging.debug("    Write memory done")
+            target_logger.debug("    Write memory done")
         else:
             raise CmdException("Write memory (0x31) failed")
 
@@ -458,7 +459,7 @@ class STM32FSerial(object):
             return self.cmdExtendedEraseMemory()
 
         if self.cmdGeneric(0x43):
-            logging.debug("*** Erase memory command")
+            target_logger.debug("*** Erase memory command")
             if sectors is None:
                 # Global erase
                 self.sp.write(chr(0xFF))
@@ -472,13 +473,13 @@ class STM32FSerial(object):
                     self.sp.write(chr(c))
                 self.sp.write(chr(crc))
             self._wait_for_ask("0x43 erasing failed")
-            logging.info("    Erase memory done")
+            target_logger.info("    Erase memory done")
         else:
             raise CmdException("Erase memory (0x43) failed")
 
     def cmdExtendedEraseMemory(self):
         if self.cmdGeneric(0x44):
-            logging.debug("*** Extended Erase memory command")
+            target_logger.debug("*** Extended Erase memory command")
             # Global mass erase
             self.sp.write(chr(0xFF))
             self.sp.write(chr(0xFF))
@@ -493,14 +494,14 @@ class STM32FSerial(object):
             print("Extended erase (0x44), this can take ten seconds or more")
             self._wait_for_ask("0x44 erasing failed")
             self.sp.timeout = tmp
-            logging.info("    Extended Erase memory done")
+            target_logger.info("    Extended Erase memory done")
         else:
             raise CmdException("Extended Erase memory (0x44) failed")
 
     def cmdWriteProtect(self, sectors):
         # generates system reset upon success, programmer needs to be reopened again
         if self.cmdGeneric(0x63):
-            logging.info("*** Write protect command")
+            target_logger.info("*** Write protect command")
             self.sp.write(chr((len(sectors) - 1) & 0xFF))
             crc = 0xFF
             for c in sectors:
@@ -508,34 +509,34 @@ class STM32FSerial(object):
                 self.sp.write(chr(c))
             self.sp.write(chr(crc))
             self._wait_for_ask("0x63 write protect failed")
-            logging.info("    Write protect done")
+            target_logger.info("    Write protect done")
         else:
             raise CmdException("Write Protect memory (0x63) failed")
 
     def cmdWriteUnprotect(self):
         # generates system reset upon success, programmer needs to be reopened again
         if self.cmdGeneric(0x73):
-            logging.info("*** Write Unprotect command")
+            target_logger.info("*** Write Unprotect command")
             self._wait_for_ask("0x73 write unprotect failed")
-            logging.info("    Write Unprotect done")
+            target_logger.info("    Write Unprotect done")
         else:
             raise CmdException("Write Unprotect (0x73) failed")
 
     def cmdReadoutProtect(self):
         # generates system reset upon success, programmer needs to be reopened again
         if self.cmdGeneric(0x82):
-            logging.info("*** Readout protect command")
+            target_logger.info("*** Readout protect command")
             self._wait_for_ask("0x82 readout protect failed")
-            logging.info("    Read protect done")
+            target_logger.info("    Read protect done")
         else:
             raise CmdException("Readout protect (0x82) failed")
 
     def cmdReadoutUnprotect(self):
         # generates system reset upon success, programmer needs to be reopened again
         if self.cmdGeneric(0x92):
-            logging.info("*** Readout Unprotect command")
+            target_logger.info("*** Readout Unprotect command")
             self._wait_for_ask("0x92 readout unprotect failed")
-            logging.info("    Read Unprotect done")
+            target_logger.info("    Read Unprotect done")
         else:
             raise CmdException("Readout unprotect (0x92) failed")
 
@@ -567,7 +568,7 @@ class STM32FSerial(object):
 
         data = []
         while lng > block_size:
-            logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
+            target_logger.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
             data = self.cmdReadMemory(addr, block_size)
             if self.slow_speed:
                 self.delay_func(1)
@@ -576,12 +577,12 @@ class STM32FSerial(object):
             for i in range(0, len(data)):
                 if fdata[i+fdata_idx] != data[i]:
                     fails += 1
-                    logging.info("Verify failed at 0x%04x, %x != %x" % (i+fdata_idx, fdata[i+fdata_idx], data[i]))
+                    target_logger.info("Verify failed at 0x%04x, %x != %x" % (i+fdata_idx, fdata[i+fdata_idx], data[i]))
                     if fails > 3:
                         raise IOError("Verify failed at 0x%04x, %x != %x" % (i+fdata_idx, fdata[i+fdata_idx], data[i]))
                     else:
                         #Redo this block
-                        logging.info("Read error - attempting retry")
+                        target_logger.info("Read error - attempting retry")
                         redo_block = True
                         break
 
@@ -594,7 +595,7 @@ class STM32FSerial(object):
             addr += block_size
             lng -= block_size
 
-        logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
+        target_logger.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
         fails = 0
         while lng:
             data = self.cmdReadMemory(addr, lng)
@@ -604,12 +605,12 @@ class STM32FSerial(object):
             for i in range(0, len(data)):
                 if fdata[i + fdata_idx] != data[i]:
                     fails += 1
-                    logging.info("Verify read failure in block at address 0x%04x" % (i + fdata_idx))
+                    target_logger.info("Verify read failure in block at address 0x%04x" % (i + fdata_idx))
                     if fails > 3:
                         raise IOError("Verify repeated failure at 0x%04x, %x != %x" % (i + fdata_idx, fdata[i + fdata_idx], data[i]))
                     else:
                         # Redo this block
-                        logging.info("Verify failure - attempting retry now")
+                        target_logger.info("Verify failure - attempting retry now")
                         redo_block = True
                         break
 
@@ -634,14 +635,14 @@ class STM32FSerial(object):
 
         data = []
         while lng > block_size:
-            logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
+            target_logger.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
             data += self.cmdReadMemory(addr, block_size)
             if self.slow_speed:
                 self.delay_func(1)
             addr += block_size
             lng -= block_size
 
-        logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
+        target_logger.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
         if lng:
             data += self.cmdReadMemory(addr, lng)
         return data
@@ -687,14 +688,14 @@ class STM32FSerial(object):
 
         offs = 0
         while lng > block_size:
-            logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
+            target_logger.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': block_size})
 
             try:
                 self.cmdWriteMemory(addr, data[offs:offs + block_size])
             except CmdException:
                 # Try shrinking the block size for the writes
                 block_size = 64
-                logging.debug("Write with block size 256 failed, retrying with block size of 64")
+                target_logger.debug("Write with block size 256 failed, retrying with block size of 64")
                 self.cmdWriteMemory(addr, data[offs:offs + block_size])
 
             if self.slow_speed:
@@ -704,5 +705,5 @@ class STM32FSerial(object):
             lng -= block_size
 
         if lng:
-            logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
+            target_logger.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': lng})
             self.cmdWriteMemory(addr, data[offs:])

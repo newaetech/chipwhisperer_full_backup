@@ -16,6 +16,8 @@ import numpy as np
 from collections import OrderedDict
 import copy
 
+from chipwhisperer.logging import *
+
 ADDR_GAIN       = 0
 ADDR_SETTINGS   = 1
 ADDR_STATUS     = 2
@@ -447,13 +449,13 @@ class TriggerSettings(util.DisableNewAttr):
             diff = (12 - (samples % 12)) % 12
             samples += diff
             if diff > 0:
-                logging.warning("Sakura G samples must be divisible by 12, rounding up to {}...".format(samples))
+                scope_logger.warning("Sakura G samples must be divisible by 12, rounding up to {}...".format(samples))
 
         if self._get_fifo_fill_mode() == "segment":
             diff = (3 - (samples - 1) % 3)
             samples += diff
             if diff > 0:
-                logging.warning("segment mode requires (samples-1) divisible by 3, rounding up to {}...".format(samples))
+                scope_logger.warning("segment mode requires (samples-1) divisible by 3, rounding up to {}...".format(samples))
 
         self._cached_samples = samples
         self._set_num_samples(samples)
@@ -754,7 +756,7 @@ class TriggerSettings(util.DisableNewAttr):
         else:
             #Other Hardware
             if samples > 0:
-                logging.warning('Pre-sample on CW-Lite is unreliable with many FPGA bitstreams. '
+                scope_logger.warning('Pre-sample on CW-Lite is unreliable with many FPGA bitstreams. '
                                 'Check data is reliably recorded before using in capture.')
 
             #enforce samples is multiple of 3
@@ -1166,7 +1168,7 @@ class ClockSettings(util.DisableNewAttr):
 
     def _autoMulDiv(self, freq):
         if freq < 3.2E6: #practical min limit of clkgen
-            logging.warning("Requested clock value below minimum of 3.2MHz - DCM may not lock!")
+            scope_logger.warning("Requested clock value below minimum of 3.2MHz - DCM may not lock!")
         if self._get_clkgen_src() == "extclk":
             inpfreq = self._get_extclk_freq()
         else:
@@ -1281,7 +1283,7 @@ class ClockSettings(util.DisableNewAttr):
 
             timeout -= 1
 
-        logging.error("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
+        openadc_logger.error("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
                       " source settings. CLKGEN clock results are currently invalid.")
         return 1
 
@@ -1470,7 +1472,7 @@ class ClockSettings(util.DisableNewAttr):
 
             return phase
         else:
-            logging.warning("No phase shift loaded")
+            scope_logger.warning("No phase shift loaded")
             return 0
 
     def _get_adcclk_locked(self):
@@ -1487,7 +1489,7 @@ class ClockSettings(util.DisableNewAttr):
 
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         if (result[0] & 0x80) == 0:
-            logging.error("ADVCLK register not present. Version mismatch")
+            scope_logger.error("ADVCLK register not present. Version mismatch")
             return (False, False)
 
         if (result[0] & 0x40) == 0:
@@ -1626,7 +1628,7 @@ class OpenADCInterface(object):
             totalerror = totalerror + len([(i,j) for i,j in zip(testData,testDataEcho) if i!=j])
             totalbytes = totalbytes + len(testData)
 
-            logging.error('%d errors in %d' % (totalerror, totalbytes))
+            scope_logger.error('%d errors in %d' % (totalerror, totalbytes))
 
     def sendMessage(self, mode, address, payload=None, Validate=False, maxResp=None, readMask=None):
         """Send a message out the serial port"""
@@ -1638,7 +1640,7 @@ class OpenADCInterface(object):
         length = len(payload)
 
         if ((mode == CODE_WRITE) and (length < 1)) or ((mode == CODE_READ) and (length != 0)):
-            logging.warning('Invalid payload for mode')
+            scope_logger.warning('Invalid payload for mode')
             return None
 
         if mode == CODE_READ:
@@ -1687,7 +1689,7 @@ class OpenADCInterface(object):
                         else:
                             errmsg += "<Timeout>"
 
-                        logging.error(errmsg)
+                        scope_logger.error(errmsg)
         else:
             # ## Setup Message
             message = bytearray([])
@@ -1723,7 +1725,7 @@ class OpenADCInterface(object):
                 # Check for timeout, if so abort
                 if len(result) < 1:
                     self.flushInput()
-                    logging.warning('Timeout in read: %d (address: 0x%02x)' % (len(result), address))
+                    scope_logger.warning('Timeout in read: %d (address: 0x%02x)' % (len(result), address))
                     return None
 
                 rb = bytearray(result)
@@ -1751,7 +1753,7 @@ class OpenADCInterface(object):
                         else:
                             errmsg += "<Timeout>"
 
-                        logging.error(errmsg)
+                        scope_logger.error(errmsg)
 
 ### Generic
     def setSettings(self, state, validate=False):
@@ -1957,7 +1959,7 @@ class OpenADCInterface(object):
 
                 # If we've timed out, don't wait any longer for a trigger
                 if (diff.total_seconds() > self._timeout):
-                    logging.warning('Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid. Status: %02x'%status)
+                    scope_logger.warning('Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid. Status: %02x'%status)
                     timeout = True
                     self.triggerNow()
                     break
@@ -1967,14 +1969,14 @@ class OpenADCInterface(object):
             timeout |= stream_timeout
             #Check the status now
             bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
-            logging.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
+            scope_logger.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
             self.arm(False)
 
             if stream_timeout:
                 if self._stream_rx_bytes == 0: # == (self._stream_len - 3072):
-                    logging.warning("Streaming mode OVERFLOW occured as trigger too fast - Adjust offset upward (suggest = 200 000)")
+                    scope_logger.warning("Streaming mode OVERFLOW occured as trigger too fast - Adjust offset upward (suggest = 200 000)")
                 else:
-                    logging.warning("Streaming mode OVERFLOW occured during capture - ADC sample clock probably too fast for stream mode (keep ADC Freq < 10 MHz)")
+                    scope_logger.warning("Streaming mode OVERFLOW occured during capture - ADC sample clock probably too fast for stream mode (keep ADC Freq < 10 MHz)")
                 timeout = True
         else:
             status = self.getStatus()
@@ -1991,7 +1993,7 @@ class OpenADCInterface(object):
 
                 # If we've timed out, don't wait any longer for a trigger
                 if (diff.total_seconds() > self._timeout):
-                    logging.warning('Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid. Status: %02x'%status)
+                    scope_logger.warning('Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid. Status: %02x'%status)
                     timeout = True
                     self.triggerNow()
 
@@ -2035,7 +2037,7 @@ class OpenADCInterface(object):
         self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, None)
 
     def readData(self, NumberPoints=None, progressDialog=None):
-        logging.debug("Reading data fromm OpenADC...")
+        scope_logger.debug("Reading data from OpenADC...")
         if self._streammode:
             # Process data
             bsize = self.serial.cmdReadStream_size_of_fpgablock()
@@ -2047,7 +2049,7 @@ class OpenADCInterface(object):
             dbuf2_idx = 1
             for i in range(0, self._stream_rx_bytes, bsize):
                 if self._sbuf[i] != 0xAC:
-                    logging.warning("Stream mode: Expected sync byte (AC) at location %d but got %x" % (i, self._sbuf[i]))
+                    scope_logger.warning("Stream mode: Expected sync byte (AC) at location %d but got %x" % (i, self._sbuf[i]))
                     break
                 s = i + 1
                 data[dbuf2_idx: (dbuf2_idx + (bsize - 1))] = self._sbuf[s:(s + (bsize - 1))]
@@ -2055,15 +2057,15 @@ class OpenADCInterface(object):
                 # Write to next section
                 dbuf2_idx += (bsize - 1)
 
-            logging.debug("Stream mode: read %d bytes"%len(data))
+            scope_logger.debug("Stream mode: read %d bytes"%len(data))
 
             # Turn raw bytes into samples
             datapoints = self.processData(data, 0.0)
 
             if datapoints is not None and len(datapoints):
-                logging.debug("Stream mode: done, %d samples processed"%len(datapoints))
+                scope_logger.debug("Stream mode: done, %d samples processed"%len(datapoints))
             else:
-                logging.warning("Stream mode: done, no samples resulted from processing")
+                scope_logger.warning("Stream mode: done, no samples resulted from processing")
                 datapoints = []
 
             if len(datapoints) > NumberPoints:
@@ -2166,7 +2168,7 @@ class OpenADCInterface(object):
 
     def processData(self, data, pad=float('NaN'), debug=False):
         if data[0] != 0xAC:
-            logging.warning('Unexpected sync byte in processData(): 0x%x' % data[0])
+            scope_logger.warning('Unexpected sync byte in processData(): 0x%x' % data[0])
             #print(data)
             return None
 
@@ -2231,7 +2233,7 @@ class OpenADCInterface(object):
             fpData = np.reshape(data[:, [0, 1, 2]], (-1))
             trigger = data[:, 3] % 4
             fpData = fpData / 1024.0 - self.offset
-            logging.debug("Trigger_data: {} len={}".format(trigger, len(trigger)))
+            scope_logger.debug("Trigger_data: {} len={}".format(trigger, len(trigger)))
 
             # Search for the trigger signal
             trigfound = False
@@ -2248,10 +2250,10 @@ class OpenADCInterface(object):
         #print len(fpData)
 
         if trigfound == False:
-            logging.warning('Trigger not found in ADC data. No data reported!')
-            logging.debug('Trigger not found typically caused by the actual \
+            scope_logger.warning('Trigger not found in ADC data. No data reported!')
+            scope_logger.debug('Trigger not found typically caused by the actual \
             capture starting too late after the trigger event happens')
-            logging.debug('Data: {}'.format(orig_data))
+            scope_logger.debug('Data: {}'.format(orig_data))
 
 
         #Ensure that the trigger point matches the requested by padding/chopping
@@ -2259,12 +2261,12 @@ class OpenADCInterface(object):
         if diff > 0:
                #fpData = [pad]*diff + fpData
                fpData = np.append([pad]*diff, fpData)
-               logging.warning('Pretrigger not met: Do not use downsampling and pretriggering at same time.')
-               logging.debug('Pretrigger not met: can attempt to increase presampleTempMargin(in the code).')
+               scope_logger.warning('Pretrigger not met: Do not use downsampling and pretriggering at same time.')
+               scope_logger.debug('Pretrigger not met: can attempt to increase presampleTempMargin(in the code).')
         else:
                fpData = fpData[-diff:]
 
-        logging.debug("Processed data, ended up with %d samples total"%len(fpData))
+        scope_logger.debug("Processed data, ended up with %d samples total"%len(fpData))
 
         return fpData
 

@@ -33,6 +33,8 @@ import numpy as np
 from collections import OrderedDict
 from chipwhisperer.common.utils import util
 
+from chipwhisperer.logging import *
+
 sadcfgaddr  = 53
 saddataaddr = 54
 CODE_READ   = 0x80

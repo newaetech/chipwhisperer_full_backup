@@ -31,6 +31,8 @@ from functools import partial
 from . import ChipWhispererGlitch
 from chipwhisperer.common.utils import util
 
+from chipwhisperer.logging import *
+
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
 ADDR_DATA = 33
@@ -1380,7 +1382,7 @@ class CWPLLDriver(object):
         if bnew != bold:
             self.writeByte(11, bnew)
 
-        logging.debug('%x, %x' % (bnew, self.readByte(11)))
+        scope_logger.debug('%x, %x' % (bnew, self.readByte(11)))
 
     def readByte(self, regaddr, slaveaddr=0x69):
         d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])
