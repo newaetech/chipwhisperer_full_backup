@@ -168,16 +168,16 @@ class CW305_ECC(CW305):
             P = Point(Px, Py, self.curve)
             Q = k*P
             if verbose:
-                print("Expecting Qx = %s" % hex(Q.x))
-                print("Expecting Qy = %s" % hex(Q.y))
+                print("Expecting Qx = %32x" % Q.x)
+                print("Expecting Qy = %32x" % Q.y)
             if Q.x != Rx:
                 target_logger.error("Bad Rx!")
-                target_logger.error("expected %32x" % hex(Q.x))
-                target_logger.error("got      %32x" % hex(Rx))
+                target_logger.error("expected %32x" % Q.x)
+                target_logger.error("got      %32x" % Rx)
             if Q.y != Ry:
                 target_logger.error("Bad Ry!")
-                target_logger.error("expected %32x" % hex(Q.y))
-                target_logger.error("got      %32x" % hex(Ry))
+                target_logger.error("expected %32x" % Q.y)
+                target_logger.error("got      %32x" % Ry)
         return {'Rx': Rx, 'Ry': Ry}
 
 
