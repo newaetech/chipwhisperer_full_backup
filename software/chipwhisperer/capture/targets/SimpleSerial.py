@@ -252,7 +252,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             num_char (int, optional): Number of byte to read. If 0, read all
                 data available. Defaults to 0.
             timeout (int, optional): How long in ms to wait before returning.
-                If 0, block until data received. Defaults to 250.
+                If 0, block for a long time. Defaults to 250.
 
         Returns:
             String of received data.
