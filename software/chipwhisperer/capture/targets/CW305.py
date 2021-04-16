@@ -308,15 +308,22 @@ class CW305(TargetTemplate):
         self.usb_clk_setenabled(True)
         self.pll.cdce906init()
 
-        if defines_files is None:
-            if fpga_id is None:
-                verilog_defines = [self.default_verilog_defines_full_path]
-            else:
-                from chipwhisperer.hardware.firmware.cw305 import getsome
-                verilog_defines = [getsome(self.default_verilog_defines)]
-        else:
-            verilog_defines = defines_files
         if slurp:
+            # If fpga_id is provided, Verilog defines are obtained from CW305.py.
+            # Otherwise, we look for it in a default location; if that doesn't exist, revert to CW305.py and warn user.
+            found_defines = False
+            if defines_files is None:
+                if fpga_id is None:
+                    verilog_defines = [self.default_verilog_defines_full_path]
+                    if os.path.isfile(verilog_defines[0]):
+                        found_defines = True
+                    else:
+                        target_logger.warning("Verilog defines not found in default location (%s).\nUsing defines from CW305.py.If this isn't what you want, either add 'slurp=False', or provide defines location in 'defines_files'" % verilog_defines[0])
+                if not found_defines:
+                    from chipwhisperer.hardware.firmware.cw305 import getsome
+                    verilog_defines = [getsome(self.default_verilog_defines)]
+            else:
+                verilog_defines = defines_files
             self.slurp_defines(verilog_defines)
 
 
