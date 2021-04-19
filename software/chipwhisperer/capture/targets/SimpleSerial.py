@@ -262,6 +262,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         """
         if not self.connectStatus:
             raise Warning("Target not connected")
+        if timeout == 0:
+            timeout = 10000000000
         try:
             if num_char == 0:
                 num_char = self.ser.inWaiting()
