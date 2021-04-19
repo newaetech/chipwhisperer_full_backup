@@ -65,13 +65,11 @@ class CDCI6214:
         """Do required initial setup
         """
         # disable GPIO1/4 as inputs
-        self.update_reg(0x00, (1 << 13) | (1 << 12), 0)
+        self.update_reg(0x00, 0, (1 << 13) | (1 << 12))
         
-        self.update_reg(0x04, (1 << 3) | (1 << 4), 0) # turn off outputs 2 and 4
+        self.update_reg(0x04, 0, (1 << 3) | (1 << 4)) # turn off outputs 2 and 4
         
         self.update_reg(0x05, 0, 0b11111110111) # turn on power to everything
-        
-        self.update_reg(0x3B, 1 << 4, 0) # Set output driver to high speed
         
         # disable SYNC on channel 3
         self.update_reg(0x32, 0 << 10, 1 << 10)
