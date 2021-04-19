@@ -114,7 +114,7 @@ class OpenADCInterface_NAEUSBChip(object):
             exctype, value = sys.exc_info()[:2]
             raise IOError("OpenADC: " + (str(exctype) + str(value)))
 
-    def reload_fpga(self, bitstream):
+    def reload_fpga(self, bitstream, reconnect=True):
 
         if bitstream is None:
             raise NotImplementedError("Oops I forgot about that")
@@ -133,12 +133,13 @@ class OpenADCInterface_NAEUSBChip(object):
             raise
         self.ser = self.dev.usbdev()
 
-        try:
-            self.scope.con(self.ser)
-            logging.info('OpenADC Found, Connecting')
-        except IOError as e:
-            exctype, value = sys.exc_info()[:2]
-            raise IOError("OpenADC: " + (str(exctype) + str(value)))
+        if reconnect:
+            try:
+                self.scope.con(self.ser)
+                logging.info('OpenADC Found, Connecting')
+            except IOError as e:
+                exctype, value = sys.exc_info()[:2]
+                raise IOError("OpenADC: " + (str(exctype) + str(value)))
 
     def dis(self):
         if self.ser is not None:
