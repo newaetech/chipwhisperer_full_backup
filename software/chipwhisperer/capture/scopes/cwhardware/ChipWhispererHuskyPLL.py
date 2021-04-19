@@ -72,7 +72,19 @@ class CDCI6214:
         
         # disable SYNC on channel 1
         self.update_reg(0x26, 0 << 10, 1 << 10)
-        
+
+        # disable glitchless on channel 3
+        self.update_reg(0x33, 0, 1)
+
+        # disable glitchless on channel 1
+        self.update_reg(0x27, 0, 1)
+
+        # Disable channel 2: mute=1, outbuf=off
+        self.update_reg(0x2C, (1<<7), (1<<7) | (0x7<<2))
+
+        # Disable channel 4: mute-1
+        self.update_reg(0x38, (1<<7), (1<<7) | (0x7<<2))
+
         # Set ref input as AC-differential, XIN to xtal
         self.update_reg(0x1A, (1 << 15) | (0x0B << 8), (1 << 15) | 0b11 | (0xFF << 8))
         
@@ -90,7 +102,14 @@ class CDCI6214:
             prescale_reg = (self.read_reg(0x1E, True) >> 0) & 0b11
             prescale = prescale_lut[prescale_reg]
 
-            outdiv = (self.read_reg(0x31, True) & 0x3FFF)
+            outdiv = self.read_reg(0x31, True)
+            #Bypass mode in upper bits
+            if outdiv & 0xC000 == 0xC000:
+                #Todo - return better value
+                return "BYPASS"
+
+            #Div held in lower bits
+            outdiv = outdiv & 0x3FFF
             if outdiv == 0:
                 return 0
 
@@ -158,7 +177,7 @@ class CDCI6214:
         if div > 0x3FFF:
             raise ValueError("Div too big")
         if pll_out == 3:
-            self.update_reg(0x31, div, 0xFFFF) # set div
+            self.update_reg(0x31, div, 0x3FFF) # set div
             self.update_reg(0x32, (1) | (1 << 2), 0xFF) # LVDS CH3
             self.reset()
         elif pll_out == 1:
@@ -193,6 +212,32 @@ class CDCI6214:
         #print("Found div {} prescale {}".format(best_div, best_prescale))
         self.set_prescale(pll_out, best_prescale)
         self.set_outdiv(pll_out, best_div)
+    
+    def set_bypass_adc(self, enable_bypass):
+        """Routes FPGA clock input directly to ADC, bypasses PLL.
+        """
+        if enable_bypass:       
+            #fpga input
+            self.pll_src = "fpga"
+
+            #For output 3 (hard coded):
+
+            # turn on bypass buffer for CH3
+            self.update_reg(0x1B, (1<<13), (1<<13))
+
+            # Output divide by 1
+            self.update_reg(0x31, 1, 0x3FFF)
+
+            # Output source is REF
+            self.update_reg(0x31, 0xC000, 0xC000)
+        else:
+
+            # Output source is PSA
+            self.update_reg(0x31, 0, 0xC000)
+
+            # turn off bypass buffer for CH3
+            self.update_reg(0x1B, 0, (1<<13))
+
         
     @property
     def pll_src(self):
