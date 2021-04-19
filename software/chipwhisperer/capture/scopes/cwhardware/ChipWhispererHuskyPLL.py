@@ -37,26 +37,26 @@ class CDCI6214:
             return (data[1]) | (data[2] << 8)
         return bytearray(data[1:])
     
-    def update_reg(self, addr, data, mask):
-        """data/mask can be a 16-bit integer or a 2 element list
-        
-        Ands the register data with mask, then ORs data
+    def update_reg(self, addr, bits_to_set, bits_to_clear):
+        """bits_to_set/bits_to_clear can be a 16-bit integer or a 2 element list.
+        The clear is applied first, so you can clear a register with 0xffff to set
+        everything after.
         """
         
-        if not hasattr(data, "__getitem__"):
-            tmp = [data & 0xFF, (data >> 8) & 0xFF]
-            data = tmp
+        if not hasattr(bits_to_set, "__getitem__"):
+            tmp = [bits_to_set & 0xFF, (bits_to_set >> 8) & 0xFF]
+            bits_to_set = tmp
             
-        if not hasattr(mask, "__getitem__"):
-            tmp = [mask & 0xFF, (mask >> 8) & 0xFF]
-            mask = tmp
+        if not hasattr(bits_to_clear, "__getitem__"):
+            tmp = [bits_to_clear & 0xFF, (bits_to_clear >> 8) & 0xFF]
+            bits_to_clear = tmp
             
         reg_val = self.read_reg(addr, as_int=False)
-        reg_val[0] &= 0xFF - mask[0] # the not we want ;)
-        reg_val[1] &= 0xFF - mask[1]
+        reg_val[0] &= 0xFF - bits_to_clear[0] # the not we want ;)
+        reg_val[1] &= 0xFF - bits_to_clear[1]
         
-        reg_val[0] |= data[0]
-        reg_val[1] |= data[1]
+        reg_val[0] |= bits_to_set[0]
+        reg_val[1] |= bits_to_set[1]
         
         self.write_reg(addr, reg_val)
 
@@ -65,17 +65,17 @@ class CDCI6214:
         """Do required initial setup
         """
         # disable GPIO1/4 as inputs
-        self.update_reg(0x00, 0, (1 << 13) | (1 << 12))
+        self.update_reg(0x00, (1 << 13) | (1 << 12), 0)
         
-        self.update_reg(0x04, 0, (1 << 3) | (1 << 4)) # turn off outputs 2 and 4
+        self.update_reg(0x04, (1 << 3) | (1 << 4), 0) # turn off outputs 2 and 4
         
         self.update_reg(0x05, 0, 0b11111110111) # turn on power to everything
         
         # disable SYNC on channel 3
-        self.update_reg(0x32, 0 << 10, 1 << 10)
+        self.update_reg(0x32, 0, 1 << 10)
         
         # disable SYNC on channel 1
-        self.update_reg(0x26, 0 << 10, 1 << 10)
+        self.update_reg(0x26, 0, 1 << 10)
 
         # disable glitchless on channel 3
         self.update_reg(0x33, 0, 1)
@@ -84,10 +84,10 @@ class CDCI6214:
         self.update_reg(0x27, 0, 1)
 
         # Disable channel 2: mute=1, outbuf=off
-        self.update_reg(0x2C, (1<<7), (1<<7) | (0x7<<2))
+        self.update_reg(0x2C, (1<<7), (0x7<<2))
 
-        # Disable channel 4: mute-1
-        self.update_reg(0x38, (1<<7), (1<<7) | (0x7<<2))
+        # Disable channel 4: mute-1, outbuf=off
+        self.update_reg(0x38, (1<<7), (0x7<<2))
 
         # Set ref input as AC-differential, XIN to xtal
         self.update_reg(0x1A, (1 << 15) | (0x0B << 8), (1 << 15) | 0b11 | (0xFF << 8))
@@ -143,7 +143,7 @@ class CDCI6214:
         """
         if xtal:
             # set input to xtal
-            self.update_reg(0x01, 0 << 8, 1 << 8)
+            self.update_reg(0x01, 0, 1 << 8)
             
             # divide input clock by 3
             self.update_reg(0x1B, 3, 0xFF)
@@ -227,13 +227,13 @@ class CDCI6214:
             #For output 3 (hard coded):
 
             # turn on bypass buffer for CH3
-            self.update_reg(0x1B, (1<<13), (1<<13))
+            self.update_reg(0x1B, (1<<13), 0)
 
             # Output divide by 1
             self.update_reg(0x31, 1, 0x3FFF)
 
             # Output source is REF
-            self.update_reg(0x31, 0xC000, 0xC000)
+            self.update_reg(0x31, 0xC000, 0)
         else:
 
             # Output source is PSA
