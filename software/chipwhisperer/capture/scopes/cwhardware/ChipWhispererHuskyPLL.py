@@ -18,19 +18,24 @@ class CDCI6214:
         if not hasattr(data, "__getitem__"):
             tmp = [data & 0xFF, (data >> 8) & 0xFF]
             data = tmp
-        self._scope._getNAEUSB().sendCtrl(0x28, data=[addr, 0x00])
-        self._scope._getNAEUSB().sendCtrl(0x29, data=data)
+
+        self._scope._getNAEUSB().sendCtrl(0x29, data=[1, addr, 0x00, data[0], data[1]])
         
     def read_reg(self, addr, as_int=False):
         """If as_int is True, return as a 16-bit integer
         
         Else return as a bytearray
         """
-        self._scope._getNAEUSB().sendCtrl(0x28, data=[addr, 0x00])
-        data = self._scope._getNAEUSB().readCtrl(0x29, dlen=2)
+
+        self._scope._getNAEUSB().sendCtrl(0x29, data=[0, addr, 0x00, 0, 0])    
+        data = self._scope._getNAEUSB().readCtrl(0x29, dlen=3)
+
+        if data[0] != 2:
+            raise IOError("PLL/I2C Error")
+
         if as_int is True:
-            return (data[0]) | (data[1] << 8)
-        return bytearray(data)
+            return (data[1]) | (data[2] << 8)
+        return bytearray(data[1:])
     
     def update_reg(self, addr, data, mask):
         """data/mask can be a 16-bit integer or a 2 element list
@@ -54,6 +59,7 @@ class CDCI6214:
         reg_val[1] |= data[1]
         
         self.write_reg(addr, reg_val)
+
         
     def setup(self):
         """Do required initial setup
