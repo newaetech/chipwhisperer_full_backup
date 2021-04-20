@@ -531,7 +531,7 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         if cmd == self.CMD_READMEM_BULK:
             data = self.usbdev().read(self.rep, dlen, timeout=self._timeout)
             # XXX Husky debug:
-            print('YYY BULK rep=%d, dlen=%d, got len=%d' % (self.rep, dlen, len(data)))
+            naeusb_logger.info('YYY BULK rep=%d, dlen=%d, got len=%d' % (self.rep, dlen, len(data)))
         else:
             data = self.readCtrl(cmd, dlen=dlen)
 

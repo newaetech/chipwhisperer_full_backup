@@ -2657,29 +2657,63 @@ class OpenADCInterface(object):
 
     def processHuskyData(self, NumberPoints, data):
         # TODO: this numpy magic may be faster?
-        #data = np.reshape(data, (-1, 4))
-        #data = np.left_shift(data, [24, 16, 8, 0])
-        #data = np.sum(data, 1)
-        # Split words into samples and trigger bytes
-        #data = np.right_shift(np.reshape(data, (-1, 1)), [0, 10, 20, 30]) & 0x3FF
-        #fpData = np.reshape(data[:, [0, 1, 2]], (-1))
+        # data = np.reshape(data, (-1, 4))
+        # data = np.left_shift(data, [24, 16, 8, 0])
+        # data = np.sum(data, 1)
+        # # Split words into samples and trigger bytes
+        # data = np.right_shift(np.reshape(data, (-1, 1)), [0, 10, 20, 30]) & 0x3FF
+        # fpData = np.reshape(data[:, [0, 1, 2]], (-1))
+        # i = np.arange(NumberPoints)
+        # a = np.where(i % 2, i, data)
+        # b = np.where(not (i % 2), i, data)
 
         if self._bits_per_sample == 12:
+            # samples = np.zeros(NumberPoints, dtype=np.int16)
+            # for i in range(NumberPoints):
+            #     if (i%2 == 0):
+            #         j = int(i*1.5)
+            #         samples[i] = (data[j]<<4) + (data[j+1]>>4)
+            #     else:
+            #         j = int((i-1)*1.5)
+            #         samples[i] = ((data[j+1] & 0xf)<<8) + data[j+2]
+
+            
+            # faster data process
+            data = np.array(data, dtype=np.int16)
+            data_len_div = len(data) % 3
+            if data_len_div != 0:
+                data = data[:-data_len_div]
+            else:
+                data = data[:-3]
+
+            i = np.arange(len(data), dtype=np.int32)
+            a = data[i%3==0]
+            b = data[i%3==1]
+            c = data[i%3==2]
             samples = np.zeros(NumberPoints, dtype=np.int16)
-            for i in range(NumberPoints):
-                if (i%2 == 0):
-                    j = int(i*1.5)
-                    samples[i] = (data[j]<<4) + (data[j+1]>>4)
-                else:
-                    j = int((i-1)*1.5)
-                    samples[i] = ((data[j+1] & 0xf)<<8) + data[j+2]
+            i = np.arange(NumberPoints, dtype=np.int32)
+            try:
+                samples[i%2==0] = (a << 4) + (b >> 4)
+                samples[i%2==1] = ((b & 0x0F) << 8) + c
+            except:
+                scope_logger.error("Husky processing error: data={}, a={}, b={}, c={}, NumPoints={}".format(data, a, b, c, NumberPoints))
+                scope_logger.error("lendata={}, lena={}, lenb={}, lenc={}".format(len(data), len(a), len(b), len(c)))
+                raise
+            # print("Samples equal?: {}".format((fast_samples==samples).all()))
+            # print(a[0], b[0], c[0], data[0], data[1], data[2])
+            # for i in range(NumberPoints):
+            #     if fast_samples[i] != samples[i]:
+            #         pass
+            #         #print("{} bad, {} vs {}".format(i, fast_samples[i], samples[i]))
+
         else:
             print('QWERTY')
             samples = data
 
-        fpData = samples / 2**self._bits_per_sample - self.offset
+        # fpData = samples / 2**self._bits_per_sample - self.offset
 
-        logging.debug("Processed data, ended up with %d samples total"%len(fpData))
+        #scope_logging.debug("Processed data, ended up with %d samples total"%len(fpData))
+        # print(data[0], data[1], data[2], samples[0], samples[1])
 
         #return fpData # XXX Husky: temporary
         return samples
