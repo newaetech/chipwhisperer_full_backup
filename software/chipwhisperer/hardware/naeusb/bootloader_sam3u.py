@@ -65,7 +65,8 @@ class Samba(object):
 
         # Binary mode
         ser.write("N#".encode("ascii"))
-        ser.read(2)
+        res = ser.read(2)
+        print(res)
 
         cid = self.chip_id()
 
@@ -99,7 +100,9 @@ class Samba(object):
         elif chipid == 0x28090560 or chipid == 0x28190560:
             flash = EefcFlash(self, "ATSAM3U1", 0x80000, 256, 256, 1, 8, 0x20001000, 0x20002000, 0x400e0800, False)
         elif chipid == 0x29970ce0:
-            flash = EefcFlash(self, "at91sam4sd16b", 0x400000, 2048, 512, 2, 256, 0x20001000, 0x20010000, 0x400e0a00, False);
+            flash = EefcFlash(self, "at91sam4sd16b", 0x400000, 2048, 512, 2, 256, 0x20001000, 0x20010000, 0x400e0a00, False)
+        elif chipid == 0x286e0a60 or chipid == 0x285e0a60  or chipid == 0x284e0a60 :
+            flash = EefcFlash(self, "ATSAM3X8", 0x80000, 2048, 256, 2, 32, 0x20001000, 0x20010000, 0x400e0a00, False)
         else:
             raise AttributeError("FWUP: Unsupported ChipID = %x" % chipid)
 
@@ -116,7 +119,12 @@ class Samba(object):
             cid = self.read_word(0xfffff240)
         # Else use the Atmel SAM3 registers
         else:
+            #This works on SAM3U/SAM4S
             cid = self.read_word(0x400e0740)
+
+            #SAM3x seems to be different - easily detected
+            if cid == 0:
+                cid = self.read_word(0x400e0940)
 
         return cid
 
