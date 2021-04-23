@@ -2642,10 +2642,10 @@ class OpenADCInterface(object):
                 bytesToRead = int(np.ceil(samplesToRead*1.5))
             else:
                 bytesToRead = samplesToRead
-            #print("XXX reading with NumberPoints=%d, bytesToRead=%d" % (NumberPoints, bytesToRead))
+            scope_logger.debug("XXX reading with NumberPoints=%d, bytesToRead=%d" % (NumberPoints, bytesToRead))
             data = self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, bytesToRead)
             # XXX Husky debug:
-            #print("XXX read %d bytes; NumberPoints=%d, bytesToRead=%d" % (len(data), NumberPoints, bytesToRead))
+            scope_logger.debug("XXX read %d bytes; NumberPoints=%d, bytesToRead=%d" % (len(data), NumberPoints, bytesToRead))
             if data is not None:
                 data = np.array(data)
                 datapoints = self.processHuskyData(NumberPoints, data)
@@ -2684,7 +2684,7 @@ class OpenADCInterface(object):
             if data_len_div != 0:
                 data = data[:-data_len_div]
             else:
-                data = data[:-3]
+                data = data[:]
 
             i = np.arange(len(data), dtype=np.int32)
             a = data[i%3==0]
