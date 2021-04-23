@@ -1,5 +1,7 @@
 from chipwhisperer.common.utils.util import dict_to_str, DelayedKeyboardInterrupt
+from chipwhisperer.logging import *
 import time
+import numpy as np
 
 class CDCI6214:
     def __init__(self, scope):
@@ -9,8 +11,11 @@ class CDCI6214:
         self.set_outdiv(3, 0)
         self.set_outdiv(1, 0)
 
-        self._pll_output_frequency = 2500E6 # 2.5GHz
-
+        self._input_freq = 12E6 # 12MHz
+        self._adc_mul = 4
+        self._set_target_freq = 7.37E6
+        self.set_prescale(3, 5)
+        self.set_prescale(1, 5)
         
     def write_reg(self, addr, data):
         """data can be a 16-bit integer or a 2 element list
@@ -42,6 +47,7 @@ class CDCI6214:
         The clear is applied first, so you can clear a register with 0xffff to set
         everything after.
         """
+        # print(bits_to_set, bits_to_clear)
         
         if not hasattr(bits_to_set, "__getitem__"):
             tmp = [bits_to_set & 0xFF, (bits_to_set >> 8) & 0xFF]
@@ -51,6 +57,7 @@ class CDCI6214:
             tmp = [bits_to_clear & 0xFF, (bits_to_clear >> 8) & 0xFF]
             bits_to_clear = tmp
             
+        # print(bits_to_set, bits_to_clear)
         reg_val = self.read_reg(addr, as_int=False)
         reg_val[0] &= 0xFF - bits_to_clear[0] # the not we want ;)
         reg_val[1] &= 0xFF - bits_to_clear[1]
@@ -58,6 +65,7 @@ class CDCI6214:
         reg_val[0] |= bits_to_set[0]
         reg_val[1] |= bits_to_set[1]
         
+        # print("Writing {} to addr {:02X} pll".format(reg_val, addr))
         self.write_reg(addr, reg_val)
 
         
@@ -78,10 +86,10 @@ class CDCI6214:
         self.update_reg(0x26, 0, 1 << 10)
 
         # disable glitchless on channel 3
-        self.update_reg(0x33, 0, 1)
+        self.update_reg(0x33, 1, 1)
 
         # disable glitchless on channel 1
-        self.update_reg(0x27, 0, 1)
+        self.update_reg(0x27, 1, 1)
 
         # Disable channel 2: mute=1, outbuf=off
         self.update_reg(0x2C, (1<<7), (0x7<<2))
@@ -181,42 +189,101 @@ class CDCI6214:
         if div > 0x3FFF:
             raise ValueError("Div too big")
         if pll_out == 3:
-            self.update_reg(0x31, div, 0x3FFF) # set div
+            self.update_reg(0x31, div, 0xFFFF) # set div
             self.update_reg(0x32, (1) | (1 << 2), 0xFF) # LVDS CH3
             self.reset()
         elif pll_out == 1:
-            self.update_reg(0x25, (1 << 14) | div, 0xFFFF) # set div, prescaler B
+            self.update_reg(0x25, div, 0xFFFF) # set div, prescaler A
             self.reset()
         else:
             raise ValueError("pll_out must be 1 or 3, not {}".format(pll_out))
+
+    def get_outdiv(self, pll_out=3):
+        if pll_out == 3:
+            return self.read_reg(0x31, True) & 0x3FFF
+        elif pll_out == 1:
+            return self.read_reg(0x25, True) & 0x3FFF
             
-    def set_outfreq(self, pll_out=3, freq=50E6):
-        base_freq = self._pll_output_frequency
-        if not freq:
-            self.set_outdiv(pll_out, 0)
-        if (freq < 100E3) or (freq > 250E6):
-            raise ValueError("Max freq = 250MHz, min freq = 100kHz, given {}".format(freq))
+    # def set_outfreq(self, pll_out=3, freq=50E6):
+    #     base_freq = self._pll_output_frequency
+    #     if not freq:
+    #         self.set_outdiv(pll_out, 0)
+    #     if (freq < 100E3) or (freq > 250E6):
+    #         raise ValueError("Max freq = 250MHz, min freq = 100kHz, given {}".format(freq))
             
-        best_error = float('inf') #infinite error
-        best_prescale = 4
-        best_div = 100
-        for prescale in range(4, 7):
-            fin = base_freq / prescale
-            div = int((fin / freq) + 0.5)
-            actual_freq = fin / div
-            error = abs(freq - actual_freq) / freq
-            if error < best_error:
-                best_error = error
-                best_prescale = prescale
-                best_div = div
+    #     best_error = float('inf') #infinite error
+    #     best_prescale = 4
+    #     best_div = 100
+    #     for prescale in range(5, 6):
+    #         fin = base_freq / prescale
+    #         div = int((fin / freq) + 0.5)
+    #         actual_freq = fin / div
+    #         error = abs(freq - actual_freq) / freq
+    #         if error < best_error:
+    #             best_error = error
+    #             best_prescale = prescale
+    #             best_div = div
                 
-            #print(error, prescale, div)
+            # print(error, prescale, div)
             
             
-        #print("Found div {} prescale {}".format(best_div, best_prescale))
-        self.set_prescale(pll_out, best_prescale)
-        self.set_outdiv(pll_out, best_div)
-    
+    #     print("Found div {} prescale {}".format(best_div, best_prescale))
+    #     self.set_prescale(pll_out, best_prescale)
+    #     self.set_outdiv(pll_out, best_div)
+
+    def set_outfreqs(self, input_freq, target_freq, adc_mul):
+        if (adc_mul < 1) or (adc_mul != int(adc_mul)):
+            raise ValueError("ADC must be >= 1 and an integer")
+        if (adc_mul * target_freq) > 200E6 or (adc_mul * target_freq < 10E6):
+            raise ValueError("Invalid adc_freq {}".format(adc_mul * target_freq))
+        okay_in_divs = [0.5]
+        okay_in_divs.extend(range(1, 256))
+        okay_in_divs = np.array(okay_in_divs)
+        okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) >= 1E6]
+        okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) <= 100E6]
+        # print(okay_in_divs)
+        
+        pll_muls = np.arange(5, 2**14)
+        # will just assume 5 for prescale works for both pll and output of pll
+        
+        pll_inputs = input_freq // okay_in_divs
+        # print(pll_inputs)
+        best_in_div = 0
+        best_out_div = 0
+        best_pll_mul = 0
+        best_error = float('inf')
+        
+        for okay_in_div in okay_in_divs:
+            pll_input = input_freq // okay_in_div
+            okay_pll_muls = np.array(pll_muls)
+            okay_pll_muls = okay_pll_muls[((pll_input * 5 * okay_pll_muls) >= 2400E6)]
+            okay_pll_muls = okay_pll_muls[((pll_input * 5 * okay_pll_muls) <= 2800E6)]
+            
+            for pll_mul in okay_pll_muls:
+                output_input = pll_input * pll_mul
+                out_div = int((output_input / target_freq) + 0.5)
+                out_div -= out_div % adc_mul
+                
+                # check outdiv valid later
+                real_target_freq = output_input / out_div
+                error = abs(target_freq - real_target_freq) / target_freq
+                if error < best_error:
+                    best_in_div = okay_in_div
+                    best_out_div = out_div
+                    best_pll_mul = pll_mul
+                    best_error = error
+                    # print("New best settings {} {} {} {}: {}".format(best_in_div, best_out_div, best_pll_mul, best_error, real_target_freq))
+                    
+        if best_error == float('inf'):
+            raise ValueError("Could not calculate pll settings for input {} with mul {}".format(target_freq, adc_mul))
+
+        self.set_prescale(3, 5)
+        self.set_input_div(best_in_div)
+        self.set_pll_mul(best_pll_mul)
+        self.set_outdiv(1, best_out_div)
+        self.set_outdiv(3, best_out_div // adc_mul)
+        self.reset()
+            
     def set_bypass_adc(self, enable_bypass):
         """Routes FPGA clock input directly to ADC, bypasses PLL.
         """
@@ -260,26 +327,75 @@ class CDCI6214:
             raise ValueError("Pll src must be either 'xtal' or 'fpga'")
 
     @property
-    def adc_freq(self):
-        return self.get_outfreq(pll_out=3)
-
-    @adc_freq.setter
-    def adc_freq(self, freq):
-        self.set_outfreq(pll_out=3, freq=freq)
+    def adc_mul(self):
+        return self._adc_mul
 
     @property
     def target_freq(self):
-        return self.get_outfreq(pll_out=1)
+        # return self.get_outfreq(pll_out=1)
+        return ((self.input_freq / self.get_input_div()) * (self.get_pll_mul()) / self.get_outdiv(1))
+
+    @property
+    def adc_freq(self):
+        return ((self.input_freq / self.get_input_div()) * (self.get_pll_mul()) / self.get_outdiv(3))
+
+
+    @property
+    def input_freq(self):
+        if self.pll_src == "xtal":
+            return 12E6
+        elif self.pll_src == "fpga":
+            return 48E6
+
+    def set_input_div(self, div):
+        okay_divs = [0.5]
+        okay_divs.extend(range(1, 256))
+        if div not in okay_divs:
+            raise ValueError("Invalid input div {}".format(div))
+
+        if div == 0.5:
+            div = 0
+
+        div = int(div)
+        self.update_reg(0x1B, div, 0xFF)
+
+    def get_input_div(self):
+        div = self.read_reg(0x1B, True) & 0xFF
+        if div == 0:
+            div = 0.5
+        return div
+
+    def set_pll_mul(self, mul):
+        okay_pll_muls = range(5, 2**14)
+        if mul not in okay_pll_muls:
+            raise ValueError("Invalid mul {}".format(mul))
+        mul = int(mul)
+        self.update_reg(0x1D, mul, 0x3FFF)
+
+    def get_pll_mul(self):
+        return self.read_reg(0x1D, True) & 0x3FFF
 
     @target_freq.setter
     def target_freq(self, freq):
-        self.set_outfreq(pll_out=1, freq=freq)
+        self._set_target_freq = freq
+        self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
+
+    @adc_mul.setter
+    def adc_mul(self, adc_mul):
+        self._adc_mul = adc_mul
+        self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
+
+    @property
+    def pll_locked(self):
+        return (self.read_reg(0x07, True) & (1 << 11)) == (1 << 11)
 
     def _dict_repr(self):
         dict = {}
         dict['pll_src'] = self.pll_src
         dict['adc_freq'] = self.adc_freq
         dict['target_freq'] = self.target_freq
+        dict['adc_mul'] = self.adc_mul
+        dict['pll_locked'] = self.pll_locked
         return dict
 
     def __repr__(self):
