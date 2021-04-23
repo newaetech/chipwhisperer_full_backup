@@ -323,7 +323,7 @@ class CDCI6214:
     @target_delay.setter
     def target_delay(self, delay):
         if (delay > 0b11111) or (delay < 0):
-            raise ValueError("Invalid Delay {}, must be between 0 and 31")
+            raise ValueError("Invalid Delay {}, must be between 0 and 31".format(delay))
 
         self.update_reg(0x26, (delay << 11) | (1 << 10), 0b11111 << 11)
 
@@ -335,7 +335,7 @@ class CDCI6214:
     @adc_delay.setter
     def adc_delay(self, delay):
         if (delay > 0b11111) or (delay < 0):
-            raise ValueError("Invalid Delay {}, must be between 0 and 31")
+            raise ValueError("Invalid Delay {}, must be between 0 and 31".format(delay))
 
         self.update_reg(0x32, (delay << 11) | (1 << 10), 0b11111 << 11)
         

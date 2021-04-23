@@ -40,6 +40,7 @@ from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
 from chipwhisperer.hardware.firmware import cw1200 as fw_cw1200
 from chipwhisperer.hardware.firmware import cw305  as fw_cw305
 from chipwhisperer.hardware.firmware import cwnano  as fw_nano
+from chipwhisperer.hardware.firmware import cwhusky as fw_cwhusky
 
 from chipwhisperer.logging import *
 
@@ -74,7 +75,7 @@ NEWAE_PIDS = {
     0xACE3: {'name': "ChipWhisperer-CW1200",   'fwver': fw_cw1200.fwver},
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fw_cw305.fwver},
     0xACE0: {'name': "ChipWhisperer-Nano", 'fwver': fw_nano.fwver},
-    0xACE5: {'name': "ChipWhisperer-CW1200",   'fwver': fw_cw1200.fwver},
+    0xACE5: {'name': "ChipWhisperer-Husky",   'fwver': fw_cwhusky.fwver},
 }
 
 class NAEUSB_Serializer_base(object):
