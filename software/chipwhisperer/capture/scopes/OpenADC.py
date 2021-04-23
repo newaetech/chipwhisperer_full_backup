@@ -284,6 +284,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
                 self.adc.oa._is_husky = True
                 self.adc.bits_per_sample = 12
                 self.ADS4128 = self.qtadc.parm_ads4128
+                self.XADC = self.qtadc.parm_xadc
             if self.advancedSettings:
                 self.io = self.advancedSettings.cwEXTRA.gpiomux
                 self.trigger = self.advancedSettings.cwEXTRA.triggermux
@@ -428,6 +429,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         if self._getCWType() == "cwhusky":
             dict['ADS4128'] = self.ADS4128._dict_repr()
             dict['pll'] = self.pll._dict_repr()
+            dict['XADC'] = self.XADC._dict_repr()
 
         return dict
 
