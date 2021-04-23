@@ -37,7 +37,7 @@ class CDCI6214:
         data = self._scope._getNAEUSB().readCtrl(0x29, dlen=3)
 
         if data[0] != 2:
-            raise IOError("PLL/I2C Error")
+            raise IOError("PLL/I2C Error, got {}".format(data))
 
         if as_int is True:
             return (data[1]) | (data[2] << 8)
@@ -80,11 +80,11 @@ class CDCI6214:
         
         self.update_reg(0x05, 0, 0b11111110111) # turn on power to everything
         
-        # disable SYNC on channel 3
-        self.update_reg(0x32, 0, 1 << 10)
+        # enable SYNC on channel 3
+        self.update_reg(0x32, 0b1, 1 << 10)
         
-        # disable SYNC on channel 1
-        self.update_reg(0x26, 0, 1 << 10)
+        # enable SYNC on channel 1
+        self.update_reg(0x26, 0b1, 1 << 10)
 
         # disable glitchless on channel 3
         self.update_reg(0x33, 1, 1)
@@ -126,7 +126,7 @@ class CDCI6214:
             if outdiv == 0:
                 return 0
 
-            return self._pll_output_frequency / outdiv / prescale
+            return self.input_freq / outdiv / prescale
         elif pll_out == 1:
             prescale_reg = (self.read_reg(0x1E, True) >> 2) & 0b11
             prescale = prescale_lut[prescale_reg]
@@ -135,12 +135,17 @@ class CDCI6214:
             if outdiv == 0:
                 return 0
 
-            return self._pll_output_frequency / outdiv / prescale
+            return self.input_freq / outdiv / prescale
             
     def reset(self):
         """Do a reset of the PLL chip. Doesn't reset registers
         """
         self.update_reg(0x0, 1 << 2, 0x00)
+
+    def sync_clocks(self):
+        """Resync clocks
+        """
+        self.update_reg(0x00, 1 << 5, 0x00)
         
     def recal(self):
         self.update_reg(0x0, 1 << 5, 1 << 5)
@@ -310,6 +315,29 @@ class CDCI6214:
             # turn off bypass buffer for CH3
             self.update_reg(0x1B, 0, (1<<13))
 
+    @property
+    def target_delay(self):
+        delay = (self.read_reg(0x26, True) >> 11) & 0b1111
+        return delay
+
+    @target_delay.setter
+    def target_delay(self, delay):
+        if (delay > 0b11111) or (delay < 0):
+            raise ValueError("Invalid Delay {}, must be between 0 and 31")
+
+        self.update_reg(0x26, (delay << 11) | (1 << 10), 0b11111 << 11)
+
+    @property
+    def adc_delay(self):
+        delay = (self.read_reg(0x32, True) >> 11) & 0b1111
+        return delay
+
+    @adc_delay.setter
+    def adc_delay(self, delay):
+        if (delay > 0b11111) or (delay < 0):
+            raise ValueError("Invalid Delay {}, must be between 0 and 31")
+
+        self.update_reg(0x32, (delay << 11) | (1 << 10), 0b11111 << 11)
         
     @property
     def pll_src(self):
@@ -412,6 +440,8 @@ class CDCI6214:
         dict['target_freq'] = self.target_freq
         dict['adc_mul'] = self.adc_mul
         dict['pll_locked'] = self.pll_locked
+        dict['adc_delay'] = self.adc_delay
+        dict['target_delay'] = self.target_delay
         return dict
 
     def __repr__(self):
