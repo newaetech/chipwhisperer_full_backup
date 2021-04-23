@@ -101,8 +101,8 @@ class CW310(CW305):
             raise ValueError("pdo_num must be 2 or 3, {}".format(pdo_num))
         if (voltage > 20 or voltage < 5):
             raise ValueError("Voltage must be between 5 and 20, {}".format(voltage))
-        self._naeusb.sendCtrl(0x40, 0, [0x28, 0x89 + (pdo_num - 2) * (0x04)])
-        snk_pdo = self._naeusb.readCtrl(0x41, 0, 4)
+        self._naeusb.sendCtrl(0x43, 0, [0x28, 0x89 + (pdo_num - 2) * (0x04)])
+        snk_pdo = self._naeusb.readCtrl(0x44, 0, 4)
         voltage *= 20
         voltage = int(voltage)
 
@@ -113,7 +113,7 @@ class CW310(CW305):
         snk_pdo[2] |= ((voltage >> 6) & 0x0F)
         target_logger.info(voltage)
         target_logger.info(snk_pdo)
-        self._naeusb.sendCtrl(0x41, 0, snk_pdo)
+        self._naeusb.sendCtrl(0x44, 0, snk_pdo)
 
     def usb_set_current(self, pdo_num, current):
         """Set the current for one of the USBC PDOs.
@@ -121,15 +121,15 @@ class CW310(CW305):
         PDO1 is always 5V 1A and cannot be changed.
 
         Args:
-            pdo_num (int): The PDO to set the voltage for. Can be 2 or 3
-            voltage (float): The voltage to set. Must be between 0.5 and 5 inclusive. Has
+            pdo_num (int): The PDO to set the current for. Can be 2 or 3
+            voltage (float): The current to set. Must be between 0.5 and 5 inclusive. Has
                             a resolution of 0.01A
         """
         if pdo_num not in [2, 3]:
             raise ValueError("pdo_num must be 2 or 3, {}".format(pdo_num))
         if (current > 5 or current < 0.5):
-            raise ValueError("Current must be between 0.5 and 5, {}".format(voltage))
-        snk_pdo = self._naeusb.readCtrl(0x41, 0, 4)
+            raise ValueError("Current must be between 0.5 and 5, {}".format(current))
+        snk_pdo = self._naeusb.readCtrl(0x44, 0, 4)
         current *= 100
         current = int(current)
 
@@ -140,18 +140,18 @@ class CW310(CW305):
         snk_pdo[1] |= ((current >> 8) & 0x03)
         target_logger.info(current)
         target_logger.info(snk_pdo)
-        self._naeusb.sendCtrl(0x41, 0, snk_pdo)
+        self._naeusb.sendCtrl(0x44, 0, snk_pdo)
 
     def usb_negotiate_pdo(self):
         """Renegotate the USBC PDOs. Must be done for new PDOs settings to take effect
         """
         #soft reset
-        self._naeusb.sendCtrl(0x40, 0, [0x28, 0x51])
-        self._naeusb.sendCtrl(0x41, 0, [0x0D])
+        self._naeusb.sendCtrl(0x43, 0, [0x28, 0x51])
+        self._naeusb.sendCtrl(0x44, 0, [0x0D])
 
         #send reset on pdo bus
-        self._naeusb.sendCtrl(0x40, 0, [0x28, 0x1A])
-        self._naeusb.sendCtrl(0x41, 0, [0x26])
+        self._naeusb.sendCtrl(0x43, 0, [0x28, 0x1A])
+        self._naeusb.sendCtrl(0x44, 0, [0x26])
 
     def _dis(self):
         if self._naeusb:
