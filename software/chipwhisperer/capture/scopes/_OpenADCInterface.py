@@ -43,6 +43,10 @@ ADDR_DRP_DATA   = 31
 ADDR_SEGMENTS   = 32
 ADDR_SEGMENT_CYCLES = 33
 
+ADDR_XADC_DRP_ADDR = 41
+ADDR_XADC_DRP_DATA = 42
+ADDR_XADC_STAT     = 43
+
 ADDR_HUSKY_ADC_CTRL = 60
 ADDR_HUSKY_VMAG_CTRL = 61
 
@@ -155,10 +159,155 @@ class HWInformation(util.DisableNewAttr):
         self.oa.hwInfo = None
 
 
+class XADCSettings(util.DisableNewAttr):
+    ''' Husky FPGA XADC temperature and voltage monitoring.
+    '''
+    _name = 'Husky XADC Setting'
+
+    def __init__(self, oaiface):
+        self.oa = oaiface
+        self.disable_newattr()
+
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['status'] = self.status
+        dict['current temperature [C]'] = self.temp
+        dict['maximum temperature [C]'] = self.max_temp
+        dict['temperature alarm trigger [C]'] = self.temp_trigger
+        dict['temperature reset trigger [C]'] = self.temp_reset
+        dict['vccint'] = self.vccint
+        dict['vccaux'] = self.vccaux
+        dict['vccbram'] = self.vccbram
+        return dict
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
+    def _drp_write(self, addr, data):
+        """Write XADC DRP register. UG480 for register definitions.
+        Args:
+            addr (int): 6-bit address
+            data (int): 16-bit write data
+        """
+        self.oa.sendMessage(CODE_WRITE, ADDR_XADC_DRP_DATA, [data  & 0xff, data >> 8])
+        self.oa.sendMessage(CODE_WRITE, ADDR_XADC_DRP_ADDR, [addr + 0x80])
+
+    def _drp_read(self, addr):
+        """Read XADC DRP register. UG480 for register definitions.
+        Args:
+            addr (int): 6-bit address
+        Returns:
+            A 16-bit integer.
+        """
+        self.oa.sendMessage(CODE_WRITE, ADDR_XADC_DRP_ADDR, [addr])
+        raw = self.oa.sendMessage(CODE_READ, ADDR_XADC_DRP_DATA, maxResp=2)
+        return int.from_bytes(raw, byteorder='little')
+
+    @property
+    def status(self):
+        """Read XADC alarm status bits
+        Args: none
+        Returns: status string
+        """
+        raw = self.oa.sendMessage(CODE_READ, ADDR_XADC_STAT, maxResp=1)[0]
+        stat = ''
+        if raw & 1:  stat += 'Over temperature alarm, '
+        if raw & 2:  stat += 'User temperature alarm, '
+        if raw & 4:  stat += 'VCCint alarm, '
+        if raw & 8:  stat += 'VCCaux alarm, '
+        if raw & 16: stat += 'VCCbram alarm, '
+        if stat == '':
+            stat = 'good'
+        return stat
+
+    @property
+    def temp(self):
+        return self.get_temp(0)
+
+    @property
+    def max_temp(self):
+        return self.get_temp(32)
+
+    @property
+    def temp_trigger(self):
+        return self.get_temp(0x50)
+
+    @property
+    def temp_reset(self):
+        return self.get_temp(0x54)
+
+    @temp_trigger.setter
+    def temp_trigger(self, temp):
+        return self.set_temp(temp, 0x50)
+
+    @temp_reset.setter
+    def temp_reset(self, temp):
+        return self.set_temp(temp, 0x54)
+
+
+    def get_temp(self, addr=0):
+        """Read XADC temperature.
+        Args: 
+            addr (int): DRP address (0: current; 32: max; 36: min)
+        Returns:
+            Temperature in celcius (float).
+        """
+        raw = self._drp_read(addr)
+        return (raw>>4) * 503.975/4096 - 273.15 # ref: UG480
+
+    def set_temp(self, temp, addr=0):
+        """Set XADC temperature thresholds.
+        Args: 
+            addr (int): DRP address
+            temp (float): temperature threshold [celcius]
+        Returns:
+            Temperature in celcius (float).
+        """
+        raw = (int((temp + 273.15)*4096/503.975) << 4) & 0xffff
+        self.oa.sendMessage(CODE_WRITE, ADDR_XADC_DRP_DATA, list(int.to_bytes(raw, length=2, byteorder='little')))
+        self.oa.sendMessage(CODE_WRITE, ADDR_XADC_DRP_ADDR, [0x80 + addr])
+
+
+    @property
+    def vccint(self):
+        return self.get_vcc('vccint')
+
+    @property
+    def vccaux(self):
+        return self.get_vcc('vccaux')
+
+    @property
+    def vccbram(self):
+        return self.get_vcc('vccbram')
+
+
+    def get_vcc(self, rail='vccint'):
+        """Read XADC vcc.
+        Args:
+            rail (string): 'vccint', 'vccaux', or 'vccbram'
+        Returns:
+            voltage (float).
+        """
+        if rail == 'vccint':
+            addr = 1
+        elif rail == 'vccaux':
+            addr = 2
+        elif rail == 'vccbram':
+            addr = 6
+        else:
+            raise ValueError("Invalid rail")
+        raw = self._drp_read(addr)
+        return (raw>>4)/4096 * 3 # ref: UG480
+
 
 class ADS4128Settings(util.DisableNewAttr):
+    ''' Husky ADS4128 ADC settings. Mostly for testing, not needed in normal use.
+    '''
     _name = 'Husky ADS4128 ADC Setting'
-    ...
+
     def __init__(self, oaiface):
         self.oa = oaiface
         self.adc_reset()

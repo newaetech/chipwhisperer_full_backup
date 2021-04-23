@@ -44,6 +44,7 @@ class OpenADCQt(object):
         self.parm_trigger = None
         self.parm_clock = None
         self.parm_ads4128 = None
+        self.parm_xadc = None
 
         self.datapoints = []
 
@@ -135,6 +136,7 @@ class OpenADCQt(object):
 
         # TODO: what if not Husky? Maybe this is harmless?
         self.parm_ads4128 = openadc.ADS4128Settings(self.sc)
+        self.parm_xadc = openadc.XADCSettings(self.sc)
 
         deviceFound = False
         numTries = 0
@@ -169,6 +171,7 @@ class OpenADCQt(object):
         self.sc = None
 
         self.parm_ads4128 = None
+        self.parm_xadc = None
 
     def __del__(self):
         self.close()
