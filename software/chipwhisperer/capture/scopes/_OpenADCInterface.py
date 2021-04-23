@@ -2684,6 +2684,8 @@ class OpenADCInterface(object):
             if data_len_div != 0:
                 data = data[:-data_len_div]
             else:
+                if NumberPoints != int(len(data) * 2 / 3):
+                    data = data[:int(NumberPoints * 3 / 2)]
                 data = data[:]
 
             i = np.arange(len(data), dtype=np.int32)
