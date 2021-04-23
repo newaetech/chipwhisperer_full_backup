@@ -68,6 +68,12 @@ class CW310(CW305):
         self.target_name = 'AES'
         self._io = FPGAIO(self._naeusb, 200)
 
+        # TODO- temporary until these are added to the parsed defines file
+        self.REG_XADC_DRP_ADDR = 0x17
+        self.REG_XADC_DRP_DATA = 0x18
+        self.REG_XADC_STAT     = 0x19
+        
+
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True):
         # add more stuff later
         self._naeusb.con(idProduct=[0xC310])
@@ -86,6 +92,71 @@ class CW310(CW305):
 
         if bsfile:
             status = self.fpga.FPGAProgram(open(bsfile, "rb"))
+
+
+    def _xadc_drp_write(self, addr, data):
+        """Write XADC DRP register. UG480 for register definitions.
+        Args:
+            addr (int): 6-bit address
+            data (int): 16-bit write data
+        """
+        self.fpga_write(self.REG_XADC_DRP_DATA, [data  & 0xff, data >> 8])
+        self.fpga_write(self.REG_XADC_DRP_ADDR, [addr + 0x80])
+
+
+    def _xadc_drp_read(self, addr):
+        """Read XADC DRP register. UG480 for register definitions.
+        Args:
+            addr (int): 6-bit address
+        Returns:
+            A 16-bit integer.
+        """
+        self.fpga_write(self.REG_XADC_DRP_ADDR, [addr])
+        raw = self.fpga_read(self.REG_XADC_DRP_DATA, 2)
+        return raw[0] + (raw[1] << 8)
+
+
+    def get_xadc_temp(self):
+        """Read XADC temperature.
+        Args: none
+        Returns:
+            Temperature in celcius (float).
+        """
+        raw = self._xadc_drp_read(0)
+        return (raw>>4) * 503.975/4096 - 273.15 # ref: UG480
+
+
+    def get_xadc_vcc(self, rail='vccint'):
+        """Read XADC vcc.
+        Args:
+            rail (string): 'vccint', 'vccaux', or 'vccbram'
+        Returns:
+            voltage (float).
+        """
+        if rail == 'vccint':
+            addr = 1
+        elif rail == 'vccaux':
+            addr = 2
+        elif rail == 'vccbram':
+            addr = 6
+        else:
+            raise ValueError("Invalid rail")
+        raw = self._xadc_drp_read(addr)
+        return (raw>>4)/4096 * 3 # ref: UG480
+
+
+    def get_xadc_vaux(self, n=0):
+        """Read XADC vaux.
+        Args:
+            n (int): 0, 1 or 8, for vauxp/n[0|1|8]
+        Returns:
+            voltage (float).
+        """
+        assert n in [0, 1, 8]
+        addr = n + 0x10
+        raw = self._xadc_drp_read(addr)
+        return raw/4096 # ref: UG480
+
 
     def usb_set_voltage(self, pdo_num, voltage):
         """Set the voltage for one of the USBC PDOs.
