@@ -16,6 +16,7 @@ class CDCI6214:
         self._set_target_freq = 7.37E6
         self.set_prescale(3, 5)
         self.set_prescale(1, 5)
+        self._fpga_clk_freq = 48E6
         
     def write_reg(self, addr, data):
         """data can be a 16-bit integer or a 2 element list
@@ -332,12 +333,27 @@ class CDCI6214:
 
     @property
     def target_freq(self):
-        # return self.get_outfreq(pll_out=1)
-        return ((self.input_freq / self.get_input_div()) * (self.get_pll_mul()) / self.get_outdiv(1))
+        indiv = self.get_input_div()
+        outdiv = self.get_outdiv(1)
+        if not indiv:
+            scope_logger.warning("Input divisor not set!")
+            return None
+        elif not outdiv:
+            return 0
+        else:
+            return ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv)
 
     @property
     def adc_freq(self):
-        return ((self.input_freq / self.get_input_div()) * (self.get_pll_mul()) / self.get_outdiv(3))
+        indiv = self.get_input_div()
+        outdiv = self.get_outdiv(3)
+        if not indiv:
+            scope_logger.warning("Input divisor not set!")
+            return None
+        elif not outdiv:
+            return 0
+        else:
+            return ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv)
 
 
     @property
@@ -345,7 +361,7 @@ class CDCI6214:
         if self.pll_src == "xtal":
             return 12E6
         elif self.pll_src == "fpga":
-            return 48E6
+            return self._fpga_clk_freq
 
     def set_input_div(self, div):
         okay_divs = [0.5]
