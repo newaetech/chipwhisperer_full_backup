@@ -1182,6 +1182,8 @@ class TriggerSettings(util.DisableNewAttr):
             raise ValueError("Can't use negative number of samples")
         # TODO: raise ValueError or round down for sample counts too high
         # TODO: raise TypeError for non-integers
+        if self._is_husky and samples < 7:
+            scope_logger.warning('There may be issues with this few samples')
         self._numSamples = samples
         self.oa.setNumSamples(samples)
 
@@ -1869,8 +1871,6 @@ class ClockSettings(util.DisableNewAttr):
             self._set_husky_clkgen_div(div)
         else:
             # TODO: valueerror
-            if hasattr(div, "__getitem__"):
-                div = div[0]
             if div < 1:
                 div = 1
 
@@ -2785,14 +2785,13 @@ class OpenADCInterface(object):
         if self._streammode:
             raise ValueError('Not implemented yet')
         else:
-            # Husky hardware always captures a multiple of 3 samples. We want to read all the captured samples.
-            samplesToRead = (NumberPoints//3) * 3
-            if NumberPoints % 3:
-                samplesToRead += 3
             if self._bits_per_sample == 12:
-                bytesToRead = int(np.ceil(samplesToRead*1.5))
+                bytesToRead = int(np.ceil(NumberPoints*1.5))
             else:
-                bytesToRead = samplesToRead
+                bytesToRead = NumberPoints
+            # Husky hardware always captures a multiple of 3 samples. We want to read all the captured samples.
+            if bytesToRead % 3:
+                bytesToRead += 3  - bytesToRead % 3
             scope_logger.debug("XXX reading with NumberPoints=%d, bytesToRead=%d" % (NumberPoints, bytesToRead))
             data = self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, bytesToRead)
             # XXX Husky debug:
@@ -2807,44 +2806,30 @@ class OpenADCInterface(object):
 
 
     def processHuskyData(self, NumberPoints, data):
-        # TODO: this numpy magic may be faster?
-        # data = np.reshape(data, (-1, 4))
-        # data = np.left_shift(data, [24, 16, 8, 0])
-        # data = np.sum(data, 1)
-        # # Split words into samples and trigger bytes
-        # data = np.right_shift(np.reshape(data, (-1, 1)), [0, 10, 20, 30]) & 0x3FF
-        # fpData = np.reshape(data[:, [0, 1, 2]], (-1))
-        # i = np.arange(NumberPoints)
-        # a = np.where(i % 2, i, data)
-        # b = np.where(not (i % 2), i, data)
-
         if self._bits_per_sample == 12:
-            # samples = np.zeros(NumberPoints, dtype=np.int16)
-            # for i in range(NumberPoints):
-            #     if (i%2 == 0):
-            #         j = int(i*1.5)
-            #         samples[i] = (data[j]<<4) + (data[j+1]>>4)
-            #     else:
-            #         j = int((i-1)*1.5)
-            #         samples[i] = ((data[j+1] & 0xf)<<8) + data[j+2]
+            #print('XXX NumberPoints: %d, len(data): %d' % (NumberPoints, len(data)))
+            # slower, easier to follow data process:
+            #samples = np.zeros(NumberPoints, dtype=np.int16)
+            #for i in range(NumberPoints):
+            #    if (i%2 == 0):
+            #        j = int(i*1.5)
+            #        samples[i] = (data[j]<<4) + (data[j+1]>>4)
+            #    else:
+            #        j = int((i-1)*1.5)
+            #        samples[i] = ((data[j+1] & 0xf)<<8) + data[j+2]
 
-            
-            # faster data process
+
+            # faster, harder to follow data process:
             data = np.array(data, dtype=np.int16)
-            data_len_div = len(data) % 3
-            if data_len_div != 0:
-                data = data[:-data_len_div]
-            else:
-                if NumberPoints != int(len(data) * 2 / 3):
-                    data = data[:int(NumberPoints * 3 / 2)]
-                data = data[:]
 
+            evenNumberPoints = NumberPoints + NumberPoints % 2
             i = np.arange(len(data), dtype=np.int32)
-            a = data[i%3==0]
-            b = data[i%3==1]
-            c = data[i%3==2]
-            samples = np.zeros(NumberPoints, dtype=np.int16)
-            i = np.arange(NumberPoints, dtype=np.int32)
+            a = data[i%3==0][:int(evenNumberPoints/2)]
+            b = data[i%3==1][:int(evenNumberPoints/2)]
+            c = data[i%3==2][:int(evenNumberPoints/2)]
+            #print('XXX i:%d, a:%d, b:%d, c:%d, np:%d' % (len(i), len(a), len(b), len(c), NumberPoints))
+            samples = np.zeros(evenNumberPoints, dtype=np.int16)
+            i = np.arange(evenNumberPoints, dtype=np.int32)
             try:
                 samples[i%2==0] = (a << 4) + (b >> 4)
                 samples[i%2==1] = ((b & 0x0F) << 8) + c
@@ -2852,6 +2837,8 @@ class OpenADCInterface(object):
                 scope_logger.error("Husky processing error: data={}, a={}, b={}, c={}, NumPoints={}".format(data, a, b, c, NumberPoints))
                 scope_logger.error("lendata={}, lena={}, lenb={}, lenc={}".format(len(data), len(a), len(b), len(c)))
                 raise
+            #samples = samples[:NumberPoints]
+
             # print("Samples equal?: {}".format((fast_samples==samples).all()))
             # print(a[0], b[0], c[0], data[0], data[1], data[2])
             # for i in range(NumberPoints):
@@ -2860,7 +2847,7 @@ class OpenADCInterface(object):
             #         #print("{} bad, {} vs {}".format(i, fast_samples[i], samples[i]))
 
         else:
-            print('QWERTY')
+            #print('QWERTY')
             samples = data
 
         # fpData = samples / 2**self._bits_per_sample - self.offset
