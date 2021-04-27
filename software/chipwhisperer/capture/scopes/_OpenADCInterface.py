@@ -47,6 +47,7 @@ ADDR_XADC_DRP_ADDR = 41
 ADDR_XADC_DRP_DATA = 42
 ADDR_XADC_STAT     = 43
 ADDR_FIFO_STAT     = 44
+ADDR_NO_CLIP_ERRORS = 45
 
 ADDR_HUSKY_ADC_CTRL = 60
 ADDR_HUSKY_VMAG_CTRL = 61
@@ -408,8 +409,10 @@ class ADS4128Settings(util.DisableNewAttr):
     def setMode(self, mode):
         if mode == "normal":
             self.set_default_settings()
+            self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [0])
         elif mode == "test ramp":
             self.set_test_settings()
+            self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [1])
         else:
             raise ValueError("Invalid mode, only 'normal' or 'test ramp' allowed")
 
@@ -1061,6 +1064,7 @@ class TriggerSettings(util.DisableNewAttr):
         if raw & 4:  stat += 'fast FIFO underflow, '
         if raw & 8:  stat += 'fast FIFO overflow, '
         if raw & 16: stat += 'presample error, '
+        if raw & 32: stat += 'ADC clipped, '
         if stat == '':
             stat = 'no errors'
         return stat
@@ -1129,10 +1133,11 @@ class TriggerSettings(util.DisableNewAttr):
     def _set_test_mode(self, enabled):
         self._test_mode = enabled
         if enabled:
-            val = 0
+            self.oa.sendMessage(CODE_WRITE, ADDR_DATA_SOURCE, [0])
+            self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [1])
         else:
-            val = 1
-        self.oa.sendMessage(CODE_WRITE, ADDR_DATA_SOURCE, [val])
+            self.oa.sendMessage(CODE_WRITE, ADDR_DATA_SOURCE, [1])
+            self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [0])
 
 
     def _get_test_mode(self):
