@@ -46,6 +46,7 @@ ADDR_SEGMENT_CYCLES = 33
 ADDR_XADC_DRP_ADDR = 41
 ADDR_XADC_DRP_DATA = 42
 ADDR_XADC_STAT     = 43
+ADDR_FIFO_STAT     = 44
 
 ADDR_HUSKY_ADC_CTRL = 60
 ADDR_HUSKY_VMAG_CTRL = 61
@@ -677,6 +678,7 @@ class TriggerSettings(util.DisableNewAttr):
             dict['bits_per_sample'] = self.bits_per_sample
             dict['segments'] = self.segments
             dict['segment_cycles'] = self.segment_cycles
+            dict['errors'] = self.errors
 
         return dict
 
@@ -1041,6 +1043,27 @@ class TriggerSettings(util.DisableNewAttr):
     def _set_segments(self, num):
         self.oa.sendMessage(CODE_WRITE, ADDR_SEGMENTS, list(int.to_bytes(num, length=2, byteorder='little')))
 
+
+    @property
+    def errors(self):
+        """Internal error flags (FPGA FIFO over/underflow)
+        .. warning:: Supported by CW-Husky only.
+        """
+        return self._get_errors()
+
+    def _get_errors(self):
+        if self.oa is None:
+            return 0
+        raw = self.oa.sendMessage(CODE_READ, ADDR_FIFO_STAT, maxResp=1)[0]
+        stat = ''
+        if raw & 1:  stat += 'slow FIFO underflow, '
+        if raw & 2:  stat += 'slow FIFO overflow, '
+        if raw & 4:  stat += 'fast FIFO underflow, '
+        if raw & 8:  stat += 'fast FIFO overflow, '
+        if raw & 16: stat += 'presample error, '
+        if stat == '':
+            stat = 'no errors'
+        return stat
 
 
     @property
