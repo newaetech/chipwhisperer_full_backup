@@ -654,6 +654,7 @@ class NAEUSB(object):
     CMD_WRITEMEM_CTRL = 0x13
     CMD_MEMSTREAM = 0x14
     CMD_WRITEMEM_CTRL_SAM3U = 0x15
+    CMD_SMC_READ_SPEED = 0x27
 
     stream = False
 
@@ -675,6 +676,13 @@ class NAEUSB(object):
             port = [port, port]
         self.usbtx.sendCtrl(self.CMD_CDC_SETTINGS_EN, (port[0]) | (port[1] << 1))
 
+    def set_smc_speed(self, val):
+        """
+        val = 0: normal read timing
+        val = 1: fast read timing, should only be used for reading ADC samples; FPGA must also be set in fast FIFO
+                 read mode for this to work correctly.
+        """
+        self.usbtx.sendCtrl(self.CMD_SMC_READ_SPEED, data=[val])
 
     def get_serial_ports(self):
         """May have multiple com ports associated with one device, so returns a list of port + interface

@@ -42,6 +42,7 @@ ADDR_DRP_ADDR   = 30
 ADDR_DRP_DATA   = 31
 ADDR_SEGMENTS   = 32
 ADDR_SEGMENT_CYCLES = 33
+ADDR_FAST_FIFO_READ = 36
 
 ADDR_XADC_DRP_ADDR = 41
 ADDR_XADC_DRP_DATA = 42
@@ -2242,6 +2243,7 @@ class OpenADCInterface(object):
         self._stream_mode = False
         self._support_get_duration = True
         self._is_husky = False
+        self._fast_fifo_read = True
 
         # Send clearing function if using streaming mode
         if hasattr(self.serial, "stream") and self.serial.stream == False:
@@ -2256,6 +2258,9 @@ class OpenADCInterface(object):
     def setStreamMode(self, stream):
         self._streammode = stream
         self.updateStreamBuffer()
+
+    def setFastSMC(self, fast):
+        self.serial.set_smc_speed(fast)
 
     def setBitsPerSample(self, bits):
         self._bits_per_sample = bits
@@ -2607,8 +2612,9 @@ class OpenADCInterface(object):
             self._stream_rx_bytes, stream_timeout = self.serial.cmdReadStream()
             timeout |= stream_timeout
             #Check the status now
-            bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
-            scope_logger.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
+            # XXX-Husky? bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
+            #scope_logger.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
+            scope_logger.debug("Streaming done, results: rx_bytes = %d"%(self._stream_rx_bytes))
             self.arm(False)
 
             if stream_timeout:
@@ -2810,26 +2816,36 @@ class OpenADCInterface(object):
 
 
     def readHuskyData(self, NumberPoints=None):
-        if self._streammode:
-            raise ValueError('Not implemented yet')
+        if self._bits_per_sample == 12:
+            bytesToRead = int(np.ceil(NumberPoints*1.5))
         else:
-            if self._bits_per_sample == 12:
-                bytesToRead = int(np.ceil(NumberPoints*1.5))
-            else:
-                bytesToRead = NumberPoints
-            # Husky hardware always captures a multiple of 3 samples. We want to read all the captured samples.
-            if bytesToRead % 3:
-                bytesToRead += 3  - bytesToRead % 3
-            scope_logger.debug("XXX reading with NumberPoints=%d, bytesToRead=%d" % (NumberPoints, bytesToRead))
+            bytesToRead = NumberPoints
+        # Husky hardware always captures a multiple of 3 samples. We want to read all the captured samples.
+        if bytesToRead % 3:
+            bytesToRead += 3  - bytesToRead % 3
+        scope_logger.debug("XXX reading with NumberPoints=%d, bytesToRead=%d" % (NumberPoints, bytesToRead))
+
+        if self._stream_mode:
+            print('yo yo YO! (streaming)')
+            data = self._sbuf
+        else:
+            if self._fast_fifo_read:
+                # switch FPGA and SAM3U into fast read timing mode
+                self.sendMessage(CODE_WRITE, ADDR_FAST_FIFO_READ, [1])
+                self.serial.set_smc_speed(1)
             data = self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, bytesToRead)
-            # XXX Husky debug:
-            scope_logger.debug("XXX read %d bytes; NumberPoints=%d, bytesToRead=%d" % (len(data), NumberPoints, bytesToRead))
-            if data is not None:
-                data = np.array(data)
-                datapoints = self.processHuskyData(NumberPoints, data)
-            if datapoints is None:
-                return []
-            return datapoints[:NumberPoints]
+            # switch FPGA and SAM3U back to regular read timing mode
+            self.sendMessage(CODE_WRITE, ADDR_FAST_FIFO_READ, [0])
+            self.serial.set_smc_speed(0)
+
+        # XXX Husky debug:
+        scope_logger.debug("XXX read %d bytes; NumberPoints=%d, bytesToRead=%d" % (len(data), NumberPoints, bytesToRead))
+        if data is not None:
+            data = np.array(data)
+            datapoints = self.processHuskyData(NumberPoints, data)
+        if datapoints is None:
+            return []
+        return datapoints[:NumberPoints]
 
 
 
