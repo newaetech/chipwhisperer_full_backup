@@ -3,7 +3,18 @@ from chipwhisperer.logging import *
 import time
 import numpy as np
 
+
 class CDCI6214:
+    """PLL control for the Husky.
+
+    May be merged into scope.clock in the future.
+
+    Basic usage::
+
+        scope = cw.scope() # Husky only
+        scope.pll.target_freq = 7.37E6 
+        scope.pll.adc_mul = 4 # any positive integer within reason that satisfies ADC specs
+    """
     def __init__(self, scope):
         self._scope = scope
         self.setup()
@@ -19,7 +30,14 @@ class CDCI6214:
         self._fpga_clk_freq = 48E6
         
     def write_reg(self, addr, data):
-        """data can be a 16-bit integer or a 2 element list
+        """Write to a CDCI6214 Register over I2C
+
+        Args:
+            addr (u8): Address to write to
+            data (u16 or list): Data to write. u16 is big endian, list is two elements long,
+                so write_reg(0x00, [0x10, 0x20]) is the same as write_reg(0x00, 0x2010)
+        
+        data can be a 16-bit integer or a 2 element list
         """
         if not hasattr(data, "__getitem__"):
             tmp = [data & 0xFF, (data >> 8) & 0xFF]
@@ -28,9 +46,11 @@ class CDCI6214:
         self._scope._getNAEUSB().sendCtrl(0x29, data=[1, addr, 0x00, data[0], data[1]])
         
     def read_reg(self, addr, as_int=False):
-        """If as_int is True, return as a 16-bit integer
-        
-        Else return as a bytearray
+        """Read a CDCI6214 Register over I2C
+
+        Args:
+            addr (u8): Address to read from
+            as_int (bool): If true, return a big endian u16. Otherwise, return a two element list.
         """
 
         self._scope._getNAEUSB().sendCtrl(0x29, data=[0, addr, 0x00, 0, 0])    
@@ -44,7 +64,24 @@ class CDCI6214:
         return bytearray(data[1:])
     
     def update_reg(self, addr, bits_to_set, bits_to_clear):
-        """bits_to_set/bits_to_clear can be a 16-bit integer or a 2 element list.
+        """Updates a CDCI6214 Register. Reads, clears bits, then sets bits.
+
+        This means bits_to_set will overwrite bits_to_clear. Effectively::
+
+            x = read_reg(addr)
+            x &= ~(bits_to_clear) # C bitwise not, illustration purposes only, not implemented like this
+            x |= bits_to_set
+            write_reg(addr, x)
+
+        Args:
+            addr (u8): Address to update
+            bits_to_set (u16 or list): Bits to set in the register, Overwrites bits_to_clear.
+                            Big endian: 0x2010 == [0x10, 0x20]
+            bits_to_clear (u16 or list): Bits to set in the register
+                            Big endian: 0x2010 == [0x10, 0x20]
+
+
+        bits_to_set/bits_to_clear can be a 16-bit integer or a 2 element list.
         The clear is applied first, so you can clear a register with 0xffff to set
         everything after.
         """
@@ -71,7 +108,17 @@ class CDCI6214:
 
         
     def setup(self):
-        """Do required initial setup
+        """Do required initial setup.
+
+        Does the following:
+
+         * Sets GPIO1 and 4 to outputs
+         * Enables power to whole chip
+         * Enable sync
+         * Disable glitchless output
+         * Disable channel 2 and 4 (unused)
+         * Set ref as AC-differential, XIN == xtal
+         * Use register to select PLL input instead of pin
         """
         # disable GPIO1/4 as inputs
         self.update_reg(0x00, (1 << 13) | (1 << 12), 0)
@@ -110,6 +157,11 @@ class CDCI6214:
         return (self.read_reg(0x01, True) & (1 << 8) == (0))
 
     def get_outfreq(self, pll_out=3):
+        """Get the output frequency of a PLL output.
+
+        Recommended to use :code:`scope.pll.adc_freq` and 
+        :code:`scope.pll.target_freq` instead
+        """
         prescale_lut = [4, 5, 6]
         if pll_out == 3:
             prescale_reg = (self.read_reg(0x1E, True) >> 0) & 0b11
@@ -138,16 +190,22 @@ class CDCI6214:
             return self.input_freq / outdiv / prescale
             
     def reset(self):
-        """Do a reset of the PLL chip. Doesn't reset registers
+        """Do a reset of the PLL chip. Doesn't reset registers.
+
+        Maybe need to do to lock PLL?
         """
         self.update_reg(0x0, 1 << 2, 0x00)
 
     def sync_clocks(self):
-        """Resync clocks
+        """Send a resync pulse to the internal synchronization blocks.
+        
+        Resync clocks.
         """
         self.update_reg(0x00, 1 << 5, 0x00)
         
     def recal(self):
+        """Perform a calibration. Typically unneeded.
+        """
         self.update_reg(0x0, 1 << 5, 1 << 5)
         
     def set_pll_input(self, xtal=True):
@@ -210,34 +268,14 @@ class CDCI6214:
         elif pll_out == 1:
             return self.read_reg(0x25, True) & 0x3FFF
             
-    # def set_outfreq(self, pll_out=3, freq=50E6):
-    #     base_freq = self._pll_output_frequency
-    #     if not freq:
-    #         self.set_outdiv(pll_out, 0)
-    #     if (freq < 100E3) or (freq > 250E6):
-    #         raise ValueError("Max freq = 250MHz, min freq = 100kHz, given {}".format(freq))
-            
-    #     best_error = float('inf') #infinite error
-    #     best_prescale = 4
-    #     best_div = 100
-    #     for prescale in range(5, 6):
-    #         fin = base_freq / prescale
-    #         div = int((fin / freq) + 0.5)
-    #         actual_freq = fin / div
-    #         error = abs(freq - actual_freq) / freq
-    #         if error < best_error:
-    #             best_error = error
-    #             best_prescale = prescale
-    #             best_div = div
-                
-            # print(error, prescale, div)
-            
-            
-    #     print("Found div {} prescale {}".format(best_div, best_prescale))
-    #     self.set_prescale(pll_out, best_prescale)
-    #     self.set_outdiv(pll_out, best_div)
-
     def set_outfreqs(self, input_freq, target_freq, adc_mul):
+        """Set an output target frequency for the target/adc using input_freq
+
+        Calculates the best PLL/divider settings for a target_freq
+        with an output div that can evenly divide adc_mul. Should
+        help keep clocks in sync. Recommended to just set scope.pll.target_freq
+        and scope.pll.adc_mul
+        """
         if (adc_mul < 1) or (adc_mul != int(adc_mul)):
             raise ValueError("ADC must be >= 1 and an integer")
         if (adc_mul * target_freq) > 200E6 or (adc_mul * target_freq < 10E6):
@@ -317,7 +355,13 @@ class CDCI6214:
 
     @property
     def target_delay(self):
-        delay = (self.read_reg(0x26, True) >> 11) & 0b1111
+        """Delays/phase shifts the target clock to the right (positive phase)
+
+        :getter: A 5 bit integer representing the delay
+        
+        :setter: A 5 bit integer representing the delay. Must be between 0 and 31
+        """
+        delay = (self.read_reg(0x26, True) >> 11) & 0b11111
         return delay
 
     @target_delay.setter
@@ -329,6 +373,12 @@ class CDCI6214:
 
     @property
     def adc_delay(self):
+        """Delays/phase shifts the target clock to the right (positive phase)
+
+        :getter: A 5 bit integer representing the delay
+        
+        :setter: A 5 bit integer representing the delay. Must be between 0 and 31
+        """
         delay = (self.read_reg(0x32, True) >> 11) & 0b1111
         return delay
 
@@ -341,6 +391,12 @@ class CDCI6214:
         
     @property
     def pll_src(self):
+        """Get/set the PLL src. fpga is typically useful if using an external clock
+
+        :getter: 'xtal' or 'fpga'
+
+        :setter: 'xtal' or 'fpga'
+        """
         if self.get_pll_input():
             return "xtal"
         else:
@@ -357,10 +413,29 @@ class CDCI6214:
 
     @property
     def adc_mul(self):
+        """The ADC clock output as a multiple of the target clock
+
+        Must be an integer multiple.
+
+        :getter: Last set multiplier
+
+        :setter: Multiplier to set. Recalculates both adc and target clock settings,
+            so setting this will result in a short disruption of the clock
+            to the target
+        """
         return self._adc_mul
 
     @property
     def target_freq(self):
+        """The target clock frequency.
+
+        Due to PLL/adc_mul limitations, the actual value set will differ
+        from the requested value
+
+        :getter: The actual calculated target clock frequency that was set
+
+        :setter: The target frequency you want
+        """
         indiv = self.get_input_div()
         outdiv = self.get_outdiv(1)
         if not indiv:
@@ -373,6 +448,8 @@ class CDCI6214:
 
     @property
     def adc_freq(self):
+        """The actual calculated adc_clock freq. Read only
+        """
         indiv = self.get_input_div()
         outdiv = self.get_outdiv(3)
         if not indiv:
@@ -431,6 +508,8 @@ class CDCI6214:
 
     @property
     def pll_locked(self):
+        """ Returns True if the pll is locked, False otherwise
+        """
         return (self.read_reg(0x07, True) & (1 << 11)) == (1 << 11)
 
     def _dict_repr(self):

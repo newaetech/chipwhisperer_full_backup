@@ -319,6 +319,73 @@ OpenADC Scope
             :OSError: Raised when there is issues connecting to the hardware, such as
                 user not having the correct device permissions to access the hardware.
 
+.. _api-scope-husky:
+
+ChipWhisperer_Husky
+===================
+
+Mostly the same as the CWPro, with some additional upgraded settings.
+
+It also includes a PLL class (which may be integrated into :code:`scope.clock`
+in the future). This class's default setup is to use 7.37MHz for the target
+clock and a x4 multiple for the ADC clock.
+
+Like with the FPGA based clock, the target clock on the Husky 
+can be set directly::
+
+    scope.pll.target_freq = 7.37E6
+
+The ADC clock is set as a positive integer multiple of the target clock::
+
+    scope.pll.adc_mul = 4
+
+In order to ensure a clean multiple for the ADC, the PLL
+settings for the whole chip are changed if :code:`adc_mul` or :code:`target_freq`
+are changed. This means the target clock will drop out for a short period if
+either are changed.
+
+The PLL can use either an onboard XTAL, or a clock output from the onboard FPGA.
+The FPGA setting can be set to use an external clock (HS1, usually). Otherwise,
+the XTAL setting is recommended as it results in much less jitter on the ADC::
+
+    scope.pll.pll_src = 'xtal' # XTAL default
+    scope.pll.pll_src = 'fpga' # FPGA 
+
+Like with the other FPGA ChipWhisperers, the phase of the clock can be changed.
+In this case, a positive unitless phase between 0 and 31 can be applied to either output clock::
+
+    # +5 phase to adc
+    scope.pll.adc_delay = 5
+
+    # +5 to both - same as both = 0
+    scope.pll.target_delay = 5
+
+Additional functionality, such as resetting the chip and resynchronizing the output clocks
+are available, but aren't typically needed.
+
+    .. attribute:: pll
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.pll_src
+            :annotation: scope.pll.pll_src
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.target_freq
+            :annotation: scope.pll.target_freq
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.adc_mul
+            :annotation: scope.pll.adc_mul
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.adc_freq
+            :annotation: scope.pll.adc_freq
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.pll_locked
+            :annotation: scope.pll.pll_locked
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.adc_delay
+            :annotation: scope.pll.adc_delay
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.target_delay
+            :annotation: scope.pll.target_delay
+
 
 .. _api-scope-cwnano:
 
