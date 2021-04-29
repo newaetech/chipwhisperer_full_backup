@@ -200,6 +200,8 @@ class CW305(TargetTemplate):
             data (list): Data to write to addr
 
         """
+        if len(data) <= 0:
+            raise ValueError("Invalid data {}".format(data))
         addr = addr << self.bytecount_size
         return self._naeusb.cmdWriteMem(addr, data)
 
@@ -213,6 +215,8 @@ class CW305(TargetTemplate):
         Returns:
             Requested data as a list
         """
+        if readlen <= 0:
+            raise ValueError("Invalid read len {}".format(readlen))
         addr = addr << self.bytecount_size
         data = self._naeusb.cmdReadMem(addr, readlen)
         return data

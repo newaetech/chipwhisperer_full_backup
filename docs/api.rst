@@ -559,6 +559,10 @@ CW305 FPGA Target
 
     .. automethod:: _con
 
+    .. automethod:: fpga_write
+
+    .. automethod:: fpga_read
+
     .. autoattribute:: clksleeptime
 
     .. autoattribute:: clkusbautooff
@@ -628,6 +632,28 @@ CW305 SAM3U IO Control
     .. automethod:: spi1_transfer
 
 .. _api-target-program:
+
+CW310
+=====
+
+.. autoclass:: chipwhisperer.capture.targets.CW310.CW310
+
+    .. automethod:: usb_set_voltage
+
+    .. automethod:: usb_set_current
+
+    .. automethod:: usb_negotiate_pdo
+
+    .. automethod:: gpio_mode
+
+    .. automethod:: _con
+
+    .. automethod:: fpga_write
+
+    .. automethod:: fpga_read
+
+    .. autoattribute:: chipwhisperer.capture.targets.CW310.CW310.cdc_settings
+        :annotation: target.cdc_settings
 
 Program
 =======
