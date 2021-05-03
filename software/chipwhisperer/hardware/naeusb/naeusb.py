@@ -31,6 +31,7 @@ import struct
 import pickle
 import traceback
 import os
+import numpy as np
 
 from usb.backend import libusb0, libusb1
 import usb.core
@@ -859,7 +860,7 @@ class NAEUSB(object):
             bytes will be located. These sync bytes must be removed in post-processing. """
         return 4096
 
-    def cmdReadStream_bufferSize(self, dlen):
+    def cmdReadStream_bufferSize(self, dlen, is_husky=False, bits_per_sample=12):
         """
         Args:
             dlen: Number of samples to be requested (will be rounded to something else)
@@ -867,18 +868,33 @@ class NAEUSB(object):
         Returns:
             Tuple: (Size of temporary buffer required, actual samples in buffer)
         """
-        num_samplebytes = int(math.ceil(float(dlen) * 4 / 3))
-        num_blocks = int(math.ceil(float(num_samplebytes) / 4096))
-        num_totalbytes = num_samplebytes + num_blocks
-        num_totalbytes = int(math.ceil(float(num_totalbytes) / 4096) * 4096)
+        if is_husky:
+            if bits_per_sample == 8:
+                num_totalbytes = dlen
+                num_samplebytes = dlen
+            elif bits_per_sample == 12:
+                # XXX check these are correct
+                num_totalbytes = int(np.ceil(dlen*1.5))
+                num_samplebytes = int(np.ceil(dlen*1.5))
+            else:
+                raise ValueError("bits_per_sample=%d" % bits_per_sample)
+        else:
+            num_samplebytes = int(math.ceil(float(dlen) * 4 / 3))
+            num_blocks = int(math.ceil(float(num_samplebytes) / 4096))
+            num_totalbytes = num_samplebytes + num_blocks
+            num_totalbytes = int(math.ceil(float(num_totalbytes) / 4096) * 4096)
         return (num_totalbytes, num_samplebytes)
 
 
-    def initStreamModeCapture(self, dlen, dbuf_temp, timeout_ms=1000):
+    def initStreamModeCapture(self, dlen, dbuf_temp, timeout_ms=1000, is_husky=False):
         #Enter streaming mode for requested number of samples
         if hasattr(self, "streamModeCaptureStream"):
             self.streamModeCaptureStream.join()
-        self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(dlen))
+        if is_husky:
+            data = packuint32(dlen)
+        else:
+            data=list(int.to_bytes(dlen, length=4, byteorder='little')) + list(int.to_bytes(3, length=4, byteorder='little'))
+        self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=data)
         self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThread(self, dlen, dbuf_temp, timeout_ms)
         self.streamModeCaptureStream.start()
 
@@ -893,6 +909,7 @@ class NAEUSB(object):
         self.streamModeCaptureStream.join()
 
         # Flush input buffers in case anything was left
+        # XXX Husky?
         try:
             #self.cmdReadMem(self.rep)
             self.usbtx.read(4096, timeout=10)
@@ -945,12 +962,19 @@ class NAEUSB(object):
         def run(self):
             naeusb_logger.info("Streaming: starting USB read")
             start = time.time()
+            count = 0
+            time.sleep(0.1) # XXX TODO- temporary! otherwise data is read before it is available
             try:
-                self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
+                #self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
+                while (self.drx == 0 and count < 100):
+                    naeusb_logger.info("Streaming: reading again (len=%d)" % self.drx)
+                    self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
+                    count += 1
             except IOError as e:
                 naeusb_logger.warning('Streaming: USB stream read timed out')
             diff = time.time() - start
             naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
+            naeusb_logger.info("Streaming: min=%x, max=%x" % (min(self.dbuf_temp), max(self.dbuf_temp)))
 
 
 if __name__ == '__main__':

@@ -2230,7 +2230,6 @@ class OpenADCInterface(object):
         self.offset = 0.5
         self.ddrMode = False
         self.sysFreq = 0
-        self._streammode = False
         self._bits_per_sample = 10
         self._sbuf = []
         self.settings()
@@ -2256,7 +2255,7 @@ class OpenADCInterface(object):
         self.setReset(False)
 
     def setStreamMode(self, stream):
-        self._streammode = stream
+        self._stream_mode = stream
         self.updateStreamBuffer()
 
     def setFastSMC(self, fast):
@@ -2459,18 +2458,17 @@ class OpenADCInterface(object):
         self.sendMessage(CODE_WRITE, ADDR_SAMPLES, list(int.to_bytes(samples, length=4, byteorder='little')))
         self.updateStreamBuffer(samples)
 
+
     def updateStreamBuffer(self, samples=None):
+        # yes this is a bit weird but it is so:
         if samples is not None:
             self._stream_len = samples
-
-        bufsizebytes = 0
-        if self._streammode:
-            nae = self.serial
+        if self._stream_mode:
+            bufsizebytes = 0
             #Save the number we will return
-            bufsizebytes, self._stream_len_act = nae.cmdReadStream_bufferSize(self._stream_len)
-
-        #Generate the buffer to save buffer
-        self._sbuf = array.array('B', [0]) * bufsizebytes
+            bufsizebytes, self._stream_len_act = self.serial.cmdReadStream_bufferSize(self._stream_len, self._is_husky, self._bits_per_sample)
+            #Generate the buffer to save buffer
+            self._sbuf = array.array('B', [0]) * bufsizebytes
 
 
     def setDecimate(self, decsamples):
@@ -2581,9 +2579,12 @@ class OpenADCInterface(object):
 
     def startCaptureThread(self):
         # Then init the stream mode stuff
-        if self._streammode:
+        if self._stream_mode:
             # Stream mode adds 500mS of extra timeout on USB traffic itself...
-            self.serial.initStreamModeCapture(self._stream_len, self._sbuf, timeout_ms=int(self._timeout * 1000) + 500)
+            scope_logger.debug("Stream on!")
+            self.sendMessage(CODE_WRITE, ADDR_FAST_FIFO_READ, [1])
+            self.serial.set_smc_speed(1)
+            self.serial.initStreamModeCapture(self._stream_len, self._sbuf, timeout_ms=int(self._timeout * 1000) + 500, is_husky=self._is_husky)
 
     def capture(self, offset=None, adc_freq=29.53E6, samples=24400):
         timeout = False
@@ -2592,7 +2593,7 @@ class OpenADCInterface(object):
             sleeptime = (29.53E6*8*offset)/(100000*adc_freq) #rougly 8ms per 100k offset
             sleeptime /= 1000
 
-        if self._streammode:
+        if self._stream_mode:
 
             # Wait for a trigger, letting the UI run when it can
             starttime = datetime.datetime.now()
@@ -2608,11 +2609,14 @@ class OpenADCInterface(object):
                     self.triggerNow()
                     break
 
+            scope_logger.debug("DISABLING fast fifo read")
+            self.sendMessage(CODE_WRITE, ADDR_FAST_FIFO_READ, [0])
+            self.serial.set_smc_speed(0)
 
             self._stream_rx_bytes, stream_timeout = self.serial.cmdReadStream()
             timeout |= stream_timeout
             #Check the status now
-            # XXX-Husky? bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
+            # TODO XXX-Husky? bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
             #scope_logger.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
             scope_logger.debug("Streaming done, results: rx_bytes = %d"%(self._stream_rx_bytes))
             self.arm(False)
@@ -2685,7 +2689,7 @@ class OpenADCInterface(object):
         scope_logger.debug("Reading data from OpenADC...")
         if self._is_husky: 
             return self.readHuskyData(NumberPoints)
-        if self._streammode:
+        elif self._stream_mode:
             # Process data
             bsize = self.serial.cmdReadStream_size_of_fpgablock()
             num_bytes, num_samples = self.serial.cmdReadStream_bufferSize(self._stream_len)
@@ -2826,8 +2830,8 @@ class OpenADCInterface(object):
         scope_logger.debug("XXX reading with NumberPoints=%d, bytesToRead=%d" % (NumberPoints, bytesToRead))
 
         if self._stream_mode:
-            print('yo yo YO! (streaming)')
             data = self._sbuf
+            scope_logger.debug('stream: got data len = %d' % len(data))
         else:
             if self._fast_fifo_read:
                 # switch FPGA and SAM3U into fast read timing mode
