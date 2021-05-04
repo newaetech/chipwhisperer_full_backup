@@ -1899,7 +1899,8 @@ class ClockSettings(util.DisableNewAttr):
         if self.oa.hwInfo.is_cwhusky():
             self._set_husky_clkgen_div(div)
         else:
-            # TODO: valueerror
+            if hasattr(div, "__getitem__"):
+                div = div[0]
             if div < 1:
                 div = 1
 
