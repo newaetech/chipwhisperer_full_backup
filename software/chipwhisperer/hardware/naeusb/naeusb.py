@@ -886,16 +886,16 @@ class NAEUSB(object):
         return (num_totalbytes, num_samplebytes)
 
 
-    def initStreamModeCapture(self, dlen, dbuf_temp, timeout_ms=1000, is_husky=False):
+    def initStreamModeCapture(self, dlen, dbuf_temp, timeout_ms=1000, is_husky=False, segment_size=0):
         #Enter streaming mode for requested number of samples
         if hasattr(self, "streamModeCaptureStream"):
             self.streamModeCaptureStream.join()
         if is_husky:
-            data = packuint32(dlen)
-        else:
             data=list(int.to_bytes(dlen, length=4, byteorder='little')) + list(int.to_bytes(3, length=4, byteorder='little'))
+        else:
+            data = packuint32(dlen)
         self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=data)
-        self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThread(self, dlen, dbuf_temp, timeout_ms)
+        self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThread(self, dlen, segment_size, dbuf_temp, timeout_ms)
         self.streamModeCaptureStream.start()
 
     def cmdReadStream_isDone(self):
@@ -939,7 +939,7 @@ class NAEUSB(object):
         self.usbserializer.read(dlen, timeout)
 
     class StreamModeCaptureThread(Thread):
-        def __init__(self, serial, dlen, dbuf_temp, timeout_ms=2000):
+        def __init__(self, serial, dlen, segment_size, dbuf_temp, timeout_ms=2000):
             """
             Reads from the FIFO in streaming mode. Requires the FPGA to be previously configured into
             streaming mode and then arm'd, otherwise this may return incorrect information.
@@ -953,6 +953,7 @@ class NAEUSB(object):
             """
             Thread.__init__(self)
             self.dlen = dlen
+            self.segment_size = segment_size
             self.dbuf_temp = dbuf_temp
             self.timeout_ms = timeout_ms
             self.serial = serial
@@ -960,18 +961,22 @@ class NAEUSB(object):
             self.drx = 0
 
         def run(self):
+            # TODO: make separate CW-Pro / Husky versions
             naeusb_logger.info("Streaming: starting USB read")
             start = time.time()
-            count = 0
-            time.sleep(0.1) # XXX TODO- temporary! otherwise data is read before it is available
-            try:
-                #self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
-                while (self.drx == 0 and count < 100):
-                    naeusb_logger.info("Streaming: reading again (len=%d)" % self.drx)
-                    self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
-                    count += 1
-            except IOError as e:
-                naeusb_logger.warning('Streaming: USB stream read timed out')
+            self.drx += self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
+            while (self.drx < self.dlen):
+                self.drx += self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
+                naeusb_logger.info("Streaming: total read = %d" % self.drx)
+            #try:
+            #    count = 0
+            #    #self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
+            #    while (self.drx == 0 and count < 100):
+            #        #naeusb_logger.info("Streaming: reading again (len=%d)" % self.drx)
+            #        self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
+            #        count += 1
+            #except IOError as e:
+            #    naeusb_logger.warning('Streaming: USB stream read timed out')
             diff = time.time() - start
             naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
             naeusb_logger.info("Streaming: min=%x, max=%x" % (min(self.dbuf_temp), max(self.dbuf_temp)))
