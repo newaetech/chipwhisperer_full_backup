@@ -527,7 +527,11 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
                 self.sendCtrl(cmd, data=pload)
             else:
                 raise
-
+        if (self.rep is None):
+            if self.usbdev().idProduct == 0xACE5: 
+                self.rep = 0x85
+            else:
+                self.rep = 0x81
         # Get data
         if cmd == self.CMD_READMEM_BULK:
             data = self.usbdev().read(self.rep, dlen, timeout=self._timeout)
