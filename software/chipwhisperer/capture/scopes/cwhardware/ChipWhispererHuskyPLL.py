@@ -276,10 +276,24 @@ class CDCI6214:
         help keep clocks in sync. Recommended to just set scope.pll.target_freq
         and scope.pll.adc_mul
         """
+
+        if target_freq == 0:
+            # TODO: turn off clocks
+            self.set_outdiv(3, 0)
+            self.set_outdiv(1, 0)
+            return
+
+        adc_off = (adc_mul == 0)
+        adc_mul = 1
         if (adc_mul < 1) or (adc_mul != int(adc_mul)):
             raise ValueError("ADC must be >= 1 and an integer")
-        if (adc_mul * target_freq) > 200E6 or (adc_mul * target_freq < 10E6):
-            raise ValueError("Invalid adc_freq {}".format(adc_mul * target_freq))
+
+        if not adc_off:
+            while (adc_mul * target_freq) > 200E6:
+                adc_mul -= 1
+            while (adc_mul * target_freq) < 10E6:
+                adc_mul += 1
+
         okay_in_divs = [0.5]
         okay_in_divs.extend(range(1, 256))
         okay_in_divs = np.array(okay_in_divs)
@@ -325,7 +339,11 @@ class CDCI6214:
         self.set_input_div(best_in_div)
         self.set_pll_mul(best_pll_mul)
         self.set_outdiv(1, best_out_div)
-        self.set_outdiv(3, best_out_div // adc_mul)
+        if not adc_off:
+            self.set_outdiv(3, best_out_div // adc_mul)
+        else:
+            self.set_outdiv(3, 0)
+
         self.reset()
             
     def set_bypass_adc(self, enable_bypass):

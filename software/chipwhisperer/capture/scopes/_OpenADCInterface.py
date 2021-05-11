@@ -1838,7 +1838,7 @@ class ClockSettings(util.DisableNewAttr):
 
                 timeout -= 1
 
-        openadc_logger.error("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
+        scope_logger.error("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
                       " source settings. CLKGEN clock results are currently invalid.")
         return 1
 
@@ -2604,7 +2604,7 @@ class OpenADCInterface(object):
 
                 # If we've timed out, don't wait any longer for a trigger
                 if (diff.total_seconds() > self._timeout):
-                    scope_logger.warning('Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid. Status: %02x'%status)
+                    scope_logger.warning('Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid')
                     timeout = True
                     self.triggerNow()
                     break
