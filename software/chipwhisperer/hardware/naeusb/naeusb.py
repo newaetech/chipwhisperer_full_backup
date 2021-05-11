@@ -891,7 +891,7 @@ class NAEUSB(object):
         if hasattr(self, "streamModeCaptureStream"):
             self.streamModeCaptureStream.join()
         if is_husky:
-            data=list(int.to_bytes(dlen, length=4, byteorder='little')) + list(int.to_bytes(3, length=4, byteorder='little'))
+            data=list(int.to_bytes(segment_size, length=4, byteorder='little')) + list(int.to_bytes(3, length=4, byteorder='little'))
         else:
             data = packuint32(dlen)
         self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=data)
