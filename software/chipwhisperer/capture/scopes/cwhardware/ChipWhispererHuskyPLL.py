@@ -267,7 +267,7 @@ class CDCI6214:
             return self.read_reg(0x31, True) & 0x3FFF
         elif pll_out == 1:
             return self.read_reg(0x25, True) & 0x3FFF
-            
+
     def set_outfreqs(self, input_freq, target_freq, adc_mul):
         """Set an output target frequency for the target/adc using input_freq
 
@@ -277,52 +277,91 @@ class CDCI6214:
         and scope.pll.adc_mul
         """
 
+        """
+        How the PLL works:
+
+        1. We either get an input clock from the onboard xtal, or from
+        the FPGA
+
+        2. This input clock gets divided between 1 and 255 or multiplied by 2
+        The resulting clock must be between 1MHz and 100MHz and is the input to
+        the PLL
+
+        3. The PLL input clock will be multiplied by a prescale value
+        (4, 5, or 6, but we assume 5), then by between 5 and 2**14. The resulting
+        clock must be between 2.4GHz and 2.8GHz
+
+        4. The PLL output clock is then divided by a prescale value (we assume 5),
+        then by an output division between 1 and 2**14. The resulting output clock
+        must be between 10MHz and 200MHz for the ADC clock.
+
+        To get the best output settings, we'll be calculating the output frequency
+        and calculating its percent error. The settings that result in the
+        lowest error will be used
+        """
+
+        # if the target clock is off, turn off both output clocks
         if target_freq == 0:
             # TODO: turn off clocks
             self.set_outdiv(3, 0)
             self.set_outdiv(1, 0)
             return
 
-        adc_off = (adc_mul == 0)
-        adc_mul = 1
-        if (adc_mul < 1) or (adc_mul != int(adc_mul)):
-            raise ValueError("ADC must be >= 1 and an integer")
 
+        # ADC mul must be either 0, or a positive integer
+        adc_off = (adc_mul == 0)
+        if (adc_mul < 1) or (adc_mul != int(adc_mul)):
+            if not adc_off:
+                raise ValueError("ADC must be >= 1 and an integer")
+
+        scope_logger.debug("adc_mul: {}".format(adc_mul))
+
+        # Adjust adc_mul if it results in an invalid adc clock
         if not adc_off:
             while (adc_mul * target_freq) > 200E6:
                 adc_mul -= 1
             while (adc_mul * target_freq) < 10E6:
                 adc_mul += 1
+        else:
+            # since the output div for the target freq
+            # needs to be divisible by adc_mul,
+            # setting it to 1 removes its effect
+            adc_mul = 1
 
+
+        scope_logger.debug("adc_mul: {}".format(adc_mul))
+
+        # find input divs that will give a clock
+        # input to the PLL between 1MHz and 100MHz
         okay_in_divs = [0.5]
         okay_in_divs.extend(range(1, 256))
         okay_in_divs = np.array(okay_in_divs)
         okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) >= 1E6]
         okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) <= 100E6]
-        # print(okay_in_divs)
         
         pll_muls = np.arange(5, 2**14)
-        # will just assume 5 for prescale works for both pll and output of pll
-        
-        pll_inputs = input_freq // okay_in_divs
-        # print(pll_inputs)
+
         best_in_div = 0
         best_out_div = 0
         best_pll_mul = 0
         best_error = float('inf')
         
+        # go through all valid input divisions
         for okay_in_div in okay_in_divs:
             pll_input = input_freq // okay_in_div
+
+            # calculate all valid PLL multiples for the current input division
             okay_pll_muls = np.array(pll_muls)
             okay_pll_muls = okay_pll_muls[((pll_input * 5 * okay_pll_muls) >= 2400E6)]
             okay_pll_muls = okay_pll_muls[((pll_input * 5 * okay_pll_muls) <= 2800E6)]
             
+            # go through all the valid PLL multiples we calculated
+            # and if we find better settings, update our best settings
             for pll_mul in okay_pll_muls:
                 output_input = pll_input * pll_mul
                 out_div = int((output_input / target_freq) + 0.5)
                 out_div -= out_div % adc_mul
                 
-                # check outdiv valid later
                 real_target_freq = output_input / out_div
                 error = abs(target_freq - real_target_freq) / target_freq
                 if error < best_error:
@@ -330,20 +369,23 @@ class CDCI6214:
                     best_out_div = out_div
                     best_pll_mul = pll_mul
                     best_error = error
-                    # print("New best settings {} {} {} {}: {}".format(best_in_div, best_out_div, best_pll_mul, best_error, real_target_freq))
                     
         if best_error == float('inf'):
             raise ValueError("Could not calculate pll settings for input {} with mul {}".format(target_freq, adc_mul))
 
+        # set the output settings we found
         self.set_prescale(3, 5)
         self.set_input_div(best_in_div)
         self.set_pll_mul(best_pll_mul)
         self.set_outdiv(1, best_out_div)
+
         if not adc_off:
             self.set_outdiv(3, best_out_div // adc_mul)
         else:
+            # if the user wants the ADC clock off, turn it off
             self.set_outdiv(3, 0)
 
+        # reset PLL (needed?)
         self.reset()
             
     def set_bypass_adc(self, enable_bypass):
@@ -517,11 +559,13 @@ class CDCI6214:
     @target_freq.setter
     def target_freq(self, freq):
         self._set_target_freq = freq
+        scope_logger.debug("adc_mul: {}".format(self._adc_mul))
         self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
 
     @adc_mul.setter
     def adc_mul(self, adc_mul):
         self._adc_mul = adc_mul
+        scope_logger.debug("adc_mul: {}".format(adc_mul))
         self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
 
     @property
