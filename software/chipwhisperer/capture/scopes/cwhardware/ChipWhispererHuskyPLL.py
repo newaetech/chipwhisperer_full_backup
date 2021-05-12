@@ -470,6 +470,8 @@ class CDCI6214:
             self.set_pll_input(False)
         else:
             raise ValueError("Pll src must be either 'xtal' or 'fpga'")
+        ## update clocks
+        self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
 
     @property
     def adc_mul(self):
