@@ -956,6 +956,7 @@ class NAEUSB(object):
             self.dlen = dlen
             self.segment_size = segment_size
             self.dbuf_temp = dbuf_temp
+            self.dbuf_temp.extend([0] * (dlen - len(self.dbuf_temp)))
             self.timeout_ms = timeout_ms
             self.serial = serial
             self.timeout = False
@@ -966,18 +967,25 @@ class NAEUSB(object):
             # TODO: make separate CW-Pro / Husky versions
             naeusb_logger.info("Streaming: starting USB read")
             start = time.time()
-            self.drx += self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
-            while (self.drx < self.dlen):
-                import array
-                x = array.array('B', [0]) * self.segment_size
-                recv = self.serial.usbtx.read(x, timeout=self.timeout_ms)
-                self.drx  += recv
-                self.dbuf_temp.extend(x[:recv])
-                naeusb_logger.info("Streaming: total read = {} out of {}. Current read was {}".format(self.drx, self.dlen, recv))
-                if self.stop:
-                    break
+            # self.drx += self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
+            import array
+            # tmp = array.array('B', [0]) * self.segment_size
+            # x = array.array('B', [0]) * self.segment_size
+            import libusb1
+
+            with open("test.bin", "wb") as f:
+                while (self.drx < self.dlen):
+                    recv = self.serial.usbtx.read(self.dlen, 10000)
+                     self.drx += len(recv)
+                    # f.write(recv)
+                    # self.dbuf_temp.extend(x[:recv])
+                    # naeusb_logger.info("Streaming: total read = {} out of {}. \
+                    #     Current read was {} , tried to read {}".format(self.drx, self.dlen, recv, self.segment_size))
+                    if self.stop:
+                        break
 
             #try:
+            print(self.drx)
             #    count = 0
             #    #self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
             #    while (self.drx == 0 and count < 100):
@@ -987,13 +995,15 @@ class NAEUSB(object):
             #except IOError as e:
             #    naeusb_logger.warning('Streaming: USB stream read timed out')
             diff = time.time() - start
-            naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
+            naeusb_logger.warning("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
             naeusb_logger.info("Streaming: min=%x, max=%x" % (min(self.dbuf_temp), max(self.dbuf_temp)))
-            if self.drx > self.dlen:
-                naeusb_logger.info("Read additional data, truchating from {} to {}".format(self.drx, self.dlen))
-                self.dbuf_temp = self.dbuf_temp[:self.dlen]
-                naeusb_logger.info("Read len {}".format(len(self.dbuf_temp)))
-                self.drx = self.dlen
+            with open('test.bin', 'rb') as f:
+                self.dbuf_temp[:] = array.array('B', f.read()[:])
+            # if self.drx > self.dlen:
+            #     naeusb_logger.info("Read additional data, truchating from {} to {}".format(self.drx, self.dlen))
+            #     self.dbuf_temp = self.dbuf_temp[:-self.dlen]
+            #     naeusb_logger.info("Read len {}".format(len(self.dbuf_temp)))
+            #     self.drx = self.dlen
 
 
 
