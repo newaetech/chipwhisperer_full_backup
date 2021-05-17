@@ -1282,6 +1282,7 @@ class NAEUSB_Backend:
         #return self.usbdev().read(self.rep, dbuf, timeout)
 
 
+
 class NAEUSB(object):
     """
     USB Interface for NewAE Products with Custom USB Firmware. This function allows use of a daemon backend, as it is
@@ -1289,12 +1290,15 @@ class NAEUSB(object):
     """
 
     CMD_FW_VERSION = 0x17
+    CMD_CDC_SETTINGS_EN = 0x31
 
     CMD_READMEM_BULK = 0x10
     CMD_WRITEMEM_BULK = 0x11
     CMD_READMEM_CTRL = 0x12
     CMD_WRITEMEM_CTRL = 0x13
     CMD_MEMSTREAM = 0x14
+    CMD_WRITEMEM_CTRL_SAM3U = 0x15
+    CMD_SMC_READ_SPEED = 0x27
 
     stream = False
 
@@ -1458,12 +1462,17 @@ class NAEUSB(object):
         return (num_totalbytes, num_samplebytes)
 
 
-    def initStreamModeCapture(self, dlen, dbuf_temp, timeout_ms=1000):
+    def initStreamModeCapture(self, dlen, dbuf_temp, timeout_ms=1000, is_husky=False, segment_size=0):
         #Enter streaming mode for requested number of samples
         if hasattr(self, "streamModeCaptureStream"):
             self.streamModeCaptureStream.join()
-        self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(dlen))
-        self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThread(self, dlen, dbuf_temp, timeout_ms)
+        if is_husky:
+            data=list(int.to_bytes(segment_size, length=4, byteorder='little')) + \
+                list(int.to_bytes(3, length=4, byteorder='little')) + list(int.to_bytes(dlen, length=4, byteorder="little"))
+        else:
+            data = packuint32(dlen)
+        self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=data)
+        self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThread(self, dlen, segment_size, dbuf_temp, timeout_ms)
         self.streamModeCaptureStream.start()
 
     def cmdReadStream_isDone(self):
@@ -1508,10 +1517,11 @@ class NAEUSB(object):
         self.usbserializer.read(dlen, timeout)
 
     class StreamModeCaptureThread(Thread):
-        def __init__(self, serial, dlen, dbuf_temp, timeout_ms=2000):
+        def __init__(self, serial, dlen, segment_size, dbuf_temp, timeout_ms=2000):
             """
             Reads from the FIFO in streaming mode. Requires the FPGA to be previously configured into
             streaming mode and then arm'd, otherwise this may return incorrect information.
+
             Args:
                 dlen: Number of samples to request.
                 dbuf_temp: Temporary data buffer, must be of size cmdReadStream_bufferSize(dlen) or bad things happen
@@ -1521,21 +1531,54 @@ class NAEUSB(object):
             """
             Thread.__init__(self)
             self.dlen = dlen
+            self.segment_size = segment_size
             self.dbuf_temp = dbuf_temp
+            self.dbuf_temp.extend([0] * (dlen - len(self.dbuf_temp)))
             self.timeout_ms = timeout_ms
             self.serial = serial
             self.timeout = False
             self.drx = 0
+            self.stop = False
 
         def run(self):
             logging.debug("Streaming: starting USB read")
             start = time.time()
+            transfer_list = []
+            self.drx = 0
             try:
-                self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
+                # self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
+                num_transfers = int(self.dlen // self.segment_size)
+                if (self.dlen % self.segment_size) != 0:
+                    num_transfers += 1
+
+                for i in range(num_transfers):
+                    transfer = self.serial.usbtx.handle.getTransfer()
+                    transfer.setBulk(usb1.ENDPOINT_IN | 0x05, \
+                        self.segment_size, \
+                        callback=self.callback)
+                    transfer.submit()
+                    transfer_list.append(transfer)
             except IOError as e:
-                logging.warning('Streaming: USB stream read timed out')
+                raise
+
             diff = time.time() - start
+            while any(x.isSubmitted() for x in transfer_list):
+                pass
             logging.debug("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
+
+        def callback(self, transfer):
+            if transfer.getStatus() != usb1.TRANSFER_COMPLETED:
+                transfer.submit()
+                naeusb_logger.warning("Stream failed with {}".format(transfer.getStatus()))
+                return
+            if (transfer.getActualLength() == 0) and (self.drx < self.dlen):
+                transfer.submit()
+                naeusb_logger.warning("Got 0 bytes back from stream {}".format(transfer.getStatus()))
+                return
+            self.drx += transfer.getActualLength()
+            naeusb_logger.warning("stream completed with {} bytes".format(transfer.getActualLength()))
+
+
 if __name__ == '__main__':
     from chipwhisperer.hardware.naeusb.fpga import FPGA
     from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
