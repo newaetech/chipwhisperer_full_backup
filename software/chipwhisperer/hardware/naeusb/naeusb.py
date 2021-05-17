@@ -33,6 +33,7 @@ import traceback
 import os
 import numpy as np
 import usb1
+import array
 
 from usb.backend import libusb0, libusb1
 import usb.core
@@ -1492,7 +1493,7 @@ class NAEUSB(object):
             self.usbtx.read(4096, timeout=10)
             self.usbtx.read(4096, timeout=10)
             self.usbtx.read(4096, timeout=10)
-        except IOError:
+        except:
             pass
 
         # Ensure stream mode disabled
@@ -1533,7 +1534,7 @@ class NAEUSB(object):
             self.dlen = dlen
             self.segment_size = segment_size
             self.dbuf_temp = dbuf_temp
-            self.dbuf_temp.extend([0] * (dlen - len(self.dbuf_temp)))
+            # self.dbuf_temp.extend([0] * (dlen - len(self.dbuf_temp)))
             self.timeout_ms = timeout_ms
             self.serial = serial
             self.timeout = False
@@ -1550,7 +1551,8 @@ class NAEUSB(object):
                 num_transfers = int(self.dlen // self.segment_size)
                 if (self.dlen % self.segment_size) != 0:
                     num_transfers += 1
-
+                print("Doing {} transfers".format(num_transfers))
+                print("Cal'd from dlen = {} and segment_len = {}".format(self.dlen, self.segment_size))
                 for i in range(num_transfers):
                     transfer = self.serial.usbtx.handle.getTransfer()
                     transfer.setBulk(usb1.ENDPOINT_IN | 0x05, \
@@ -1563,19 +1565,27 @@ class NAEUSB(object):
 
             diff = time.time() - start
             while any(x.isSubmitted() for x in transfer_list):
+                # print("Got {} bytes".format(self.drx))
+                if (self.drx >= self.dlen):
+                    break
                 pass
             logging.debug("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
 
         def callback(self, transfer):
-            if transfer.getStatus() != usb1.TRANSFER_COMPLETED:
-                transfer.submit()
-                naeusb_logger.warning("Stream failed with {}".format(transfer.getStatus()))
+            if (self.drx >= self.dlen):
+                self.drx += transfer.getActualLength()
                 return
             if (transfer.getActualLength() == 0) and (self.drx < self.dlen):
                 transfer.submit()
                 naeusb_logger.warning("Got 0 bytes back from stream {}".format(transfer.getStatus()))
                 return
+
+            self.dbuf_temp[self.drx:self.drx+transfer.getActualLength()] = array.array('B', transfer.getBuffer()[:transfer.getActualLength()])
             self.drx += transfer.getActualLength()
+            if transfer.getStatus() != usb1.TRANSFER_COMPLETED:
+                transfer.submit()
+                naeusb_logger.warning("Stream failed with {}".format(transfer.getStatus()))
+                return
             naeusb_logger.warning("stream completed with {} bytes".format(transfer.getActualLength()))
 
 
