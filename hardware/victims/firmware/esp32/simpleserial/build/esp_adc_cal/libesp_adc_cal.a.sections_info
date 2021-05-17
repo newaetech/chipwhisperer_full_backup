@@ -1,0 +1,130 @@
+In archive C:/Users/adewa/Code/chipwhisperer/hardware/victims/firmware/esp32/simpleserial/build/esp_adc_cal/libesp_adc_cal.a:
+
+esp_adc_cal.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.check_efuse_vref 00000004  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .literal.check_efuse_tp 00000008  00000000  00000000  00000038  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .literal.read_efuse_vref 00000004  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  3 .literal.read_efuse_tp_low 00000004  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  4 .literal.read_efuse_tp_high 0000000c  00000000  00000000  00000048  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .literal.characterize_using_two_point 00000010  00000000  00000000  00000054  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.characterize_using_vref 00000010  00000000  00000000  00000064  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.calculate_voltage_linear 00000004  00000000  00000000  00000074  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  8 .literal.calculate_voltage_lut 00000008  00000000  00000000  00000078  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  9 .literal.esp_adc_cal_check_efuse 00000008  00000000  00000000  00000080  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .literal.esp_adc_cal_characterize 00000054  00000000  00000000  00000088  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .literal.esp_adc_cal_raw_to_voltage 0000002c  00000000  00000000  000000dc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .literal.esp_adc_cal_get_voltage 0000000c  00000000  00000000  00000108  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .literal.esp_adc_cal_get_characteristics 00000014  00000000  00000000  00000114  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .literal.adc1_to_voltage 00000014  00000000  00000000  00000128  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .text         00000000  00000000  00000000  0000013c  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 16 .data         00000000  00000000  00000000  0000013c  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 17 .bss          00000000  00000000  00000000  0000013c  2**0
+                  ALLOC
+ 18 .text.check_efuse_vref 00000017  00000000  00000000  0000013c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.check_efuse_tp 00000055  00000000  00000000  00000154  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .text.read_efuse_vref 00000029  00000000  00000000  000001ac  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .text.read_efuse_tp_low 0000003f  00000000  00000000  000001d8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .text.read_efuse_tp_high 00000040  00000000  00000000  00000218  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .text.characterize_using_two_point 00000048  00000000  00000000  00000258  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .text.characterize_using_vref 0000002d  00000000  00000000  000002a0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .text.calculate_voltage_linear 00000012  00000000  00000000  000002d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .text.calculate_voltage_lut 0000006f  00000000  00000000  000002e4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .text.esp_adc_cal_check_efuse 00000031  00000000  00000000  00000354  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 28 .rodata.str1.4 000000a6  00000000  00000000  00000388  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 29 .text.esp_adc_cal_characterize 000000fa  00000000  00000000  00000430  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 30 .text.esp_adc_cal_raw_to_voltage 0000008c  00000000  00000000  0000052c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 31 .text.esp_adc_cal_get_voltage 0000005d  00000000  00000000  000005b8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 32 .text.esp_adc_cal_get_characteristics 0000002a  00000000  00000000  00000618  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 33 .text.adc1_to_voltage 0000002c  00000000  00000000  00000644  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 34 .rodata.__func__$3740 00000010  00000000  00000000  00000670  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 35 .rodata.__func__$3735 00000020  00000000  00000000  00000680  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 36 .rodata.__func__$3720 0000001b  00000000  00000000  000006a0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 37 .rodata.__func__$3709 00000019  00000000  00000000  000006bc  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 38 .rodata.lut_adc2_high 00000050  00000000  00000000  000006d8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 39 .rodata.lut_adc2_low 00000050  00000000  00000000  00000728  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 40 .rodata.lut_adc1_high 00000050  00000000  00000000  00000778  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 41 .rodata.lut_adc1_low 00000050  00000000  00000000  000007c8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 42 .rodata.adc2_vref_atten_offset 00000010  00000000  00000000  00000818  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 43 .rodata.adc1_vref_atten_offset 00000010  00000000  00000000  00000828  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 44 .rodata.adc2_vref_atten_scale 00000010  00000000  00000000  00000838  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 45 .rodata.adc1_vref_atten_scale 00000010  00000000  00000000  00000848  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 46 .rodata.adc2_tp_atten_offset 00000010  00000000  00000000  00000858  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 47 .rodata.adc1_tp_atten_offset 00000010  00000000  00000000  00000868  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 48 .rodata.adc2_tp_atten_scale 00000010  00000000  00000000  00000878  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 49 .rodata.adc1_tp_atten_scale 00000010  00000000  00000000  00000888  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 50 .debug_frame  00000178  00000000  00000000  00000898  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 51 .debug_info   00000f2b  00000000  00000000  00000a10  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 52 .debug_abbrev 000002f4  00000000  00000000  0000193b  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 53 .debug_loc    000008b4  00000000  00000000  00001c2f  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 54 .debug_aranges 00000090  00000000  00000000  000024e3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 55 .debug_ranges 00000098  00000000  00000000  00002573  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 56 .debug_line   000006d4  00000000  00000000  0000260b  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 57 .debug_str    00000925  00000000  00000000  00002cdf  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 58 .comment      0000003c  00000000  00000000  00003604  2**0
+                  CONTENTS, READONLY
+ 59 .xtensa.info  00000038  00000000  00000000  00003640  2**0
+                  CONTENTS, READONLY
+ 60 .xt.lit       00000078  00000000  00000000  00003678  2**0
+                  CONTENTS, RELOC, READONLY
+ 61 .xt.prop      000006b4  00000000  00000000  000036f0  2**0
+                  CONTENTS, RELOC, READONLY

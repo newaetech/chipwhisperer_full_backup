@@ -89,6 +89,7 @@ class OpenADCInterface_NAEUSBChip(object):
                     #if possible_sn[0]['sn'] !=
                     #sn = None
                 found_id = self.dev.con(idProduct=nae_products, serial_number=sn)
+                print(found_id)
             except (IOError, ValueError):
                 raise Warning('Could not connect to "%s". It may have been disconnected, is in an error state, or is being used by another tool.' % self.getName())
 

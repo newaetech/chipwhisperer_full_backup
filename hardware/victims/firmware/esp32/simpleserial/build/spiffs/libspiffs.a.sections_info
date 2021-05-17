@@ -1,0 +1,862 @@
+In archive C:/Users/adewa/Code/chipwhisperer/hardware/victims/firmware/esp32/simpleserial/build/spiffs/libspiffs.a:
+
+esp_spiffs.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.esp_spiffs_get_empty 00000004  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.spiffs_res_to_errno 0000002c  00000000  00000000  00000038  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .literal.spiffs_mode_conv 00000004  00000000  00000000  00000064  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  3 .literal.esp_spiffs_by_label 00000008  00000000  00000000  00000068  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.vfs_spiffs_telldir 00000010  00000000  00000000  00000070  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.esp_spiffs_free 0000001c  00000000  00000000  00000080  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.esp_spiffs_init 00000130  00000000  00000000  0000009c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.vfs_spiffs_rmdir 00000004  00000000  00000000  000001cc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .literal.vfs_spiffs_mkdir 00000004  00000000  00000000  000001d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .literal.vfs_spiffs_link 00000004  00000000  00000000  000001d4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .literal.vfs_spiffs_update_mtime_value 00000014  00000000  00000000  000001d8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .literal.vfs_spiffs_utime 00000028  00000000  00000000  000001ec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .literal.vfs_spiffs_closedir 00000028  00000000  00000000  00000214  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .literal.vfs_spiffs_seekdir 00000044  00000000  00000000  0000023c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .literal.vfs_spiffs_readdir_r 0000003c  00000000  00000000  00000280  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .literal.vfs_spiffs_readdir 00000018  00000000  00000000  000002bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .literal.vfs_spiffs_opendir 00000034  00000000  00000000  000002d4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .literal.vfs_spiffs_rename 0000002c  00000000  00000000  00000308  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .literal.vfs_spiffs_unlink 00000024  00000000  00000000  00000334  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .literal.vfs_spiffs_stat 00000038  00000000  00000000  00000358  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .literal.vfs_spiffs_fstat 0000002c  00000000  00000000  00000390  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .literal.vfs_spiffs_close 00000014  00000000  00000000  000003bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .literal.vfs_spiffs_update_mtime 00000018  00000000  00000000  000003d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .literal.vfs_spiffs_open 0000002c  00000000  00000000  000003e8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .literal.vfs_spiffs_read 00000014  00000000  00000000  00000414  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .literal.vfs_spiffs_lseek 00000014  00000000  00000000  00000428  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .literal.vfs_spiffs_write 00000014  00000000  00000000  0000043c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .literal.esp_spiffs_mounted 0000000c  00000000  00000000  00000450  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 28 .literal.esp_spiffs_info 0000000c  00000000  00000000  0000045c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 29 .literal.esp_spiffs_format 00000068  00000000  00000000  00000468  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 30 .literal.esp_vfs_spiffs_register 00000078  00000000  00000000  000004d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 31 .literal.esp_vfs_spiffs_unregister 00000010  00000000  00000000  00000548  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 32 .text         00000000  00000000  00000000  00000558  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 33 .data         00000000  00000000  00000000  00000558  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 34 .bss          00000000  00000000  00000000  00000558  2**0
+                  ALLOC
+ 35 .text.esp_spiffs_get_empty 00000022  00000000  00000000  00000558  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 36 .text.spiffs_res_to_errno 0000009d  00000000  00000000  0000057c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 37 .text.spiffs_mode_conv 0000004c  00000000  00000000  0000061c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 38 .text.esp_spiffs_by_label 00000049  00000000  00000000  00000668  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 39 .rodata.str1.4 000003f0  00000000  00000000  000006b4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 40 .text.vfs_spiffs_telldir 0000001d  00000000  00000000  00000aa4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 41 .text.esp_spiffs_free 0000004e  00000000  00000000  00000ac4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 42 .text.esp_spiffs_init 000003cd  00000000  00000000  00000b14  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 43 .text.vfs_spiffs_rmdir 00000012  00000000  00000000  00000ee4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 44 .text.vfs_spiffs_mkdir 00000012  00000000  00000000  00000ef8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 45 .text.vfs_spiffs_link 00000012  00000000  00000000  00000f0c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 46 .text.vfs_spiffs_update_mtime_value 00000032  00000000  00000000  00000f20  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 47 .text.vfs_spiffs_utime 00000060  00000000  00000000  00000f54  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 48 .text.vfs_spiffs_closedir 00000058  00000000  00000000  00000fb4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 49 .text.vfs_spiffs_seekdir 000000e0  00000000  00000000  0000100c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 50 .text.vfs_spiffs_readdir_r 000000d8  00000000  00000000  000010ec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 51 .text.vfs_spiffs_readdir 0000003c  00000000  00000000  000011c4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 52 .text.vfs_spiffs_opendir 00000088  00000000  00000000  00001200  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 53 .text.vfs_spiffs_rename 00000064  00000000  00000000  00001288  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 54 .text.vfs_spiffs_unlink 0000004d  00000000  00000000  000012ec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 55 .text.vfs_spiffs_get_mtime 00000022  00000000  00000000  0000133c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 56 .text.vfs_spiffs_stat 00000098  00000000  00000000  00001360  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 57 .text.vfs_spiffs_fstat 0000006d  00000000  00000000  000013f8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 58 .text.vfs_spiffs_close 00000039  00000000  00000000  00001468  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 59 .text.vfs_spiffs_update_mtime 0000003e  00000000  00000000  000014a4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 60 .text.vfs_spiffs_open 00000075  00000000  00000000  000014e4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 61 .text.vfs_spiffs_read 00000040  00000000  00000000  0000155c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 62 .text.vfs_spiffs_lseek 00000040  00000000  00000000  0000159c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 63 .text.vfs_spiffs_write 00000040  00000000  00000000  000015dc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 64 .text.esp_spiffs_mounted 00000031  00000000  00000000  0000161c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 65 .text.esp_spiffs_info 00000031  00000000  00000000  00001650  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 66 .text.esp_spiffs_format 00000176  00000000  00000000  00001684  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 67 .text.esp_vfs_spiffs_register 000000f6  00000000  00000000  000017fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 68 .text.esp_vfs_spiffs_unregister 00000041  00000000  00000000  000018f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 69 .rodata.__func__$7477 00000010  00000000  00000000  00001938  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 70 .rodata.__func__$7516 00000011  00000000  00000000  00001948  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 71 .rodata.__func__$7525 00000010  00000000  00000000  0000195c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 72 .rodata.__func__$7541 00000012  00000000  00000000  0000196c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 73 .rodata.__func__$7534 00000012  00000000  00000000  00001980  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 74 .rodata.__func__$7548 00000013  00000000  00000000  00001994  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 75 .rodata.__func__$7563 00000013  00000000  00000000  000019a8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 76 .rodata.__func__$7573 00000015  00000000  00000000  000019bc  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 77 .rodata.__func__$7585 00000013  00000000  00000000  000019d4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 78 .rodata.__func__$7592 00000013  00000000  00000000  000019e8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 79 .rodata.__func__$7555 00000014  00000000  00000000  000019fc  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 80 .rodata.__func__$7637 00000011  00000000  00000000  00001a10  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 81 .rodata.__func__$7439 00000018  00000000  00000000  00001a24  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 82 .rodata.__func__$7434 00000012  00000000  00000000  00001a3c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 83 .bss._efs     0000000c  00000000  00000000  00001a50  2**2
+                  ALLOC
+ 84 .debug_frame  00000328  00000000  00000000  00001a50  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 85 .debug_info   00003836  00000000  00000000  00001d78  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 86 .debug_abbrev 0000039a  00000000  00000000  000055ae  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 87 .debug_loc    00001281  00000000  00000000  00005948  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 88 .debug_aranges 00000120  00000000  00000000  00006bc9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 89 .debug_ranges 00000110  00000000  00000000  00006ce9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 90 .debug_line   00001310  00000000  00000000  00006df9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 91 .debug_str    00001595  00000000  00000000  00008109  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 92 .comment      0000003c  00000000  00000000  0000969e  2**0
+                  CONTENTS, READONLY
+ 93 .xtensa.info  00000038  00000000  00000000  000096da  2**0
+                  CONTENTS, READONLY
+ 94 .xt.lit       00000100  00000000  00000000  00009712  2**0
+                  CONTENTS, RELOC, READONLY
+ 95 .xt.prop      00000f18  00000000  00000000  00009812  2**0
+                  CONTENTS, RELOC, READONLY
+
+spiffs_api.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.spiffs_api_lock 00000004  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.spiffs_api_unlock 00000004  00000000  00000000  00000038  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.spiffs_api_read 00000014  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.spiffs_api_write 00000014  00000000  00000000  00000050  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.spiffs_api_erase 00000014  00000000  00000000  00000064  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.spiffs_api_check 00000018  00000000  00000000  00000078  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text         00000000  00000000  00000000  00000090  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  7 .data         00000000  00000000  00000000  00000090  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  8 .bss          00000000  00000000  00000000  00000090  2**0
+                  ALLOC
+  9 .text.spiffs_api_lock 00000016  00000000  00000000  00000090  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.spiffs_api_unlock 00000016  00000000  00000000  000000a8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .rodata.str1.4 00000181  00000000  00000000  000000c0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 12 .text.spiffs_api_read 00000040  00000000  00000000  00000244  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.spiffs_api_write 00000040  00000000  00000000  00000284  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.spiffs_api_erase 0000003c  00000000  00000000  000002c4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .text.spiffs_api_check 00000036  00000000  00000000  00000300  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .rodata.spiffs_check_report_str$6793 0000001c  00000000  00000000  00000338  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 17 .rodata.spiffs_check_type_str$6792 0000000c  00000000  00000000  00000354  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 18 .debug_frame  000000a0  00000000  00000000  00000360  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 19 .debug_info   00000ac3  00000000  00000000  00000400  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 20 .debug_abbrev 000001d9  00000000  00000000  00000ec3  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 21 .debug_loc    0000014d  00000000  00000000  0000109c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 22 .debug_aranges 00000048  00000000  00000000  000011e9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 23 .debug_ranges 00000038  00000000  00000000  00001231  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 24 .debug_line   00000402  00000000  00000000  00001269  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 25 .debug_str    00000bcc  00000000  00000000  0000166b  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 26 .comment      0000003c  00000000  00000000  00002237  2**0
+                  CONTENTS, READONLY
+ 27 .xtensa.info  00000038  00000000  00000000  00002273  2**0
+                  CONTENTS, READONLY
+ 28 .xt.lit       00000030  00000000  00000000  000022ab  2**0
+                  CONTENTS, RELOC, READONLY
+ 29 .xt.prop      0000018c  00000000  00000000  000022db  2**0
+                  CONTENTS, RELOC, READONLY
+
+spiffs_cache.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.spiffs_cache_page_remove_oldest 00000004  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.spiffs_cache_drop_page 00000008  00000000  00000000  00000038  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.spiffs_phys_rd 00000014  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.spiffs_phys_wr 0000000c  00000000  00000000  00000054  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.spiffs_cache_page_allocate_by_fd 00000008  00000000  00000000  00000060  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.spiffs_cache_fd_release 00000004  00000000  00000000  00000068  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.spiffs_cache_init 00000008  00000000  00000000  0000006c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text         00000000  00000000  00000000  00000074  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  8 .data         00000000  00000000  00000000  00000074  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  9 .bss          00000000  00000000  00000000  00000074  2**0
+                  ALLOC
+ 10 .text.spiffs_cache_page_get 00000048  00000000  00000000  00000074  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.spiffs_cache_page_free 0000006d  00000000  00000000  000000bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.spiffs_cache_page_remove_oldest 0000005d  00000000  00000000  0000012c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.spiffs_cache_page_allocate 00000042  00000000  00000000  0000018c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.spiffs_cache_drop_page 0000001f  00000000  00000000  000001d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .text.spiffs_phys_rd 0000010b  00000000  00000000  000001f0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .text.spiffs_phys_wr 000000b5  00000000  00000000  000002fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .text.spiffs_cache_page_get_by_fd 00000048  00000000  00000000  000003b4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.spiffs_cache_page_allocate_by_fd 00000030  00000000  00000000  000003fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.spiffs_cache_fd_release 0000003f  00000000  00000000  0000042c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .text.spiffs_cache_init 00000092  00000000  00000000  0000046c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .debug_frame  00000118  00000000  00000000  00000500  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 22 .debug_info   00000dd9  00000000  00000000  00000618  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 23 .debug_abbrev 000002b9  00000000  00000000  000013f1  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 24 .debug_loc    000008a4  00000000  00000000  000016aa  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 25 .debug_aranges 00000070  00000000  00000000  00001f4e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 26 .debug_ranges 000000c0  00000000  00000000  00001fbe  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 27 .debug_line   000005ce  00000000  00000000  0000207e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 28 .debug_str    000007ce  00000000  00000000  0000264c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 29 .comment      0000003c  00000000  00000000  00002e1a  2**0
+                  CONTENTS, READONLY
+ 30 .xtensa.info  00000038  00000000  00000000  00002e56  2**0
+                  CONTENTS, READONLY
+ 31 .xt.lit       00000038  00000000  00000000  00002e8e  2**0
+                  CONTENTS, RELOC, READONLY
+ 32 .xt.prop      0000048c  00000000  00000000  00002ec6  2**0
+                  CONTENTS, RELOC, READONLY
+
+spiffs_check.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.spiffs_object_get_data_page_index_reference 0000000c  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.spiffs_object_index_consistency_check_v 0000002c  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.spiffs_rewrite_page 00000008  00000000  00000000  0000006c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.spiffs_delete_obj_lazy 0000000c  00000000  00000000  00000074  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.spiffs_rewrite_index 00000030  00000000  00000000  00000080  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.spiffs_lookup_check_validate 00000080  00000000  00000000  000000b0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.spiffs_lookup_check_v 00000010  00000000  00000000  00000130  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.spiffs_page_consistency_check_i 00000064  00000000  00000000  00000140  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .literal.spiffs_lookup_consistency_check 0000000c  00000000  00000000  000001a4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .literal.spiffs_page_consistency_check 00000004  00000000  00000000  000001b0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .literal.spiffs_object_index_consistency_check 00000010  00000000  00000000  000001b4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text         00000000  00000000  00000000  000001c4  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 12 .data         00000000  00000000  00000000  000001c4  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 13 .bss          00000000  00000000  00000000  000001c4  2**0
+                  ALLOC
+ 14 .text.spiffs_object_index_search 0000002b  00000000  00000000  000001c4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .text.spiffs_object_get_data_page_index_reference 00000094  00000000  00000000  000001f0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .text.spiffs_object_index_consistency_check_v 000001ca  00000000  00000000  00000284  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .text.spiffs_rewrite_page 00000051  00000000  00000000  00000450  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.spiffs_delete_obj_lazy 0000004d  00000000  00000000  000004a4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.spiffs_rewrite_index 000001b5  00000000  00000000  000004f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .text.spiffs_lookup_check_validate 0000079e  00000000  00000000  000006ac  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .text.spiffs_lookup_check_v 000000a1  00000000  00000000  00000e4c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .text.spiffs_page_consistency_check_i 000007ca  00000000  00000000  00000ef0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .text.spiffs_lookup_consistency_check 00000068  00000000  00000000  000016bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .text.spiffs_page_consistency_check 0000004c  00000000  00000000  00001724  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .text.spiffs_object_index_consistency_check 0000007c  00000000  00000000  00001770  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .debug_frame  00000130  00000000  00000000  000017ec  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 27 .debug_info   00001ceb  00000000  00000000  0000191c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 28 .debug_abbrev 000002b6  00000000  00000000  00003607  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 29 .debug_loc    00001a44  00000000  00000000  000038bd  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 30 .debug_aranges 00000078  00000000  00000000  00005301  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 31 .debug_ranges 000001f0  00000000  00000000  00005379  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 32 .debug_line   0000122a  00000000  00000000  00005569  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 33 .debug_str    000009d4  00000000  00000000  00006793  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 34 .comment      0000003c  00000000  00000000  00007167  2**0
+                  CONTENTS, READONLY
+ 35 .xtensa.info  00000038  00000000  00000000  000071a3  2**0
+                  CONTENTS, READONLY
+ 36 .xt.lit       00000058  00000000  00000000  000071db  2**0
+                  CONTENTS, RELOC, READONLY
+ 37 .xt.prop      000011d0  00000000  00000000  00007233  2**0
+                  CONTENTS, RELOC, READONLY
+
+spiffs_gc.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.spiffs_gc_erase_block 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.spiffs_gc_quick 00000010  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.spiffs_gc_erase_page_stats 00000008  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.spiffs_gc_find_candidate 00000014  00000000  00000000  00000054  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.spiffs_gc_clean 00000068  00000000  00000000  00000068  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.spiffs_gc_check 00000014  00000000  00000000  000000d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text         00000000  00000000  00000000  000000e4  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  7 .data         00000000  00000000  00000000  000000e4  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  8 .bss          00000000  00000000  00000000  000000e4  2**0
+                  ALLOC
+  9 .text.spiffs_gc_erase_block 00000038  00000000  00000000  000000e4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.spiffs_gc_quick 00000146  00000000  00000000  0000011c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.spiffs_gc_erase_page_stats 000000b3  00000000  00000000  00000264  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.spiffs_gc_find_candidate 000001f8  00000000  00000000  00000318  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.spiffs_gc_clean 0000052c  00000000  00000000  00000510  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.spiffs_gc_check 00000168  00000000  00000000  00000a3c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .debug_frame  000000a0  00000000  00000000  00000ba4  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_info   0000107a  00000000  00000000  00000c44  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 17 .debug_abbrev 00000275  00000000  00000000  00001cbe  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 18 .debug_loc    00001098  00000000  00000000  00001f33  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 19 .debug_aranges 00000048  00000000  00000000  00002fcb  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 20 .debug_ranges 000000e0  00000000  00000000  00003013  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 21 .debug_line   00000b09  00000000  00000000  000030f3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 22 .debug_str    0000098a  00000000  00000000  00003bfc  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 23 .comment      0000003c  00000000  00000000  00004586  2**0
+                  CONTENTS, READONLY
+ 24 .xtensa.info  00000038  00000000  00000000  000045c2  2**0
+                  CONTENTS, READONLY
+ 25 .xt.lit       00000030  00000000  00000000  000045fa  2**0
+                  CONTENTS, RELOC, READONLY
+ 26 .xt.prop      0000093c  00000000  00000000  0000462a  2**0
+                  CONTENTS, RELOC, READONLY
+
+spiffs_hydrogen.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.spiffs_hydro_write 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.spiffs_fflush_cache 00000010  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.spiffs_hydro_read 00000048  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.spiffs_stat_pix 0000000c  00000000  00000000  00000094  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.spiffs_read_dir_v 00000010  00000000  00000000  000000a0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.SPIFFS_format 00000020  00000000  00000000  000000b0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.SPIFFS_probe_fs 00000004  00000000  00000000  000000d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.SPIFFS_mount 00000030  00000000  00000000  000000d4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .literal.SPIFFS_unmount 00000014  00000000  00000000  00000104  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .literal.SPIFFS_creat 0000002c  00000000  00000000  00000118  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .literal.SPIFFS_open 00000078  00000000  00000000  00000144  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .literal.SPIFFS_open_by_dirent 00000034  00000000  00000000  000001bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .literal.SPIFFS_open_by_page 00000050  00000000  00000000  000001f0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .literal.SPIFFS_read 00000008  00000000  00000000  00000240  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .literal.SPIFFS_write 00000060  00000000  00000000  00000248  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .literal.SPIFFS_lseek 0000003c  00000000  00000000  000002a8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .literal.SPIFFS_remove 00000048  00000000  00000000  000002e4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .literal.SPIFFS_fremove 00000030  00000000  00000000  0000032c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .literal.SPIFFS_stat 00000028  00000000  00000000  0000035c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .literal.SPIFFS_fstat 00000024  00000000  00000000  00000384  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .literal.SPIFFS_fflush 0000001c  00000000  00000000  000003a8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .literal.SPIFFS_close 00000024  00000000  00000000  000003c4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .literal.SPIFFS_rename 0000005c  00000000  00000000  000003e8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .literal.SPIFFS_update_meta 0000003c  00000000  00000000  00000444  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .literal.SPIFFS_fupdate_meta 0000002c  00000000  00000000  00000480  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .literal.SPIFFS_opendir 0000000c  00000000  00000000  000004ac  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 26 .literal.SPIFFS_readdir 00000014  00000000  00000000  000004b8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .literal.SPIFFS_closedir 0000000c  00000000  00000000  000004cc  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 28 .literal.SPIFFS_check 00000024  00000000  00000000  000004d8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 29 .literal.SPIFFS_info 00000014  00000000  00000000  000004fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 30 .literal.SPIFFS_gc_quick 0000001c  00000000  00000000  00000510  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 31 .literal.SPIFFS_gc 0000001c  00000000  00000000  0000052c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 32 .literal.SPIFFS_eof 00000024  00000000  00000000  00000548  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 33 .literal.SPIFFS_tell 00000024  00000000  00000000  0000056c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 34 .literal.SPIFFS_set_file_callback_func 00000008  00000000  00000000  00000590  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 35 .literal.SPIFFS_ix_map 00000030  00000000  00000000  00000598  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 36 .literal.SPIFFS_ix_unmap 00000024  00000000  00000000  000005c8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 37 .literal.SPIFFS_ix_remap 00000048  00000000  00000000  000005ec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 38 .literal.SPIFFS_bytes_to_ix_map_entries 00000008  00000000  00000000  00000634  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 39 .literal.SPIFFS_ix_map_entries_to_bytes 00000008  00000000  00000000  0000063c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 40 .text         00000000  00000000  00000000  00000644  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 41 .data         00000000  00000000  00000000  00000644  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 42 .bss          00000000  00000000  00000000  00000644  2**0
+                  ALLOC
+ 43 .text.spiffs_hydro_write 00000058  00000000  00000000  00000644  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 44 .text.spiffs_fflush_cache 00000072  00000000  00000000  0000069c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 45 .text.spiffs_hydro_read 00000120  00000000  00000000  00000710  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 46 .text.spiffs_stat_pix 000000af  00000000  00000000  00000830  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 47 .text.spiffs_read_dir_v 000000ca  00000000  00000000  000008e0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 48 .text.SPIFFS_mounted 0000000f  00000000  00000000  000009ac  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 49 .text.SPIFFS_format 00000074  00000000  00000000  000009bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 50 .text.SPIFFS_probe_fs 00000010  00000000  00000000  00000a30  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 51 .text.SPIFFS_mount 00000126  00000000  00000000  00000a40  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 52 .text.SPIFFS_unmount 0000005b  00000000  00000000  00000b68  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 53 .text.SPIFFS_errno 00000008  00000000  00000000  00000bc4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 54 .text.SPIFFS_clearerr 0000000a  00000000  00000000  00000bcc  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 55 .text.SPIFFS_creat 00000098  00000000  00000000  00000bd8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 56 .text.SPIFFS_open 000001fd  00000000  00000000  00000c70  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 57 .text.SPIFFS_open_by_dirent 000000d5  00000000  00000000  00000e70  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 58 .text.SPIFFS_open_by_page 00000150  00000000  00000000  00000f48  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 59 .text.SPIFFS_read 00000020  00000000  00000000  00001098  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 60 .text.SPIFFS_write 00000242  00000000  00000000  000010b8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 61 .text.SPIFFS_lseek 00000129  00000000  00000000  000012fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 62 .text.SPIFFS_remove 0000010a  00000000  00000000  00001428  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 63 .text.SPIFFS_fremove 000000a0  00000000  00000000  00001534  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 64 .text.SPIFFS_stat 00000086  00000000  00000000  000015d4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 65 .text.SPIFFS_fstat 0000007a  00000000  00000000  0000165c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 66 .text.SPIFFS_fflush 0000005a  00000000  00000000  000016d8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 67 .text.SPIFFS_close 00000078  00000000  00000000  00001734  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 68 .text.SPIFFS_rename 0000015c  00000000  00000000  000017ac  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 69 .text.SPIFFS_update_meta 000000f6  00000000  00000000  00001908  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 70 .text.SPIFFS_fupdate_meta 000000a8  00000000  00000000  00001a00  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 71 .text.SPIFFS_opendir 00000037  00000000  00000000  00001aa8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 72 .text.SPIFFS_readdir 00000069  00000000  00000000  00001ae0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 73 .text.SPIFFS_closedir 00000029  00000000  00000000  00001b4c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 74 .text.SPIFFS_check 00000060  00000000  00000000  00001b78  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 75 .text.SPIFFS_info 00000070  00000000  00000000  00001bd8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 76 .text.SPIFFS_gc_quick 0000005a  00000000  00000000  00001c48  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 77 .text.SPIFFS_gc 0000005a  00000000  00000000  00001ca4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 78 .text.SPIFFS_eof 00000090  00000000  00000000  00001d00  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 79 .text.SPIFFS_tell 0000007e  00000000  00000000  00001d90  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 80 .text.SPIFFS_set_file_callback_func 0000001c  00000000  00000000  00001e10  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 81 .text.SPIFFS_ix_map 000000d5  00000000  00000000  00001e2c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 82 .text.SPIFFS_ix_unmap 00000078  00000000  00000000  00001f04  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 83 .text.SPIFFS_ix_remap 00000176  00000000  00000000  00001f7c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 84 .text.SPIFFS_bytes_to_ix_map_entries 00000025  00000000  00000000  000020f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 85 .text.SPIFFS_ix_map_entries_to_bytes 00000020  00000000  00000000  0000211c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 86 .debug_frame  00000418  00000000  00000000  0000213c  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 87 .debug_info   000033cf  00000000  00000000  00002554  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 88 .debug_abbrev 00000322  00000000  00000000  00005923  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 89 .debug_loc    000028a4  00000000  00000000  00005c45  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 90 .debug_aranges 00000170  00000000  00000000  000084e9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 91 .debug_ranges 00000178  00000000  00000000  00008659  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 92 .debug_line   00001b06  00000000  00000000  000087d1  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 93 .debug_str    00000e84  00000000  00000000  0000a2d7  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 94 .comment      0000003c  00000000  00000000  0000b15b  2**0
+                  CONTENTS, READONLY
+ 95 .xtensa.info  00000038  00000000  00000000  0000b197  2**0
+                  CONTENTS, READONLY
+ 96 .xt.lit       00000140  00000000  00000000  0000b1cf  2**0
+                  CONTENTS, RELOC, READONLY
+ 97 .xt.prop      00001a4c  00000000  00000000  0000b30f  2**0
+                  CONTENTS, RELOC, READONLY
+
+spiffs_nucleus.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.spiffs_obj_lu_scan_v 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .literal.spiffs_update_ix_map 00000004  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .literal.spiffs_hash 00000004  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  3 .literal.spiffs_obj_lu_find_id_and_span_v 00000008  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.spiffs_populate_ix_map_v 00000024  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.spiffs_page_data_check 00000028  00000000  00000000  00000070  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.spiffs_page_index_check 00000028  00000000  00000000  00000098  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.spiffs_object_find_object_index_header_by_name_v 00000010  00000000  00000000  000000c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .literal.spiffs_obj_lu_find_free_obj_id_compact_v 00000014  00000000  00000000  000000d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .literal.spiffs_obj_lu_find_free_obj_id_bitmap_v 00000010  00000000  00000000  000000e4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .literal.spiffs_phys_cpy 00000008  00000000  00000000  000000f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .literal.spiffs_obj_lu_find_entry_visitor 00000014  00000000  00000000  000000fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .literal.spiffs_erase_block 0000000c  00000000  00000000  00000110  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .literal.spiffs_probe 00000010  00000000  00000000  0000011c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .literal.spiffs_obj_lu_scan 00000028  00000000  00000000  0000012c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .literal.spiffs_obj_lu_find_id 0000000c  00000000  00000000  00000154  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .literal.spiffs_obj_lu_find_free 00000014  00000000  00000000  00000160  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .literal.spiffs_obj_lu_find_id_and_span 00000010  00000000  00000000  00000174  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .literal.spiffs_obj_lu_find_id_and_span_by_phdr 00000010  00000000  00000000  00000184  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .literal.spiffs_populate_ix_map 00000014  00000000  00000000  00000194  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .literal.spiffs_page_allocate_data 00000014  00000000  00000000  000001a8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .literal.spiffs_page_delete 00000008  00000000  00000000  000001bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .literal.spiffs_page_move 00000018  00000000  00000000  000001c4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .literal.spiffs_cb_object_event 0000000c  00000000  00000000  000001dc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .literal.spiffs_object_create 00000020  00000000  00000000  000001e8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .literal.spiffs_object_update_index_hdr 00000028  00000000  00000000  00000208  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .literal.spiffs_object_open_by_page 0000001c  00000000  00000000  00000230  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .literal.spiffs_object_open_by_id 0000000c  00000000  00000000  0000024c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 28 .literal.spiffs_object_append 00000084  00000000  00000000  00000258  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 29 .literal.spiffs_object_modify 0000006c  00000000  00000000  000002dc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 30 .literal.spiffs_object_find_object_index_header_by_name 00000010  00000000  00000000  00000348  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 31 .literal.spiffs_object_truncate 0000008c  00000000  00000000  00000358  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 32 .literal.spiffs_object_read 00000030  00000000  00000000  000003e4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 33 .literal.spiffs_obj_lu_find_free_obj_id 00000024  00000000  00000000  00000414  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 34 .literal.spiffs_fd_find_new 0000000c  00000000  00000000  00000438  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 35 .literal.spiffs_fd_return 00000008  00000000  00000000  00000444  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 36 .literal.spiffs_fd_get 00000008  00000000  00000000  0000044c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 37 .literal.spiffs_fd_temporal_cache_rehash 00000008  00000000  00000000  00000454  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 38 .text         00000000  00000000  00000000  0000045c  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 39 .data         00000000  00000000  00000000  0000045c  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 40 .bss          00000000  00000000  00000000  0000045c  2**0
+                  ALLOC
+ 41 .text.spiffs_obj_lu_scan_v 00000035  00000000  00000000  0000045c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 42 .text.spiffs_update_ix_map 000000f0  00000000  00000000  00000494  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 43 .text.spiffs_hash 00000026  00000000  00000000  00000584  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 44 .text.spiffs_obj_lu_find_id_and_span_v 0000009e  00000000  00000000  000005ac  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 45 .text.spiffs_populate_ix_map_v 00000109  00000000  00000000  0000064c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 46 .text.spiffs_page_data_check 00000095  00000000  00000000  00000758  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 47 .text.spiffs_page_index_check 000000a1  00000000  00000000  000007f0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 48 .text.spiffs_object_find_object_index_header_by_name_v 0000008e  00000000  00000000  00000894  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 49 .text.spiffs_obj_lu_find_free_obj_id_compact_v 0000009a  00000000  00000000  00000924  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 50 .text.spiffs_obj_lu_find_free_obj_id_bitmap_v 000000d5  00000000  00000000  000009c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 51 .text.spiffs_phys_cpy 00000051  00000000  00000000  00000a98  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 52 .text.spiffs_obj_lu_find_entry_visitor 000001de  00000000  00000000  00000aec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 53 .text.spiffs_erase_block 000000d5  00000000  00000000  00000ccc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 54 .text.spiffs_probe 000000f5  00000000  00000000  00000da4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 55 .text.spiffs_obj_lu_scan 00000158  00000000  00000000  00000e9c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 56 .text.spiffs_obj_lu_find_id 0000002d  00000000  00000000  00000ff4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 57 .text.spiffs_obj_lu_find_free 00000071  00000000  00000000  00001024  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 58 .text.spiffs_obj_lu_find_id_and_span 00000082  00000000  00000000  00001098  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 59 .text.spiffs_obj_lu_find_id_and_span_by_phdr 00000082  00000000  00000000  0000111c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 60 .text.spiffs_populate_ix_map 000000c1  00000000  00000000  000011a0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 61 .text.spiffs_page_allocate_data 00000166  00000000  00000000  00001264  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 62 .text.spiffs_page_delete 0000007e  00000000  00000000  000013cc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 63 .text.spiffs_page_move 00000142  00000000  00000000  0000144c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 64 .text.spiffs_cb_object_event 00000162  00000000  00000000  00001590  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 65 .text.spiffs_object_create 00000188  00000000  00000000  000016f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 66 .text.spiffs_object_update_index_hdr 00000169  00000000  00000000  0000187c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 67 .text.spiffs_object_open_by_page 000000c5  00000000  00000000  000019e8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 68 .text.spiffs_object_open_by_id 00000040  00000000  00000000  00001ab0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 69 .text.spiffs_object_append 0000066a  00000000  00000000  00001af0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 70 .text.spiffs_object_modify 000004f2  00000000  00000000  0000215c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 71 .text.spiffs_object_find_object_index_header_by_name 0000006a  00000000  00000000  00002650  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 72 .text.spiffs_object_truncate 00000565  00000000  00000000  000026bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 73 .text.spiffs_object_read 00000205  00000000  00000000  00002c24  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 74 .text.spiffs_obj_lu_find_free_obj_id 00000181  00000000  00000000  00002e2c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 75 .text.spiffs_fd_find_new 000000e8  00000000  00000000  00002fb0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 76 .text.spiffs_fd_return 00000041  00000000  00000000  00003098  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 77 .text.spiffs_fd_get 00000036  00000000  00000000  000030dc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 78 .text.spiffs_fd_temporal_cache_rehash 0000003e  00000000  00000000  00003114  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 79 .debug_frame  000003a0  00000000  00000000  00003154  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 80 .debug_info   00003976  00000000  00000000  000034f4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 81 .debug_abbrev 0000035d  00000000  00000000  00006e6a  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 82 .debug_loc    00003ea9  00000000  00000000  000071c7  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 83 .debug_aranges 00000148  00000000  00000000  0000b070  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 84 .debug_ranges 00000278  00000000  00000000  0000b1b8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 85 .debug_line   00002854  00000000  00000000  0000b430  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 86 .debug_str    00000fa7  00000000  00000000  0000dc84  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 87 .comment      0000003c  00000000  00000000  0000ec2b  2**0
+                  CONTENTS, READONLY
+ 88 .xtensa.info  00000038  00000000  00000000  0000ec67  2**0
+                  CONTENTS, READONLY
+ 89 .xt.lit       00000130  00000000  00000000  0000ec9f  2**0
+                  CONTENTS, RELOC, READONLY
+ 90 .xt.prop      000029f4  00000000  00000000  0000edcf  2**0
+                  CONTENTS, RELOC, READONLY
