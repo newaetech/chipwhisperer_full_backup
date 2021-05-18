@@ -525,39 +525,23 @@ def get_cw_type(sn=None):
     """ Gets the scope type of the connected ChipWhisperer
     If multiple connected, sn must be specified
     """
-    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
+    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, NAEUSB_Backend
     from chipwhisperer.capture import scopes
+    # todo: pyusb as well
+
     possible_ids = [0xace0, 0xace2, 0xace3, 0xace5]
 
-    cwusb = NAEUSB().usbtx
-    dev_list = cwusb.get_possible_devices(idProduct=possible_ids)
+    cwusb = NAEUSB_Backend()
+    device = cwusb.find(idProduct=possible_ids)
 
-    naelist = cwusb.get_naelist(dev_list)
-    naelist_accessable = [dev for dev in naelist if cwusb.is_accessable(dev)]
-    if len(naelist) == 0:
-        add_info = ""
-        if sn:
-            add_info = " with serial number {}".format(serial_number)
-        raise OSError("Could not find ChipWhisperer{}. Is it connected?".format(add_info))
-
-    if len(naelist_accessable) == 0:
-        logging.error("Found ChipWhisperer, but device not accessable")
-        logging.error("Try checking that you have permission to access the device and that it isn't being used elsewhere (i.e. in another Python instance, or in this script)")
-        sn = naelist[0].getSerialNumber() #should throw error, if not, it's fine I guess
-
-    if len(naelist_accessable) > 1:
-        sns = ["{}:{}".format(dev.getProduct(), dev.getSerialNumber()) for dev in naelist_accessable]
-        raise Warning("Multiple ChipWhisperers connected, please specify serial number." \
-                      "\nDevices:\n \
-                      {}".format(sns))
-
-    name = naelist_accessable[0].getProduct()
+    name = device.getProduct()
+    cwusb.usb_ctx.close()
     if (name == "ChipWhisperer Lite") or (name == "ChipWhisperer CW1200") or (name == "ChipWhisperer Husky"):
         return scopes.OpenADC
     elif name == "ChipWhisperer Nano":
         return scopes.CWNano
     else:
-        raise OSError("Got chipwhisperer with unknown name {} (ID = {})".format(name, naelist_accessable[0].getProductID()))
+        raise OSError("Got chipwhisperer with unknown name {} (ID = {})".format(name, possible_ids))
 import time
 def better_delay(ms):
     t = time.perf_counter() + ms / 1000
