@@ -534,19 +534,17 @@ def get_cw_type(sn=None):
 
     cwusb = NAEUSB_Backend_Legacy()
     try:
-        device = cwusb.find(idProduct=possible_ids)
+        device = cwusb.find(sn=sn, idProduct=possible_ids)
         legacy_backend = True
         name = device.product
     except:
         try:
             cwusb = NAEUSB_Backend()
-            device = cwusb.find(idProduct=possible_ids)
+            device = cwusb.find(sn=sn, idProduct=possible_ids)
             name = device.getProduct()
             cwusb.usb_ctx.close()
         except Exception as e:
             raise e from None # suppress legacy error message
-
-        
 
     if (name == "ChipWhisperer Lite") or (name == "ChipWhisperer CW1200") or (name == "ChipWhisperer Husky"):
         return scopes.OpenADC, legacy_backend
@@ -559,3 +557,25 @@ def better_delay(ms):
     t = time.perf_counter() + ms / 1000
     while time.perf_counter() < t:
         pass
+
+def is_cw_legacy(pids, sn=None):
+    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, NAEUSB_Backend, NAEUSB_Backend_Legacy
+    from chipwhisperer.capture import scopes
+    # todo: pyusb as well
+    legacy_backend = False
+
+    possible_ids = pids
+
+    cwusb = NAEUSB_Backend_Legacy()
+    try:
+        device = cwusb.find(sn=sn, idProduct=possible_ids)
+        legacy_backend = True
+    except:
+        try:
+            cwusb = NAEUSB_Backend()
+            device = cwusb.find(sn=sn, idProduct=possible_ids)
+            cwusb.usb_ctx.close()
+        except Exception as e:
+            raise e from None # suppress legacy error message
+
+    return legacy_backend

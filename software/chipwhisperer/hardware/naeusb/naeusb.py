@@ -641,7 +641,6 @@ class NAEUSB:
             self.usbtx = NAEUSB_Backend()
         else:
             self.usbtx = NAEUSB_Backend_Legacy()
-            naeusb_logger.warning("Using legacy backend. Updating your firmware is highly recommended")
         self.usbseralizer = self.usbtx
 
     def get_possible_devices(self, idProduct):
@@ -681,7 +680,8 @@ class NAEUSB:
         """
         Connect to device using default VID/PID
         """
-        naeusb_logger.info("Using legacy" if self.legacy else "Using new backend")
+        if self.legacy:
+            naeusb_logger.warning("Using legacy backend. Updating your firmware is highly recommended")
 
         self.usbtx.open(idProduct=idProduct, serial_number=serial_number, connect_to_first=True)
 

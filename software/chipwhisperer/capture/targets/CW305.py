@@ -23,6 +23,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+from common.utils.util import is_cw_legacy
 import logging
 import time
 import random
@@ -276,6 +277,8 @@ class CW305(TargetTemplate):
         """
 
         from datetime import datetime
+        from chipwhisperer.common.utils.util import is_cw_legacy
+        self._naeusb.legacy = is_cw_legacy([0xC305])
         self._naeusb.con(idProduct=[0xC305])
         if not fpga_id is None:
             if fpga_id not in ('100t', '35t'):

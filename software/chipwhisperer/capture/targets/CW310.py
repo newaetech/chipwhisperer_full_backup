@@ -76,6 +76,8 @@ class CW310(CW305):
 
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True):
         # add more stuff later
+        from chipwhisperer.common.utils.util import is_cw_legacy
+        self._naeusb.legacy = is_cw_legacy([0xC310])
         self._naeusb.con(idProduct=[0xC310])
         # self.pll.cdce906init()
 
