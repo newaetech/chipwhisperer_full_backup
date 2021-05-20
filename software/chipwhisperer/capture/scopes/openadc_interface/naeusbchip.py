@@ -68,9 +68,11 @@ class OpenADCInterface_NAEUSBChip(object):
             }
             self.scope = oadcInstance
 
-    def con(self, sn=None):
+    def con(self, sn=None, legacy=False):
         if self.ser is None:
-            self.dev = CWL.CWLiteUSB()
+            scope_logger.info("Legacy? {}".format(legacy))
+
+            self.dev = CWL.CWLiteUSB(legacy)
 
             # try:
             nae_products = [0xACE2, 0xACE3, 0xACE5]
@@ -80,7 +82,7 @@ class OpenADCInterface_NAEUSBChip(object):
             #     raise Warning('Could not connect to "%s". It may have been disconnected, is in an error state, or is being used by another tool.' % self.getName())
 
             if found_id != self.last_id:
-                logging.info("Detected ChipWhisperer with USB ID %x - switching firmware loader" % found_id)
+                scope_logger.info("Detected ChipWhisperer with USB ID %x - switching firmware loader" % found_id)
             self.last_id = found_id
 
             self.getFWConfig().setInterface(self.dev.fpga)
@@ -96,7 +98,7 @@ class OpenADCInterface_NAEUSBChip(object):
 
         try:
             self.scope.con(self.ser)
-            logging.info('OpenADC Found, Connecting')
+            scope_logger.info('OpenADC Found, Connecting')
         except IOError as e:
             exctype, value = sys.exc_info()[:2]
             raise IOError("OpenADC: " + (str(exctype) + str(value)))

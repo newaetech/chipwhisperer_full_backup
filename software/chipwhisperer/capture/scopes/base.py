@@ -54,11 +54,11 @@ class ScopeTemplate(object):
     def getStatus(self):
         return self.connectStatus
 
-    def con(self, sn=None):
-        if self._con(sn):
+    def con(self, sn=None, legacy=False):
+        if self._con(sn, legacy):
             self.connectStatus = True
 
-    def _con(self, sn=None):
+    def _con(self, sn=None, legacy=False):
         raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def dis(self):

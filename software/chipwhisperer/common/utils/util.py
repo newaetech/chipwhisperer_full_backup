@@ -522,24 +522,36 @@ def camel_case_deprecated(func):
 #         return scopes.CWNano
 
 def get_cw_type(sn=None):
-    """ Gets the scope type of the connected ChipWhisperer
+    """ Gets the scope type of the connected ChipWhisperer and whether the legacy backend needs to be used
     If multiple connected, sn must be specified
     """
-    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, NAEUSB_Backend
+    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, NAEUSB_Backend, NAEUSB_Backend_Legacy
     from chipwhisperer.capture import scopes
     # todo: pyusb as well
+    legacy_backend = False
 
     possible_ids = [0xace0, 0xace2, 0xace3, 0xace5]
 
-    cwusb = NAEUSB_Backend()
-    device = cwusb.find(idProduct=possible_ids)
+    cwusb = NAEUSB_Backend_Legacy()
+    try:
+        device = cwusb.find(idProduct=possible_ids)
+        legacy_backend = True
+        name = device.product
+    except:
+        try:
+            cwusb = NAEUSB_Backend()
+            device = cwusb.find(idProduct=possible_ids)
+            name = device.getProduct()
+            cwusb.usb_ctx.close()
+        except Exception as e:
+            raise e from None # suppress legacy error message
 
-    name = device.getProduct()
-    cwusb.usb_ctx.close()
+        
+
     if (name == "ChipWhisperer Lite") or (name == "ChipWhisperer CW1200") or (name == "ChipWhisperer Husky"):
-        return scopes.OpenADC
+        return scopes.OpenADC, legacy_backend
     elif name == "ChipWhisperer Nano":
-        return scopes.CWNano
+        return scopes.CWNano, legacy_backend
     else:
         raise OSError("Got chipwhisperer with unknown name {} (ID = {})".format(name, possible_ids))
 import time

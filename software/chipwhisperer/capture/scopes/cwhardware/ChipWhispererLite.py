@@ -33,8 +33,8 @@ from chipwhisperer.hardware.naeusb.serial import USART
 class CWLiteUSB(object):
     _name = "ChipWisperer-Lite USB"
 
-    def __init__(self):
-        self._cwusb = NAEUSB()
+    def __init__(self, legacy=False):
+        self._cwusb = NAEUSB(legacy)
 
         # Connect required modules up here
         self.fpga = FPGA(self._cwusb)

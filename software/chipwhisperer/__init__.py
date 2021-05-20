@@ -226,16 +226,17 @@ def scope(scope_type=None, sn=None):
     """
     from chipwhisperer.common.utils.util import get_cw_type
     if scope_type is None:
-        scope_type = get_cw_type(sn)
+        scope_type, legacy = get_cw_type(sn)
     scope = scope_type()
     try:
-        scope.con(sn)
+        scope_logger.info("Legacy: {}".format(legacy))
+        scope.con(sn, legacy)
     except IOError:
         scope_logger.error("ChipWhisperer error state detected. Resetting and retrying connection...")
         scope._getNAEUSB().reset()
         time.sleep(2)
         scope = scope_type()
-        scope.con(sn)
+        scope.con(sn, legacy)
     return scope
 
 

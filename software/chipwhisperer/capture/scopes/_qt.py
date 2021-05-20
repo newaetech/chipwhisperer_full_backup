@@ -162,8 +162,7 @@ class OpenADCQt(object):
     def close(self):
         #free libusb1 stuff
         if self.ser:
-            self.ser.usbtx.handle.close()
-            self.ser.usbtx.usb_ctx.exit()
+            self.ser.close()
 
         self.ser = None
         self.parm_hwinfo = None

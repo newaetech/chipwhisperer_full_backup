@@ -110,7 +110,8 @@ class NAEUSB_Backend_Legacy:
         self._usbdev = self.device
 
         self.sn = self.device.serial_number
-        naeusb_logger.debug('Found %s, Serial Number = %s' % (self.device.serial_number(), self.sn))
+        self.pid = self.device.idProduct
+        naeusb_logger.debug('Found %s, Serial Number = %s' % (self.device.product, self.sn))
 
         # Husky has different endpoints for faster transfer
         if self.device.product == 0xace5:
@@ -152,7 +153,7 @@ class NAEUSB_Backend_Legacy:
 
     def get_possible_devices(self, idProduct=None, dictonly=True):
         libusb_backend = libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll")
-        dev_list = list(usb.core.find(idVendor=0x2B3E, find_fall=True, backend=libusb_backend))
+        dev_list = list(usb.core.find(idVendor=0x2B3E, find_all=True, backend=libusb_backend))
         if idProduct:
             dev_list = [dev for dev in dev_list if dev.idProduct in idProduct]
 
@@ -328,6 +329,26 @@ class NAEUSB_Backend_Legacy:
                 self.wep = 0x02
         return self.usbdev().read(self.rep, dbuf, timeout)
 
+    def cmdWriteBulk(self, data):
+        """
+        Write data directly to the bulk endpoint.
+        :param data: Data to be written
+        :return:
+        """
+        self.usbdev().write(self.wep, data, timeout=self._timeout)
+        naeusb_logger.debug("BULK WRITE: data = {}".format(data))
+
+    def close(self):        
+        """Close the USB connection"""
+        try:
+            usb.util.dispose_resources(self.usbdev())
+        except usb.USBError as e:
+            naeusb_logger.info('USB Failure calling dispose_resources: %s' % str(e))
+
+
+    writeBulk = cmdWriteBulk
+
+
 class NAEUSB_Backend:
     """
     Backend to talk to the USB device. TODO: Need to make one for pyusb as people might still require libusb0
@@ -411,6 +432,7 @@ class NAEUSB_Backend:
         self.handle.claimInterface(0)
 
         self.sn = self.handle.getSerialNumber()
+        self.pid = self.device.getProductID()
         naeusb_logger.debug('Found %s, Serial Number = %s' % (self.handle.getProduct(), self.sn))
 
         # Husky has different endpoints for faster transfer
@@ -465,7 +487,7 @@ class NAEUSB_Backend:
 
         if len(dev_list) == 0:
             raise OSError("Unable to communicate with found ChipWhisperer. Check that \
-                another process isn't connected to it and that you have permission to communicate with it.")
+                \nanother process isn't connected to it and that you have permission to communicate with it.")
 
         return dev_list
 
@@ -611,14 +633,19 @@ class NAEUSB:
 
     # TODO: make this better
     fwversion_latest = [0, 11]
-    def __init__(self):
+    def __init__(self, legacy=False):
         self._usbdev = None
         self.handle=None
-        self.usbtx = NAEUSB_Backend()
+        self.legacy = legacy
+        if legacy is False:
+            self.usbtx = NAEUSB_Backend()
+        else:
+            self.usbtx = NAEUSB_Backend_Legacy()
+            naeusb_logger.warning("Using legacy backend. Updating your firmware is highly recommended")
         self.usbseralizer = self.usbtx
 
     def get_possible_devices(self, idProduct):
-        return self.usbseralizer.get_possible_devices(idProduct)
+        return self.usbtx.get_possible_devices(idProduct)
 
     def get_cdc_settings(self):
         return self.usbtx.readCtrl(self.CMD_CDC_SETTINGS_EN, dlen=2)
@@ -654,6 +681,7 @@ class NAEUSB:
         """
         Connect to device using default VID/PID
         """
+        naeusb_logger.info("Using legacy" if self.legacy else "Using new backend")
 
         self.usbtx.open(idProduct=idProduct, serial_number=serial_number, connect_to_first=True)
 
@@ -662,14 +690,27 @@ class NAEUSB:
         fwver = self.readFwVersion()
         naeusb_logger.info('SAM3U Firmware version = %d.%d b%d' % (fwver[0], fwver[1], fwver[2]))
 
-        return self.usbtx.device.getProductID()
+        if self.usbtx.pid in NEWAE_PIDS:
+            name = NEWAE_PIDS[self.usbtx.pid]['name']
+            fw_latest = NEWAE_PIDS[self.usbtx.pid]['fwver']
+        else:
+            name = "Unknown (PID = %04x)"%self.usbtx.pid
+            fw_latest = [0, 0]
+
+        latest = fwver[0] > fw_latest[0] or (fwver[0] == fw_latest[0] and fwver[1] >= fw_latest[1])
+        if not latest:
+            naeusb_logger.warning('Your firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
+                             '. Suggested to update firmware, as you may experience errors' +
+                             '\nSee https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update')
+
+        return self.usbtx.pid
 
     def usbdev(self):
         raise AttributeError("Do Not Call Me")
 
     def close(self):
         """Close USB connection."""
-        self.usbseralizer.close()
+        self.usbtx.close()
         self.snum = None
 
     def readFwVersion(self):
