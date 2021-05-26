@@ -534,13 +534,13 @@ def get_cw_type(sn=None):
 
     cwusb = NAEUSB_Backend_Legacy()
     try:
-        device = cwusb.find(sn=sn, idProduct=possible_ids)
+        device = cwusb.find(serial_number=sn, idProduct=possible_ids)
         legacy_backend = True
         name = device.product
     except:
         try:
             cwusb = NAEUSB_Backend()
-            device = cwusb.find(sn=sn, idProduct=possible_ids)
+            device = cwusb.find(serial_number=sn, idProduct=possible_ids)
             name = device.getProduct()
             cwusb.usb_ctx.close()
         except Exception as e:
@@ -568,12 +568,12 @@ def is_cw_legacy(pids, sn=None):
 
     cwusb = NAEUSB_Backend_Legacy()
     try:
-        device = cwusb.find(sn=sn, idProduct=possible_ids)
+        device = cwusb.find(serial_number=sn, idProduct=possible_ids)
         legacy_backend = True
     except:
         try:
             cwusb = NAEUSB_Backend()
-            device = cwusb.find(sn=sn, idProduct=possible_ids)
+            device = cwusb.find(serial_number=sn, idProduct=possible_ids)
             cwusb.usb_ctx.close()
         except Exception as e:
             raise e from None # suppress legacy error message

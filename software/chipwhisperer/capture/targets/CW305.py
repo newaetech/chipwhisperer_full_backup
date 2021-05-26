@@ -23,7 +23,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-from common.utils.util import is_cw_legacy
 import logging
 import time
 import random
