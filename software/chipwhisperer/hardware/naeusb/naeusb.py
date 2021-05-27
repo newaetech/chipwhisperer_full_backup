@@ -884,8 +884,8 @@ class NAEUSB(object):
         if hasattr(self, "streamModeCaptureStream"):
             self.streamModeCaptureStream.join()
         if is_husky:
-            naeusb_logger.info("Streaming: init with segment_size=%d" % segment_size)
-            data=list(int.to_bytes(segment_size, length=4, byteorder='little')) + list(int.to_bytes(3, length=4, byteorder='little'))
+            data=list(int.to_bytes(segment_size, length=4, byteorder='little')) + \
+                list(int.to_bytes(3, length=4, byteorder='little')) + list(int.to_bytes(dlen, length=4, byteorder="little"))
         else:
             data = packuint32(dlen)
         self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=data)
@@ -952,18 +952,21 @@ class NAEUSB(object):
             self.timeout = False
             self.drx = 0
             self._is_husky = is_husky
+            self.stop = False
 
         def run(self):
             start = time.time()
-            naeusb_logger.info("Streaming: starting USB read")
             if self._is_husky:
-                short_buf = array.array('B', [0]) * self.segment_size
-                # TODO-husky: add a timeout to the while loop
+                self.drx += self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
                 while (self.drx < self.dlen):
-                    bytesread = self.serial.usbtx.read(short_buf, timeout=self.timeout_ms)
-                    if bytesread:
-                        self.dbuf_temp[self.drx:self.drx+bytesread] = short_buf
-                        self.drx += bytesread
+                    import array
+                    x = array.array('B', [0]) * self.segment_size
+                    recv = self.serial.usbtx.read(x, timeout=self.timeout_ms)
+                    self.drx  += recv
+                    self.dbuf_temp.extend(x[:recv])
+                    naeusb_logger.info("Streaming: total read = {} out of {}. Current read was {}".format(self.drx, self.dlen, recv))
+                    if self.stop:
+                        break
 
             else:
                 try:
@@ -974,6 +977,12 @@ class NAEUSB(object):
             diff = time.time() - start
             naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
             naeusb_logger.info("Streaming: min=%x, max=%x" % (min(self.dbuf_temp), max(self.dbuf_temp)))
+            if self.drx > self.dlen:
+                naeusb_logger.info("Read additional data, truchating from {} to {}".format(self.drx, self.dlen))
+                self.dbuf_temp = self.dbuf_temp[:self.dlen]
+                naeusb_logger.info("Read len {}".format(len(self.dbuf_temp)))
+                self.drx = self.dlen
+
 
 if __name__ == '__main__':
     from chipwhisperer.hardware.naeusb.fpga import FPGA
