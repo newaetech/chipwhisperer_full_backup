@@ -217,12 +217,22 @@ void BoardInit(void)
     // FMPLL.ESYNCR1.B.EMFD = 38;          /* Feedback divide ratio: 38+16=54 */ 
     
     // while(!FMPLL.SYNSR.B.LOCK) {;}      /* Wait for FMPLL to lock */
+
+    // VERY IMPORTANT:
+    // The endianness of the datasheet is opposite
+    // To the C representation
+
+    // So bit 0 on the datasheet is bit 31 here
+    // Probably powerpc bs
     uint32_t sysdiv = SIU->SYSDIV;
-    sysdiv &= ~0x01; //unlock register
+
     
     //sysclock = xosc
-    sysdiv &= ~(0b11 << 18);
-    sysdiv |= 0b01 << 18;
+    sysdiv &= ~(0b11 << 12);
+    sysdiv |= 0b01 << 12;
+
+    // turn off bypass
+    // sysdiv &= ~(0b1 << 4);
 
     sysdiv &= ~(0b11 << 28); // sysclock/2 for m_clk
 
