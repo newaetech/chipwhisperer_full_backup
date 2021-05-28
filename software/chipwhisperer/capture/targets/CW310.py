@@ -16,6 +16,35 @@ from chipwhisperer.common.utils.util import camel_case_deprecated, fw_ver_requir
 from chipwhisperer.logging import *
 
 class CW310(CW305):
+    """CW310 Bergen Board target object.
+
+    This class contains the public API for the CW310 hardware.
+    To connect to the CW310, the easiest method is::
+
+        import chipwhisperer as cw
+        scope = cw.scope()
+
+        # scope can also be None here, unlike with the default SimpleSerial
+        target = cw.target(scope,
+                targets.CW310, bsfile=<valid FPGA bitstream file>)
+
+
+    Inherits the CW305 object, so you can use the same methods as the CW305, provided the register interface
+    in your FPGA build is the same.
+
+    You can also set the voltage and current settings for the USB-C Power port on the CW310
+
+        # set USB PDO 3 to 20V 5A
+        target.usb_set_voltage(3, 20)
+        target.usb.set_current(3, 5)
+
+        # renegotiate PDO (applies above settings)
+        target.usb_negotiate_pdo()
+
+    For more help about CW305 settings, try help() on this CW310 submodule:
+
+       * target.pll
+    """
     def __init__(self, *args, **kwargs):
         # maybe later can hijack cw305 stuff, but for now don't
         pass
@@ -37,6 +66,13 @@ class CW310(CW305):
         self._clkusbautooff = True
         self.last_key = bytearray([0]*16)
         self.target_name = 'AES'
+        self._io = FPGAIO(self._naeusb, 200)
+
+        # TODO- temporary until these are added to the parsed defines file
+        self.REG_XADC_DRP_ADDR = 0x17
+        self.REG_XADC_DRP_DATA = 0x18
+        self.REG_XADC_STAT     = 0x19
+        
 
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True):
         # add more stuff later
@@ -57,13 +93,87 @@ class CW310(CW305):
         if bsfile:
             status = self.fpga.FPGAProgram(open(bsfile, "rb"))
 
+
+    def _xadc_drp_write(self, addr, data):
+        """Write XADC DRP register. UG480 for register definitions.
+        Args:
+            addr (int): 6-bit address
+            data (int): 16-bit write data
+        """
+        self.fpga_write(self.REG_XADC_DRP_DATA, [data  & 0xff, data >> 8])
+        self.fpga_write(self.REG_XADC_DRP_ADDR, [addr + 0x80])
+
+
+    def _xadc_drp_read(self, addr):
+        """Read XADC DRP register. UG480 for register definitions.
+        Args:
+            addr (int): 6-bit address
+        Returns:
+            A 16-bit integer.
+        """
+        self.fpga_write(self.REG_XADC_DRP_ADDR, [addr])
+        raw = self.fpga_read(self.REG_XADC_DRP_DATA, 2)
+        return raw[0] + (raw[1] << 8)
+
+
+    def get_xadc_temp(self):
+        """Read XADC temperature.
+        Args: none
+        Returns:
+            Temperature in celcius (float).
+        """
+        raw = self._xadc_drp_read(0)
+        return (raw>>4) * 503.975/4096 - 273.15 # ref: UG480
+
+
+    def get_xadc_vcc(self, rail='vccint'):
+        """Read XADC vcc.
+        Args:
+            rail (string): 'vccint', 'vccaux', or 'vccbram'
+        Returns:
+            voltage (float).
+        """
+        if rail == 'vccint':
+            addr = 1
+        elif rail == 'vccaux':
+            addr = 2
+        elif rail == 'vccbram':
+            addr = 6
+        else:
+            raise ValueError("Invalid rail")
+        raw = self._xadc_drp_read(addr)
+        return (raw>>4)/4096 * 3 # ref: UG480
+
+
+    def get_xadc_vaux(self, n=0):
+        """Read XADC vaux.
+        Args:
+            n (int): 0, 1 or 8, for vauxp/n[0|1|8]
+        Returns:
+            voltage (float).
+        """
+        assert n in [0, 1, 8]
+        addr = n + 0x10
+        raw = self._xadc_drp_read(addr)
+        return raw/4096 # ref: UG480
+
+
     def usb_set_voltage(self, pdo_num, voltage):
+        """Set the voltage for one of the USBC PDOs.
+
+        PDO1 is always 5V 1A and cannot be changed.
+
+        Args:
+            pdo_num (int): The PDO to set the voltage for. Can be 2 or 3
+            voltage (float): The voltage to set. Must be between 5 and 20 inclusive. Has
+                            a resolution of 0.05V
+        """
         if pdo_num not in [2, 3]:
             raise ValueError("pdo_num must be 2 or 3, {}".format(pdo_num))
         if (voltage > 20 or voltage < 5):
             raise ValueError("Voltage must be between 5 and 20, {}".format(voltage))
-        self._naeusb.sendCtrl(0x40, 0, [0x28, 0x89 + (pdo_num - 2) * (0x04)])
-        snk_pdo = self._naeusb.readCtrl(0x41, 0, 4)
+        self._naeusb.sendCtrl(0x43, 0, [0x28, 0x89 + (pdo_num - 2) * (0x04)])
+        snk_pdo = self._naeusb.readCtrl(0x44, 0, 4)
         voltage *= 20
         voltage = int(voltage)
 
@@ -74,14 +184,23 @@ class CW310(CW305):
         snk_pdo[2] |= ((voltage >> 6) & 0x0F)
         target_logger.info(voltage)
         target_logger.info(snk_pdo)
-        self._naeusb.sendCtrl(0x41, 0, snk_pdo)
+        self._naeusb.sendCtrl(0x44, 0, snk_pdo)
 
     def usb_set_current(self, pdo_num, current):
+        """Set the current for one of the USBC PDOs.
+
+        PDO1 is always 5V 1A and cannot be changed.
+
+        Args:
+            pdo_num (int): The PDO to set the current for. Can be 2 or 3
+            voltage (float): The current to set. Must be between 0.5 and 5 inclusive. Has
+                            a resolution of 0.01A
+        """
         if pdo_num not in [2, 3]:
             raise ValueError("pdo_num must be 2 or 3, {}".format(pdo_num))
         if (current > 5 or current < 0.5):
-            raise ValueError("Voltage must be between 0.5 and 20, {}".format(voltage))
-        snk_pdo = self._naeusb.readCtrl(0x41, 0, 4)
+            raise ValueError("Current must be between 0.5 and 5, {}".format(current))
+        snk_pdo = self._naeusb.readCtrl(0x44, 0, 4)
         current *= 100
         current = int(current)
 
@@ -92,16 +211,18 @@ class CW310(CW305):
         snk_pdo[1] |= ((current >> 8) & 0x03)
         target_logger.info(current)
         target_logger.info(snk_pdo)
-        self._naeusb.sendCtrl(0x41, 0, snk_pdo)
+        self._naeusb.sendCtrl(0x44, 0, snk_pdo)
 
     def usb_negotiate_pdo(self):
+        """Renegotate the USBC PDOs. Must be done for new PDOs settings to take effect
+        """
         #soft reset
-        self._naeusb.sendCtrl(0x40, 0, [0x28, 0x51])
-        self._naeusb.sendCtrl(0x41, 0, [0x0D])
+        self._naeusb.sendCtrl(0x43, 0, [0x28, 0x51])
+        self._naeusb.sendCtrl(0x44, 0, [0x0D])
 
         #send reset on pdo bus
-        self._naeusb.sendCtrl(0x40, 0, [0x28, 0x1A])
-        self._naeusb.sendCtrl(0x41, 0, [0x26])
+        self._naeusb.sendCtrl(0x43, 0, [0x28, 0x1A])
+        self._naeusb.sendCtrl(0x44, 0, [0x26])
 
     def _dis(self):
         if self._naeusb:
@@ -115,6 +236,22 @@ class CW310(CW305):
         time.sleep(0.01)
         self.fpga_write(self.REG_CRYPT_GO, [0])
 
+    def temp_sensor_send(self, addr, data_byte):
+        self._naeusb.sendCtrl(0x42, addr & 0xFF, [data_byte & 0xFF])
+
+    def temp_sensor_read(self, addr):
+        return self._naeusb.readCtrl(0x42, addr & 0xFF, 1)[0]
+
+    @property
+    def fpga_temp(self):
+        return self.temp_sensor_read(0x01)
+
+    def reset_fpga_power(self):
+        self._naeusb.sendCtrl(0x22, 0x07) #kill power
+
+        time.sleep(0.5)
+        self._naeusb.sendCtrl(0x22, 0x08) #enable power
+
     def gpio_mode(self, timeout=200):
         """Allow arbitrary GPIO access on SAM3U
         
@@ -127,8 +264,99 @@ class CW310(CW305):
         Returns:
             A FPGAIO object which can be used to access IO on the CW305.
         """
-        io = FPGAIO(self._naeusb, timeout)
-        return io
+        self._io._timeout = timeout
+        return self._io
+
+    @property
+    def cdc_settings(self):
+        """Check or set whether USART settings can be changed via the USB CDC connection
+
+        i.e. whether you can change USART settings (baud rate, 8n1) via a serial client like PuTTY
+
+        :getter: An array of length two for the two CDC ports
+
+        :setter: Can set either via an integer (which sets both ports) or an array of length 2 (which sets each port)
+
+        Returns None if using firmware before the CDC port was added
+        """
+        rawver = self._naeusb.readFwVersion()
+        ver = '{}.{}'.format(rawver[0], rawver[1])
+        if ver < '0.30':
+            return None
+        self._naeusb.CMD_CDC_SETTINGS_EN = 0x41
+        return self._naeusb.get_cdc_settings()
+
+    @cdc_settings.setter
+    def cdc_settings(self, port):
+        rawver = self._naeusb.readFwVersion()
+        ver = '{}.{}'.format(rawver[0], rawver[1])
+        if ver < '0.30':
+            return None
+
+        self._naeusb.CMD_CDC_SETTINGS_EN = 0x41
+        return self._naeusb.set_cdc_settings(port)
+
+    def _test(self):
+        print("Testing PGOOD/FPGA Power")
+        print("Turning off FPGA power...")
+        self._io.pin_set_state("PB27", 0)
+        time.sleep(0.5)
+        pgood_states = [self._io.pin_get_state("PC16") , self._io.pin_get_state("PC19") , 
+                        self._io.pin_get_state("PC20") , self._io.pin_get_state("PB11")]
+        if 1 in pgood_states:
+            print("ERROR: PGOOD high when power set to low: {}".format(pgood_states))
+        else:
+            print("OK: PGOOD low when power off")
+            
+        resp = input("Power LEDs off? [y/n]")
+        if resp == 'y' or resp == 'Y':
+            print("PGOOD LEDs ok")
+        
+        print("Turning on FPGA power...")
+        self._io.pin_set_state("PB27", 1)
+        time.sleep(0.5)
+        pgood_states = [self._io.pin_get_state("PC16") , self._io.pin_get_state("PC19") , 
+                        self._io.pin_get_state("PC20") , self._io.pin_get_state("PB11")]
+        
+        if 0 in pgood_states:
+            print("ERROR: PGOOD low when power set to high: {}".format(pgood_states))
+        else:
+            print("OK: PGOOD high when power high") 
+            
+        resp = input("Power LEDs on? [y/n]")
+        if resp == 'y' or resp == 'Y':
+            print("PGOOD LEDs ok")
+            
+        print("Testing reset power button - please press it")
+        
+        button_ok = False
+        for i in range(500):
+            if self._io.pin_get_state("PB23") == 0:
+                button_ok = True
+                break
+            time.sleep(0.01)
+        if not button_ok:
+            print("ERROR: Couldn't detect button press")
+        else:
+            print("OK: Button press detected")
+            
+        print("Setting temp LEDs high")
+        input("Press ENTER when ready to look")
+        self._io.pin_set_state("PA0", 1)
+        self._io.pin_set_state("PA1", 1)
+        
+        resp = input("Did both go or stay on? [y/n]")
+        if "y" == resp or "Y" == resp:
+            print("Temp LEDs ok")
+            
+        print("Setting temp LEDs low")
+        input("Press ENTER when ready to look")
+        self._io.pin_set_state("PA0", 0)
+        self._io.pin_set_state("PA1", 0)
+        
+        resp = input("Did both go or stay off? [y/n]")
+        if "y" == resp or "Y" == resp:
+            print("Temp LEDs ok")
 
 
 class FPGAIO:
@@ -433,6 +661,15 @@ class FPGAIO:
             return self.SAM3X_PIN_NAMES[pinname]
         
         raise ValueError("I don't know what pin this is (sorry): %s"%(pinname))
+
+    def pin_get_state(self, pinname):
+        """Get the state of a pin
+
+        Args:
+            pinname (str): Name such as "PB22", "USB_A20", or "M2".   
+        """
+        pinnum = self.pin_name_to_number(pinname)
+        return self.readCtrl(self.REQ_FPGAIO_UTIL, pinnum, 1)[0]
         
     def pin_set_output(self, pinname):
         """Set a given pin as an output.
@@ -547,3 +784,7 @@ class FPGAIO:
         self.spi1_set_cs_pin(True)
 
         return resp
+
+
+def test_cw310(fpgaio):
+    print("Testing")

@@ -27,7 +27,7 @@
 #=================================================
 import logging
 from usb import USBError
-from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD
+from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD, ChipWhispererHuskyPLL
 from . import _qt as openadc_qt
 from .base import ScopeTemplate
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
@@ -117,14 +117,14 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
     def sn(self):
         return self.scopetype.ser.snum
 
-    def reload_fpga(self, bitstream=None):
+    def reload_fpga(self, bitstream=None, reconnect=True):
         """(Re)loads a FPGA bitstream (even if already configured).
 
         Will cause a reconnect event, all settings become default again.
         If no bitstream specified default is used based on current
         configuration settings.
         """        
-        self.scopetype.reload_fpga(bitstream)
+        self.scopetype.reload_fpga(bitstream, reconnect)
 
     def _getNAEUSB(self):
         return self.scopetype.dev._cwusb
@@ -224,6 +224,8 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
                 return "cwlite"
             elif "CW1200" in hwInfoVer:
                 return "cw1200"
+            elif "Husky" in hwInfoVer:
+                return "cwhusky"
             else:
                 return "cwrev2"
         return ""
@@ -249,7 +251,9 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
             #self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
 
             cwtype = self._getCWType()
+            self.pll = None
             if cwtype != "":
+                #if cwtype != "cwhusky":
                 self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.qtadc.sc)
 
                 util.chipwhisperer_extra = self.advancedSettings
@@ -264,15 +268,27 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
                 if cwtype == "cwcrev2":
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
 
+                if cwtype == "cwhusky":
+                    self.pll = ChipWhispererHuskyPLL.CDCI6214(self)
             self.adc = self.qtadc.parm_trigger
             self.gain = self.qtadc.parm_gain
             self.clock = self.qtadc.parm_clock
 
             if cwtype == "cw1200":
                 self.adc._is_pro = True
+            if cwtype == "cwlite":
+                self.adc._is_lite = True
+            elif cwtype == "cwhusky":
+                self.adc._is_husky = True
+                self.gain._is_husky = True
+                self.adc.oa._is_husky = True
+                self.adc.bits_per_sample = 12
+                self.ADS4128 = self.qtadc.parm_ads4128
+                self.XADC = self.qtadc.parm_xadc
             if self.advancedSettings:
                 self.io = self.advancedSettings.cwEXTRA.gpiomux
                 self.trigger = self.advancedSettings.cwEXTRA.triggermux
+                #if cwtype != "cwhusky":
                 self.glitch = self.advancedSettings.glitch.glitchSettings
                 if cwtype == "cw1200":
                     self.trigger = self.advancedSettings.cwEXTRA.protrigger
@@ -410,6 +426,10 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         if self._getCWType() == "cw1200":
             dict['SAD'] = self.SAD._dict_repr()
             dict['decode_IO'] = self.decode_IO._dict_repr()
+        if self._getCWType() == "cwhusky":
+            dict['ADS4128'] = self.ADS4128._dict_repr()
+            dict['pll'] = self.pll._dict_repr()
+            dict['XADC'] = self.XADC._dict_repr()
 
         return dict
 

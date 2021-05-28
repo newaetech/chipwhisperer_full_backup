@@ -834,7 +834,10 @@ class ChipWhispererExtra(object):
         #self.cwADV = CWAdvTrigger()
 
         self.cwEXTRA = CWExtraSettings(oa, cwtype)
-        self.enableGlitch = True
+        if cwtype == "cwhusky":
+            self.enableGlitch = True # TODO: temporary
+        else:
+            self.enableGlitch = True
         if self.enableGlitch:
             self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(cwtype, scope, oa)
 
@@ -904,6 +907,11 @@ class CWExtraSettings(object):
             hasGlitchOut=True
             hasPLL=False
             hasAux=True
+        elif cwtype == "cwhusky":
+            hasFPAFPB=False
+            hasGlitchOut=False # TODO-temporary
+            hasPLL=False
+            hasAux=False
         else:
             raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
 

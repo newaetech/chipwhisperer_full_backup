@@ -40,6 +40,7 @@ from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
 from chipwhisperer.hardware.firmware import cw1200 as fw_cw1200
 from chipwhisperer.hardware.firmware import cw305  as fw_cw305
 from chipwhisperer.hardware.firmware import cwnano  as fw_nano
+from chipwhisperer.hardware.firmware import cwhusky as fw_cwhusky
 
 from chipwhisperer.logging import *
 
@@ -74,6 +75,7 @@ NEWAE_PIDS = {
     0xACE3: {'name': "ChipWhisperer-CW1200",   'fwver': fw_cw1200.fwver},
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fw_cw305.fwver},
     0xACE0: {'name': "ChipWhisperer-Nano", 'fwver': fw_nano.fwver},
+    0xACE5: {'name': "ChipWhisperer-Husky",   'fwver': fw_cwhusky.fwver},
 }
 
 class NAEUSB_Serializer_base(object):
@@ -395,8 +397,16 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         naeusb_logger.info('Found %s, Serial Number = %s' % (name, self.snum))
 
         self._usbdev = dev
-        self.rep = 0x81
-        self.wep = 0x02
+        # TODO: how to tell if we're Husky at this point? maybe a try block?
+        # for husky:
+        # TEMPORARY: fix rep/wep in the notebook instead, so that the old values can be used for the CW305 target
+        # self.rep = 0x85
+        # self.wep = 0x06
+        # for older capture HW:
+        # self.rep = 0x81
+        # self.wep = 0x02
+        self.rep = None
+        self.wep = None
         self._timeout = 200
 
         return foundId
@@ -517,10 +527,16 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
                 self.sendCtrl(cmd, data=pload)
             else:
                 raise
-
+        if (self.rep is None):
+            if self.usbdev().idProduct == 0xACE5: 
+                self.rep = 0x85
+            else:
+                self.rep = 0x81
         # Get data
         if cmd == self.CMD_READMEM_BULK:
             data = self.usbdev().read(self.rep, dlen, timeout=self._timeout)
+            # XXX Husky debug:
+            naeusb_logger.info('YYY BULK rep=%d, dlen=%d, got len=%d' % (self.rep, dlen, len(data)))
         else:
             data = self.readCtrl(cmd, dlen=dlen)
 
@@ -549,6 +565,13 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         self.sendCtrl(cmd, data=pload)
 
         # Get data
+        if (self.rep is None) or (self.wep is None):
+            if self.usbdev().idProduct == 0xACE5: 
+                self.rep = 0x85
+                self.wep = 0x06
+            else:
+                self.rep = 0x81
+                self.wep = 0x02
         if cmd == self.CMD_WRITEMEM_BULK:
             data = self.usbdev().write(self.wep, data, timeout=self._timeout)
         else:
@@ -586,17 +609,38 @@ class NAEUSB_Backend(NAEUSB_Serializer_base):
         :return:
         """
 
+        if (self.rep is None) or (self.wep is None):
+            if self.usbdev().idProduct == 0xACE5: 
+                self.rep = 0x85
+                self.wep = 0x06
+            else:
+                self.rep = 0x81
+                self.wep = 0x02
         self.usbdev().write(self.wep, data, timeout=self._timeout)
 
     def flushInput(self):
         """Dump all the crap left over"""
         try:
             # TODO: This probably isn't needed, and causes slow-downs on Mac OS X.
+            if (self.rep is None) or (self.wep is None):
+                if self.usbdev().idProduct == 0xACE5: 
+                    self.rep = 0x85
+                    self.wep = 0x06
+                else:
+                    self.rep = 0x81
+                    self.wep = 0x02
             self.usbdev().read(self.rep, 1000, timeout=0.010)
         except:
             pass
 
     def read(self, dbuf, timeout):
+        if (self.rep is None) or (self.wep is None):
+            if self.usbdev().idProduct == 0xACE5: 
+                self.rep = 0x85
+                self.wep = 0x06
+            else:
+                self.rep = 0x81
+                self.wep = 0x02
         return self.usbdev().read(self.rep, dbuf, timeout)
 
 class NAEUSB(object):
@@ -614,6 +658,7 @@ class NAEUSB(object):
     CMD_WRITEMEM_CTRL = 0x13
     CMD_MEMSTREAM = 0x14
     CMD_WRITEMEM_CTRL_SAM3U = 0x15
+    CMD_SMC_READ_SPEED = 0x27
 
     stream = False
 
@@ -635,6 +680,13 @@ class NAEUSB(object):
             port = [port, port]
         self.usbtx.sendCtrl(self.CMD_CDC_SETTINGS_EN, (port[0]) | (port[1] << 1))
 
+    def set_smc_speed(self, val):
+        """
+        val = 0: normal read timing
+        val = 1: fast read timing, should only be used for reading ADC samples; FPGA must also be set in fast FIFO
+                 read mode for this to work correctly.
+        """
+        self.usbtx.sendCtrl(self.CMD_SMC_READ_SPEED, data=[val])
 
     def get_serial_ports(self):
         """May have multiple com ports associated with one device, so returns a list of port + interface
@@ -703,8 +755,8 @@ class NAEUSB(object):
         latest = fwver[0] > fw_latest[0] or (fwver[0] == fw_latest[0] and fwver[1] >= fw_latest[1])
         if not latest:
             naeusb_logger.warning('Your firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
-                            '. Suggested to update firmware, as you may experience errors' +
-                            '\nSee https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update')
+                             '. Suggested to update firmware, as you may experience errors' +
+                             '\nSee https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update')
         return foundId
 
     def usbdev(self):
