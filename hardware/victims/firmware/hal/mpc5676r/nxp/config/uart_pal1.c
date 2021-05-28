@@ -54,7 +54,7 @@ const uart_instance_t uart_pal1_instance = {
 
 /* Serial User Configurations */
 const uart_user_config_t uart_pal1_Config0 = {
-    .baudRate         = 24000,
+    .baudRate         = 38400,
     .bitCount         = UART_8_BITS_PER_CHAR,
     .parityMode       = UART_PARITY_DISABLED,
     .stopBitCount     = UART_ONE_STOP_BIT,

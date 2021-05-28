@@ -50,7 +50,6 @@
 #define FLASH_REG2  FLASH_A.BIUCR3.R
 #define FLASH_DATA2 0x00020015
 
-
 /* This function is defined in some other functions too */
 __attribute__ ((weak)) void uart_puts(char * s){
     while(*s){
@@ -68,12 +67,17 @@ void putch(char c)
     /* Ensure all the data in the transmit buffer are sent out to bus. */
     char local = c;
     uint8_t* mssg = &local;
-    UART_SendDataBlocking(&uart_pal1_instance, (uint8_t *)mssg, 1 , TIMEOUT);
+    // UART_SendData(&uart_pal1_instance, (uint8_t *)mssg, 1);
+    ESCI_HW_SendCharacter(0, c);
+    // while (!ESCI_HW_GetSendReadyFlag(0));
+    // ESCI_HW_ClearSendReadyFlag(0);
 }
 
 char getch(void)
 {
     char mssg;
+    while (!ESCI_HW_GetReceiveReadyFlag(0));
+    ESCI_HW_ClearReceiveReadyFlag(0);
     UART_ReceiveDataBlocking(&uart_pal1_instance, &mssg, 1,TIMEOUT);
     return mssg;
 }
@@ -202,18 +206,30 @@ static void PIT3Init(void)
 void BoardInit(void)
 {
 
-    FMPLL.ESYNCR1.B.CLKCFG = 7;         /* Normal mode with crystal osc */
+    // FMPLL.ESYNCR1.B.CLKCFG = 7;         /* Normal mode with crystal osc */
+    // FMPLL.ESYNCR1.B.CLKCFG = 0;         /* Normal mode with crystal osc */
     
     /* Programming PLL to 60 MHz */
     /* Fpll = (10Mhz* (EMFD+16)) / ((ERFD+1) * (EPREDIV+1) * DIV2) */
     /* Fpll = (10 * 54 / 9)  = 60MHz */
-    FMPLL.ESYNCR2.R = 0x00000002;           /* Output divide ratio: 2+1=3 */
-    FMPLL.ESYNCR1.B.EPREDIV = 5;        /* Input divide ratio: 5+1=6 */
-    FMPLL.ESYNCR1.B.EMFD = 38;          /* Feedback divide ratio: 38+16=54 */ 
+    // FMPLL.ESYNCR2.R = 0x00000002;           /* Output divide ratio: 2+1=3 */
+    // FMPLL.ESYNCR1.B.EPREDIV = 5;        /* Input divide ratio: 5+1=6 */
+    // FMPLL.ESYNCR1.B.EMFD = 38;          /* Feedback divide ratio: 38+16=54 */ 
     
-    while(!FMPLL.SYNSR.B.LOCK) {;}      /* Wait for FMPLL to lock */
+    // while(!FMPLL.SYNSR.B.LOCK) {;}      /* Wait for FMPLL to lock */
+    uint32_t sysdiv = SIU->SYSDIV;
+    sysdiv &= ~0x01; //unlock register
     
-    //SIU->SYSDIV = (SIU->SYSDIV & ~SIU_SYSDIV_BYPASS_MASK) | SIU_SYSDIV_BYPASS(1U);
+    //sysclock = xosc
+    sysdiv &= ~(0b11 << 18);
+    sysdiv |= 0b01 << 18;
+
+    sysdiv &= ~(0b11 << 28); // sysclock/2 for m_clk
+
+    SIU->SYSDIV = sysdiv;
+
+    
+    // SIU->SYSDIV = (SIU->SYSDIV & ~SIU_SYSDIV_BYPASS_MASK) | SIU_SYSDIV_BYPASS(1U);
     //SIU->SYSDIV = (SIU->SYSDIV & ~SIU_SYSDIV_SYSCLKSEL_MASK) | SIU_SYSDIV_SYSCLKSEL(2U);
     
     PINS_DRV_Init(NUM_OF_CONFIGURED_PINS, g_pin_mux_InitConfigArr);
