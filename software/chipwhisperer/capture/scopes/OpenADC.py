@@ -28,6 +28,7 @@
 import logging
 from usb import USBError
 from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD, ChipWhispererHuskyPLL
+from chipwhisperer.capture.scopes._OpenADCInterface import XilinxDRP, XilinxMMCMDRP
 from . import _qt as openadc_qt
 from .base import ScopeTemplate
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
@@ -38,6 +39,11 @@ import time
 import numpy as np
 
 from chipwhisperer.logging import *
+
+ADDR_GLITCH1_DRP_ADDR = 62
+ADDR_GLITCH1_DRP_DATA = 63
+ADDR_GLITCH2_DRP_ADDR = 64
+ADDR_GLITCH2_DRP_DATA = 65
 
 class OpenADC(ScopeTemplate, util.DisableNewAttr):
     """OpenADC scope object.
@@ -252,6 +258,10 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
 
             cwtype = self._getCWType()
             self.pll = None
+            self.glitch_drp1 = None
+            self.glitch_drp2 = None
+            self.glitch_mmcm1 = None
+            self.glitch_mmcm2 = None
             if cwtype != "":
                 #if cwtype != "cwhusky":
                 self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.qtadc.sc)
@@ -269,10 +279,17 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
 
                 if cwtype == "cwhusky":
-                    self.pll = ChipWhispererHuskyPLL.CDCI6214(self)
+                    # TODO: we want to keep the clock glitch MMCM VCOs running at the ~same frequency when the
+                    # PLL clock is updated; this does that, but maybe there's a better way?
+                    self.glitch_drp1 = XilinxDRP(self.qtadc.sc, ADDR_GLITCH1_DRP_DATA, ADDR_GLITCH1_DRP_ADDR)
+                    self.glitch_drp2 = XilinxDRP(self.qtadc.sc, ADDR_GLITCH2_DRP_DATA, ADDR_GLITCH2_DRP_ADDR)
+                    self.glitch_mmcm1 = XilinxMMCMDRP(self.glitch_drp1)
+                    self.glitch_mmcm2 = XilinxMMCMDRP(self.glitch_drp2)
+                    self.pll = ChipWhispererHuskyPLL.CDCI6214(self, self.glitch_mmcm1, self.glitch_mmcm2)
             self.adc = self.qtadc.parm_trigger
             self.gain = self.qtadc.parm_gain
             self.clock = self.qtadc.parm_clock
+
 
             if cwtype == "cw1200":
                 self.adc._is_pro = True

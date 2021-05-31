@@ -15,8 +15,12 @@ class CDCI6214:
         scope.pll.target_freq = 7.37E6 
         scope.pll.adc_mul = 4 # any positive integer within reason that satisfies ADC specs
     """
-    def __init__(self, scope):
+    def __init__(self, scope, mmcm1, mmcm2):
         self._scope = scope
+        # TODO: these are the FPGA clock glitch MMCMs, which need to be programmed to have a constant
+        # VCO frequency no matter what this PLL's frequency is. Maybe there's a cleaner way to do this?
+        self._mmcm1 = mmcm1
+        self._mmcm2 = mmcm2
         self.setup()
         self.set_pll_input()
         self.set_outdiv(3, 0)
@@ -563,6 +567,19 @@ class CDCI6214:
         self._set_target_freq = freq
         scope_logger.debug("adc_mul: {}".format(self._adc_mul))
         self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
+        # For clock glitching, FPGA clock glitch MMCMs also need to have their M/D parameters
+        # adjusted, in order to keep their VCO frequency in range.
+        # Rules of the game: 
+        # 1. M and (secondary) D are always equal (output frequency = input frequency), and their range is [2, 64]
+        # 2. main divider is always set to 1
+        # 3. MMCM VCO range is [600, 1200] MHz; we aim for 600 MHz.
+        muldiv = int(np.ceil(600e6/freq))
+        self._mmcm1.set_mul(muldiv)
+        self._mmcm2.set_mul(muldiv)
+        self._mmcm1.set_sec_div(muldiv)
+        self._mmcm2.set_sec_div(muldiv)
+        self._mmcm1.set_main_div(1)
+        self._mmcm2.set_main_div(1)
 
     @adc_mul.setter
     def adc_mul(self, adc_mul):
