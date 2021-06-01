@@ -19,7 +19,7 @@ setup(
         'configobj',
         'pyserial',
         'numpy',
-        'pyusb',
+        'libusb1',
         'ECpy',
         'scipy',
         'fastdtw',
