@@ -27,7 +27,7 @@
 #=================================================
 import logging
 from usb import USBError
-from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD, ChipWhispererHuskyPLL
+from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD, ChipWhispererHuskyClock
 from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings, \
     ADS4128Settings, XADCSettings
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
@@ -262,23 +262,20 @@ class OpenADC(util.DisableNewAttr):
         cwtype = self._getCWType()
         self.pll = None
         self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.sc)
-        if cwtype != "":
-            #if cwtype != "cwhusky":
-            self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.sc)
 
-            util.chipwhisperer_extra = self.advancedSettings
+        util.chipwhisperer_extra = self.advancedSettings
 
-            if cwtype == "cwrev2" or cwtype == "cw1200":
-                self.SAD = ChipWhispererSAD.ChipWhispererSAD(self.sc)
+        if cwtype == "cwrev2" or cwtype == "cw1200":
+            self.SAD = ChipWhispererSAD.ChipWhispererSAD(self.sc)
 
-            if cwtype == "cw1200":
-                self.decode_IO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.sc)
+        if cwtype == "cw1200":
+            self.decode_IO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.sc)
 
-            if cwtype == "cwcrev2":
-                self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.sc)
+        if cwtype == "cwcrev2":
+            self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.sc)
 
-            if cwtype == "cwhusky":
-                self.pll = ChipWhispererHuskyPLL.CDCI6214(self)
+        if cwtype == "cwhusky":
+            self.pll = ChipWhispererHuskyClock.CDCI6214(self)
 
         if cwtype == "cw1200":
             self.adc._is_pro = True
