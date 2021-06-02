@@ -439,7 +439,7 @@ class CDCI6214:
         
         :setter: A 5 bit integer representing the delay. Must be between 0 and 31
         """
-        delay = (self.read_reg(0x32, True) >> 11) & 0b1111
+        delay = (self.read_reg(0x32, True) >> 11) & 0b11111
         return delay
 
     @adc_delay.setter
@@ -606,6 +606,7 @@ class ChipWhispererHuskyClock:
         self.pll = CDCI6214(naeusb)
         self.fpga_clk_settings = fpga_clk_settings
         self.fpga_clk_settings.freq_ctr_src = "clkgen"
+        self.adc_phase = 0
         # self.adv_settings = ChipWhispererHuskyClockAdv(pll, fpga_clk_settings)
 
     @property
@@ -663,6 +664,23 @@ class ChipWhispererHuskyClock:
     def clkgen_locked(self):
         return self.pll.pll_locked
 
+    @property
+    def adc_phase(self):
+        return int((self.pll.adc_delay - self.pll.target_delay) * 255 / 31)
+
+    @adc_phase.setter
+    def adc_phase(self, phase):
+        if abs(phase) > 255:
+            raise ValueError("Max phase +/- 255")
+        adj_phase = int((abs(phase) * 31 / 255) + 0.5)
+
+        if phase > 0:
+            self.pll.adc_delay = adj_phase
+            self.pll.target_delay = 0
+        else:
+            self.pll.target_delay = abs(adj_phase)
+            self.pll.adc_delay = 0
+
     def reset_dcms(self):
         self.pll.reset()
     
@@ -675,6 +693,7 @@ class ChipWhispererHuskyClock:
         my_dict['adc_freq'] = self.adc_freq
         my_dict['freq_ctr'] = self.freq_ctr
         my_dict['clkgen_locked'] = self.clkgen_locked
+        my_dict['adc_phase'] = self.adc_phase
         return my_dict
 
     def __repr__(self):
