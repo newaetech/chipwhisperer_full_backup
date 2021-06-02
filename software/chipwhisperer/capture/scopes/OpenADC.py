@@ -256,7 +256,6 @@ class OpenADC(util.DisableNewAttr):
 
         self.adc = TriggerSettings(self.sc)
 
-        self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
 
 
         cwtype = self._getCWType()
@@ -275,7 +274,11 @@ class OpenADC(util.DisableNewAttr):
             self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.sc)
 
         if cwtype == "cwhusky":
-            self.pll = ChipWhispererHuskyClock.CDCI6214(self)
+            # self.pll = ChipWhispererHuskyClock.CDCI6214(self.sc)
+            self._fpga_clk = ClockSettings(self.sc, hwinfo=self.hwinfo)
+            self.clock = ChipWhispererHuskyClock.ChipWhispererHuskyClock(self.sc.serial, self._fpga_clk)
+        else:
+            self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
 
         if cwtype == "cw1200":
             self.adc._is_pro = True
@@ -443,7 +446,7 @@ class OpenADC(util.DisableNewAttr):
             dict['decode_IO'] = self.decode_IO._dict_repr()
         if self._getCWType() == "cwhusky":
             dict['ADS4128'] = self.ADS4128._dict_repr()
-            dict['pll'] = self.pll._dict_repr()
+            # dict['pll'] = self.pll._dict_repr()
             dict['XADC'] = self.XADC._dict_repr()
 
         return dict

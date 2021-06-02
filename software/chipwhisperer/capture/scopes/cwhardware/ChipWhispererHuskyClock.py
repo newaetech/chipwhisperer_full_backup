@@ -15,8 +15,8 @@ class CDCI6214:
         scope.pll.target_freq = 7.37E6 
         scope.pll.adc_mul = 4 # any positive integer within reason that satisfies ADC specs
     """
-    def __init__(self, scope):
-        self._scope = scope
+    def __init__(self, naeusb):
+        self.naeusb = naeusb
         self.setup()
         self.set_pll_input()
         self.set_outdiv(3, 0)
@@ -43,7 +43,7 @@ class CDCI6214:
             tmp = [data & 0xFF, (data >> 8) & 0xFF]
             data = tmp
 
-        self._scope._getNAEUSB().sendCtrl(0x29, data=[1, addr, 0x00, data[0], data[1]])
+        self.naeusb.sendCtrl(0x29, data=[1, addr, 0x00, data[0], data[1]])
         
     def read_reg(self, addr, as_int=False):
         """Read a CDCI6214 Register over I2C
@@ -53,8 +53,8 @@ class CDCI6214:
             as_int (bool): If true, return a big endian u16. Otherwise, return a two element list.
         """
 
-        self._scope._getNAEUSB().sendCtrl(0x29, data=[0, addr, 0x00, 0, 0])    
-        data = self._scope._getNAEUSB().readCtrl(0x29, dlen=3)
+        self.naeusb.sendCtrl(0x29, data=[0, addr, 0x00, 0, 0])    
+        data = self.naeusb.readCtrl(0x29, dlen=3)
 
         if data[0] != 2:
             raise IOError("PLL/I2C Error, got {}".format(data))
@@ -586,6 +586,96 @@ class CDCI6214:
         dict['adc_delay'] = self.adc_delay
         dict['target_delay'] = self.target_delay
         return dict
+
+    def __repr__(self):
+        return dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
+# class ChipWhispererHuskyClockAdv:
+#     """todo"""
+#     def __init__(self, pll, fpga_clk_settings):
+#         self.pll = pll
+#         self.fpga_clk_settings = fpga_clk_settings
+
+class ChipWhispererHuskyClock:
+
+    def __init__(self, naeusb, fpga_clk_settings):
+        self.naeusb = naeusb
+        self.pll = CDCI6214(naeusb)
+        self.fpga_clk_settings = fpga_clk_settings
+        self.fpga_clk_settings.freq_ctr_src = "clkgen"
+        # self.adv_settings = ChipWhispererHuskyClockAdv(pll, fpga_clk_settings)
+
+    @property
+    def clkgen_src(self):
+        if self.pll.pll_src == "xtal":
+            return "system"
+        elif self.pll.pll_src == "fpga":
+            return "extclk"
+            
+        raise ValueError("Invalid FPGA/PLL settings!") #TODO: print values
+    
+    @clkgen_src.setter
+    def clkgen_src(self, clk_src):
+        if clk_src in ["internal", "system"]:
+            self.pll.pll_src = "xtal"
+        elif clk_src == "extclk":
+            self.fpga_clk_settings.clkgen_src = "extclk"
+            self.pll.pll_src = "fpga"
+        else:
+            raise ValueError("Invalid src settings! Must be 'xtal', 'extclk' or 'fpga', not {}".format(clk_src))
+
+    @property
+    def clkgen_freq(self):
+        # update pll clk src
+        if not (self.clkgen_src in ["internal", "system"]):
+            self.pll._fpga_clk_freq = self.fpga_clk_settings.freq_ctr
+        return self.pll.target_freq
+
+
+    @clkgen_freq.setter
+    def clkgen_freq(self, freq):
+        # update pll clk src
+        if not (self.clkgen_src in ["internal", "system"]):
+            self.pll._fpga_clk_freq = self.fpga_clk_settings.freq_ctr
+
+        self.pll.target_freq = freq
+
+    @property
+    def adc_mul(self):
+        return self.pll.adc_mul
+
+    @adc_mul.setter
+    def adc_mul(self, mul):
+        self.pll.adc_mul = mul
+
+    @property
+    def adc_freq(self):
+        return self.pll.adc_freq
+
+    @property
+    def freq_ctr(self):
+        return self.fpga_clk_settings.freq_ctr
+
+    @property
+    def clkgen_locked(self):
+        return self.pll.pll_locked
+
+    def reset_dcms(self):
+        self.pll.reset()
+    
+
+    def _dict_repr(self):
+        my_dict = {}
+        my_dict['clkgen_src'] = self.clkgen_src
+        my_dict['clkgen_freq'] = self.clkgen_freq
+        my_dict['adc_mul'] = self.adc_mul
+        my_dict['adc_freq'] = self.adc_freq
+        my_dict['freq_ctr'] = self.freq_ctr
+        my_dict['clkgen_locked'] = self.clkgen_locked
+        return my_dict
 
     def __repr__(self):
         return dict_to_str(self._dict_repr())
