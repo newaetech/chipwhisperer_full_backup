@@ -488,7 +488,7 @@ def camel_case_deprecated(func):
 
 
 
-def get_cw_type(sn=None):
+def get_cw_type(sn=None, **kwargs):
     """ Gets the scope type of the connected ChipWhisperer
     If multiple connected, sn must be specified
     """

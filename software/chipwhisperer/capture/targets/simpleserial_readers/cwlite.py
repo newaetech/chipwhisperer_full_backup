@@ -26,6 +26,7 @@ import logging
 
 from ._base import SimpleSerialTemplate
 from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
+from chipwhisperer.capture.scopes.OpenADC import OpenADC
 
 class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
     _name = 'NewAE USB (CWLite/CW1200)'
@@ -52,12 +53,12 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         if scope is None or not hasattr(scope, "qtadc"):
             Warning("You need a scope with OpenADC connected to use this Target")
 
-        if hasattr(scope, 'qtadc'):
-            ser = scope.qtadc.ser
+        if isinstance(scope, OpenADC):
+            ser = scope.scopetype.ser
             
             # if we don't do this, we get multiple serial objects kicking around
             # making it hard to save +  restore the baud
-            self.cwlite_usart = scope.scopetype.dev.serialstm32f._cwserial
+            self.cwlite_usart = scope.scopetype.serialstm32f._cwserial
         else:
             ser = scope._cwusb
             self.cwlite_usart = scope.usart

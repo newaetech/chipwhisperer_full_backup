@@ -174,7 +174,7 @@ def import_project(filename, file_type='zip', overwrite=False):
     return proj
 
 
-def scope(scope_type=None, sn=None):
+def scope(scope_type=None, **kwargs):
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the
@@ -212,10 +212,10 @@ def scope(scope_type=None, sn=None):
     """
     from chipwhisperer.common.utils.util import get_cw_type
     if scope_type is None:
-        scope_type = get_cw_type(sn)
+        scope_type = get_cw_type(**kwargs)
     scope = scope_type()
     try:
-        scope.con(sn)
+        scope.con(**kwargs)
     except IOError:
         scope_logger.error("ChipWhisperer error state detected. Resetting and retrying connection...")
         scope._getNAEUSB().reset()

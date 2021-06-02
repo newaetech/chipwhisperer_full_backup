@@ -57,7 +57,7 @@ class OpenADCInterface_NAEUSBChip:
             0xACE5:FWLoaderConfig(CWHusky_Loader())
         }
 
-    def con(self, sn=None):
+    def con(self, sn=None, bitstream=None):
         # try:
         nae_products = [0xACE2, 0xACE3, 0xACE5]
         found_id = self.ser.con(idProduct=nae_products, serial_number=sn)
@@ -69,13 +69,16 @@ class OpenADCInterface_NAEUSBChip:
         self.getFWConfig().setInterface(self.fpga)
         # XXX: need to comment this out?
         try:
-            self.getFWConfig().loadRequired()
+            if bitstream is None:
+                self.getFWConfig().loadRequired()
+            else:
+                bsdata = open(bitstream, "rb")
+                self.fpga.FPGAProgram(bsdata)
         except:
             self.ser.close()
             raise
 
-    def reload_fpga(self, bitstream, reconnect=True):
-
+    def reload_fpga(self, bitstream):
         if bitstream is None:
             raise NotImplementedError("Oops I forgot about that")
         
@@ -90,14 +93,6 @@ class OpenADCInterface_NAEUSBChip:
         except:
             self.ser.close()
             raise
-
-        if reconnect:
-            try:
-                self.scope.con(self.ser)
-                scope_logger.info('OpenADC Found, Connecting')
-            except IOError as e:
-                exctype, value = sys.exc_info()[:2]
-                raise IOError("OpenADC: " + (str(exctype) + str(value)))
 
     def dis(self):
         if self.ser is not None:

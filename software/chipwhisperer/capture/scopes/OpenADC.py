@@ -124,7 +124,9 @@ class OpenADC(util.DisableNewAttr):
         If no bitstream specified default is used based on current
         configuration settings.
         """        
-        self.scopetype.reload_fpga(bitstream, reconnect)
+        self.scopetype.reload_fpga(bitstream)
+        self.dis()
+        self.con(self._saved_sn)
 
     def _getNAEUSB(self):
         return self.scopetype.ser
@@ -242,10 +244,11 @@ class OpenADC(util.DisableNewAttr):
         elif name == "cw1200":
             return "ChipWhisperer Pro"
 
-    def con(self, sn=None):
+    def con(self, sn=None, bitstream=None):
+        self._saved_sn = sn
         self.scopetype = OpenADCInterface_NAEUSBChip()
 
-        self.scopetype.con(sn)
+        self.scopetype.con(sn, bitstream)
         self.sc = OpenADCInterface(self.scopetype.ser)
         self.hwinfo = HWInformation(self.sc)
 
