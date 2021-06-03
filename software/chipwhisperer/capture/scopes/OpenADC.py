@@ -305,8 +305,11 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
             if self.advancedSettings:
                 self.io = self.advancedSettings.cwEXTRA.gpiomux
                 self.trigger = self.advancedSettings.cwEXTRA.triggermux
-                #if cwtype != "cwhusky":
                 self.glitch = self.advancedSettings.glitch.glitchSettings
+                if cwtype == 'cwhusky':
+                    # TODO: cleaner way to do this?
+                    self.glitch.pll = self.pll
+                    self.advancedSettings.glitch.pll = self.pll
                 if cwtype == "cw1200":
                     self.trigger = self.advancedSettings.cwEXTRA.protrigger
 

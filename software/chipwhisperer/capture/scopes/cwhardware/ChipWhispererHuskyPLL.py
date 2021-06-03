@@ -21,6 +21,10 @@ class CDCI6214:
         # VCO frequency no matter what this PLL's frequency is. Maybe there's a cleaner way to do this?
         self._mmcm1 = mmcm1
         self._mmcm2 = mmcm2
+        self._mmcm_muldiv = 0
+        self._mmcm_vco_freq = 600e6
+        self._mmcm_vco_min = 600e6
+        self._mmcm_vco_max = 1200e6
         self.setup()
         self.set_pll_input()
         self.set_outdiv(3, 0)
@@ -567,19 +571,35 @@ class CDCI6214:
         self._set_target_freq = freq
         scope_logger.debug("adc_mul: {}".format(self._adc_mul))
         self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
+        self.update_fpga_vco(self._mmcm_vco_freq)
+
+    def update_fpga_vco(self, vco):
+        """Set the FPGA clock glitch PLL's VCO frequency.
+
+        This isn't a property of the CDCI6214 PLL, but it is closely tied, because
+        the FPGA VCO frequency depends of this PLL's frequency.
+
+        Allowed range: 600 - 1200 MHz.
+        """
         # For clock glitching, FPGA clock glitch MMCMs also need to have their M/D parameters
         # adjusted, in order to keep their VCO frequency in range.
         # Rules of the game: 
         # 1. M and (secondary) D are always equal (output frequency = input frequency), and their range is [2, 64]
         # 2. main divider is always set to 1
-        # 3. MMCM VCO range is [600, 1200] MHz; we aim for 600 MHz.
-        muldiv = int(np.ceil(600e6/freq))
+        # 3. MMCM VCO range is [600, 1200] MHz (default: 600)
+        if vco > self._mmcm_vco_max or vco < self._mmcm_vco_min:
+            raise ValueError("Requested VCO out of range")
+        muldiv = int(np.ceil(vco/self.target_freq))
+        self._mmcm_vco_freq = vco
+        if self.target_freq * muldiv > self._mmcm_vco_max:
+            muldiv -= 1
         self._mmcm1.set_mul(muldiv)
         self._mmcm2.set_mul(muldiv)
         self._mmcm1.set_sec_div(muldiv)
         self._mmcm2.set_sec_div(muldiv)
         self._mmcm1.set_main_div(1)
         self._mmcm2.set_main_div(1)
+        self._mmcm_muldiv = muldiv
 
     @adc_mul.setter
     def adc_mul(self, adc_mul):
