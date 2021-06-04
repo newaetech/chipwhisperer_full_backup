@@ -611,6 +611,23 @@ class ChipWhispererHuskyClock:
 
     @property
     def clkgen_src(self):
+        """The input for the Husky's PLL, which generates clocks
+        for the target and the ADC.
+
+        The PLL can receive input from two places:
+
+        - "system" or "internal": An onboard cystal
+        - "extclk": An external clock passed through the FPGA
+
+        :Getter: Return the current PLL input (either "system" or "extclk")
+
+        :Setter: Change the CLKGEN source
+
+        Raises:
+            ValueError: if source is not one of the above
+
+
+        """
         if self.pll.pll_src == "xtal":
             return "system"
         elif self.pll.pll_src == "fpga":
@@ -630,6 +647,30 @@ class ChipWhispererHuskyClock:
 
     @property
     def clkgen_freq(self):
+        """The target clock frequency in Hz.
+
+        The PLL takes the input clock frequency and multiplies it/divides to
+        match as closely as possible to the set clkgen_freq. If set to 0,
+        turns both the target and ADC clocks off.
+        
+        Some important notes for setting this value:
+
+        * The minimum output frequency is 500kHz and the maximum is 350MHz
+        * The ADC clock output frequency (clkgen_freq * adc_mul) must be
+        between 10MHz and 200MHz. Therefore, if you want to use
+        a clkgen_freq above 200MHz, you must set adc_mul=0
+        * The accuracy of the actual clkgen_freq will depend
+        on adc_mul, as the output divisor for the clkgen_freq must divide
+        cleanly by adc_mul. For example, if you try to use a clkgen_freq 
+        of 7.37MHz and and adc_mul of 16, the closest valid clkgen_freq
+        will be 7.5MHz.
+
+        :Getter: Return the calculated target clock frequency in Hz
+        
+        :Setter: Attempt to set a new target clock frequency in Hz
+
+
+        """
         # update pll clk src
         if not (self.clkgen_src in ["internal", "system"]):
             self.pll._fpga_clk_freq = self.fpga_clk_settings.freq_ctr
@@ -646,6 +687,19 @@ class ChipWhispererHuskyClock:
 
     @property
     def adc_mul(self):
+        """ Sets a new ADC clock frequency by multiplying this value by clkgen_freq
+
+        Must be a positive integer, or 0. If 0, turns the ADC clock off.
+
+        adc_freq = adc_mul * clkgen_freq
+
+        Note that the value of adc_mul affects how closely clkgen_freq can be matched
+        to the requested frequency. See clkgen_freq for more information.
+
+        :Getter: The currently set adc multiplier
+
+        :Setter: Set the adc multiplier
+        """
         return self.pll.adc_mul
 
     @adc_mul.setter
@@ -654,18 +708,39 @@ class ChipWhispererHuskyClock:
 
     @property
     def adc_freq(self):
+        """Calculates the ADC frequency based on clkgen_freq and adc_mul
+
+        Read-only
+        """
         return self.pll.adc_freq
 
     @property
     def freq_ctr(self):
+        """Reads the frequency of the external input clock
+        """
         return self.fpga_clk_settings.freq_ctr
 
     @property
     def clkgen_locked(self):
+        """Checks if the Husky PLL is locked"""
         return self.pll.pll_locked
 
     @property
     def adc_phase(self):
+        """Changes the phase of the ADC clock relative to the target clock
+
+        Positive values delay the ADC clock compared to the target clock
+        and vice versa.
+
+        Note: The actual phase is only a 6 bit signed value compared to
+        a 9 bit signed value on the Lite/Pro. This is mapped onto
+        the same [-255, 255] range, meaning not all phases
+        between -255 and 255 are possible.
+
+        :Getter: Gets the current adc_phase
+
+        :Setter: Sets the adc_phase. Must be in the range [-255, 255]
+        """
         return int((self.pll.adc_delay - self.pll.target_delay) * 255 / 31)
 
     @adc_phase.setter
@@ -682,6 +757,8 @@ class ChipWhispererHuskyClock:
             self.pll.adc_delay = 0
 
     def reset_dcms(self):
+        """Reset the lock on the Husky's PLL.
+        """
         self.pll.reset()
     
 
