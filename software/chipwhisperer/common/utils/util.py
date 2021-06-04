@@ -28,7 +28,6 @@ import collections
 import os.path
 import shutil
 import weakref
-import numpy as np
 from functools import wraps
 import warnings
 
@@ -146,6 +145,7 @@ def binarylist2bytearray(bitlist, nrBits=8):
 
 
 def bytearray2binarylist(bytes, nrBits=8):
+    import numpy as np
     init = np.array([], dtype=bool)
     for byte in bytes:
         init = np.concatenate((init, np.unpackbits(np.uint8(byte))[8 - nrBits:]), axis=0)

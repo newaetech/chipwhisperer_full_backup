@@ -9,9 +9,8 @@
 Main module for ChipWhisperer.
 """
 
-__version__ = '5.5.0'
+__version__ = '5.6.0'
 import os, os.path, time
-import warnings
 from zipfile import ZipFile
 
 from chipwhisperer.capture import scopes, targets
@@ -23,7 +22,6 @@ from chipwhisperer.common.traces import Trace
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 import logging
-import usb
 from chipwhisperer.logging import *
 
 # replace bytearray with inherited class with better repr and str.

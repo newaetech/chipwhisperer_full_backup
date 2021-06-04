@@ -23,19 +23,12 @@
 # United States of America, the European Union, and other jurisdictions.
 # ==========================================================================
 import logging
-import warnings
 import time
 import math
-from threading import Condition, Thread
-import struct
-import pickle
-import traceback
-import os
-import numpy as np
+from threading import Thread
 import usb1
 import array
 
-from usb.backend import libusb0, libusb1
 import usb.core
 import usb.util
 
