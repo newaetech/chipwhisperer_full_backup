@@ -30,7 +30,6 @@ import logging
 from chipwhisperer.logging import *
 
 import numpy as np
-from usb import USBError
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import dict_to_str

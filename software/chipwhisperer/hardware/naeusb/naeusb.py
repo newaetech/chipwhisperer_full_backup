@@ -29,9 +29,6 @@ from threading import Thread
 import usb1
 import array
 
-import usb.core
-import usb.util
-
 from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
 from chipwhisperer.hardware.firmware import cw1200 as fw_cw1200
 from chipwhisperer.hardware.firmware import cw305  as fw_cw305
