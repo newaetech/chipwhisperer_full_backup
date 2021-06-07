@@ -173,30 +173,42 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         self.io.cdc_settings = 0
 
         count = 0
-        while not self.clock.clkgen_locked:            
-            self.clock.reset_dcms()
-            time.sleep(0.05)
-            count += 1
+        if self._getCWType() == 'cwhusky':
+            self.pll.pll_src = 'xtal'
+            self.pll.target_freq = 7.37e6
+            self.pll.adc_mul = 4
+            while not self.pll.pll_locked:
+                count += 1
+                self.pll.reset()
+                if count > 10:
+                    raise OSError("Could not lock PLL. Try rerunning this function or calling scope.pll.reset(): {}".format(self))
 
-            if count == 5:
-                scope_logger.info("Could not lock clock for scope. This is typically safe to ignore. Reconnecting and retrying...")
-                self.dis()
-                time.sleep(0.25)
-                self.con()
-                time.sleep(0.25)
-                self.gain.db = 25
-                self.adc.samples = 5000
-                self.adc.offset = 0
-                self.adc.basic_mode = "rising_edge"
-                self.clock.clkgen_freq = 7.37e6
-                self.trigger.triggers = "tio4"
-                self.io.tio1 = "serial_rx"
-                self.io.tio2 = "serial_tx"
-                self.io.hs2 = "clkgen"
-                self.clock.adc_src = "clkgen_x4"
+        else:
+            while not self.clock.clkgen_locked:            
+                self.clock.reset_dcms()
+                time.sleep(0.05)
+                count += 1
 
-            if count > 10:
-                raise OSError("Could not lock DCM. Try rerunning this function or calling scope.clock.reset_dcms(): {}".format(self))
+                if count == 5:
+                    scope_logger.info("Could not lock clock for scope. This is typically safe to ignore. Reconnecting and retrying...")
+                    self.dis()
+                    time.sleep(0.25)
+                    self.con()
+                    time.sleep(0.25)
+                    self.gain.db = 25
+                    self.adc.samples = 5000
+                    self.adc.offset = 0
+                    self.adc.basic_mode = "rising_edge"
+                    self.clock.clkgen_freq = 7.37e6
+                    self.trigger.triggers = "tio4"
+                    self.io.tio1 = "serial_rx"
+                    self.io.tio2 = "serial_tx"
+                    self.io.hs2 = "clkgen"
+                    self.clock.adc_src = "clkgen_x4"
+
+                if count > 10:
+                    raise OSError("Could not lock DCM. Try rerunning this function or calling scope.clock.reset_dcms(): {}".format(self))
+
     def dcmTimeout(self):
         if self.connectStatus:
             try:
