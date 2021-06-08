@@ -32,6 +32,7 @@ from collections import OrderedDict
 from chipwhisperer.capture.scopes.cwhardware import PartialReconfiguration as pr
 from chipwhisperer.common.utils import util
 
+powerdownaddr = 49
 glitchaddr = 51
 glitchoffsetaddr = 25
 glitchreadbackaddr = 56
@@ -75,8 +76,10 @@ class GlitchSettings(util.DisableNewAttr):
     def _dict_repr(self):
         dict = OrderedDict()
 
+        if self._is_husky:
+            dict['enabled'] = self.enabled
+            dict['mmcm_locked'] = self.mmcm_locked
         dict['clk_src'] = self.clk_src
-
         dict['width'] = self.width
         if not self._is_husky:
             dict['width_fine'] = self.width_fine
@@ -178,6 +181,36 @@ class GlitchSettings(util.DisableNewAttr):
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
         return self.cwg.getPhaseShiftSteps()
+
+
+    @property
+    def enabled(self):
+        """Whether the Xilinx MMCMs used to generate glitches are powered on or not.
+        7-series MMCMs are power hungry. In the Husky FPGA, MMCMs are estimated to
+        consume half of the FPGA's power. If you run into temperature issues and don't
+        require glitching, you can power down these MMCMs.
+
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        return self.cwg.getEnabled()
+
+    @enabled.setter
+    def enabled(self, enable):
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        self.cwg.setEnabled(enable)
+
+
+    @property
+    def mmcm_locked(self):
+        """Whether the Xilinx MMCMs used to generate glitches are locked or not.
+
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        return self.cwg.getMMCMLocked()
+
 
 
     @property
@@ -673,6 +706,29 @@ class ChipWhispererGlitch(object):
         (ref: Xilinx UG472 v1.14, "Dynamic Phase Shift Interface in the MMCM")
         """
         return self.pll._mmcm_muldiv * 56
+
+    def setEnabled(self, enable):
+        if enable:
+            val = [0]
+        else:
+            val = [1]
+        self.oa.sendMessage(CODE_WRITE, powerdownaddr, val, Validate=False)
+
+    def getEnabled(self):
+        raw = self.oa.sendMessage(CODE_READ, powerdownaddr, Validate=False, maxResp=1)[0]
+        if raw == 1:
+            return False
+        elif raw == 0:
+            return True
+        else:
+            raise ValueError("Unexpected: read %d" % raw)
+
+    def getMMCMLocked(self):
+        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=6)
+        if ((resp[4] & 0x80) == 0x80) and ((resp[5] & 0x01) == 0x01):
+            return True
+        else:
+            return False
 
     def setGlitchWidth(self, width):
         if self._is_husky:
