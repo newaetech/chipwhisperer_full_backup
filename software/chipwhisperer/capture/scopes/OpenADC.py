@@ -29,6 +29,7 @@ import logging
 from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD, ChipWhispererHuskyClock
 from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings, \
     ADS4128Settings, XADCSettings
+from chipwhisperer.capture.scopes._OpenADCInterface import XilinxDRP, XilinxMMCMDRP
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import dict_to_str, DelayedKeyboardInterrupt
@@ -297,11 +298,12 @@ class OpenADC(util.DisableNewAttr):
         if cwtype == "cwhusky":
             # self.pll = ChipWhispererHuskyClock.CDCI6214(self.sc)
             self._fpga_clk = ClockSettings(self.sc, hwinfo=self.hwinfo)
-            self.glitch_drp1 = XilinxDRP(self.qtadc.sc, ADDR_GLITCH1_DRP_DATA, ADDR_GLITCH1_DRP_ADDR)
-            self.glitch_drp2 = XilinxDRP(self.qtadc.sc, ADDR_GLITCH2_DRP_DATA, ADDR_GLITCH2_DRP_ADDR)
+            self.glitch_drp1 = XilinxDRP(self.sc, ADDR_GLITCH1_DRP_DATA, ADDR_GLITCH1_DRP_ADDR)
+            self.glitch_drp2 = XilinxDRP(self.sc, ADDR_GLITCH2_DRP_DATA, ADDR_GLITCH2_DRP_ADDR)
             self.glitch_mmcm1 = XilinxMMCMDRP(self.glitch_drp1)
             self.glitch_mmcm2 = XilinxMMCMDRP(self.glitch_drp2)
-            self.clock = ChipWhispererHuskyClock.ChipWhispererHuskyClock(self.sc.serial, self._fpga_clk)
+            self.clock = ChipWhispererHuskyClock.ChipWhispererHuskyClock(self.sc.serial, \
+                self._fpga_clk, self.glitch_mmcm1, self.glitch_mmcm2)
         else:
             self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
 
