@@ -9,27 +9,20 @@
 Main module for ChipWhisperer.
 """
 
-__version__ = '5.5.0'
+__version__ = '5.6.0'
 import os, os.path, time
-import warnings
 from zipfile import ZipFile
 
 from chipwhisperer.capture import scopes, targets
 from chipwhisperer.capture.api import programmers
 from chipwhisperer.capture import acq_patterns as key_text_patterns
-from chipwhisperer.common.utils.util import camel_case_deprecated, fw_ver_compare
+from chipwhisperer.common.utils.util import fw_ver_compare
 from chipwhisperer.common.api import ProjectFormat as project
 from chipwhisperer.common.traces import Trace
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 import logging
-import usb
 from chipwhisperer.logging import *
-if usb.__version__ < '1.1.0':
-    print(f"---------------------------------------------------------")
-    print(f"ChipWhisperer requires pyusb >= 1.1.0, but you have {usb.__version__}")
-    print(f"---------------------------------------------------------")
-    scope_logger.warning(f"ChipWhisperer requires pyusb >= 1.1.0, but you have {usb.__version__}")
 
 # replace bytearray with inherited class with better repr and str.
 import builtins
@@ -76,9 +69,6 @@ def program_target(scope, prog_type, fw_path, **kwargs):
 
 
 
-programTarget = camel_case_deprecated(program_target)
-
-
 def open_project(filename):
     """Load an existing project from disk.
 
@@ -96,9 +86,6 @@ def open_project(filename):
     proj = project.Project()
     proj.load(filename)
     return proj
-
-
-openProject = camel_case_deprecated(open_project)
 
 
 def create_project(filename, overwrite=False):
@@ -130,9 +117,6 @@ def create_project(filename, overwrite=False):
     proj.setFilename(filename)
 
     return proj
-
-
-createProject = camel_case_deprecated(create_project)
 
 
 def import_project(filename, file_type='zip', overwrite=False):
@@ -188,7 +172,7 @@ def import_project(filename, file_type='zip', overwrite=False):
     return proj
 
 
-def scope(scope_type=None, sn=None):
+def scope(scope_type=None, **kwargs):
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the
@@ -226,17 +210,16 @@ def scope(scope_type=None, sn=None):
     """
     from chipwhisperer.common.utils.util import get_cw_type
     if scope_type is None:
-        scope_type, legacy = get_cw_type(sn)
+        scope_type = get_cw_type(**kwargs)
     scope = scope_type()
     try:
-        scope_logger.info("Legacy: {}".format(legacy))
-        scope.con(sn, legacy)
+        scope.con(**kwargs)
     except IOError:
         scope_logger.error("ChipWhisperer error state detected. Resetting and retrying connection...")
         scope._getNAEUSB().reset()
         time.sleep(2)
         scope = scope_type()
-        scope.con(sn, legacy)
+        scope.con(sn)
     return scope
 
 
@@ -357,9 +340,6 @@ def capture_trace(scope, target, plaintext, key=None, ack=True):
         return Trace(wave, plaintext, response, key)
     else:
         return None
-
-
-captureTrace = camel_case_deprecated(capture_trace)
 
 def plot(*args, **kwargs):
     """Get a plotting object for use in Jupyter.

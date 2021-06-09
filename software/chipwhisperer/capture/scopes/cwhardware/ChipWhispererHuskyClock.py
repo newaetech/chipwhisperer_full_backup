@@ -15,16 +15,8 @@ class CDCI6214:
         scope.pll.target_freq = 7.37E6 
         scope.pll.adc_mul = 4 # any positive integer within reason that satisfies ADC specs
     """
-    def __init__(self, scope, mmcm1, mmcm2):
-        self._scope = scope
-        # TODO: these are the FPGA clock glitch MMCMs, which need to be programmed to have a constant
-        # VCO frequency no matter what this PLL's frequency is. Maybe there's a cleaner way to do this?
-        self._mmcm1 = mmcm1
-        self._mmcm2 = mmcm2
-        self._mmcm_muldiv = 0
-        self._mmcm_vco_freq = 600e6
-        self._mmcm_vco_min = 600e6
-        self._mmcm_vco_max = 1200e6
+    def __init__(self, naeusb):
+        self.naeusb = naeusb
         self.setup()
         self.set_pll_input()
         self.set_outdiv(3, 0)
@@ -51,7 +43,7 @@ class CDCI6214:
             tmp = [data & 0xFF, (data >> 8) & 0xFF]
             data = tmp
 
-        self._scope._getNAEUSB().sendCtrl(0x29, data=[1, addr, 0x00, data[0], data[1]])
+        self.naeusb.sendCtrl(0x29, data=[1, addr, 0x00, data[0], data[1]])
         
     def read_reg(self, addr, as_int=False):
         """Read a CDCI6214 Register over I2C
@@ -61,8 +53,8 @@ class CDCI6214:
             as_int (bool): If true, return a big endian u16. Otherwise, return a two element list.
         """
 
-        self._scope._getNAEUSB().sendCtrl(0x29, data=[0, addr, 0x00, 0, 0])    
-        data = self._scope._getNAEUSB().readCtrl(0x29, dlen=3)
+        self.naeusb.sendCtrl(0x29, data=[0, addr, 0x00, 0, 0])    
+        data = self.naeusb.readCtrl(0x29, dlen=3)
 
         if data[0] != 2:
             raise IOError("PLL/I2C Error, got {}".format(data))
@@ -447,7 +439,7 @@ class CDCI6214:
         
         :setter: A 5 bit integer representing the delay. Must be between 0 and 31
         """
-        delay = (self.read_reg(0x32, True) >> 11) & 0b1111
+        delay = (self.read_reg(0x32, True) >> 11) & 0b11111
         return delay
 
     @adc_delay.setter
@@ -571,35 +563,6 @@ class CDCI6214:
         self._set_target_freq = freq
         scope_logger.debug("adc_mul: {}".format(self._adc_mul))
         self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
-        self.update_fpga_vco(self._mmcm_vco_freq)
-
-    def update_fpga_vco(self, vco):
-        """Set the FPGA clock glitch PLL's VCO frequency.
-
-        This isn't a property of the CDCI6214 PLL, but it is closely tied, because
-        the FPGA VCO frequency depends of this PLL's frequency.
-
-        Allowed range: 600 - 1200 MHz.
-        """
-        # For clock glitching, FPGA clock glitch MMCMs also need to have their M/D parameters
-        # adjusted, in order to keep their VCO frequency in range.
-        # Rules of the game: 
-        # 1. M and (secondary) D are always equal (output frequency = input frequency), and their range is [2, 64]
-        # 2. main divider is always set to 1
-        # 3. MMCM VCO range is [600, 1200] MHz (default: 600)
-        if vco > self._mmcm_vco_max or vco < self._mmcm_vco_min:
-            raise ValueError("Requested VCO out of range")
-        muldiv = int(np.ceil(vco/self.target_freq))
-        self._mmcm_vco_freq = vco
-        if self.target_freq * muldiv > self._mmcm_vco_max:
-            muldiv -= 1
-        self._mmcm1.set_mul(muldiv)
-        self._mmcm2.set_mul(muldiv)
-        self._mmcm1.set_sec_div(muldiv)
-        self._mmcm2.set_sec_div(muldiv)
-        self._mmcm1.set_main_div(1)
-        self._mmcm2.set_main_div(1)
-        self._mmcm_muldiv = muldiv
 
     @adc_mul.setter
     def adc_mul(self, adc_mul):
@@ -623,6 +586,192 @@ class CDCI6214:
         dict['adc_delay'] = self.adc_delay
         dict['target_delay'] = self.target_delay
         return dict
+
+    def __repr__(self):
+        return dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
+# class ChipWhispererHuskyClockAdv:
+#     """todo"""
+#     def __init__(self, pll, fpga_clk_settings):
+#         self.pll = pll
+#         self.fpga_clk_settings = fpga_clk_settings
+
+class ChipWhispererHuskyClock:
+
+    def __init__(self, naeusb, fpga_clk_settings):
+        self.naeusb = naeusb
+        self.pll = CDCI6214(naeusb)
+        self.fpga_clk_settings = fpga_clk_settings
+        self.fpga_clk_settings.freq_ctr_src = "clkgen"
+        self.adc_phase = 0
+        # self.adv_settings = ChipWhispererHuskyClockAdv(pll, fpga_clk_settings)
+
+    @property
+    def clkgen_src(self):
+        """The input for the Husky's PLL, which generates clocks
+        for the target and the ADC.
+
+        The PLL can receive input from two places:
+
+        - "system" or "internal": An onboard cystal
+        - "extclk": An external clock passed through the FPGA
+
+        :Getter: Return the current PLL input (either "system" or "extclk")
+
+        :Setter: Change the CLKGEN source
+
+        Raises:
+            ValueError: if source is not one of the above
+
+
+        """
+        if self.pll.pll_src == "xtal":
+            return "system"
+        elif self.pll.pll_src == "fpga":
+            return "extclk"
+            
+        raise ValueError("Invalid FPGA/PLL settings!") #TODO: print values
+    
+    @clkgen_src.setter
+    def clkgen_src(self, clk_src):
+        if clk_src in ["internal", "system"]:
+            self.pll.pll_src = "xtal"
+        elif clk_src == "extclk":
+            self.fpga_clk_settings.clkgen_src = "extclk"
+            self.pll.pll_src = "fpga"
+        else:
+            raise ValueError("Invalid src settings! Must be 'xtal', 'extclk' or 'fpga', not {}".format(clk_src))
+
+    @property
+    def clkgen_freq(self):
+        """The target clock frequency in Hz.
+
+        The PLL takes the input clock frequency and multiplies it/divides to
+        match as closely as possible to the set clkgen_freq. If set to 0,
+        turns both the target and ADC clocks off.
+        
+        Some important notes for setting this value:
+
+        * The minimum output frequency is 500kHz and the maximum is 350MHz
+        * The ADC clock output frequency (clkgen_freq * adc_mul) must be
+        between 10MHz and 200MHz. Therefore, if you want to use
+        a clkgen_freq above 200MHz, you must set adc_mul=0
+        * The accuracy of the actual clkgen_freq will depend
+        on adc_mul, as the output divisor for the clkgen_freq must divide
+        cleanly by adc_mul. For example, if you try to use a clkgen_freq 
+        of 7.37MHz and and adc_mul of 16, the closest valid clkgen_freq
+        will be 7.5MHz.
+
+        :Getter: Return the calculated target clock frequency in Hz
+        
+        :Setter: Attempt to set a new target clock frequency in Hz
+
+
+        """
+        # update pll clk src
+        if not (self.clkgen_src in ["internal", "system"]):
+            self.pll._fpga_clk_freq = self.fpga_clk_settings.freq_ctr
+        return self.pll.target_freq
+
+
+    @clkgen_freq.setter
+    def clkgen_freq(self, freq):
+        # update pll clk src
+        if not (self.clkgen_src in ["internal", "system"]):
+            self.pll._fpga_clk_freq = self.fpga_clk_settings.freq_ctr
+
+        self.pll.target_freq = freq
+
+    @property
+    def adc_mul(self):
+        """ Sets a new ADC clock frequency by multiplying this value by clkgen_freq
+
+        Must be a positive integer, or 0. If 0, turns the ADC clock off.
+
+        adc_freq = adc_mul * clkgen_freq
+
+        Note that the value of adc_mul affects how closely clkgen_freq can be matched
+        to the requested frequency. See clkgen_freq for more information.
+
+        :Getter: The currently set adc multiplier
+
+        :Setter: Set the adc multiplier
+        """
+        return self.pll.adc_mul
+
+    @adc_mul.setter
+    def adc_mul(self, mul):
+        self.pll.adc_mul = mul
+
+    @property
+    def adc_freq(self):
+        """Calculates the ADC frequency based on clkgen_freq and adc_mul
+
+        Read-only
+        """
+        return self.pll.adc_freq
+
+    @property
+    def freq_ctr(self):
+        """Reads the frequency of the external input clock
+        """
+        return self.fpga_clk_settings.freq_ctr
+
+    @property
+    def clkgen_locked(self):
+        """Checks if the Husky PLL is locked"""
+        return self.pll.pll_locked
+
+    @property
+    def adc_phase(self):
+        """Changes the phase of the ADC clock relative to the target clock
+
+        Positive values delay the ADC clock compared to the target clock
+        and vice versa.
+
+        Note: The actual phase is only a 6 bit signed value compared to
+        a 9 bit signed value on the Lite/Pro. This is mapped onto
+        the same [-255, 255] range, meaning not all phases
+        between -255 and 255 are possible.
+
+        :Getter: Gets the current adc_phase
+
+        :Setter: Sets the adc_phase. Must be in the range [-255, 255]
+        """
+        return int((self.pll.adc_delay - self.pll.target_delay) * 255 / 31)
+
+    @adc_phase.setter
+    def adc_phase(self, phase):
+        if abs(phase) > 255:
+            raise ValueError("Max phase +/- 255")
+        adj_phase = int((abs(phase) * 31 / 255) + 0.5)
+
+        if phase > 0:
+            self.pll.adc_delay = adj_phase
+            self.pll.target_delay = 0
+        else:
+            self.pll.target_delay = abs(adj_phase)
+            self.pll.adc_delay = 0
+
+    def reset_dcms(self):
+        """Reset the lock on the Husky's PLL.
+        """
+        self.pll.reset()
+    
+
+    def _dict_repr(self):
+        my_dict = {}
+        my_dict['clkgen_src'] = self.clkgen_src
+        my_dict['clkgen_freq'] = self.clkgen_freq
+        my_dict['adc_mul'] = self.adc_mul
+        my_dict['adc_freq'] = self.adc_freq
+        my_dict['freq_ctr'] = self.freq_ctr
+        my_dict['clkgen_locked'] = self.clkgen_locked
+        my_dict['adc_phase'] = self.adc_phase
+        return my_dict
 
     def __repr__(self):
         return dict_to_str(self._dict_repr())

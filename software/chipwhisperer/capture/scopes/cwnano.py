@@ -30,8 +30,6 @@ import logging
 from chipwhisperer.logging import *
 
 import numpy as np
-from usb import USBError
-from .base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import dict_to_str
@@ -535,7 +533,7 @@ class GPIOSettings(util.DisableNewAttr):
             return None
         return self.usb.set_cdc_settings(port)
 
-class CWNano(ScopeTemplate, util.DisableNewAttr):
+class CWNano(util.DisableNewAttr):
     """CWNano scope object.
 
     This class contains the public API for the CWNano hardware. It includes
@@ -645,7 +643,7 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
         a = self._cwusb.readFwVersion()
         return {"major": a[0], "minor": a[1], "debug": a[2]}
 
-    def _con(self, sn=None):
+    def con(self, sn=None):
         try:
             possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
             serial_numbers = []
@@ -663,8 +661,7 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
         self._is_connected = True
         return True
 
-    def _dis(self):
-        self.enable_newattr()
+    def dis(self):
         self.usbdev().close()
         self._is_connected = False
         return True

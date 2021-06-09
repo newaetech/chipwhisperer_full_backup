@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='chipwhisperer',
-    version='5.5.0',
+    version='5.6.0',
     description="ChipWhisperer Side-Channel Analysis Tool",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
@@ -13,15 +13,13 @@ setup(
     license='GPLv3',
     url='https://www.chipwhisperer.com',
     packages=find_packages('software'),
-    data_files=[('chipwhisperer/hardware/naeusb', ['software/chipwhisperer/hardware/naeusb/libusb-1.0.dll', 'software/chipwhisperer/hardware/naeusb/libusb-master.zip'])],
     package_dir={'': 'software'},
     install_requires=[
         'configobj',
         'pyserial',
         'numpy',
-        'pyusb',
+        'libusb1',
         'ECpy',
-        'scipy',
         'fastdtw',
         'Cython',
         'tqdm'
