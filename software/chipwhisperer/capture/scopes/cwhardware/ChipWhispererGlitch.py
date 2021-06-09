@@ -173,7 +173,7 @@ class GlitchSettings(util.DisableNewAttr):
     def phase_shift_steps(self):
         """The number of phase shift steps per target clock period.
         Husky only.
-        To change, modify pll.update_fpga_vco()
+        To change, modify clock.update_fpga_vco()
 
         :Getter: Returns the number of steps.
 
@@ -700,8 +700,8 @@ class ChipWhispererGlitch(object):
         self.oa.sendMessage(CODE_WRITE, glitchreadbackaddr, cmd, Validate=False)
 
     def getPhaseShiftSteps(self):
-        """Returns number of phase shift steps in one target clock cycle.
-        This is simply 56 times the clock glitch MMCM's multiplier, indepedent
+        """Returns number of phase shift steps in one target pll cycle.
+        This is simply 56 times the pll glitch MMCM's multiplier, indepedent
         of the target clock frequency.
         (ref: Xilinx UG472 v1.14, "Dynamic Phase Shift Interface in the MMCM")
         """

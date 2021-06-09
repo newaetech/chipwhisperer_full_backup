@@ -39,10 +39,12 @@ import numpy as np
 
 from chipwhisperer.logging import *
 
-class OpenADC(util.DisableNewAttr):
+ADDR_GLITCH1_DRP_ADDR = 62
 ADDR_GLITCH1_DRP_DATA = 63
 ADDR_GLITCH2_DRP_ADDR = 64
 ADDR_GLITCH2_DRP_DATA = 65
+
+class OpenADC(util.DisableNewAttr):
 
     """OpenADC scope object.
 
@@ -276,9 +278,10 @@ ADDR_GLITCH2_DRP_DATA = 65
         cwtype = self._getCWType()
         self.pll = None
         self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.sc)
-            self.glitch_drp2 = None
-            self.glitch_mmcm1 = None
-            self.glitch_mmcm2 = None
+        self.glitch_drp1 = None
+        self.glitch_drp2 = None
+        self.glitch_mmcm1 = None
+        self.glitch_mmcm2 = None
 
         util.chipwhisperer_extra = self.advancedSettings
 
@@ -294,11 +297,13 @@ ADDR_GLITCH2_DRP_DATA = 65
         if cwtype == "cwhusky":
             # self.pll = ChipWhispererHuskyClock.CDCI6214(self.sc)
             self._fpga_clk = ClockSettings(self.sc, hwinfo=self.hwinfo)
+            self.glitch_drp1 = XilinxDRP(self.qtadc.sc, ADDR_GLITCH1_DRP_DATA, ADDR_GLITCH1_DRP_ADDR)
+            self.glitch_drp2 = XilinxDRP(self.qtadc.sc, ADDR_GLITCH2_DRP_DATA, ADDR_GLITCH2_DRP_ADDR)
+            self.glitch_mmcm1 = XilinxMMCMDRP(self.glitch_drp1)
+            self.glitch_mmcm2 = XilinxMMCMDRP(self.glitch_drp2)
             self.clock = ChipWhispererHuskyClock.ChipWhispererHuskyClock(self.sc.serial, self._fpga_clk)
         else:
             self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
-                    self.glitch_mmcm2 = XilinxMMCMDRP(self.glitch_drp2)
-                    self.pll = ChipWhispererHuskyPLL.CDCI6214(self, self.glitch_mmcm1, self.glitch_mmcm2)
 
 
         if cwtype == "cw1200":
@@ -308,7 +313,7 @@ ADDR_GLITCH2_DRP_DATA = 65
         elif cwtype == "cwhusky":
             self.adc._is_husky = True
             self.gain._is_husky = True
-                self.clock._is_husky = True
+            self._fpga_clk._is_husky = True
             self.adc.oa._is_husky = True
             self.adc.bits_per_sample = 12
             self.ADS4128 = ADS4128Settings(self.sc)
@@ -318,10 +323,10 @@ ADDR_GLITCH2_DRP_DATA = 65
             self.trigger = self.advancedSettings.cwEXTRA.triggermux
             #if cwtype != "cwhusky":
             self.glitch = self.advancedSettings.glitch.glitchSettings
-                if cwtype == 'cwhusky':
-                    # TODO: cleaner way to do this?
-                    self.glitch.pll = self.pll
-                    self.advancedSettings.glitch.pll = self.pll
+            if cwtype == 'cwhusky':
+                # TODO: cleaner way to do this?
+                self.glitch.pll = self.clock.pll
+                self.advancedSettings.glitch.pll = self.clock.pll
             if cwtype == "cw1200":
                 self.trigger = self.advancedSettings.cwEXTRA.protrigger
 
