@@ -160,6 +160,10 @@ class OpenADCQt(object):
         self.setEnabled(True)
 
     def close(self):
+        #free libusb1 stuff
+        if self.ser:
+            self.ser.close()
+
         self.ser = None
         self.parm_hwinfo = None
 

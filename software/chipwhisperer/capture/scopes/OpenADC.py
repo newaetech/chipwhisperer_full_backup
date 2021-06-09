@@ -260,9 +260,9 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         elif name == "cw1200":
             return "ChipWhisperer Pro"
 
-    def _con(self, sn=None):
-        if self.scopetype is not None:
-            self.scopetype.con(sn)
+    def _con(self, sn=None, legacy=False):
+        if not self.scopetype is None:
+            self.scopetype.con(sn, legacy)
 
             if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
                 self.qtadc.sc.usbcon = self.scopetype.ser._usbdev

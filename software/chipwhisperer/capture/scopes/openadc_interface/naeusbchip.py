@@ -28,6 +28,7 @@ from .. import _qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader, CWHusky_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.common.utils.util import DictType, camel_case_deprecated
+from chipwhisperer.logging import *
 
 
 try:
@@ -67,33 +68,21 @@ class OpenADCInterface_NAEUSBChip(object):
             }
             self.scope = oadcInstance
 
-    def con(self, sn=None):
+    def con(self, sn=None, legacy=False):
         if self.ser is None:
-            self.dev = CWL.CWLiteUSB()
+            scope_logger.info("Legacy? {}".format(legacy))
 
-            try:
-                nae_products = [0xACE2, 0xACE3, 0xACE5]
-                possible_sn = self.dev.get_possible_devices(nae_products)
-                serial_numbers = []
-                if len(possible_sn) > 1:
-                    #Update list...
-                    if sn is None:
-                        snlist = DictType({'Select Device to Connect':None})
-                        for d in possible_sn:
-                            snlist[str(d['sn']) + " (" + str(d['product']) + ")"] = d['sn']
-                            serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
-                            pass
-                        raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
-                else:
-                    pass
-                    #if possible_sn[0]['sn'] !=
-                    #sn = None
-                found_id = self.dev.con(idProduct=nae_products, serial_number=sn)
-            except (IOError, ValueError):
-                raise Warning('Could not connect to "%s". It may have been disconnected, is in an error state, or is being used by another tool.' % self.getName())
+            self.dev = CWL.CWLiteUSB(legacy)
+
+            # try:
+            nae_products = [0xACE2, 0xACE3, 0xACE5]
+            found_id = self.dev.con(idProduct=nae_products, serial_number=sn)
+
+            # except (IOError, ValueError):
+            #     raise Warning('Could not connect to "%s". It may have been disconnected, is in an error state, or is being used by another tool.' % self.getName())
 
             if found_id != self.last_id:
-                logging.info("Detected ChipWhisperer with USB ID %x - switching firmware loader" % found_id)
+                scope_logger.info("Detected ChipWhisperer with USB ID %x - switching firmware loader" % found_id)
             self.last_id = found_id
 
             self.getFWConfig().setInterface(self.dev.fpga)
@@ -109,7 +98,7 @@ class OpenADCInterface_NAEUSBChip(object):
 
         try:
             self.scope.con(self.ser)
-            logging.info('OpenADC Found, Connecting')
+            scope_logger.info('OpenADC Found, Connecting')
         except IOError as e:
             exctype, value = sys.exc_info()[:2]
             raise IOError("OpenADC: " + (str(exctype) + str(value)))
@@ -120,8 +109,8 @@ class OpenADCInterface_NAEUSBChip(object):
             raise NotImplementedError("Oops I forgot about that")
         
         bsdate = time.ctime(os.path.getmtime(bitstream))
-        logging.debug("FPGA: Using file %s"%bitstream)
-        logging.debug("FPGA: File modification date %s"%bsdate)
+        scope_logger.debug("FPGA: Using file %s"%bitstream)
+        scope_logger.debug("FPGA: File modification date %s"%bsdate)
 
         bsdata = open(bitstream, "rb")
 
@@ -136,7 +125,7 @@ class OpenADCInterface_NAEUSBChip(object):
         if reconnect:
             try:
                 self.scope.con(self.ser)
-                logging.info('OpenADC Found, Connecting')
+                scope_logger.info('OpenADC Found, Connecting')
             except IOError as e:
                 exctype, value = sys.exc_info()[:2]
                 raise IOError("OpenADC: " + (str(exctype) + str(value)))

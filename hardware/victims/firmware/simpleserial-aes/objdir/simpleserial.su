@@ -1,0 +1,7 @@
+simpleserial.c:216:9:check_version	0	static
+simpleserial.c:19:9:ss_crc	16	static
+simpleserial.c:227:5:hex_decode	16	static
+simpleserial.c:264:5:simpleserial_addcmd	16	static
+simpleserial.c:259:6:simpleserial_init	8	static
+simpleserial.c:332:6:simpleserial_put	24	static
+simpleserial.c:280:6:simpleserial_get	616	dynamic,bounded

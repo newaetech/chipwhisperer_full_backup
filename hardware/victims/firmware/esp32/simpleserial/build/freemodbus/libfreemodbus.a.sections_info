@@ -1,0 +1,917 @@
+In archive C:/Users/adewa/Code/chipwhisperer/hardware/victims/firmware/esp32/simpleserial/build/freemodbus/libfreemodbus.a:
+
+mb.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.eMBInit 0000004c  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.eMBRegisterCB 0000000c  00000000  00000000  00000080  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.eMBClose 00000008  00000000  00000000  0000008c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.eMBEnable 00000008  00000000  00000000  00000094  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.eMBDisable 00000008  00000000  00000000  0000009c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.eMBPoll 00000030  00000000  00000000  000000a4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text         00000000  00000000  00000000  000000d4  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  7 .data         00000000  00000000  00000000  000000d4  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  8 .bss          00000000  00000000  00000000  000000d4  2**0
+                  ALLOC
+  9 .text.eMBInit 0000008a  00000000  00000000  000000d4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.eMBRegisterCB 00000080  00000000  00000000  00000160  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.eMBClose 00000021  00000000  00000000  000001e0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.eMBEnable 00000021  00000000  00000000  00000204  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.eMBDisable 00000028  00000000  00000000  00000228  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.eMBPoll 0000010d  00000000  00000000  00000250  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .bss.eException$6777 00000004  00000000  00000000  00000360  2**2
+                  ALLOC
+ 16 .bss.ucFunctionCode$6775 00000001  00000000  00000000  00000360  2**0
+                  ALLOC
+ 17 .bss.usLength$6776 00000002  00000000  00000000  00000360  2**1
+                  ALLOC
+ 18 .bss.ucMBFrame$6773 00000004  00000000  00000000  00000360  2**2
+                  ALLOC
+ 19 .bss.ucRcvAddress$6774 00000001  00000000  00000000  00000360  2**0
+                  ALLOC
+ 20 .data.xFuncHandlers 00000080  00000000  00000000  00000360  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, DATA
+ 21 .bss.pvMBFrameCloseCur 00000004  00000000  00000000  000003e0  2**2
+                  ALLOC
+ 22 .bss.peMBFrameReceiveCur 00000004  00000000  00000000  000003e0  2**2
+                  ALLOC
+ 23 .bss.pvMBFrameStopCur 00000004  00000000  00000000  000003e0  2**2
+                  ALLOC
+ 24 .bss.pvMBFrameStartCur 00000004  00000000  00000000  000003e0  2**2
+                  ALLOC
+ 25 .bss.peMBFrameSendCur 00000004  00000000  00000000  000003e0  2**2
+                  ALLOC
+ 26 .data.eMBState 00000004  00000000  00000000  000003e0  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+ 27 .bss.ucMBAddress 00000001  00000000  00000000  000003e4  2**0
+                  ALLOC
+ 28 .debug_frame  000000a0  00000000  00000000  000003e4  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 29 .debug_info   0000071d  00000000  00000000  00000484  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 30 .debug_abbrev 000001d7  00000000  00000000  00000ba1  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 31 .debug_loc    00000290  00000000  00000000  00000d78  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 32 .debug_aranges 00000048  00000000  00000000  00001008  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 33 .debug_ranges 00000038  00000000  00000000  00001050  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 34 .debug_line   00000474  00000000  00000000  00001088  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 35 .debug_str    000006d0  00000000  00000000  000014fc  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 36 .comment      0000003c  00000000  00000000  00001bcc  2**0
+                  CONTENTS, READONLY
+ 37 .xtensa.info  00000038  00000000  00000000  00001c08  2**0
+                  CONTENTS, READONLY
+ 38 .xt.lit       00000030  00000000  00000000  00001c40  2**0
+                  CONTENTS, RELOC, READONLY
+ 39 .xt.prop      0000042c  00000000  00000000  00001c70  2**0
+                  CONTENTS, RELOC, READONLY
+
+portevent.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.xMBPortEventInit 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.vMBPortEventClose 00000008  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.xMBPortEventPost 00000020  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.xMBPortEventGet 00000018  00000000  00000000  00000064  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.xMBPortEventGetHandle 00000004  00000000  00000000  0000007c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text         00000000  00000000  00000000  00000080  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .data         00000000  00000000  00000000  00000080  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  7 .bss          00000000  00000000  00000000  00000080  2**0
+                  ALLOC
+  8 .text.xMBPortEventInit 00000020  00000000  00000000  00000080  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.vMBPortEventClose 0000001a  00000000  00000000  000000a0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .rodata.str1.4 0000005e  00000000  00000000  000000bc  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 11 .text.xMBPortEventPost 00000051  00000000  00000000  0000011c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.xMBPortEventGet 00000034  00000000  00000000  00000170  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.xMBPortEventGetHandle 0000000a  00000000  00000000  000001a4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .rodata.__func__$6500 00000010  00000000  00000000  000001b0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 15 .rodata.__func__$6496 00000011  00000000  00000000  000001c0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 16 .bss.xQueueHdl 00000004  00000000  00000000  000001d4  2**2
+                  ALLOC
+ 17 .debug_frame  00000088  00000000  00000000  000001d4  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 18 .debug_info   00000359  00000000  00000000  0000025c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 19 .debug_abbrev 00000162  00000000  00000000  000005b5  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 20 .debug_loc    00000097  00000000  00000000  00000717  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 21 .debug_aranges 00000040  00000000  00000000  000007ae  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 22 .debug_ranges 00000030  00000000  00000000  000007ee  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 23 .debug_line   000002af  00000000  00000000  0000081e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 24 .debug_str    0000035c  00000000  00000000  00000acd  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 25 .comment      0000003c  00000000  00000000  00000e29  2**0
+                  CONTENTS, READONLY
+ 26 .xtensa.info  00000038  00000000  00000000  00000e65  2**0
+                  CONTENTS, READONLY
+ 27 .xt.lit       00000028  00000000  00000000  00000e9d  2**0
+                  CONTENTS, RELOC, READONLY
+ 28 .xt.prop      00000180  00000000  00000000  00000ec5  2**0
+                  CONTENTS, RELOC, READONLY
+
+portother.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.bMBPortIsWithinException 00000004  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.vMBPortEnterCritical 00000008  00000000  00000000  00000038  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.vMBPortExitCritical 00000008  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.vMBPortClose 0000000c  00000000  00000000  00000048  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text         00000000  00000000  00000000  00000054  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .data         00000000  00000000  00000000  00000054  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  6 .bss          00000000  00000000  00000000  00000054  2**0
+                  ALLOC
+  7 .text.bMBPortIsWithinException 0000000e  00000000  00000000  00000054  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.vMBPortEnterCritical 0000000e  00000000  00000000  00000064  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.vMBPortExitCritical 0000000e  00000000  00000000  00000074  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.vMBPortClose 00000017  00000000  00000000  00000084  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .bss.s_port_lock 00000004  00000000  00000000  0000009c  2**2
+                  ALLOC
+ 12 .debug_frame  00000070  00000000  00000000  0000009c  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 13 .debug_info   000001b2  00000000  00000000  0000010c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 14 .debug_abbrev 000000c0  00000000  00000000  000002be  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 15 .debug_aranges 00000038  00000000  00000000  0000037e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_ranges 00000028  00000000  00000000  000003b6  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 17 .debug_line   00000180  00000000  00000000  000003de  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 18 .debug_str    00000291  00000000  00000000  0000055e  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 19 .comment      0000003c  00000000  00000000  000007ef  2**0
+                  CONTENTS, READONLY
+ 20 .xtensa.info  00000038  00000000  00000000  0000082b  2**0
+                  CONTENTS, READONLY
+ 21 .xt.lit       00000020  00000000  00000000  00000863  2**0
+                  CONTENTS, RELOC, READONLY
+ 22 .xt.prop      000000cc  00000000  00000000  00000883  2**0
+                  CONTENTS, RELOC, READONLY
+
+portserial.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.vMBPortSerialRxPoll 00000020  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.vUartTask 0000001c  00000000  00000000  00000054  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.vMBPortSerialEnable 00000014  00000000  00000000  00000070  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.xMBPortSerialTxPoll 00000008  00000000  00000000  00000084  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.xMBPortSerialInit 0000007c  00000000  00000000  0000008c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.vMBPortSerialClose 00000024  00000000  00000000  00000108  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.xMBPortSerialPutByte 00000008  00000000  00000000  0000012c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.xMBPortSerialGetByte 0000002c  00000000  00000000  00000134  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text         00000000  00000000  00000000  00000160  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  9 .data         00000000  00000000  00000000  00000160  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 10 .bss          00000000  00000000  00000000  00000160  2**0
+                  ALLOC
+ 11 .text.vMBPortSerialRxPoll 0000006e  00000000  00000000  00000160  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.vUartTask 0000005c  00000000  00000000  000001d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.vMBPortSerialEnable 0000004e  00000000  00000000  0000022c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.xMBPortSerialTxPoll 00000033  00000000  00000000  0000027c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .rodata.str1.4 0000029d  00000000  00000000  000002b0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 16 .text.xMBPortSerialInit 000001a4  00000000  00000000  00000550  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .text.vMBPortSerialClose 00000038  00000000  00000000  000006f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.xMBPortSerialPutByte 00000026  00000000  00000000  0000072c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.xMBPortSerialGetByte 0000005f  00000000  00000000  00000754  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .rodata.__FUNCTION__$6557 00000015  00000000  00000000  000007b4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 21 .rodata.__func__$6556 00000015  00000000  00000000  000007cc  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 22 .rodata.__func__$6548 00000013  00000000  00000000  000007e4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 23 .rodata.__FUNCTION__$6530 00000012  00000000  00000000  000007f8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 24 .bss.uiRxBufferPos 00000002  00000000  00000000  0000080a  2**1
+                  ALLOC
+ 25 .bss.ucBuffer 00000100  00000000  00000000  0000080c  2**2
+                  ALLOC
+ 26 .bss.bTxStateEnabled 00000001  00000000  00000000  0000080c  2**0
+                  ALLOC
+ 27 .bss.bRxStateEnabled 00000001  00000000  00000000  0000080c  2**0
+                  ALLOC
+ 28 .data.ucUartNumber 00000001  00000000  00000000  0000080c  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 29 .bss.xMbTaskHandle 00000004  00000000  00000000  00000810  2**2
+                  ALLOC
+ 30 .bss.xMbUartQueue 00000004  00000000  00000000  00000810  2**2
+                  ALLOC
+ 31 .debug_frame  000000d0  00000000  00000000  00000810  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 32 .debug_info   00000c2b  00000000  00000000  000008e0  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 33 .debug_abbrev 000002a7  00000000  00000000  0000150b  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 34 .debug_loc    0000047b  00000000  00000000  000017b2  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 35 .debug_aranges 00000058  00000000  00000000  00001c2d  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 36 .debug_ranges 00000048  00000000  00000000  00001c85  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 37 .debug_line   000005f8  00000000  00000000  00001ccd  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 38 .debug_str    0000094b  00000000  00000000  000022c5  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 39 .comment      0000003c  00000000  00000000  00002c10  2**0
+                  CONTENTS, READONLY
+ 40 .xtensa.info  00000038  00000000  00000000  00002c4c  2**0
+                  CONTENTS, READONLY
+ 41 .xt.lit       00000040  00000000  00000000  00002c84  2**0
+                  CONTENTS, RELOC, READONLY
+ 42 .xt.prop      0000042c  00000000  00000000  00002cc4  2**0
+                  CONTENTS, RELOC, READONLY
+
+porttimer.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .iram1.17.literal 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.xMBPortTimersInit 00000074  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.vMBPortTimersEnable 00000040  00000000  00000000  000000b0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.vMBPortTimersDisable 00000034  00000000  00000000  000000f0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.vMBPortTimerClose 00000020  00000000  00000000  00000124  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text         00000000  00000000  00000000  00000144  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .data         00000000  00000000  00000000  00000144  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  7 .bss          00000000  00000000  00000000  00000144  2**0
+                  ALLOC
+  8 .iram1.17     0000003e  00000000  00000000  00000144  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .rodata.str1.4 00000378  00000000  00000000  00000184  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 10 .text.xMBPortTimersInit 00000168  00000000  00000000  000004fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.vMBPortTimersEnable 00000084  00000000  00000000  00000664  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.vMBPortTimersDisable 00000066  00000000  00000000  000006e8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.vMBPortTimerClose 00000042  00000000  00000000  00000750  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .rodata.__func__$6511 00000012  00000000  00000000  00000794  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 15 .rodata.__func__$6505 00000015  00000000  00000000  000007a8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 16 .rodata.__func__$6498 00000014  00000000  00000000  000007c0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 17 .rodata.__FUNCTION__$6492 00000012  00000000  00000000  000007d4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 18 .debug_frame  00000088  00000000  00000000  000007e8  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 19 .debug_info   00001212  00000000  00000000  00000870  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 20 .debug_abbrev 0000023d  00000000  00000000  00001a82  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 21 .debug_loc    000001bc  00000000  00000000  00001cbf  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 22 .debug_aranges 00000040  00000000  00000000  00001e7b  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 23 .debug_ranges 00000030  00000000  00000000  00001ebb  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 24 .debug_line   00000470  00000000  00000000  00001eeb  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 25 .debug_str    00000853  00000000  00000000  0000235b  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 26 .comment      0000003c  00000000  00000000  00002bae  2**0
+                  CONTENTS, READONLY
+ 27 .xtensa.info  00000038  00000000  00000000  00002bea  2**0
+                  CONTENTS, READONLY
+ 28 .xt.lit       00000028  00000000  00000000  00002c22  2**0
+                  CONTENTS, RELOC, READONLY
+ 29 .xt.prop      000001e0  00000000  00000000  00002c4a  2**0
+                  CONTENTS, RELOC, READONLY
+
+mbascii.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .debug_info   00000079  00000000  00000000  00000034  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  4 .debug_abbrev 00000026  00000000  00000000  000000ad  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_aranges 00000018  00000000  00000000  000000d3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  6 .debug_line   0000001d  00000000  00000000  000000eb  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_str    000001b7  00000000  00000000  00000108  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .comment      0000003c  00000000  00000000  000002bf  2**0
+                  CONTENTS, READONLY
+  9 .xtensa.info  00000038  00000000  00000000  000002fb  2**0
+                  CONTENTS, READONLY
+
+mbfunccoils.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.eMBFuncReadCoils 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.eMBFuncWriteCoil 00000008  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.eMBFuncWriteMultipleCoils 00000008  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .text         00000000  00000000  00000000  0000004c  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  4 .data         00000000  00000000  00000000  0000004c  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  5 .bss          00000000  00000000  00000000  0000004c  2**0
+                  ALLOC
+  6 .text.eMBFuncReadCoils 0000008c  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.eMBFuncWriteCoil 0000006e  00000000  00000000  000000d8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.eMBFuncWriteMultipleCoils 00000075  00000000  00000000  00000148  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .debug_frame  00000058  00000000  00000000  000001c0  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 10 .debug_info   0000037b  00000000  00000000  00000218  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 11 .debug_abbrev 00000108  00000000  00000000  00000593  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_loc    0000040d  00000000  00000000  0000069b  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 13 .debug_aranges 00000030  00000000  00000000  00000aa8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 14 .debug_ranges 00000020  00000000  00000000  00000ad8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 15 .debug_line   000002c7  00000000  00000000  00000af8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_str    00000413  00000000  00000000  00000dbf  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 17 .comment      0000003c  00000000  00000000  000011d2  2**0
+                  CONTENTS, READONLY
+ 18 .xtensa.info  00000038  00000000  00000000  0000120e  2**0
+                  CONTENTS, READONLY
+ 19 .xt.lit       00000018  00000000  00000000  00001246  2**0
+                  CONTENTS, RELOC, READONLY
+ 20 .xt.prop      000001e0  00000000  00000000  0000125e  2**0
+                  CONTENTS, RELOC, READONLY
+
+mbfuncdiag.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .debug_line   00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  4 .debug_str    000000c6  00000000  00000000  00000034  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .comment      0000003c  00000000  00000000  000000fa  2**0
+                  CONTENTS, READONLY
+  6 .xtensa.info  00000038  00000000  00000000  00000136  2**0
+                  CONTENTS, READONLY
+
+mbfuncdisc.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.eMBFuncReadDiscreteInputs 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .text         00000000  00000000  00000000  0000003c  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .data         00000000  00000000  00000000  0000003c  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  3 .bss          00000000  00000000  00000000  0000003c  2**0
+                  ALLOC
+  4 .text.eMBFuncReadDiscreteInputs 0000008c  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .debug_frame  00000028  00000000  00000000  000000c8  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  6 .debug_info   00000203  00000000  00000000  000000f0  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  7 .debug_abbrev 000000e7  00000000  00000000  000002f3  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_loc    000001af  00000000  00000000  000003da  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  9 .debug_aranges 00000020  00000000  00000000  00000589  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 10 .debug_ranges 00000010  00000000  00000000  000005a9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 11 .debug_line   000001b7  00000000  00000000  000005b9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 12 .debug_str    000003ae  00000000  00000000  00000770  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 13 .comment      0000003c  00000000  00000000  00000b1e  2**0
+                  CONTENTS, READONLY
+ 14 .xtensa.info  00000038  00000000  00000000  00000b5a  2**0
+                  CONTENTS, READONLY
+ 15 .xt.lit       00000008  00000000  00000000  00000b92  2**0
+                  CONTENTS, RELOC, READONLY
+ 16 .xt.prop      00000090  00000000  00000000  00000b9a  2**0
+                  CONTENTS, RELOC, READONLY
+
+mbfuncholding.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.eMBFuncWriteHoldingRegister 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.eMBFuncWriteMultipleHoldingRegister 00000008  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.eMBFuncReadHoldingRegister 00000008  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.eMBFuncReadWriteMultipleHoldingRegister 0000000c  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text         00000000  00000000  00000000  00000058  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .data         00000000  00000000  00000000  00000058  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  6 .bss          00000000  00000000  00000000  00000058  2**0
+                  ALLOC
+  7 .text.eMBFuncWriteHoldingRegister 0000003a  00000000  00000000  00000058  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.eMBFuncWriteMultipleHoldingRegister 00000069  00000000  00000000  00000094  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.eMBFuncReadHoldingRegister 00000076  00000000  00000000  00000100  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.eMBFuncReadWriteMultipleHoldingRegister 000000cc  00000000  00000000  00000178  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .debug_frame  00000070  00000000  00000000  00000244  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 12 .debug_info   00000434  00000000  00000000  000002b4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 13 .debug_abbrev 000000e7  00000000  00000000  000006e8  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 14 .debug_loc    000005e7  00000000  00000000  000007cf  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 15 .debug_aranges 00000038  00000000  00000000  00000db6  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_ranges 00000028  00000000  00000000  00000dee  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 17 .debug_line   00000345  00000000  00000000  00000e16  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 18 .debug_str    0000048b  00000000  00000000  0000115b  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 19 .comment      0000003c  00000000  00000000  000015e6  2**0
+                  CONTENTS, READONLY
+ 20 .xtensa.info  00000038  00000000  00000000  00001622  2**0
+                  CONTENTS, READONLY
+ 21 .xt.lit       00000020  00000000  00000000  0000165a  2**0
+                  CONTENTS, RELOC, READONLY
+ 22 .xt.prop      0000021c  00000000  00000000  0000167a  2**0
+                  CONTENTS, RELOC, READONLY
+
+mbfuncinput.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.eMBFuncReadInputRegister 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .text         00000000  00000000  00000000  0000003c  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .data         00000000  00000000  00000000  0000003c  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  3 .bss          00000000  00000000  00000000  0000003c  2**0
+                  ALLOC
+  4 .text.eMBFuncReadInputRegister 0000007d  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .debug_frame  00000028  00000000  00000000  000000bc  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  6 .debug_info   000001fa  00000000  00000000  000000e4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  7 .debug_abbrev 000000e7  00000000  00000000  000002de  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_loc    00000186  00000000  00000000  000003c5  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  9 .debug_aranges 00000020  00000000  00000000  0000054b  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 10 .debug_ranges 00000010  00000000  00000000  0000056b  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 11 .debug_line   000001ab  00000000  00000000  0000057b  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 12 .debug_str    0000039f  00000000  00000000  00000726  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 13 .comment      0000003c  00000000  00000000  00000ac5  2**0
+                  CONTENTS, READONLY
+ 14 .xtensa.info  00000038  00000000  00000000  00000b01  2**0
+                  CONTENTS, READONLY
+ 15 .xt.lit       00000008  00000000  00000000  00000b39  2**0
+                  CONTENTS, RELOC, READONLY
+ 16 .xt.prop      00000078  00000000  00000000  00000b41  2**0
+                  CONTENTS, RELOC, READONLY
+
+mbfuncother.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .debug_info   00000079  00000000  00000000  00000034  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  4 .debug_abbrev 00000026  00000000  00000000  000000ad  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_aranges 00000018  00000000  00000000  000000d3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  6 .debug_line   0000001d  00000000  00000000  000000eb  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_str    000001bf  00000000  00000000  00000108  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .comment      0000003c  00000000  00000000  000002c7  2**0
+                  CONTENTS, READONLY
+  9 .xtensa.info  00000038  00000000  00000000  00000303  2**0
+                  CONTENTS, READONLY
+
+mbutils.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.xMBUtilSetBits 00000010  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .text         00000000  00000000  00000000  00000044  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .data         00000000  00000000  00000000  00000044  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  3 .bss          00000000  00000000  00000000  00000044  2**0
+                  ALLOC
+  4 .rodata.str1.4 00000064  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  5 .text.xMBUtilSetBits 00000077  00000000  00000000  000000a8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .text.xMBUtilGetBits 0000003b  00000000  00000000  00000120  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  7 .text.prveMBError2Exception 0000001e  00000000  00000000  0000015c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .rodata.__func__$6653 0000000f  00000000  00000000  0000017c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  9 .debug_frame  00000058  00000000  00000000  0000018c  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 10 .debug_info   000002ee  00000000  00000000  000001e4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 11 .debug_abbrev 00000118  00000000  00000000  000004d2  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_loc    000002a6  00000000  00000000  000005ea  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 13 .debug_aranges 00000030  00000000  00000000  00000890  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 14 .debug_ranges 00000020  00000000  00000000  000008c0  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 15 .debug_line   00000294  00000000  00000000  000008e0  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_str    000003d4  00000000  00000000  00000b74  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 17 .comment      0000003c  00000000  00000000  00000f48  2**0
+                  CONTENTS, READONLY
+ 18 .xtensa.info  00000038  00000000  00000000  00000f84  2**0
+                  CONTENTS, READONLY
+ 19 .xt.lit       00000008  00000000  00000000  00000fbc  2**0
+                  CONTENTS, RELOC, READONLY
+ 20 .xt.prop      000000f0  00000000  00000000  00000fc4  2**0
+                  CONTENTS, RELOC, READONLY
+
+mbcrc.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.usMBCRC16 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .text         00000000  00000000  00000000  0000003c  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .data         00000000  00000000  00000000  0000003c  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  3 .bss          00000000  00000000  00000000  0000003c  2**0
+                  ALLOC
+  4 .text.usMBCRC16 00000040  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .rodata.aucCRCLo 00000100  00000000  00000000  0000007c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  6 .rodata.aucCRCHi 00000100  00000000  00000000  0000017c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  7 .debug_frame  00000028  00000000  00000000  0000027c  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  8 .debug_info   0000013e  00000000  00000000  000002a4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  9 .debug_abbrev 000000a2  00000000  00000000  000003e2  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_loc    000000df  00000000  00000000  00000484  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 11 .debug_aranges 00000020  00000000  00000000  00000563  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 12 .debug_ranges 00000010  00000000  00000000  00000583  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 13 .debug_line   00000107  00000000  00000000  00000593  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 14 .debug_str    00000202  00000000  00000000  0000069a  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 15 .comment      0000003c  00000000  00000000  0000089c  2**0
+                  CONTENTS, READONLY
+ 16 .xtensa.info  00000038  00000000  00000000  000008d8  2**0
+                  CONTENTS, READONLY
+ 17 .xt.lit       00000008  00000000  00000000  00000910  2**0
+                  CONTENTS, RELOC, READONLY
+ 18 .xt.prop      00000060  00000000  00000000  00000918  2**0
+                  CONTENTS, RELOC, READONLY
+
+mbrtu.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.eMBRTUInit 00000018  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.eMBRTUStart 00000014  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.eMBRTUStop 00000010  00000000  00000000  00000060  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.eMBRTUReceive 00000028  00000000  00000000  00000070  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.eMBRTUSend 00000024  00000000  00000000  00000098  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.xMBRTUReceiveFSM 00000034  00000000  00000000  000000bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.xMBRTUTransmitFSM 00000030  00000000  00000000  000000f0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.xMBRTUTimerT35Expired 00000020  00000000  00000000  00000120  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text         00000000  00000000  00000000  00000140  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  9 .data         00000000  00000000  00000000  00000140  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 10 .bss          00000000  00000000  00000000  00000140  2**0
+                  ALLOC
+ 11 .text.eMBRTUInit 00000053  00000000  00000000  00000140  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.eMBRTUStart 0000002a  00000000  00000000  00000194  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.eMBRTUStop 00000022  00000000  00000000  000001c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .rodata.str1.4 0000010f  00000000  00000000  000001e4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 15 .text.eMBRTUReceive 0000008b  00000000  00000000  000002f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .text.eMBRTUSend 000000bb  00000000  00000000  00000380  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .text.xMBRTUReceiveFSM 000000e2  00000000  00000000  0000043c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.xMBRTUTransmitFSM 000000a8  00000000  00000000  00000520  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.xMBRTUTimerT35Expired 00000086  00000000  00000000  000005c8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .rodata.__func__$6761 00000016  00000000  00000000  00000650  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 21 .rodata.__func__$6748 00000012  00000000  00000000  00000668  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 22 .rodata.__func__$6738 00000011  00000000  00000000  0000067c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 23 .rodata.__func__$6724 0000000e  00000000  00000000  00000690  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 24 .bss.usRcvBufferPos 00000002  00000000  00000000  0000069e  2**1
+                  ALLOC
+ 25 .bss.usSndBufferCount 00000002  00000000  00000000  0000069e  2**1
+                  ALLOC
+ 26 .bss.pucSndBufferCur 00000004  00000000  00000000  000006a0  2**2
+                  ALLOC
+ 27 .bss.eRcvState 00000004  00000000  00000000  000006a0  2**2
+                  ALLOC
+ 28 .bss.eSndState 00000004  00000000  00000000  000006a0  2**2
+                  ALLOC
+ 29 .debug_frame  000000d0  00000000  00000000  000006a0  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 30 .debug_info   0000085b  00000000  00000000  00000770  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 31 .debug_abbrev 0000018d  00000000  00000000  00000fcb  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 32 .debug_loc    000002a6  00000000  00000000  00001158  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 33 .debug_aranges 00000058  00000000  00000000  000013fe  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 34 .debug_ranges 00000048  00000000  00000000  00001456  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 35 .debug_line   0000048d  00000000  00000000  0000149e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 36 .debug_str    0000059c  00000000  00000000  0000192b  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 37 .comment      0000003c  00000000  00000000  00001ec7  2**0
+                  CONTENTS, READONLY
+ 38 .xtensa.info  00000038  00000000  00000000  00001f03  2**0
+                  CONTENTS, READONLY
+ 39 .xt.lit       00000040  00000000  00000000  00001f3b  2**0
+                  CONTENTS, RELOC, READONLY
+ 40 .xt.prop      000003fc  00000000  00000000  00001f7b  2**0
+                  CONTENTS, RELOC, READONLY
+
+mbcontroller.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.modbus_task 00000010  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.send_param_access_notification 00000008  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.get_time_stamp 00000004  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.send_param_info 0000000c  00000000  00000000  00000050  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.mbcontroller_check_event 00000018  00000000  00000000  0000005c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.mbcontroller_set_descriptor 00000034  00000000  00000000  00000074  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.mbcontroller_init 00000080  00000000  00000000  000000a8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.mbcontroller_get_param_info 0000002c  00000000  00000000  00000128  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .literal.mbcontroller_start 00000050  00000000  00000000  00000154  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .literal.mbcontroller_destroy 00000050  00000000  00000000  000001a4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .literal.mbcontroller_setup 0000004c  00000000  00000000  000001f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .literal.eMBRegInputCB 0000001c  00000000  00000000  00000240  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .literal.eMBRegHoldingCB 00000024  00000000  00000000  0000025c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .literal.eMBRegCoilsCB 00000034  00000000  00000000  00000280  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .literal.eMBRegDiscreteCB 00000020  00000000  00000000  000002b4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .text         00000000  00000000  00000000  000002d4  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 16 .data         00000000  00000000  00000000  000002d4  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 17 .bss          00000000  00000000  00000000  000002d4  2**0
+                  ALLOC
+ 18 .text.modbus_task 0000002a  00000000  00000000  000002d4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.send_param_access_notification 0000001c  00000000  00000000  00000300  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .text.get_time_stamp 0000000f  00000000  00000000  0000031c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .text.send_param_info 00000034  00000000  00000000  0000032c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .rodata.str1.4 000005c9  00000000  00000000  00000360  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 23 .text.mbcontroller_check_event 0000002e  00000000  00000000  0000092c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .text.mbcontroller_set_descriptor 000000ad  00000000  00000000  0000095c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .text.mbcontroller_init 00000111  00000000  00000000  00000a0c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .text.mbcontroller_get_param_info 00000081  00000000  00000000  00000b20  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .text.mbcontroller_start 000000c1  00000000  00000000  00000ba4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 28 .text.mbcontroller_destroy 000000c1  00000000  00000000  00000c68  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 29 .text.mbcontroller_setup 000000e3  00000000  00000000  00000d2c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 30 .text.eMBRegInputCB 000000ac  00000000  00000000  00000e10  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 31 .text.eMBRegHoldingCB 0000010c  00000000  00000000  00000ebc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 32 .text.eMBRegCoilsCB 00000136  00000000  00000000  00000fc8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 33 .text.eMBRegDiscreteCB 000000ea  00000000  00000000  00001100  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 34 .rodata.__func__$6786 00000011  00000000  00000000  000011ec  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 35 .rodata.__func__$6762 0000000e  00000000  00000000  00001200  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 36 .rodata.__func__$6739 00000010  00000000  00000000  00001210  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 37 .rodata.__func__$6722 0000000e  00000000  00000000  00001220  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 38 .rodata.__FUNCTION__$6716 00000013  00000000  00000000  00001230  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 39 .rodata.__FUNCTION__$6712 00000015  00000000  00000000  00001244  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 40 .rodata.__FUNCTION__$6705 00000013  00000000  00000000  0000125c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 41 .rodata.__FUNCTION__$6699 0000001c  00000000  00000000  00001270  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 42 .rodata.__func__$6693 00000012  00000000  00000000  0000128c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 43 .rodata.__FUNCTION__$6692 00000012  00000000  00000000  000012a0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 44 .rodata.__FUNCTION__$6687 0000001c  00000000  00000000  000012b4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 45 .rodata.__func__$6682 00000019  00000000  00000000  000012d0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 46 .bss.mb_area_descriptors 00000040  00000000  00000000  000012ec  2**2
+                  ALLOC
+ 47 .bss.mb_parity 00000002  00000000  00000000  000012ec  2**1
+                  ALLOC
+ 48 .bss.mb_speed 00000004  00000000  00000000  000012ec  2**2
+                  ALLOC
+ 49 .bss.mb_port  00000001  00000000  00000000  000012ec  2**0
+                  ALLOC
+ 50 .bss.mb_address 00000001  00000000  00000000  000012ec  2**0
+                  ALLOC
+ 51 .bss.mb_type  00000001  00000000  00000000  000012ec  2**0
+                  ALLOC
+ 52 .bss.mb_controller_notification_queue_handle 00000004  00000000  00000000  000012ec  2**2
+                  ALLOC
+ 53 .bss.mb_controller_event_group 00000004  00000000  00000000  000012ec  2**2
+                  ALLOC
+ 54 .bss.mb_controller_task_handle 00000004  00000000  00000000  000012ec  2**2
+                  ALLOC
+ 55 .debug_frame  00000178  00000000  00000000  000012ec  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 56 .debug_info   00001871  00000000  00000000  00001464  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 57 .debug_abbrev 00000295  00000000  00000000  00002cd5  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 58 .debug_loc    00000cee  00000000  00000000  00002f6a  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 59 .debug_aranges 00000090  00000000  00000000  00003c58  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 60 .debug_ranges 000000c0  00000000  00000000  00003ce8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 61 .debug_line   00000ac7  00000000  00000000  00003da8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 62 .debug_str    00000be9  00000000  00000000  0000486f  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 63 .comment      0000003c  00000000  00000000  00005458  2**0
+                  CONTENTS, READONLY
+ 64 .xtensa.info  00000038  00000000  00000000  00005494  2**0
+                  CONTENTS, READONLY
+ 65 .xt.lit       00000078  00000000  00000000  000054cc  2**0
+                  CONTENTS, RELOC, READONLY
+ 66 .xt.prop      00000864  00000000  00000000  00005544  2**0
+                  CONTENTS, RELOC, READONLY
