@@ -502,7 +502,7 @@ class NAEUSB:
 
     def cmdReadStream_size_of_fpgablock(self):
         """ Asks the hardware how many BYTES are read in one go from FPGA, which indicates where the sync
-            bytes will be located. These sync bytes must be removed in post-processing. """
+            bytes will be located. These sync bytes must be removed in post-processing. CW-pro only. """
         return 4096
 
     def cmdReadStream_bufferSize(self, dlen):
@@ -512,6 +512,22 @@ class NAEUSB:
         Returns:
             Tuple: (Size of temporary buffer required, actual samples in buffer)
         """
+        # TODO: previous husky branch code:
+        #if is_husky:
+        #    if bits_per_sample == 8:
+        #        num_totalbytes = dlen
+        #        num_samplebytes = dlen
+        #    elif bits_per_sample == 12:
+        #        # TODO-husky check these are correct
+        #        num_totalbytes = int(np.ceil(dlen*1.5))
+        #        num_samplebytes = int(np.ceil(dlen*1.5))
+        #    else:
+        #        raise ValueError("bits_per_sample=%d" % bits_per_sample)
+        #else:
+        #    num_samplebytes = int(math.ceil(float(dlen) * 4 / 3))
+        #    num_blocks = int(math.ceil(float(num_samplebytes) / 4096))
+        #    num_totalbytes = num_samplebytes + num_blocks
+        #    num_totalbytes = int(math.ceil(float(num_totalbytes) / 4096) * 4096)
         num_samplebytes = int(math.ceil(float(dlen) * 4 / 3))
         num_blocks = int(math.ceil(float(num_samplebytes) / 4096))
         num_totalbytes = num_samplebytes + num_blocks
@@ -529,20 +545,19 @@ class NAEUSB:
         else:
             data = packuint32(dlen)
         self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=data)
-        self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThread(self, dlen, segment_size, dbuf_temp, timeout_ms)
+        self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThread(self, dlen, segment_size, dbuf_temp, timeout_ms, is_husky)
         self.streamModeCaptureStream.start()
 
     def cmdReadStream_isDone(self):
         print(self.streamModeCaptureStream.drx)
         return self.streamModeCaptureStream.drx >= self.streamModeCaptureStream.dlen
 
-    def cmdReadStream(self):
+    def cmdReadStream(self, is_husky=False):
         """
         Gets data acquired in streaming mode.
         initStreamModeCapture should be called first in order to make it work.
         """
         self.streamModeCaptureStream.join()
-
         # Flush input buffers in case anything was left
         try:
             #self.cmdReadMem(self.rep)
@@ -555,7 +570,6 @@ class NAEUSB:
 
         # Ensure stream mode disabled
         self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(0))
-
         return self.streamModeCaptureStream.drx, self.streamModeCaptureStream.timeout
 
     def readCDCSettings(self):
@@ -580,7 +594,7 @@ class NAEUSB:
         self.usbserializer.read(dlen, timeout)
 
     class StreamModeCaptureThread(Thread):
-        def __init__(self, serial, dlen, segment_size, dbuf_temp, timeout_ms=2000):
+        def __init__(self, serial, dlen, segment_size, dbuf_temp, timeout_ms=2000, is_husky=False):
             """
             Reads from the FIFO in streaming mode. Requires the FPGA to be previously configured into
             streaming mode and then arm'd, otherwise this may return incorrect information.
@@ -589,6 +603,7 @@ class NAEUSB:
                 dlen: Number of samples to request.
                 dbuf_temp: Temporary data buffer, must be of size cmdReadStream_bufferSize(dlen) or bad things happen
                 timeout_ms: Timeout in ms to wait for stream to start, otherwise returns a zero-length buffer
+                is_husky: False for CW-Pro, True for CW-Husky
             Returns:
                 Tuple of (samples_per_block, total_bytes_rx)
             """
@@ -601,6 +616,7 @@ class NAEUSB:
             self.serial = serial
             self.timeout = False
             self.drx = 0
+            self._is_husky = is_husky
             self.stop = False
 
         def run(self):
@@ -651,7 +667,6 @@ class NAEUSB:
                 naeusb_logger.error("Stream failed with error {}, retrying".format(transfer.getStatus()))
                 return
             naeusb_logger.debug("stream completed with {} bytes".format(transfer.getActualLength()))
-
 
 if __name__ == '__main__':
     from chipwhisperer.hardware.naeusb.fpga import FPGA

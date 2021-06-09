@@ -40,6 +40,10 @@ import numpy as np
 from chipwhisperer.logging import *
 
 class OpenADC(util.DisableNewAttr):
+ADDR_GLITCH1_DRP_DATA = 63
+ADDR_GLITCH2_DRP_ADDR = 64
+ADDR_GLITCH2_DRP_DATA = 65
+
     """OpenADC scope object.
 
     This class contains the public API for the OpenADC hardware, including the
@@ -168,30 +172,42 @@ class OpenADC(util.DisableNewAttr):
         self.io.cdc_settings = 0
 
         count = 0
-        while not self.clock.clkgen_locked:            
-            self.clock.reset_dcms()
-            time.sleep(0.05)
-            count += 1
+        if self._getCWType() == 'cwhusky':
+            self.pll.pll_src = 'xtal'
+            self.pll.target_freq = 7.37e6
+            self.pll.adc_mul = 4
+            while not self.pll.pll_locked:
+                count += 1
+                self.pll.reset()
+                if count > 10:
+                    raise OSError("Could not lock PLL. Try rerunning this function or calling scope.pll.reset(): {}".format(self))
 
-            if count == 5:
-                scope_logger.info("Could not lock clock for scope. This is typically safe to ignore. Reconnecting and retrying...")
-                self.dis()
-                time.sleep(0.25)
-                self.con()
-                time.sleep(0.25)
-                self.gain.db = 25
-                self.adc.samples = 5000
-                self.adc.offset = 0
-                self.adc.basic_mode = "rising_edge"
-                self.clock.clkgen_freq = 7.37e6
-                self.trigger.triggers = "tio4"
-                self.io.tio1 = "serial_rx"
-                self.io.tio2 = "serial_tx"
-                self.io.hs2 = "clkgen"
-                self.clock.adc_src = "clkgen_x4"
+        else:
+            while not self.clock.clkgen_locked:            
+                self.clock.reset_dcms()
+                time.sleep(0.05)
+                count += 1
 
-            if count > 10:
-                raise OSError("Could not lock DCM. Try rerunning this function or calling scope.clock.reset_dcms(): {}".format(self))
+                if count == 5:
+                    scope_logger.info("Could not lock clock for scope. This is typically safe to ignore. Reconnecting and retrying...")
+                    self.dis()
+                    time.sleep(0.25)
+                    self.con()
+                    time.sleep(0.25)
+                    self.gain.db = 25
+                    self.adc.samples = 5000
+                    self.adc.offset = 0
+                    self.adc.basic_mode = "rising_edge"
+                    self.clock.clkgen_freq = 7.37e6
+                    self.trigger.triggers = "tio4"
+                    self.io.tio1 = "serial_rx"
+                    self.io.tio2 = "serial_tx"
+                    self.io.hs2 = "clkgen"
+                    self.clock.adc_src = "clkgen_x4"
+
+                if count > 10:
+                    raise OSError("Could not lock DCM. Try rerunning this function or calling scope.clock.reset_dcms(): {}".format(self))
+
     def dcmTimeout(self):
         if self.connectStatus:
             try:
@@ -260,6 +276,9 @@ class OpenADC(util.DisableNewAttr):
         cwtype = self._getCWType()
         self.pll = None
         self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.sc)
+            self.glitch_drp2 = None
+            self.glitch_mmcm1 = None
+            self.glitch_mmcm2 = None
 
         util.chipwhisperer_extra = self.advancedSettings
 
@@ -278,6 +297,9 @@ class OpenADC(util.DisableNewAttr):
             self.clock = ChipWhispererHuskyClock.ChipWhispererHuskyClock(self.sc.serial, self._fpga_clk)
         else:
             self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
+                    self.glitch_mmcm2 = XilinxMMCMDRP(self.glitch_drp2)
+                    self.pll = ChipWhispererHuskyPLL.CDCI6214(self, self.glitch_mmcm1, self.glitch_mmcm2)
+
 
         if cwtype == "cw1200":
             self.adc._is_pro = True
@@ -286,6 +308,7 @@ class OpenADC(util.DisableNewAttr):
         elif cwtype == "cwhusky":
             self.adc._is_husky = True
             self.gain._is_husky = True
+                self.clock._is_husky = True
             self.adc.oa._is_husky = True
             self.adc.bits_per_sample = 12
             self.ADS4128 = ADS4128Settings(self.sc)
@@ -295,6 +318,10 @@ class OpenADC(util.DisableNewAttr):
             self.trigger = self.advancedSettings.cwEXTRA.triggermux
             #if cwtype != "cwhusky":
             self.glitch = self.advancedSettings.glitch.glitchSettings
+                if cwtype == 'cwhusky':
+                    # TODO: cleaner way to do this?
+                    self.glitch.pll = self.pll
+                    self.advancedSettings.glitch.pll = self.pll
             if cwtype == "cw1200":
                 self.trigger = self.advancedSettings.cwEXTRA.protrigger
 
