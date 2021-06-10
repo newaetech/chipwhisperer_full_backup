@@ -320,7 +320,7 @@ class OpenADC(util.DisableNewAttr):
             self.adc.oa._is_husky = True
             self.adc.bits_per_sample = 12
             self.ADS4128 = ADS4128Settings(self.sc)
-            self.XADC = ADS4128Settings(self.sc)
+            self.XADC = XADCSettings(self.sc)
         if self.advancedSettings:
             self.io = self.advancedSettings.cwEXTRA.gpiomux
             self.trigger = self.advancedSettings.cwEXTRA.triggermux
