@@ -101,6 +101,7 @@ class OpenADC(util.DisableNewAttr):
         self.digitalPattern = None
 
         self._is_connected = False
+        self.data_points = []
 
         # self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
 
@@ -212,7 +213,7 @@ class OpenADC(util.DisableNewAttr):
                     raise OSError("Could not lock DCM. Try rerunning this function or calling scope.clock.reset_dcms(): {}".format(self))
 
     def dcmTimeout(self):
-        if self.connectStatus:
+        if self._is_connected:
             try:
                 self.sc.getStatus()
             except USBError:
@@ -370,7 +371,7 @@ class OpenADC(util.DisableNewAttr):
            Exception: Error when arming. This method catches these and
                disconnects before reraising them.
         """
-        if self.connectStatus is False:
+        if self._is_connected is False:
             raise OSError("Scope is not connected. Connect it first...")
         # with DelayedKeyboardInterrupt():
         try:
@@ -386,6 +387,7 @@ class OpenADC(util.DisableNewAttr):
             raise
 
     def _capture_read(self, num_points=None):
+        #print("XXX _capture_read")
         if num_points is None:
             num_points = self.adc.samples
         scope_logger.debug("Expecting {} points".format(num_points))
@@ -393,8 +395,8 @@ class OpenADC(util.DisableNewAttr):
         self.data_points = self.sc.readData(num_points)
 
         scope_logger.debug("Read {} datapoints".format(len(self.data_points)))
-        if (self.data_points is None) or (len(self.data_points != num_points)):
-            scope_logger.error("Received fewer points than expected: {} vs {}".format(len(scope.data_points), num_points))
+        if (self.data_points is None) or (len(self.data_points) != num_points):
+            scope_logger.error("Received fewer points than expected: {} vs {}".format(len(self.data_points), num_points))
             return True
         return False
 
@@ -409,12 +411,9 @@ class OpenADC(util.DisableNewAttr):
            IOError: Unknown failure.
         """
         # need adc offset, adc_freq, samples
-        if not self.adc.stream_mode:
-            a = self.sc.capture(self.adc.offset, self.clock.adc_freq, self.adc.samples)
-            b = self._capture_read()
-            return a or b
-        else:
-            return self.sc.capture()
+        a = self.sc.capture(self.adc.offset, self.clock.adc_freq, self.adc.samples)
+        b = self._capture_read()
+        return a or b
 
     def get_last_trace(self):
         """Return the last trace captured with this scope.
@@ -422,7 +421,7 @@ class OpenADC(util.DisableNewAttr):
         Returns:
            Numpy array of the last capture trace.
         """
-        return self.datapoints    
+        return self.data_points    
 
     getLastTrace = util.camel_case_deprecated(get_last_trace)
 
@@ -460,9 +459,9 @@ class OpenADC(util.DisableNewAttr):
         """
 
         seg_len = self.adc.samples-1
-        num_seg = int(len(self.datapoints) / seg_len)
+        num_seg = int(len(self.data_points) / seg_len)
 
-        return np.reshape(self.datapoints[:num_seg*seg_len], (num_seg, seg_len))
+        return np.reshape(self.data_points[:num_seg*seg_len], (num_seg, seg_len))
 
     def _dict_repr(self):
         dict = OrderedDict()
