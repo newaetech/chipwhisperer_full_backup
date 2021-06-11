@@ -234,14 +234,24 @@ class PLLCDCE906(object):
         self._usb.sendCtrl(0x30, data=[0x01, addr, data])
         resp = self._usb.readCtrl(0x30, dlen=2)
         if resp[0] != 2:
-            raise IOError("CDCE906 Write Error, response = %d" % resp[0])
+            time.sleep(0.01)
+            print("Blocked I2C, retrying...")
+            self._usb.sendCtrl(0x30, data=[0x01, addr, data])
+            resp = self._usb.readCtrl(0x30, dlen=2)
+            if resp[0] != 2:
+                raise IOError("CDCE906 Write Error, response = %d" % resp[0])
 
     def cdce906read(self, addr):
         """ Read a byte from the CDCE906 External PLL Chip """
         self._usb.sendCtrl(0x30, data=[0x00, addr, 0])
         resp = self._usb.readCtrl(0x30, dlen=2)
         if resp[0] != 2:
-            raise IOError("CDCE906 Read Error, response = %d" % resp[0])
+            time.sleep(0.01)
+            print("Blocked I2C, retrying...")
+            self._usb.sendCtrl(0x30, data=[0x00, addr, 0])
+            resp = self._usb.readCtrl(0x30, dlen=2)
+            if resp[0] != 2:
+                raise IOError("CDCE906 Read Error, response = %d" % resp[0])
         return resp[1]
 
     def cdce906init(self):

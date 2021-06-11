@@ -45,6 +45,8 @@ class CW310(CW305):
 
        * target.pll
     """
+    USB_I2C_SETUP = 0x43
+    USB_I2C_DATA = 0x44
     def __init__(self, *args, **kwargs):
         # maybe later can hijack cw305 stuff, but for now don't
         pass
@@ -72,6 +74,7 @@ class CW310(CW305):
         self.REG_XADC_DRP_ADDR = 0x17
         self.REG_XADC_DRP_DATA = 0x18
         self.REG_XADC_STAT     = 0x19
+
         
 
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True):
@@ -157,6 +160,37 @@ class CW310(CW305):
         raw = self._xadc_drp_read(addr)
         return raw/4096 # ref: UG480
 
+    def _i2c_write(self, data):
+        self._naeusb.sendCtrl(self.USB_I2C_DATA, 0, data)
+
+    def _i2c_write_settings(self, chip, addr):
+        self._naeusb.sendCtrl(self.USB_I2C_SETUP, 0, [chip, addr])
+        pass
+
+    def _i2c_read(self, dlen):
+        msg = self._naeusb.readCtrl(self.USB_I2C_DATA, 0, dlen+1)
+        return msg[0], msg[1:]
+
+    def _i2c_read_settings(self, addr_len=1):
+        msg = self._naeusb.readCtrl(self.USB_I2C_SETUP, 0, 2+addr_len)
+        return msg[0], msg[1], msg[2:]
+
+    def usb_i2c_read(self, addr, dlen, retry=True):
+        self._i2c_write_settings(chip=0x28, addr=addr)
+        status, data = self._i2c_read(dlen+1)
+        if status != 0:
+            status, data = self._i2c_read(dlen+1)
+        return status, data
+
+    def usb_i2c_write(self, addr, data, retry=True):
+        self._i2c_write_settings(chip=0x28, addr=addr)
+        self._i2c_write(data)
+        msg = self._i2c_read_settings()
+        if msg[0] != 0:
+            self._i2c_write(data)
+            msg = self._i2c_read_settings()
+        return msg[0]
+
 
     def usb_set_voltage(self, pdo_num, voltage):
         """Set the voltage for one of the USBC PDOs.
@@ -172,8 +206,12 @@ class CW310(CW305):
             raise ValueError("pdo_num must be 2 or 3, {}".format(pdo_num))
         if (voltage > 20 or voltage < 5):
             raise ValueError("Voltage must be between 5 and 20, {}".format(voltage))
-        self._naeusb.sendCtrl(0x43, 0, [0x28, 0x89 + (pdo_num - 2) * (0x04)])
-        snk_pdo = self._naeusb.readCtrl(0x44, 0, 4)
+        
+        # self._naeusb.sendCtrl(0x43, 0, [0x28, 0x89 + (pdo_num - 2) * (0x04)])
+        # snk_pdo = self._naeusb.readCtrl(0x44, 0, 4)
+        pdo_reg = 0x89 + (pdo_num - 2) * 0x04
+        status, snk_pdo = self.usb_i2c_read(pdo_reg, 4)
+
         voltage *= 20
         voltage = int(voltage)
 
@@ -184,7 +222,8 @@ class CW310(CW305):
         snk_pdo[2] |= ((voltage >> 6) & 0x0F)
         target_logger.info(voltage)
         target_logger.info(snk_pdo)
-        self._naeusb.sendCtrl(0x44, 0, snk_pdo)
+        # self._naeusb.sendCtrl(0x44, 0, snk_pdo)
+        status = self.usb_i2c_write(pdo_reg, snk_pdo)
 
     def usb_set_current(self, pdo_num, current):
         """Set the current for one of the USBC PDOs.
@@ -200,7 +239,9 @@ class CW310(CW305):
             raise ValueError("pdo_num must be 2 or 3, {}".format(pdo_num))
         if (current > 5 or current < 0.5):
             raise ValueError("Current must be between 0.5 and 5, {}".format(current))
-        snk_pdo = self._naeusb.readCtrl(0x44, 0, 4)
+
+        pdo_reg = 0x88 + (pdo_num-2) * 0x04
+        status, snk_pdo = self.usb_i2c_read(pdo_reg, 4)
         current *= 100
         current = int(current)
 
@@ -211,18 +252,20 @@ class CW310(CW305):
         snk_pdo[1] |= ((current >> 8) & 0x03)
         target_logger.info(current)
         target_logger.info(snk_pdo)
-        self._naeusb.sendCtrl(0x44, 0, snk_pdo)
+        status = self.usb_i2c_write(pdo_reg, snk_pdo)
 
     def usb_negotiate_pdo(self):
         """Renegotate the USBC PDOs. Must be done for new PDOs settings to take effect
         """
         #soft reset
-        self._naeusb.sendCtrl(0x43, 0, [0x28, 0x51])
-        self._naeusb.sendCtrl(0x44, 0, [0x0D])
+        # self._naeusb.sendCtrl(0x43, 0, [0x28, 0x51])
+        # self._naeusb.sendCtrl(0x44, 0, [0x0D])
+        status = self.usb_i2c_write(0x51, [0x0D])
 
         #send reset on pdo bus
-        self._naeusb.sendCtrl(0x43, 0, [0x28, 0x1A])
-        self._naeusb.sendCtrl(0x44, 0, [0x26])
+        # self._naeusb.sendCtrl(0x43, 0, [0x28, 0x1A])
+        # self._naeusb.sendCtrl(0x44, 0, [0x26])
+        self.usb_i2c.write(0x1A, 0x26)
 
     def _dis(self):
         if self._naeusb:
