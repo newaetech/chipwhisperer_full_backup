@@ -140,7 +140,8 @@ class GlitchSettings(util.DisableNewAttr):
 
         This DCM can be clocked from two different sources:
          * "target": The HS1 clock from the target device
-         * "clkgen": The CLKGEN DCM output
+         * "clkgen": The CLKGEN DCM output (not recommended for Husky)
+         * "pll": Husky's on-board PLL clock (Husky only)
 
         :Getter:
            Return the clock signal currently in use
@@ -156,6 +157,8 @@ class GlitchSettings(util.DisableNewAttr):
             return "target"
         elif clk_val == self.cwg.CLKSOURCE1_BIT:
             return "clkgen"
+        elif clk_val == self.cwg.CLKSOURCE2_BIT:
+            return "pll"
         else:
             raise ValueError("Received unexpected glitch module clock source %s" % (clk_val), clk_val)
 
@@ -165,6 +168,8 @@ class GlitchSettings(util.DisableNewAttr):
             clk_val = self.cwg.CLKSOURCE0_BIT
         elif source == "clkgen":
             clk_val = self.cwg.CLKSOURCE1_BIT
+        elif source == "pll":
+            clk_val = self.cwg.CLKSOURCE2_BIT
         else:
             raise ValueError("Can't set glitch arm timing to %s; valid values: ('target', 'clkgen')" % source, source)
         self.cwg.setGlitchClkSource(clk_val)
@@ -523,6 +528,7 @@ class ChipWhispererGlitch(object):
     """
     CLKSOURCE0_BIT = 0b00000000
     CLKSOURCE1_BIT = 0b00000001
+    CLKSOURCE2_BIT = 0b00000010
     CLKSOURCE_MASK = 0b00000011
     _name= 'Glitch Module'
 

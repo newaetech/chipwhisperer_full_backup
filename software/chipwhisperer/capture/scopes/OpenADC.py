@@ -28,7 +28,7 @@
 import logging
 from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD, ChipWhispererHuskyClock
 from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings, \
-    ADS4128Settings, XADCSettings
+    ADS4128Settings, XADCSettings, LEDSettings
 from chipwhisperer.capture.scopes._OpenADCInterface import XilinxDRP, XilinxMMCMDRP
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.utils import util
@@ -321,6 +321,7 @@ class OpenADC(util.DisableNewAttr):
             self.adc.bits_per_sample = 12
             self.ADS4128 = ADS4128Settings(self.sc)
             self.XADC = XADCSettings(self.sc)
+            self.LEDs = LEDSettings(self.sc)
         if self.advancedSettings:
             self.io = self.advancedSettings.cwEXTRA.gpiomux
             self.trigger = self.advancedSettings.cwEXTRA.triggermux
@@ -480,6 +481,7 @@ class OpenADC(util.DisableNewAttr):
             dict['ADS4128'] = self.ADS4128._dict_repr()
             # dict['pll'] = self.pll._dict_repr()
             dict['XADC'] = self.XADC._dict_repr()
+            dict['LEDs'] = self.LEDs._dict_repr()
 
         return dict
 
