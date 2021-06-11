@@ -235,7 +235,6 @@ class PLLCDCE906(object):
         resp = self._usb.readCtrl(0x30, dlen=2)
         if resp[0] != 2:
             time.sleep(0.01)
-            print("Blocked I2C, retrying...")
             self._usb.sendCtrl(0x30, data=[0x01, addr, data])
             resp = self._usb.readCtrl(0x30, dlen=2)
             if resp[0] != 2:
@@ -247,7 +246,6 @@ class PLLCDCE906(object):
         resp = self._usb.readCtrl(0x30, dlen=2)
         if resp[0] != 2:
             time.sleep(0.01)
-            print("Blocked I2C, retrying...")
             self._usb.sendCtrl(0x30, data=[0x00, addr, 0])
             resp = self._usb.readCtrl(0x30, dlen=2)
             if resp[0] != 2:
