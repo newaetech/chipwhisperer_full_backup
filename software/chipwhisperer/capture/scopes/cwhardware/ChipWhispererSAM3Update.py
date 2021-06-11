@@ -273,8 +273,9 @@ class SAMFWLoader(object):
         self.logfunc("Programmed!\nVerifying...")
         if sam.verify(fw_data):
             self.logfunc("Verify OK!")
-            sam.flash.setBootFlash(True)
-            self.logfunc("Bootloader disabled. Please power cycle device.")
+            sam.flash.setBootFlash(True)            
+            sam.reset()
+            self.logfunc("Bootloader disabled - power cycle device if required.")
             sam.ser.close()
             return True
         else:
