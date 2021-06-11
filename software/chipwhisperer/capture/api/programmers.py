@@ -149,7 +149,7 @@ class AVRProgrammer(Programmer):
 
     @save_and_restore_pins
     def find(self):
-        avr = self.scope.scopetype.dev.avr
+        avr = self.scope.scopetype.avr
         sig, chip = avr.find(self.slow_clock)
         if chip is None:
             self.log("AVR: Detected unknown device with signature=%2x %2x %2x" % (sig[0], sig[1], sig[2]))
@@ -158,23 +158,23 @@ class AVRProgrammer(Programmer):
 
     @save_and_restore_pins
     def erase(self):
-        avr = self.scope.scopetype.dev.avr
+        avr = self.scope.scopetype.avr
         self.log("Erasing Chip")
         avr.eraseChip()
 
     @save_and_restore_pins
     def autoProgram(self, hexfile, erase, verify, logfunc, waitfunc):
-        avr = self.scope.scopetype.dev.avr
+        avr = self.scope.scopetype.avr
         avr.autoProgram(hexfile, erase, verify, logfunc, waitfunc)
 
     @save_and_restore_pins
     def writeFuse(self, value, lfuse):
-        avr = self.scope.scopetype.dev.avr
+        avr = self.scope.scopetype.avr
         avr.writeFuse(value, lfuse)
 
     @save_and_restore_pins
     def readFuse(self, value):
-        avr = self.scope.scopetype.dev.avr
+        avr = self.scope.scopetype.avr
         return avr.readFuse(value)
 
     @save_and_restore_pins
@@ -183,23 +183,23 @@ class AVRProgrammer(Programmer):
             self.slow_clock = True
         else:
             self.slow_clock = False
-        avr = self.scope.scopetype.dev.avr
+        avr = self.scope.scopetype.avr
         avr.enableSlowClock(value)
 
     @save_and_restore_pins
     def program(self, filename, memtype="flash", verify=True):
-        avr = self.scope.scopetype.dev.avr
+        avr = self.scope.scopetype.avr
         Programmer.lastFlashedFile = filename
         avr.program(filename, memtype, verify)
 
     @save_and_restore_pins
     def autoProgram(self, hexfile, erase, verify, logfunc, waitfunc):
-        avr = self.scope.scopetype.dev.avr
+        avr = self.scope.scopetype.avr
         avr.autoProgram(hexfile, erase, verify, logfunc, waitfunc)
 
     @save_and_restore_pins
     def close(self):
-        avr = self.scope.scopetype.dev.avr
+        avr = self.scope.scopetype.avr
         try:
             avr.enableISP(False)
         except AttributeError as e:
@@ -215,7 +215,7 @@ class XMEGAProgrammer(Programmer):
 
     def xmegaprog(self):
         if self.xmega is None:
-            xmega = self.scope.scopetype.dev.xmega
+            xmega = self.scope.scopetype.xmega
         else:
             xmega = self.xmega
         return xmega
@@ -247,7 +247,7 @@ class XMEGAProgrammer(Programmer):
 
     @save_and_restore_pins
     def autoProgram(self, hexfile, erase, verify, logfunc, waitfunc):
-        xmega = self.scope.scopetype.dev.xmega
+        xmega = self.scope.scopetype.xmega
         xmega.autoProgram(hexfile, erase, verify, logfunc, waitfunc)
 
     @save_and_restore_pins
@@ -275,7 +275,7 @@ class STM32FProgrammer(Programmer):
     def stm32prog(self):
 
         if self.stm is None:
-            stm = self.scope.scopetype.dev.serialstm32f
+            stm = self.scope.scopetype.serialstm32f
         else:
             stm = self.stm
 
