@@ -102,6 +102,7 @@ class OpenADC(util.DisableNewAttr):
 
         self._is_connected = False
         self.data_points = []
+        self._is_husky = False
 
         # self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
 
@@ -176,7 +177,7 @@ class OpenADC(util.DisableNewAttr):
         self.io.cdc_settings = 0
 
         count = 0
-        if self._getCWType() == 'cwhusky':
+        if self._is_husky:
             self.pll.pll_src = 'xtal'
             self.pll.target_freq = 7.37e6
             self.pll.adc_mul = 4
@@ -314,6 +315,7 @@ class OpenADC(util.DisableNewAttr):
         if cwtype == "cwlite":
             self.adc._is_lite = True
         elif cwtype == "cwhusky":
+            self._is_husky = True
             self.adc._is_husky = True
             self.gain._is_husky = True
             self._fpga_clk._is_husky = True
@@ -388,7 +390,6 @@ class OpenADC(util.DisableNewAttr):
             raise
 
     def _capture_read(self, num_points=None):
-        #print("XXX _capture_read")
         if num_points is None:
             num_points = self.adc.samples
         scope_logger.debug("Expecting {} points".format(num_points))
@@ -412,8 +413,12 @@ class OpenADC(util.DisableNewAttr):
            IOError: Unknown failure.
         """
         # need adc offset, adc_freq, samples
-        a = self.sc.capture(self.adc.offset, self.clock.adc_freq, self.adc.samples)
-        b = self._capture_read()
+        if self._is_husky:
+            samples = self.adc.samples * self.adc.segments
+        else:
+            samples = self.adc.samples
+        a = self.sc.capture(self.adc.offset, self.clock.adc_freq, samples)
+        b = self._capture_read(samples)
         return a or b
 
     def get_last_trace(self):
@@ -442,6 +447,9 @@ class OpenADC(util.DisableNewAttr):
         if self.adc.fifo_fill_mode != "segment":
             raise IOError("ADC is not in 'segment' mode - aborting.")
 
+        if self._is_husky:
+            scope_logger.warning("Not intended for Husky -- just use a regular capture.")
+            
         with DelayedKeyboardInterrupt():
             max_fifo_size = self.adc.oa.hwMaxSamples
             #self.adc.offset should maybe be ignored - passing for now but untested
@@ -477,7 +485,7 @@ class OpenADC(util.DisableNewAttr):
         if self._getCWType() == "cw1200":
             dict['SAD'] = self.SAD._dict_repr()
             dict['decode_IO'] = self.decode_IO._dict_repr()
-        if self._getCWType() == "cwhusky":
+        if self._is_husky:
             dict['ADS4128'] = self.ADS4128._dict_repr()
             # dict['pll'] = self.pll._dict_repr()
             dict['XADC'] = self.XADC._dict_repr()
