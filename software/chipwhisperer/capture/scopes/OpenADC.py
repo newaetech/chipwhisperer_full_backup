@@ -178,14 +178,15 @@ class OpenADC(util.DisableNewAttr):
 
         count = 0
         if self._is_husky:
-            self.pll.pll_src = 'xtal'
-            self.pll.target_freq = 7.37e6
-            self.pll.adc_mul = 4
-            while not self.pll.pll_locked:
+            self.clock.pll.pll_src = 'xtal'
+            self.clock.clkgen_src = 'system'
+            self.clock.clkgen_freq = 7.37e6
+            self.clock.adc_mul = 4
+            while not self.clock.pll.pll_locked:
                 count += 1
-                self.pll.reset()
+                self.clock.pll.reset()
                 if count > 10:
-                    raise OSError("Could not lock PLL. Try rerunning this function or calling scope.pll.reset(): {}".format(self))
+                    raise OSError("Could not lock PLL. Try rerunning this function or calling scope.clock.pll.reset(): {}".format(self))
 
         else:
             while not self.clock.clkgen_locked:            
@@ -223,6 +224,9 @@ class OpenADC(util.DisableNewAttr):
             except Exception as e:
                 self.dis()
                 raise e
+
+    def connectStatus(self):
+        return self._is_connected
 
     def getCurrentScope(self):
         return self.scopetype
