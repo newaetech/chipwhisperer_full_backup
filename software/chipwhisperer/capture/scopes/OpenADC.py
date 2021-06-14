@@ -172,17 +172,16 @@ class OpenADC(util.DisableNewAttr):
         self.io.tio2 = "serial_tx"
         self.io.hs2 = "clkgen"
 
-        self.clock.adc_src = "clkgen_x4"
         self.io.cdc_settings = 0
 
         count = 0
         if self._getCWType() == 'cwhusky':
-            self.pll.pll_src = 'xtal'
-            self.pll.target_freq = 7.37e6
-            self.pll.adc_mul = 4
-            while not self.pll.pll_locked:
+            self.clock.clkgen_src = 'system'
+            self.clock.clkgen_freq = 7.37e6
+            self.clock.adc_mul = 4
+            while not self.clock.clkgen_locked:
                 count += 1
-                self.pll.reset()
+                self.clock.reset_dcms()
                 if count > 10:
                     raise OSError("Could not lock PLL. Try rerunning this function or calling scope.pll.reset(): {}".format(self))
 
