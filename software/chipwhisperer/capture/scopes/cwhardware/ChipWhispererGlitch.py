@@ -748,8 +748,8 @@ class ChipWhispererGlitch(object):
             current[2] = current[2] | 0x02
             self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
         else:
-            if width < self.cwg._min_width or width > self.cwg._max_width:
-                raise UserWarning("Can't use glitch width %s - rounding into [%s, %s]" % (width, self.cwg._min_width, self.cwg._max_width))
+            if width < self._min_width or width > self._max_width:
+                raise UserWarning("Can't use glitch width %s - rounding into [%s, %s]" % (width, self._min_width, self._max_width))
             if width > self._max_width:
                 width = self._max_width
             if width < self._min_width:
@@ -776,8 +776,8 @@ class ChipWhispererGlitch(object):
             self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
         else:
             value = offset
-            if value < self.cwg._min_offset or value > self.cwg._max_offset:
-                raise UserWarning("Can't use glitch offset %s - rounding into [%s, %s]" % (value, self.cwg._min_offset, self.cwg._max_offset))
+            if value < self._min_offset or value > self._max_offset:
+                raise UserWarning("Can't use glitch offset %s - rounding into [%s, %s]" % (value, self._min_offset, self._max_offset))
             if value < -45:
                 glitch_logger.warning("Negative offsets <-45 may result in double glitches!")
             if offset > self._max_offset:
