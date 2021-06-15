@@ -569,7 +569,7 @@ class NAEUSB:
             pass
 
         # Ensure stream mode disabled
-        self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(0))
+        # self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(0))
         return self.streamModeCaptureStream.drx, self.streamModeCaptureStream.timeout
 
     def readCDCSettings(self):
@@ -646,12 +646,18 @@ class NAEUSB:
                 # handleEvents does the callbacks
                 try:
                     self.serial.usbtx.usb_ctx.handleEvents()
+                    if self.stop:
+                        self.stop = False
+                        for transfer in transfer_list:
+                            transfer.cancel()
                 except usb1.USBErrorInterrupted:
                     pass
             naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
 
         def callback(self, transfer):
             """ Handle finished asynchronous bulk transfer"""
+            if transfer.getStatus() == usb1.TRANSFER_CANCELLED:
+                return
             if (self.drx >= self.dlen):
                 self.drx += transfer.getActualLength()
                 return
