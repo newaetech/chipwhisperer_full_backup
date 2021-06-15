@@ -775,6 +775,7 @@ class ChipWhispererGlitch(object):
             current[2] = current[2] | 0x01
             self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
         else:
+            value = offset
             if value < self.cwg._min_offset or value > self.cwg._max_offset:
                 raise UserWarning("Can't use glitch offset %s - rounding into [%s, %s]" % (value, self.cwg._min_offset, self.cwg._max_offset))
             if value < -45:

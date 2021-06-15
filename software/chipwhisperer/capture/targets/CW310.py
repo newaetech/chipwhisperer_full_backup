@@ -250,6 +250,7 @@ class CW310(CW305):
         target_logger.info(snk_pdo)
         snk_pdo[0] |= (current & 0xFF)
         snk_pdo[1] |= ((current >> 8) & 0x03)
+        
         target_logger.info(current)
         target_logger.info(snk_pdo)
         status = self.usb_i2c_write(pdo_reg, snk_pdo)
@@ -266,6 +267,9 @@ class CW310(CW305):
         # self._naeusb.sendCtrl(0x43, 0, [0x28, 0x1A])
         # self._naeusb.sendCtrl(0x44, 0, [0x26])
         self.usb_i2c.write(0x1A, 0x26)
+
+    def _getCWType(self):
+        return 'cwbergen'
 
     def _dis(self):
         if self._naeusb:

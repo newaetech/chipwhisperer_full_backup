@@ -35,6 +35,7 @@ except ImportError:
 from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
 from chipwhisperer.logging import *
+import time
 
 #The firmware files, may still be useful
 
@@ -222,7 +223,8 @@ class SAMFWLoader(object):
             'cwlite',
             'cwnano',
             'cw305',
-            'cw1200'
+            'cw1200',
+            'cwbergen'
         ]
 
 
@@ -254,6 +256,9 @@ class SAMFWLoader(object):
                 elif hardware_type == 'cw1200':
                     from chipwhisperer.hardware.firmware.cw1200 import getsome as getsome
                     name = 'CW1200_SAM3UFW.bin'
+                elif hardware_type == 'cwbergen':
+                    from chipwhisperer.hardware.firmware.cwbergen import getsome as getsome
+                    name = 'CW310.bin'
                 self.logfunc('Loading {} firmware...'.format(hardware_type))
                 fw_data = getsome(name).read()
 
@@ -274,7 +279,9 @@ class SAMFWLoader(object):
         if sam.verify(fw_data):
             self.logfunc("Verify OK!")
             sam.flash.setBootFlash(True)            
+            self.logfunc("Resetting...")
             sam.reset()
+            time.sleep(0.1)
             self.logfunc("Bootloader disabled - power cycle device if required.")
             sam.ser.close()
             return True
