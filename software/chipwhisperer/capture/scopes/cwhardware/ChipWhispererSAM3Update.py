@@ -44,10 +44,8 @@ from chipwhisperer.common.utils.util import camel_case_deprecated
 class SAMFWLoader(object):
     """ Object for easy reprogramming of ChipWhisperers
 
-    This will work with the Lite, the Pro, and
-    the Nano. If the ChipWhisperer has already been erased, pass None instead
-    of the scope object and skip the enter_bootloader() call. Will also work
-    for the CW305.
+    See https://chipwhisperer.readthedocs.io/en/latest/firmware.html
+    for information on how to update.
 
     Can autoprogram if the ChipWhisperer's firmware has not already been erased.
 
@@ -173,11 +171,7 @@ class SAMFWLoader(object):
 
 
         else:
-            self.logfunc("""Entering bootloader mode...
-            Please wait until the ChipWhisperer shows up as a serial port. Once it has, call
-            the program(COMPORT, FWPATH) to program the ChipWhisperer
-
-            Default firmware can be found at chipwhisperer/hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin""")
+            self.logfunc("""Entering bootloader mode...""")
             self.usb.enterBootloader(True)
 
     def auto_program(self):
@@ -278,11 +272,21 @@ class SAMFWLoader(object):
         self.logfunc("Programmed!\nVerifying...")
         if sam.verify(fw_data):
             self.logfunc("Verify OK!")
-            sam.flash.setBootFlash(True)            
+            sam.flash.setBootFlash(1)            
+
+            i = 0
+            while not sam.flash.getBootFlash():
+                time.sleep(0.05)
+                i += 1
+                if i > 10:
+                    sam.ser.close()
+                    self.logfunc("Upgrade succeded")
+                    self.logfunc("Unable to set boot flash, please power cycle")
+                    return True
+
             self.logfunc("Resetting...")
             sam.reset()
-            time.sleep(0.1)
-            self.logfunc("Bootloader disabled - power cycle device if required.")
+            self.logfunc("Upgrade successful")
             sam.ser.close()
             return True
         else:

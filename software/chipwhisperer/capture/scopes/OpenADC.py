@@ -26,9 +26,12 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
-from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD, ChipWhispererHuskyClock
+from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra,\
+     ChipWhispererSAD, ChipWhispererHuskyClock
 from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings, \
     ADS4128Settings, XADCSettings, LEDSettings
+
+from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from chipwhisperer.capture.scopes._OpenADCInterface import XilinxDRP, XilinxMMCMDRP
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.utils import util
@@ -104,6 +107,7 @@ class OpenADC(util.DisableNewAttr):
         self.data_points = []
 
         # self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
+        self.connectStatus = True
 
     @property
     def latest_fw(self):
@@ -336,6 +340,7 @@ class OpenADC(util.DisableNewAttr):
 
         self.disable_newattr()
         self._is_connected = True
+        self.connectStatus = True
 
         return True
 
@@ -358,6 +363,7 @@ class OpenADC(util.DisableNewAttr):
 
         self.enable_newattr()
         self._is_connected = False
+        self.connectStatus = False
         return True
 
     def arm(self):
@@ -495,3 +501,12 @@ class OpenADC(util.DisableNewAttr):
 
     def __str__(self):
         return self.__repr__()
+
+    def upgrade_firmware(self):
+        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
+
+        key should be 0xDEADBEEF and is there to prevent accidental upgrade attempts.
+        """
+        prog = SAMFWLoader(self)
+        prog.auto_program()
+

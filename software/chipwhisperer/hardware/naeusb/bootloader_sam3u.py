@@ -66,7 +66,7 @@ class Samba(object):
         # Binary mode
         ser.write("N#".encode("ascii"))
         res = ser.read(2)
-        print(res)
+        # print(res)
 
         cid = self.chip_id()
 

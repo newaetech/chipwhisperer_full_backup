@@ -36,6 +36,7 @@ from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
 from chipwhisperer.hardware.naeusb.fpga import FPGA
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import camel_case_deprecated, fw_ver_required
+from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 
 from chipwhisperer.logging import *
 
@@ -1321,3 +1322,10 @@ class FPGAIO:
 
         return resp
 
+    def upgrade_firmware(self):
+        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
+
+        key should be 0xDEADBEEF and is there to prevent accidental upgrade attempts.
+        """
+        prog = SAMFWLoader(self)
+        prog.auto_program()

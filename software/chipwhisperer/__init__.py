@@ -32,6 +32,27 @@ builtins.bytearray = util.bytearray
 
 ktp = key_text_patterns #alias
 
+def program_scope_firmware(serial_port=None, hardware_type=None, fw_path=None):
+    """Program firmware onto an erased chipwhisperer scope or target
+
+    See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information
+    """
+    if (hardware_type, fw_path) == (None, None):
+        raise ValueError("Must specify hardware_type or fw_path, see https://chipwhisperer.readthedocs.io/en/latest/firmware.html")
+
+    if serial_port is None:
+        from serial.tools import list_ports
+        at91_ports = [port for port in list_ports.comports() if (port.vid, port.pid) == (0x03EB, 0x6124)]
+        if len(at91_ports) == 0:
+            raise OSError("Could not find bootloader serial port, please see https://chipwhisperer.readthedocs.io/en/latest/firmware.html")
+        if len(at91_ports) > 1:
+            raise OSError("Found multiple bootloaders, please specify com port. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html")
+
+        serial_port = at91_ports[0].device
+        print("Found {}".format(serial_port))
+    prog = SAMFWLoader(None)
+    prog.program(serial_port, hardware_type=hardware_type, fw_path=fw_path)
+
 def program_target(scope, prog_type, fw_path, **kwargs):
     """Program the target using the programmer <type>
 

@@ -34,6 +34,7 @@ from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInt
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.util import dict_to_str
 from collections import OrderedDict
+from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 
 from chipwhisperer.hardware.naeusb.serial import USART
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, packuint32, unpackuint32
@@ -742,3 +743,11 @@ class CWNano(util.DisableNewAttr):
 
     def usbdev(self):
         return self._cwusb
+
+    def upgrade_firmware(self):
+        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
+
+        key should be 0xDEADBEEF and is there to prevent accidental upgrade attempts.
+        """
+        prog = SAMFWLoader(self)
+        prog.auto_program()
