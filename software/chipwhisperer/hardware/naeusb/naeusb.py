@@ -549,7 +549,6 @@ class NAEUSB:
         self.streamModeCaptureStream.start()
 
     def cmdReadStream_isDone(self):
-        print(self.streamModeCaptureStream.drx) # TODO: clean up
         return self.streamModeCaptureStream.drx >= self.streamModeCaptureStream.dlen
 
     def cmdReadStream(self, is_husky=False):
