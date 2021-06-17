@@ -24,14 +24,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
 import time
 from collections import OrderedDict
-from functools import partial
 from . import ChipWhispererGlitch
-from chipwhisperer.common.utils import util
+from ....common.utils import util
 
-from chipwhisperer.logging import *
+from ....logging import *
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0

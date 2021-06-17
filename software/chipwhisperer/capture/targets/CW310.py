@@ -1,19 +1,10 @@
 from .CW305 import CW305
-import logging
 import time
-import random
-from datetime import datetime
 import os.path
-import re
-import io
-from ._base import TargetTemplate
-from chipwhisperer.hardware.naeusb.naeusb import NAEUSB,packuint32
-from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
-from chipwhisperer.hardware.naeusb.fpga import FPGA
-from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.util import camel_case_deprecated, fw_ver_required
-
-from chipwhisperer.logging import *
+from ...hardware.naeusb.naeusb import NAEUSB
+from ...hardware.naeusb.pll_cdce906 import PLLCDCE906
+from ...hardware.naeusb.fpga import FPGA
+from ...logging import *
 
 class CW310(CW305):
     """CW310 Bergen Board target object.

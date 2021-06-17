@@ -23,8 +23,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.capture.api.programmers import Programmer
-from chipwhisperer.common.utils import util
+from ...capture.api.programmers import Programmer
+from ...common.utils import util
 
 
 class TargetTemplate:

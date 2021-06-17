@@ -22,24 +22,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
-
-import os.path
-try:
-    from chipwhisperer.common.utils import serialport as scan
-except ImportError:
-    class scan:
-        @staticmethod
-        def scan():
-            return ["pyserial not installed"]
-from chipwhisperer.common.utils import util
-from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
-from chipwhisperer.logging import *
+from ....hardware.naeusb.bootloader_sam3u import Samba
+from ....logging import *
 import time
-
-#The firmware files, may still be useful
-
-from chipwhisperer.common.utils.util import camel_case_deprecated
 
 def get_at91_ports():
     from serial.tools import list_ports

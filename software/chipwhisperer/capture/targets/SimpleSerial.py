@@ -22,16 +22,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
-
-import random
-
 import binascii
 from ._base import TargetTemplate
 from .simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
-from chipwhisperer.common.utils import util
+from ...common.utils import util
 from collections import OrderedDict
-from chipwhisperer.common.utils.util import camel_case_deprecated, dict_to_str
+from ...common.utils.util import camel_case_deprecated, dict_to_str
 
 from chipwhisperer.logging import *
 

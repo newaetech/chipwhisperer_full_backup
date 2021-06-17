@@ -25,9 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
-import logging
-from chipwhisperer.common.utils.util import dict_to_str
+from ....common.utils.util import dict_to_str
 from collections import OrderedDict
 from copy import copy
 

@@ -27,21 +27,21 @@
 #=================================================
 import logging
 
-from chipwhisperer.logging import *
+from ...logging import *
 
 import numpy as np
-from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.util import dict_to_str
+from ...capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
+from ...common.utils import util
+from ...common.utils.util import dict_to_str
 from collections import OrderedDict
 from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 
-from chipwhisperer.hardware.naeusb.serial import USART
-from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, packuint32, unpackuint32
-from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
-from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
-from chipwhisperer.hardware.naeusb.programmer_stm32fserial import STM32FSerial
-from chipwhisperer.common.utils.util import camel_case_deprecated, DelayedKeyboardInterrupt
+from ...hardware.naeusb.serial import USART
+from ...hardware.naeusb.naeusb import NAEUSB, packuint32, unpackuint32
+from ...hardware.naeusb.programmer_avr import AVRISP
+from ...hardware.naeusb.programmer_xmega import XMEGAPDI
+from ...hardware.naeusb.programmer_stm32fserial import STM32FSerial
+from ...common.utils.util import camel_case_deprecated, DelayedKeyboardInterrupt
 import time
 import datetime
 

@@ -29,11 +29,11 @@ import zipfile
 import os.path
 
 #from chipwhisperer.capture.scopes.cwhardware.ztex_fwloader import Ztex1v1, IhxFile
-from chipwhisperer.common.utils import util
-from chipwhisperer.hardware.firmware.cwlite import getsome as cwlite_getsome
-from chipwhisperer.hardware.firmware.cwcr2 import getsome as cwcr2_getsome
-from chipwhisperer.hardware.firmware.cw1200 import getsome as cw1200_getsome
-from chipwhisperer.hardware.firmware.cwhusky import getsome as husky_getsome
+from ....common.utils import util
+from ....hardware.firmware.cwlite import getsome as cwlite_getsome
+from ....hardware.firmware.cwcr2 import getsome as cwcr2_getsome
+from ....hardware.firmware.cw1200 import getsome as cw1200_getsome
+from ....hardware.firmware.cwhusky import getsome as husky_getsome
 
 from chipwhisperer.common.api.settings import Settings
 

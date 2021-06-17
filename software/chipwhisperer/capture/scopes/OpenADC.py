@@ -25,19 +25,17 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
 from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra,\
      ChipWhispererSAD, ChipWhispererHuskyClock
 from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings, \
     ADS4128Settings, XADCSettings, LEDSettings
 
 from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
-from chipwhisperer.capture.scopes._OpenADCInterface import XilinxDRP, XilinxMMCMDRP
+from ...capture.scopes._OpenADCInterface import XilinxDRP, XilinxMMCMDRP
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.util import dict_to_str, DelayedKeyboardInterrupt
+from ...common.utils import util
+from ...common.utils.util import dict_to_str, DelayedKeyboardInterrupt
 from collections import OrderedDict
-from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 import time
 import numpy as np
 

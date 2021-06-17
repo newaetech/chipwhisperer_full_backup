@@ -1,8 +1,5 @@
-import logging
 import time
-import chipwhisperer as cw
 
-from chipwhisperer.common.utils import util
 from ._base import TargetTemplate
 from .simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
 

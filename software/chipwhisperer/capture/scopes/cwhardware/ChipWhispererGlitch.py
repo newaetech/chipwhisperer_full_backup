@@ -24,13 +24,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
 import zipfile
-import io
-import base64
 from collections import OrderedDict
-from chipwhisperer.capture.scopes.cwhardware import PartialReconfiguration as pr
-from chipwhisperer.common.utils import util
+from ....capture.scopes.cwhardware import PartialReconfiguration as pr
+from ....common.utils import util
 
 powerdownaddr = 49
 glitchaddr = 51

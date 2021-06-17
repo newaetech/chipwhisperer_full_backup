@@ -25,8 +25,7 @@
 import logging
 
 from ._base import SimpleSerialTemplate
-from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
-from chipwhisperer.capture.scopes.OpenADC import OpenADC
+from ....capture.scopes.OpenADC import OpenADC
 
 class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
     _name = 'NewAE USB (CWLite/CW1200)'

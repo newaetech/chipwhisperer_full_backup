@@ -24,16 +24,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
-import struct
-import base64
-import copy
-
 import numpy as np
 from collections import OrderedDict
-from chipwhisperer.common.utils import util
+from ....common.utils import util
 
-from chipwhisperer.logging import *
+from ....logging import *
 
 sadcfgaddr  = 53
 saddataaddr = 54

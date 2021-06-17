@@ -1,6 +1,5 @@
-from chipwhisperer.common.utils.util import dict_to_str, DelayedKeyboardInterrupt
-from chipwhisperer.logging import *
-import time
+from ....common.utils.util import dict_to_str, DelayedKeyboardInterrupt
+from ....logging import *
 import numpy as np
 
 

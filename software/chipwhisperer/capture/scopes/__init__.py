@@ -12,7 +12,7 @@ Scopes:
    * VisaScope - VisaScope (requires Visa module, old, untested)
 
 """
-from chipwhisperer.capture.scopes.OpenADC import OpenADC
+from .OpenADC import OpenADC
 from .cwnano import CWNano
 try:
    from .sakura_g import SakuraG

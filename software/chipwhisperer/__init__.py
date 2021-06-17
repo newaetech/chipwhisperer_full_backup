@@ -13,16 +13,16 @@ __version__ = '5.6.0'
 import os, os.path, time
 from zipfile import ZipFile
 
-from chipwhisperer.capture import scopes, targets
-from chipwhisperer.capture.api import programmers
-from chipwhisperer.capture import acq_patterns as key_text_patterns
-from chipwhisperer.common.utils.util import fw_ver_compare
-from chipwhisperer.common.api import ProjectFormat as project
-from chipwhisperer.common.traces import Trace
-from chipwhisperer.common.utils import util
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader, get_at91_ports
+from .capture import scopes, targets
+from .capture.api import programmers
+from .capture import acq_patterns as key_text_patterns
+from .common.utils.util import fw_ver_compare
+from .common.api import ProjectFormat as project
+from .common.traces import Trace
+from .common.utils import util
+from .capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader, get_at91_ports
 import logging
-from chipwhisperer.logging import *
+from .logging import *
 
 # replace bytearray with inherited class with better repr and str.
 import builtins

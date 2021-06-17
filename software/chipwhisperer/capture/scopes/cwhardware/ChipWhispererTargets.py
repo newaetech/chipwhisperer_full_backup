@@ -24,10 +24,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
 import time
-from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as calcClkDiv
-from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
+from ....capture.utils.SerialProtocols import CWCalcClkDiv as calcClkDiv
+from ....capture.utils.SerialProtocols import strToBits as strToBits
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
