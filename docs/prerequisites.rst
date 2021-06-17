@@ -186,8 +186,7 @@ As of ChipWhisperer firmware \*.23, your ChipWhisperer will automatically
 configure as a WinUSB device, meaning no manual driver installation is
 required.
 
-If your ChipWhisperer has older firmware, see our page :ref:`driverless_windows` for information
-about how to update your ChipWhisperer.
+If your ChipWhisperer has older firmware, we have drivers in :code:`chipwhisperer/hardware/newae_windowsusb_drivers.zip`
 
 .. _releases: https://github.com/newaetech/chipwhisperer/releases
 .. _firmware_update: https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update

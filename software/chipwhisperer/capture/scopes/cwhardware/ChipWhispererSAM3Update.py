@@ -41,6 +41,13 @@ import time
 
 from chipwhisperer.common.utils.util import camel_case_deprecated
 
+def get_at91_ports():
+    from serial.tools import list_ports
+
+    at91_ports = [port.device for port in list_ports.comports() if (port.vid, port.pid) == (0x03EB, 0x6124)]
+    return at91_ports
+
+
 class SAMFWLoader(object):
     """ Object for easy reprogramming of ChipWhisperers
 
@@ -183,16 +190,17 @@ class SAMFWLoader(object):
         if not self._hw_type:
             raise OSError("Unable to detect chipwhisperer hardware type")
         before = serial.tools.list_ports.comports()
-        before = [b.device for b in before]
+        before = get_at91_ports()
         time.sleep(0.5)
         self.enter_bootloader(True)
         time.sleep(1.5)
         candidate = []
         i = 0
         while (candidate == []) and (i < 10):
-            after = serial.tools.list_ports.comports()
-            after = [a.device for a in after]
+            after = get_at91_ports()
             candidate = list((set(before) ^ set(after)) & set(after)) # make sure we only grab the serial ports from after
+            time.sleep(0.1)
+
         if len(candidate) == 0:
             raise OSError("Could not detect COMPORT. Continue using programmer.program()")
         com = candidate[0]
