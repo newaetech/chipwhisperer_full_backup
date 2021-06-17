@@ -8,5 +8,6 @@
 # 4) Log in/out again for changes to take effect
 # 5) Connect hardware
 #
-# Match all CW devices
+# Match all CW devices and serial ports
 SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace[0-9]|c[3-6][0-9][0-9]", TAG+="uaccess"
+SUBSYSTEM=="usb-serial", TAG+="uaccess"
