@@ -131,7 +131,11 @@ Permission Error
 ==================
 
 If running on Linux, ensure you have the new :code:`50-newae.rules` file in
-:code:`/etc/udev/rules.d/`.
+:code:`/etc/udev/rules.d/`, then run :code:`sudo udevadm control --reload-rules`.
+
+Additionally, try unplugging and replugging your ChipWhisperer. If the udev
+rules have been applied properly, you should see a :code:`cw_bootloader%n`
+device in :code:`/dev/`, where :code:`%n` is some integer.
 
 If you're still unable to program new firmware, try adding your user
 to the :code:`dialout` group:

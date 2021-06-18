@@ -570,7 +570,6 @@ class CWNano(util.DisableNewAttr):
     REQ_SAMPLES = 0x2A
 
     def __init__(self):
-        ScopeTemplate.__init__(self)
         self._is_connected = False
 
 
@@ -591,6 +590,7 @@ class CWNano(util.DisableNewAttr):
 
         self._lasttrace = None
 
+        self.connectStatus = False
         self.disable_newattr()
 
     def default_setup(self):
@@ -660,6 +660,7 @@ class CWNano(util.DisableNewAttr):
             raise Warning("Could not connect to cwnano. It may have been disconnected, is in an error state, or is being used by another tool.")
         self.disable_newattr()
         self._is_connected = True
+        self.connectStatus=True
         return True
 
     def dis(self):
