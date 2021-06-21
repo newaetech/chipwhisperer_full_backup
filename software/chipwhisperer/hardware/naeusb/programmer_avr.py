@@ -437,7 +437,7 @@ class AVRISP(object):
         """
         Read lock byte and return value.
         """
-        return self._readFuseLockSig(self.ISP_CMD_READ_LOCK_ISP, [0xAC, 0xE0, 0x00, 0x00], 4)
+        return self._readFuseLockSig(self.ISP_CMD_READ_LOCK_ISP, [0x58, 0x00, 0x00, 0x00], 4)
 
 
     def writeFuse(self, fusename, value):
