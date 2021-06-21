@@ -15,7 +15,7 @@ static int num_commands = 0;
 //#define SS_VER_2_0 2
 
 
-#define CRC 0xA6
+#define CW_CRC 0xA6
 uint8_t ss_crc(uint8_t *buf, uint8_t len)
 {
 	unsigned int k = 0;
@@ -23,7 +23,7 @@ uint8_t ss_crc(uint8_t *buf, uint8_t len)
 	while (len--) {
 		crc ^= *buf++;
 		for (k = 0; k < 8; k++) {
-			crc = crc & 0x80 ? (crc << 1) ^ 0xA6: crc << 1;
+			crc = crc & 0x80 ? (crc << 1) ^ CW_CRC: crc << 1;
 		}
 	}
 	return crc;

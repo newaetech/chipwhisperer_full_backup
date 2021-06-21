@@ -537,6 +537,8 @@ class SimpleSerial2(TargetTemplate):
         """
         if num_char == 0:
             num_char = self.ser.inWaiting()
+        if timeout == 0:
+            timeout = 1000000000000
         return self.ser.read(num_char, timeout)
 
     def send_cmd(self, cmd, scmd, data):

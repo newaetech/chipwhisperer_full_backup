@@ -177,7 +177,7 @@ class USART(object):
             dlen = waiting
 
         if timeout == 0:
-            timeout = 1000000000
+            timeout = self.timeout
 
 
         resp = []

@@ -1,9 +1,9 @@
 # Makefile for CW308T-MPC5676R Target
 
 #Normal installation of S32 goes here:
-#NXPS32DSROOT = C:/NXP/S32DS_Power_v2.1
+NXPS32DSROOT = C:/NXP/S32DS_Power_v2.1
 
-NXPS32DSROOT = D:/devtools/NXP/S32DS_Power_v2.1
+#NXPS32DSROOT = D:/devtools/NXP/S32DS_Power_v2.1
 
 VPATH += :$(HALPATH)/mpc5676r
 VPATH += :$(HALPATH)/mpc5676r/nxp
