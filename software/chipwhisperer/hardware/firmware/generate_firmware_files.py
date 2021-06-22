@@ -51,7 +51,7 @@ file_list = [
     # ("cwlite.py", cwlite_v, cwlite_files),
     # ("cw1200.py", cw1200_v, cw1200_files),
     ("cwhusky.py", cwhusky_v, cwhusky_files),
-    ("cwbergen.py", cwbergen_v, cwbergen_files),
+    #("cwbergen.py", cwbergen_v, cwbergen_files),
 ]
 
 for fdata in file_list:
