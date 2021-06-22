@@ -115,9 +115,14 @@ class OpenADC(util.DisableNewAttr):
             from chipwhisperer.hardware.firmware.cwlite import fwver
         elif cw_type == "cw1200":
             from chipwhisperer.hardware.firmware.cw1200 import fwver
-        
+        elif cw_type == "cwhusky":
+            from chipwhisperer.hardware.firmware.cwhusky import fwver
+        else:
+            raise ValueError('Unknown cw_type: %s' % cw_type)
+
         ret = OrderedDict()
         return {"major": fwver[0], "minor": fwver[1]}
+
     @property
     def fw_version(self):
         a = self.sc.serial.readFwVersion()
