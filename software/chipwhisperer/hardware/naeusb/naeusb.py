@@ -22,8 +22,8 @@
 # ChipWhisperer is a trademark of NewAE Technology Inc., registered in the
 # United States of America, the European Union, and other jurisdictions.
 # ==========================================================================
-import logging
 import time
+import warnings
 import math
 from threading import Thread
 import usb1
@@ -85,15 +85,17 @@ class NAEUSB_Backend:
     def __init__(self):
         self._usbdev = None
         self._timeout = 500
+
         self.usb_ctx = usb1.USBContext()
+        self.usb_ctx.open()
         self.handle = None
 
     def __del__(self):
         if self.handle:
-            self.handle.close()
+            del self.handle
             self.handle = None
         if self.usb_ctx:
-            self.usb_ctx.exit()
+            del self.usb_ctx
             self.usb_ctx = None
 
     def usbdev(self):
@@ -173,13 +175,12 @@ class NAEUSB_Backend:
 
     def close(self):
         """Close the USB connection"""
-        try:
-            self.handle.close()
+        if self.handle:
+            del self.handle
             self.handle = None
-            self.usb_ctx.exit()
+        if self.usb_ctx:
+            del self.usb_ctx
             self.usb_ctx = None
-        except:
-            logging.info('USB Failure calling dispose_resources: %s' % str(e))
 
     def get_possible_devices(self, idProduct=None, dictonly=True):
         """Get list of USB devices that match NewAE vendor ID (0x2b3e) and

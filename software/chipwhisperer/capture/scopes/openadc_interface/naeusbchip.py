@@ -95,15 +95,16 @@ class OpenADCInterface_NAEUSBChip:
             raise
 
     def dis(self):
-        if self.ser is not None:
+        if not self.ser is None:
             self.ser.close()
             self.ser = None
         else:
             scope_logger.error("Scope already disconnected!")
 
     def __del__(self):
-        if self.ser is not None:
+        if not self.ser is None:
             self.ser.close()
+            self.ser = None
 
     def getFWConfig(self):
         try:
