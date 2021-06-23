@@ -41,6 +41,7 @@ ktp = cw.ktp.Basic()
 key, text = ktp.next()
 scope.sc._timeout = 3
 scope.adc.timeout = 3
+scope.adc.offset = 0
 
 def check_segmented_ramp(raw, samples, segment_cycles, verbose=False):
     errors = 0
@@ -131,9 +132,11 @@ testdata = [
 
 testtargetdata = [
     # samples   presamples  testmode    clock       adcmul  bit stream  segs    segcycs desc
-    (10,        0,          'internal', 20e6,       1,      8,  False,  1,      0,      'quick'),
+    (200,       0,          'internal', 20e6,       1,      8,  False,  1,      0,      'quick'),
     (131070,    0,          'internal', 20e6,       1,      12, False,  1,      0,      'maxsamples12'),
-#    (200000,    0,          'internal', 10e6,       1,      12, True ,  1,      0,      'quickstream'), # TODO: why is this fragile?
+    (200000,    0,          'internal', 10e6,       1,      8,  True ,  1,      0,      'quickstream8'),
+    (2000000,   0,          'internal', 16e6,       1,      12, True ,  1,      0,      'longstream12'),
+#    (200,       0,          'internal', 20e6,       1,      8,  False,  1,      0,      'quick'),  # TODO: going from stream back to regular fails?
 ]
 
 
@@ -163,11 +166,11 @@ def test_internal_ramp(samples, presamples, testmode, clock, adcmul, bits, strea
     else:
         raise ValueError
 
+    scope.adc.stream_mode = stream
     scope.adc.samples = samples
     scope.adc.presamples = presamples
     scope.adc.segments = segments
     scope.adc.segment_cycles = segment_cycles
-    scope.adc.stream_mode = stream
     scope.adc.bits_per_sample = bits
     scope.adc.clip_errors_disabled = True
     scope.sc.arm(False)
