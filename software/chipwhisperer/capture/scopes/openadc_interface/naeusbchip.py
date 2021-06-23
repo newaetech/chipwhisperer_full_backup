@@ -18,9 +18,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
-import sys
-import traceback
 import time
 import os.path
 # import chipwhisperer.capture.scopes._qt as openadc_qt
@@ -57,10 +54,13 @@ class OpenADCInterface_NAEUSBChip:
             0xACE5:FWLoaderConfig(CWHusky_Loader())
         }
 
-    def con(self, sn=None, bitstream=None):
+    def con(self, sn=None, bitstream=None, force=False):
         # try:
         nae_products = [0xACE2, 0xACE3, 0xACE5]
         found_id = self.ser.con(idProduct=nae_products, serial_number=sn)
+        if force:
+            self.fpga.eraseFPGA()
+            time.sleep(0.5)
 
         if found_id != self.last_id:
             scope_logger.info("Detected ChipWhisperer with USB ID %x - switching firmware loader" % found_id)

@@ -91,8 +91,10 @@ class NAEUSB_Backend:
     def __del__(self):
         if self.handle:
             self.handle.close()
+            self.handle = None
         if self.usb_ctx:
             self.usb_ctx.exit()
+            self.usb_ctx = None
 
     def usbdev(self):
         """Safely get USB device, throwing error if not connected"""
@@ -173,7 +175,9 @@ class NAEUSB_Backend:
         """Close the USB connection"""
         try:
             self.handle.close()
+            self.handle = None
             self.usb_ctx.exit()
+            self.usb_ctx = None
         except:
             logging.info('USB Failure calling dispose_resources: %s' % str(e))
 
@@ -254,13 +258,10 @@ class NAEUSB_Backend:
         pload.extend(packuint32(addr))
         try:
             self.sendCtrl(cmd, data=pload)
-        except usb.USBError as e:
-            if "Pipe error" in str(e):
-                naeusb_logger.info("Attempting pipe error fix - typically safe to ignore")
-                self.sendCtrl(0x22, 0x11)
-                self.sendCtrl(cmd, data=pload)
-            else:
-                raise
+        except usb1.USBErrorPipe:
+            naeusb_logger.info("Attempting pipe error fix - typically safe to ignore")
+            self.sendCtrl(0x22, 0x11)
+            self.sendCtrl(cmd, data=pload)
         # Get data
         if cmd == self.CMD_READMEM_BULK:
             data = self.handle.bulkRead(self.rep, dlen, timeout=self._timeout)

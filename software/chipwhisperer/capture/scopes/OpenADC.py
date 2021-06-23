@@ -265,7 +265,7 @@ class OpenADC(util.DisableNewAttr):
         elif name == "cw1200":
             return "ChipWhisperer Pro"
 
-    def con(self, sn=None, bitstream=None):
+    def con(self, sn=None, bitstream=None, force=False):
         self._saved_sn = sn
         self.scopetype = OpenADCInterface_NAEUSBChip()
 

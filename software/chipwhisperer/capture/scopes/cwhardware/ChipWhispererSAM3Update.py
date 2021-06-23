@@ -127,6 +127,7 @@ class SAMFWLoader(object):
         self._hw_type = None
         if scope:
             self.usb = scope._getNAEUSB()
+            self.scope = scope
             self._hw_type = scope._getCWType()
         if logfunc is None:
             logfunc = lambda *args, **kwargs: None
@@ -165,6 +166,7 @@ class SAMFWLoader(object):
         else:
             self.logfunc("""Entering bootloader mode...""")
             self.usb.enterBootloader(True)
+            del self.scope
 
     def auto_program(self):
         """Erase and program firmware of ChipWhisperer
@@ -176,9 +178,9 @@ class SAMFWLoader(object):
             raise OSError("Unable to detect chipwhisperer hardware type")
         before = serial.tools.list_ports.comports()
         before = get_at91_ports()
-        time.sleep(0.5)
+        # time.sleep(0.5)
         self.enter_bootloader(True)
-        time.sleep(1.5)
+        time.sleep(0.5)
         candidate = []
         i = 0
         while (candidate == []) and (i < 10):
