@@ -129,6 +129,11 @@ class OpenADC(util.DisableNewAttr):
         return {"major": a[0], "minor": a[1], "debug": a[2]}
 
     @property
+    def fw_version_str(self):
+        a = self.sc.serial.readFwVersion()
+        return "{}.{}.{}".format(a[0], a[1], a[2])
+
+    @property
     def sn(self):
         return self.scopetype.ser.snum
 
