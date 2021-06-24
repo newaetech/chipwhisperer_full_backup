@@ -351,6 +351,8 @@ class NAEUSB:
     CMD_WRITEMEM_CTRL_SAM3U = 0x15
     CMD_SMC_READ_SPEED = 0x27
 
+    CMD_FW_BUILD_DATE = 0x40
+
     stream = False
 
     # TODO: make this better
@@ -379,6 +381,14 @@ class NAEUSB:
                  read mode for this to work correctly.
         """
         self.usbtx.sendCtrl(self.CMD_SMC_READ_SPEED, data=[val])
+
+    def get_fw_build_date(self):
+        try:
+            build_date = bytes(self.usbtx.readCtrl(0x40, dlen=100)).decode()
+            return build_date
+        except usb1.USBErrorPipe:
+            naeusb_logger.info("Build date unavailable") 
+            return "UNKNOWN"
 
     def get_serial_ports(self):
         """May have multiple com ports associated with one device, so returns a list of port + interface

@@ -134,6 +134,10 @@ class OpenADC(util.DisableNewAttr):
         return "{}.{}.{}".format(a[0], a[1], a[2])
 
     @property
+    def sam_build_date(self):
+        return self._getNAEUSB().get_fw_build_date()
+
+    @property
     def sn(self):
         return self.scopetype.ser.snum
 
