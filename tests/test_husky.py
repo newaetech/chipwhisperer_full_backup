@@ -131,12 +131,14 @@ testdata = [
 
 
 testtargetdata = [
-    # samples   presamples  testmode    clock       adcmul  bit stream  segs    segcycs desc
-    (200,       0,          'internal', 20e6,       1,      8,  False,  1,      0,      'quick'),
-    (131070,    0,          'internal', 20e6,       1,      12, False,  1,      0,      'maxsamples12'),
-    (200000,    0,          'internal', 10e6,       1,      8,  True ,  1,      0,      'quickstream8'),
-    (2000000,   0,          'internal', 16e6,       1,      12, True ,  1,      0,      'longstream12'),
-#    (200,       0,          'internal', 20e6,       1,      8,  False,  1,      0,      'quick'),  # TODO: going from stream back to regular fails?
+    # samples   presamples  testmode    clock       adcmul  bit stream  threshold   check   segs    segcycs desc
+    (200,       0,          'internal', 20e6,       1,      8,  False,  65536,      True,   1,      0,      'quick'),
+    (131070,    0,          'internal', 20e6,       1,      12, False,  65536,      True,   1,      0,      'maxsamples12'),
+    (200000,    0,          'internal', 20e6,       1,      8,  True ,  65536,      True,   1,      0,      'quickstream8'),
+    (2000000,   0,          'internal', 16e6,       1,      12, True ,  65536,      True,   1,      0,      'longstream12'),
+    (20000000,  0,          'internal', 16e6,       1,      12, True ,  65536,      False,  1,      0,      'vlongstream12'),
+    (1000000,   0,          'internal', 20e6,       1,      12, True ,  16384,      True,   1,      0,      'over'),
+    (2000,      0,          'internal', 10e6,       1,      8,  False,  65536,      True,   1,      0,      'back2nostream'),
 ]
 
 
@@ -146,7 +148,8 @@ def test_fpga_version():
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
-    assert scope.fw_version['minor'] == 1
+    assert scope.fw_version['minor'] == 10
+    assert scope.sam_build_date == 'Jun 24 2021'
 
 
 @pytest.mark.parametrize("samples, presamples, testmode, clock, adcmul, bits, stream, segments, segment_cycles, desc", testdata)
@@ -183,9 +186,9 @@ def test_internal_ramp(samples, presamples, testmode, clock, adcmul, bits, strea
     assert scope.adc.errors == 'no errors'
 
 
-@pytest.mark.parametrize("samples, presamples, testmode, clock, adcmul, bits, stream, segments, segment_cycles, desc", testtargetdata)
+@pytest.mark.parametrize("samples, presamples, testmode, clock, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc", testtargetdata)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_target_internal_ramp (samples, presamples, testmode, clock, adcmul, bits, stream, segments, segment_cycles, desc):
+def test_target_internal_ramp (samples, presamples, testmode, clock, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc):
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = adcmul
     time.sleep(0.1)
@@ -223,12 +226,13 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, adcmul, bit
     scope.adc.segments = segments
     scope.adc.segment_cycles = segment_cycles
     scope.adc.stream_mode = stream
+    scope.adc.stream_segment_threshold = threshold
     scope.adc.bits_per_sample = bits
     scope.adc.clip_errors_disabled = True
     ret = cw.capture_trace(scope, target, text, key)
     print('Words read before error: %d ' % int.from_bytes(scope.sc.sendMessage(0x80, 47, maxResp=4), byteorder='little'))
     assert scope.adc.errors == 'no errors'
-    assert check_ramp(ret.wave, testmode, samples, segment_cycles) == 0
+    if check: assert check_ramp(ret.wave, testmode, samples, segment_cycles) == 0
 
 
 def test_xadc():
