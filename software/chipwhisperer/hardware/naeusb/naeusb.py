@@ -86,17 +86,11 @@ class NAEUSB_Backend:
         self._usbdev = None
         self._timeout = 500
 
+        import atexit
         self.usb_ctx = usb1.USBContext()
         self.usb_ctx.open()
+        atexit.register(self.usb_ctx.close)
         self.handle = None
-
-    def __del__(self):
-        if self.handle:
-            del self.handle
-            self.handle = None
-        if self.usb_ctx:
-            del self.usb_ctx
-            self.usb_ctx = None
 
     def usbdev(self):
         """Safely get USB device, throwing error if not connected"""
@@ -153,6 +147,8 @@ class NAEUSB_Backend:
                 naeusb_logger.error("Or that you have the proper permissions to access it")
             raise
         self._usbdev = self.handle
+        import atexit
+        atexit.register(self._usbdev.close)
 
         # claim bulk interface, may not be necessary?
         self.handle.claimInterface(0)
@@ -223,10 +219,10 @@ class NAEUSB_Backend:
         Send data over control endpoint
         """
         # Vendor-specific, OUT, interface control transfer
-        self.handle.controlWrite(0x41, cmd, value, 0, data, timeout=self._timeout)
         naeusb_logger.debug("WRITE_CTRL: bmRequestType: {:02X}, \
                     bRequest: {:02X}, wValue: {:04X}, wIndex: {:04X}, data: {}".format(0x41, cmd, \
                         value, 0, data))
+        self.handle.controlWrite(0x41, cmd, value, 0, data, timeout=self._timeout)
         #return self.usbdev().ctrl_transfer(0x41, cmd, value, 0, data, timeout=self._timeout)
 
     def readCtrl(self, cmd, value=0, dlen=0):
