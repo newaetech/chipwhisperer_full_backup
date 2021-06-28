@@ -107,6 +107,12 @@ class CW305(TargetTemplate):
     BATCHRUN_RANDOM_KEY = 0x2
     BATCHRUN_RANDOM_PT = 0x4
 
+    def upgrade_firmware(self):
+        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
+        """
+        prog = SAMFWLoader(self)
+        prog.auto_program()
+
     def __init__(self):
         import chipwhisperer as cw
         TargetTemplate.__init__(self)
@@ -1321,9 +1327,3 @@ class FPGAIO:
         self.spi1_set_cs_pin(True)
 
         return resp
-
-    def upgrade_firmware(self):
-        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
-        """
-        prog = SAMFWLoader(self)
-        prog.auto_program()
