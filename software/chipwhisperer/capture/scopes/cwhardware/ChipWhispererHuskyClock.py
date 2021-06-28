@@ -638,7 +638,7 @@ class ChipWhispererHuskyClock:
         self.naeusb = naeusb
         self.pll = CDCI6214(naeusb, mmcm1, mmcm2)
         self.fpga_clk_settings = fpga_clk_settings
-        self.fpga_clk_settings.freq_ctr_src = "clkgen"
+        self.fpga_clk_settings.freq_ctr_src = "extclk"
         self.adc_phase = 0
         # self.adv_settings = ChipWhispererHuskyClockAdv(pll, fpga_clk_settings)
 
@@ -671,10 +671,19 @@ class ChipWhispererHuskyClock:
     @clkgen_src.setter
     def clkgen_src(self, clk_src):
         if clk_src in ["internal", "system"]:
+            clkgen_freq = self.clkgen_freq
             self.pll.pll_src = "xtal"
+            self.fpga_clk_settings.enabled = False # keep things cool
+            self.clkgen_freq = clkgen_freq
         elif clk_src == "extclk":
-            self.fpga_clk_settings.clkgen_src = "extclk"
+            clkgen_freq = self.clkgen_freq
+            self.fpga_clk_settings.adc_src = "extclk_dir"
+            self.fpga_clk_settings.enabled = True
+            self.fpga_clk_settings.freq_ctr_src = "extclk"
+            
             self.pll.pll_src = "fpga"
+
+            self.clkgen_freq = clkgen_freq
         else:
             raise ValueError("Invalid src settings! Must be 'xtal', 'extclk' or 'fpga', not {}".format(clk_src))
 
