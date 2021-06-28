@@ -278,7 +278,7 @@ class CW310(CW305):
         self._naeusb.sendCtrl(0x42, addr & 0xFF, [data_byte & 0xFF])
 
     def temp_sensor_read(self, addr):
-        return self._naeusb.readCtrl(0x42, addr & 0xFF, 1)[0]
+        return self._naeusb.readCtrl(0x42, addr & 0xFF, 2)[1]
 
     @property
     def fpga_temp(self):
