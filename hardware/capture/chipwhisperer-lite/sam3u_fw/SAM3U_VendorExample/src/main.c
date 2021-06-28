@@ -21,12 +21,14 @@
 #include "ui.h"
 #include "genclk.h"
 #include "fpga_program.h"
-#include "pdi/XPROGNewAE.h"
-#include "pdi/XPROGTimeout.h"
-#include "pdi/XPROGTarget.h"
-#include "isp/V2Protocol.h"
-#include "ccdebug/chipcon.h"
+#include "XPROGNewAE.h"
+#include "XPROGTimeout.h"
+#include "XPROGTarget.h"
+#include "V2Protocol.h"
 #include "usart_driver.h"
+#include "naeusb_default.h"
+#include "naeusb_openadc.h"
+#include "naeusb_usart.h"
 #include <string.h>
 
 //Serial Number - will be read by device ID
@@ -137,6 +139,9 @@ int main(void)
 	//genclk_enable_config(GENCLK_PCK_0, GENCLK_PCK_SRC_PLLBCK, GENCLK_PCK_PRES_4);
 	
 	printf("Event Loop Entered, waiting...\n");
+	naeusb_register_handlers();
+	naeusart_register_handlers();
+	openadc_register_handlers();
 	
 	// The main loop manages only the power mode
 	// because the USB management is done by interrupt

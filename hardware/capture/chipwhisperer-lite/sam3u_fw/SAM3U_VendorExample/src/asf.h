@@ -106,9 +106,6 @@
 #include <sam/sleepmgr.h>
 #include <sleepmgr.h>
 
-// From module: Smart Card - ISO7816 smart card using GPIO
-#include "scard/iso7816.h"
-
 // From module: System Clock Control - SAM3U implementation
 #include <sysclk.h>
 
