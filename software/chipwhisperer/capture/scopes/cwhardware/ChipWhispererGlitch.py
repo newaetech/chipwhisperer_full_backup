@@ -135,7 +135,7 @@ class GlitchSettings(util.DisableNewAttr):
     def clk_src(self):
         """The clock signal that the glitch DCM is using as input.
 
-        This DCM can be clocked from two different sources:
+        This DCM can be clocked from three different sources:
          * "target": The HS1 clock from the target device
          * "clkgen": The CLKGEN DCM output (not recommended for Husky)
          * "pll": Husky's on-board PLL clock (Husky only)
@@ -147,7 +147,7 @@ class GlitchSettings(util.DisableNewAttr):
            Change the glitch clock source
 
         Raises:
-           ValueError: New value not one of "target" or "clkgen"
+           ValueError: New value not one of "target", "clkgen" or "pll"
         """
         clk_val = self.cwg.glitchClkSource()
         if clk_val == self.cwg.CLKSOURCE0_BIT:
@@ -168,7 +168,7 @@ class GlitchSettings(util.DisableNewAttr):
         elif source == "pll":
             clk_val = self.cwg.CLKSOURCE2_BIT
         else:
-            raise ValueError("Can't set glitch arm timing to %s; valid values: ('target', 'clkgen')" % source, source)
+            raise ValueError("Can't set glitch arm timing to %s; valid values: ('target', 'pll', 'clkgen')" % source, source)
         self.cwg.setGlitchClkSource(clk_val)
 
     @property
