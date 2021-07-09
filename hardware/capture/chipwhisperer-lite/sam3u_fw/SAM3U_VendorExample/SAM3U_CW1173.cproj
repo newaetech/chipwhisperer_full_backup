@@ -677,6 +677,9 @@
     <Compile Include="src\ASF\sam\drivers\chipid\chipid.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\naeusb\circbuffer.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\naeusb\fpga_program.c">
       <SubType>compile</SubType>
     </Compile>
@@ -788,9 +791,6 @@
     <None Include="src\ASF\sam\services\flash_efc\flash_efc.h">
       <SubType>compile</SubType>
     </None>
-    <Compile Include="src\circbuffer.c">
-      <SubType>compile</SubType>
-    </Compile>
     <None Include="src\ASF\sam\drivers\tc\tc.h">
       <SubType>compile</SubType>
     </None>

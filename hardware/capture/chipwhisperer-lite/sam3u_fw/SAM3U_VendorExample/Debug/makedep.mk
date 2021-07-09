@@ -8,6 +8,8 @@ src\ASF\common\services\usb\class\composite\device\udi_composite_desc.c
 
 src\ASF\sam\drivers\chipid\chipid.c
 
+src\naeusb\circbuffer.c
+
 src\naeusb\fpga_program.c
 
 src\naeusb\ISPProtocol.c
@@ -41,8 +43,6 @@ src\ASF\sam\drivers\efc\efc.c
 src\ASF\sam\drivers\tc\tc.c
 
 src\ASF\sam\services\flash_efc\flash_efc.c
-
-src\circbuffer.c
 
 src\ASF\common\services\delay\sam\cycle_counter.c
 
