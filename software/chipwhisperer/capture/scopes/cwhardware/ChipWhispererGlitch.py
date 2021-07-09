@@ -716,6 +716,8 @@ class ChipWhispererGlitch(object):
         else:
             val = [1]
         self.oa.sendMessage(CODE_WRITE, powerdownaddr, val, Validate=False)
+        if self._is_husky and enable:
+            self.resetDCMs()
 
     def getEnabled(self):
         raw = self.oa.sendMessage(CODE_READ, powerdownaddr, Validate=False, maxResp=1)[0]
@@ -975,6 +977,8 @@ class ChipWhispererGlitch(object):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         resp[7] = (resp[7] & ~self.CLKSOURCE_MASK) | source
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
+        if self._is_husky:
+            self.resetDCMs()
 
     def glitchClkSource(self):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
