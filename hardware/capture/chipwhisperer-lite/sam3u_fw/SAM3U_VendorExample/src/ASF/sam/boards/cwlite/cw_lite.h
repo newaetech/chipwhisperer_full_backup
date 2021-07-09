@@ -305,6 +305,8 @@
 */
 
 //! USART0 (Target Communication)
+
+#define CW_USE_USART0
 #define USART_TARGET USART0
 
 #define PIN_USART0_RXD	         (PIO_PA19_IDX)
