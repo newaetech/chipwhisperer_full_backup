@@ -283,14 +283,10 @@ class GPIOSettings(util.DisableNewAttr):
 
         TIO1 can be used for the following functions:
           * "serial_rx": UART input
-          * "high_z" / None: High impedance input
-          * "gpio_low" / False: Driven output: logic 0
-          * "gpio_high" / True: Driven output: logic 1
-          * "gpio_disabled": Driven output: no effect
 
         Default value is "serial_rx".
 
-        :Getter: Return one of the above strings
+        :Getter: Return None
 
         :Setter: Set the Target IO1 mode.
             Raises: ValueError if new value is not one of the above modes
@@ -311,14 +307,10 @@ class GPIOSettings(util.DisableNewAttr):
 
         TIO2 can be used for the following functions:
           * "serial_tx": UART output
-          * "high_z" / None: High impedance input
-          * "gpio_low" / False: Driven output: logic 0
-          * "gpio_high" / True: Driven output: logic 1
-          * "gpio_disabled": Driven output: no effect
 
         Default value is "serial_tx".
 
-        :Getter: Return one of the above strings
+        :Getter: Return None
 
         :Setter: Set the Target IO2 mode.
             Raises: ValueError if new value is not one of the above modes
@@ -363,19 +355,16 @@ class GPIOSettings(util.DisableNewAttr):
 
         TIO4 can be used for the following functions:
           * "high_z" / None: High impedance input
-          * "gpio_low" / False: Driven output: logic 0
-          * "gpio_high" / True: Driven output: logic 1
-          * "gpio_disabled": Driven output: no effect
 
         Default value is "high_z". Typically, this pin is used as a trigger
         input.
 
-        :Getter: Return one of the above strings
+        :Getter: Return None
 
         :Setter: Set the Target IO4 mode
             Raises: ValueError if new value is not one of the above modes
         """
-        return None
+        return "high_z"
 
     @tio4.setter
     def tio4(self, state):
