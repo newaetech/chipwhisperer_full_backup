@@ -719,9 +719,6 @@
     <Compile Include="src\naeusb\naeusb_usart.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\naeusb\usart_driver.c">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\naeusb\usart_driver.h">
       <SubType>compile</SubType>
     </Compile>

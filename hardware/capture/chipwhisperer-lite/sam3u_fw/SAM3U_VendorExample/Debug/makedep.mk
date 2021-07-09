@@ -22,8 +22,6 @@ src\naeusb\naeusb_openadc.c
 
 src\naeusb\naeusb_usart.c
 
-src\naeusb\usart_driver.c
-
 src\naeusb\usb_xmem.c
 
 src\naeusb\V2Protocol.c
