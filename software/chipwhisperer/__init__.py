@@ -210,17 +210,24 @@ def scope(scope_type=None, name=None, **kwargs):
        scope_type (ScopeTemplate, optional): Scope type to connect to. Types
            can be found in chipwhisperer.scopes. If None, will try to detect
            the type of ChipWhisperer connected. Defaults to None.
+       name (str, optional): model name of the ChipWhisperer that you want to
+           connect to. Alternative to specifying the serial number when
+           multiple ChipWhisperers, all of different type, are connected.
+           Defaults to None. Valid values:
+           * Lite
+           * Pro
+           * Husky
        idProduct (int, optional): idProduct of the ChipWhisperer that you want to
-           connect to. Either idProduct or sn is required if more than one
-           ChipWhisperer of the same type is connected (i.e. two CWNano's or a
-           CWLite and CWPro). Defaults to None. Valid values:
+           connect to. Alternative to specifying the serial number when
+           multiple ChipWhisperers, all of different type, are connected.
+           Defaults to None. Valid values:
            * 0xace2: CW-Lite
            * 0xace3: CW-Pro
            * 0xace5: CW-Husky
        sn (str, optional): Serial number of ChipWhisperer that you want to
-           connect to. Either idProduct or sn is required if more than one
-           ChipWhisperer of the same type is connected (i.e. two CWNano's or a
-           CWLite and CWPro). Defaults to None.
+           connect to. sn is required if more than one ChipWhisperer of the
+           same type is connected (i.e. two CWNano's or a CWLite and CWPro).
+           Defaults to None.
 
     Returns:
         Connected scope object.
