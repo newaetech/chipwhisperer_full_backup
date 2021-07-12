@@ -41,12 +41,15 @@ import numpy as np
 
 from chipwhisperer.logging import *
 
-ADDR_GLITCH1_DRP_ADDR = 62
-ADDR_GLITCH1_DRP_DATA = 63
-ADDR_GLITCH2_DRP_ADDR = 64
-ADDR_GLITCH2_DRP_DATA = 65
-ADDR_LA_DRP_ADDR = 68
-ADDR_LA_DRP_DATA = 69
+ADDR_GLITCH1_DRP_ADDR  = 62
+ADDR_GLITCH1_DRP_DATA  = 63
+ADDR_GLITCH2_DRP_ADDR  = 64
+ADDR_GLITCH2_DRP_DATA  = 65
+ADDR_GLITCH1_DRP_RESET = 79
+ADDR_GLITCH2_DRP_RESET = 80
+ADDR_LA_DRP_ADDR       = 68
+ADDR_LA_DRP_DATA       = 69
+ADDR_LA_DRP_RESET      = 74
 
 class OpenADC(util.DisableNewAttr):
 
@@ -322,9 +325,9 @@ class OpenADC(util.DisableNewAttr):
         if cwtype == "cwhusky":
             # self.pll = ChipWhispererHuskyClock.CDCI6214(self.sc)
             self._fpga_clk = ClockSettings(self.sc, hwinfo=self.hwinfo)
-            self.glitch_drp1 = XilinxDRP(self.sc, ADDR_GLITCH1_DRP_DATA, ADDR_GLITCH1_DRP_ADDR)
-            self.glitch_drp2 = XilinxDRP(self.sc, ADDR_GLITCH2_DRP_DATA, ADDR_GLITCH2_DRP_ADDR)
-            self.la_drp = XilinxDRP(self.sc, ADDR_LA_DRP_DATA, ADDR_LA_DRP_ADDR)
+            self.glitch_drp1 = XilinxDRP(self.sc, ADDR_GLITCH1_DRP_DATA, ADDR_GLITCH1_DRP_ADDR, ADDR_GLITCH1_DRP_RESET)
+            self.glitch_drp2 = XilinxDRP(self.sc, ADDR_GLITCH2_DRP_DATA, ADDR_GLITCH2_DRP_ADDR, ADDR_GLITCH2_DRP_RESET)
+            self.la_drp = XilinxDRP(self.sc, ADDR_LA_DRP_DATA, ADDR_LA_DRP_ADDR, ADDR_LA_DRP_RESET)
             self.glitch_mmcm1 = XilinxMMCMDRP(self.glitch_drp1)
             self.glitch_mmcm2 = XilinxMMCMDRP(self.glitch_drp2)
             self.la_mmcm = XilinxMMCMDRP(self.la_drp)

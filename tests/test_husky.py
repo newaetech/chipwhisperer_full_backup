@@ -147,7 +147,7 @@ testtargetdata = [
 
 
 def test_fpga_version():
-    assert scope.get_fpga_buildtime() == 'FPGA build time: 7/9/2021, 10:14'
+    assert scope.get_fpga_buildtime() == 'FPGA build time: 7/10/2021, 15:0'
 
 
 def test_fw_version():
