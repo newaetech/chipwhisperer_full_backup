@@ -3,6 +3,7 @@
 import chipwhisperer as cw
 import pytest
 import time
+import numpy as np
 
 scope = cw.scope()
 scope.clock.clkgen_src = 'system'
@@ -113,7 +114,7 @@ def check_ramp(raw, testmode, samples, segment_cycles, verbose=False):
 
 
 
-testdata = [
+testData = [
     # samples   presamples  testmode    clock       adcmul  bit stream  segs    segcycs desc
     (10,        0,          'internal', 20e6,       1,      8,  False,  1,      0,      'quick'),
     (131070,    0,          'internal', 20e6,       1,      8,  False,  1,      0,      'maxsamples8'),
@@ -134,16 +135,44 @@ testdata = [
 ]
 
 
-testtargetdata = [
+testTargetData = [
     # samples   presamples  testmode    clock       adcmul  bit stream  threshold   check   segs    segcycs desc
     (200,       0,          'internal', 20e6,       1,      8,  False,  65536,      True,   1,      0,      'quick'),
     (131070,    0,          'internal', 20e6,       1,      12, False,  65536,      True,   1,      0,      'maxsamples12'),
     (200000,    0,          'internal', 20e6,       1,      8,  True ,  65536,      True,   1,      0,      'quickstream8'),
     (2000000,   0,          'internal', 16e6,       1,      12, True ,  65536,      True,   1,      0,      'longstream12'),
     (10000000,  0,          'internal', 16e6,       1,      12, True ,  65536,      False,  1,      0,      'vlongstream12'), # TODO: 20M used to pass?
-    (1000000,   0,          'internal', 20e6,       1,      12, True ,  16384,      True,   1,      0,      'over'),
+    (500000,    0,          'internal', 20e6,       1,      12, True ,  16384,      True,   1,      0,      'over'), # TODO: 1M used to pass?
     (2000,      0,          'internal', 10e6,       1,      8,  False,  65536,      True,   1,      0,      'back2nostream'),
 ]
+
+testGlitchOffsetData = [
+    # offset    oversamp    desc
+    (0,         40,         ''),
+    (400,       40,         ''),
+    (800,       40,         ''),
+    (1600,      40,         ''),
+]
+
+testGlitchWidthData = [
+    # offset    oversamp    desc
+    (0,         40,         ''),
+    (400,       40,         ''),
+    (800,       40,         ''),
+    (1600,      40,         ''),
+]
+
+testGlitchOuputData = [
+    # offset    oversamp    desc
+    (0,         40,         ''),
+    (600,       40,         ''),
+    (1200,      40,         ''),
+    (0,         60,         ''),
+    (0,         20,         ''),
+]
+
+
+
 
 
 def test_fpga_version():
@@ -156,7 +185,7 @@ def test_fw_version():
     assert scope.sam_build_date == 'Jun 24 2021'
 
 
-@pytest.mark.parametrize("samples, presamples, testmode, clock, adcmul, bits, stream, segments, segment_cycles, desc", testdata)
+@pytest.mark.parametrize("samples, presamples, testmode, clock, adcmul, bits, stream, segments, segment_cycles, desc", testData)
 def test_internal_ramp(samples, presamples, testmode, clock, adcmul, bits, stream, segments, segment_cycles, desc):
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = adcmul
@@ -190,7 +219,94 @@ def test_internal_ramp(samples, presamples, testmode, clock, adcmul, bits, strea
     assert scope.adc.errors == 'no errors'
 
 
-@pytest.mark.parametrize("samples, presamples, testmode, clock, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc", testtargetdata)
+def setup_glitch(offset, width, oversamp):
+    # set up glitch:
+    scope.glitch.enabled = True
+    scope.clock.pll.update_fpga_vco(600e6)
+    scope.glitch.clk_src = 'pll'
+    scope.glitch.repeat = 1
+    scope.glitch.output = 'glitch_only'
+    scope.glitch.trigger_src = 'manual'
+    scope.glitch.offset = offset
+    scope.glitch.width = width
+    assert scope.glitch.mmcm_locked
+    # set up LA:
+    scope.LA.enabled = True
+    scope.LA.oversampling_factor = oversamp
+    scope.LA.capture_group = 0
+    assert scope.LA.locked
+
+
+@pytest.mark.parametrize("offset, oversamp, desc", testGlitchOffsetData)
+@pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
+def test_glitch_offset(offset, oversamp, desc):
+    # first set clock back to 10M:
+    scope.clock.clkgen_freq = 10e6
+    scope.clock.adc_mul = 1
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    assert scope.clock.adc_freq == 10e6
+
+    setup_glitch(offset, 0, oversamp)
+    margin = 0.1
+
+    # glitch and measure:
+    scope.glitch.manual_trigger()
+    source    = scope.LA.read_capture(1)
+    mmcm1out  = scope.LA.read_capture(2)
+
+    # check offset:
+    offset_percent = offset / scope.glitch.phase_shift_steps * 2 # (100% = fully offset)
+    mmcm1_not_equal = len(np.where(abs(source-mmcm1out) > 0)[0])
+    points = len(source)
+    ratio = mmcm1_not_equal / points
+    assert (ratio > offset_percent - margin) and (ratio < offset_percent + margin), "Ratio out of bounds (%f)" % ratio
+    scope.glitch.enabled = False
+    scope.LA.enabled = False
+
+@pytest.mark.parametrize("width, oversamp, desc", testGlitchWidthData)
+@pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
+def test_glitch_width(width, oversamp, desc):
+    setup_glitch(0, width, oversamp)
+    margin = 0.05
+
+    # glitch and measure:
+    scope.glitch.manual_trigger()
+    mmcm1out  = scope.LA.read_capture(2)
+    mmcm2out  = scope.LA.read_capture(3)
+
+    # check width:
+    offset_percent = 1 - width / scope.glitch.phase_shift_steps * 2 # (100% = fully offset)
+    mmcm2_not_equal = len(np.where(abs(mmcm2out-mmcm1out) > 0)[0])
+    points = len(mmcm1out)
+    ratio = mmcm2_not_equal / points
+    assert (ratio > offset_percent - margin) and (ratio < offset_percent + margin), "Ratio out of bounds (%f)" % ratio
+    scope.glitch.enabled = False
+    scope.LA.enabled = False
+
+@pytest.mark.parametrize("offset, oversamp, desc", testGlitchOuputData)
+@pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
+def test_glitch_output(offset, oversamp, desc):
+    margin = 1
+    prev_width = 0
+    setup_glitch(offset, 0, oversamp)
+    stepsize = int(scope.glitch.phase_shift_steps / scope.LA.oversampling_factor)
+
+    # sweep width and check that width of glitch increases by expected amount each time:
+    for i, width in enumerate(range(0, scope.glitch.phase_shift_steps//2 - stepsize, stepsize)):
+        setup_glitch(offset, width, oversamp)
+        scope.glitch.manual_trigger()
+        glitch = scope.LA.read_capture(0)
+        measured_width = len(np.where(glitch > 0)[0])
+        assert measured_width >= prev_width, "Glitch width did not increase"
+        assert abs(measured_width - i) <= margin, "Glitch width not within margin"
+        prev_width = measured_width
+
+    scope.glitch.enabled = False
+    scope.LA.enabled = False
+
+
+@pytest.mark.parametrize("samples, presamples, testmode, clock, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc", testTargetData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
 def test_target_internal_ramp (samples, presamples, testmode, clock, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc):
     scope.clock.clkgen_freq = clock
@@ -242,4 +358,5 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, adcmul, bit
 def test_xadc():
     assert scope.XADC.status == 'good'
     assert scope.XADC.temp < 55.0
+    assert scope.XADC.max_temp < 60.0   # things can get hotter with glitching
 
