@@ -488,7 +488,7 @@ def camel_case_deprecated(func):
 
 
 
-def get_cw_type(sn=None, **kwargs):
+def get_cw_type(sn=None, idProduct=None, **kwargs):
     """ Gets the scope type of the connected ChipWhisperer
     If multiple connected, sn must be specified
     """
@@ -496,7 +496,10 @@ def get_cw_type(sn=None, **kwargs):
     from chipwhisperer.capture import scopes
     # todo: pyusb as well
 
-    possible_ids = [0xace0, 0xace2, 0xace3, 0xace5]
+    if idProduct:
+        possible_ids = [idProduct]
+    else:
+        possible_ids = [0xace0, 0xace2, 0xace3, 0xace5]
 
     cwusb = NAEUSB_Backend()
     device = cwusb.find(serial_number=sn, idProduct=possible_ids)

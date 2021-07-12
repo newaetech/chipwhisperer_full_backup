@@ -287,11 +287,11 @@ class OpenADC(util.DisableNewAttr):
     def get_fpga_buildtime(self):
         return self.sc.hwInfo.get_fpga_buildtime()
 
-    def con(self, sn=None, bitstream=None, force=False):
+    def con(self, sn=None, idProduct=None, bitstream=None, force=False):
         self._saved_sn = sn
         self.scopetype = OpenADCInterface_NAEUSBChip()
 
-        self.scopetype.con(sn, bitstream)
+        self.scopetype.con(sn, idProduct, bitstream)
         self.sc = OpenADCInterface(self.scopetype.ser)
         self.hwinfo = HWInformation(self.sc)
 
