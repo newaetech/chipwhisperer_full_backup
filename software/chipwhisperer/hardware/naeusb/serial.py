@@ -42,7 +42,7 @@ class USART(object):
     USART_CMD_NUMWAIT = 0x0014
     USART_CMD_NUMWAIT_TX = 0x0018
 
-    def __init__(self, usb, timeout=200):
+    def __init__(self, usb, timeout=200, usart_num=0):
         """
         Set the USB communications instance.
         """
@@ -60,6 +60,7 @@ class USART(object):
         # and don't want to spam them
         self.tx_buf_in_wait = False
         self.fw_read = None
+        self._usart_num = usart_num
 
     def init(self, baud=115200, stopbits=1, parity="none"):
         """
@@ -136,7 +137,7 @@ class USART(object):
             # to make this faster, but okay for now...
             if self.tx_buf_in_wait:
                 datatosend = min(datatosend, 128-self.in_waiting_tx())
-            self._usb.sendCtrl(self.CMD_USART0_DATA, 0, data[datasent:(datasent + datatosend)])
+            self._usb.sendCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), data[datasent:(datasent + datatosend)])
             datasent += datatosend
 
     def flush(self):
@@ -185,7 +186,7 @@ class USART(object):
         # * 10 does nothing
         while dlen and (timeout * 10) > 0:
             if waiting > 0:
-                newdata = self._usb.readCtrl(self.CMD_USART0_DATA, 0, min(min(waiting, dlen), self._max_read))
+                newdata = self._usb.readCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), min(min(waiting, dlen), self._max_read))
                 resp.extend(newdata)
                 dlen -= len(newdata)
             waiting = self.inWaiting()
@@ -200,14 +201,14 @@ class USART(object):
         """
 
         # windex selects interface
-        self._usb.sendCtrl(self.CMD_USART0_CONFIG, cmd, data)
+        self._usb.sendCtrl(self.CMD_USART0_CONFIG, (self._usart_num << 8) | cmd, data)
 
     def _usartRxCmd(self, cmd, dlen=1):
         """
         Read the result of some command (internal function).
         """
         # windex selects interface, set to 0
-        return self._usb.readCtrl(self.CMD_USART0_CONFIG, cmd, dlen)
+        return self._usb.readCtrl(self.CMD_USART0_CONFIG, cmd | (self._usart_num << 8), dlen)
 
     @property
     def fw_version(self):

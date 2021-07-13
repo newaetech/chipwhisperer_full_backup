@@ -89,8 +89,9 @@ class NAEUSB_Backend:
         import atexit
         self.usb_ctx = usb1.USBContext()
         self.usb_ctx.open()
-        atexit.register(self.usb_ctx.close)
+        # atexit.register(self.usb_ctx.close)
         self.handle = None
+        self.device = None
 
     def usbdev(self):
         """Safely get USB device, throwing error if not connected"""
@@ -147,8 +148,6 @@ class NAEUSB_Backend:
                 naeusb_logger.error("Or that you have the proper permissions to access it")
             raise
         self._usbdev = self.handle
-        import atexit
-        atexit.register(self._usbdev.close)
 
         # claim bulk interface, may not be necessary?
         self.handle.claimInterface(0)
@@ -169,14 +168,20 @@ class NAEUSB_Backend:
 
         return self.handle
 
+    def __del__(self):
+        # need to make sure device and handle are closed before everything is deleted
+        self.close()
+
     def close(self):
-        """Close the USB connection"""
+        # """Close the USB connection"""
+        if self.device:
+            del self.device
+            self.device = None
         if self.handle:
+            # self._usbdev.close()
+            self._usbdev = None
             del self.handle
             self.handle = None
-        if self.usb_ctx:
-            del self.usb_ctx
-            self.usb_ctx = None
 
     def get_possible_devices(self, idProduct=None, dictonly=True):
         """Get list of USB devices that match NewAE vendor ID (0x2b3e) and
@@ -363,12 +368,12 @@ class NAEUSB:
         return self.usbtx.get_possible_devices(idProduct)
 
     def get_cdc_settings(self):
-        return self.usbtx.readCtrl(self.CMD_CDC_SETTINGS_EN, dlen=2)
+        return self.usbtx.readCtrl(self.CMD_CDC_SETTINGS_EN, dlen=4)
 
-    def set_cdc_settings(self, port=[1, 1]):
+    def set_cdc_settings(self, port=[1, 1, 0, 0]):
         if isinstance(port, int):
-            port = [port, port]
-        self.usbtx.sendCtrl(self.CMD_CDC_SETTINGS_EN, (port[0]) | (port[1] << 1))
+            port = [port, port, 0, 0]
+        self.usbtx.sendCtrl(self.CMD_CDC_SETTINGS_EN, (port[0]) | (port[1] << 1) | (port[2] << 2) | (port[3] << 3))
 
     def set_smc_speed(self, val):
         """

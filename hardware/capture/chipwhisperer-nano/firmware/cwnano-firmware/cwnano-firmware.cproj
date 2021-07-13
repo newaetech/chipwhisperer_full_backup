@@ -538,7 +538,7 @@
   <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
   <armgcc.compiler.optimization.DebugLevel>Maximum (-g3)</armgcc.compiler.optimization.DebugLevel>
   <armgcc.compiler.warnings.AllWarnings>True</armgcc.compiler.warnings.AllWarnings>
-  <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500</armgcc.compiler.miscellaneous.OtherFlags>
+  <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500 -I ../src/naeusb</armgcc.compiler.miscellaneous.OtherFlags>
   <armgcc.linker.general.UseNewlibNano>True</armgcc.linker.general.UseNewlibNano>
   <armgcc.linker.general.AdditionalSpecs>Use syscall stubs (--specs=nosys.specs)</armgcc.linker.general.AdditionalSpecs>
   <armgcc.linker.libraries.Libraries>
@@ -716,13 +716,25 @@
     <Folder Include="src\ASF\thirdparty\CMSIS\Lib\" />
     <Folder Include="src\ASF\thirdparty\CMSIS\Lib\GCC\" />
     <Folder Include="src\config\" />
-    <Folder Include="src\pdi" />
+    <Folder Include="src\naeusb\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\ASF\common\boards\user_board\led.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\ASF\common\boards\user_board\led.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\circbuffer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb_nano.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb_nano.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\usb.h">
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\sam\drivers\pdc\pdc.h">
@@ -782,49 +794,31 @@
     <None Include="src\ASF\sam\services\flash_efc\flash_efc.h">
       <SubType>compile</SubType>
     </None>
-    <Compile Include="src\circbuffer.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\circbuffer.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\cwnano_adc.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\cwnano_glitch.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\pdi\XMEGANVM.c">
+    <Compile Include="src\naeusb\naeusb.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\pdi\XMEGANVM.h">
+    <Compile Include="src\naeusb\naeusb.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\pdi\XPROGNewAE.c">
+    <Compile Include="src\naeusb\naeusb_default.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\pdi\XPROGNewAE.h">
+    <Compile Include="src\naeusb\naeusb_default.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\pdi\XPROGTarget.c">
+    <Compile Include="src\naeusb\naeusb_usart.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\pdi\XPROGTarget.h">
+    <Compile Include="src\naeusb\naeusb_usart.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\pdi\XPROGTimeout.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\pdi\XPROGTimeout.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\usart_driver.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\usart_driver.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\usb.c">
+    <Compile Include="src\naeusb\usart_driver.h">
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\common\services\gpio\sam_gpio\sam_gpio.h">
@@ -1352,6 +1346,12 @@
     <Compile Include="src\main.c">
       <SubType>compile</SubType>
     </Compile>
+    <None Include="src\naeusb\.git">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\naeusb\README.md">
+      <SubType>compile</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
