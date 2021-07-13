@@ -3,7 +3,7 @@ Package containing all of the scope types that the ChipWhisperer API can connect
 
 Scopes:
 
-   * OpenADC- CWLite and CWPro
+   * OpenADC- CWLite, CWPro, and CWHusky
 
    * CWNano - CWNano
 

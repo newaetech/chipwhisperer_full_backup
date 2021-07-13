@@ -135,7 +135,7 @@ class GlitchSettings(util.DisableNewAttr):
     def clk_src(self):
         """The clock signal that the glitch DCM is using as input.
 
-        This DCM can be clocked from two different sources:
+        This DCM can be clocked from three different sources:
          * "target": The HS1 clock from the target device
          * "clkgen": The CLKGEN DCM output (not recommended for Husky)
          * "pll": Husky's on-board PLL clock (Husky only)
@@ -147,7 +147,7 @@ class GlitchSettings(util.DisableNewAttr):
            Change the glitch clock source
 
         Raises:
-           ValueError: New value not one of "target" or "clkgen"
+           ValueError: New value not one of "target", "clkgen" or "pll"
         """
         clk_val = self.cwg.glitchClkSource()
         if clk_val == self.cwg.CLKSOURCE0_BIT:
@@ -168,7 +168,7 @@ class GlitchSettings(util.DisableNewAttr):
         elif source == "pll":
             clk_val = self.cwg.CLKSOURCE2_BIT
         else:
-            raise ValueError("Can't set glitch arm timing to %s; valid values: ('target', 'clkgen')" % source, source)
+            raise ValueError("Can't set glitch arm timing to %s; valid values: ('target', 'pll', 'clkgen')" % source, source)
         self.cwg.setGlitchClkSource(clk_val)
 
     @property
@@ -716,6 +716,8 @@ class ChipWhispererGlitch(object):
         else:
             val = [1]
         self.oa.sendMessage(CODE_WRITE, powerdownaddr, val, Validate=False)
+        if self._is_husky and enable:
+            self.resetDCMs()
 
     def getEnabled(self):
         raw = self.oa.sendMessage(CODE_READ, powerdownaddr, Validate=False, maxResp=1)[0]
@@ -975,6 +977,8 @@ class ChipWhispererGlitch(object):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         resp[7] = (resp[7] & ~self.CLKSOURCE_MASK) | source
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
+        if self._is_husky:
+            self.resetDCMs()
 
     def glitchClkSource(self):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)

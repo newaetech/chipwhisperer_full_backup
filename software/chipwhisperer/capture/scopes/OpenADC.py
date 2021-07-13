@@ -28,7 +28,7 @@
 from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra,\
      ChipWhispererSAD, ChipWhispererHuskyClock
 from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings, \
-    ADS4128Settings, XADCSettings, LEDSettings
+    ADS4128Settings, XADCSettings, LEDSettings, LASettings
 
 from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from ...capture.scopes._OpenADCInterface import XilinxDRP, XilinxMMCMDRP
@@ -41,10 +41,15 @@ import numpy as np
 
 from chipwhisperer.logging import *
 
-ADDR_GLITCH1_DRP_ADDR = 62
-ADDR_GLITCH1_DRP_DATA = 63
-ADDR_GLITCH2_DRP_ADDR = 64
-ADDR_GLITCH2_DRP_DATA = 65
+ADDR_GLITCH1_DRP_ADDR  = 62
+ADDR_GLITCH1_DRP_DATA  = 63
+ADDR_GLITCH2_DRP_ADDR  = 64
+ADDR_GLITCH2_DRP_DATA  = 65
+ADDR_GLITCH1_DRP_RESET = 79
+ADDR_GLITCH2_DRP_RESET = 80
+ADDR_LA_DRP_ADDR       = 68
+ADDR_LA_DRP_DATA       = 69
+ADDR_LA_DRP_RESET      = 74
 
 class OpenADC(util.DisableNewAttr):
 
@@ -282,11 +287,11 @@ class OpenADC(util.DisableNewAttr):
     def get_fpga_buildtime(self):
         return self.sc.hwInfo.get_fpga_buildtime()
 
-    def con(self, sn=None, bitstream=None, force=False):
+    def con(self, sn=None, idProduct=None, bitstream=None, force=False):
         self._saved_sn = sn
         self.scopetype = OpenADCInterface_NAEUSBChip()
 
-        self.scopetype.con(sn, bitstream)
+        self.scopetype.con(sn, idProduct, bitstream)
         self.sc = OpenADCInterface(self.scopetype.ser)
         self.hwinfo = HWInformation(self.sc)
 
@@ -301,8 +306,10 @@ class OpenADC(util.DisableNewAttr):
         self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.sc)
         self.glitch_drp1 = None
         self.glitch_drp2 = None
+        self.la_drp = None
         self.glitch_mmcm1 = None
         self.glitch_mmcm2 = None
+        self.la_mmcm = None
 
         util.chipwhisperer_extra = self.advancedSettings
 
@@ -318,10 +325,12 @@ class OpenADC(util.DisableNewAttr):
         if cwtype == "cwhusky":
             # self.pll = ChipWhispererHuskyClock.CDCI6214(self.sc)
             self._fpga_clk = ClockSettings(self.sc, hwinfo=self.hwinfo)
-            self.glitch_drp1 = XilinxDRP(self.sc, ADDR_GLITCH1_DRP_DATA, ADDR_GLITCH1_DRP_ADDR)
-            self.glitch_drp2 = XilinxDRP(self.sc, ADDR_GLITCH2_DRP_DATA, ADDR_GLITCH2_DRP_ADDR)
+            self.glitch_drp1 = XilinxDRP(self.sc, ADDR_GLITCH1_DRP_DATA, ADDR_GLITCH1_DRP_ADDR, ADDR_GLITCH1_DRP_RESET)
+            self.glitch_drp2 = XilinxDRP(self.sc, ADDR_GLITCH2_DRP_DATA, ADDR_GLITCH2_DRP_ADDR, ADDR_GLITCH2_DRP_RESET)
+            self.la_drp = XilinxDRP(self.sc, ADDR_LA_DRP_DATA, ADDR_LA_DRP_ADDR, ADDR_LA_DRP_RESET)
             self.glitch_mmcm1 = XilinxMMCMDRP(self.glitch_drp1)
             self.glitch_mmcm2 = XilinxMMCMDRP(self.glitch_drp2)
+            self.la_mmcm = XilinxMMCMDRP(self.la_drp)
             self.clock = ChipWhispererHuskyClock.ChipWhispererHuskyClock(self.sc.serial, \
                 self._fpga_clk, self.glitch_mmcm1, self.glitch_mmcm2)
         else:
@@ -342,10 +351,10 @@ class OpenADC(util.DisableNewAttr):
             self.ADS4128 = ADS4128Settings(self.sc)
             self.XADC = XADCSettings(self.sc)
             self.LEDs = LEDSettings(self.sc)
+            self.LA = LASettings(self.sc, self.la_mmcm)
         if self.advancedSettings:
             self.io = self.advancedSettings.cwEXTRA.gpiomux
             self.trigger = self.advancedSettings.cwEXTRA.triggermux
-            #if cwtype != "cwhusky":
             self.glitch = self.advancedSettings.glitch.glitchSettings
             if cwtype == 'cwhusky':
                 # TODO: cleaner way to do this?
@@ -509,6 +518,7 @@ class OpenADC(util.DisableNewAttr):
         if self._is_husky:
             dict['ADS4128'] = self.ADS4128._dict_repr()
             # dict['pll'] = self.pll._dict_repr()
+            dict['LA'] = self.LA._dict_repr()
             dict['XADC'] = self.XADC._dict_repr()
             dict['LEDs'] = self.LEDs._dict_repr()
 

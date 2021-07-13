@@ -192,7 +192,7 @@ def import_project(filename, file_type='zip', overwrite=False):
     return proj
 
 
-def scope(scope_type=None, **kwargs):
+def scope(scope_type=None, name=None, **kwargs):
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the
@@ -210,10 +210,24 @@ def scope(scope_type=None, **kwargs):
        scope_type (ScopeTemplate, optional): Scope type to connect to. Types
            can be found in chipwhisperer.scopes. If None, will try to detect
            the type of ChipWhisperer connected. Defaults to None.
+       name (str, optional): model name of the ChipWhisperer that you want to
+           connect to. Alternative to specifying the serial number when
+           multiple ChipWhisperers, all of different type, are connected.
+           Defaults to None. Valid values:
+           * Lite
+           * Pro
+           * Husky
+       idProduct (int, optional): idProduct of the ChipWhisperer that you want to
+           connect to. Alternative to specifying the serial number when
+           multiple ChipWhisperers, all of different type, are connected.
+           Defaults to None. Valid values:
+           * 0xace2: CW-Lite
+           * 0xace3: CW-Pro
+           * 0xace5: CW-Husky
        sn (str, optional): Serial number of ChipWhisperer that you want to
-           connect to. Required if more than one ChipWhisperer
-           of the same type is connected (i.e. two CWNano's or a CWLite and
-           CWPro). Defaults to None.
+           connect to. sn is required if more than one ChipWhisperer of the
+           same type is connected (i.e. two CWNano's or a CWLite and CWPro).
+           Defaults to None.
 
     Returns:
         Connected scope object.
@@ -229,6 +243,16 @@ def scope(scope_type=None, **kwargs):
         Added autodetection of scope_type
     """
     from chipwhisperer.common.utils.util import get_cw_type
+    if name is not None:
+        if name == 'Husky':
+            kwargs['idProduct'] = 0xace5
+        elif name == 'Lite':
+            kwargs['idProduct'] = 0xace2
+        elif name == 'Pro':
+            kwargs['idProduct'] = 0xace3
+        else:
+            raise ValueError
+
     if scope_type is None:
         scope_type = get_cw_type(**kwargs)
     scope = scope_type()
