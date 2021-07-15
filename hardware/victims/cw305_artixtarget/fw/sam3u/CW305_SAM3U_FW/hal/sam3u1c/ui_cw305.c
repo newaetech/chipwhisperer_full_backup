@@ -50,23 +50,33 @@ void ui_init(void)
 	// Initialize LEDs
 	LED_Off(LED0_GPIO);
 	LED_Off(LED1_GPIO);
-	//LED_Off(LED2_GPIO);
+	LED_Off(LED2_GPIO);
 }
-
 
 void ui_powerdown(void)
 {
 	LED_Off(LED0_GPIO);
 	LED_Off(LED1_GPIO);
+	LED_Off(LED2_GPIO);
 	
 	// Power off FPGA
-	//board_sram_pwroff();
+	board_power(0);
+		
 }
 
 void ui_wakeup(void)
 {
 	LED_On(LED0_GPIO);
-	//board_sram_pwron();
+	board_power(1);
+}
+
+void ui_loop_back_state(bool b_started)
+{
+	if (b_started) {
+		LED_On(LED1_GPIO);
+	} else {
+		LED_Off(LED1_GPIO);
+	}
 }
 
 void ui_process(uint16_t framenumber)
@@ -78,10 +88,7 @@ void ui_process(uint16_t framenumber)
 		LED_Off(LED0_GPIO);
 	}
 	
-	if ((framenumber % 512) == 0) {
-		// LED_Off(LED1_GPIO);
-		//LED_Off(LED2_GPIO);
-	}
+	task_tickCnt++;
 }
 
 /**

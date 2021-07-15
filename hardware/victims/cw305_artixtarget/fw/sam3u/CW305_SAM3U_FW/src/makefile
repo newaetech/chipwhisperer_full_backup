@@ -38,7 +38,7 @@ SRC += main_cw305.c naeusb/usb_xmem.c naeusb/fpga_program.c naeusb/V2Protocol.c 
 SRC += cdce906.c naeusb/fpga_program.c fpgaspi_program.c fpgautil_io.c tps56520.c
 SRC += naeusb/XMEGANVM.c naeusb/XPROGNewAE.c naeusb/XPROGTarget.c
 SRC += naeusb/XPROGTimeout.c naeusb/circbuffer.c tasks.c
-SRC += naeusb/naeusb.c naeusb/naeusb_default.c naeusb/naeusb_fpga_target.c
+SRC += naeusb/naeusb.c naeusb/naeusb_default.c naeusb/naeusb_fpga_target.c naeusb/udc.c
 # -----------------------------------------------------------------------------
 OPT=g
 
