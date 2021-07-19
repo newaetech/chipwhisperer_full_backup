@@ -25,6 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import zipfile
+import datetime
 from collections import OrderedDict
 from ....capture.scopes.cwhardware import PartialReconfiguration as pr
 from ....common.utils import util
@@ -544,6 +545,7 @@ class ChipWhispererGlitch(object):
 
         # Set default glitch width/offset:
         if self._is_husky:
+            self._timeout = 1
             self._width = 500
             self._offset = 500
             self.setGlitchOffset(self._offset)
@@ -746,6 +748,18 @@ class ChipWhispererGlitch(object):
             current[1] = MSB
             current[2] = current[2] | 0x02
             self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
+            # Large adjustments can take a while so it's important to check if done. It *is* possible to trigger a glitch, following an adjustment,
+            # before the adjustment is complete!
+            starttime = datetime.datetime.now()
+            done = False
+            while not done:
+                diff = datetime.datetime.now() - starttime
+                if (diff.total_seconds() > self._timeout):
+                    scope_logger.warning('Timeout in phase adjustment. Increase self._timeout. This should not be necessary unless you make *huge* width jumps.')
+                    break
+                raw = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=5)
+                done = (raw[4] >> 6) & 0x01
+
         else:
             if width < self._min_width or width > self._max_width:
                 raise UserWarning("Can't use glitch width %s - rounding into [%s, %s]" % (width, self._min_width, self._max_width))
@@ -773,6 +787,18 @@ class ChipWhispererGlitch(object):
             current[1] = MSB
             current[2] = current[2] | 0x01
             self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
+            # Large adjustments can take a while so it's important to check if done. It *is* possible to trigger a glitch, following an adjustment,
+            # before the adjustment is complete!
+            starttime = datetime.datetime.now()
+            done = False
+            while not done:
+                diff = datetime.datetime.now() - starttime
+                if (diff.total_seconds() > self._timeout):
+                    scope_logger.warning('Timeout in phase adjustment. Increase self._timeout. This should not be necessary unless you make *huge* offset jumps.')
+                    break
+                raw = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=5)
+                done = (raw[4] >> 5) & 0x01
+
         else:
             value = offset
             if value < self._min_offset or value > self._max_offset:
