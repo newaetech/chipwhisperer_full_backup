@@ -5,6 +5,15 @@ import pytest
 import time
 import numpy as np
 
+""" 
+Args:
+    reps: number of times to run certain test (default: 1)
+          Currently used for glitch sweep test, to catch events such as
+          extra glitches which only occur sporadically.
+
+"""
+
+
 scope = cw.scope()
 scope.clock.clkgen_src = 'system'
 target = cw.target(scope)
@@ -47,6 +56,10 @@ scope.adc.offset = 0
 # these are default off, but just in case:
 scope.glitch.enabled = False
 scope.LA.enabled = False
+
+@pytest.fixture()
+def reps(pytestconfig):
+    return int(pytestconfig.getoption("reps"))
 
 def check_segmented_ramp(raw, samples, segment_cycles, verbose=False):
     errors = 0
@@ -113,6 +126,10 @@ def check_ramp(raw, testmode, samples, segment_cycles, verbose=False):
     return errors
 
 
+def find0to1trans(data):
+    pattern = [0,1]
+    return [i for i in range(0,len(data)) if list(data[i:i+len(pattern)])==pattern]
+
 
 testData = [
     # samples   presamples  testmode    clock       adcmul  bit stream  segs    segcycs desc
@@ -162,15 +179,27 @@ testGlitchWidthData = [
     (1600,      40,         ''),
 ]
 
-testGlitchOuputData = [
-    # offset    oversamp    desc
-    (0,         40,         ''),
-    (600,       40,         ''),
-    (1200,      40,         ''),
-    (0,         60,         ''),
-    (0,         20,         ''),
+testGlitchOutputWidthSweepData = [
+    # offset    oversamp    steps_per_point desc
+    (0,         40,         2,              ''),
+    (600,       40,         2,              ''),
+    (1200,      40,         2,              ''),
+    (-1200,     40,         2,              ''),
+    (0,         60,         2,              ''),
+    (0,         20,         2,              ''),
 ]
 
+testGlitchOutputOffsetSweepData = [
+    # width     oversamp    steps_per_point desc
+    (200,       40,         2,              ''),
+    (-200,      40,         2,              ''),
+    (1000,      40,         2,              ''),
+    (-1000,     40,         2,              ''),
+    (3000,      40,         2,              ''),
+    (-3000,     40,         2,              ''),
+    (500,       60,         2,              ''),
+    (500,       20,         2,              ''),
+]
 
 
 
@@ -222,8 +251,8 @@ def test_internal_ramp(samples, presamples, testmode, clock, adcmul, bits, strea
 def setup_glitch(offset, width, oversamp):
     # set up glitch:
     scope.glitch.enabled = True
-    scope.clock.pll.update_fpga_vco(600e6)
     scope.glitch.clk_src = 'pll'
+    scope.clock.pll.update_fpga_vco(600e6)
     scope.glitch.repeat = 1
     scope.glitch.output = 'glitch_only'
     scope.glitch.trigger_src = 'manual'
@@ -284,23 +313,79 @@ def test_glitch_width(width, oversamp, desc):
     scope.glitch.enabled = False
     scope.LA.enabled = False
 
-@pytest.mark.parametrize("offset, oversamp, desc", testGlitchOuputData)
+@pytest.mark.parametrize("offset, oversamp, steps_per_point, desc", testGlitchOutputWidthSweepData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
-def test_glitch_output(offset, oversamp, desc):
+def test_glitch_output_sweep_width(reps, offset, oversamp, steps_per_point, desc):
     margin = 1
-    prev_width = 0
     setup_glitch(offset, 0, oversamp)
-    stepsize = int(scope.glitch.phase_shift_steps / scope.LA.oversampling_factor)
+    stepsize = int(scope.glitch.phase_shift_steps / scope.LA.oversampling_factor / steps_per_point)
 
-    # sweep width and check that width of glitch increases by expected amount each time:
-    for i, width in enumerate(range(0, scope.glitch.phase_shift_steps//2 - stepsize, stepsize)):
-        setup_glitch(offset, width, oversamp)
-        scope.glitch.manual_trigger()
-        glitch = scope.LA.read_capture(0)
-        measured_width = len(np.where(glitch > 0)[0])
-        assert measured_width >= prev_width, "Glitch width did not increase"
-        assert abs(measured_width - i) <= margin, "Glitch width not within margin"
-        prev_width = measured_width
+    for r in range(reps):
+        prev_width = 0
+        # sweep width and check that width of glitch increases by expected amount each time:
+        for i, width in enumerate(range(-scope.glitch.phase_shift_steps, scope.glitch.phase_shift_steps - stepsize, stepsize)):
+            scope.glitch.width = width
+            scope.glitch.manual_trigger()
+            glitch = scope.LA.read_capture(0)
+            measured_width = len(np.where(glitch > 0)[0])
+
+            # determine expected width
+            if width < -scope.glitch.phase_shift_steps // 2:
+                expected_width = i // steps_per_point
+                increasing = True
+            elif width < 0:
+                expected_width = oversamp - i // steps_per_point
+                increasing = False
+            elif width < scope.glitch.phase_shift_steps // 2:
+                expected_width = i // steps_per_point - oversamp
+                increasing = True
+            else:
+                expected_width = oversamp*2 - i // steps_per_point
+                increasing = False
+
+            if increasing:
+                assert measured_width + margin >= prev_width, "Glitch width did not increase"
+            else:
+                assert measured_width - margin <= prev_width, "Glitch width did not decrease"
+            assert abs(measured_width - expected_width) <= margin, "Glitch width not within margin (expected %d, measured %d)" % (expected_width, measured_width)
+            prev_width = measured_width
+
+    scope.glitch.enabled = False
+    scope.LA.enabled = False
+
+
+@pytest.mark.parametrize("width, oversamp, steps_per_point, desc", testGlitchOutputOffsetSweepData)
+@pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
+def test_glitch_output_sweep_offset(reps, width, oversamp, steps_per_point, desc):
+    margin = 4
+    setup_glitch(0, width, oversamp)
+    stepsize = int(scope.glitch.phase_shift_steps / scope.LA.oversampling_factor / steps_per_point)
+
+    for r in range(reps):
+        prev_offset = 0
+        # sweep offset and check that glitch offset increases by expected amount each time:
+        for i, offset in enumerate(range(-scope.glitch.phase_shift_steps, scope.glitch.phase_shift_steps - stepsize, stepsize)):
+            scope.glitch.offset = offset
+            scope.glitch.manual_trigger()
+            glitch = scope.LA.read_capture(0)
+            source = scope.LA.read_capture(1)
+
+            # measure observed offset
+            glitchtrans = find0to1trans(glitch)
+            sourcetrans = find0to1trans(source)
+            assert len(glitchtrans) == 1, "Offset=%d: Expected to find a single glitch but found %d" % (offset, len(glitchtrans))
+            g = glitchtrans[0]
+            offset = None
+            for s in sourcetrans:
+                if s > g:
+                    offset = s - g
+                    break
+            assert offset, "Offset=%d: Could not measure offset between source clock and glitch clock" % offset
+            if offset - prev_offset > oversamp/2 and i > 0:
+                prev_offset += oversamp
+            if i > 0:
+                assert prev_offset - offset < margin, "Offset change out of bounds: new offset=%d, previous offset=%d" % (offset, prev_offset)
+            prev_offset = offset
 
     scope.glitch.enabled = False
     scope.LA.enabled = False
