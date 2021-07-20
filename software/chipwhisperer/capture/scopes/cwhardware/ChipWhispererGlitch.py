@@ -546,10 +546,8 @@ class ChipWhispererGlitch(object):
         # Set default glitch width/offset:
         if self._is_husky:
             self._timeout = 1
-            self._width = 500
-            self._offset = 500
-            self.setGlitchOffset(self._offset)
-            self.setGlitchWidth(self._width)
+            self._width = 0
+            self._offset = 0
         else:
             # Note that these are ints scaled by 256/100 (these will get set via the setOpenADC() call below)
             self._width = 26
@@ -719,7 +717,7 @@ class ChipWhispererGlitch(object):
             val = [1]
         self.oa.sendMessage(CODE_WRITE, powerdownaddr, val, Validate=False)
         if self._is_husky and enable:
-            self.resetDCMs()
+            self.resetDCMs(keepPhase=False)
 
     def getEnabled(self):
         raw = self.oa.sendMessage(CODE_READ, powerdownaddr, Validate=False, maxResp=1)[0]
@@ -739,6 +737,8 @@ class ChipWhispererGlitch(object):
 
     def setGlitchWidth(self, width):
         if self._is_husky:
+            if not (self.glitchSettings.enabled and self.glitchSettings.mmcm_locked):
+                raise ValueError("Can't change glitch settings if not enabled and locked.")
             assert type(width) == int
             self._width = width
             current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -778,6 +778,8 @@ class ChipWhispererGlitch(object):
 
     def setGlitchOffset(self, offset):
         if self._is_husky:
+            if not (self.glitchSettings.enabled and self.glitchSettings.mmcm_locked):
+                raise ValueError("Can't change glitch settings if not enabled and locked.")
             assert type(offset) == int
             self._offset = offset
             current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -924,11 +926,12 @@ class ChipWhispererGlitch(object):
         # TODO: should we be doing something with keepPhase if we're not Husky?
 
         if self._is_husky:
-            if not keepPhase:
-                self._offset = 500
-                self._width = 500
-            self.setGlitchOffset(self._offset)
-            self.setGlitchWidth(self._width)
+            if keepPhase:
+                self.setGlitchOffset(self._offset)
+                self.setGlitchWidth(self._width)
+            else:
+                self._offset = 0
+                self._width = 0
 
 
     def checkLocked(self, _=None):
