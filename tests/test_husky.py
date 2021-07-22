@@ -201,11 +201,16 @@ testGlitchOutputOffsetSweepData = [
     (500,       20,         2,              ''),
 ]
 
+testGlitchOutputDoublesData = [
+    # width     oversamp    stepsize        desc
+    (200,       20,         1,              ''),
+    (-200,      20,         1,              ''),
+]
 
 
 
 def test_fpga_version():
-    assert scope.get_fpga_buildtime() == 'FPGA build time: 7/10/2021, 15:0'
+    assert scope.get_fpga_buildtime() == 'FPGA build time: 7/22/2021, 11:6'
 
 
 def test_fw_version():
@@ -263,6 +268,7 @@ def setup_glitch(offset, width, oversamp):
     scope.LA.enabled = True
     scope.LA.oversampling_factor = oversamp
     scope.LA.capture_group = 0
+    scope.LA.trigger_source = "glitch_source"
     assert scope.LA.locked
 
 
@@ -316,7 +322,7 @@ def test_glitch_width(width, oversamp, desc):
 @pytest.mark.parametrize("offset, oversamp, steps_per_point, desc", testGlitchOutputWidthSweepData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
 def test_glitch_output_sweep_width(reps, offset, oversamp, steps_per_point, desc):
-    margin = 1
+    margin = 2
     setup_glitch(offset, 0, oversamp)
     stepsize = int(scope.glitch.phase_shift_steps / scope.LA.oversampling_factor / steps_per_point)
 
@@ -357,6 +363,11 @@ def test_glitch_output_sweep_width(reps, offset, oversamp, steps_per_point, desc
 @pytest.mark.parametrize("width, oversamp, steps_per_point, desc", testGlitchOutputOffsetSweepData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
 def test_glitch_output_sweep_offset(reps, width, oversamp, steps_per_point, desc):
+    # This doesn't verify the offset itself -- that's covered by test_glitch_offset().
+    # What it does verify is:
+    # 1. that the offset change as the offset setting is swept;
+    # 2. that there are no "double glitches" - by looking at the glitches themselves, but also by looking
+    #    at the width of the glitch "go" signal
     margin = 4
     setup_glitch(0, width, oversamp)
     stepsize = int(scope.glitch.phase_shift_steps / scope.LA.oversampling_factor / steps_per_point)
@@ -369,26 +380,62 @@ def test_glitch_output_sweep_offset(reps, width, oversamp, steps_per_point, desc
             scope.glitch.manual_trigger()
             glitch = scope.LA.read_capture(0)
             source = scope.LA.read_capture(1)
+            go = scope.LA.read_capture(4)
 
             # measure observed offset
             glitchtrans = find0to1trans(glitch)
             sourcetrans = find0to1trans(source)
             assert len(glitchtrans) == 1, "Offset=%d: Expected to find a single glitch but found %d" % (offset, len(glitchtrans))
             g = glitchtrans[0]
-            offset = None
+            measured_offset = None
             for s in sourcetrans:
                 if s > g:
-                    offset = s - g
+                    measured_offset = s - g
                     break
-            assert offset, "Offset=%d: Could not measure offset between source clock and glitch clock" % offset
-            if offset - prev_offset > oversamp/2 and i > 0:
-                prev_offset += oversamp
+            assert measured_offset, "Offset=%d: Could not measure offset between source clock and glitch clock" % offset
+
+            golen = len(np.where(go > 0)[0])
+            assert abs(golen - oversamp) < oversamp *1.2, "Go width exceeds margin, could lead to extra glitches: %d at offset=%d" % (golen, offset)
+
             if i > 0:
-                assert prev_offset - offset < margin, "Offset change out of bounds: new offset=%d, previous offset=%d" % (offset, prev_offset)
-            prev_offset = offset
+                # account for full period jump:
+                if measured_offset - prev_offset > oversamp/2:
+                    prev_offset += oversamp
+                # sampling jitter can make us go back and forth a bit:
+                elif prev_offset - measured_offset > oversamp/2:
+                    prev_offset -= oversamp
+                assert prev_offset - measured_offset < margin, "Offset change out of bounds: new offset=%d, previous offset=%d" % (measured_offset, prev_offset)
+            prev_offset = measured_offset
 
     scope.glitch.enabled = False
     scope.LA.enabled = False
+
+
+@pytest.mark.parametrize("width, oversamp, stepsize, desc", testGlitchOutputDoublesData)
+@pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
+def ttest_glitch_output_doubles(reps, width, oversamp, stepsize, desc):
+    # Similar to test_glitch_output_sweep_offset() but only look at the width of glitch "go".
+    # Intended to be a more exhaustive test for double glitches, by sweeping with a finer increment.
+    # Since double glitches are an MMCM1/offset problem (width has no effect), we save having to check for different widths.
+    # Use a higher VCO frequency for finer grain, and reduce LA oversampling since that doesn't matter as much here.
+    setup_glitch(0, width, oversamp)
+    scope.clock.pll.update_fpga_vco(1200e6)
+
+    for r in range(reps):
+        # sweep offset and check that glitch offset increases by expected amount each time:
+        for i, offset in enumerate(range(-scope.glitch.phase_shift_steps, scope.glitch.phase_shift_steps - stepsize, stepsize)):
+            scope.glitch.offset = offset
+            scope.glitch.manual_trigger()
+            go = scope.LA.read_capture(4)
+
+            # check width of glitch "go" signal
+            golen = len(np.where(go > 0)[0])
+            assert abs(golen - oversamp) < oversamp *1.1, "Go width exceeds margin, could lead to extra glitches: %d at offset=%d" % (golen, offset)
+
+    scope.clock.pll.update_fpga_vco(600e6)
+    scope.glitch.enabled = False
+    scope.LA.enabled = False
+
 
 
 @pytest.mark.parametrize("samples, presamples, testmode, clock, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc", testTargetData)
@@ -442,6 +489,8 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, adcmul, bit
 
 def test_xadc():
     assert scope.XADC.status == 'good'
-    assert scope.XADC.temp < 55.0
-    assert scope.XADC.max_temp < 60.0   # things can get hotter with glitching
+    if target_attached:
+        # if target isn't attached, last tests run are glitch so will be hotter
+        assert scope.XADC.temp < 55.0
+    assert scope.XADC.max_temp < 62.0   # things can get hotter with glitching
 
