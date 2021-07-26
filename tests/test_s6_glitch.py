@@ -57,6 +57,7 @@ def test_connect(target):
     hscope.LA.enabled = True
     hscope.LA.oversampling_factor = 50
     hscope.LA.capture_group = 1 # 20-pin header
+    hscope.LA.trigger_source = "glitch_source"
     hscope.io.hs2 = 'clkgen'
     hscope.glitch.enabled = True
     hscope.glitch.clk_src = 'pll'
@@ -141,10 +142,16 @@ testFineWidthData = [
 ]
 
 
+testGlitchOutputDoublesData = [
+    # TODO: swith to finer finer_step when current failures are fixed
+    #glitches   oversamp    fine_step   desc
+    (1,         30,         5,          ''),
+    (2,         30,         5,          ''),
+]
 
 
 def test_hfpga_version():
-    assert hscope.get_fpga_buildtime() == 'FPGA build time: 7/10/2021, 15:0'
+    assert hscope.get_fpga_buildtime() == 'FPGA build time: 7/26/2021, 13:13'
 
 
 def test_hfw_version():
@@ -558,6 +565,53 @@ def test_fine_width(reps, loose, coarse_width, offset, oversamp, desc):
 
         assert errors == '', "Errors seen for rep %d:\n%s" % (rep, errors)
 
+
+@pytest.mark.parametrize("glitches, oversamp, fine_step, desc", testGlitchOutputDoublesData)
+def test_glitch_output_doubles(reps, glitches, oversamp, fine_step, desc):
+    # by looking at the glitch enable output, we can infer the presence of double glitches even if the glitches themselves are too narrow
+    # to be caught by our too-low sampling rate
+    scope.glitch.repeat = glitches
+    failing_offsets = []
+    maxwidth = 0
+
+    scope.glitch.output = 'enable_only'
+    scope.glitch.trigger_src = 'manual'
+    scope.glitch.repeat = 1
+    hscope.LA.trigger_source = "HS1"
+    hscope.LA.oversampling_factor = oversamp
+
+    maxwidth = 0
+    failing_offsets = []
+    good = 0
+    bad = 0
+    reps = 1 # TODO: override reps because there is no sense in repeating a test that is known to fail
+
+    for r in range(reps):
+        for i in range(20):
+            # TODO: sweep a wider offset_coarse range once current failures are fixed
+            offset_coarse = -49 + i*0.5
+            scope.glitch.offset = offset_coarse
+            for offset_fine in range(-255, 255, fine_step):
+                scope.glitch.offset_fine = offset_fine
+                if scope.glitch.offset_fine != offset_fine:
+                    continue
+                scope.glitch.manual_trigger()
+                glitchout = hscope.LA.read_capture(4)
+                glitchlen = len(np.where(glitchout > 0)[0])
+                cycles = glitchlen/oversamp
+
+                if glitchlen and (abs(glitchlen/glitches - oversamp) > oversamp/4):
+                    bad += 1
+                    failing_offsets.append([scope.glitch.offset, offset_fine])
+                    if glitchlen > maxwidth:
+                        maxwidth = glitchlen
+                elif glitchlen:
+                    good += 1
+
+    #assert failing_offsets == [], "Max width seen: %d; failing offsets: %s" % (maxwidth, failing_offsets) # TODO: this is too noisy when there are so many failures
+    assert not bad, "Out of %d tests, double glitches seen in %d cases." % (good+bad, bad)
+    # since this test is known and expected to fail, just issue a warning?
+    #warnings.warn("Out of %d tests, double glitches seen in %d cases." % (good+bad, bad))
 
 
 def test_hxadc():
