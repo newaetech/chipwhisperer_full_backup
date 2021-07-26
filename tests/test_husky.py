@@ -202,15 +202,16 @@ testGlitchOutputOffsetSweepData = [
 ]
 
 testGlitchOutputDoublesData = [
-    # width     oversamp    stepsize        desc
-    (200,       20,         1,              ''),
-    (-200,      20,         1,              ''),
+    #vco        glitches    oversamp    stepsize    desc
+    (600e6,     1,          20,         1,          ''),
+    (1200e6,    1,          20,         1,          ''),
+    (600e6,     2,          20,         1,          ''),
 ]
 
 
 
 def test_fpga_version():
-    assert scope.get_fpga_buildtime() == 'FPGA build time: 7/22/2021, 11:6'
+    assert scope.get_fpga_buildtime() == 'FPGA build time: 7/26/2021, 13:13'
 
 
 def test_fw_version():
@@ -411,15 +412,18 @@ def test_glitch_output_sweep_offset(reps, width, oversamp, steps_per_point, desc
     scope.LA.enabled = False
 
 
-@pytest.mark.parametrize("width, oversamp, stepsize, desc", testGlitchOutputDoublesData)
+@pytest.mark.parametrize("vco, glitches, oversamp, stepsize, desc", testGlitchOutputDoublesData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
-def ttest_glitch_output_doubles(reps, width, oversamp, stepsize, desc):
+def test_glitch_output_doubles(reps, vco, glitches, oversamp, stepsize, desc):
     # Similar to test_glitch_output_sweep_offset() but only look at the width of glitch "go".
     # Intended to be a more exhaustive test for double glitches, by sweeping with a finer increment.
     # Since double glitches are an MMCM1/offset problem (width has no effect), we save having to check for different widths.
     # Use a higher VCO frequency for finer grain, and reduce LA oversampling since that doesn't matter as much here.
-    setup_glitch(0, width, oversamp)
-    scope.clock.pll.update_fpga_vco(1200e6)
+    setup_glitch(0, 0, oversamp)
+    scope.clock.pll.update_fpga_vco(vco)
+    scope.glitch.repeat = glitches
+    failing_offsets = []
+    maxwidth = 0
 
     for r in range(reps):
         # sweep offset and check that glitch offset increases by expected amount each time:
@@ -430,8 +434,12 @@ def ttest_glitch_output_doubles(reps, width, oversamp, stepsize, desc):
 
             # check width of glitch "go" signal
             golen = len(np.where(go > 0)[0])
-            assert abs(golen - oversamp) < oversamp *1.1, "Go width exceeds margin, could lead to extra glitches: %d at offset=%d" % (golen, offset)
+            if golen and (abs(golen/glitches - oversamp) > oversamp/4):
+                failing_offsets.append(offset)
+                if golen > maxwidth:
+                    maxwidth = golen
 
+    assert failing_offsets == [], "Max width seen: %d; failing offsets: %s" % (maxwidth, failing_offsets)
     scope.clock.pll.update_fpga_vco(600e6)
     scope.glitch.enabled = False
     scope.LA.enabled = False
@@ -492,5 +500,5 @@ def test_xadc():
     if target_attached:
         # if target isn't attached, last tests run are glitch so will be hotter
         assert scope.XADC.temp < 55.0
-    assert scope.XADC.max_temp < 62.0   # things can get hotter with glitching
+    assert scope.XADC.max_temp < 65.0   # things can get hotter with glitching
 
