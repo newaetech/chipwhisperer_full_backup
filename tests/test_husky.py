@@ -15,11 +15,11 @@ Args:
 
 
 scope = cw.scope()
-scope.clock.clkgen_src = 'system'
 target = cw.target(scope)
 
 # TODO: program FW?
 scope.clock.clkgen_freq = 10e6
+scope.clock.clkgen_src = 'system'
 scope.clock.adc_mul = 1
 time.sleep(0.1)
 assert scope.clock.pll.pll_locked == True
@@ -144,7 +144,7 @@ testData = [
     (131070,    0,          'internal', 10e6,       1,      12, False,  1,      0,      'slow'),
     (131070,    0,          'internal', 80e6,       1,      12, False,  1,      0,      'fast'),
     (131070,    0,          'internal', 180e6,      1,      12, False,  1,      0,      'fastest'),
-    (131070,    0,          'internal', 2.5e6,      4,      12, False,  1,      0,      '4xslow'),
+    (131070,    0,          'internal', 5e6,        4,      12, False,  1,      0,      '4xslow'),
     (131070,    0,          'internal', 45e6,       4,      12, False,  1,      0,      '4xfast'),
     (131070,    0,          'ADC',      20e6,       1,      12, False,  1,      0,      'ADCslow'),
     (131070,    0,          'ADC',      180e6,      1,      12, False,  1,      0,      'ADCfast'),

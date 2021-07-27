@@ -33,6 +33,7 @@ class CDCI6214:
         self.set_prescale(3, 5)
         self.set_prescale(1, 5)
         self._fpga_clk_freq = 48E6
+        self._glitch = None
         
     def write_reg(self, addr, data):
         """Write to a CDCI6214 Register over I2C
@@ -568,7 +569,7 @@ class CDCI6214:
         self._set_target_freq = freq
         scope_logger.debug("adc_mul: {}".format(self._adc_mul))
         self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
-        self.update_fpga_vco
+        self.update_fpga_vco(self._mmcm_vco_freq)
 
     def update_fpga_vco(self, vco):
         """Set the FPGA clock glitch PLL's VCO frequency.
@@ -584,6 +585,14 @@ class CDCI6214:
         # 3. MMCM VCO range is [600, 1200] MHz (default: 600)
         if vco > self._mmcm_vco_max or vco < self._mmcm_vco_min:
             raise ValueError("Requested VCO out of range")
+
+        # the following changes resets the glitch offset and width setting, but just resetting the internal (Python)
+        # phase settings doesn't work as one would expect; resetting the actual FPGA MMCM phases is needed to get consistent
+        # results (e.g. glitch shape is the same for a given offset/width after changing the VCO freq)
+        if self._glitch.enabled and self._glitch.mmcm_locked:
+            self._glitch.offset = 0
+            self._glitch.width = 0
+
         muldiv = int(np.ceil(vco/self.target_freq))
         self._mmcm_vco_freq = vco
         if self.target_freq * muldiv > self._mmcm_vco_max:
@@ -649,7 +658,7 @@ class ChipWhispererHuskyClock:
 
         The PLL can receive input from two places:
 
-        - "system" or "internal": An onboard cystal
+        - "system" or "internal": An onboard crystal
         - "extclk": An external clock passed through the FPGA
 
         :Getter: Return the current PLL input (either "system" or "extclk")

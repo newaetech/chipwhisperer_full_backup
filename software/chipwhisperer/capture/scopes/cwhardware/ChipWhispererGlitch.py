@@ -176,7 +176,7 @@ class GlitchSettings(util.DisableNewAttr):
     def phase_shift_steps(self):
         """The number of phase shift steps per target clock period.
         Husky only.
-        To change, modify clock.update_fpga_vco()
+        To change, modify clock.pll.update_fpga_vco()
 
         :Getter: Returns the number of steps.
 
@@ -343,7 +343,7 @@ class GlitchSettings(util.DisableNewAttr):
 
         The glitch module can use four different types of triggers:
          * "continuous": Constantly trigger glitches
-         * "manual": Only trigger glitches through API calls/GUI actions
+         * "manual": Only trigger glitches through API calls
          * "ext_single": Use the trigger module. One glitch per scope arm.
          * "ext_continuous": Use the trigger module. Many glitches per arm.
 
@@ -422,6 +422,8 @@ class GlitchSettings(util.DisableNewAttr):
         cycles before generating glitch pulses. This delay allows the glitch to
         be inserted at a precise moment during the target's execution to glitch
         specific instructions.
+
+        Has no effect when trigger_src = 'manual' or 'continuous'.
 
         .. note::
             It is possible to get more precise offsets by clocking the
@@ -652,7 +654,7 @@ class ChipWhispererGlitch(object):
 
     def updatePartialReconfig(self, _=None):
         """
-        Reads the values set via the GUI & updates the hardware settings for partial reconfiguration. Checks that PR
+        Reads the values set via API calls & updates the hardware settings for partial reconfiguration. Checks that PR
         is enabled with self.prEnabled.
         """
 

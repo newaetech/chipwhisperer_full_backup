@@ -359,6 +359,7 @@ class OpenADC(util.DisableNewAttr):
             if cwtype == 'cwhusky':
                 # TODO: cleaner way to do this?
                 self.glitch.pll = self.clock.pll
+                self.clock.pll._glitch = self.glitch
                 self.advancedSettings.glitch.pll = self.clock.pll
             if cwtype == "cw1200":
                 self.trigger = self.advancedSettings.cwEXTRA.protrigger
