@@ -323,6 +323,7 @@ module reg_chipwhisperer(
 	assign extclk_rearout_o = (registers_cwextclk[6] & (~targetio_highz)) ? rearclk : 1'bZ;
 	
 	//Output clock using DDR2 block (recommended for Spartan-6 device)
+    `ifndef __ICARUS__
 	ODDR2 #(
 		// The following parameters specify the behavior
 		// of the component.
@@ -365,6 +366,7 @@ module reg_chipwhisperer(
 		.R(~registers_iorouting[33]),   // 1-bit reset input
 		.S(1'b0)    // 1-bit set input
 	);
+    `endif
 	
 	
 	 assign enable_avrprog = registers_iorouting[40];
