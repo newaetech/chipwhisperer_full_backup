@@ -211,8 +211,7 @@ testGlitchOutputDoublesData = [
 
 
 def test_fpga_version():
-    assert scope.get_fpga_buildtime() == 'FPGA build time: 7/26/2021, 13:13'
-
+    assert scope.get_fpga_buildtime() == 'FPGA build time: 7/29/2021, 22:58'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1

@@ -171,7 +171,7 @@ class OpenADC(util.DisableNewAttr):
     def default_setup(self):
         """Sets up sane capture defaults for this scope
 
-         *  45dB gain
+         *  25dB gain
          *  5000 capture samples
          *  0 sample offset
          *  rising edge trigger
