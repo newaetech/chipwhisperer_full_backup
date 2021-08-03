@@ -700,7 +700,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.fpga_clk_settings.freq_ctr_src = "extclk"
             self.clkgen_freq = self.fpga_clk_settings.freq_ctr
         else:
-            raise ValueError("Invalid src settings! Must be 'xtal', 'extclk' or 'fpga', not {}".format(clk_src))
+            raise ValueError("Invalid src settings! Must be 'internal', 'system' or 'extclk', not {}".format(clk_src))
 
     @property
     def clkgen_freq(self):
@@ -887,6 +887,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         """
         self.pll.reset()
 
+    @property
     def adc_locked(self):
         """Convenience function for backwards compatibility with how ADC clocks
         are managed on CW-lite and CW-pro.
