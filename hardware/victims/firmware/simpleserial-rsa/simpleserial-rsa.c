@@ -30,6 +30,12 @@ void rsa_init(void);
 uint8_t real_dec(uint8_t * pt, uint8_t len);
 uint8_t get_pt(uint8_t * pt, uint8_t len);
 
+#if defined(__arm__)
+
+uint8_t sig_chunk_1(uint8_t *pt, uint8_t len);
+uint8_t sig_chunk_2(uint8_t *pt, uint8_t len);
+#endif
+
 int main(void)
 {
     platform_init();
