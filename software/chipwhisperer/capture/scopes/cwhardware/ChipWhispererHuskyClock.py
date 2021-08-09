@@ -3,6 +3,12 @@ from ....common.utils import util
 from ....logging import *
 import numpy as np
 
+ADDR_EXTCLK_CHANGE_LIMIT        = 82
+ADDR_EXTCLK_MONITOR_DISABLED    = 83
+ADDR_EXTCLK_MONITOR_STAT        = 84
+
+CODE_READ       = 0x80
+CODE_WRITE      = 0xC0
 
 class CDCI6214:
     """PLL control for the Husky.
@@ -643,10 +649,11 @@ class CDCI6214:
 
 class ChipWhispererHuskyClock(util.DisableNewAttr):
 
-    def __init__(self, naeusb, fpga_clk_settings, mmcm1, mmcm2):
+    def __init__(self, oaiface, fpga_clk_settings, mmcm1, mmcm2):
 
-        self.naeusb = naeusb
-        self.pll = CDCI6214(naeusb, mmcm1, mmcm2)
+        self.oa = oaiface
+        self.naeusb = oaiface.serial
+        self.pll = CDCI6214(self.naeusb, mmcm1, mmcm2)
         self.fpga_clk_settings = fpga_clk_settings
         self.fpga_clk_settings.freq_ctr_src = "extclk"
         self.adc_phase = 0
@@ -689,6 +696,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     @clkgen_src.setter
     def clkgen_src(self, clk_src):
         if clk_src in ["internal", "system"]:
+            self.extclk_monitor_enabled = False
             clkgen_freq = self.clkgen_freq
             self.pll.pll_src = "xtal"
             self.fpga_clk_settings.enabled = False # keep things cool
@@ -699,6 +707,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.fpga_clk_settings.enabled = False # keep things cool
             self.fpga_clk_settings.freq_ctr_src = "extclk"
             self.clkgen_freq = self.fpga_clk_settings.freq_ctr
+            self.extclk_monitor_enabled = True
         else:
             raise ValueError("Invalid src settings! Must be 'internal', 'system' or 'extclk', not {}".format(clk_src))
 
@@ -818,6 +827,75 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         """
         self.pll.reset()
     
+    @property
+    def extclk_monitor_enabled(self):
+        """When enabled, any change in the external clock frequency input
+        exceeding the amount set in self.extclk_tolerance will trigger an
+        error.
+
+        When using an external clock to drive ChipWhisperer (i.e.
+        self.clkgen_src == 'extclk'), Husky must know the frequency of that
+        clock. This clock monitor is a convenience to flag when the frequency
+        changes without Husky being informed of that change.
+
+        :Getter: Whether the external clock monitor is enabled.
+
+        :Setter: Enable/disable the external clock monitor.
+        """
+        raw = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK_MONITOR_DISABLED, maxResp=1)[0]
+        if raw:
+            return False
+        else:
+            return True
+
+    @extclk_monitor_enabled.setter
+    def extclk_monitor_enabled(self, en):
+        if en:
+            self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK_MONITOR_DISABLED, [0])
+        else: 
+            self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK_MONITOR_DISABLED, [1])
+
+
+    @property
+    def extclk_error(self):
+        """TODO
+        :Getter: Whether the external clock monitor is enabled.
+
+        :Setter: Clear the error.
+        """
+        raw = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK_MONITOR_STAT, maxResp=1)[0]
+        if raw:
+            return True
+        else:
+            return False
+
+    @extclk_error.setter
+    def extclk_error(self, val):
+        if self.extclk_monitor_enabled:
+            self.extclk_monitor_enabled = False
+            self.extclk_monitor_enabled = True
+
+
+    @property
+    def extclk_tolerance(self):
+        """Tolerance for external clock frequency change, measured in Hz. If
+        the difference between consecutive measurements exceeds this, an error
+        is flagged. Defaults to ~100 Hz.
+
+        :Getter: Get the frequency change tolerance [Hz].
+
+        :Setter: Set the frequency change tolerance [Hz].
+        """
+        raw = int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_EXTCLK_CHANGE_LIMIT, maxResp=4), byteorder='little')
+        samplefreq = float(self.oa.hwInfo.sysFrequency()) / float(pow(2,23))
+        return raw * samplefreq
+
+    @extclk_tolerance.setter
+    def extclk_tolerance(self, freq):
+        samplefreq = float(self.oa.hwInfo.sysFrequency()) / float(pow(2,23))
+        freq = int(freq/samplefreq)
+        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK_CHANGE_LIMIT, list(int.to_bytes(freq, length=4, byteorder='little')))
+
 
     def _dict_repr(self):
         my_dict = {}
@@ -828,6 +906,9 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         my_dict['freq_ctr'] = self.freq_ctr
         my_dict['clkgen_locked'] = self.clkgen_locked
         my_dict['adc_phase'] = self.adc_phase
+        my_dict['extclk_monitor_enabled'] = self.extclk_monitor_enabled
+        my_dict['extclk_error'] = self.extclk_error
+        my_dict['extclk_tolerance'] = self.extclk_tolerance
         return my_dict
 
     def __repr__(self):
