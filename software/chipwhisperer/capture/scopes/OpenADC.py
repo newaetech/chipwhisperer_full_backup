@@ -453,12 +453,14 @@ class OpenADC(util.DisableNewAttr):
         b = self._capture_read(samples)
         return a or b
 
-    def get_last_trace(self):
+    def get_last_trace(self, as_int=False):
         """Return the last trace captured with this scope.
 
         Returns:
            Numpy array of the last capture trace.
         """
+        if as_int:
+            return self.sc._int_data
         return self.data_points    
 
     getLastTrace = util.camel_case_deprecated(get_last_trace)
