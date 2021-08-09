@@ -95,15 +95,18 @@ class CW305_ECC(CW305):
     
         """
         scope.arm()
-        start_cycles = scope.adc.trig_count
+        if scope._is_husky:
+            start_cycles = 0
+        else:
+            start_cycles = scope.adc.trig_count
 
         if operation == 'pmult':
             textout = self.run_pmult(k, Px, Py, check=check, verbose=False)
         else:
             target_logger.error("Please supply a valid operation to run.")
 
-        cycles = scope.adc.trig_count - start_cycles
         ret = scope.capture()
+        cycles = scope.adc.trig_count - start_cycles
 
         if ret:
             target_logger.warning("Timeout happened during capture")
