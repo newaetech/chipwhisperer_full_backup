@@ -151,7 +151,7 @@ testGlitchOutputDoublesData = [
 
 
 def test_hfpga_version():
-    assert hscope.get_fpga_buildtime() == 'FPGA build time: 7/29/2021, 22:58'
+    assert hscope.fpga_buildtime == '8/9/2021, 22:56'
 
 
 def test_hfw_version():

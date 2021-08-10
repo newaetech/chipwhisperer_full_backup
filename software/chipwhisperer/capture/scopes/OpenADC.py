@@ -25,13 +25,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra,\
+from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, \
      ChipWhispererSAD, ChipWhispererHuskyClock
-from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings, \
-    ADS4128Settings, XADCSettings, LEDSettings, LASettings, HuskyErrors, USERIOSettings
+from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP, LEDSettings, HuskyErrors, \
+        USERIOSettings, XADCSettings, LASettings, ADS4128Settings
+from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings
 
 from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
-from ...capture.scopes._OpenADCInterface import XilinxDRP, XilinxMMCMDRP
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from ...common.utils import util
 from ...common.utils.util import dict_to_str, DelayedKeyboardInterrupt
@@ -40,6 +40,7 @@ import time
 import numpy as np
 
 from chipwhisperer.logging import *
+
 
 ADDR_GLITCH1_DRP_ADDR  = 62
 ADDR_GLITCH1_DRP_DATA  = 63
@@ -284,7 +285,8 @@ class OpenADC(util.DisableNewAttr):
         elif name == "cw1200":
             return "ChipWhisperer Pro"
 
-    def get_fpga_buildtime(self):
+    @property
+    def fpga_buildtime(self):
         return self.sc.hwInfo.get_fpga_buildtime()
 
     def con(self, sn=None, idProduct=None, bitstream=None, force=False):
@@ -507,6 +509,8 @@ class OpenADC(util.DisableNewAttr):
     def _dict_repr(self):
         dict = OrderedDict()
         dict['sn'] = self.sn
+        if self._is_husky:
+            dict['fpga_buildtime'] = self.fpga_buildtime
         dict['fw_version'] = self.fw_version
         dict['gain']    = self.gain._dict_repr()
         dict['adc']     = self.adc._dict_repr()
@@ -522,6 +526,7 @@ class OpenADC(util.DisableNewAttr):
             # dict['pll'] = self.pll._dict_repr()
             dict['LA'] = self.LA._dict_repr()
             dict['XADC'] = self.XADC._dict_repr()
+            dict['userio'] = self.userio._dict_repr()
             dict['LEDs'] = self.LEDs._dict_repr()
             dict['errors'] = self.errors._dict_repr()
 
