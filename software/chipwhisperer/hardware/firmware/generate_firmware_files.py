@@ -49,8 +49,8 @@ file_list = [
     # ("cw305.py" , cw305_v , cw305_files),
 #    ("cwcr2.py" , cwcr2_v , cwcr2_files),
     #  ("cwlite.py", cwlite_v, cwlite_files),
-    ("cw1200.py", cw1200_v, cw1200_files),
-    #("cwhusky.py", cwhusky_v, cwhusky_files),
+    #("cw1200.py", cw1200_v, cw1200_files),
+    ("cwhusky.py", cwhusky_v, cwhusky_files),
     #("cwbergen.py", cwbergen_v, cwbergen_files),
 ]
 

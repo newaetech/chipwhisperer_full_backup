@@ -28,7 +28,7 @@
 from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra,\
      ChipWhispererSAD, ChipWhispererHuskyClock
 from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings, \
-    ADS4128Settings, XADCSettings, LEDSettings, LASettings, HuskyErrors
+    ADS4128Settings, XADCSettings, LEDSettings, LASettings, HuskyErrors, USERIOSettings
 
 from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from ...capture.scopes._OpenADCInterface import XilinxDRP, XilinxMMCMDRP
@@ -330,6 +330,12 @@ class OpenADC(util.DisableNewAttr):
             self.la_mmcm = XilinxMMCMDRP(self.la_drp)
             self.clock = ChipWhispererHuskyClock.ChipWhispererHuskyClock(self.sc, \
                 self._fpga_clk, self.glitch_mmcm1, self.glitch_mmcm2)
+            self.ADS4128 = ADS4128Settings(self.sc)
+            self.XADC = XADCSettings(self.sc)
+            self.LEDs = LEDSettings(self.sc)
+            self.errors = HuskyErrors(self.sc, self.XADC, self.adc, self.clock)
+            self.LA = LASettings(self.sc, self.la_mmcm)
+            self.userio = USERIOSettings(self.sc)
         else:
             self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
 
@@ -345,11 +351,6 @@ class OpenADC(util.DisableNewAttr):
             self._fpga_clk._is_husky = True
             self.adc.oa._is_husky = True
             self.adc.bits_per_sample = 12
-            self.ADS4128 = ADS4128Settings(self.sc)
-            self.XADC = XADCSettings(self.sc)
-            self.LEDs = LEDSettings(self.sc)
-            self.errors = HuskyErrors(self.sc, self.XADC, self.adc, self.clock)
-            self.LA = LASettings(self.sc, self.la_mmcm)
         if self.advancedSettings:
             self.io = self.advancedSettings.cwEXTRA.gpiomux
             self.trigger = self.advancedSettings.cwEXTRA.triggermux
