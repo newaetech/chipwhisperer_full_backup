@@ -295,11 +295,8 @@ class OpenADC(util.DisableNewAttr):
         self.sc = OpenADCInterface(self.scopetype.ser)
         self.hwinfo = HWInformation(self.sc)
 
-        self.gain = GainSettings(self.sc)
-
         self.adc = TriggerSettings(self.sc)
-
-
+        self.gain = GainSettings(self.sc, self.adc)
 
         cwtype = self._getCWType()
         self.pll = None
