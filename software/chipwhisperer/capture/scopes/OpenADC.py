@@ -449,7 +449,10 @@ class OpenADC(util.DisableNewAttr):
             samples = self.adc.samples * self.adc.segments
         else:
             samples = self.adc.samples
-        a = self.sc.capture(self.adc.offset, self.clock.adc_freq, samples)
+        if self.adc.stream_mode and (not self.sc._is_husky):
+            a = self.sc.capture(None)
+        else:
+            a = self.sc.capture(self.adc.offset, self.clock.adc_freq, samples)
         b = self._capture_read(samples)
         return a or b
 

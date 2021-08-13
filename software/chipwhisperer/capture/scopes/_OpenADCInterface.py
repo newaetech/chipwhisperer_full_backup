@@ -2554,7 +2554,7 @@ class OpenADCInterface:
 
             # Wait for a trigger, letting the UI run when it can
             starttime = datetime.datetime.now()
-            while self.serial.cmdReadStream_isDone() == False:
+            while self.serial.cmdReadStream_isDone(self._is_husky) == False:
                 # Wait for a moment before re-running the loop
                 time.sleep(0.05)
                 diff = datetime.datetime.now() - starttime
@@ -2575,12 +2575,14 @@ class OpenADCInterface:
             self._stream_rx_bytes, stream_timeout = self.serial.cmdReadStream(self._is_husky)
             timeout |= stream_timeout
             #Check the status now
+            scope_logger.debug("Streaming done, results: rx_bytes = %d"%(self._stream_rx_bytes))
             if self._is_husky:
-                scope_logger.debug("Streaming done, results: rx_bytes = %d"%(self._stream_rx_bytes))
+                pass
             else:
             # TODO later-Husky? 
-                bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
-                scope_logger.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
+                pass
+                # bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
+                # scope_logger.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
             self.arm(False)
 
             if stream_timeout:

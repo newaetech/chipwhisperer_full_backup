@@ -565,8 +565,11 @@ class NAEUSB:
             self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThreadPro(self, dlen, dbuf_temp, timeout_ms)
         self.streamModeCaptureStream.start()
 
-    def cmdReadStream_isDone(self):
-        return self.streamModeCaptureStream.drx >= self.streamModeCaptureStream.dlen
+    def cmdReadStream_isDone(self, is_husky=False):
+        if is_husky:
+            return self.streamModeCaptureStream.drx >= self.streamModeCaptureStream.dlen
+        else:
+            return self.streamModeCaptureStream.isAlive() == False
 
     def cmdReadStream(self, is_husky=False):
         """
@@ -715,12 +718,14 @@ class NAEUSB:
             naeusb_logger.info("Streaming: starting USB read")
             start = time.time()
             try:
-                
-                self.dbuf_temp[:] = array.array('B', self.serial.usbtx.read(len(self.dbuf_temp), timeout=self.timeout_ms))[:]
-            except IOError as e:
+                x = self.serial.usbtx.read(len(self.dbuf_temp), timeout=self.timeout_ms)
+                self.dbuf_temp[:] = array.array('B', x)[:]
+                self.drx = len(x)
+            except Exception as e:
                 naeusb_logger.warning('Streaming: USB stream read timed out')
             diff = time.time() - start
             naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
+            naeusb_logger.info("Expected {}".format(len(self.dbuf_temp)))
 
 if __name__ == '__main__':
     from chipwhisperer.hardware.naeusb.fpga import FPGA
