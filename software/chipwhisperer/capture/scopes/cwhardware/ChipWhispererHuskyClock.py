@@ -590,6 +590,8 @@ class CDCI6214:
         # 1. M and (secondary) D are always equal (output frequency = input frequency), and their range is [2, 64]
         # 2. main divider is always set to 1
         # 3. MMCM VCO range is [600, 1200] MHz (default: 600)
+        if self.target_freq == 0:
+            return
         if vco > self._mmcm_vco_max or vco < self._mmcm_vco_min:
             raise ValueError("Requested VCO out of range")
 

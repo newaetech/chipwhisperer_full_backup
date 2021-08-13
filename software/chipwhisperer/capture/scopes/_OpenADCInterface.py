@@ -2372,21 +2372,31 @@ class OpenADCInterface:
         # yes this is a bit weird but it is so:
         if samples is not None:
             self._stream_len = samples
-        if self._stream_mode:
+        if self._is_husky:
+            if self._stream_mode:
+                bufsizebytes = 0
+                #Save the number we will return
+                # bufsizebytes, self._stream_len_act = self.serial.cmdReadStream_bufferSize(self._stream_len, self._is_husky, self._bits_per_sample)
+                #bufsizebytes = self._stream_segment_size # XXX- temporary
+                #Generate the buffer to save buffer
+                sbuf_len = int(self._stream_len * self._bits_per_sample / 8)
+                if self._is_husky and sbuf_len % 3:
+                    # need to capture a multiple of 3 otherwise processHuskyData may fail
+                    sbuf_len += 3 - sbuf_len % 3
+                self._sbuf = array.array('B', [0]) * sbuf_len
+                # For CW-Pro, _stream_len is the number of (10-bit) samples (which was previously set), whereas for Husky, to accomodate 8/12-bit samples, 
+                # it's the total number of bytes, so we need to update _stream_len accordingly:
+                if self._is_husky:
+                    self._stream_len = sbuf_len
+        else:
             bufsizebytes = 0
-            #Save the number we will return
-            # bufsizebytes, self._stream_len_act = self.serial.cmdReadStream_bufferSize(self._stream_len, self._is_husky, self._bits_per_sample)
-            #bufsizebytes = self._stream_segment_size # XXX- temporary
+            if self._stream_mode:
+                nae = self.serial
+                #Save the number we will return
+                bufsizebytes, self._stream_len_act = nae.cmdReadStream_bufferSize(self._stream_len)
+
             #Generate the buffer to save buffer
-            sbuf_len = int(self._stream_len * self._bits_per_sample / 8)
-            if self._is_husky and sbuf_len % 3:
-                # need to capture a multiple of 3 otherwise processHuskyData may fail
-                sbuf_len += 3 - sbuf_len % 3
-            self._sbuf = array.array('B', [0]) * sbuf_len
-            # For CW-Pro, _stream_len is the number of (10-bit) samples (which was previously set), whereas for Husky, to accomodate 8/12-bit samples, 
-            # it's the total number of bytes, so we need to update _stream_len accordingly:
-            if self._is_husky:
-                self._stream_len = sbuf_len
+            self._sbuf = array.array('B', [0]) * bufsizebytes
 
 
     def setDecimate(self, decsamples):
@@ -2527,9 +2537,11 @@ class OpenADCInterface:
         if self._stream_mode:
             # Stream mode adds 500mS of extra timeout on USB traffic itself...
             scope_logger.debug("Stream on!")
-            self.setFastFIFORead(1)
-            self.serial.set_smc_speed(1)
-            self.serial.initStreamModeCapture(self._stream_len, self._sbuf, timeout_ms=int(self._timeout * 1000) + 500, is_husky=self._is_husky, segment_size=self._stream_segment_size)
+            if self._is_husky:
+                self.setFastFIFORead(1)
+                self.serial.set_smc_speed(1)
+            self.serial.initStreamModeCapture(self._stream_len, self._sbuf, timeout_ms=int(self._timeout * 1000) + 500, \
+                is_husky=self._is_husky, segment_size=self._stream_segment_size)
 
     def capture(self, offset=None, adc_freq=29.53E6, samples=24400):
         timeout = False
@@ -2555,9 +2567,10 @@ class OpenADCInterface:
                     self.serial.streamModeCaptureStream.stop = True
                     break
 
-            scope_logger.debug("DISABLING fast fifo read")
-            self.setFastFIFORead(0)
-            self.serial.set_smc_speed(0)
+            if self._is_husky:
+                scope_logger.debug("DISABLING fast fifo read")
+                self.setFastFIFORead(0)
+                self.serial.set_smc_speed(0)
 
             self._stream_rx_bytes, stream_timeout = self.serial.cmdReadStream(self._is_husky)
             timeout |= stream_timeout
