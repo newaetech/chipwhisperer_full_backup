@@ -47,7 +47,7 @@ int main(void)
 
     simpleserial_init();
     simpleserial_addcmd('t', 0,  real_dec);
-    #if SS_VER != SS_VER_2_0
+    #if (SS_VER != SS_VER_2_0) && defined(__arm__)
     simpleserial_addcmd('1', 0,  sig_chunk_1);
     simpleserial_addcmd('2', 0,  sig_chunk_2);
     #endif
