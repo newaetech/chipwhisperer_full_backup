@@ -27,6 +27,7 @@ import warnings
 import math
 from threading import Thread
 import usb1
+import os
 import array
 
 from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
@@ -36,6 +37,78 @@ from chipwhisperer.hardware.firmware import cwnano  as fw_nano
 from chipwhisperer.hardware.firmware import cwhusky as fw_cwhusky
 
 from chipwhisperer.logging import *
+
+def _WINDOWS_USB_CHECK_DRIVER(device):
+    try:
+        import winreg
+        keyhandle = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM")
+        subkey = r"ControlSet001\Enum\USB"
+        subkey += "\\VID_{:04X}&PID_{:04X}".format(device.getVendorID(), device.getProductID())
+        # print(subkey)
+
+        def get_enum_by_name(handle, name):
+            try:
+                cnt = 0
+                enum_name = ""
+                myenum = None
+                while enum_name != name:
+                    myenum = winreg.EnumValue(handle, cnt)
+                    enum_name = myenum[0]
+                    # print(myenum)
+                    cnt += 1
+                return myenum[1]
+            except OSError as e:
+                return None
+
+        # find our device by checking its USB address
+        keyhandle_device = winreg.OpenKey(keyhandle, subkey)
+        #naeusb_logger.debug("Opened keyhandle_device")
+        i = 0
+        address = None
+        sn = None
+        attached = False
+        while (address != device.getPortNumber()) or (attached is False):
+            sn = winreg.EnumKey(keyhandle_device, i)
+            # print("sn: " + sn)
+            keyhandle_sn = winreg.OpenKey(keyhandle_device, sn)
+            with keyhandle_sn as h:
+                address = get_enum_by_name(h, "Address")
+                if address is None:
+                    naeusb_logger.info("Could not find Address in device {}".format(sn))
+                service = get_enum_by_name(h, "Service")
+
+                # now we need to figure out if this device is attached
+                # Windows really doesn't make this easy...
+                keyhandle_driver = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\{}\\Enum".format(service))
+                num_enums = winreg.QueryInfoKey(keyhandle_driver)[1]
+
+                attached = False
+                for j in range(num_enums):
+                    device_id = get_enum_by_name(keyhandle_driver, str(j))
+                    if device_id is None:
+                        break
+                    if device_id == "USB\\VID_{:04X}&PID_{:04X}\\{}".format(device.getVendorID(), device.getProductID(), sn):
+                        attached = True
+                    
+                keyhandle_driver.Close()
+                i += 1
+        keyhandle_sn = winreg.OpenKey(keyhandle_device, sn)
+        service = get_enum_by_name(keyhandle_sn, "Service")
+        if service is None:
+            naeusb_logger.info("Could not find service name in device {}".format(sn))
+
+        keyhandle_sn.Close()
+        keyhandle_device.Close()
+        keyhandle.Close()
+        return service
+
+        # if service == "usbccgp":
+        #     print("Composite driver")
+        #     return "composite"
+        
+            
+    except Exception as e:
+        naeusb_logger.warning("Could not check driver ({}), assuming WINUSB is used".format(str(e)))
 
 
 def packuint32(data):
@@ -86,10 +159,8 @@ class NAEUSB_Backend:
         self._usbdev = None
         self._timeout = 500
 
-        import atexit
         self.usb_ctx = usb1.USBContext()
         self.usb_ctx.open()
-        # atexit.register(self.usb_ctx.close)
         self.handle = None
         self.device = None
 
@@ -197,6 +268,13 @@ class NAEUSB_Backend:
         
         dev_list = [dev for dev in self.usb_ctx.getDeviceIterator() if dev.getVendorID() == 0x2b3e]
         naeusb_logger.info("Found NAEUSB devices {}".format(dev_list))
+        
+        if os.name == "nt":
+            for dev in dev_list:
+                win_driver = _WINDOWS_USB_CHECK_DRIVER(dev)
+                if (win_driver != "usbccgp") and (win_driver != "WINUSB"):
+                    naeusb_logger.warning("Invalid driver {} detected. If you have connection problems, try upgrading your driver".format(win_driver))
+                    naeusb_logger.warning("See TDB for more information")
         if not (idProduct is None):
             dev_list = [dev for dev in dev_list if dev.getProductID() in idProduct]
 
