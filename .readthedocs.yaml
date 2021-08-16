@@ -7,6 +7,8 @@ sphinx:
 
 build:
   image: stable
+  apt_packages:
+    - libusb-1.0.0-dev
 
 python:
   version: 3.6
