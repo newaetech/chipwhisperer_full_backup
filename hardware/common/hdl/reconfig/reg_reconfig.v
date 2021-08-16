@@ -179,6 +179,7 @@ module reg_reconfig(
 		icap_cfg <= icap_cfg2;
 	end
 	
+        `ifndef __ICARUS__
 	// ICAP_SPARTAN6: Internal Configuration Access Port
 	// Spartan-6
 	ICAP_SPARTAN6 #(
@@ -211,6 +212,9 @@ module reg_reconfig(
 		.empty(fifo_empty),
 		.almost_empty()
 		);
+        `else
+        wire fifo_empty = 1'b0;
+        `endif
 
 `ifdef CHIPSCOPE
    wire [127:0] cs_data;   
