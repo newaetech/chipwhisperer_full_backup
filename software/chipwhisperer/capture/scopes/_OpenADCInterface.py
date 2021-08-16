@@ -10,13 +10,14 @@ import logging
 import sys
 import time
 import datetime
-from chipwhisperer.common.utils import util
+from ...common.utils import util
 import array
 import numpy as np
 from collections import OrderedDict
 import copy
 
 from chipwhisperer.logging import *
+from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP
 
 ADDR_GAIN       = 0
 ADDR_SETTINGS   = 1
@@ -29,6 +30,7 @@ ADDR_SYSFREQ    = 7
 ADDR_ADCFREQ    = 8
 ADDR_PHASE      = 9
 ADDR_VERSIONS   = 10
+ADDR_FPGA_BUILDTIME = 11
 ADDR_OFFSET     = 26
 ADDR_DECIMATE   = 15
 ADDR_SAMPLES    = 16
@@ -38,20 +40,26 @@ ADDR_TRIGGERDUR = 20
 ADDR_MULTIECHO  = 34
 ADDR_DATA_SOURCE = 27
 ADDR_ADC_LOW_RES = 29
-ADDR_DRP_ADDR   = 30
-ADDR_DRP_DATA   = 31
+ADDR_CLKGEN_DRP_ADDR = 30
+ADDR_CLKGEN_DRP_DATA = 31
 ADDR_SEGMENTS   = 32
 ADDR_SEGMENT_CYCLES = 33
+ADDR_STREAM_SEGMENT_THRESHOLD = 35
 ADDR_FAST_FIFO_READ = 36
 
-ADDR_XADC_DRP_ADDR = 41
-ADDR_XADC_DRP_DATA = 42
-ADDR_XADC_STAT     = 43
 ADDR_FIFO_STAT     = 44
 ADDR_NO_CLIP_ERRORS = 45
+ADDR_CLKGEN_POWERDOWN = 48
 
-ADDR_HUSKY_ADC_CTRL = 60
 ADDR_HUSKY_VMAG_CTRL = 61
+
+ADDR_FIFO_UNDERFLOW_COUNT = 66
+ADDR_FIFO_NO_UNDERFLOW_ERROR = 67
+
+ADDR_CLKGEN_DRP_RESET  = 81
+
+ADDR_CLIP_TEST         = 85
+
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -87,6 +95,7 @@ class HWInformation(util.DisableNewAttr):
     _name = 'HW Information'
 
     def __init__(self, oaiface):
+        # oaiface = OpenADCInterface
         self.oa = oaiface
         self.oa.hwInfo = self
         self.sysFreq = 0
@@ -140,6 +149,21 @@ class HWInformation(util.DisableNewAttr):
         else:
             return False
 
+    def get_fpga_buildtime(self):
+        """Returns date and time when FPGA bitfile was generated.
+        """
+        if self.is_cwhusky():
+            raw = self.oa.sendMessage(CODE_READ, ADDR_FPGA_BUILDTIME, maxResp=4)
+            # definitions: Xilinx XAPP1232
+            day = raw[3] >> 3
+            month = ((raw[3] & 0x7) << 1) + (raw[2] >> 7)
+            year = ((raw[2] >> 1) & 0x3f) + 2000
+            hour = ((raw[2] & 0x1) << 4) + (raw[1] >> 4)
+            minute = ((raw[1] & 0xf) << 2) + (raw[0] >> 6)
+            return "{}/{}/{}, {}:{}".format(month, day, year, hour, minute)
+        else:
+            return None
+
 
     def synthDate(self):
         return "unknown"
@@ -162,269 +186,14 @@ class HWInformation(util.DisableNewAttr):
         self.oa.hwInfo = None
 
 
-class XADCSettings(util.DisableNewAttr):
-    ''' Husky FPGA XADC temperature and voltage monitoring.
-    '''
-    _name = 'Husky XADC Setting'
-
-    def __init__(self, oaiface):
-        self.oa = oaiface
-        self.disable_newattr()
-
-    def _dict_repr(self):
-        dict = OrderedDict()
-        dict['status'] = self.status
-        dict['current temperature [C]'] = self.temp
-        dict['maximum temperature [C]'] = self.max_temp
-        dict['temperature alarm trigger [C]'] = self.temp_trigger
-        dict['temperature reset trigger [C]'] = self.temp_reset
-        dict['vccint'] = self.vccint
-        dict['vccaux'] = self.vccaux
-        dict['vccbram'] = self.vccbram
-        return dict
-
-    def __repr__(self):
-        return util.dict_to_str(self._dict_repr())
-
-    def __str__(self):
-        return self.__repr__()
-
-    def _drp_write(self, addr, data):
-        """Write XADC DRP register. UG480 for register definitions.
-        Args:
-            addr (int): 6-bit address
-            data (int): 16-bit write data
-        """
-        self.oa.sendMessage(CODE_WRITE, ADDR_XADC_DRP_DATA, [data  & 0xff, data >> 8])
-        self.oa.sendMessage(CODE_WRITE, ADDR_XADC_DRP_ADDR, [addr + 0x80])
-
-    def _drp_read(self, addr):
-        """Read XADC DRP register. UG480 for register definitions.
-        Args:
-            addr (int): 6-bit address
-        Returns:
-            A 16-bit integer.
-        """
-        self.oa.sendMessage(CODE_WRITE, ADDR_XADC_DRP_ADDR, [addr])
-        raw = self.oa.sendMessage(CODE_READ, ADDR_XADC_DRP_DATA, maxResp=2)
-        return int.from_bytes(raw, byteorder='little')
-
-    @property
-    def status(self):
-        """Read XADC alarm status bits
-        Args: none
-        Returns: status string
-        """
-        raw = self.oa.sendMessage(CODE_READ, ADDR_XADC_STAT, maxResp=1)[0]
-        stat = ''
-        if raw & 1:  stat += 'Over temperature alarm, '
-        if raw & 2:  stat += 'User temperature alarm, '
-        if raw & 4:  stat += 'VCCint alarm, '
-        if raw & 8:  stat += 'VCCaux alarm, '
-        if raw & 16: stat += 'VCCbram alarm, '
-        if stat == '':
-            stat = 'good'
-        return stat
-
-    @property
-    def temp(self):
-        return self.get_temp(0)
-
-    @property
-    def max_temp(self):
-        return self.get_temp(32)
-
-    @property
-    def temp_trigger(self):
-        return self.get_temp(0x50)
-
-    @property
-    def temp_reset(self):
-        return self.get_temp(0x54)
-
-    @temp_trigger.setter
-    def temp_trigger(self, temp):
-        return self.set_temp(temp, 0x50)
-
-    @temp_reset.setter
-    def temp_reset(self, temp):
-        return self.set_temp(temp, 0x54)
-
-
-    def get_temp(self, addr=0):
-        """Read XADC temperature.
-        Args: 
-            addr (int): DRP address (0: current; 32: max; 36: min)
-        Returns:
-            Temperature in celcius (float).
-        """
-        raw = self._drp_read(addr)
-        return (raw>>4) * 503.975/4096 - 273.15 # ref: UG480
-
-    def set_temp(self, temp, addr=0):
-        """Set XADC temperature thresholds.
-        Args: 
-            addr (int): DRP address
-            temp (float): temperature threshold [celcius]
-        Returns:
-            Temperature in celcius (float).
-        """
-        raw = (int((temp + 273.15)*4096/503.975) << 4) & 0xffff
-        self.oa.sendMessage(CODE_WRITE, ADDR_XADC_DRP_DATA, list(int.to_bytes(raw, length=2, byteorder='little')))
-        self.oa.sendMessage(CODE_WRITE, ADDR_XADC_DRP_ADDR, [0x80 + addr])
-
-
-    @property
-    def vccint(self):
-        return self.get_vcc('vccint')
-
-    @property
-    def vccaux(self):
-        return self.get_vcc('vccaux')
-
-    @property
-    def vccbram(self):
-        return self.get_vcc('vccbram')
-
-
-    def get_vcc(self, rail='vccint'):
-        """Read XADC vcc.
-        Args:
-            rail (string): 'vccint', 'vccaux', or 'vccbram'
-        Returns:
-            voltage (float).
-        """
-        if rail == 'vccint':
-            addr = 1
-        elif rail == 'vccaux':
-            addr = 2
-        elif rail == 'vccbram':
-            addr = 6
-        else:
-            raise ValueError("Invalid rail")
-        raw = self._drp_read(addr)
-        return (raw>>4)/4096 * 3 # ref: UG480
-
-
-class ADS4128Settings(util.DisableNewAttr):
-    ''' Husky ADS4128 ADC settings. Mostly for testing, not needed in normal use.
-    '''
-    _name = 'Husky ADS4128 ADC Setting'
-
-    def __init__(self, oaiface):
-        self.oa = oaiface
-        self.adc_reset()
-        self.set_default_settings()
-        self.disable_newattr()
-
-    def _dict_repr(self):
-        dict = OrderedDict()
-        dict['mode'] = self.mode
-        return dict
-
-    def __repr__(self):
-        return util.dict_to_str(self._dict_repr())
-
-    def __str__(self):
-        return self.__repr__()
-
-    def adc_reset(self):
-        """Resets the ADC.
-        Note this is done by the FPGA - see reg_husky_adc.v
-        """
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0xc1])
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
-
-    def _adc_write(self, address, data):
-        """Write ADC configuration register.
-        Note this is done by the FPGA - see reg_husky_adc.v
-        """
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
-        for i in range(8):
-            bit = (address >> (7-i)) & 1
-            val = (bit << 4) + 1
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
-            val = (bit << 4) + 0
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
-        
-        for i in range(8):
-            bit = (data >> (7-i)) & 1
-            val = (bit << 4) + 1
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
-            val = (bit << 4) + 0
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
-
-    def _adc_read(self, address):
-        """Read ADC configuration register.
-        Note this is done by the FPGA - see reg_husky_adc.v
-        """
-        # first, enable readout:
-        self._adc_write(0x0, 0x1)
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
-        for i in range(8):
-            bit = (address >> (7-i)) & 1
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [(bit<<4) + 1])
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [(bit<<4) + 0])
-        for i in range(8):
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x01])
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x02])
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
-        data =  self.oa.sendMessage(CODE_READ, ADDR_HUSKY_ADC_CTRL, maxResp=1)[0]
-        # finished, disable readout:
-        self._adc_write(0x0, 0x0)
-        return data
-
-    def set_default_settings(self):
-        self._adc_write(0x42, 0x00) # enable low-latency mode
-        self._adc_write(0x25, 0x00) # disable test patterns
-        self._adc_write(0x03, 0x03) # set high performance mode
-        self._adc_write(0x4a, 0x01) # set high performance mode
-        self._adc_write(0x3d, 0xc0) # set offset binary output
-        self.mode_cached = "normal"
-
-    def set_test_settings(self):
-        self._adc_write(0x42, 0x08) # disable low-latency mode
-        self._adc_write(0x25, 0x04) # set test pattern to ramp
-        self._adc_write(0x3d, 0xc0) # set offset binary output
-        self.mode_cached = "test ramp"
-
-    @property
-    def mode(self):
-        """The current mode of the ADC.
-
-        :Getter: Return the current ADC operating mode ("normal" or "test ramp")
-
-        :Setter: Set the operating mode.
-
-        Raises:
-            ValueError: if mode not one of "normal" or "test ramp"
-        """
-        return self.mode_cached
-
-    @mode.setter
-    def mode(self, val):
-        return self.setMode(val)
-
-    def setMode(self, mode):
-        if mode == "normal":
-            self.set_default_settings()
-            self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [0])
-        elif mode == "test ramp":
-            self.set_test_settings()
-            self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [1])
-        else:
-            raise ValueError("Invalid mode, only 'normal' or 'test ramp' allowed")
-
-
-
 
 class GainSettings(util.DisableNewAttr):
     _name = 'Gain Setting'
 
-    def __init__(self, oaiface):
+    def __init__(self, oaiface, adc):
+        # oaiface = OpenADCInterface
         self.oa = oaiface
+        self.adc = adc
         self.gainlow_cached = False
         self.gain_cached = 0
         self._is_husky = False
@@ -639,10 +408,32 @@ class GainSettings(util.DisableNewAttr):
 
         self.setGain(g)
 
+    def auto_gain(self, margin=20):
+        '''Increment gain until clipping occurs, then reduce by <margin> dB (default: 20 dB)
+        '''
+        if not self._is_husky:
+            raise ValueError("Only supported on Husky")
+        self.adc.clip_errors_disabled = False
+        self.adc.clear_clip_errors()
+        self.oa.sendMessage(CODE_WRITE, ADDR_CLIP_TEST, [1])
+        found = False
+        for gain in range(-15+margin, 65):
+            self.db = gain
+            if self.oa.sendMessage(CODE_READ, ADDR_FIFO_STAT, maxResp=1)[0] & 32:
+                self.db = gain - margin
+                found = True
+                self.adc.clear_clip_errors()
+                break
+        if not found:
+            scope_logger.warning("Couldn't clip ADC, using maximum gain")
+
+        self.oa.sendMessage(CODE_WRITE, ADDR_CLIP_TEST, [0])
+
 class TriggerSettings(util.DisableNewAttr):
     _name = 'Trigger Setup'
 
     def __init__(self, oaiface):
+        # oaiface = OpenADCInterface
         self._new_attributes_disabled = False
         self.oa = oaiface
         self._numSamples = 0
@@ -651,6 +442,8 @@ class TriggerSettings(util.DisableNewAttr):
         self.presampleTempMargin = 24
         self._timeout = 2
         self._stream_mode = False
+        self._stream_segment_size = 65536
+        self._stream_segment_threshold = 65536
         self._test_mode = False
         self._bits_per_sample = 10
         self._support_get_duration = True
@@ -659,6 +452,7 @@ class TriggerSettings(util.DisableNewAttr):
         self._is_husky = False
         self._cached_samples = None
         self._cached_offset = None
+        self._cached_segments = 1 # Husky streaming capture breaks if left as None
         self._is_sakura_g = None
 
         self.disable_newattr()
@@ -675,14 +469,18 @@ class TriggerSettings(util.DisableNewAttr):
         dict['trig_count'] = self.trig_count
         if self._is_pro or self._is_lite:
             dict['fifo_fill_mode'] = self.fifo_fill_mode
-        if self._is_pro:
+        if self._is_pro or self._is_husky:
             dict['stream_mode'] = self.stream_mode
         if self._is_husky:
             dict['test_mode'] = self.test_mode
             dict['bits_per_sample'] = self.bits_per_sample
             dict['segments'] = self.segments
             dict['segment_cycles'] = self.segment_cycles
+            dict['clip_errors_disabled'] = self.clip_errors_disabled
             dict['errors'] = self.errors
+            # keep these hidden:
+            #dict['stream_segment_size'] = self.stream_segment_size
+            #dict['stream_segment_threshold'] = self.stream_segment_threshold
 
         return dict
 
@@ -705,7 +503,7 @@ class TriggerSettings(util.DisableNewAttr):
 
     @property
     def stream_mode(self):
-        """The ChipWhisperer's streaming status. Only available on CW1200.
+        """The ChipWhisperer's streaming status. Only available on CW1200 and CW-Husky.
 
         When stream mode is enabled, the ChipWhisperer sends back ADC data as
         soon as it is recorded. In this mode, there is no hardware limit on the
@@ -725,6 +523,31 @@ class TriggerSettings(util.DisableNewAttr):
     @stream_mode.setter
     def stream_mode(self, enabled):
         self._set_stream_mode(enabled)
+
+    @property
+    def stream_segment_threshold(self):
+        """Only available on CW-Husky.
+        TODO: when stable, document (including limits), or maybe hide?
+        """
+        return self._get_stream_segment_threshold()
+
+    @stream_segment_threshold.setter
+    def stream_segment_threshold(self, size):
+        self._set_stream_segment_threshold(size)
+
+
+    @property
+    def stream_segment_size(self):
+        """Only available on CW-Husky.
+        TODO: when stable, document (including limits), or maybe hide?
+        """
+        return self._get_stream_segment_size()
+
+    @stream_segment_size.setter
+    def stream_segment_size(self, size):
+        self._set_stream_segment_size(size)
+
+
 
     @property
     def decimate(self):
@@ -749,6 +572,18 @@ class TriggerSettings(util.DisableNewAttr):
     @decimate.setter
     def decimate(self, decfactor):
         self._set_decimate(decfactor)
+
+    @property
+    def clip_errors_disabled(self):
+        """TODO
+        """
+        return self._get_clip_errors_disabled()
+
+    @clip_errors_disabled.setter
+    def clip_errors_disabled(self, disable):
+        self.clear_clip_errors()
+        self._set_clip_errors_disabled(disable)
+
 
     @property
     def samples(self):
@@ -806,7 +641,7 @@ class TriggerSettings(util.DisableNewAttr):
 
     @property
     def offset(self):
-        """The number of samples to before recording data after seeing a
+        """The number of samples to wait before recording data after seeing a
         trigger event.
 
         This offset is useful for long operations. For instance, if an
@@ -1027,18 +862,21 @@ class TriggerSettings(util.DisableNewAttr):
            ValueError: if segments is outside of range [1, 2^16-1]
         """
 
-        return self._get_segments()
+        if self._cached_segments is None:
+            self._cached_segments = self._get_segments()
+        return self._cached_segments
+
 
     @segments.setter
     def segments(self, num):
         if num < 1 or num > 2**16-1:
             raise ValueError("Number of segments must be in range [1, 2^16-1]")
+        self._cached_segments = num
         self._set_segments(num)
 
     def _get_segments(self):
         if self.oa is None:
             return 0
-
         cmd = self.oa.sendMessage(CODE_READ, ADDR_SEGMENTS, maxResp=2)
         segments = int.from_bytes(cmd, byteorder='little')
         return segments
@@ -1052,20 +890,38 @@ class TriggerSettings(util.DisableNewAttr):
     def errors(self):
         """Internal error flags (FPGA FIFO over/underflow)
         .. warning:: Supported by CW-Husky only.
+
+        :Getter: Return the error flags.
+
+        :Setter: Clear error flags.
+
         """
         return self._get_errors()
+
+    @errors.setter
+    def errors(self, val):
+        """Internal error flags (FPGA FIFO over/underflow)
+        .. warning:: Supported by CW-Husky only.
+        """
+        self.oa.sendMessage(CODE_WRITE, ADDR_FIFO_STAT, [1])
+        if not self.clip_errors_disabled:
+            self.clear_clip_errors()
+
+
 
     def _get_errors(self):
         if self.oa is None:
             return 0
         raw = self.oa.sendMessage(CODE_READ, ADDR_FIFO_STAT, maxResp=1)[0]
         stat = ''
-        if raw & 1:  stat += 'slow FIFO underflow, '
-        if raw & 2:  stat += 'slow FIFO overflow, '
-        if raw & 4:  stat += 'fast FIFO underflow, '
-        if raw & 8:  stat += 'fast FIFO overflow, '
-        if raw & 16: stat += 'presample error, '
-        if raw & 32: stat += 'ADC clipped, '
+        if raw & 1:   stat += 'slow FIFO underflow, '
+        if raw & 2:   stat += 'slow FIFO overflow, '
+        if raw & 4:   stat += 'fast FIFO underflow, '
+        if raw & 8:   stat += 'fast FIFO overflow, '
+        if raw & 16:  stat += 'presample error, '
+        if raw & 32:  stat += 'ADC clipped, '
+        if raw & 64:  stat += 'invalid downsample setting, '
+        if raw & 128: stat += 'segmenting error, '
         if stat == '':
             stat = 'no errors'
         return stat
@@ -1131,14 +987,38 @@ class TriggerSettings(util.DisableNewAttr):
         return self._stream_mode
 
 
+    def _set_stream_segment_threshold(self, size):
+        scope_logger.warning('Changing this parameter can degrade performance and/or cause reads to fail entirely; use at your own risk.')
+        self._stream_segment_threshold = size
+        #Write to FPGA
+        self.oa.sendMessage(CODE_WRITE, ADDR_STREAM_SEGMENT_THRESHOLD, list(int.to_bytes(size, length=4, byteorder='little')))
+
+
+    def _set_stream_segment_size(self, size):
+        scope_logger.warning('Changing this parameter can degrade performance and/or cause reads to fail entirely; use at your own risk.')
+        self._stream_segment_size = size
+        #Notify capture system
+        self.oa.setStreamSegmentSize(size)
+
+
+    def _get_stream_segment_threshold(self):
+        raw = self.oa.sendMessage(CODE_READ, ADDR_STREAM_SEGMENT_THRESHOLD, maxResp=4)
+        return int.from_bytes(raw, byteorder='little')
+
+    def _get_stream_segment_size(self):
+        return self._stream_segment_size
+
     def _set_test_mode(self, enabled):
         self._test_mode = enabled
         if enabled:
             self.oa.sendMessage(CODE_WRITE, ADDR_DATA_SOURCE, [0])
             self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [1])
+            if self._bits_per_sample == 8:
+                self.oa.sendMessage(CODE_WRITE, ADDR_ADC_LOW_RES, [3]) # store LSB instead of MSB
         else:
             self.oa.sendMessage(CODE_WRITE, ADDR_DATA_SOURCE, [1])
             self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [0])
+            self.bits_per_sample = self._bits_per_sample #shorthand to clear the LSB setting
 
 
     def _get_test_mode(self):
@@ -1166,12 +1046,17 @@ class TriggerSettings(util.DisableNewAttr):
         self._bits_per_sample = bits
         # update FPGA:
         if bits == 8:
-            val = 1
+            if self.test_mode:
+                val = 3 # store LSB instead of MSB
+            else:
+                val = 1
         else:
             val = 0
         self.oa.sendMessage(CODE_WRITE, ADDR_ADC_LOW_RES, [val])
         # Notify capture system:
         self.oa.setBitsPerSample(bits)
+        # necessary for streaming to work:
+        self.oa.setNumSamples(self.samples)
 
     def _get_bits_per_sample(self):
         return self._bits_per_sample
@@ -1201,10 +1086,28 @@ class TriggerSettings(util.DisableNewAttr):
         return self.oa.getStatus() & STATUS_OVERFLOW_MASK
 
     def _set_decimate(self, decsamples):
+        if self.presamples > 0 and decsamples > 1 and self._is_husky:
+            raise Warning("Decimating with presamples is not supported on Husky.")
         self.oa.setDecimate(decsamples)
 
     def _get_decimate(self):
         return self.oa.decimate()
+
+    def _set_clip_errors_disabled(self, disable):
+        self.oa.set_clip_errors_disabled(disable)
+
+    def clear_clip_errors(self):
+        """ADC clipping errors are sticky until manually cleared by calling this.
+        """
+        self.oa.sendMessage(CODE_WRITE, ADDR_FIFO_STAT, [1])
+        self._set_clip_errors_disabled(True)
+        self._set_clip_errors_disabled(False)
+        self.oa.sendMessage(CODE_WRITE, ADDR_FIFO_STAT, [1])
+
+
+    def _get_clip_errors_disabled(self):
+        return self.oa.clip_errors_disabled()
+
 
     def _set_num_samples(self, samples):
         if samples < 0:
@@ -1224,6 +1127,18 @@ class TriggerSettings(util.DisableNewAttr):
             return self._numSamples
         else:
             return self.oa.numSamples()
+
+
+    def _get_underflow_reads(self):
+        """ Number of slow FIFO underflow reads. HW resets this on every capture.
+        Count is valid even when the associated error flag is disabled.
+        8 bits only, doesn't overflow. Meant for debugging.
+        Husky only.
+        """
+        if self.oa is None or not self._is_husky:
+            return 0
+        return self.oa.sendMessage(CODE_READ, ADDR_FIFO_UNDERFLOW_COUNT, maxResp=1)[0]
+
 
     def _set_timeout(self, timeout):
         self._timeout = timeout
@@ -1251,15 +1166,19 @@ class TriggerSettings(util.DisableNewAttr):
     def _set_presamples(self, samples):
         if self._is_husky:
             min_samples = 8
-            max_samples = min(self.samples, 32768)
+            max_samples = min(self.samples, 32767)
+            presamp_bytes = 2
+            if self.decimate > 1:
+                raise Warning("Decimating with presamples is not supported on Husky.")
         else:
             min_samples = 0
             max_samples = self.samples
+            presamp_bytes = 4
         if samples < min_samples and samples != 0:
             raise ValueError("Number of pre-trigger samples cannot be less than %d" % min_samples)
         if samples > max_samples:
             if self._is_husky:
-                raise ValueError("Number of pre-trigger samples cannot be larger than the lesser of [total number of samples, 32768] (%d)." % max_samples)
+                raise ValueError("Number of pre-trigger samples cannot be larger than the lesser of [total number of samples, 32767] (%d)." % max_samples)
             else:
                 raise ValueError("Number of pre-trigger samples cannot be larger than the total number of samples (%d)." % max_samples)
 
@@ -1284,7 +1203,7 @@ class TriggerSettings(util.DisableNewAttr):
 
             self.presamples_actual = samplesact * 3
 
-        self.oa.sendMessage(CODE_WRITE, ADDR_PRESAMPLES, list(int.to_bytes(samplesact, length=4, byteorder='little')))
+        self.oa.sendMessage(CODE_WRITE, ADDR_PRESAMPLES, list(int.to_bytes(samplesact, length=presamp_bytes, byteorder='little')))
 
 
         #print "Requested presamples: %d, actual: %d"%(samples, self.presamples_actual)
@@ -1301,7 +1220,12 @@ class TriggerSettings(util.DisableNewAttr):
         if cached:
             return self.presamples_desired
 
-        temp = self.oa.sendMessage(CODE_READ, ADDR_PRESAMPLES, maxResp=4)
+        if self._is_husky:
+            presamp_bytes = 2
+        else:
+            presamp_bytes = 4
+
+        temp = self.oa.sendMessage(CODE_READ, ADDR_PRESAMPLES, maxResp=presamp_bytes)
         samples = int.from_bytes(temp, byteorder='little')
 
         #CW1200/CW-Lite/Husky reports presamples using different method
@@ -1386,10 +1310,15 @@ class ClockSettings(util.DisableNewAttr):
         self.oa = oaiface
         self._hwinfo = hwinfo
         self._freqExt = 10e6
+        self._is_husky = False
+        self.drp = XilinxDRP(oaiface, ADDR_CLKGEN_DRP_DATA, ADDR_CLKGEN_DRP_ADDR, ADDR_CLKGEN_DRP_RESET)
+        self.mmcm = XilinxMMCMDRP(self.drp)
         self.disable_newattr()
 
     def _dict_repr(self):
         dict = OrderedDict()
+        if self._is_husky:
+            dict['enabled'] = self.enabled
         dict['adc_src']    = self.adc_src
         dict['adc_phase']  = self.adc_phase
         dict['adc_freq']   = self.adc_freq
@@ -1415,10 +1344,31 @@ class ClockSettings(util.DisableNewAttr):
         return self.__repr__()
 
     @property
+    def enabled(self):
+        """Controls whether the Xilinx MMCMs used to generate glitches are
+        powered on or not.  7-series MMCMs are power hungry. In the Husky FPGA,
+        MMCMs are estimated to consume close to half of the FPGA's power. If
+        you run into temperature issues and don't require glitching, you can
+        power down these MMCMs.
+
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        return self._getEnabled()
+
+    @enabled.setter
+    def enabled(self, enable):
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        self._setEnabled(enable)
+
+
+    @property
     def adc_src(self):
         """The clock source for the ADC module.
 
         The ADC can be clocked by one of five possible sources:
+
          * "clkgen_x1": CLKGEN output via DCM
          * "clkgen_x4": CLKGEN output via DCM with x4 clk multiplier
          * "extclk_x1": External clock input via DCM
@@ -1475,7 +1425,7 @@ class ClockSettings(util.DisableNewAttr):
         :Setter: Set a new phase offset
 
         Raises:
-           ValueError: if offset not in [-255, 255]
+           ValueError: if offset not in [-32767, 32767] (Husky) or [-255, 255] (others)
            TypeError: if offset not integer
         """
         return self._get_phase()
@@ -1491,7 +1441,8 @@ class ClockSettings(util.DisableNewAttr):
         This clock frequency is derived from one of the ADC clock sources as
         described in adc_src.
 
-        :Getter: Return the current frequency in MHz (float)
+        :Getter: Return the current frequency in MHz (float). May take
+                up to 0.5s to stabilize after adc_locked is True.
         """
         return self._getAdcFrequency()
 
@@ -1566,6 +1517,7 @@ class ClockSettings(util.DisableNewAttr):
         """The input source for the CLKGEN DCM.
 
         This DCM can receive input from one of two places:
+
         - "extclk": The external clock input
         - "system" or "internal": The system clock (96 MHz)
 
@@ -1619,7 +1571,8 @@ class ClockSettings(util.DisableNewAttr):
         :Getter:
             Return the current calculated CLKGEN output frequency in Hz
             (float). Note that this is the theoretical frequency - use the
-            freq counter to determine the actual output.
+            freq counter to determine the actual output. May take up to 0.5s
+            to stabilize after clkgen_locked is True.
 
         :Setter:
             Attempt to set a new CLKGEN frequency in Hz. When this value is
@@ -1792,17 +1745,7 @@ class ClockSettings(util.DisableNewAttr):
         # calculate register value:
         if type(mul) != int:
             raise ValueError("Only integers are supported")
-        muldiv2 = int(mul/2)
-        lo = muldiv2
-        if mul%2:
-            hi = lo+1
-        else:
-            hi = lo
-        raw = list(int.to_bytes(lo + (hi<<6) + 0x1000, length=2, byteorder='little'))
-        # data to write:
-        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_DATA, raw)
-        # write data to addres 0x14:
-        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x94])
+        self.mmcm.set_mul(mul)
 
 
     @property
@@ -1838,7 +1781,7 @@ class ClockSettings(util.DisableNewAttr):
 
                 timeout -= 1
 
-        openadc_logger.error("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
+        scope_logger.error("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
                       " source settings. CLKGEN clock results are currently invalid.")
         return 1
 
@@ -1856,43 +1799,8 @@ class ClockSettings(util.DisableNewAttr):
     def _set_husky_clkgen_div(self, div):
         main_div = div[0]
         sec_div = div[1]
-        if type(main_div) != int or type(sec_div) != int:
-            raise ValueError("Only integers are supported")
-        # 1. Set main divider:
-        if main_div == 1:
-            raw = list(int.to_bytes(0x1000, length=2, byteorder='little'))
-        else:
-            div2 = int(main_div/2)
-            lo = div2
-            if main_div % 2:
-                hi = lo+1
-            else:
-                hi = lo
-            raw = list(int.to_bytes(lo + (hi<<6), length=2, byteorder='little'))
-        # data to write:
-        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_DATA, raw)
-        # write data to addres 0x16:
-        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x96])
-
-        # 2. Set clkout0 secondary divider:
-        if sec_div == 1:
-            raw = list(int.to_bytes(0x0040, length=2, byteorder='little'))
-            # data to write:
-            self.oa.sendMessage(CODE_WRITE, ADDR_DRP_DATA, raw)
-            # write data to address 0x09:
-            self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x89])
-        else:
-            div2 = int(sec_div/2)
-            lo = div2
-            if sec_div%2:
-                hi = lo+1
-            else:
-                hi = lo
-            raw = list(int.to_bytes(lo + (hi<<6) + 0x1000, length=2, byteorder='little'))
-            # data to write:
-            self.oa.sendMessage(CODE_WRITE, ADDR_DRP_DATA, raw)
-            # write data to address 0x08:
-            self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x88])
+        self.mmcm.set_main_div(div[0])
+        self.mmcm.set_sec_div(div[1],0)
 
 
     def _setClkgenDivWrapper(self, div):
@@ -1914,53 +1822,14 @@ class ClockSettings(util.DisableNewAttr):
 
 
     def _get_husky_clkgen_div(self):
-        # 1. read DIVREG to get main divider:
-        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x16])
-        raw = self.oa.sendMessage(CODE_READ, ADDR_DRP_DATA, maxResp=2)
-        if raw[1] & 0x10:
-            maindiv = 1
-        else:
-            # extract high time and low time
-            lo = (raw[0] & 0x3f)
-            hi = (raw[0]>>6) + ((raw[1] & 0x0f)<<2)
-            maindiv = lo + hi
-        # 2. read CLKOUT2 to ensure fractional mode is disabled and check NO_COUNT bit for CLKOUT divider:
-        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x9])
-        raw = self.oa.sendMessage(CODE_READ, ADDR_DRP_DATA, maxResp=2)
-        if raw[1] & 0x08:
-            logging.error('CLKGEN fractional mode is enabled. This is unexpected.')
-        if raw[0] & 0x40:
-            secdiv = 1
-        else:
-            # 3. read CLKOUT divider:
-            self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x8])
-            raw = self.oa.sendMessage(CODE_READ, ADDR_DRP_DATA, maxResp=2)
-            # extract high time and low time
-            lo = (raw[0] & 0x3f)
-            hi = (raw[0]>>6) + ((raw[1] & 0x0f)<<2)
-            secdiv = lo + hi
+        maindiv = self.mmcm.get_main_div()
+        secdiv = self.mmcm.get_sec_div()
         return maindiv*secdiv
 
 
     def _get_husky_clkgen_mul(self):
-        # 1. read CLKFBOUT2 to ensure fractional mode is disabled:
-        self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x11])
-        raw = self.oa.sendMessage(CODE_READ, ADDR_DRP_DATA, maxResp=2)
-        if raw[1] & 0x08:
-            print('WARNING: fractional mode is enabled. This is unexpected. Reported multiplier value will be incorrect.')
-        # 2. check "NO COUNT" bit:
-        if raw[0] & 0x04:
-            mul = 1
-        else:
-            # 3. read CLKFBOUT:
-            self.oa.sendMessage(CODE_WRITE, ADDR_DRP_ADDR, [0x14])
-            raw = self.oa.sendMessage(CODE_READ, ADDR_DRP_DATA, maxResp=2)
-            # extract high time and low time
-            lo = (raw[0] & 0x3f)
-            hi = (raw[0]>>6) + ((raw[1] & 0x0f)<<2)
-            mul = lo + hi
-            #if lo != hi: print('WARNING: high and low times unequal (%d, %d) ! Duty cycle is not 50/50. This is unexpected. % (hi, lo))
-        return mul
+        return self.mmcm.get_mul()
+
 
     def reset_adc(self):
         """Reset the ADC DCM.
@@ -2005,6 +1874,24 @@ class ClockSettings(util.DisableNewAttr):
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
         result[3] &= ~(0x01)
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
+
+
+    def _setEnabled(self, enable):
+        if enable:
+            val = [0]
+        else:
+            val = [3]
+        self.oa.sendMessage(CODE_WRITE, ADDR_CLKGEN_POWERDOWN, val, Validate=False)
+
+    def _getEnabled(self):
+        raw = self.oa.sendMessage(CODE_READ, ADDR_CLKGEN_POWERDOWN, Validate=False, maxResp=1)[0]
+        if raw == 3:
+            return False
+        elif raw == 0:
+            return True
+        else:
+            raise ValueError("Unexpected: read %d" % raw)
+
 
     def _getAdcSource(self):
         if self.oa is None:
@@ -2098,15 +1985,20 @@ class ClockSettings(util.DisableNewAttr):
         except ValueError:
             raise TypeError("Can't convert %s to int" % phase)
 
-        if phase_int < -255 or phase_int > 255:
+        if self._is_husky:
+            if phase_int < -32767 or phase_int > 32767:
+                raise ValueError("Phase %d is outside range [-32767, 32767]" % phase_int)
+        elif phase_int < -255 or phase_int > 255:
             raise ValueError("Phase %d is outside range [-255, 255]" % phase_int)
 
-        LSB = phase_int & 0x00FF
-        MSB = (phase_int & 0x0100) >> 8
-
         cmd = bytearray(2)
-        cmd[0] = LSB
-        cmd[1] = MSB | 0x02
+        cmd[0] = phase_int & 0x00FF
+        if self._is_husky:
+            cmd[1] = (phase_int & 0xFF00) >> 8
+        else:
+            MSB = (phase_int & 0x0100) >> 8
+            cmd[1] = MSB | 0x02 # TODO: hmm why is this being done?
+
         self.oa.sendMessage(CODE_WRITE, ADDR_PHASE, cmd, False)
 
     def _get_phase(self):
@@ -2121,12 +2013,18 @@ class ClockSettings(util.DisableNewAttr):
 
         if phase_valid:
             LSB = result[0]
-            MSB = result[1] & 0x01
+            if self._is_husky:
+                MSB = result[1]
+            else:
+                MSB = result[1] & 0x01
 
             phase = LSB | (MSB << 8)
 
             #Sign Extend
-            phase = SIGNEXT(phase, 9)
+            if self._is_husky:
+                phase = SIGNEXT(phase, 16)
+            else:
+                phase = SIGNEXT(phase, 9)
 
             return phase
         else:
@@ -2223,7 +2121,7 @@ class ClockSettings(util.DisableNewAttr):
         return self._getAdcFrequency() / self.oa.decimate()
 
 
-class OpenADCInterface(object):
+class OpenADCInterface:
 
     cached_settings = None
     def __init__(self, serial_instance):
@@ -2231,10 +2129,8 @@ class OpenADCInterface(object):
         self.offset = 0.5
         self.ddrMode = False
         self.sysFreq = 0
-        self._streammode = False
         self._bits_per_sample = 10
         self._sbuf = []
-        self.settings()
         self._support_decimate = True
         self._nosampletimeout = 100
         self._timeout = 2
@@ -2242,9 +2138,13 @@ class OpenADCInterface(object):
         self.presamples_actual = 0
         self.presampleTempMargin = 24
         self._stream_mode = False
+        self._stream_segment_size = 65536
         self._support_get_duration = True
         self._is_husky = False
-        self._fast_fifo_read = True
+        self._fast_fifo_read_enable = True
+        self._fast_fifo_read_active = False
+
+        self.settings()
 
         # Send clearing function if using streaming mode
         if hasattr(self.serial, "stream") and self.serial.stream == False:
@@ -2257,8 +2157,12 @@ class OpenADCInterface(object):
         self.setReset(False)
 
     def setStreamMode(self, stream):
-        self._streammode = stream
+        self._stream_mode = stream
         self.updateStreamBuffer()
+
+    def setStreamSegmentSize(self, size):
+        self._stream_segment_size = size
+
 
     def setFastSMC(self, fast):
         self.serial.set_smc_speed(fast)
@@ -2318,6 +2222,9 @@ class OpenADCInterface(object):
                     datalen = 65000
                 else:
                     datalen = 1
+
+                if self._fast_fifo_read_active and address != ADDR_ADCDATA:
+                    raise ValueError('Internal error: in fast read mode but not reading FIFO! (address=%0d, datalen=%0d). Need to add a cached setting?' % (address, datalen))
 
                 data = bytearray(self.serial.cmdReadMem(address, datalen))
                 return data
@@ -2443,7 +2350,7 @@ class OpenADCInterface(object):
             self.setSettings(self.settings() & ~SETTINGS_RESET)
 
     def triggerNow(self):
-        initial = self.settings()
+        initial = self.settings(True)
         self.setSettings(initial | SETTINGS_TRIG_NOW)
         time.sleep(0.05)
         self.setSettings(initial & ~SETTINGS_TRIG_NOW)
@@ -2460,18 +2367,36 @@ class OpenADCInterface(object):
         self.sendMessage(CODE_WRITE, ADDR_SAMPLES, list(int.to_bytes(samples, length=4, byteorder='little')))
         self.updateStreamBuffer(samples)
 
+
     def updateStreamBuffer(self, samples=None):
+        # yes this is a bit weird but it is so:
         if samples is not None:
             self._stream_len = samples
+        if self._is_husky:
+            if self._stream_mode:
+                bufsizebytes = 0
+                #Save the number we will return
+                # bufsizebytes, self._stream_len_act = self.serial.cmdReadStream_bufferSize(self._stream_len, self._is_husky, self._bits_per_sample)
+                #bufsizebytes = self._stream_segment_size # XXX- temporary
+                #Generate the buffer to save buffer
+                sbuf_len = int(self._stream_len * self._bits_per_sample / 8)
+                if self._is_husky and sbuf_len % 3:
+                    # need to capture a multiple of 3 otherwise processHuskyData may fail
+                    sbuf_len += 3 - sbuf_len % 3
+                self._sbuf = array.array('B', [0]) * sbuf_len
+                # For CW-Pro, _stream_len is the number of (10-bit) samples (which was previously set), whereas for Husky, to accomodate 8/12-bit samples, 
+                # it's the total number of bytes, so we need to update _stream_len accordingly:
+                if self._is_husky:
+                    self._stream_len = sbuf_len
+        else:
+            bufsizebytes = 0
+            if self._stream_mode:
+                nae = self.serial
+                #Save the number we will return
+                bufsizebytes, self._stream_len_act = nae.cmdReadStream_bufferSize(self._stream_len)
 
-        bufsizebytes = 0
-        if self._streammode:
-            nae = self.serial
-            #Save the number we will return
-            bufsizebytes, self._stream_len_act = nae.cmdReadStream_bufferSize(self._stream_len)
-
-        #Generate the buffer to save buffer
-        self._sbuf = array.array('B', [0]) * bufsizebytes
+            #Generate the buffer to save buffer
+            self._sbuf = array.array('B', [0]) * bufsizebytes
 
 
     def setDecimate(self, decsamples):
@@ -2498,6 +2423,22 @@ class OpenADCInterface(object):
             decnum = 1
         return decnum
 
+    def set_clip_errors_disabled(self, disable):
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        if disable:
+            val = [1]
+        else:
+            val = [0]
+        self.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, val)
+
+
+    def clip_errors_disabled(self):
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        return self.sendMessage(CODE_READ, ADDR_NO_CLIP_ERRORS, maxResp=1)[0]
+
+
     def numSamples(self):
         """Return the number of samples captured in one go. Returns max after resetting the hardware"""
         temp = self.sendMessage(CODE_READ, ADDR_SAMPLES, maxResp=4)
@@ -2505,9 +2446,12 @@ class OpenADCInterface(object):
         return samples
 
     def getBytesInFifo(self):
-        temp = self.sendMessage(CODE_READ, ADDR_BYTESTORX, maxResp=4)
-        samples = int.from_bytes(temp, byteorder='little')
-        return samples
+        if self._is_husky:
+            scope_logger.error("Shouldn't be calling getBytesInFifo on Husky: associated register doesn't exist.")
+        else:
+            temp = self.sendMessage(CODE_READ, ADDR_BYTESTORX, maxResp=4)
+            samples = int.from_bytes(temp, byteorder='little')
+            return samples
 
     def flushInput(self):
         try:
@@ -2580,11 +2524,24 @@ class OpenADCInterface(object):
         else:
             self.setSettings(self.settings() & ~SETTINGS_ARM)
 
+    def setFastFIFORead(self, active):
+        if active:
+            self.sendMessage(CODE_WRITE, ADDR_FAST_FIFO_READ, [1])
+            self._fast_fifo_read_active = True
+        else:
+            self.sendMessage(CODE_WRITE, ADDR_FAST_FIFO_READ, [0])
+            self._fast_fifo_read_active = False
+
     def startCaptureThread(self):
         # Then init the stream mode stuff
-        if self._streammode:
+        if self._stream_mode:
             # Stream mode adds 500mS of extra timeout on USB traffic itself...
-            self.serial.initStreamModeCapture(self._stream_len, self._sbuf, timeout_ms=int(self._timeout * 1000) + 500)
+            scope_logger.debug("Stream on!")
+            if self._is_husky:
+                self.setFastFIFORead(1)
+                self.serial.set_smc_speed(1)
+            self.serial.initStreamModeCapture(self._stream_len, self._sbuf, timeout_ms=int(self._timeout * 1000) + 500, \
+                is_husky=self._is_husky, segment_size=self._stream_segment_size)
 
     def capture(self, offset=None, adc_freq=29.53E6, samples=24400):
         timeout = False
@@ -2593,32 +2550,43 @@ class OpenADCInterface(object):
             sleeptime = (29.53E6*8*offset)/(100000*adc_freq) #rougly 8ms per 100k offset
             sleeptime /= 1000
 
-        if self._streammode:
+        if self._stream_mode:
 
             # Wait for a trigger, letting the UI run when it can
             starttime = datetime.datetime.now()
-            while self.serial.cmdReadStream_isDone() == False:
+            while self.serial.cmdReadStream_isDone(self._is_husky) == False:
                 # Wait for a moment before re-running the loop
-                #time.sleep(0.05)
+                time.sleep(0.05)
                 diff = datetime.datetime.now() - starttime
 
                 # If we've timed out, don't wait any longer for a trigger
                 if (diff.total_seconds() > self._timeout):
-                    scope_logger.warning('Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid. Status: %02x'%status)
+                    scope_logger.warning('Timeout in OpenADC capture(), no trigger seen! Trigger forced, data is invalid')
                     timeout = True
                     self.triggerNow()
+                    self.serial.streamModeCaptureStream.stop = True
                     break
 
+            if self._is_husky:
+                scope_logger.debug("DISABLING fast fifo read")
+                self.setFastFIFORead(0)
+                self.serial.set_smc_speed(0)
 
-            self._stream_rx_bytes, stream_timeout = self.serial.cmdReadStream()
+            self._stream_rx_bytes, stream_timeout = self.serial.cmdReadStream(self._is_husky)
             timeout |= stream_timeout
             #Check the status now
-            # XXX-Husky? bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
-            #scope_logger.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
             scope_logger.debug("Streaming done, results: rx_bytes = %d"%(self._stream_rx_bytes))
+            if self._is_husky:
+                pass
+            else:
+            # TODO later-Husky? 
+                pass
+                # bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
+                # scope_logger.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
             self.arm(False)
 
             if stream_timeout:
+                # TODO later- adjust messages/checks for Husky?
                 if self._stream_rx_bytes == 0: # == (self._stream_len - 3072):
                     scope_logger.warning("Streaming mode OVERFLOW occured as trigger too fast - Adjust offset upward (suggest = 200 000)")
                 else:
@@ -2683,10 +2651,10 @@ class OpenADCInterface(object):
         self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, None)
 
     def readData(self, NumberPoints=None, progressDialog=None):
-        scope_logger.debug("Reading data from OpenADC...")
+        scope_logger.debug("Reading data from OpenADC (NumberPoints=%d)..." % NumberPoints)
         if self._is_husky: 
             return self.readHuskyData(NumberPoints)
-        if self._streammode:
+        elif self._stream_mode:
             # Process data
             bsize = self.serial.cmdReadStream_size_of_fpgablock()
             num_bytes, num_samples = self.serial.cmdReadStream_bufferSize(self._stream_len)
@@ -2827,16 +2795,16 @@ class OpenADCInterface(object):
         scope_logger.debug("XXX reading with NumberPoints=%d, bytesToRead=%d" % (NumberPoints, bytesToRead))
 
         if self._stream_mode:
-            print('yo yo YO! (streaming)')
             data = self._sbuf
+            scope_logger.debug('stream: got data len = %d' % len(data))
         else:
-            if self._fast_fifo_read:
+            if self._fast_fifo_read_enable:
                 # switch FPGA and SAM3U into fast read timing mode
-                self.sendMessage(CODE_WRITE, ADDR_FAST_FIFO_READ, [1])
+                self.setFastFIFORead(1)
                 self.serial.set_smc_speed(1)
             data = self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, bytesToRead)
             # switch FPGA and SAM3U back to regular read timing mode
-            self.sendMessage(CODE_WRITE, ADDR_FAST_FIFO_READ, [0])
+            self.setFastFIFORead(0)
             self.serial.set_smc_speed(0)
 
         # XXX Husky debug:
@@ -2846,6 +2814,7 @@ class OpenADCInterface(object):
             datapoints = self.processHuskyData(NumberPoints, data)
         if datapoints is None:
             return []
+        #scope_logger.debug("YYY got datapoints size %d, returning %d elements; last few: %s" % (len(datapoints), NumberPoints, datapoints[-10:-1]))
         return datapoints[:NumberPoints]
 
 
@@ -2911,9 +2880,12 @@ class OpenADCInterface(object):
             #print(data)
             return None
 
+        self._int_data = None
+
         orig_data = copy.copy(data)
         if debug:
             fpData = []
+            intData = []
             # Slow, verbose processing method
             # Useful for fixing issues in ADC read
             for i in range(1, len(data) - 3, 4):
@@ -2951,6 +2923,8 @@ class OpenADCInterface(object):
                 fpData.append(float(intpt1) / 1024.0 - self.offset)
                 fpData.append(float(intpt2) / 1024.0 - self.offset)
                 fpData.append(float(intpt3) / 1024.0 - self.offset)
+                intData.extend([intpt1, intpt2, intpt3])
+                
         else:
             # Fast, efficient NumPy implementation
 
@@ -2971,6 +2945,7 @@ class OpenADCInterface(object):
             data = np.right_shift(np.reshape(data, (-1, 1)), [0, 10, 20, 30]) & 0x3FF
             fpData = np.reshape(data[:, [0, 1, 2]], (-1))
             trigger = data[:, 3] % 4
+            self._int_data = np.array(fpData, dtype='int16')
             fpData = fpData / 1024.0 - self.offset
             scope_logger.debug("Trigger_data: {} len={}".format(trigger, len(trigger)))
 

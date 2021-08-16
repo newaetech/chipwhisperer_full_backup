@@ -19,3 +19,9 @@
 [submodule "hardware/victims/firmware/crypto/Higher-Order-Masked-AES-128"]
 	path = hardware/victims/firmware/crypto/Higher-Order-Masked-AES-128
 	url = https://github.com/knarfrank/Higher-Order-Masked-AES-128
+[submodule "hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src/naeusb"]
+	path = hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src/naeusb
+	url = https://github.com/newaetech/naeusb.git
+[submodule "hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src/naeusb"]
+	path = hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src/naeusb
+	url = https://github.com/newaetech/naeusb.git

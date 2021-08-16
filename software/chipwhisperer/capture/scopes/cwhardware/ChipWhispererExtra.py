@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2021, NewAE Technology Inc
 # All rights reserved.
 #
 # Authors: Colin O'Flynn
@@ -24,14 +24,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
 import time
 from collections import OrderedDict
-from functools import partial
 from . import ChipWhispererGlitch
-from chipwhisperer.common.utils import util
+from ....common.utils import util
 
-from chipwhisperer.logging import *
+from ....logging import *
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
@@ -834,10 +832,8 @@ class ChipWhispererExtra(object):
         #self.cwADV = CWAdvTrigger()
 
         self.cwEXTRA = CWExtraSettings(oa, cwtype)
-        if cwtype == "cwhusky":
-            self.enableGlitch = True # TODO: temporary
-        else:
-            self.enableGlitch = True
+        #if cwtype == "cwhusky":
+        self.enableGlitch = True
         if self.enableGlitch:
             self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(cwtype, scope, oa)
 

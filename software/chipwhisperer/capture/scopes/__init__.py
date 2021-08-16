@@ -3,7 +3,7 @@ Package containing all of the scope types that the ChipWhisperer API can connect
 
 Scopes:
 
-   * OpenADC- CWLite and CWPro
+   * OpenADC- CWLite, CWPro, and CWHusky
 
    * CWNano - CWNano
 
@@ -12,7 +12,7 @@ Scopes:
    * VisaScope - VisaScope (requires Visa module, old, untested)
 
 """
-from chipwhisperer.capture.scopes.OpenADC import OpenADC
+from .OpenADC import OpenADC
 from .cwnano import CWNano
 try:
    from .sakura_g import SakuraG

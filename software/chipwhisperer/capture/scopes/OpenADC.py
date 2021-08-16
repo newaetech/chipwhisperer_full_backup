@@ -25,21 +25,35 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
-from usb import USBError
-from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, ChipWhispererSAD, ChipWhispererHuskyPLL
-from . import _qt as openadc_qt
-from .base import ScopeTemplate
+from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, \
+     ChipWhispererSAD, ChipWhispererHuskyClock
+from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP, LEDSettings, HuskyErrors, \
+        USERIOSettings, XADCSettings, LASettings, ADS4128Settings
+from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings
+
+from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.util import dict_to_str, DelayedKeyboardInterrupt
+from ...common.utils import util
+from ...common.utils.util import dict_to_str, DelayedKeyboardInterrupt
 from collections import OrderedDict
 import time
 import numpy as np
 
 from chipwhisperer.logging import *
 
-class OpenADC(ScopeTemplate, util.DisableNewAttr):
+
+ADDR_GLITCH1_DRP_ADDR  = 62
+ADDR_GLITCH1_DRP_DATA  = 63
+ADDR_GLITCH2_DRP_ADDR  = 64
+ADDR_GLITCH2_DRP_DATA  = 65
+ADDR_GLITCH1_DRP_RESET = 79
+ADDR_GLITCH2_DRP_RESET = 80
+ADDR_LA_DRP_ADDR       = 68
+ADDR_LA_DRP_DATA       = 69
+ADDR_LA_DRP_RESET      = 74
+
+class OpenADC(util.DisableNewAttr):
+
     """OpenADC scope object.
 
     This class contains the public API for the OpenADC hardware, including the
@@ -85,18 +99,20 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
     _name = "ChipWhisperer/OpenADC"
 
     def __init__(self):
-        ScopeTemplate.__init__(self)
+        # self.qtadc = openadc_qt.OpenADCQt()
+        # self
 
-        self.qtadc = openadc_qt.OpenADCQt()
-        self.qtadc.dataUpdated.connect(self.newDataReceived)
         # Bonus Modules for ChipWhisperer
         self.advancedSettings = None
         self.advancedSAD = None
         self.digitalPattern = None
 
         self._is_connected = False
+        self.data_points = []
+        self._is_husky = False
 
-        self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
+        # self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
+        self.connectStatus = True
 
     @property
     def latest_fw(self):
@@ -105,13 +121,27 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
             from chipwhisperer.hardware.firmware.cwlite import fwver
         elif cw_type == "cw1200":
             from chipwhisperer.hardware.firmware.cw1200 import fwver
-        
+        elif cw_type == "cwhusky":
+            from chipwhisperer.hardware.firmware.cwhusky import fwver
+        else:
+            raise ValueError('Unknown cw_type: %s' % cw_type)
+
         ret = OrderedDict()
         return {"major": fwver[0], "minor": fwver[1]}
+
     @property
     def fw_version(self):
-        a = self.qtadc.sc.serial.readFwVersion()
+        a = self.sc.serial.readFwVersion()
         return {"major": a[0], "minor": a[1], "debug": a[2]}
+
+    @property
+    def fw_version_str(self):
+        a = self.sc.serial.readFwVersion()
+        return "{}.{}.{}".format(a[0], a[1], a[2])
+
+    @property
+    def sam_build_date(self):
+        return self._getNAEUSB().get_fw_build_date()
 
     @property
     def sn(self):
@@ -124,10 +154,12 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         If no bitstream specified default is used based on current
         configuration settings.
         """        
-        self.scopetype.reload_fpga(bitstream, reconnect)
+        self.scopetype.reload_fpga(bitstream)
+        self.dis()
+        self.con(self._saved_sn)
 
     def _getNAEUSB(self):
-        return self.scopetype.dev._cwusb
+        return self.scopetype.ser
 
     def get_serial_ports(self):
         """ Get the CDC serial ports associated with this scope
@@ -140,7 +172,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
     def default_setup(self):
         """Sets up sane capture defaults for this scope
 
-         *  45dB gain
+         *  25dB gain
          *  5000 capture samples
          *  0 sample offset
          *  rising edge trigger
@@ -163,38 +195,49 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         self.io.tio2 = "serial_tx"
         self.io.hs2 = "clkgen"
 
-        self.clock.adc_src = "clkgen_x4"
         self.io.cdc_settings = 0
 
         count = 0
-        while not self.clock.clkgen_locked:            
-            self.clock.reset_dcms()
-            time.sleep(0.05)
-            count += 1
+        if self._is_husky:
+            self.clock.clkgen_src = 'system'
+            self.clock.clkgen_freq = 7.37e6
+            self.clock.adc_mul = 4
+            while not self.clock.clkgen_locked:
+                count += 1
+                self.clock.reset_dcms()
+                if count > 10:
+                    raise OSError("Could not lock PLL. Try rerunning this function or calling scope.pll.reset(): {}".format(self))
 
-            if count == 5:
-                scope_logger.info("Could not lock clock for scope. This is typically safe to ignore. Reconnecting and retrying...")
-                self.dis()
-                time.sleep(0.25)
-                self.con()
-                time.sleep(0.25)
-                self.gain.db = 25
-                self.adc.samples = 5000
-                self.adc.offset = 0
-                self.adc.basic_mode = "rising_edge"
-                self.clock.clkgen_freq = 7.37e6
-                self.trigger.triggers = "tio4"
-                self.io.tio1 = "serial_rx"
-                self.io.tio2 = "serial_tx"
-                self.io.hs2 = "clkgen"
-                self.clock.adc_src = "clkgen_x4"
+        else:
+            while not self.clock.clkgen_locked:            
+                self.clock.reset_dcms()
+                time.sleep(0.05)
+                count += 1
 
-            if count > 10:
-                raise OSError("Could not lock DCM. Try rerunning this function or calling scope.clock.reset_dcms(): {}".format(self))
+                if count == 5:
+                    scope_logger.info("Could not lock clock for scope. This is typically safe to ignore. Reconnecting and retrying...")
+                    self.dis()
+                    time.sleep(0.25)
+                    self.con()
+                    time.sleep(0.25)
+                    self.gain.db = 25
+                    self.adc.samples = 5000
+                    self.adc.offset = 0
+                    self.adc.basic_mode = "rising_edge"
+                    self.clock.clkgen_freq = 7.37e6
+                    self.trigger.triggers = "tio4"
+                    self.io.tio1 = "serial_rx"
+                    self.io.tio2 = "serial_tx"
+                    self.io.hs2 = "clkgen"
+                    self.clock.adc_src = "clkgen_x4"
+
+                if count > 10:
+                    raise OSError("Could not lock DCM. Try rerunning this function or calling scope.clock.reset_dcms(): {}".format(self))
+
     def dcmTimeout(self):
-        if self.connectStatus:
+        if self._is_connected:
             try:
-                self.qtadc.sc.getStatus()
+                self.sc.getStatus()
             except USBError:
                 self.dis()
                 raise Warning("Error in the scope. It may have been disconnected.")
@@ -218,7 +261,7 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
              -  "cw1200"
              -  "cwrev2"
         """
-        hwInfoVer = self.qtadc.sc.hwInfo.versions()[2]
+        hwInfoVer = self.sc.hwInfo.versions()[2]
         if "ChipWhisperer" in hwInfoVer:
             if "Lite" in hwInfoVer:
                 return "cwlite"
@@ -242,65 +285,94 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         elif name == "cw1200":
             return "ChipWhisperer Pro"
 
-    def _con(self, sn=None):
-        if self.scopetype is not None:
-            self.scopetype.con(sn)
+    @property
+    def fpga_buildtime(self):
+        return self.sc.hwInfo.get_fpga_buildtime()
 
-            if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
-                self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
-            #self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
+    def con(self, sn=None, idProduct=None, bitstream=None, force=False):
+        self._saved_sn = sn
+        self.scopetype = OpenADCInterface_NAEUSBChip()
 
-            cwtype = self._getCWType()
-            self.pll = None
-            if cwtype != "":
-                #if cwtype != "cwhusky":
-                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.qtadc.sc)
+        self.scopetype.con(sn, idProduct, bitstream)
+        self.sc = OpenADCInterface(self.scopetype.ser)
+        self.hwinfo = HWInformation(self.sc)
 
-                util.chipwhisperer_extra = self.advancedSettings
+        self.adc = TriggerSettings(self.sc)
+        self.gain = GainSettings(self.sc, self.adc)
 
-                if cwtype == "cwrev2" or cwtype == "cw1200":
-                    self.SAD = ChipWhispererSAD.ChipWhispererSAD(self.qtadc.sc)
+        cwtype = self._getCWType()
+        self.pll = None
+        self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.sc)
+        self.glitch_drp1 = None
+        self.glitch_drp2 = None
+        self.la_drp = None
+        self.glitch_mmcm1 = None
+        self.glitch_mmcm2 = None
+        self.la_mmcm = None
 
-                if cwtype == "cw1200":
-                    self.decode_IO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.qtadc.sc)
-                    #self.advancedSettings.cwEXTRA.triggermux._set_is_pro(True)
+        util.chipwhisperer_extra = self.advancedSettings
 
-                if cwtype == "cwcrev2":
-                    self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
+        if cwtype == "cwrev2" or cwtype == "cw1200":
+            self.SAD = ChipWhispererSAD.ChipWhispererSAD(self.sc)
 
-                if cwtype == "cwhusky":
-                    self.pll = ChipWhispererHuskyPLL.CDCI6214(self)
-            self.adc = self.qtadc.parm_trigger
-            self.gain = self.qtadc.parm_gain
-            self.clock = self.qtadc.parm_clock
+        if cwtype == "cw1200":
+            self.decode_IO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.sc)
 
+        if cwtype == "cwcrev2":
+            self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.sc)
+
+        if cwtype == "cwhusky":
+            # self.pll = ChipWhispererHuskyClock.CDCI6214(self.sc)
+            self._fpga_clk = ClockSettings(self.sc, hwinfo=self.hwinfo)
+            self.glitch_drp1 = XilinxDRP(self.sc, ADDR_GLITCH1_DRP_DATA, ADDR_GLITCH1_DRP_ADDR, ADDR_GLITCH1_DRP_RESET)
+            self.glitch_drp2 = XilinxDRP(self.sc, ADDR_GLITCH2_DRP_DATA, ADDR_GLITCH2_DRP_ADDR, ADDR_GLITCH2_DRP_RESET)
+            self.la_drp = XilinxDRP(self.sc, ADDR_LA_DRP_DATA, ADDR_LA_DRP_ADDR, ADDR_LA_DRP_RESET)
+            self.glitch_mmcm1 = XilinxMMCMDRP(self.glitch_drp1)
+            self.glitch_mmcm2 = XilinxMMCMDRP(self.glitch_drp2)
+            self.la_mmcm = XilinxMMCMDRP(self.la_drp)
+            self.clock = ChipWhispererHuskyClock.ChipWhispererHuskyClock(self.sc, \
+                self._fpga_clk, self.glitch_mmcm1, self.glitch_mmcm2)
+            self.ADS4128 = ADS4128Settings(self.sc)
+            self.XADC = XADCSettings(self.sc)
+            self.LEDs = LEDSettings(self.sc)
+            self.errors = HuskyErrors(self.sc, self.XADC, self.adc, self.clock)
+            self.LA = LASettings(self.sc, self.la_mmcm)
+            self.userio = USERIOSettings(self.sc)
+        else:
+            self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
+
+
+        if cwtype == "cw1200":
+            self.adc._is_pro = True
+        if cwtype == "cwlite":
+            self.adc._is_lite = True
+        elif cwtype == "cwhusky":
+            self._is_husky = True
+            self.adc._is_husky = True
+            self.gain._is_husky = True
+            self._fpga_clk._is_husky = True
+            self.adc.oa._is_husky = True
+            self.adc.bits_per_sample = 12
+        if self.advancedSettings:
+            self.io = self.advancedSettings.cwEXTRA.gpiomux
+            self.trigger = self.advancedSettings.cwEXTRA.triggermux
+            self.glitch = self.advancedSettings.glitch.glitchSettings
+            if cwtype == 'cwhusky':
+                # TODO: cleaner way to do this?
+                self.glitch.pll = self.clock.pll
+                self.clock.pll._glitch = self.glitch
+                self.advancedSettings.glitch.pll = self.clock.pll
             if cwtype == "cw1200":
-                self.adc._is_pro = True
-            if cwtype == "cwlite":
-                self.adc._is_lite = True
-            elif cwtype == "cwhusky":
-                self.adc._is_husky = True
-                self.gain._is_husky = True
-                self.adc.oa._is_husky = True
-                self.adc.bits_per_sample = 12
-                self.ADS4128 = self.qtadc.parm_ads4128
-                self.XADC = self.qtadc.parm_xadc
-            if self.advancedSettings:
-                self.io = self.advancedSettings.cwEXTRA.gpiomux
-                self.trigger = self.advancedSettings.cwEXTRA.triggermux
-                #if cwtype != "cwhusky":
-                self.glitch = self.advancedSettings.glitch.glitchSettings
-                if cwtype == "cw1200":
-                    self.trigger = self.advancedSettings.cwEXTRA.protrigger
+                self.trigger = self.advancedSettings.cwEXTRA.protrigger
 
 
-            self.disable_newattr()
-            self._is_connected = True
+        self.disable_newattr()
+        self._is_connected = True
+        self.connectStatus = True
 
-            return True
-        return False
+        return True
 
-    def _dis(self):
+    def dis(self):
         if self.scopetype is not None:
             self.scopetype.dis()
             if self.advancedSettings is not None:
@@ -315,10 +387,11 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
 
         # TODO Fix this hack
         if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
-            self.qtadc.sc.usbcon = None
+            self.sc.usbcon = None
 
         self.enable_newattr()
         self._is_connected = False
+        self.connectStatus = False
         return True
 
     def arm(self):
@@ -332,22 +405,35 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
            Exception: Error when arming. This method catches these and
                disconnects before reraising them.
         """
-        if self.connectStatus is False:
+        if self._is_connected is False:
             raise OSError("Scope is not connected. Connect it first...")
         # with DelayedKeyboardInterrupt():
         try:
-            if self.advancedSettings:
-                self.advancedSettings.armPreScope()
+            self.advancedSettings.armPreScope()
 
-            self.qtadc.arm()
+            self.sc.arm()
 
-            if self.advancedSettings:
-                self.advancedSettings.armPostScope()
+            self.advancedSettings.armPostScope()
 
-            self.qtadc.startCaptureThread()
+            self.sc.startCaptureThread()
         except Exception:
             self.dis()
             raise
+
+    def _capture_read(self, num_points=None):
+        #print("XXX _capture_read")
+        if num_points is None:
+            num_points = self.adc.samples
+        scope_logger.debug("Expecting {} points".format(num_points))
+
+        self.data_points = self.sc.readData(num_points)
+
+        scope_logger.debug("Read {} datapoints".format(len(self.data_points)))
+        if (self.data_points is None) or (len(self.data_points) != num_points):
+            scope_logger.error("Received fewer points than expected: {} vs {}".format(len(self.data_points), num_points))
+            return True
+        return False
+
 
     def capture(self):
         """Captures trace. Scope must be armed before capturing.
@@ -358,20 +444,27 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         Raises:
            IOError: Unknown failure.
         """
-        # need adc offset, adc_freq, samples cached
-        # with DelayedKeyboardInterrupt():
-        if not self.adc.stream_mode:
-            return self.qtadc.capture(self.adc.offset, self.clock.adc_freq, self.adc.samples)
+        # need adc offset, adc_freq, samples
+        if self._is_husky:
+            samples = self.adc.samples * self.adc.segments
         else:
-            return self.qtadc.capture(None)
+            samples = self.adc.samples
+        if self.adc.stream_mode and (not self.sc._is_husky):
+            a = self.sc.capture(None)
+        else:
+            a = self.sc.capture(self.adc.offset, self.clock.adc_freq, samples)
+        b = self._capture_read(samples)
+        return a or b
 
-    def get_last_trace(self):
+    def get_last_trace(self, as_int=False):
         """Return the last trace captured with this scope.
 
         Returns:
            Numpy array of the last capture trace.
         """
-        return self.qtadc.datapoints    
+        if as_int:
+            return self.sc._int_data
+        return self.data_points    
 
     getLastTrace = util.camel_case_deprecated(get_last_trace)
 
@@ -391,11 +484,14 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         if self.adc.fifo_fill_mode != "segment":
             raise IOError("ADC is not in 'segment' mode - aborting.")
 
+        if self._is_husky:
+            scope_logger.warning("Not intended for Husky -- just use a regular capture.")
+
         with DelayedKeyboardInterrupt():
             max_fifo_size = self.adc.oa.hwMaxSamples
             #self.adc.offset should maybe be ignored - passing for now but untested
-            timeout = self.qtadc.sc.capture(self.adc.offset, self.clock.adc_freq, max_fifo_size)
-            timeout2 = self.qtadc.read(max_fifo_size-256)
+            timeout = self.sc.capture(self.adc.offset, self.clock.adc_freq, max_fifo_size)
+            timeout2 = self._capture_read(max_fifo_size-256)
 
             return timeout or timeout2 
 
@@ -409,13 +505,15 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         """
 
         seg_len = self.adc.samples-1
-        num_seg = int(len(self.qtadc.datapoints) / seg_len)
+        num_seg = int(len(self.data_points) / seg_len)
 
-        return np.reshape(self.qtadc.datapoints[:num_seg*seg_len], (num_seg, seg_len))
+        return np.reshape(self.data_points[:num_seg*seg_len], (num_seg, seg_len))
 
     def _dict_repr(self):
         dict = OrderedDict()
         dict['sn'] = self.sn
+        if self._is_husky:
+            dict['fpga_buildtime'] = self.fpga_buildtime
         dict['fw_version'] = self.fw_version
         dict['gain']    = self.gain._dict_repr()
         dict['adc']     = self.adc._dict_repr()
@@ -426,10 +524,14 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
         if self._getCWType() == "cw1200":
             dict['SAD'] = self.SAD._dict_repr()
             dict['decode_IO'] = self.decode_IO._dict_repr()
-        if self._getCWType() == "cwhusky":
+        if self._is_husky:
             dict['ADS4128'] = self.ADS4128._dict_repr()
-            dict['pll'] = self.pll._dict_repr()
+            # dict['pll'] = self.pll._dict_repr()
+            dict['LA'] = self.LA._dict_repr()
             dict['XADC'] = self.XADC._dict_repr()
+            dict['userio'] = self.userio._dict_repr()
+            dict['LEDs'] = self.LEDs._dict_repr()
+            dict['errors'] = self.errors._dict_repr()
 
         return dict
 
@@ -444,3 +546,12 @@ class OpenADC(ScopeTemplate, util.DisableNewAttr):
 
     def __str__(self):
         return self.__repr__()
+
+    def upgrade_firmware(self):
+        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
+
+        key should be 0xDEADBEEF and is there to prevent accidental upgrade attempts.
+        """
+        prog = SAMFWLoader(self)
+        prog.auto_program()
+

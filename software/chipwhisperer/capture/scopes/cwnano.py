@@ -27,22 +27,21 @@
 #=================================================
 import logging
 
-from chipwhisperer.logging import *
+from ...logging import *
 
 import numpy as np
-from usb import USBError
-from .base import ScopeTemplate
-from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.util import dict_to_str
+from ...capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
+from ...common.utils import util
+from ...common.utils.util import dict_to_str
 from collections import OrderedDict
+from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 
-from chipwhisperer.hardware.naeusb.serial import USART
-from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, packuint32, unpackuint32
-from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
-from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
-from chipwhisperer.hardware.naeusb.programmer_stm32fserial import STM32FSerial
-from chipwhisperer.common.utils.util import camel_case_deprecated, DelayedKeyboardInterrupt
+from ...hardware.naeusb.serial import USART
+from ...hardware.naeusb.naeusb import NAEUSB, packuint32, unpackuint32
+from ...hardware.naeusb.programmer_avr import AVRISP
+from ...hardware.naeusb.programmer_xmega import XMEGAPDI
+from ...hardware.naeusb.programmer_stm32fserial import STM32FSerial
+from ...common.utils.util import camel_case_deprecated, DelayedKeyboardInterrupt
 import time
 import datetime
 
@@ -284,14 +283,10 @@ class GPIOSettings(util.DisableNewAttr):
 
         TIO1 can be used for the following functions:
           * "serial_rx": UART input
-          * "high_z" / None: High impedance input
-          * "gpio_low" / False: Driven output: logic 0
-          * "gpio_high" / True: Driven output: logic 1
-          * "gpio_disabled": Driven output: no effect
 
         Default value is "serial_rx".
 
-        :Getter: Return one of the above strings
+        :Getter: Return None
 
         :Setter: Set the Target IO1 mode.
             Raises: ValueError if new value is not one of the above modes
@@ -312,14 +307,10 @@ class GPIOSettings(util.DisableNewAttr):
 
         TIO2 can be used for the following functions:
           * "serial_tx": UART output
-          * "high_z" / None: High impedance input
-          * "gpio_low" / False: Driven output: logic 0
-          * "gpio_high" / True: Driven output: logic 1
-          * "gpio_disabled": Driven output: no effect
 
         Default value is "serial_tx".
 
-        :Getter: Return one of the above strings
+        :Getter: Return None
 
         :Setter: Set the Target IO2 mode.
             Raises: ValueError if new value is not one of the above modes
@@ -364,19 +355,16 @@ class GPIOSettings(util.DisableNewAttr):
 
         TIO4 can be used for the following functions:
           * "high_z" / None: High impedance input
-          * "gpio_low" / False: Driven output: logic 0
-          * "gpio_high" / True: Driven output: logic 1
-          * "gpio_disabled": Driven output: no effect
 
         Default value is "high_z". Typically, this pin is used as a trigger
         input.
 
-        :Getter: Return one of the above strings
+        :Getter: Return None
 
         :Setter: Set the Target IO4 mode
             Raises: ValueError if new value is not one of the above modes
         """
-        return None
+        return "high_z"
 
     @tio4.setter
     def tio4(self, state):
@@ -535,7 +523,7 @@ class GPIOSettings(util.DisableNewAttr):
             return None
         return self.usb.set_cdc_settings(port)
 
-class CWNano(ScopeTemplate, util.DisableNewAttr):
+class CWNano(util.DisableNewAttr):
     """CWNano scope object.
 
     This class contains the public API for the CWNano hardware. It includes
@@ -571,7 +559,6 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
     REQ_SAMPLES = 0x2A
 
     def __init__(self):
-        ScopeTemplate.__init__(self)
         self._is_connected = False
 
 
@@ -592,6 +579,7 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
 
         self._lasttrace = None
 
+        self.connectStatus = False
         self.disable_newattr()
 
     def default_setup(self):
@@ -645,7 +633,7 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
         a = self._cwusb.readFwVersion()
         return {"major": a[0], "minor": a[1], "debug": a[2]}
 
-    def _con(self, sn=None):
+    def con(self, sn=None):
         try:
             possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
             serial_numbers = []
@@ -661,10 +649,10 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
             raise Warning("Could not connect to cwnano. It may have been disconnected, is in an error state, or is being used by another tool.")
         self.disable_newattr()
         self._is_connected = True
+        self.connectStatus=True
         return True
 
-    def _dis(self):
-        self.enable_newattr()
+    def dis(self):
         self.usbdev().close()
         self._is_connected = False
         return True
@@ -745,3 +733,11 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
 
     def usbdev(self):
         return self._cwusb
+
+    def upgrade_firmware(self):
+        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
+
+        key should be 0xDEADBEEF and is there to prevent accidental upgrade attempts.
+        """
+        prog = SAMFWLoader(self)
+        prog.auto_program()

@@ -24,14 +24,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
 import zipfile
-import io
-import base64
+import datetime
 from collections import OrderedDict
-from chipwhisperer.capture.scopes.cwhardware import PartialReconfiguration as pr
-from chipwhisperer.common.utils import util
+from ....capture.scopes.cwhardware import PartialReconfiguration as pr
+from ....common.utils import util
 
+powerdownaddr = 49
 glitchaddr = 51
 glitchoffsetaddr = 25
 glitchreadbackaddr = 56
@@ -68,22 +67,30 @@ class GlitchSettings(util.DisableNewAttr):
 
     def __init__(self, cwglitch):
         self.cwg = cwglitch
+        self._is_husky = self.cwg.cwtype == 'cwhusky'
+        self.pll = None
         self.disable_newattr()
 
     def _dict_repr(self):
         dict = OrderedDict()
 
+        if self._is_husky:
+            dict['enabled'] = self.enabled
+            dict['mmcm_locked'] = self.mmcm_locked
         dict['clk_src'] = self.clk_src
-
         dict['width'] = self.width
-        dict['width_fine'] = self.width_fine
+        if not self._is_husky:
+            dict['width_fine'] = self.width_fine
         dict['offset'] = self.offset
-        dict['offset_fine'] = self.offset_fine
+        if not self._is_husky:
+            dict['offset_fine'] = self.offset_fine
         dict['trigger_src'] = self.trigger_src
         dict['arm_timing'] = self.arm_timing
         dict['ext_offset'] = self.ext_offset
         dict['repeat'] = self.repeat
         dict['output'] = self.output
+        if self._is_husky:
+            dict['phase_shift_steps'] = self.phase_shift_steps
         
         return dict
 
@@ -110,28 +117,29 @@ class GlitchSettings(util.DisableNewAttr):
         Returns:
             A tuple with 4 elements::
 
-             * phase1: Phase shift of DCM1,
-             * phase2: Phase shift of DCM2,
+             * phase1: Phase shift of DCM1 (N/A for Husky),
+             * phase2: Phase shift of DCM2 (N/A for Husky),
              * lock1: Whether DCM1 is locked,
              * lock2: Whether DCM2 is locked
         """
         return self.cwg.getDCMStatus()
 
-    def resetDcms(self):
+    def resetDCMs(self, keepPhase=True):
         """Reset the two glitch DCMs.
 
         This is automatically run after changing the glitch width or offset,
         so this function is typically not necessary.
         """
-        self.cwg.resetDCMs()
+        self.cwg.resetDCMs(keepPhase)
 
     @property
     def clk_src(self):
         """The clock signal that the glitch DCM is using as input.
 
-        This DCM can be clocked from two different sources:
+        This DCM can be clocked from three different sources:
          * "target": The HS1 clock from the target device
-         * "clkgen": The CLKGEN DCM output
+         * "clkgen": The CLKGEN DCM output (not recommended for Husky)
+         * "pll": Husky's on-board PLL clock (Husky only)
 
         :Getter:
            Return the clock signal currently in use
@@ -140,13 +148,15 @@ class GlitchSettings(util.DisableNewAttr):
            Change the glitch clock source
 
         Raises:
-           ValueError: New value not one of "target" or "clkgen"
+           ValueError: New value not one of "target", "clkgen" or "pll"
         """
         clk_val = self.cwg.glitchClkSource()
         if clk_val == self.cwg.CLKSOURCE0_BIT:
             return "target"
         elif clk_val == self.cwg.CLKSOURCE1_BIT:
             return "clkgen"
+        elif clk_val == self.cwg.CLKSOURCE2_BIT:
+            return "pll"
         else:
             raise ValueError("Received unexpected glitch module clock source %s" % (clk_val), clk_val)
 
@@ -156,13 +166,64 @@ class GlitchSettings(util.DisableNewAttr):
             clk_val = self.cwg.CLKSOURCE0_BIT
         elif source == "clkgen":
             clk_val = self.cwg.CLKSOURCE1_BIT
+        elif source == "pll":
+            clk_val = self.cwg.CLKSOURCE2_BIT
         else:
-            raise ValueError("Can't set glitch arm timing to %s; valid values: ('target', 'clkgen')" % source, source)
+            raise ValueError("Can't set glitch arm timing to %s; valid values: ('target', 'pll', 'clkgen')" % source, source)
         self.cwg.setGlitchClkSource(clk_val)
 
     @property
+    def phase_shift_steps(self):
+        """The number of phase shift steps per target clock period.
+        Husky only.
+        To change, modify clock.pll.update_fpga_vco()
+
+        :Getter: Returns the number of steps.
+
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        return self.cwg.getPhaseShiftSteps()
+
+
+    @property
+    def enabled(self):
+        """Whether the Xilinx MMCMs used to generate glitches are powered on or not.
+        7-series MMCMs are power hungry. In the Husky FPGA, MMCMs are estimated to
+        consume half of the FPGA's power. If you run into temperature issues and don't
+        require glitching, you can power down these MMCMs.
+
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        return self.cwg.getEnabled()
+
+    @enabled.setter
+    def enabled(self, enable):
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        self.cwg.setEnabled(enable)
+
+
+    @property
+    def mmcm_locked(self):
+        """Whether the Xilinx MMCMs used to generate glitches are locked or not.
+
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        return self.cwg.getMMCMLocked()
+
+
+
+    @property
     def width(self):
-        """The width of a single glitch pulse, as a percentage of one period.
+        """The width of a single glitch pulse
+        
+        For CW-Husky, width is expressed as the number of phase shift steps.
+
+        For other capture hardware, width is expressed as a percentage of one
+        period.
 
         One pulse can range from -49.8% to roughly 49.8% of a period. The
         system may not be reliable at 0%. Note that negative widths are allowed;
@@ -182,8 +243,6 @@ class GlitchSettings(util.DisableNewAttr):
 
     @width.setter
     def width(self, value):
-        if value < self.cwg._min_width or value > self.cwg._max_width:
-            raise UserWarning("Can't use glitch width %s - rounding into [%s, %s]" % (value, self.cwg._min_width, self.cwg._max_width))
         self.cwg.setGlitchWidth(value)
 
     @property
@@ -191,7 +250,7 @@ class GlitchSettings(util.DisableNewAttr):
         """The fine adjustment value on the glitch width.
 
         This is a dimensionless number that makes small adjustments to the
-        glitch pulses' width. Valid range is [-255, 255].
+        glitch pulses' width. Valid range is [-255, 255]. N/A for Husky.
 
         .. warning:: This value is write-only. Reads will always return 0.
 
@@ -207,6 +266,8 @@ class GlitchSettings(util.DisableNewAttr):
 
     @width_fine.setter
     def width_fine(self, value):
+        if self._is_husky:
+            glitch_logger.error("N/A for Husky")
         try:
             int_val = int(value)
         except ValueError:
@@ -224,6 +285,8 @@ class GlitchSettings(util.DisableNewAttr):
         A pulse may begin anywhere from -49.8% to 49.8% away from a rising
         edge, allowing glitches to be swept over the entire clock cycle.
 
+        N/A for Husky.
+
         .. warning:: very large negative offset <-45 may result in double glitches
 
         :Getter: Return a float with the current glitch offset.
@@ -240,11 +303,6 @@ class GlitchSettings(util.DisableNewAttr):
 
     @offset.setter
     def offset(self, value):
-        if value < self.cwg._min_offset or value > self.cwg._max_offset:
-            raise UserWarning("Can't use glitch offset %s - rounding into [%s, %s]" % (value, self.cwg._min_offset, self.cwg._max_offset))
-
-        if value < -45:
-            glitch_logger.warning("Negative offsets <-45 may result in double glitches!")
         self.cwg.setGlitchOffset(value)
 
     @property
@@ -268,6 +326,8 @@ class GlitchSettings(util.DisableNewAttr):
 
     @offset_fine.setter
     def offset_fine(self, value):
+        if self._is_husky:
+            glitch_logger.error("N/A for Husky")
         try:
             int_val = int(value)
         except ValueError:
@@ -468,6 +528,7 @@ class ChipWhispererGlitch(object):
     """
     CLKSOURCE0_BIT = 0b00000000
     CLKSOURCE1_BIT = 0b00000001
+    CLKSOURCE2_BIT = 0b00000010
     CLKSOURCE_MASK = 0b00000011
     _name= 'Glitch Module'
 
@@ -477,13 +538,25 @@ class ChipWhispererGlitch(object):
         self.prCon = pr.PartialReconfigConnection()
         self.prEnabled = False
         self.oa = oa
+        self.cwtype = cwtype
+        if cwtype == 'cwhusky':
+            self._is_husky = True
+        else:
+            self._is_husky = False
+        self.pll = None
 
-        # Glitch width/offset
-        # Note that these are ints scaled by 256/100
-        self._width = 26
-        self._offset = 26
+        # Set default glitch width/offset:
+        if self._is_husky:
+            self._timeout = 1
+            self._width = 0
+            self._offset = 0
+        else:
+            # Note that these are ints scaled by 256/100 (these will get set via the setOpenADC() call below)
+            self._width = 26
+            self._offset = 26
 
         # These ranges are updated during __init__: see below
+        # (N/A for Husky)
         self._min_width = 0
         self._max_width = 100
 
@@ -514,8 +587,10 @@ class ChipWhispererGlitch(object):
             else:
                 raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
 
-            if scope.getFWConfig().loader._release_mode != "debug" and cwtype != "cwhusky": # TODO- temporary
+            if not self.glitchPR:
+                self.prEnabled = False
 
+            elif scope.getFWConfig().loader._release_mode != "debug":
                 if scope.getFWConfig().loader._release_mode == "builtin":
                     filelike = scope.getFWConfig().loader._bsBuiltinData
                     zfile = zipfile.ZipFile(filelike)
@@ -558,7 +633,8 @@ class ChipWhispererGlitch(object):
             self._min_offset = self.glitchPR.limitList[1][0] / 2.55
             self._max_offset = self.glitchPR.limitList[1][1] / 2.55
 
-        self.setOpenADC(oa)
+        if not self._is_husky:
+            self.setOpenADC(oa)
         self.glitchSettings = GlitchSettings(self)
 
     def setOpenADC(self, oa):
@@ -596,7 +672,7 @@ class ChipWhispererGlitch(object):
         if self.prEnabled:
             self.prCon.program(bs)
             if self.oa is not None:
-                self.resetDCMs(keepPhase=True)
+                self.resetDCMs()
                 # print "Partial: %d %d" % (widthint, offsetint)
 
             self.updateGlitchReadBack()
@@ -628,29 +704,123 @@ class ChipWhispererGlitch(object):
 
         self.oa.sendMessage(CODE_WRITE, glitchreadbackaddr, cmd, Validate=False)
 
-    def setGlitchWidth(self, width):
-        if width > self._max_width:
-            width = self._max_width
-        if width < self._min_width:
-            width = self._min_width
-        self._width = int(round((width/100.) * 256.))
+    def getPhaseShiftSteps(self):
+        """Returns number of phase shift steps in one target pll cycle.
+        This is simply 56 times the pll glitch MMCM's multiplier, indepedent
+        of the target clock frequency.
+        (ref: Xilinx UG472 v1.14, "Dynamic Phase Shift Interface in the MMCM")
+        """
+        return self.pll._mmcm_muldiv * 56
 
-        self.updatePartialReconfig()
+    def setEnabled(self, enable):
+        if enable:
+            val = [0]
+        else:
+            val = [1]
+        self.oa.sendMessage(CODE_WRITE, powerdownaddr, val, Validate=False)
+        if self._is_husky and enable:
+            self.resetDCMs(keepPhase=False)
+
+    def getEnabled(self):
+        raw = self.oa.sendMessage(CODE_READ, powerdownaddr, Validate=False, maxResp=1)[0]
+        if raw == 1:
+            return False
+        elif raw == 0:
+            return True
+        else:
+            raise ValueError("Unexpected: read %d" % raw)
+
+    def getMMCMLocked(self):
+        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=6)
+        if ((resp[4] & 0x80) == 0x80) and ((resp[5] & 0x01) == 0x01):
+            return True
+        else:
+            return False
+
+    def setGlitchWidth(self, width):
+        if self._is_husky:
+            if not (self.glitchSettings.enabled and self.glitchSettings.mmcm_locked):
+                raise ValueError("Can't change glitch settings if not enabled and locked.")
+            assert type(width) == int
+            self._width = width
+            current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+            LSB = width & 0x00FF
+            MSB = (width & 0xFF00) >> 8
+            current[0] = LSB
+            current[1] = MSB
+            current[2] = current[2] | 0x02
+            self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
+            # Large adjustments can take a while so it's important to check if done. It *is* possible to trigger a glitch, following an adjustment,
+            # before the adjustment is complete!
+            starttime = datetime.datetime.now()
+            done = False
+            while not done:
+                diff = datetime.datetime.now() - starttime
+                if (diff.total_seconds() > self._timeout):
+                    scope_logger.warning('Timeout in phase adjustment. Increase self._timeout. This should not be necessary unless you make *huge* width jumps.')
+                    break
+                raw = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=5)
+                done = (raw[4] >> 6) & 0x01
+
+        else:
+            if width < self._min_width or width > self._max_width:
+                raise UserWarning("Can't use glitch width %s - rounding into [%s, %s]" % (width, self._min_width, self._max_width))
+            if width > self._max_width:
+                width = self._max_width
+            if width < self._min_width:
+                width = self._min_width
+            self._width = int(round((width/100.) * 256.))
+            self.updatePartialReconfig()
 
     def getGlitchWidth(self):
-        return self._width * 100. / 256.
+        if self._is_husky:
+            return self._width
+        else:
+            return self._width * 100. / 256.
 
     def setGlitchOffset(self, offset):
-        if offset > self._max_offset:
-            offset = self._max_offset
-        if offset < self._min_offset:
-            offset = self._min_offset
-        self._offset = int(round((offset / 100.) * 256.))
+        if self._is_husky:
+            if not (self.glitchSettings.enabled and self.glitchSettings.mmcm_locked):
+                raise ValueError("Can't change glitch settings if not enabled and locked.")
+            assert type(offset) == int
+            self._offset = offset
+            current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+            LSB = offset & 0x00FF
+            MSB = (offset & 0xFF00) >> 8
+            current[0] = LSB
+            current[1] = MSB
+            current[2] = current[2] | 0x01
+            self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
+            # Large adjustments can take a while so it's important to check if done. It *is* possible to trigger a glitch, following an adjustment,
+            # before the adjustment is complete!
+            starttime = datetime.datetime.now()
+            done = False
+            while not done:
+                diff = datetime.datetime.now() - starttime
+                if (diff.total_seconds() > self._timeout):
+                    scope_logger.warning('Timeout in phase adjustment. Increase self._timeout. This should not be necessary unless you make *huge* offset jumps.')
+                    break
+                raw = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=5)
+                done = (raw[4] >> 5) & 0x01
 
-        self.updatePartialReconfig()
+        else:
+            value = offset
+            if value < self._min_offset or value > self._max_offset:
+                raise UserWarning("Can't use glitch offset %s - rounding into [%s, %s]" % (value, self._min_offset, self._max_offset))
+            if value < -45:
+                glitch_logger.warning("Negative offsets <-45 may result in double glitches!")
+            if offset > self._max_offset:
+                offset = self._max_offset
+            if offset < self._min_offset:
+                offset = self._min_offset
+            self._offset = int(round((offset / 100.) * 256.))
+            self.updatePartialReconfig()
 
     def getGlitchOffset(self):
-        return self._offset * 100. / 256.
+        if self._is_husky:
+            return self._offset
+        else:
+            return self._offset * 100. / 256.
 
     def setTriggerOffset(self, offset):
         offset = int(offset)
@@ -693,6 +863,8 @@ class ChipWhispererGlitch(object):
         self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
 
     def getGlitchWidthFine(self):
+        if self._is_husky:
+            glitch_logger.error("N/A for Husky")
         return self.getDCMStatus()[1]
 
     def setGlitchWidthFine(self, fine):
@@ -716,6 +888,8 @@ class ChipWhispererGlitch(object):
         self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
 
     def getGlitchOffsetFine(self):
+        if self._is_husky:
+            glitch_logger.error("N/A for Husky")
         return self.getDCMStatus()[0]
 
     def getDCMStatus(self):
@@ -740,14 +914,27 @@ class ChipWhispererGlitch(object):
 
         return (glitch_offset_fine_loaded, glitch_width_fine_loaded, dcm1Lock, dcm2Lock)
 
-    def resetDCMs(self, keepPhase=False):
-        """Reset the DCMs for the Glitch width & Glitch offset. Required after doing a PR operation"""
-
+    def resetDCMs(self, keepPhase=True):
+        """ Reset the DCMs/MMCMs for the Glitch width & Glitch offset. 
+        Husky: if keepPhase=True, the previous offset and width settings are automatically re-applied.
+        Non-Husky: Required after doing a PR operation
+        """
         reset = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         reset[5] |= (1<<1)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, reset, Validate=False)
         reset[5] &= ~(1<<1)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, reset, Validate=False)
+
+        # TODO: should we be doing something with keepPhase if we're not Husky?
+
+        if self._is_husky:
+            if keepPhase:
+                self.setGlitchOffset(self._offset)
+                self.setGlitchWidth(self._width)
+            else:
+                self._offset = 0
+                self._width = 0
+
 
     def checkLocked(self, _=None):
         """Check if the DCMs are locked and print results """
@@ -821,6 +1008,8 @@ class ChipWhispererGlitch(object):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         resp[7] = (resp[7] & ~self.CLKSOURCE_MASK) | source
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
+        if self._is_husky:
+            self.resetDCMs()
 
     def glitchClkSource(self):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)

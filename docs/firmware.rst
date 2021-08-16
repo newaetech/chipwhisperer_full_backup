@@ -4,125 +4,158 @@
 Updating Firmware
 #################
 
-The following page details how to update the firmware on your ChipWhisperer Capture
-or CW305 device. This consists of two separate steps: erasing firmware and flashing
-new firmware.
+Received a message about a ChipWhisperer firmware update being available? Accidentally
+erased the firmware on your ChipWhisperer? If so, this page contains all the information
+you need to get your device up and running again!
 
-This page is only for ChipWhisperer capture devices and the CW305 target board **NOT**
-for target boards such as the CW308.
+.. note:: All ChipWhisperer scopes and FPGA targets have a ROM base bootloader,
+    meaning it is effectively impossible to "brick" your ChipWhisperer
+    by updating or erasing its firmware.
 
-You can find API documentation for our firmware updater at :ref:`api-scope-update`.
+.. warning:: This page only concerns firmware for ChipWhisperer scopes
+    and FPGA boards like the CW310 or CW305, not for integrated
+    targets or CW308 target boards
 
-.. _single_step_update:
+*********************
+Prerequisites
+*********************
 
-*******************
-Single Step Update
-*******************
+=====================
+Windows Prerequisites
+=====================
 
-If you're able to connect to your ChipWhisperer, the easiest way to update firmware is to use our
-auto update API, which combines the erasing and flashing steps:
+If you are already running ChipWhisperer natively on Windows,
+no steps are required before upgrading or flashing
+new firmware onto your ChipWhisperer.
 
-.. code:: python3
+=====================
+Linux Prerequisites
+=====================
 
-    import chipwhisperer as cw
-    scope = cw.scope()
-    prog = cw.SAMFWLoader(scope)
-    prog.auto_program()
+If you are running natively on Linux, you will need to 
+ensure you have access to the serial ports. As of
+ChipWhisperer 5.6, a rule in :code:`chipwhisperer/hardware/50-newae.rules`
+will give serial port access to the current user
 
-Or, if you're using a CW305:
+Older versions do not include this rule, so it is recommended to replace :code:`/etc/udev/rules.d/50-newae.rules`
+with ChipWhisperer 5.6's :code:`chipwhisperer/hardware/50-newae.rules`, then run :code:`$ sudo udevadm control --reload-rules`
 
-.. code:: python3
+=================
+Mac Prerequisites
+=================
 
-    import chipwhisperer as cw
-    target = cw.target(None, cw.targets.CW305)
-    prog = cw.SAMFWLoader(target)
-    prog.auto_program()
+Coming soon!
 
-.. _erasing_firmware:
+========================
+VirtualBox Prerequisites
+========================
 
-****************
-Erasing Firmware
-****************
+In addition to the prerequisites for your guest system, you will also need
+to ensure that the serial bootloader is being passed through from your host, like
+with your other ChipWhisperer devices. To add a USB passthrough filter
+for the bootloader, go to the settings for your VM > USB and create a 
+new USB filter with the following settings:
 
-If you're not able to connect to your ChipWhisperer, but want to update
-its firmware, you'll need to erase the firmware using hardware pins
-on your ChipWhisperer device. This involves shorting erase
-header pins and is described on the https://rtfm.newae.com page
-for your device.
-
-.. _loading_firmware:
-
-*****************
-Flashing Firmware
-*****************
-
-You can flash new firmware onto your ChipWhisperer though our Python API:
-
-.. code:: python3
-
-    import chipwhisperer as cw
-    prog = cw.SAMFWLoader(None)
-    prog.program(<serial_port>, hardware_type=<hardware_type>)
-
-Where :code:`<serial_port>` is the serial port of the AT91 Serial Bootloader (typically :code:`'/dev/ttyACMX'` or
-:code:`'COMX'`) and :code:`<hardware_type>` is your hardware type (for example :code:`'cwlite'`). 
-See :ref:`api-scope-update` for more information.
-
-You can find the correct :code:`/dev/ttyACMX` via :code:`lsusb` on Linux or the correct
-:code:`COMX` on Windows through device manager.
-
-For Windows users, we also provide an executable for flashing new firmware onto your ChipWhisperer. 
-The utility must be run from the command line and usage is the same as the program call above:
-
-.. code:: bash
-
-    firmware_update.exe <COM_PORT> <hardware_type>
-
-For example:
-
-.. code:: bash
-
-    firmware_update.exe COM3 cw1200
-
-It is most useful in the case where you're primarily using a VM, but are unable to flash new firmware
-from your VM.
-
-.. _driverless_windows:
-
-********************************
-Special Case: Driverless Windows
-********************************
-
-If you're looking to upgrade your firmware and you don't already have
-drivers installed, as will be the case on older firmware versions,
-you have two options for updating your firmware:
-
- #. Temporarily installing drivers, then using :ref:`single_step_update`
- #. :ref:`erasing_firmware` using hardware pins, then :ref:`loading_firmware`
-
-These temporary drivers can be installed via `Zadig`_ (use WinUSB), or by using Windows's driver update
-on the files in :code:`chipwhisperer/hardware/newae_windowsusb_drivers.zip` (unzip them first). The latter drivers
-are out of date, but should be replaced automatically when you update the firmware of your ChipWhisperer.
-
-.. _Zadig: https://zadig.akeo.ie/
+  * Name: ATSAM Bootloader
+  * Vendor ID: 03eb
+  * Product ID: 6124
 
 ******************
+Upgrading Firmware
+******************
+
+If you just need to update the firmware on your ChipWhisperer,
+the easiest way is to connect to your ChipWhisperer as usual,
+then call the :code:`upgrade_firmware()` method. For example,
+upgrading a ChipWhisperer-Lite::
+
+    >>> import chipwhisperer as cw
+    >>> scope = cw.scope()
+    >>> scope.upgrade_firmware()
+    Entering bootloader mode...
+    Detected com port COM13
+    Loading cwlite firmware...
+    Opened!
+    Connecting...
+    Connected!
+    Erasing...
+    Erased!
+    Programming file SAM3U_CW1173.bin...
+    Programmed!
+    Verifying...
+    Verify OK!
+    Resetting...
+    Upgrade successful
+
+************************
+Programming New Firmware
+************************
+
+If you've accidentally erased the firmware on your ChipWhisperer,
+the best way to flash new firmware is to use ChipWhisperer's
+:code:`program_sam_firmware()` function. You will need
+to specify the device you are upgrading from the following list:
+
+  * 'cwlite'
+  * 'cw1200'
+  * 'cwnano'
+  * 'cwhusky'
+  * 'cwbergen'
+  * 'cw305'
+
+For example, to flash new firmware to a CW305::
+
+    >>> import chipwhisperer as cw
+    >>> cw.program_sam_firmware(hardware_type='cw305')
+
+***************
 Troubleshooting
-******************
+***************
 
-auto_program Fails
+=======================
+Firmware upgrade failed
+=======================
+
+If :code:`scope.upgrade_firmware()`/:code:`target.upgrade_firmware()` fails
+for any reason, use :code:`cw.program_sam_firmware()`.
+
+=====================================
+Could not find bootloader serial port
+=====================================
+
+Ensure the device is plugged in. If you're using a VM,
+ensure you have the USB device passed through.
+
+==================
+Permission Error
 ==================
 
-If :code:`auto_program()` fails, you should continue on from :ref:`loading_firmware`.
+If running on Linux, ensure you have the new :code:`50-newae.rules` file in
+:code:`/etc/udev/rules.d/`, then run :code:`sudo udevadm control --reload-rules`.
 
-Unable to flash firmware from a Virutal Machine/Linux
-=====================================================
+Additionally, try unplugging and replugging your ChipWhisperer. If the udev
+rules have been applied properly, you should see a :code:`cw_bootloader%n`
+device in :code:`/dev/`, where :code:`%n` is some integer.
 
-Ensure the AT91 bootloader is being passed through to the VM (commonly an issue on
-VirutalBox) and that your user is a member of the :code:`dialout` group.
+If you're still unable to program new firmware, try adding your user
+to the :code:`dialout` group:
 
-Incorrect Firmware Flashed onto ChipWhisperer
-=============================================
+.. code:: bash
 
-Use the hardware erase pins to erase the firmware of your ChipWhisperer device as described
-in :ref:`erasing_firmware`.
+    sudo usermod -a -G dialout $USER
+
+then logging out and back in again.
+
+=======================================
+Accidentally flashed incorrect firmware
+=======================================
+
+Short the erase pins on your ChipWhisperer to
+enter bootloader mode, then flash the correct firmware onto your device.
+
+Instructions for shorting the erase pins can be found
+on the documentation page for your device at https://rtfm.newae.com
+
+
+If you run into any issues not covered here, or if none of these steps
+work for you, let us know over at https://forum.newae.com

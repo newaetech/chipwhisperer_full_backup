@@ -493,7 +493,6 @@
       <Value>../src/ASF/sam/drivers/chipid</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
       <Value>../src/ASF/sam/services/flash_efc</Value>
-      <Value>../src/ASF/sam/services/smart_card</Value>
       <Value>../src/ASF/common/services/usb/class/cdc</Value>
       <Value>../src/ASF/common/services/usb/class/cdc/device</Value>
       <Value>../src/ASF/common/services/usb/class/composite/device</Value>
@@ -504,7 +503,7 @@
   <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
   <armgcc.compiler.optimization.DebugLevel>Maximum (-g3)</armgcc.compiler.optimization.DebugLevel>
   <armgcc.compiler.warnings.AllWarnings>True</armgcc.compiler.warnings.AllWarnings>
-  <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500 -Wno-attributes</armgcc.compiler.miscellaneous.OtherFlags>
+  <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500 -Wno-attributes -I ../src/naeusb</armgcc.compiler.miscellaneous.OtherFlags>
   <armgcc.linker.libraries.Libraries>
     <ListValues>
       <Value>libarm_cortexM3l_math</Value>
@@ -651,9 +650,7 @@
     <Folder Include="src\ASF\thirdparty\CMSIS\Lib\" />
     <Folder Include="src\ASF\thirdparty\CMSIS\Lib\GCC\" />
     <Folder Include="src\config\" />
-    <Folder Include="src\isp" />
-    <Folder Include="src\scard" />
-    <Folder Include="src\pdi" />
+    <Folder Include="src\naeusb\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="atmel_devices_cdc.cat">
@@ -680,35 +677,100 @@
     <Compile Include="src\ASF\sam\drivers\chipid\chipid.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\fpga_xmem.h">
+    <Compile Include="src\naeusb\circbuffer.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\scard\at88sc102_highlevel.c">
+    <Compile Include="src\naeusb\fpga_program.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\scard\at88sc102_highlevel.h">
+    <Compile Include="src\naeusb\fpga_program.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\scard\at88sc102_lowlevel.c">
+    <Compile Include="src\naeusb\ISPProtocol.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\scard\at88sc102_lowlevel.h">
+    <Compile Include="src\naeusb\ISPProtocol.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\scard\iso7816.c">
+    <Compile Include="src\naeusb\ISPTarget.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\scard\iso7816.h">
+    <Compile Include="src\naeusb\ISPTarget.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\scard_usb.c">
+    <Compile Include="src\naeusb\naeusb.c">
       <SubType>compile</SubType>
-      <Link>src\scard_usb.c</Link>
+    </Compile>
+    <Compile Include="src\naeusb\naeusb.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\naeusb_default.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\naeusb_default.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\naeusb_openadc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\naeusb_openadc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\naeusb_usart.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\naeusb_usart.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\usart_driver.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\usb_xmem.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\usb_xmem.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\V2Protocol.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\V2Protocol.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\V2ProtocolConstants.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\V2ProtocolParams.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\V2ProtocolParams.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\XMEGANVM.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\XMEGANVM.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\XPROGNewAE.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\XPROGNewAE.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\XPROGTarget.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\XPROGTarget.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\XPROGTimeout.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\XPROGTimeout.h">
+      <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\usb.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\usb_xmem.c">
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\sam\drivers\chipid\chipid.h">
@@ -729,72 +791,9 @@
     <None Include="src\ASF\sam\services\flash_efc\flash_efc.h">
       <SubType>compile</SubType>
     </None>
-    <Compile Include="src\circbuffer.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\isp\ISPProtocol.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\isp\ISPProtocol.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\isp\ISPTarget.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\isp\ISPTarget.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\isp\V2Protocol.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\isp\V2Protocol.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\isp\V2ProtocolConstants.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\isp\V2ProtocolParams.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\isp\V2ProtocolParams.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\usb.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\pdi\XPROGTimeout.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\pdi\XPROGTimeout.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\usart_driver.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\usart_driver.h">
-      <SubType>compile</SubType>
-    </Compile>
     <None Include="src\ASF\sam\drivers\tc\tc.h">
       <SubType>compile</SubType>
     </None>
-    <Compile Include="src\pdi\XMEGANVM.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\pdi\XMEGANVM.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\pdi\XPROGNewAE.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\pdi\XPROGNewAE.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\pdi\XPROGTarget.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\pdi\XPROGTarget.h">
-      <SubType>compile</SubType>
-    </Compile>
     <None Include="src\ASF\common\services\delay\delay.h">
       <SubType>compile</SubType>
     </None>
@@ -1119,6 +1118,15 @@
     <None Include="src\ASF\sam\utils\cmsis\sam3u\include\instance\instance_twi0.h">
       <SubType>compile</SubType>
     </None>
+    <None Include="src\naeusb\.git">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\naeusb\README.md">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\README.md">
+      <SubType>compile</SubType>
+    </None>
     <None Include="src\ui.h">
       <SubType>compile</SubType>
     </None>
@@ -1264,9 +1272,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\config\conf_uart_serial.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\fpga_program.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\main.c">

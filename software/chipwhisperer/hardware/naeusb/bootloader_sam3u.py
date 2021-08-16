@@ -66,7 +66,7 @@ class Samba(object):
         # Binary mode
         ser.write("N#".encode("ascii"))
         res = ser.read(2)
-        print(res)
+        # print(res)
 
         cid = self.chip_id()
 
@@ -78,14 +78,14 @@ class Samba(object):
         #if eproc == 3 and ((0x80 <= arch <= 0x8a) or (0x93 <= arch <= 0x9a)):
         #    logging.info('FWUP: Detected SAM3')
 
-        self.flash = self.get_flash_instance(cid)
+        self.setup_device_specific(cid)
 
         logging.info('FWUP: Detected ' + self.flash.name)
         return True
 
 
 
-    def get_flash_instance(self, chipid):
+    def setup_device_specific(self, chipid):
 
         chipid = chipid & 0x7fffffe0
 
@@ -95,19 +95,27 @@ class Samba(object):
 
         if chipid == 0x28000960 or chipid == 0x28100960:
             flash = EefcFlash(self, "ATSAM3U4", 0xE0000, 1024, 256, 2, 32, 0x20001000, 0x20008000, 0x400e0800, False)
+            self.rstc_addr = 0x400E1200
         elif chipid == 0x280a0760 or chipid == 0x281a0760:
             flash = EefcFlash(self, "ATSAM3U2", 0x80000, 512, 256, 1, 16, 0x20001000, 0x20004000, 0x400e0800, False)
+            self.rstc_addr = 0x400E1200
         elif chipid == 0x28090560 or chipid == 0x28190560:
             flash = EefcFlash(self, "ATSAM3U1", 0x80000, 256, 256, 1, 8, 0x20001000, 0x20002000, 0x400e0800, False)
+            self.rstc_addr = 0x400E1200
         elif chipid == 0x29970ce0:
             flash = EefcFlash(self, "at91sam4sd16b", 0x400000, 2048, 512, 2, 256, 0x20001000, 0x20010000, 0x400e0a00, False)
+            self.rstc_addr = 0x400E1400
         elif chipid == 0x286e0a60 or chipid == 0x285e0a60  or chipid == 0x284e0a60 :
             flash = EefcFlash(self, "ATSAM3X8", 0x80000, 2048, 256, 2, 32, 0x20001000, 0x20010000, 0x400e0a00, False)
+            self.rstc_addr = 0x400E1A00
         else:
             raise AttributeError("FWUP: Unsupported ChipID = %x" % chipid)
 
-        return flash
+        self.flash = flash
 
+    def reset(self):
+        """ Reset via RSTC register """
+        self.write_word(self.rstc_addr, 0xA500000D)
 
     def chip_id(self):
         """ Read chip-id """

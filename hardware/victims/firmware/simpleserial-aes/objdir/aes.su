@@ -1,0 +1,13 @@
+aes.c:141:13:KeyExpansion	32	static
+aes.c:208:13:AddRoundKey	16	static
+aes.c:222:13:SubBytes	8	static
+aes.c:249:13:ShiftRows	0	static
+aes.c:327:16:xtime	0	static
+aes.c:402:13:InvSubBytes	8	static
+aes.c:414:13:InvShiftRows	0	static
+aes.c:444:13:Cipher	48	static
+aes.c:494:13:BlockCopy	0	static
+aes.c:509:6:AES128_ECB_indp_setkey	8	static
+aes.c:515:6:AES128_ECB_indp_crypto	8	static
+aes.c:522:6:AES128_ECB_encrypt	16	static
+aes.c:535:6:AES128_ECB_decrypt	88	static

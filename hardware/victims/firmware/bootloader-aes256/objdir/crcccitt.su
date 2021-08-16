@@ -1,0 +1,6 @@
+crcccitt.c:137:13:init_crcccitt_tab	20	static
+crcccitt.c:93:17:crc_ccitt_generic	16	static
+crcccitt.c:51:10:crc_xmodem	8	static
+crcccitt.c:65:10:crc_ccitt_1d0f	8	static
+crcccitt.c:79:10:crc_ccitt_ffff	8	static
+crcccitt.c:120:10:update_crc_ccitt	16	static

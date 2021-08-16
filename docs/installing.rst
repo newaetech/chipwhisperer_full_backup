@@ -116,7 +116,7 @@ prerequisites for you. The steps for using the installer are as follows:
    do).
 
 If you're on firmware x.23 or newer, you're all set! Drivers will be automatically installed when you plug your ChipWhisperer in.
-Otherwise, you may need to upgrade your firmware before continuing. See our section :ref:`driverless_windows` for more information.
+Otherwise, you'll need to install drivers from :code:`chipwhisperer/hardware/newae_windowsusb_drivers.zip`
 
 With this, you now have a fully functioning ChipWhisperer install. Run the 
 ChipWhisperer app, then navigate to the Jupyter folder, where tutorials for 

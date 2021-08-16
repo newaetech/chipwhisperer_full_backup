@@ -1,0 +1,88 @@
+In archive C:/Users/adewa/Code/chipwhisperer/hardware/victims/firmware/esp32/simpleserial/build/esp_https_server/libesp_https_server.a:
+
+https_server.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.httpd_ssl_open 00000074  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.httpd_ssl_pending 00000018  00000000  00000000  000000a8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.httpd_ssl_recv 00000018  00000000  00000000  000000c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.httpd_ssl_send 00000018  00000000  00000000  000000d8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.httpd_ssl_close 00000018  00000000  00000000  000000f0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.free_secure_context 00000024  00000000  00000000  00000108  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.create_secure_context 00000030  00000000  00000000  0000012c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.httpd_ssl_start 00000044  00000000  00000000  0000015c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .literal.httpd_ssl_stop 00000004  00000000  00000000  000001a0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text         00000000  00000000  00000000  000001a4  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 10 .data         00000000  00000000  00000000  000001a4  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 11 .bss          00000000  00000000  00000000  000001a4  2**0
+                  ALLOC
+ 12 .rodata.str1.4 00000267  00000000  00000000  000001a4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 13 .text.httpd_ssl_open 000000f5  00000000  00000000  0000040c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.httpd_ssl_pending 0000002a  00000000  00000000  00000504  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .text.httpd_ssl_recv 0000002e  00000000  00000000  00000530  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .text.httpd_ssl_send 0000002e  00000000  00000000  00000560  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .text.httpd_ssl_close 00000028  00000000  00000000  00000590  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.free_secure_context 0000003a  00000000  00000000  000005b8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.create_secure_context 00000078  00000000  00000000  000005f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .text.httpd_ssl_start 000000aa  00000000  00000000  0000066c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .text.httpd_ssl_stop 0000000e  00000000  00000000  00000718  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .rodata.__func__$6501 00000014  00000000  00000000  00000728  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 23 .rodata.__func__$6465 00000010  00000000  00000000  0000073c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 24 .rodata.__func__$6489 0000000f  00000000  00000000  0000074c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 25 .rodata.__func__$6480 0000000f  00000000  00000000  0000075c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 26 .rodata.__func__$6471 00000012  00000000  00000000  0000076c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 27 .rodata.__func__$6494 0000000f  00000000  00000000  00000780  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 28 .rodata.__func__$6510 00000010  00000000  00000000  00000790  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 29 .debug_frame  000000e8  00000000  00000000  000007a0  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 30 .debug_info   00001601  00000000  00000000  00000888  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 31 .debug_abbrev 00000240  00000000  00000000  00001e89  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 32 .debug_loc    00000246  00000000  00000000  000020c9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 33 .debug_aranges 00000060  00000000  00000000  0000230f  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 34 .debug_ranges 00000068  00000000  00000000  0000236f  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 35 .debug_line   00000655  00000000  00000000  000023d7  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 36 .debug_str    00000eb1  00000000  00000000  00002a2c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 37 .comment      0000003c  00000000  00000000  000038dd  2**0
+                  CONTENTS, READONLY
+ 38 .xtensa.info  00000038  00000000  00000000  00003919  2**0
+                  CONTENTS, READONLY
+ 39 .xt.lit       00000048  00000000  00000000  00003951  2**0
+                  CONTENTS, RELOC, READONLY
+ 40 .xt.prop      00000354  00000000  00000000  00003999  2**0
+                  CONTENTS, RELOC, READONLY

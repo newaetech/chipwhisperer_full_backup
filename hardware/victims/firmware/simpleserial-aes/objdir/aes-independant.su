@@ -1,0 +1,6 @@
+aes-independant.c:176:6:aes_indep_init	0	static
+aes-independant.c:181:6:aes_indep_key	8	static
+aes-independant.c:186:6:aes_indep_enc	8	static
+aes-independant.c:191:6:aes_indep_enc_pretrigger	0	static
+aes-independant.c:196:6:aes_indep_enc_posttrigger	0	static
+aes-independant.c:201:6:aes_indep_mask	0	static

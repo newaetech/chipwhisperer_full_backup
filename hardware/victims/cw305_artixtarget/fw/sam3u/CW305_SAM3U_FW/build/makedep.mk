@@ -18,13 +18,13 @@ src\circbuffer.c
 
 src\fpga_program.c
 
-src\pdi\XMEGANVM.c
+src\naeusb\XMEGANVM.c
 
-src\pdi\XPROGNewAE.c
+src\naeusb\XPROGNewAE.c
 
-src\pdi\XPROGTarget.c
+src\naeusb\XPROGTarget.c
 
-src\pdi\XPROGTimeout.c
+src\naeusb\XPROGTimeout.c
 
 src\tasks.c
 

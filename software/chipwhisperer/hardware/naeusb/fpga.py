@@ -50,6 +50,12 @@ class FPGA(object):
         else:
             return False
 
+    def eraseFPGA(self):
+        self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA0)
+        time.sleep(0.001)
+        self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA1)
+        time.sleep(0.001)
+
     def FPGAProgram(self, bitstream=None, exceptOnDoneFailure=True):
         """
         Program FPGA with a bitstream, or if not bitstream passed just erases FPGA

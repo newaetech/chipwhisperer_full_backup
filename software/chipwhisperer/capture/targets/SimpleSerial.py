@@ -22,17 +22,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
-
-import random
-from usb import USBError
-
 import binascii
 from ._base import TargetTemplate
 from .simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
-from chipwhisperer.common.utils import util
+from ...common.utils import util
 from collections import OrderedDict
-from chipwhisperer.common.utils.util import camel_case_deprecated, dict_to_str
+from ...common.utils.util import camel_case_deprecated, dict_to_str
 
 from chipwhisperer.logging import *
 
@@ -238,9 +233,6 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         try:
             self.ser.write(data)
-        except USBError:
-            self.dis()
-            raise Warning("Error in target. It may have been disconnected")
         except Exception as e:
             self.dis()
             raise e
@@ -268,9 +260,6 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             if num_char == 0:
                 num_char = self.ser.inWaiting()
             return self.ser.read(num_char, timeout)
-        except USBError:
-            self.dis()
-            raise Warning("Error in target. It may have been disconnected")
         except Exception as e:
             self.dis()
             raise e

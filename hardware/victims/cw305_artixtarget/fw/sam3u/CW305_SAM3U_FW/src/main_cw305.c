@@ -23,9 +23,11 @@
 #include "fpga_program.h"
 #include "usart_driver.h"
 #include "tasks.h"
-#include "fpga_xmem.h"
+#include "usb_xmem.h"
 #include "usb.h"
 #include "tps56520.h"
+#include "naeusb_default.h"
+#include "naeusb_fpga_target.h"
 #include "cdce906.h"
 #include <string.h>
 
@@ -35,6 +37,17 @@ char usb_serial_number[33] = "000000000000DEADBEEF";
 
 void fpga_pins(bool enabled);
 static void configure_console(void);
+
+static inline void genclk_enable_config(unsigned int id, enum genclk_source src, unsigned int divider)
+{
+    struct genclk_config gcfg;
+
+    genclk_config_defaults(&gcfg, id);
+    genclk_enable_source(src);
+    genclk_config_set_source(&gcfg, src);
+    genclk_config_set_divider(&gcfg, divider);
+    genclk_enable(&gcfg, id);
+}
 
 void fpga_pins(bool enabled)
 {
@@ -249,8 +262,11 @@ int main(void)
 		
 	// The main loop manages only the power mode
 	// because the USB management is done by interrupt
+	
+	naeusb_register_handlers();
+    fpga_target_register_handlers();
 	while (true) {
-		sleepmgr_enter_sleep();
+		// sleepmgr_enter_sleep();
 		process_events();
 	}
 }

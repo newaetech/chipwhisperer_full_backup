@@ -365,6 +365,7 @@ module reg_chipwhisperer(
 		.D1(1'b0), // 1-bit data input (associated with C1)
 		.R(~registers_iorouting[33]),   // 1-bit reset input
 		.S(1'b0)    // 1-bit set input
+
 	);
     `endif
 	

@@ -28,7 +28,6 @@ import collections
 import os.path
 import shutil
 import weakref
-import numpy as np
 from functools import wraps
 import warnings
 
@@ -146,6 +145,7 @@ def binarylist2bytearray(bitlist, nrBits=8):
 
 
 def bytearray2binarylist(bytes, nrBits=8):
+    import numpy as np
     init = np.array([], dtype=bool)
     for byte in bytes:
         init = np.concatenate((init, np.unpackbits(np.uint8(byte))[8 - nrBits:]), axis=0)
@@ -487,40 +487,31 @@ def camel_case_deprecated(func):
     return wrapper
 
 
-def get_cw_type(sn=None):
-    """ Gets the scope type of the connected ChipWhisperer
 
+def get_cw_type(sn=None, idProduct=None, **kwargs):
+    """ Gets the scope type of the connected ChipWhisperer
     If multiple connected, sn must be specified
     """
-    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
+    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, NAEUSB_Backend
     from chipwhisperer.capture import scopes
-    possible_ids = [0xace0, 0xace2, 0xace3, 0xace5]
+    # todo: pyusb as well
 
-    cwusb = NAEUSB()
-    possible_sn = cwusb.get_possible_devices(idProduct=possible_ids)
-    name = ""
-    if len(possible_sn) == 0:
-        raise OSError("USB Device not found. Did you connect it first?")
-
-    if (len(possible_sn) > 1):
-        if sn is None:
-            serial_numbers = []
-            for d in possible_sn:
-                serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
-            raise Warning("Multiple chipwhisperers connected, but device and/or serial number not specified.\nDevices:\n{}".format(serial_numbers))
-        else:
-            for d in possible_sn:
-                if d['sn'] == sn:
-                    name = d['product']
+    if idProduct:
+        possible_ids = [idProduct]
     else:
-        name = possible_sn[0]['product']
+        possible_ids = [0xace0, 0xace2, 0xace3, 0xace5]
 
-    #print(name)
+    cwusb = NAEUSB_Backend()
+    device = cwusb.find(serial_number=sn, idProduct=possible_ids)
+    name = device.getProduct()
+    cwusb.usb_ctx.close()
+
     if (name == "ChipWhisperer Lite") or (name == "ChipWhisperer CW1200") or (name == "ChipWhisperer Husky"):
         return scopes.OpenADC
     elif name == "ChipWhisperer Nano":
         return scopes.CWNano
-
+    else:
+        raise OSError("Got chipwhisperer with unknown name {} (ID = {})".format(name, possible_ids))
 import time
 def better_delay(ms):
     t = time.perf_counter() + ms / 1000

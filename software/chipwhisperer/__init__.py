@@ -9,27 +9,20 @@
 Main module for ChipWhisperer.
 """
 
-__version__ = '5.5.0'
+__version__ = '5.6.0'
 import os, os.path, time
-import warnings
 from zipfile import ZipFile
 
-from chipwhisperer.capture import scopes, targets
-from chipwhisperer.capture.api import programmers
-from chipwhisperer.capture import acq_patterns as key_text_patterns
-from chipwhisperer.common.utils.util import camel_case_deprecated, fw_ver_compare
-from chipwhisperer.common.api import ProjectFormat as project
-from chipwhisperer.common.traces import Trace
-from chipwhisperer.common.utils import util
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
+from .capture import scopes, targets
+from .capture.api import programmers
+from .capture import acq_patterns as key_text_patterns
+from .common.utils.util import fw_ver_compare
+from .common.api import ProjectFormat as project
+from .common.traces import Trace
+from .common.utils import util
+from .capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader, get_at91_ports
 import logging
-import usb
-from chipwhisperer.logging import *
-if usb.__version__ < '1.1.0':
-    print(f"---------------------------------------------------------")
-    print(f"ChipWhisperer requires pyusb >= 1.1.0, but you have {usb.__version__}")
-    print(f"---------------------------------------------------------")
-    scope_logger.warning(f"ChipWhisperer requires pyusb >= 1.1.0, but you have {usb.__version__}")
+from .logging import *
 
 # replace bytearray with inherited class with better repr and str.
 import builtins
@@ -38,6 +31,26 @@ builtins.bytearray = util.bytearray
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 
 ktp = key_text_patterns #alias
+
+def program_sam_firmware(serial_port=None, hardware_type=None, fw_path=None):
+    """Program firmware onto an erased chipwhisperer scope or target
+
+    See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information
+    """
+    if (hardware_type, fw_path) == (None, None):
+        raise ValueError("Must specify hardware_type or fw_path, see https://chipwhisperer.readthedocs.io/en/latest/firmware.html")
+
+    if serial_port is None:
+        at91_ports = get_at91_ports()
+        if len(at91_ports) == 0:
+            raise OSError("Could not find bootloader serial port, please see https://chipwhisperer.readthedocs.io/en/latest/firmware.html")
+        if len(at91_ports) > 1:
+            raise OSError("Found multiple bootloaders, please specify com port. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html")
+
+        serial_port = at91_ports[0]
+        print("Found {}".format(serial_port))
+    prog = SAMFWLoader(None)
+    prog.program(serial_port, hardware_type=hardware_type, fw_path=fw_path)
 
 def program_target(scope, prog_type, fw_path, **kwargs):
     """Program the target using the programmer <type>
@@ -76,9 +89,6 @@ def program_target(scope, prog_type, fw_path, **kwargs):
 
 
 
-programTarget = camel_case_deprecated(program_target)
-
-
 def open_project(filename):
     """Load an existing project from disk.
 
@@ -96,9 +106,6 @@ def open_project(filename):
     proj = project.Project()
     proj.load(filename)
     return proj
-
-
-openProject = camel_case_deprecated(open_project)
 
 
 def create_project(filename, overwrite=False):
@@ -130,9 +137,6 @@ def create_project(filename, overwrite=False):
     proj.setFilename(filename)
 
     return proj
-
-
-createProject = camel_case_deprecated(create_project)
 
 
 def import_project(filename, file_type='zip', overwrite=False):
@@ -188,7 +192,7 @@ def import_project(filename, file_type='zip', overwrite=False):
     return proj
 
 
-def scope(scope_type=None, sn=None):
+def scope(scope_type=None, name=None, **kwargs):
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the
@@ -206,10 +210,24 @@ def scope(scope_type=None, sn=None):
        scope_type (ScopeTemplate, optional): Scope type to connect to. Types
            can be found in chipwhisperer.scopes. If None, will try to detect
            the type of ChipWhisperer connected. Defaults to None.
+       name (str, optional): model name of the ChipWhisperer that you want to
+           connect to. Alternative to specifying the serial number when
+           multiple ChipWhisperers, all of different type, are connected.
+           Defaults to None. Valid values:
+           * Lite
+           * Pro
+           * Husky
+       idProduct (int, optional): idProduct of the ChipWhisperer that you want to
+           connect to. Alternative to specifying the serial number when
+           multiple ChipWhisperers, all of different type, are connected.
+           Defaults to None. Valid values:
+           * 0xace2: CW-Lite
+           * 0xace3: CW-Pro
+           * 0xace5: CW-Husky
        sn (str, optional): Serial number of ChipWhisperer that you want to
-           connect to. Required if more than one ChipWhisperer
-           of the same type is connected (i.e. two CWNano's or a CWLite and
-           CWPro). Defaults to None.
+           connect to. sn is required if more than one ChipWhisperer of the
+           same type is connected (i.e. two CWNano's or a CWLite and CWPro).
+           Defaults to None.
 
     Returns:
         Connected scope object.
@@ -225,11 +243,21 @@ def scope(scope_type=None, sn=None):
         Added autodetection of scope_type
     """
     from chipwhisperer.common.utils.util import get_cw_type
+    if name is not None:
+        if name == 'Husky':
+            kwargs['idProduct'] = 0xace5
+        elif name == 'Lite':
+            kwargs['idProduct'] = 0xace2
+        elif name == 'Pro':
+            kwargs['idProduct'] = 0xace3
+        else:
+            raise ValueError
+
     if scope_type is None:
-        scope_type = get_cw_type(sn)
+        scope_type = get_cw_type(**kwargs)
     scope = scope_type()
     try:
-        scope.con(sn)
+        scope.con(**kwargs)
     except IOError:
         scope_logger.error("ChipWhisperer error state detected. Resetting and retrying connection...")
         scope._getNAEUSB().reset()
@@ -356,9 +384,6 @@ def capture_trace(scope, target, plaintext, key=None, ack=True):
         return Trace(wave, plaintext, response, key)
     else:
         return None
-
-
-captureTrace = camel_case_deprecated(capture_trace)
 
 def plot(*args, **kwargs):
     """Get a plotting object for use in Jupyter.

@@ -23,23 +23,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
 import time
 import re
 import math
 import pkg_resources
 import chipwhisperer as cw
-from chipwhisperer.common.utils import util
-from chipwhisperer.common.traces import Trace
-from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
-from chipwhisperer.hardware.naeusb.fpga import FPGA
-
-top_logger = logging.getLogger("Top level")
-target_logger = logging.getLogger("Target")
-scope_logger = logging.getLogger("Scope")
-naeusb_logger = logging.getLogger("NAEUSB")
-tracewhisperer_logger = logging.getLogger("TraceWhisperer")
-glitch_logger = logging.getLogger("Glitch")
+from ...common.utils import util
+from ...hardware.naeusb.naeusb import NAEUSB
+from ...hardware.naeusb.fpga import FPGA
 
 class TraceWhisperer():
 

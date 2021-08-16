@@ -1,8 +1,5 @@
-import logging
 import time
-import chipwhisperer as cw
 
-from chipwhisperer.common.utils import util
 from ._base import TargetTemplate
 from .simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
 
@@ -151,7 +148,7 @@ class SimpleSerial2(TargetTemplate):
                 target_logger.error(buf)
                 return
             sentinel += 1
-            if sentinel > 30:
+            if sentinel > len(buf):
                 target_logger.error(f"{buf}, {n}, {tmp}")
                 return
         if n > l:

@@ -21,12 +21,14 @@
 #include "ui.h"
 #include "genclk.h"
 #include "fpga_program.h"
-#include "pdi/XPROGNewAE.h"
-#include "pdi/XPROGTimeout.h"
-#include "pdi/XPROGTarget.h"
-#include "isp/V2Protocol.h"
-#include "ccdebug/chipcon.h"
+#include "XPROGNewAE.h"
+#include "XPROGTimeout.h"
+#include "XPROGTarget.h"
+#include "V2Protocol.h"
 #include "usart_driver.h"
+#include "naeusb_default.h"
+#include "naeusb_openadc.h"
+#include "naeusb_usart.h"
 #include <string.h>
 
 //Serial Number - will be read by device ID
@@ -137,21 +139,15 @@ int main(void)
 	//genclk_enable_config(GENCLK_PCK_0, GENCLK_PCK_SRC_PLLBCK, GENCLK_PCK_PRES_4);
 	
 	printf("Event Loop Entered, waiting...\n");
+	naeusb_register_handlers();
+	naeusart_register_handlers();
+	openadc_register_handlers();
 	
 	// The main loop manages only the power mode
 	// because the USB management is done by interrupt
-	extern volatile bool enable_cdc_transfer[2];
-	extern volatile bool usart_x_enabled[4];
-	extern tcirc_buf usb_usart_circ_buf;
-	init_circ_buf(&usb_usart_circ_buf);
 	while (true) {
         // if we've received stuff on USART, send it back to the PC
-		if (enable_cdc_transfer[0] && usart_x_enabled[0]) {
-			while (circ_buf_has_char(&usb_usart_circ_buf)) {
-				uint16_t i = 0;
-				udi_cdc_multi_putc(0, get_from_circ_buf(&usb_usart_circ_buf));
-			}
-		}
+		cdc_send_to_pc();
 		
 	}
 }
