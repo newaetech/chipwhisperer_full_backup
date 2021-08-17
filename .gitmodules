@@ -25,3 +25,6 @@
 [submodule "hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src/naeusb"]
 	path = hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src/naeusb
 	url = https://github.com/newaetech/naeusb.git
+[submodule "hardware/victims/cw305_artixtarget/fw/sam3u/CW305_SAM3U_FW/src/naeusb"]
+	path = hardware/victims/cw305_artixtarget/fw/sam3u/CW305_SAM3U_FW/src/naeusb
+	url = https://github.com/newaetech/naeusb.git
