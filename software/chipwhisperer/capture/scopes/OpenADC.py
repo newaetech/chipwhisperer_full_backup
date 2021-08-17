@@ -549,8 +549,6 @@ class OpenADC(util.DisableNewAttr):
 
     def upgrade_firmware(self):
         """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
-
-        key should be 0xDEADBEEF and is there to prevent accidental upgrade attempts.
         """
         prog = SAMFWLoader(self)
         prog.auto_program()

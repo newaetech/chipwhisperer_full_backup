@@ -39,12 +39,18 @@ from chipwhisperer.hardware.firmware import cwhusky as fw_cwhusky
 from chipwhisperer.logging import *
 
 def _WINDOWS_USB_CHECK_DRIVER(device):
+    """Checks which driver device is using
+
+    Checks whether the device is connected to the PC (harder than you'd think)
+
+    Does not check the actual driver in use for custom interfaces in composite devices.
+    Instead, it just resolves to usbcggp, which is the composite device driver for Windows.
+    """
     try:
         import winreg
         keyhandle = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM")
         subkey = r"ControlSet001\Enum\USB"
         subkey += "\\VID_{:04X}&PID_{:04X}".format(device.getVendorID(), device.getProductID())
-        # print(subkey)
 
         def get_enum_by_name(handle, name):
             try:
@@ -54,19 +60,19 @@ def _WINDOWS_USB_CHECK_DRIVER(device):
                 while enum_name != name:
                     myenum = winreg.EnumValue(handle, cnt)
                     enum_name = myenum[0]
-                    # print(myenum)
                     cnt += 1
                 return myenum[1]
             except OSError as e:
                 return None
 
-        # find our device by checking its USB address
+        # get devices with same PID/VID
         keyhandle_device = winreg.OpenKey(keyhandle, subkey)
-        #naeusb_logger.debug("Opened keyhandle_device")
         i = 0
         address = None
         sn = None
         attached = False
+
+        # get devices that are connected and have the same port number
         while (address != device.getPortNumber()) or (attached is False):
             sn = winreg.EnumKey(keyhandle_device, i)
             # print("sn: " + sn)
@@ -101,10 +107,6 @@ def _WINDOWS_USB_CHECK_DRIVER(device):
         keyhandle_device.Close()
         keyhandle.Close()
         return service
-
-        # if service == "usbccgp":
-        #     print("Composite driver")
-        #     return "composite"
         
             
     except Exception as e:
