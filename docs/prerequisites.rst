@@ -58,11 +58,11 @@ Packages
 ========
 
 There are some packages required for **chipwhisperer** and its dependencies such
-as **pyusb** to work. Install using:
+as **libusb1** to work. Install using:
 
 .. code:: bash
 
-    sudo apt install libusb-dev make
+    sudo apt install libusb-dev make libusb-1.0.0-dev
 
 You'll probably want to pick up git as well:
 
