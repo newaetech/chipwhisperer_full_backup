@@ -86,7 +86,7 @@ def _WINDOWS_USB_CHECK_DRIVER(device):
                 # now we need to figure out if this device is attached
                 # Windows really doesn't make this easy...
                 keyhandle_driver = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\{}\\Enum".format(service))
-                num_enums = winreg.QueryInfoKey(keyhandle_driver)[1]
+                num_enums = get_enum_by_name(keyhandle_driver, "Count")
 
                 attached = False
                 for j in range(num_enums + 1):
