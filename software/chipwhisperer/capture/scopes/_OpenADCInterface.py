@@ -2818,60 +2818,17 @@ class OpenADCInterface:
         return datapoints[:NumberPoints]
 
 
-
     def processHuskyData(self, NumberPoints, data):
         if self._bits_per_sample == 12:
-            #print('XXX NumberPoints: %d, len(data): %d' % (NumberPoints, len(data)))
-            # slower, easier to follow data process:
-            #samples = np.zeros(NumberPoints, dtype=np.int16)
-            #for i in range(NumberPoints):
-            #    if (i%2 == 0):
-            #        j = int(i*1.5)
-            #        samples[i] = (data[j]<<4) + (data[j+1]>>4)
-            #    else:
-            #        j = int((i-1)*1.5)
-            #        samples[i] = ((data[j+1] & 0xf)<<8) + data[j+2]
-
-
-            # faster, harder to follow data process:
-            data = np.array(data, dtype=np.int16)
-
-            evenNumberPoints = NumberPoints + NumberPoints % 2
-            i = np.arange(len(data), dtype=np.int32)
-            a = data[i%3==0][:int(evenNumberPoints/2)]
-            b = data[i%3==1][:int(evenNumberPoints/2)]
-            c = data[i%3==2][:int(evenNumberPoints/2)]
-            #print('XXX i:%d, a:%d, b:%d, c:%d, np:%d' % (len(i), len(a), len(b), len(c), NumberPoints))
-            samples = np.zeros(evenNumberPoints, dtype=np.int16)
-            i = np.arange(evenNumberPoints, dtype=np.int32)
-            try:
-                samples[i%2==0] = (a << 4) + (b >> 4)
-                samples[i%2==1] = ((b & 0x0F) << 8) + c
-            except:
-                scope_logger.error("Husky processing error: data={}, a={}, b={}, c={}, NumPoints={}".format(data, a, b, c, NumberPoints))
-                scope_logger.error("lendata={}, lena={}, lenb={}, lenc={}".format(len(data), len(a), len(b), len(c)))
-                raise
-            #samples = samples[:NumberPoints]
-
-            # print("Samples equal?: {}".format((fast_samples==samples).all()))
-            # print(a[0], b[0], c[0], data[0], data[1], data[2])
-            # for i in range(NumberPoints):
-            #     if fast_samples[i] != samples[i]:
-            #         pass
-            #         #print("{} bad, {} vs {}".format(i, fast_samples[i], samples[i]))
-
-        else:
-            #print('QWERTY')
-            samples = data
+            data = np.frombuffer(data, dtype=np.uint8)
+            fst_uint8, mid_uint8, lst_uint8 = np.reshape(data, (data.shape[0] // 3, 3)).astype(np.uint16).T
+            fst_uint12 = (fst_uint8 << 4) + (mid_uint8 >> 4)
+            snd_uint12 = ((mid_uint8 % 16) << 8) + lst_uint8
+            data = np.reshape(np.concatenate((fst_uint12[:, None], snd_uint12[:, None]), axis=1), 2 * fst_uint12.shape[0])
 
         # fpData = samples / 2**self._bits_per_sample - self.offset
-
-        #scope_logging.debug("Processed data, ended up with %d samples total"%len(fpData))
-        # print(data[0], data[1], data[2], samples[0], samples[1])
-
         #return fpData # XXX Husky: temporary
-        return samples
-
+        return data
 
 
     def processData(self, data, pad=float('NaN'), debug=False):
