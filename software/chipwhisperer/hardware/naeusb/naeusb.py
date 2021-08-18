@@ -732,7 +732,8 @@ class NAEUSB:
                     if self.stop:
                         self.stop = False
                         for transfer in transfer_list:
-                            transfer.cancel()
+                            if transfer.isSubmitted():
+                                transfer.cancel()
                 except usb1.USBErrorInterrupted:
                     pass
             naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))

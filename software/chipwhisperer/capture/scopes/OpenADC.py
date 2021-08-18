@@ -238,9 +238,6 @@ class OpenADC(util.DisableNewAttr):
         if self._is_connected:
             try:
                 self.sc.getStatus()
-            except USBError:
-                self.dis()
-                raise Warning("Error in the scope. It may have been disconnected.")
             except Exception as e:
                 self.dis()
                 raise e
