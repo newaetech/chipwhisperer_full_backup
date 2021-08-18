@@ -2830,9 +2830,9 @@ class OpenADCInterface:
             snd_uint12 = ((mid_uint8 % 16) << 8) + lst_uint8
             data = np.reshape(np.concatenate((fst_uint12[:, None], snd_uint12[:, None]), axis=1), 2 * fst_uint12.shape[0])
 
-        # fpData = samples / 2**self._bits_per_sample - self.offset
-        #return fpData # XXX Husky: temporary
-        return data
+        self._int_data = data
+        fpData = data / 2**self._bits_per_sample - self.offset
+        return fpData
 
 
     def processData(self, data, pad=float('NaN'), debug=False):
