@@ -89,12 +89,11 @@ def _WINDOWS_USB_CHECK_DRIVER(device):
                 num_enums = winreg.QueryInfoKey(keyhandle_driver)[1]
 
                 attached = False
-                for j in range(num_enums):
+                for j in range(num_enums + 1):
                     device_id = get_enum_by_name(keyhandle_driver, str(j))
-                    if device_id is None:
-                        break
                     if device_id == "USB\\VID_{:04X}&PID_{:04X}\\{}".format(device.getVendorID(), device.getProductID(), sn):
                         attached = True
+                        break
                     
                 keyhandle_driver.Close()
                 i += 1
@@ -808,93 +807,5 @@ class NAEUSB:
             naeusb_logger.info("Expected {}".format(len(self.dbuf_temp)))
 
 if __name__ == '__main__':
-    from chipwhisperer.hardware.naeusb.fpga import FPGA
-    from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
-    from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI, supported_xmega
-    from chipwhisperer.hardware.naeusb.serial import USART
-
-    cwtestusb = NAEUSB()
-    cwtestusb.con()
-
-    #Connect required modules up here
-    fpga = FPGA(cwtestusb)
-    xmega = XMEGAPDI(cwtestusb)
-    avr = AVRISP(cwtestusb)
-    usart = USART(cwtestusb)
-
-    force = True
-    if fpga.isFPGAProgrammed() == False or force:
-        from datetime import datetime
-        starttime = datetime.now()
-        fpga.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-lite\hdl\cwlite_ise\cwlite_interface.bit", "rb"))
-        # fpga.FPGAProgram(open(r"C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\temp\artix7test\artix7test.runs\impl_1\cw305_top.bit", "rb"))
-        # fpga.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\api\chipwhisperer-lite\hdl\cwlite_ise_spifake\cwlite_interface.bit", "rb"))
-        stoptime = datetime.now()
-        print("FPGA Config time: %s" % str(stoptime - starttime))
-
-    # print fpga.cmdReadMem(10, 6)
-    # print fpga.cmdReadMem(0x1A, 4)
-    # fpga.cmdWriteMem(0x1A, [235, 126, 5, 4])
-    # print fpga.cmdReadMem(0x1A, 4)
-
-    avrprogram = False
-    if avrprogram:
-        avr.enableISP(True)
-        avr.enableISP(False)
-
-    xmegaprogram = True
-    if xmegaprogram:
-        xmega.setChip(supported_xmega[0])
-        # Worst-case is 75mS for chip erase, so give us some head-room
-        xmega.setParamTimeout(200)
-
-        try:
-            print("Enable")
-            xmega.enablePDI(True)
-
-            print("Read sig")
-            # Read signature bytes
-            data = xmega.readMemory(0x01000090, 3, "signature")
-
-            print(data)
-
-            if data[0] != 0x1E or data[1] != 0x97 or data[2] != 0x46:
-                print("Signature bytes failed: %02x %02x %02x != 1E 97 46" % (data[0], data[1], data[2]))
-            else:
-                print("Detected XMEGA128A4U")
-
-            print("Erasing")
-            # Chip erase
-            try:
-                xmega.eraseChip()
-            except IOError:
-                xmega.enablePDI(False)
-                xmega.enablePDI(True)
-
-            fakedata = [i & 0xff for i in range(0, 2048)]
-            print("Programming FLASH Memory")
-            xmega.writeMemory(0x0800000, fakedata, memname="flash")
-
-            print("Verifying")
-            test = xmega.readMemory(0x0800000, 512)
-
-            print(test)
-
-
-        except TypeError as e:
-            print(str(e))
-
-        except IOError as e:
-            print(str(e))
-
-        xmega.enablePDI(False)
-
-    print("Let's Rock and Roll baby")
-
-    sertest = True
-
-    if sertest:
-        usart.init()
-        usart.write("hello\n")
-        time.sleep(0.1)
-        print(usart.read())
+    import chipwhisperer as cw
+    scope = cw.scope()
