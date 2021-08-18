@@ -421,7 +421,6 @@ class OpenADC(util.DisableNewAttr):
             raise
 
     def _capture_read(self, num_points=None):
-        #print("XXX _capture_read")
         if num_points is None:
             num_points = self.adc.samples
         scope_logger.debug("Expecting {} points".format(num_points))

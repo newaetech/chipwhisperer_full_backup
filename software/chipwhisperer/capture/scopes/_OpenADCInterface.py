@@ -526,25 +526,44 @@ class TriggerSettings(util.DisableNewAttr):
 
     @property
     def stream_segment_threshold(self):
-        """Only available on CW-Husky.
-        TODO: when stable, document (including limits), or maybe hide?
-        """
+        """Only available on CW-Husky. ** Internal parameter which should not
+        be tweaked unless you know what you're doing. **
+        
+        For streaming, this many samples must be available to be read from the
+        FPGA before the SAM3U starts a burst read of <stream_segment_size>
+        bytes.  Normally these parameters are both set to 65536. Under some
+        conditions it may be possible to obtain higher streaming performance by
+        tweaking these parameters -- this depends on the sampling rate and
+        capture size. But it's also easy to degrade performance.  
+        """ 
         return self._get_stream_segment_threshold()
 
     @stream_segment_threshold.setter
     def stream_segment_threshold(self, size):
+        if size < 1 or size > 131070 or not type(size) is int:
+            raise ValueError("Number of segments must be in range [1, 131070]")
         self._set_stream_segment_threshold(size)
 
 
     @property
     def stream_segment_size(self):
-        """Only available on CW-Husky.
-        TODO: when stable, document (including limits), or maybe hide?
+        """Only available on CW-Husky. ** Internal parameter which should not
+        be tweaked unless you know what you're doing. **
+        
+        For streaming, this is the size of the burst that the SAM3U reads from
+        from the FPGA.  A burst read doesn't start until
+        <stream_segment_threshold> bytes are available to be read from the
+        FPGA.  Normally these parameters are both set to 65536. Under some
+        conditions it may be possible to obtain higher streaming performance by
+        tweaking these parameters -- this depends on the sampling rate and
+        capture size. But it's also easy to degrade performance.  
         """
         return self._get_stream_segment_size()
 
     @stream_segment_size.setter
     def stream_segment_size(self, size):
+        if size < 1 or size > 131070 or not type(size) is int:
+            raise ValueError("Number of segments must be in range [1, 131070]")
         self._set_stream_segment_size(size)
 
 
@@ -575,7 +594,8 @@ class TriggerSettings(util.DisableNewAttr):
 
     @property
     def clip_errors_disabled(self):
-        """TODO
+        """By default, ADC clipping is flagged as an error. Disable if you
+        do not want this notification (for example, when using the test ramp).
         """
         return self._get_clip_errors_disabled()
 
@@ -869,7 +889,7 @@ class TriggerSettings(util.DisableNewAttr):
 
     @segments.setter
     def segments(self, num):
-        if num < 1 or num > 2**16-1:
+        if num < 1 or num > 2**16-1 or not type(num) is int:
             raise ValueError("Number of segments must be in range [1, 2^16-1]")
         self._cached_segments = num
         self._set_segments(num)
@@ -951,7 +971,7 @@ class TriggerSettings(util.DisableNewAttr):
 
     @segment_cycles.setter
     def segment_cycles(self, num):
-        if num < 0 or num > 2**20-1:
+        if num < 0 or num > 2**20-1 or not type(num) is int:
             raise ValueError("Number of segments must be in range [0, 2^20-1]")
         self._set_segment_cycles(num)
 
@@ -1110,12 +1130,10 @@ class TriggerSettings(util.DisableNewAttr):
 
 
     def _set_num_samples(self, samples):
-        if samples < 0:
-            raise ValueError("Can't use negative number of samples")
-        # TODO: raise ValueError or round down for sample counts too high
-        # TODO: raise TypeError for non-integers
+        if samples < 0 or not type(samples) is int:
+            raise ValueError("Samples must be a positive integer")
         if self._is_husky and samples < 7:
-            scope_logger.warning('There may be issues with this few samples')
+            scope_logger.warning('There may be issues with this few samples on Husky; a minimum of 7 samples is recommended')
         self._numSamples = samples
         self.oa.setNumSamples(samples)
 
@@ -1149,10 +1167,8 @@ class TriggerSettings(util.DisableNewAttr):
         return self._timeout
 
     def _set_offset(self,  offset):
-        if offset < 0:
-            raise ValueError("Offset must be a non-negative integer")
-        if offset >= 2**32:
-            raise ValueError("Offset must fit into a 32-bit unsigned integer")
+        if offset < 0 or offset >= 2**32 or not type(offset) is int:
+            raise ValueError("Offset must be a non-negative 32-bit unsigned integer")
         self.oa.sendMessage(CODE_WRITE, ADDR_OFFSET, list(int.to_bytes(offset, length=4, byteorder='little')))
 
     def _get_offset(self):
@@ -1186,8 +1202,8 @@ class TriggerSettings(util.DisableNewAttr):
 
         if self._is_pro or self._is_lite or self._is_husky:
             #CW-1200 Hardware / CW-Lite / CW-Husky
-            samplesact = samples
-            self.presamples_actual = samples
+            samplesact = int(samples)
+            self.presamples_actual = samplesact
         else:
             #Other Hardware
             if samples > 0:
@@ -2374,13 +2390,8 @@ class OpenADCInterface:
             self._stream_len = samples
         if self._is_husky:
             if self._stream_mode:
-                bufsizebytes = 0
-                #Save the number we will return
-                # bufsizebytes, self._stream_len_act = self.serial.cmdReadStream_bufferSize(self._stream_len, self._is_husky, self._bits_per_sample)
-                #bufsizebytes = self._stream_segment_size # XXX- temporary
-                #Generate the buffer to save buffer
                 sbuf_len = int(self._stream_len * self._bits_per_sample / 8)
-                if self._is_husky and sbuf_len % 3:
+                if sbuf_len % 3:
                     # need to capture a multiple of 3 otherwise processHuskyData may fail
                     sbuf_len += 3 - sbuf_len % 3
                 self._sbuf = array.array('B', [0]) * sbuf_len
@@ -2401,8 +2412,8 @@ class OpenADCInterface:
 
     def setDecimate(self, decsamples):
         cmd = bytearray(2)
-        if decsamples <= 0:
-            raise ValueError("Decsamples is <= 0 (%d), makes no sense" % decsamples)
+        if decsamples <= 0 or decsamples >= 2**16 or not type(decsamples) is int:
+            raise ValueError("Decsamples must be a positive 16-bit integer")
         decsamples -= 1
         self.sendMessage(CODE_WRITE, ADDR_DECIMATE, list(int.to_bytes(decsamples, length=2, byteorder='little')))
 
@@ -2576,17 +2587,12 @@ class OpenADCInterface:
             timeout |= stream_timeout
             #Check the status now
             scope_logger.debug("Streaming done, results: rx_bytes = %d"%(self._stream_rx_bytes))
-            if self._is_husky:
-                pass
-            else:
-            # TODO later-Husky? 
-                pass
-                # bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
-                # scope_logger.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
             self.arm(False)
 
+            if self._is_husky and self.sendMessage(CODE_READ, ADDR_FIFO_STAT, maxResp=1)[0] & 0x0f:
+                scope_logger.warning("FIFO error occured; see scope.adc.errors for details.")
+
             if stream_timeout:
-                # TODO later- adjust messages/checks for Husky?
                 if self._stream_rx_bytes == 0: # == (self._stream_len - 3072):
                     scope_logger.warning("Streaming mode OVERFLOW occured as trigger too fast - Adjust offset upward (suggest = 200 000)")
                 else:
@@ -2807,14 +2813,12 @@ class OpenADCInterface:
             self.setFastFIFORead(0)
             self.serial.set_smc_speed(0)
 
-        # XXX Husky debug:
         scope_logger.debug("XXX read %d bytes; NumberPoints=%d, bytesToRead=%d" % (len(data), NumberPoints, bytesToRead))
         if data is not None:
             data = np.array(data)
             datapoints = self.processHuskyData(NumberPoints, data)
         if datapoints is None:
             return []
-        #scope_logger.debug("YYY got datapoints size %d, returning %d elements; last few: %s" % (len(datapoints), NumberPoints, datapoints[-10:-1]))
         return datapoints[:NumberPoints]
 
 

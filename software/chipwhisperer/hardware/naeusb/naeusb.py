@@ -605,22 +605,6 @@ class NAEUSB:
         Returns:
             Tuple: (Size of temporary buffer required, actual samples in buffer)
         """
-        # TODO: previous husky branch code:
-        #if is_husky:
-        #    if bits_per_sample == 8:
-        #        num_totalbytes = dlen
-        #        num_samplebytes = dlen
-        #    elif bits_per_sample == 12:
-        #        # TODO-husky check these are correct
-        #        num_totalbytes = int(np.ceil(dlen*1.5))
-        #        num_samplebytes = int(np.ceil(dlen*1.5))
-        #    else:
-        #        raise ValueError("bits_per_sample=%d" % bits_per_sample)
-        #else:
-        #    num_samplebytes = int(math.ceil(float(dlen) * 4 / 3))
-        #    num_blocks = int(math.ceil(float(num_samplebytes) / 4096))
-        #    num_totalbytes = num_samplebytes + num_blocks
-        #    num_totalbytes = int(math.ceil(float(num_totalbytes) / 4096) * 4096)
         num_samplebytes = int(math.ceil(float(dlen) * 4 / 3))
         num_blocks = int(math.ceil(float(num_samplebytes) / 4096))
         num_totalbytes = num_samplebytes + num_blocks
