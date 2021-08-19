@@ -2397,8 +2397,7 @@ class OpenADCInterface:
                 self._sbuf = array.array('B', [0]) * sbuf_len
                 # For CW-Pro, _stream_len is the number of (10-bit) samples (which was previously set), whereas for Husky, to accomodate 8/12-bit samples, 
                 # it's the total number of bytes, so we need to update _stream_len accordingly:
-                if self._is_husky:
-                    self._stream_len = sbuf_len
+                self._stream_len = sbuf_len
         else:
             bufsizebytes = 0
             if self._stream_mode:
@@ -2819,7 +2818,7 @@ class OpenADCInterface:
             datapoints = self.processHuskyData(NumberPoints, data)
         if datapoints is None:
             return []
-        return datapoints[:NumberPoints]
+        return datapoints
 
 
     def processHuskyData(self, NumberPoints, data):
@@ -2830,9 +2829,9 @@ class OpenADCInterface:
             snd_uint12 = ((mid_uint8 % 16) << 8) + lst_uint8
             data = np.reshape(np.concatenate((fst_uint12[:, None], snd_uint12[:, None]), axis=1), 2 * fst_uint12.shape[0])
 
-        self._int_data = data
+        self._int_data = data[:NumberPoints]
         fpData = data / 2**self._bits_per_sample - self.offset
-        return fpData
+        return fpData[:NumberPoints]
 
 
     def processData(self, data, pad=float('NaN'), debug=False):
