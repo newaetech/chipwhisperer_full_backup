@@ -49,7 +49,6 @@ else:
 
 ktp = cw.ktp.Basic()
 key, text = ktp.next()
-scope.sc._timeout = 3
 scope.adc.timeout = 3
 scope.adc.offset = 0
 
@@ -155,11 +154,13 @@ testData = [
 testTargetData = [
     # samples   presamples  testmode    clock       adcmul  bit stream  threshold   check   segs    segcycs desc
     (200,       0,          'internal', 20e6,       1,      8,  False,  65536,      True,   1,      0,      'quick'),
-    (131070,    0,          'internal', 20e6,       1,      12, False,  65536,      True,   1,      0,      'maxsamples12'),
+    (131070,    0,          'internal', 15e6,       1,      12, False,  65536,      True,   1,      0,      'maxsamples12'),
     (200000,    0,          'internal', 20e6,       1,      8,  True ,  65536,      True,   1,      0,      'quickstream8'),
     (2000000,   0,          'internal', 16e6,       1,      12, True ,  65536,      True,   1,      0,      'longstream12'),
-    (10000000,  0,          'internal', 16e6,       1,      12, True ,  65536,      False,  1,      0,      'vlongstream12'), # TODO: 20M used to pass?
-    (500000,    0,          'internal', 20e6,       1,      12, True ,  16384,      True,   1,      0,      'over'), # TODO: 1M used to pass?
+    (6000000,   0,          'internal', 16e6,       1,      12, True ,  65536,      False,  1,      0,      'vlongstream12'),
+    (500000,    0,          'internal', 20e6,       1,      12, True ,  16384,      True,   1,      0,      'over'),
+    (2000000,   0,          'internal', 20e6,       1,      12, True ,  65536,      False,  1,      0,      'overflow'),
+    (200000,    0,          'internal', 15e6,       1,      12, True ,  65536,      True,   1,      0,      'postfail'),
     (2000,      0,          'internal', 10e6,       1,      8,  False,  65536,      True,   1,      0,      'back2nostream'),
 ]
 
@@ -185,7 +186,7 @@ testGlitchOutputWidthSweepData = [
     (600,       40,         2,              ''),
     (1200,      40,         2,              ''),
     (-1200,     40,         2,              ''),
-    (0,         60,         2,              ''),
+    (0,         30,         2,              ''),
     (0,         20,         2,              ''),
 ]
 
@@ -197,7 +198,7 @@ testGlitchOutputOffsetSweepData = [
     (-1000,     40,         2,              ''),
     (3000,      40,         2,              ''),
     (-3000,     40,         2,              ''),
-    (500,       60,         2,              ''),
+    (500,       30,         2,              ''),
     (500,       20,         2,              ''),
 ]
 
@@ -211,12 +212,12 @@ testGlitchOutputDoublesData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '8/9/2021, 22:56'
+    assert scope.fpga_buildtime == '8/12/2021, 17:34'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
     assert scope.fw_version['minor'] == 10
-    assert scope.sam_build_date == 'Jun 24 2021'
+    assert scope.sam_build_date == '16:58:36 Aug 20 2021'
 
 
 @pytest.mark.parametrize("samples, presamples, testmode, clock, adcmul, bits, stream, segments, segment_cycles, desc", testData)
@@ -248,7 +249,7 @@ def test_internal_ramp(samples, presamples, testmode, clock, adcmul, bits, strea
     scope.sc.triggerNow()
     scope.sc.arm(False)
     assert scope.capture() == False
-    raw = scope.get_last_trace()
+    raw = scope.get_last_trace(True)
     assert check_ramp(raw, testmode, samples, segment_cycles) == 0
     assert scope.adc.errors == 'no errors'
 
@@ -368,7 +369,7 @@ def test_glitch_output_sweep_offset(reps, width, oversamp, steps_per_point, desc
     # 1. that the offset change as the offset setting is swept;
     # 2. that there are no "double glitches" - by looking at the glitches themselves, but also by looking
     #    at the width of the glitch "go" signal
-    margin = 4
+    margin = 2
     setup_glitch(0, width, oversamp)
     stepsize = int(scope.glitch.phase_shift_steps / scope.LA.oversampling_factor / steps_per_point)
 
@@ -489,9 +490,15 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, adcmul, bit
     scope.adc.bits_per_sample = bits
     scope.adc.clip_errors_disabled = True
     ret = cw.capture_trace(scope, target, text, key)
+    raw = scope.get_last_trace(True)
     print('Words read before error: %d ' % int.from_bytes(scope.sc.sendMessage(0x80, 47, maxResp=4), byteorder='little'))
-    assert scope.adc.errors == 'no errors'
-    if check: assert check_ramp(ret.wave, testmode, samples, segment_cycles) == 0
+    if desc == 'overflow':
+        assert 'fast FIFO' in scope.adc.errors
+        scope.errors.clear()
+        time.sleep(2)
+    else:
+        assert scope.adc.errors == 'no errors'
+    if check: assert check_ramp(raw, testmode, samples, segment_cycles) == 0
 
 
 def test_xadc():
@@ -500,4 +507,8 @@ def test_xadc():
         # if target isn't attached, last tests run are glitch so will be hotter
         assert scope.XADC.temp < 55.0
     assert scope.XADC.max_temp < 65.0   # things can get hotter with glitching
+
+def test_finish():
+    # just restore some defaults:
+    scope.default_setup()
 
