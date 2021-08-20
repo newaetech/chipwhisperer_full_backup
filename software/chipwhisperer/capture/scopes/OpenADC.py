@@ -208,6 +208,13 @@ class OpenADC(util.DisableNewAttr):
                 if count > 10:
                     raise OSError("Could not lock PLL. Try rerunning this function or calling scope.pll.reset(): {}".format(self))
 
+            # these are the power-up defaults, but just in case e.g. test script left these on:
+            self.adc.test_mode = False
+            self.ADS4128.mode = 'normal'
+            self.glitch.enabled = False
+            self.LA.enabled = False
+
+
         else:
             while not self.clock.clkgen_locked:            
                 self.clock.reset_dcms()
@@ -362,6 +369,12 @@ class OpenADC(util.DisableNewAttr):
             if cwtype == "cw1200":
                 self.trigger = self.advancedSettings.cwEXTRA.protrigger
 
+        if cwtype == "cwhusky":
+            # these are the power-up defaults, but just in case e.g. test script left these on:
+            self.adc.test_mode = False
+            self.ADS4128.mode = 'normal'
+            self.glitch.enabled = False
+            self.LA.enabled = False
 
         self.disable_newattr()
         self._is_connected = True
