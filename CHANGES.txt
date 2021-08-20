@@ -1,3 +1,22 @@
+V5.6.1
+  New Features:
+    * ChipWhisperer-Husky and CW310 Bergen Board support
+    * Switch firmware to naeusb
+    * Add firmware build date command: `scope.sam_build_date()`
+    * Add `scope.fw_version_str()`
+    * Switch from pyusb to libusb1 - deprecates libusb0.dll on Windows
+    * Switch firmware to use shared usb library
+    * Add `as_int` parameter to `scope.get_last_trace()`
+    * Add driver detection for Windows
+    * Add force and bitstream option to `cw.scope()`
+    * Improve 50-naeusb.rules
+
+  Fixes:
+    * Fix SS_VER_1_X and XMega simplserial-rsa
+    * Fix SSV2 unstuff data for >30 zeros
+    * Fix AVR lock bits read
+    * Fix nano connect status
+
 V5.5
   New Features:
     * Re-add SAKURA-G support

@@ -9,7 +9,7 @@
 Main module for ChipWhisperer.
 """
 
-__version__ = '5.6.0'
+__version__ = '5.6.1'
 import os, os.path, time
 from zipfile import ZipFile
 

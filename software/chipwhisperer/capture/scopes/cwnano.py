@@ -693,6 +693,7 @@ class CWNano(util.DisableNewAttr):
                 if i > 20:
                     scope_logger.warning("Couldn't read trace data back from Nano")
                     return True
+            self._lasttrace_int = np.array(self._lasttrace)
             self._lasttrace = np.array(self._lasttrace) / 256.0 - 0.5
 
             #self.newDataReceived(0, self._lasttrace, 0, self.adc.clk_freq)
@@ -700,9 +701,11 @@ class CWNano(util.DisableNewAttr):
             return False
 
 
-    def get_last_trace(self):
+    def get_last_trace(self, as_int=False):
         """Return the last trace captured with this scope.
         """
+        if as_int:
+            return self._lasttrace_int
         return self._lasttrace
 
     getLastTrace = camel_case_deprecated(get_last_trace)

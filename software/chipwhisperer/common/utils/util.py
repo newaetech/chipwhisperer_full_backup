@@ -479,7 +479,7 @@ def camel_case_deprecated(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        warnings.warn('{} function is deprecated use {} instead.'.format(cc_func, func.__name__))
+        warnings.warn('{} function is deprecated use {} instead. This function will be removed in ChipWhisperer 5.7.0'.format(cc_func, func.__name__))
         return func(*args, *kwargs)
 
     wrapper.__name__ = underscore_to_camelcase(func.__name__)
