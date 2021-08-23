@@ -633,6 +633,15 @@ class CWNano(util.DisableNewAttr):
         a = self._cwusb.readFwVersion()
         return {"major": a[0], "minor": a[1], "debug": a[2]}
 
+    @property
+    def fw_version_str(self):
+        a = self.sc.serial.readFwVersion()
+        return "{}.{}.{}".format(a[0], a[1], a[2])
+
+    @property
+    def sam_build_date(self):
+        return self._getNAEUSB().get_fw_build_date()
+
     def con(self, sn=None):
         try:
             possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])

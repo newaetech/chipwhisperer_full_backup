@@ -275,7 +275,7 @@ class NAEUSB_Backend:
                 win_driver = _WINDOWS_USB_CHECK_DRIVER(dev)
                 if (win_driver != "usbccgp") and (win_driver != "WINUSB"):
                     naeusb_logger.warning("Invalid driver {} detected. If you have connection problems, try upgrading your driver".format(win_driver))
-                    naeusb_logger.warning("See TDB for more information")
+                    naeusb_logger.warning("See https://chipwhisperer.readthedocs.io/en/latest/drivers.html for more information")
         if not (idProduct is None):
             dev_list = [dev for dev in dev_list if dev.getProductID() in idProduct]
 
