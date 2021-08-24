@@ -300,24 +300,22 @@ OpenADC Scope
 
     .. automethod:: chipwhisperer.capture.scopes.OpenADC.get_serial_ports
 
-    .. method:: dis()
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.dis
 
-        Disconnects the current scope object.
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.con
 
-        :return: A boolean of whether the disconnect was successful.
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.upgrade_firmware
 
-    .. method:: con(sn=None)
+    .. autoattribute:: chipwhisperer.capture.scopes.OpenADC.sn
 
-        Connects to attached chipwhisperer hardware (Lite or Pro)
+    .. autoattribute:: chipwhisperer.capture.scopes.OpenADC.latest_fw
 
-        :param sn: The serial number of the attached device. Does not need to be
-            specified unless there are multiple device attached.
+    .. autoattribute:: chipwhisperer.capture.scopes.OpenADC.fw_version
 
-        :return: A boolean of whether the connection was successful.
+    .. autoattribute:: chipwhisperer.capture.scopes.OpenADC.fw_version_str
 
-        :raises:
-            :OSError: Raised when there is issues connecting to the hardware, such as
-                user not having the correct device permissions to access the hardware.
+    .. autoattribute:: chipwhisperer.capture.scopes.OpenADC.sam_build_date
+
 
 .. _api-scope-husky:
 
@@ -455,25 +453,21 @@ ChipWhisperer Nano Scope
 
     .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.get_serial_ports
 
-    .. method:: dis()
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.con
 
-        Disconnects the current scope object.
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.dis
 
-        :return: A boolean of whether the disconnect was successful.
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.upgrade_firmware
 
-    .. method:: con(sn=None)
+    .. autoattribute:: chipwhisperer.capture.scopes.cwnano.CWNano.sn
 
-        Connects to attached chipwhisperer hardware (ChipWhisperer Nano)
+    .. autoattribute:: chipwhisperer.capture.scopes.cwnano.CWNano.latest_fw
 
-        :param sn: The serial number of the attached device. Does not need to be
-            specified unless there are multiple device attached.
+    .. autoattribute:: chipwhisperer.capture.scopes.cwnano.CWNano.fw_version
 
-        :return: A boolean of whether the connection was successful.
+    .. autoattribute:: chipwhisperer.capture.scopes.cwnano.CWNano.fw_version_str
 
-        :raises:
-            :OSError: Raised when there is issues connecting to the hardware, such as
-                user not having the correct device permissions to access the hardware.
-
+    .. autoattribute:: chipwhisperer.capture.scopes.cwnano.CWNano.sam_build_date
 
 .. _api-scope-update:
 

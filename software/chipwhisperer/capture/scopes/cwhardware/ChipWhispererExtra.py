@@ -197,9 +197,9 @@ class GPIOSettings(util.DisableNewAttr):
 
         i.e. whether you can change USART settings (baud rate, 8n1) via a serial client like PuTTY
 
-        :getter: An array of length two for two possible CDC serial ports (though only one is used)
+        :getter: An array of length four for four possible CDC serial ports (though only one is used)
 
-        :setter: Can set either via an integer (which sets both ports) or an array of length 2 (which sets each port)
+        :setter: Can set either via an integer (which sets both ports) or an array of length 4 (which sets each port)
 
         Returns None if using firmware before the CDC port was added
         """

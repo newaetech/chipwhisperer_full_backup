@@ -621,28 +621,63 @@ class CWNano(util.DisableNewAttr):
 
     @property
     def sn(self):
+        """The serial number for this ChipWhisperer
+        """
         return self._cwusb.snum
 
     @property
     def latest_fw(self):
+        """The latest available firmware as a dict::
+
+            {'major', 'minor'}
+        """
         from chipwhisperer.hardware.firmware.cwnano import fwver
         return {"major": fwver[0], "minor": fwver[1]}
 
     @property
+    def latest_fw_str(self):
+        """The latest available firmware as a str::
+
+            'x.y'
+        """
+        from chipwhisperer.hardware.firmware.cwnano import fwver
+
+        return "{}.{}".format(fwver[0], fwver[1])
+
+    @property
     def fw_version(self):
+        """a dict of the firmware version:: 
+        
+            {'major', 'minor', 'debug'}
+        """
         a = self._cwusb.readFwVersion()
         return {"major": a[0], "minor": a[1], "debug": a[2]}
 
     @property
     def fw_version_str(self):
+        """A string of the firmware version:: 
+        
+            'x.y.z'
+        """
         a = self.sc.serial.readFwVersion()
         return "{}.{}.{}".format(a[0], a[1], a[2])
 
     @property
     def sam_build_date(self):
+        """The date the SAM3U firmware was built on
+        """
         return self._getNAEUSB().get_fw_build_date()
 
     def con(self, sn=None):
+        """Connects to attached chipwhisperer hardware (Nano)
+
+        Args:
+            sn (str): The serial number of the attached device. Does not need to
+                be specified unless there are multiple devices attached.
+
+        Returns:
+            True if connection is successful, False otherwise.
+        """
         try:
             possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
             serial_numbers = []
@@ -662,6 +697,11 @@ class CWNano(util.DisableNewAttr):
         return True
 
     def dis(self):
+        """Disconnects the current scope object.
+
+        Returns:
+            True if the disconnection was successful, False otherwise.
+        """
         self.usbdev().close()
         self._is_connected = False
         return True
@@ -712,6 +752,12 @@ class CWNano(util.DisableNewAttr):
 
     def get_last_trace(self, as_int=False):
         """Return the last trace captured with this scope.
+
+        Args:
+            as_int (bool): If False, return trace as a float. Otherwise, return as an int.
+
+        Returns:
+           Numpy array of the last capture trace.
         """
         if as_int:
             return self._lasttrace_int
@@ -748,8 +794,6 @@ class CWNano(util.DisableNewAttr):
 
     def upgrade_firmware(self):
         """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
-
-        key should be 0xDEADBEEF and is there to prevent accidental upgrade attempts.
         """
         prog = SAMFWLoader(self)
         prog.auto_program()

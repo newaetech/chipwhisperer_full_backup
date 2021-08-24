@@ -116,6 +116,10 @@ class OpenADC(util.DisableNewAttr):
 
     @property
     def latest_fw(self):
+        """The latest available firmware as a dict::
+
+            {'major', 'minor'}
+        """
         cw_type = self._getCWType()
         if cw_type == "cwlite":
             from chipwhisperer.hardware.firmware.cwlite import fwver
@@ -126,25 +130,54 @@ class OpenADC(util.DisableNewAttr):
         else:
             raise ValueError('Unknown cw_type: %s' % cw_type)
 
-        ret = OrderedDict()
         return {"major": fwver[0], "minor": fwver[1]}
 
     @property
+    def latest_fw_str(self):
+        """The latest available firmware as a str::
+
+            'x.y'
+        """
+        cw_type = self._getCWType()
+        if cw_type == "cwlite":
+            from chipwhisperer.hardware.firmware.cwlite import fwver
+        elif cw_type == "cw1200":
+            from chipwhisperer.hardware.firmware.cw1200 import fwver
+        elif cw_type == "cwhusky":
+            from chipwhisperer.hardware.firmware.cwhusky import fwver
+        else:
+            raise ValueError('Unknown cw_type: %s' % cw_type)
+
+        return "{}.{}".format(fwver[0], fwver[1])
+
+    @property
     def fw_version(self):
+        """A dict of the firmware version:: 
+        
+            {'major', 'minor', 'debug'}
+        """
         a = self.sc.serial.readFwVersion()
         return {"major": a[0], "minor": a[1], "debug": a[2]}
 
     @property
     def fw_version_str(self):
+        """A string of the firmware version:: 
+        
+            'x.y.z'
+        """
         a = self.sc.serial.readFwVersion()
         return "{}.{}.{}".format(a[0], a[1], a[2])
 
     @property
     def sam_build_date(self):
+        """The date the SAM3U firmware was built on
+        """
         return self._getNAEUSB().get_fw_build_date()
 
     @property
     def sn(self):
+        """The serial number for this ChipWhisperer
+        """
         return self.scopetype.ser.snum
 
     def reload_fpga(self, bitstream=None, reconnect=True):
@@ -294,6 +327,19 @@ class OpenADC(util.DisableNewAttr):
         return self.sc.hwInfo.get_fpga_buildtime()
 
     def con(self, sn=None, idProduct=None, bitstream=None, force=False):
+        """Connects to attached chipwhisperer hardware (Lite, Pro, or Husky)
+
+        Args:
+            sn (str): The serial number of the attached device. Does not need to
+                be specified unless there are multiple devices attached.
+            idProduct (int): The product ID of the ChipWhisperer. If None, autodetects product ID. Optional.
+            bitstream (str): Path to bitstream to program. If None, programs default bitstream. Optional.
+            force (bool): Force reprogramming of bitstream. If False, only program bitstream if no bitstream
+                is currently programmed. Optional.
+
+        Returns:
+            True if connection is successful, False otherwise
+        """
         self._saved_sn = sn
         self.scopetype = OpenADCInterface_NAEUSBChip()
 
@@ -383,6 +429,11 @@ class OpenADC(util.DisableNewAttr):
         return True
 
     def dis(self):
+        """Disconnects the current scope object.
+
+        Returns:
+            True if the disconnection was successful, False otherwise.
+        """
         if self.scopetype is not None:
             self.scopetype.dis()
             if self.advancedSettings is not None:
@@ -467,6 +518,9 @@ class OpenADC(util.DisableNewAttr):
 
     def get_last_trace(self, as_int=False):
         """Return the last trace captured with this scope.
+
+        Args:
+            as_int (bool): If False, return trace as a float. Otherwise, return as an int.
 
         Returns:
            Numpy array of the last capture trace.
