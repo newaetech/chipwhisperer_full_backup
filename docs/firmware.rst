@@ -28,6 +28,10 @@ If you are already running ChipWhisperer natively on Windows,
 no steps are required before upgrading or flashing
 new firmware onto your ChipWhisperer.
 
+If you have ChipWhisperer installed and are unable to 
+connect due to not having the correct driver, follow the steps
+shown at :ref:`windows-change-drivers`.
+
 =====================
 Linux Prerequisites
 =====================
@@ -60,6 +64,11 @@ new USB filter with the following settings:
   * Vendor ID: 03eb
   * Product ID: 6124
 
+This should already be done on the ChipWhisperer VM, but may not be present on
+older VMs.
+
+.. _upgrade-firmware-python:
+
 ******************
 Upgrading Firmware
 ******************
@@ -86,6 +95,8 @@ upgrading a ChipWhisperer-Lite::
     Verify OK!
     Resetting...
     Upgrade successful
+
+If you don't see the "Resetting..." line, you'll need to power cycle your ChipWhisperer.
 
 ************************
 Programming New Firmware
@@ -155,7 +166,6 @@ enter bootloader mode, then flash the correct firmware onto your device.
 
 Instructions for shorting the erase pins can be found
 on the documentation page for your device at https://rtfm.newae.com
-
 
 If you run into any issues not covered here, or if none of these steps
 work for you, let us know over at https://forum.newae.com

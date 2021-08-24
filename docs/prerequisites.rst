@@ -32,7 +32,7 @@ The following commands are provided if you want to get right into using ChipWhis
 
 .. code:: bash
 
-    sudo apt install python3 python3-pip libusb-dev make git avr-libc gcc-avr gcc-arm-none-eabi
+    sudo apt install python3 python3-pip libusb-dev make git avr-libc gcc-avr gcc-arm-none-eabi libusb-1.0.0-dev
     sudo printf "SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b3e\", ATTRS{idProduct}==\"ace[0-9]|c[3-6][0-9][0-9]\", TAG+=\"uaccess\"" >> /etc/udev/rules.d/50-newae.rules
     sudo udevadm control --reload-rules
     sudo usermod -a -G dialout $USER
@@ -186,7 +186,7 @@ As of ChipWhisperer firmware \*.23, your ChipWhisperer will automatically
 configure as a WinUSB device, meaning no manual driver installation is
 required.
 
-If your ChipWhisperer has older firmware, we have drivers in :code:`chipwhisperer/hardware/newae_windowsusb_drivers.zip`
+If your ChipWhisperer has older firmware, see :ref:`our driver help page.<windows-drivers>`
 
 .. _releases: https://github.com/newaetech/chipwhisperer/releases
 .. _firmware_update: https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update

@@ -16,6 +16,8 @@ the major ChipWhisperer release 5.6, we will no longer support libusb0. We are
 switching to a new Python USB library to take advantage of additional USB features, and this 
 new library does not support libusb0.
 
+.. _windows-change-drivers:
+
 *********************
 How to Change Drivers
 *********************
@@ -23,14 +25,39 @@ How to Change Drivers
 If you're running on the old drivers, the recommended way to change drivers 
 is to upgrade to the latest firmware and let Windows assign the correct driver.
 
-If you're unable to connect due to having old firmware and old drivers, you can update by
-following the instructions on our `ChipWhisperer-Jupyter page 
-<https://github.com/newaetech/chipwhisperer-jupyter/blob/2aaf7e296b60d7291d28660224338d478a3298a6/ChipWhisperer-Lite%20Firmware%20Upgrade.ipynb>`_:
+If you're unable to connect due to having old firmware and old drivers, you
+can assign the correct driver by:
 
-If you're on the latest firmware and are not getting the correct driver assigned,
+ 1. Installing ChipWhisperer (if you haven't done so already)
+ 2. Download and run Zadig.exe, available at https://zadig.akeo.ie/
+ 3. In Zadig, select your ChipWhisperer device (e.g. "ChipWhisperer-Lite"). If it doesn't appear, go to Options and select "List all devices"
+ 4. Make sure WinUSB is selected as the driver
+ 5. Click "Install Driver"
 
- 1. Open Device Manager and search for "libusb-win32"
- 2. Under that header, find your device (ex. "ChipWhisperer-Lite")
- 3. Right click the device and select "Uninstall Device"
- 4. Select "delete the driver software for this device" and click "Uninstall"
- 5. Unplug and replug your ChipWhisperer
+From there, you should be able to upgrade your firmware. Instructions are at :ref:`upgrade-firmware-python`.
+
+Correct Zadig settings are shown below:
+
+ .. image:: _images/zadig.png
+
+
+Once that's done:
+
+ 6. Open Device Manager
+ 7. Go to device manager and find your device (e.g. "ChipWhisperer Lite") under "Universal Serial Bus devices"
+ 8. Right click your Device and select "Uninstall Device"
+ 9. Select "Delete the driver software for this device" and click "Uninstall"
+ 10. Unplug and replug your ChipWhisperer
+
+A ChipWhisperer with an incorrectly installed driver is shown below (note that "libusb-win32" has been
+replaced by "Microchip Tools" due to another driver):
+
+ .. image:: _images/Device\ Manager.png
+
+Ensure you have "Delete the driver software for this device" selected when uninstalling the driver:
+
+ .. image:: _images/Uninstall\ Device.png
+
+A ChipWhisperer with a correctly installed driver is shown below:
+
+  .. image:: _images/Device\ Manager\ Correct.png
