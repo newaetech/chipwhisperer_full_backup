@@ -39,6 +39,7 @@ ADDR_BYTESTORX  = 18
 ADDR_TRIGGERDUR = 20
 ADDR_MULTIECHO  = 34
 ADDR_DATA_SOURCE = 27
+ADDR_RESET      = 28
 ADDR_ADC_LOW_RES = 29
 ADDR_CLKGEN_DRP_ADDR = 30
 ADDR_CLKGEN_DRP_DATA = 31
@@ -1011,7 +1012,7 @@ class TriggerSettings(util.DisableNewAttr):
         scope_logger.warning('Changing this parameter can degrade performance and/or cause reads to fail entirely; use at your own risk.')
         self._stream_segment_threshold = size
         #Write to FPGA
-        self.oa.sendMessage(CODE_WRITE, ADDR_STREAM_SEGMENT_THRESHOLD, list(int.to_bytes(size, length=4, byteorder='little')))
+        self.oa.sendMessage(CODE_WRITE, ADDR_STREAM_SEGMENT_THRESHOLD, list(int.to_bytes(size, length=3, byteorder='little')))
 
 
     def _set_stream_segment_size(self, size):
@@ -1022,7 +1023,7 @@ class TriggerSettings(util.DisableNewAttr):
 
 
     def _get_stream_segment_threshold(self):
-        raw = self.oa.sendMessage(CODE_READ, ADDR_STREAM_SEGMENT_THRESHOLD, maxResp=4)
+        raw = self.oa.sendMessage(CODE_READ, ADDR_STREAM_SEGMENT_THRESHOLD, maxResp=3)
         return int.from_bytes(raw, byteorder='little')
 
     def _get_stream_segment_size(self):
@@ -2338,6 +2339,25 @@ class OpenADCInterface:
                         scope_logger.error(errmsg)
 
 ### Generic
+    def fpga_write(self, address, data):
+        """Helper function to write FPGA registers. Intended for development/debug, not for regular use.
+        """
+        return self.sendMessage(CODE_WRITE, address, data)
+
+    def fpga_read(self, address, num_bytes):
+        """Helper function to read FPGA registers. Intended for development/debug, not for regular use.
+        """
+        return self.sendMessage(CODE_READ, address, maxResp=num_bytes)
+
+    def reset_fpga(self):
+        """ Reset all FPGA resgiters to their defaults.
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        self.sendMessage(CODE_WRITE, ADDR_RESET, [1])
+        self.sendMessage(CODE_WRITE, ADDR_RESET, [0])
+
+
     def setSettings(self, state, validate=False):
         cmd = bytearray(1)
         cmd[0] = state

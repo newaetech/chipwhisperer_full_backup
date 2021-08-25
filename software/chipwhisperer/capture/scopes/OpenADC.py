@@ -321,10 +321,18 @@ class OpenADC(util.DisableNewAttr):
             return "ChipWhisperer Lite"
         elif name == "cw1200":
             return "ChipWhisperer Pro"
+        elif name == "cwhusky":
+            return "ChipWhisperer Husky"
 
     @property
     def fpga_buildtime(self):
         return self.sc.hwInfo.get_fpga_buildtime()
+
+    def reset_fpga(self):
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        self.sc.reset_fpga()
+
 
     def con(self, sn=None, idProduct=None, bitstream=None, force=False):
         """Connects to attached chipwhisperer hardware (Lite, Pro, or Husky)
