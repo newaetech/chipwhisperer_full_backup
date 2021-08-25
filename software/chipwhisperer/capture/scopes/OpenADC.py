@@ -329,9 +329,14 @@ class OpenADC(util.DisableNewAttr):
         return self.sc.hwInfo.get_fpga_buildtime()
 
     def reset_fpga(self):
+        """Reset Husky FPGA. This causes all FPGA-based settings to return to their default values.
+        """
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
         self.sc.reset_fpga()
+        self.adc._clear_caches()
+        self.sc._clear_caches()
+        self.ADS4128.set_defaults()
 
 
     def con(self, sn=None, idProduct=None, bitstream=None, force=False):
@@ -352,13 +357,17 @@ class OpenADC(util.DisableNewAttr):
         self.scopetype = OpenADCInterface_NAEUSBChip()
 
         self.scopetype.con(sn, idProduct, bitstream)
-        self.sc = OpenADCInterface(self.scopetype.ser)
+        self.sc = OpenADCInterface(self.scopetype.ser) # important to instantiate this before other FPGA components, since this does an FPGA reset
         self.hwinfo = HWInformation(self.sc)
+        cwtype = self._getCWType()
+        if cwtype == "cwhusky":
+            self.sc._is_husky = True
+        self.sc._setReset(True)
+        self.sc._setReset(False)
 
         self.adc = TriggerSettings(self.sc)
         self.gain = GainSettings(self.sc, self.adc)
 
-        cwtype = self._getCWType()
         self.pll = None
         self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.sc)
         self.glitch_drp1 = None
@@ -409,7 +418,7 @@ class OpenADC(util.DisableNewAttr):
             self.adc._is_husky = True
             self.gain._is_husky = True
             self._fpga_clk._is_husky = True
-            self.adc.oa._is_husky = True
+            self.sc._is_husky = True
             self.adc.bits_per_sample = 12
         if self.advancedSettings:
             self.io = self.advancedSettings.cwEXTRA.gpiomux
