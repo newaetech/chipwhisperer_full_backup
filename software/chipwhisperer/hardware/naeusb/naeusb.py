@@ -609,7 +609,7 @@ class NAEUSB:
         num_blocks = int(math.ceil(float(num_samplebytes) / 4096))
         num_totalbytes = num_samplebytes + num_blocks
         num_totalbytes = int(math.ceil(float(num_totalbytes) / 4096) * 4096)
-        return (num_totalbytes, num_samplebytes)
+        return num_totalbytes
 
 
     def initStreamModeCapture(self, dlen, dbuf_temp, timeout_ms=1000, is_husky=False, segment_size=0):

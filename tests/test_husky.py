@@ -18,6 +18,7 @@ scope = cw.scope()
 target = cw.target(scope)
 
 # TODO: program FW?
+scope.sc.reset_fpga()
 scope.clock.clkgen_freq = 10e6
 scope.clock.clkgen_src = 'system'
 scope.clock.adc_mul = 1
@@ -159,7 +160,7 @@ testTargetData = [
     (2000000,   0,          'internal', 16e6,       1,      12, True ,  65536,      True,   1,      0,      'longstream12'),
     (6000000,   0,          'internal', 16e6,       1,      12, True ,  65536,      False,  1,      0,      'vlongstream12'),
     (500000,    0,          'internal', 20e6,       1,      12, True ,  16384,      True,   1,      0,      'over'),
-    (2000000,   0,          'internal', 20e6,       1,      12, True ,  65536,      False,  1,      0,      'overflow'),
+    (3000000,   0,          'internal', 24e6,       1,      12, True ,  65536,      False,  1,      0,      'overflow'),
     (200000,    0,          'internal', 15e6,       1,      12, True ,  65536,      True,   1,      0,      'postfail'),
     (2000,      0,          'internal', 10e6,       1,      8,  False,  65536,      True,   1,      0,      'back2nostream'),
 ]
@@ -212,12 +213,12 @@ testGlitchOutputDoublesData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '8/12/2021, 17:34'
+    assert scope.fpga_buildtime == '8/25/2021, 13:31'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
     assert scope.fw_version['minor'] == 10
-    assert scope.sam_build_date == '16:58:36 Aug 20 2021'
+    assert scope.sam_build_date == '17:03:04 Aug 24 2021'
 
 
 @pytest.mark.parametrize("samples, presamples, testmode, clock, adcmul, bits, stream, segments, segment_cycles, desc", testData)

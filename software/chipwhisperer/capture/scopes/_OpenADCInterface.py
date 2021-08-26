@@ -39,6 +39,7 @@ ADDR_BYTESTORX  = 18
 ADDR_TRIGGERDUR = 20
 ADDR_MULTIECHO  = 34
 ADDR_DATA_SOURCE = 27
+ADDR_RESET      = 28
 ADDR_ADC_LOW_RES = 29
 ADDR_CLKGEN_DRP_ADDR = 30
 ADDR_CLKGEN_DRP_DATA = 31
@@ -436,7 +437,6 @@ class TriggerSettings(util.DisableNewAttr):
         # oaiface = OpenADCInterface
         self._new_attributes_disabled = False
         self.oa = oaiface
-        self._numSamples = 0
         self.presamples_desired = 0
         self.presamples_actual = 0
         self.presampleTempMargin = 24
@@ -450,12 +450,14 @@ class TriggerSettings(util.DisableNewAttr):
         self._is_pro = False
         self._is_lite = False
         self._is_husky = False
+        self._is_sakura_g = None
+        self._clear_caches()
+
+        self.disable_newattr()
+    def _clear_caches(self):
         self._cached_samples = None
         self._cached_offset = None
         self._cached_segments = 1 # Husky streaming capture breaks if left as None
-        self._is_sakura_g = None
-
-        self.disable_newattr()
 
     def _dict_repr(self):
         dict = OrderedDict()
@@ -1011,7 +1013,7 @@ class TriggerSettings(util.DisableNewAttr):
         scope_logger.warning('Changing this parameter can degrade performance and/or cause reads to fail entirely; use at your own risk.')
         self._stream_segment_threshold = size
         #Write to FPGA
-        self.oa.sendMessage(CODE_WRITE, ADDR_STREAM_SEGMENT_THRESHOLD, list(int.to_bytes(size, length=4, byteorder='little')))
+        self.oa.sendMessage(CODE_WRITE, ADDR_STREAM_SEGMENT_THRESHOLD, list(int.to_bytes(size, length=3, byteorder='little')))
 
 
     def _set_stream_segment_size(self, size):
@@ -1022,7 +1024,7 @@ class TriggerSettings(util.DisableNewAttr):
 
 
     def _get_stream_segment_threshold(self):
-        raw = self.oa.sendMessage(CODE_READ, ADDR_STREAM_SEGMENT_THRESHOLD, maxResp=4)
+        raw = self.oa.sendMessage(CODE_READ, ADDR_STREAM_SEGMENT_THRESHOLD, maxResp=3)
         return int.from_bytes(raw, byteorder='little')
 
     def _get_stream_segment_size(self):
@@ -1134,17 +1136,12 @@ class TriggerSettings(util.DisableNewAttr):
             raise ValueError("Samples must be a positive integer")
         if self._is_husky and samples < 7:
             scope_logger.warning('There may be issues with this few samples on Husky; a minimum of 7 samples is recommended')
-        self._numSamples = samples
         self.oa.setNumSamples(samples)
 
-    def _get_num_samples(self, cached=True):
+    def _get_num_samples(self):
         if self.oa is None:
             return 0
-
-        if cached:
-            return self._numSamples
-        else:
-            return self.oa.numSamples()
+        return self.oa.numSamples()
 
 
     def _get_underflow_reads(self):
@@ -2137,11 +2134,11 @@ class ClockSettings(util.DisableNewAttr):
         return self._getAdcFrequency() / self.oa.decimate()
 
 
-class OpenADCInterface:
+class OpenADCInterface(util.DisableNewAttr):
 
-    cached_settings = None
     def __init__(self, serial_instance):
         self.serial = serial_instance
+        self.hwInfo = None
         self.offset = 0.5
         self.ddrMode = False
         self.sysFreq = 0
@@ -2159,6 +2156,11 @@ class OpenADCInterface:
         self._is_husky = False
         self._fast_fifo_read_enable = True
         self._fast_fifo_read_active = False
+        self.hwMaxSamples = 0
+        self._stream_len = 0
+        self._int_data = None
+        self._stream_rx_bytes = 0
+        self._clear_caches()
 
         self.settings()
 
@@ -2169,8 +2171,11 @@ class OpenADCInterface:
             nullmessage = bytearray([0] * 20)
             self.serial.write(str(nullmessage))
 
-        self.setReset(True)
-        self.setReset(False)
+        self.disable_newattr()
+
+    def _clear_caches(self):
+        self.cached_settings = None
+
 
     def setStreamMode(self, stream):
         self._stream_mode = stream
@@ -2338,6 +2343,25 @@ class OpenADCInterface:
                         scope_logger.error(errmsg)
 
 ### Generic
+    def fpga_write(self, address, data):
+        """Helper function to write FPGA registers. Intended for development/debug, not for regular use.
+        """
+        return self.sendMessage(CODE_WRITE, address, data)
+
+    def fpga_read(self, address, num_bytes):
+        """Helper function to read FPGA registers. Intended for development/debug, not for regular use.
+        """
+        return self.sendMessage(CODE_READ, address, maxResp=num_bytes)
+
+    def reset_fpga(self):
+        """ Reset all FPGA resgiters to their defaults.
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        self.sendMessage(CODE_WRITE, ADDR_RESET, [1])
+        self.sendMessage(CODE_WRITE, ADDR_RESET, [0])
+
+
     def setSettings(self, state, validate=False):
         cmd = bytearray(1)
         cmd[0] = state
@@ -2353,14 +2377,16 @@ class OpenADCInterface:
                 self.cached_settings = sets[0]
         return self.cached_settings
 
-    def setReset(self, value):
+    def _setReset(self, value):
+        """Note: this is only intended to be called when connecting. If used outside of this, cached register values may be not reflect reality.
+        """
         if value:
             self.setSettings(self.settings() | SETTINGS_RESET, validate=False)
-            #TODO: Hack to adjust the hwMaxSamples since the number should be smaller than what is being returned
-            self.hwMaxSamples = self.numSamples() - 45
-            #TODO: another hack... if reconnecting to Husky which was previously set to have a small number of samples, avoid feeding through a negative number... don't quite understand what's happening here and why...
-            if self.hwMaxSamples < 0:
-                self.hwMaxSamples = 0
+            if self._is_husky:
+                self.hwMaxSamples = self.numSamples()
+            else:
+                #Hack to adjust the hwMaxSamples since the number should be smaller than what is being returned
+                self.hwMaxSamples = self.numSamples() - 45
             self.setNumSamples(self.hwMaxSamples)
         else:
             self.setSettings(self.settings() & ~SETTINGS_RESET)
@@ -2403,7 +2429,7 @@ class OpenADCInterface:
             if self._stream_mode:
                 nae = self.serial
                 #Save the number we will return
-                bufsizebytes, self._stream_len_act = nae.cmdReadStream_bufferSize(self._stream_len)
+                bufsizebytes = nae.cmdReadStream_bufferSize(self._stream_len)
 
             #Generate the buffer to save buffer
             self._sbuf = array.array('B', [0]) * bufsizebytes
@@ -2481,7 +2507,7 @@ class OpenADCInterface:
         self.flushInput()
 
         #Reset... will automatically clear by the time we are done
-        self.setReset(True)
+        self._setReset(True)
         self.flushInput()
 
         #Send ping
@@ -2662,7 +2688,7 @@ class OpenADCInterface:
         elif self._stream_mode:
             # Process data
             bsize = self.serial.cmdReadStream_size_of_fpgablock()
-            num_bytes, num_samples = self.serial.cmdReadStream_bufferSize(self._stream_len)
+            num_bytes = self.serial.cmdReadStream_bufferSize(self._stream_len)
 
             # Remove sync bytes from trace
             data = np.zeros(num_bytes, dtype=np.uint8)
