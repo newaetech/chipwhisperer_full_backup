@@ -335,6 +335,7 @@ class AVRISP(object):
 
         # Check status
         if checkStatus:
+            time.sleep(0.01)
             status = self._avrDoRead(cmd=0x0020, dlen=2)
             if status[1] != 0x00:
                 status_txt = "0x%02x"%status[1]
