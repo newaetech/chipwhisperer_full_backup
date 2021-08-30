@@ -29,6 +29,7 @@ import numpy as np
 import math
 
 from ..algorithmsbase import AlgorithmsBase
+from chipwhisperer.logging import *
 
 
 class CPAProgressiveOneSubkey(object):
@@ -57,8 +58,8 @@ class CPAProgressiveOneSubkey(object):
             # padafter = len(traces_all[0, :]) - pointRange[1]
             # print "%d - %d (%d %d)" % (pointRange[0], pointRange[1], padbefore, padafter)
 
-        self.sumtq += np.sum(np.square(traces), axis=0, dtype=np.float64)
-        self.sumt += np.sum(traces, axis=0)
+        self.sumtq += np.sum(np.square(traces), axis=0, dtype=np.longdouble)
+        self.sumt += np.sum(traces, axis=0, dtype=np.longdouble)
         sumden2 = (np.square(self.sumt) - self.totalTraces * self.sumtq)
 
         #For each 0..0xFF possible value of the key byte
@@ -98,8 +99,8 @@ class CPAProgressiveOneSubkey(object):
 
             hyp = np.array(hyp)
 
-            self.sumh[key] += np.sum(hyp, axis=0)
-            self.sumht[key] += np.sum(np.multiply(np.transpose(traces), hyp), axis=1)
+            self.sumh[key] += np.sum(hyp, axis=0, dtype=np.longdouble)
+            self.sumht[key] += np.sum(np.multiply(np.transpose(traces), hyp), axis=1, dtype=np.longdouble)
 
             #WARNING: not casting to np.float64 causes algorithm degredation... always be careful
             #meanh = self.sumh[key] / np.float64(self.totalTraces)
@@ -112,7 +113,7 @@ class CPAProgressiveOneSubkey(object):
             #sumnum =  self.sumht[key] - self.sumh[key]*self.sumt[key] / np.float64(self.totalTraces)
             sumnum = self.totalTraces * self.sumht[key] - self.sumh[key] * self.sumt
 
-            self.sumhq[key] += np.sum(np.square(hyp),axis=0, dtype=np.float64)
+            self.sumhq[key] += np.sum(np.square(hyp),axis=0, dtype=np.longdouble)
 
             #numtraces * meanh * meanh = sumh * meanh
             #sumden1 = sumhq - (2*meanh*self.sumh) + (numtraces*meanh*meanh)
@@ -127,7 +128,11 @@ class CPAProgressiveOneSubkey(object):
             #See http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance for online update
             #algorithm which might be better
             sumden1 = (np.square(self.sumh[key]) - self.totalTraces * self.sumhq[key])
+
             sumden = sumden1 * sumden2
+
+            if ((key == 0x2B) and (bnum == 0)):
+                other_logger.info("sumden1: {}".format(sumden1))
 
             #if sumden.any() < 1E-12:
             #    print "WARNING: sumden small"
