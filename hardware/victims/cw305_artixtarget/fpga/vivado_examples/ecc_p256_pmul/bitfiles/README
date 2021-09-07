@@ -1,0 +1,7 @@
+The bitfiles used in the CW305 ECC demo parts 3-5 in one handy place.
+
+original.bit: copied from ./ecc_p256_pmul.runs/impl_100t/cw305_ecc_p256_pmul_top.bit; see ../../cryptosrc/cryptech/ecdsa-v1/ for Verilog source, ecc_p256_pmul.xpr for Vivado project.
+attempt1.bit: copied from ./v2/v2.runs/impl_100t/cw305_ecc_p256_pmul_top.bit; see v2/v2.srcs/sources_1/imports/fpga/ for Verilog source, v2/v2.xpr for Vivado project.
+attempt2.bit: copied from ./v3/v3.runs/impl_100t/cw305_ecc_p256_pmul_top.bit; see v3/v3.srcs/sources_1/imports/fpga/ for Verilog source, v3/v3.xpr for Vivado project.
+attempt3.bit: copied from ./v5/v5.runs/impl_100t/cw305_ecc_p256_pmul_top.bit; see v5/v5.srcs/sources_1/imports/fpga/ for Verilog source, v5/v5.xpr for Vivado project.
+attempt4.bit: copied from ./v6/v6.runs/impl_100t/cw305_ecc_p256_pmul_top.bit; see v6/v6.srcs/sources_1/imports/fpga/ for Verilog source, v6/v6.xpr for Vivado project.

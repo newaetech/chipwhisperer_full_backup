@@ -1,0 +1,652 @@
+Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2019.1 (win64) Build 2552052 Fri May 24 14:49:42 MDT 2019
+| Date         : Wed Mar 17 14:50:34 2021
+| Host         : qed running 64-bit major release  (build 9200)
+| Command      : report_drc -file cw305_ecc_p256_pmul_top_drc_opted.rpt -pb cw305_ecc_p256_pmul_top_drc_opted.pb -rpx cw305_ecc_p256_pmul_top_drc_opted.rpx
+| Design       : cw305_ecc_p256_pmul_top
+| Device       : xc7a100tftg256-2
+| Speed File   : -2
+| Design State : Synthesized
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Report DRC
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+           Ruledeck: default
+             Max violations: <unlimited>
+             Violations found: 122
++-----------+----------+-----------------------------+------------+
+| Rule      | Severity | Description                 | Violations |
++-----------+----------+-----------------------------+------------+
+| CHECK-3   | Warning  | Report rule limit reached   | 2          |
+| DPIP-1    | Warning  | Input pipelining            | 32         |
+| DPOP-1    | Warning  | PREG Output pipelining      | 16         |
+| DPOP-2    | Warning  | MREG Output pipelining      | 16         |
+| DPREG-4   | Warning  | DSP48E1_PregDynOpmodeZmuxP: | 16         |
+| REQP-1839 | Warning  | RAMB36 async control check  | 20         |
+| REQP-1840 | Warning  | RAMB18 async control check  | 20         |
++-----------+----------+-----------------------------+------------+
+
+2. REPORT DETAILS
+-----------------
+CHECK-3#1 Warning
+Report rule limit reached  
+REQP-1839 rule limit reached: 20 violations have been found.
+Related violations: <none>
+
+CHECK-3#2 Warning
+Report rule limit reached  
+REQP-1840 rule limit reached: 20 violations have been found.
+Related violations: <none>
+
+DPIP-1#1 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[0].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[0].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#2 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[0].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[0].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#3 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[10].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[10].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#4 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[10].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[10].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#5 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[11].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[11].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#6 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[11].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[11].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#7 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[12].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[12].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#8 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[12].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[12].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#9 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[13].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[13].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#10 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[13].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[13].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#11 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[14].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[14].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#12 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[14].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[14].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#13 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[15].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[15].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#14 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[15].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[15].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#15 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[1].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[1].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#16 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[1].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[1].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#17 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[2].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[2].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#18 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[2].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[2].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#19 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[3].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[3].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#20 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[3].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[3].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#21 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[4].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[4].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#22 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[4].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[4].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#23 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[5].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[5].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#24 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[5].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[5].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#25 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[6].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[6].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#26 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[6].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[6].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#27 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[7].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[7].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#28 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[7].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[7].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#29 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[8].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[8].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#30 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[8].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[8].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#31 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[9].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[9].mac16_inst/mac16_inst/s_int1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPIP-1#32 Warning
+Input pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[9].mac16_inst/mac16_inst/s_int1 input U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[9].mac16_inst/mac16_inst/s_int1/C[47:0] is not pipelined. Pipelining DSP48 input will improve performance.
+Related violations: <none>
+
+DPOP-1#1 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[0].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[0].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#2 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[10].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[10].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#3 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[11].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[11].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#4 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[12].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[12].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#5 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[13].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[13].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#6 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[14].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[14].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#7 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[15].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[15].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#8 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[1].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[1].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#9 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[2].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[2].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#10 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[3].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[3].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#11 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[4].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[4].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#12 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[5].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[5].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#13 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[6].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[6].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#14 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[7].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[7].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#15 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[8].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[8].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-1#16 Warning
+PREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[9].mac16_inst/mac16_inst/s_int1 output U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[9].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+Related violations: <none>
+
+DPOP-2#1 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[0].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[0].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#2 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[10].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[10].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#3 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[11].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[11].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#4 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[12].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[12].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#5 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[13].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[13].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#6 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[14].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[14].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#7 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[15].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[15].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#8 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[1].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[1].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#9 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[2].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[2].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#10 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[3].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[3].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#11 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[4].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[4].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#12 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[5].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[5].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#13 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[6].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[6].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#14 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[7].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[7].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#15 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[8].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[8].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPOP-2#16 Warning
+MREG Output pipelining  
+DSP U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[9].mac16_inst/mac16_inst/s_int1 multiplier stage U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[9].mac16_inst/mac16_inst/s_int1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+Related violations: <none>
+
+DPREG-4#1 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[0].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#2 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[10].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#3 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[11].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#4 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[12].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#5 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[13].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#6 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[14].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#7 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[15].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#8 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[1].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#9 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[2].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#10 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[3].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#11 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[4].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#12 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[5].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#13 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[6].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#14 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[7].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#15 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[8].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+DPREG-4#16 Warning
+DSP48E1_PregDynOpmodeZmuxP:  
+The DSP48E1 cell U_curve_mul_256/worker/modular_multiplier_inst/gen_mac_array[9].mac16_inst/mac16_inst/s_int1 with the given dynamic OPMODE[6:0] connections may lead to an unregistered asynchronous feedback path without the PREG attribute enabled. Please refer to the user guide and if one of the internal P feedback opmodes is possible for this design the PREG attribute must be set to 1, currently set to 0
+Related violations: <none>
+
+REQP-1839#1 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[5] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[0]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[13]_rep__0) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#2 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[5] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[0]) which is driven by a register (U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/fsm_shreg_reg[1]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#3 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[6] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[11]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#4 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[6] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[13]_rep) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#5 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[6] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[13]_rep__0) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#6 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[6] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[1]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#7 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[6] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[1]_rep) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#8 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[6] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[1]_rep__1) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#9 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[6] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[5]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#10 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[6] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[6]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#11 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[6] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/fsm_shreg_reg[1]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#12 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[7] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[11]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#13 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[7] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[13]_rep) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#14 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[7] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[13]_rep__0) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#15 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[7] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[1]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#16 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[7] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[1]_rep) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#17 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[7] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[1]_rep__1) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#18 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[7] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[5]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#19 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[7] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[6]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1839#20 Warning
+RAMB36 async control check  
+The RAMB36E1 U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin U_curve_mul_256/bram_bx1/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[7] (net: U_curve_mul_256/bram_bx1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/fsm_shreg_reg[1]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#1 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[5] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[0]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[13]_rep) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#2 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[5] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[0]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[13]_rep__0) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#3 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[5] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[0]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[1]_rep) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#4 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[5] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[0]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[1]_rep__1) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#5 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[5] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[0]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[5]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#6 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[5] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[0]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[6]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#7 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[6] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[13]_rep) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#8 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[6] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[13]_rep__0) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#9 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[6] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[1]_rep) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#10 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[6] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[1]_rep__1) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#11 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[6] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[5]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#12 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[6] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[1]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[6]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#13 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[7] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[13]_rep) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#14 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[7] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[13]_rep__0) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#15 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[7] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[1]_rep) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#16 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[7] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[1]_rep__1) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#17 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[7] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[5]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#18 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ADDRARDADDR[7] (net: U_curve_mul_256/bram_rz1/ADDRARDADDR[2]) which is driven by a register (U_curve_mul_256/FSM_onehot_fsm_state_reg[6]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#19 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ENBWREN (net: U_curve_mul_256/bram_rz1/WEBWE[0]) which is driven by a register (U_curve_mul_256/invertor/helper_copy/proc_cnt_reg[2]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+REQP-1840#20 Warning
+RAMB18 async control check  
+The RAMB18E1 U_curve_mul_256/bram_rz1/bram_reg has an input control pin U_curve_mul_256/bram_rz1/bram_reg/ENBWREN (net: U_curve_mul_256/bram_rz1/WEBWE[0]) which is driven by a register (U_curve_mul_256/invertor/helper_copy/proc_cnt_reg[3]) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
+Related violations: <none>
+
+

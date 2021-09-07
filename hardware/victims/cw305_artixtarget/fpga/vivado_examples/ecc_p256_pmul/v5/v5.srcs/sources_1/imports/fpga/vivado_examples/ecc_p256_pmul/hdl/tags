@@ -1,0 +1,188 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+REG_BRAM_RD_MSB	cw305_pmul_defines.v	/^`define REG_BRAM_RD_MSB                 'h0c$/;"	c
+REG_BUILDTIME	cw305_pmul_defines.v	/^`define REG_BUILDTIME                   'h0b$/;"	c
+REG_CLKSETTINGS	cw305_pmul_defines.v	/^`define REG_CLKSETTINGS                 'h00$/;"	c
+REG_CRYPT_GO	cw305_pmul_defines.v	/^`define REG_CRYPT_GO                    'h05$/;"	c
+REG_CRYPT_GX	cw305_pmul_defines.v	/^`define REG_CRYPT_GX                    'h09$/;"	c
+REG_CRYPT_GY	cw305_pmul_defines.v	/^`define REG_CRYPT_GY                    'h0a$/;"	c
+REG_CRYPT_K	cw305_pmul_defines.v	/^`define REG_CRYPT_K                     'h06$/;"	c
+REG_CRYPT_REV	cw305_pmul_defines.v	/^`define REG_CRYPT_REV                   'h03$/;"	c
+REG_CRYPT_RX	cw305_pmul_defines.v	/^`define REG_CRYPT_RX                    'h07$/;"	c
+REG_CRYPT_RY	cw305_pmul_defines.v	/^`define REG_CRYPT_RY                    'h08$/;"	c
+REG_CRYPT_TYPE	cw305_pmul_defines.v	/^`define REG_CRYPT_TYPE                  'h02$/;"	c
+REG_IDENTIFY	cw305_pmul_defines.v	/^`define REG_IDENTIFY                    'h04$/;"	c
+REG_LFSR_GO	cw305_pmul_defines.v	/^`define REG_LFSR_GO                     'h0d$/;"	c
+REG_LFSR_RD	cw305_pmul_defines.v	/^`define REG_LFSR_RD                     'h0f$/;"	c
+REG_LFSR_RD_BANK	cw305_pmul_defines.v	/^`define REG_LFSR_RD_BANK                'h10$/;"	c
+REG_LFSR_STATE	cw305_pmul_defines.v	/^`define REG_LFSR_STATE                  'h0e$/;"	c
+REG_NOISE_ENABLE	cw305_pmul_defines.v	/^`define REG_NOISE_ENABLE                'h11$/;"	c
+REG_USER_LED	cw305_pmul_defines.v	/^`define REG_USER_LED                    'h01$/;"	c
+base_x_wr_data	noise_memories.v	/^    wire [31:0] base_x_wr_data = I_lfsr_state ^ {2'b01, {10{bram_rx_wr_addr}}};$/;"	n
+base_y_wr_data	noise_memories.v	/^    wire [31:0] base_y_wr_data = I_lfsr_state ^ {2'b10, {10{bram_rx_wr_addr}}};$/;"	n
+base_z_wr_data	noise_memories.v	/^    wire [31:0] base_z_wr_data = I_lfsr_state ^ {2'b11, {10{bram_rx_wr_addr}}};$/;"	n
+bram_rd_msb	cw305_ecc_p256_pmul_top.v	/^    wire bram_rd_msb;$/;"	n
+bram_rx_lfsr_data	noise_memories.v	/^    wire [31:0] bram_rx_lfsr_data [0:15];$/;"	n
+bram_rxa_rd_data_lfsr	noise_memories.v	/^    wire [31:0] bram_rxa_rd_data_lfsr [0:15];$/;"	n
+bram_rxb_rd_data_lfsr	noise_memories.v	/^    wire [31:0] bram_rxb_rd_data_lfsr [0:15];$/;"	n
+bram_ry_lfsr_data	noise_memories.v	/^    wire [31:0] bram_ry_lfsr_data [0:15];$/;"	n
+bram_rya_rd_data_lfsr	noise_memories.v	/^    wire [31:0] bram_rya_rd_data_lfsr [0:15];$/;"	n
+bram_ryb_rd_data_lfsr	noise_memories.v	/^    wire [31:0] bram_ryb_rd_data_lfsr [0:15];$/;"	n
+bram_rz_lfsr_data	noise_memories.v	/^    wire [31:0] bram_rz_lfsr_data [0:15];$/;"	n
+bram_rza_rd_data_lfsr	noise_memories.v	/^    wire [31:0] bram_rza_rd_data_lfsr [0:15];$/;"	n
+bram_rzb_rd_data_lfsr	noise_memories.v	/^    wire [31:0] bram_rzb_rd_data_lfsr [0:15];$/;"	n
+buildtime	cw305_reg_pmul.v	/^   wire [31:0]                  buildtime;$/;"	n
+busy_usb	cw305_reg_pmul.v	/^   reg                          busy_usb;$/;"	r
+clk_settings	cw305_ecc_p256_pmul_top.v	/^    wire [4:0] clk_settings;$/;"	n
+crypt_busy	cw305_ecc_p256_pmul_top.v	/^    wire crypt_busy;$/;"	n
+crypt_clk	cw305_ecc_p256_pmul_top.v	/^    wire crypt_clk;    $/;"	n
+crypt_clk_heartbeat	cw305_ecc_p256_pmul_top.v	/^    reg [22:0] crypt_clk_heartbeat;$/;"	r
+crypt_done	cw305_ecc_p256_pmul_top.v	/^    wire crypt_done;$/;"	n
+crypt_go_pulse	cw305_reg_pmul.v	/^   wire                         crypt_go_pulse;$/;"	n
+crypt_init	cw305_ecc_p256_pmul_top.v	/^    wire crypt_init;$/;"	n
+crypt_ready	cw305_ecc_p256_pmul_top.v	/^    wire crypt_ready;$/;"	n
+crypt_start	cw305_ecc_p256_pmul_top.v	/^    wire crypt_start;$/;"	n
+cw305_ecc_p256_pmul_top	cw305_ecc_p256_pmul_top.v	/^module cw305_ecc_p256_pmul_top #($/;"	m
+cw305_reg_pmul	cw305_reg_pmul.v	/^module cw305_reg_pmul #($/;"	m
+done_pulse	cw305_reg_pmul.v	/^   wire                         done_pulse;$/;"	n
+done_r	cw305_reg_pmul.v	/^   reg                          done_r;$/;"	r
+ecc_rdy	cw305_ecc_p256_pmul_top.v	/^   wire ecc_rdy;$/;"	n
+go	cw305_reg_pmul.v	/^   reg                          go;$/;"	r
+go_r	cw305_reg_pmul.v	/^   reg                          go_r;$/;"	r
+gx_addr	cw305_ecc_p256_pmul_top.v	/^    wire [2:0] gx_addr;$/;"	n
+gx_word	cw305_ecc_p256_pmul_top.v	/^    wire [31:0] gx_word;$/;"	n
+gy_addr	cw305_ecc_p256_pmul_top.v	/^    wire [2:0] gy_addr;$/;"	n
+gy_word	cw305_ecc_p256_pmul_top.v	/^    wire [31:0] gy_word;$/;"	n
+inout	cw305_ecc_p256_pmul_top.v	/^    inout wire [7:0]                    usb_data,       \/\/ Data for write\/read$/;"	c
+input	noise_memories.v	/^   input  wire          rst,$/;"	c
+isout	cw305_ecc_p256_pmul_top.v	/^    wire isout;$/;"	n
+k_addr	cw305_ecc_p256_pmul_top.v	/^    wire [2:0] k_addr;$/;"	n
+k_word	cw305_ecc_p256_pmul_top.v	/^    wire [31:0] k_word;$/;"	n
+lfsr_go	cw305_ecc_p256_pmul_top.v	/^    wire lfsr_go;$/;"	n
+lfsr_rd	cw305_ecc_p256_pmul_top.v	/^    wire [1:0] lfsr_rd;$/;"	n
+lfsr_rd_bank	cw305_ecc_p256_pmul_top.v	/^    wire [3:0] lfsr_rd_bank;$/;"	n
+lfsr_state	cw305_ecc_p256_pmul_top.v	/^    wire [31:0] lfsr_state;$/;"	n
+noise_enable	cw305_ecc_p256_pmul_top.v	/^    wire [15:0] noise_enable;$/;"	n
+noise_memories	noise_memories.v	/^module noise_memories #($/;"	m
+pADDR_WIDTH	cw305_reg_pmul.v	/^   parameter pADDR_WIDTH = 21,$/;"	c
+pBYTECNT_SIZE	cw305_ecc_p256_pmul_top.v	/^    parameter pBYTECNT_SIZE = 8,$/;"	c
+pCRYPT_REV	cw305_reg_pmul.v	/^   parameter pCRYPT_REV = 1,$/;"	c
+pDONE_EDGE_SENSITIVE	cw305_reg_pmul.v	/^   parameter pDONE_EDGE_SENSITIVE = 1,$/;"	c
+pKEY_WIDTH	cw305_ecc_p256_pmul_top.v	/^    parameter pKEY_WIDTH = 256$/;"	c
+pKEY_WIDTH	cw305_reg_pmul.v	/^   parameter pKEY_WIDTH = 256,$/;"	c
+pMEMORY_INSTANCES	noise_memories.v	/^   parameter pMEMORY_INSTANCES = 16$/;"	c
+pPT_WIDTH	cw305_ecc_p256_pmul_top.v	/^    parameter pPT_WIDTH = 256,$/;"	c
+parameter	cw305_ecc_p256_pmul_top.v	/^    parameter pADDR_WIDTH = 21,$/;"	c
+parameter	cw305_ecc_p256_pmul_top.v	/^    parameter pCT_WIDTH = 256,$/;"	c
+parameter	cw305_reg_pmul.v	/^   parameter pBYTECNT_SIZE = 8,$/;"	c
+parameter	cw305_reg_pmul.v	/^   parameter pCRYPT_TYPE = 3,$/;"	c
+parameter	cw305_reg_pmul.v	/^   parameter pCT_WIDTH = 256,$/;"	c
+parameter	cw305_reg_pmul.v	/^   parameter pIDENTIFY = 8'h2e$/;"	c
+read_data	cw305_ecc_p256_pmul_top.v	/^    wire [7:0] read_data;$/;"	n
+reg	cw305_reg_pmul.v	/^   output reg                                   O_bram_rd_msb,$/;"	p
+reg	cw305_reg_pmul.v	/^   output reg                                   O_lfsr_go,$/;"	p
+reg	cw305_reg_pmul.v	/^   output reg                                   O_user_led,$/;"	p
+reg	cw305_reg_pmul.v	/^   output reg  [15:0]                           O_noise_enable,$/;"	p
+reg	cw305_reg_pmul.v	/^   output reg  [1:0]                            O_lfsr_rd,$/;"	p
+reg	cw305_reg_pmul.v	/^   output reg  [31:0]                           O_gx_word,$/;"	p
+reg	cw305_reg_pmul.v	/^   output reg  [31:0]                           O_gy_word,$/;"	p
+reg	cw305_reg_pmul.v	/^   output reg  [31:0]                           O_lfsr_state,$/;"	p
+reg	cw305_reg_pmul.v	/^   output reg  [3:0]                            O_lfsr_rd_bank,$/;"	p
+reg	cw305_reg_pmul.v	/^   output reg  [4:0]                            O_clksettings,$/;"	p
+reg	cw305_reg_pmul.v	/^   output reg  [7:0]                            read_data,       \/\/$/;"	p
+reg_address	cw305_ecc_p256_pmul_top.v	/^    wire [pADDR_WIDTH-pBYTECNT_SIZE-1:0] reg_address;$/;"	n
+reg_addrvalid	cw305_ecc_p256_pmul_top.v	/^    wire reg_addrvalid;$/;"	n
+reg_bytecnt	cw305_ecc_p256_pmul_top.v	/^    wire [pBYTECNT_SIZE-1:0] reg_bytecnt;$/;"	n
+reg_crypt_go_pulse	cw305_reg_pmul.v	/^   reg                          reg_crypt_go_pulse;$/;"	r
+reg_crypt_go_pulse_crypt	cw305_reg_pmul.v	/^   wire                         reg_crypt_go_pulse_crypt;$/;"	n
+reg_gx	cw305_reg_pmul.v	/^   reg  [pCT_WIDTH-1:0]         reg_gx;$/;"	r
+reg_gy	cw305_reg_pmul.v	/^   reg  [pCT_WIDTH-1:0]         reg_gy;$/;"	r
+reg_k	cw305_reg_pmul.v	/^   reg  [pKEY_WIDTH-1:0]        reg_k;$/;"	r
+reg_read	cw305_ecc_p256_pmul_top.v	/^    wire reg_read;$/;"	n
+reg_read_data	cw305_reg_pmul.v	/^   reg  [7:0]                   reg_read_data;$/;"	r
+reg_rx	cw305_reg_pmul.v	/^   reg  [pCT_WIDTH-1:0]         reg_rx;$/;"	r
+reg_ry	cw305_reg_pmul.v	/^   reg  [pCT_WIDTH-1:0]         reg_ry;$/;"	r
+reg_write	cw305_ecc_p256_pmul_top.v	/^    wire reg_write;$/;"	n
+reset	cw305_ecc_p256_pmul_top.v	/^    wire reset = !resetn;$/;"	n
+resetn	cw305_ecc_p256_pmul_top.v	/^    wire resetn = pushbutton;$/;"	n
+rx_addr	cw305_ecc_p256_pmul_top.v	/^    wire [2:0] rx_addr;$/;"	n
+rx_word	cw305_ecc_p256_pmul_top.v	/^    wire [31:0] rx_word;$/;"	n
+rx_wren	cw305_ecc_p256_pmul_top.v	/^    wire rx_wren;$/;"	n
+ry_addr	cw305_ecc_p256_pmul_top.v	/^    wire [2:0] ry_addr;$/;"	n
+ry_word	cw305_ecc_p256_pmul_top.v	/^    wire [31:0] ry_word;$/;"	n
+ry_wren	cw305_ecc_p256_pmul_top.v	/^    wire ry_wren;$/;"	n
+usb_clk_buf	cw305_ecc_p256_pmul_top.v	/^    wire usb_clk_buf;$/;"	n
+usb_dout	cw305_ecc_p256_pmul_top.v	/^    wire [7:0] usb_dout;$/;"	n
+usb_timer_heartbeat	cw305_ecc_p256_pmul_top.v	/^    reg [24:0] usb_timer_heartbeat;$/;"	r
+wire	cw305_ecc_p256_pmul_top.v	/^    input  wire                         tio_clkin$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input  wire [pCT_WIDTH-1:0]         crypto_cipherin,$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          crypto_busy,$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          crypto_done,$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          crypto_idle$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          crypto_ready,$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          j16_sel,        \/\/ DIP switch J16$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          k15_sel,        \/\/ DIP switch K15$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          k16_sel,        \/\/ DIP switch K16$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          l14_sel,        \/\/ DIP Switch L14$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          pll_clk1,       \/\/PLL Clock Channel #1$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          pushbutton,     \/\/ Pushbutton SW4, connected to R1, used here as reset$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          usb_cen,        \/\/ !CE, active low chip enable$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          usb_rdn,        \/\/ !RD, low when addr valid for read$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          usb_trigger,    \/\/ High when trigger requested$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire                          usb_wrn,        \/\/ !WR, low when data+addr valid for write$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    input wire [pADDR_WIDTH-1:0]        usb_addr,       \/\/ Address$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    output wire                         crypto_rst,$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    output wire                         crypto_start,$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    output wire                         led1,           \/\/ red LED$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    output wire                         led2,           \/\/ green LED$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    output wire                         led3,           \/\/ blue LED$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    output wire                         tio_clkout,$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    output wire                         tio_trigger,$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    output wire [pKEY_WIDTH-1:0]        crypto_keyout,$/;"	p
+wire	cw305_ecc_p256_pmul_top.v	/^    output wire [pPT_WIDTH-1:0]         crypto_textout,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire                                  I_busy,   \/* Crypto busy. *\/$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire                                  I_done,   \/* Crypto done. Can be high for one crypto_clk cycle or longer. *\/$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire                                  I_ready,  \/* Crypto core ready. Tie to '1' if not used. *\/$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire                                  crypto_clk,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire                                  exttrigger_in,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire                                  reg_addrvalid,   \/\/ Address valid flag$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire                                  reg_read,        \/\/ Read flag. One clock cycle AFTER this flag is high$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire                                  reg_write,       \/\/ Write flag. When high on rising edge valid data is$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire                                  reset_i,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire                                  rx_wren,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire                                  ry_wren,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire                                  usb_clk,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire [2:0]                            gx_addr,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire [2:0]                            gy_addr,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire [2:0]                            k_addr,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire [2:0]                            rx_addr,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire [2:0]                            ry_addr,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire [31:0]                           I_rx_word,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire [31:0]                           I_ry_word,$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire [7:0]                            write_data,      \/\/$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire [pADDR_WIDTH-pBYTECNT_SIZE-1:0]  reg_address,     \/\/ Address of register$/;"	p
+wire	cw305_reg_pmul.v	/^   input  wire [pBYTECNT_SIZE-1:0]              reg_bytecnt,  \/\/ Current byte count$/;"	p
+wire	cw305_reg_pmul.v	/^   output wire                                  O_start   \/* High for one crypto_clk cycle, indicates text ready. *\/$/;"	p
+wire	cw305_reg_pmul.v	/^   output wire [31:0]                           O_k_word,$/;"	p
+wire	noise_memories.v	/^   input  wire          I_wr_en,$/;"	p
+wire	noise_memories.v	/^   input  wire [15:0]   I_enable,$/;"	p
+wire	noise_memories.v	/^   input  wire [2:0]    bram_rx_rd_addr,$/;"	p
+wire	noise_memories.v	/^   input  wire [2:0]    bram_rx_wr_addr,$/;"	p
+wire	noise_memories.v	/^   input  wire [2:0]    bram_ry_rd_addr,$/;"	p
+wire	noise_memories.v	/^   input  wire [2:0]    bram_ry_wr_addr,$/;"	p
+wire	noise_memories.v	/^   input  wire [2:0]    bram_rz_rd_addr,$/;"	p
+wire	noise_memories.v	/^   input  wire [2:0]    bram_rz_wr_addr,$/;"	p
+wire	noise_memories.v	/^   input  wire [31:0]   I_lfsr_state,$/;"	p
+wire	noise_memories.v	/^   input  wire [3:0]    I_rd_bank,$/;"	p
+wire	noise_memories.v	/^   output wire [31:0]   O_rd_data_ax,$/;"	p
+wire	noise_memories.v	/^   output wire [31:0]   O_rd_data_ay,$/;"	p
+wire	noise_memories.v	/^   output wire [31:0]   O_rd_data_az,$/;"	p
+wire	noise_memories.v	/^   output wire [31:0]   O_rd_data_bx,$/;"	p
+wire	noise_memories.v	/^   output wire [31:0]   O_rd_data_by,$/;"	p
+wire	noise_memories.v	/^   output wire [31:0]   O_rd_data_bz$/;"	p
+wr_en	noise_memories.v	/^    wire [15:0] wr_en = {16{I_wr_en}};$/;"	n
+write_data	cw305_ecc_p256_pmul_top.v	/^    wire [7:0] write_data;$/;"	n
