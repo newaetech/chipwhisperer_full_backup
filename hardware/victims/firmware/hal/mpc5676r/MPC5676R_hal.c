@@ -91,7 +91,7 @@ void trigger_setup(void)
 void trigger_high(void)
 {
     // PINS_DRV_WritePin(SIU, 160, 1);
-    pin_settings_config_t wtf = {
+    pin_settings_config_t trig_config = {
         .base              = SIU,
         .pinPortIdx        = 160u,
         .mux               = PORT_MUX_AS_GPIO,
@@ -104,12 +104,12 @@ void trigger_high(void)
         .pullConfig        = PORT_INTERNAL_PULL_NOT_ENABLED,
         .initValue         = 1u,
     };
-    PINS_DRV_Init(1, &wtf);
+    PINS_DRV_Init(1, &trig_config);
    ;
 }
 void trigger_low(void)
 {
-    pin_settings_config_t wtf = {
+    pin_settings_config_t trig_config = {
         .base              = SIU,
         .pinPortIdx        = 160u,
         .mux               = PORT_MUX_AS_GPIO,
@@ -123,7 +123,7 @@ void trigger_low(void)
         .initValue         = 0u,
     };
     // PINS_DRV_WritePin(SIU, 160, 0);
-    PINS_DRV_Init(1, &wtf);
+    PINS_DRV_Init(1, &trig_config);
    ;
 }
 
@@ -271,6 +271,21 @@ void BoardInit(void)
     sysdiv &= ~(0b11 << 2); // sysclock/2 for m_clk
 
     SIU->SYSDIV = sysdiv;
+    pin_settings_config_t clkokconfig = {
+        .base              = SIU,
+        .pinPortIdx        = 199,
+        .mux               = PORT_MUX_AS_GPIO,
+        .outputBuffer      = PORT_OUTPUT_BUFFER_ENABLED,
+        .slewRateCtrl      = HALF_STRENGTH_WITH_SLEWRATE_CONTROL,
+        .openDrain         = PORT_OPEN_DRAIN_DISABLED,
+        .hysteresis        = PORT_HYSTERESYS_DISABLED,
+        .driveSelect       = PORT_MINIMUM_DRIVE_STRENGTH,
+        .inputBuffer       = PORT_INPUT_BUFFER_DISABLED,
+        .pullConfig        = PORT_INTERNAL_PULL_NOT_ENABLED,
+        .initValue         = 1u,
+    };
+    // PINS_DRV_WritePin(SIU, 160, 0);
+    PINS_DRV_Init(1, &clkokconfig);
 
     // SIU_SYSDIV_BYPASS_MASK
     // SIU->SYSDIV = (SIU->SYSDIV & ~SIU_SYSDIV_BYPASS_MASK) | SIU_SYSDIV_BYPASS(1U);
