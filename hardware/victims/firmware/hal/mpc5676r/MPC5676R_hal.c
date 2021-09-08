@@ -90,12 +90,40 @@ void trigger_setup(void)
 }
 void trigger_high(void)
 {
-    PINS_DRV_WritePin(SIU, 160, 1);
+    // PINS_DRV_WritePin(SIU, 160, 1);
+    pin_settings_config_t wtf = {
+        .base              = SIU,
+        .pinPortIdx        = 160u,
+        .mux               = PORT_MUX_AS_GPIO,
+        .outputBuffer      = PORT_OUTPUT_BUFFER_ENABLED,
+        .slewRateCtrl      = HALF_STRENGTH_WITH_SLEWRATE_CONTROL,
+        .openDrain         = PORT_OPEN_DRAIN_DISABLED,
+        .hysteresis        = PORT_HYSTERESYS_DISABLED,
+        .driveSelect       = PORT_MINIMUM_DRIVE_STRENGTH,
+        .inputBuffer       = PORT_INPUT_BUFFER_DISABLED,
+        .pullConfig        = PORT_INTERNAL_PULL_NOT_ENABLED,
+        .initValue         = 1u,
+    };
+    PINS_DRV_Init(1, &wtf);
    ;
 }
 void trigger_low(void)
 {
-    PINS_DRV_WritePin(SIU, 160, 0);
+    pin_settings_config_t wtf = {
+        .base              = SIU,
+        .pinPortIdx        = 160u,
+        .mux               = PORT_MUX_AS_GPIO,
+        .outputBuffer      = PORT_OUTPUT_BUFFER_ENABLED,
+        .slewRateCtrl      = HALF_STRENGTH_WITH_SLEWRATE_CONTROL,
+        .openDrain         = PORT_OPEN_DRAIN_DISABLED,
+        .hysteresis        = PORT_HYSTERESYS_DISABLED,
+        .driveSelect       = PORT_MINIMUM_DRIVE_STRENGTH,
+        .inputBuffer       = PORT_INPUT_BUFFER_DISABLED,
+        .pullConfig        = PORT_INTERNAL_PULL_NOT_ENABLED,
+        .initValue         = 0u,
+    };
+    // PINS_DRV_WritePin(SIU, 160, 0);
+    PINS_DRV_Init(1, &wtf);
    ;
 }
 

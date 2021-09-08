@@ -86,7 +86,7 @@ pin_settings_config_t g_pin_mux_InitConfigArr[NUM_OF_CONFIGURED_PINS] =
         .hysteresis        = PORT_HYSTERESYS_DISABLED,
         .driveSelect       = PORT_MINIMUM_DRIVE_STRENGTH,
         .inputBuffer       = PORT_INPUT_BUFFER_DISABLED,
-        .pullConfig        = PORT_INTERNAL_PULL_DOWN_ENABLED,
+        .pullConfig        = PORT_INTERNAL_PULL_NOT_ENABLED,
         .initValue         = 0u,
     },
     {
