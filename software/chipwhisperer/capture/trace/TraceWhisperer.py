@@ -31,6 +31,7 @@ import chipwhisperer as cw
 from ...common.utils import util
 from ...hardware.naeusb.naeusb import NAEUSB
 from ...hardware.naeusb.fpga import FPGA
+from ...logging import *
 
 class TraceWhisperer():
 

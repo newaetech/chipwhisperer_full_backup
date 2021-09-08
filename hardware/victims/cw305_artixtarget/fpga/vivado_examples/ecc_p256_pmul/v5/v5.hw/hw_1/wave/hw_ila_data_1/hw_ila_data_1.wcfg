@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<wave_config>
+	<wave_state>
+	</wave_state>
+	<db_ref_list>
+		<db_ref path="Y:/fpga/vivado_examples/ecc_p256_pmul/v5/v5.hw/hw_1/wave/hw_ila_data_1/hw_ila_data_1.wdb" id="1" type="auto">
+			<top_modules>
+				<top_module name="top">
+				</top_module>
+			</top_modules>
+		</db_ref>
+	</db_ref_list>
+	<WVObjectSize size="5">
+	</WVObjectSize>
+	<wvobject fp_name="U_reg_pmul/O_start" type="logic" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/O_start</obj_property>
+		<obj_property name="ObjectShortName">O_start</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/I_done" type="logic" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/I_done</obj_property>
+		<obj_property name="ObjectShortName">I_done</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/reg_rx" type="array" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/reg_rx[7:0]</obj_property>
+		<obj_property name="ObjectShortName">reg_rx[7:0]</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/O_k_word" type="array" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/O_k_word[7:0]</obj_property>
+		<obj_property name="ObjectShortName">O_k_word[7:0]</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/done_pulse" type="logic" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/done_pulse</obj_property>
+		<obj_property name="ObjectShortName">done_pulse</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+</wave_config>
+
