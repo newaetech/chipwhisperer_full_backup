@@ -78,7 +78,7 @@ pin_settings_config_t g_pin_mux_InitConfigArr[NUM_OF_CONFIGURED_PINS] =
 {
     {
         .base              = SIU,
-        .pinPortIdx        = 180u,
+        .pinPortIdx        = 160u,
         .mux               = PORT_MUX_AS_GPIO,
         .outputBuffer      = PORT_OUTPUT_BUFFER_ENABLED,
         .slewRateCtrl      = HALF_STRENGTH_WITH_SLEWRATE_CONTROL,
@@ -222,14 +222,14 @@ pin_settings_config_t g_pin_mux_InitConfigArr[NUM_OF_CONFIGURED_PINS] =
         .initValue         = 0u,
     },
     {
-		.base = SIU, .pinPortIdx = 180u, .mux = PORT_MUX_AS_GPIO,
+		.base = SIU, .pinPortIdx = 195, .mux = PORT_MUX_AS_GPIO,
 		.outputBuffer = PORT_OUTPUT_BUFFER_ENABLED, .slewRateCtrl =
 				HALF_STRENGTH_WITH_SLEWRATE_CONTROL, .openDrain =
 				PORT_OPEN_DRAIN_DISABLED,
 		.hysteresis = PORT_HYSTERESYS_DISABLED, .driveSelect =
 				PORT_MINIMUM_DRIVE_STRENGTH, .inputBuffer =
 				PORT_INPUT_BUFFER_DISABLED, .pullConfig =
-				PORT_INTERNAL_PULL_DOWN_ENABLED, .initValue = 0u, },
+				PORT_INTERNAL_PULL_DOWN_ENABLED, .initValue = 1u, },
     { .base =
 		SIU, .pinPortIdx = 89u, .mux = PORT_MUX_PRIMARY, .outputBuffer =
 		PORT_OUTPUT_BUFFER_ENABLED, .slewRateCtrl =

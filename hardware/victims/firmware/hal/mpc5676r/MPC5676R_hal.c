@@ -90,10 +90,12 @@ void trigger_setup(void)
 }
 void trigger_high(void)
 {
+    PINS_DRV_WritePin(SIU, 160, 1);
    ;
 }
 void trigger_low(void)
 {
+    PINS_DRV_WritePin(SIU, 160, 0);
    ;
 }
 
@@ -205,6 +207,7 @@ static void PIT3Init(void)
  */
 void BoardInit(void)
 {
+    PINS_DRV_Init(NUM_OF_CONFIGURED_PINS, g_pin_mux_InitConfigArr);
 
     // FMPLL.ESYNCR1.B.CLKCFG = 7;         /* Normal mode with crystal osc */
     // FMPLL.ESYNCR1.B.CLKCFG = 0;         /* Normal mode with crystal osc */
@@ -224,25 +227,27 @@ void BoardInit(void)
 
     // So bit 0 on the datasheet is bit 31 here
     // Probably powerpc bs
+    if (SIU->SYSDIV & (1 << 31)) {
+        SIU->SYSDIV &= ~(1 << 31);
+    }
     uint32_t sysdiv = SIU->SYSDIV;
 
     
     //sysclock = xosc
     sysdiv &= ~(0b11 << 12);
-    sysdiv |= 0b01 << 12;
+    sysdiv |= 0b01 << 12; //10 for ext oscillator
 
     // turn off bypass
     // sysdiv &= ~(0b1 << 4);
 
-    sysdiv &= ~(0b11 << 28); // sysclock/2 for m_clk
+    sysdiv &= ~(0b11 << 2); // sysclock/2 for m_clk
 
     SIU->SYSDIV = sysdiv;
 
-    
+    // SIU_SYSDIV_BYPASS_MASK
     // SIU->SYSDIV = (SIU->SYSDIV & ~SIU_SYSDIV_BYPASS_MASK) | SIU_SYSDIV_BYPASS(1U);
     //SIU->SYSDIV = (SIU->SYSDIV & ~SIU_SYSDIV_SYSCLKSEL_MASK) | SIU_SYSDIV_SYSCLKSEL(2U);
     
-    PINS_DRV_Init(NUM_OF_CONFIGURED_PINS, g_pin_mux_InitConfigArr);
 }
 
 
@@ -286,3 +291,18 @@ void platform_init(void)
      */
     FLEXCAN_DRV_Init(INST_CANCOM1, &canCom1_State, &canCom1_InitConfig0);
 }
+
+
+// const uint32_t  __attribute__((section (".rchw")))user_rchw[] = {
+//     0x005A0000,
+//     0x1000
+// };
+
+#define MPC56xx_ID    0x005A0000  /* RCHW boot ID for MPC56xx devices     */
+#define VLE_ENABLE    0x01000000  /* VLE is enabled                       */
+
+extern void _start(void);
+#define ENTRY_POINT  _start
+#define RCHW_VAL (VLE_ENABLE | MPC56xx_ID)
+
+const uint32_t __attribute__ ((section(".rchw"))) RCHW[] = {RCHW_VAL, (uint32_t)ENTRY_POINT};
