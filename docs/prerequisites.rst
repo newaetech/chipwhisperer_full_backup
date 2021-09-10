@@ -32,6 +32,7 @@ The following commands are provided if you want to get right into using ChipWhis
 
 .. code:: bash
 
+    sudo apt update && sudo apt ugrade
     sudo apt install python3 python3-pip libusb-dev make git avr-libc gcc-avr gcc-arm-none-eabi libusb-1.0.0-dev
     sudo printf "SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b3e\", ATTRS{idProduct}==\"ace[0-9]|c[3-6][0-9][0-9]\", TAG+=\"uaccess\"" >> /etc/udev/rules.d/50-newae.rules
     sudo udevadm control --reload-rules
@@ -40,6 +41,15 @@ The following commands are provided if you want to get right into using ChipWhis
 You are now ready to move on to :ref:`install-repo`.
 
 We go through each of these commands below:
+
+Update Packages
+===============
+
+Make sure your packages are up to date before installing anything
+
+.. code:: bash
+
+    sudo apt update && sudo apt upgrade
 
 Python
 ======
