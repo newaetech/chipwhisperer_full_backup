@@ -57,16 +57,21 @@ def _WINDOWS_USB_CHECK_DRIVER(device):
                 cnt = 0
                 enum_name = ""
                 myenum = None
+                naeusb_logger.debug('Looking for {}...'.format(name))
                 while enum_name != name:
                     myenum = winreg.EnumValue(handle, cnt)
                     enum_name = myenum[0]
                     cnt += 1
+                    naeusb_logger.debug('Found {}'.format(enum_name))
                 return myenum[1]
             except OSError as e:
                 return None
 
         # get devices with same PID/VID
-        keyhandle_device = winreg.OpenKey(keyhandle, subkey)
+        try:
+            keyhandle_device = winreg.OpenKey(keyhandle, subkey)
+        except Exception as e:
+            naeusb_logger.debug("Could not get keyhandle device " + str(e))
         i = 0
         address = None
         sn = None
@@ -74,18 +79,24 @@ def _WINDOWS_USB_CHECK_DRIVER(device):
 
         # get devices that are connected and have the same port number
         while (address != device.getPortNumber()) or (attached is False):
-            sn = winreg.EnumKey(keyhandle_device, i)
+            try:
+                sn = winreg.EnumKey(keyhandle_device, i)
+            except Exception as e:
+                naeusb_logger.debug("Could not get sn " + str(e)) 
             # print("sn: " + sn)
             keyhandle_sn = winreg.OpenKey(keyhandle_device, sn)
             with keyhandle_sn as h:
                 address = get_enum_by_name(h, "Address")
                 if address is None:
-                    naeusb_logger.info("Could not find Address in device {}".format(sn))
+                    naeusb_logger.debug("Could not find Address in device {}".format(sn))
                 service = get_enum_by_name(h, "Service")
 
                 # now we need to figure out if this device is attached
                 # Windows really doesn't make this easy...
-                keyhandle_driver = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\{}\\Enum".format(service))
+                try:
+                    keyhandle_driver = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\{}\\Enum".format(service))
+                except Exception as e:
+                    naeusb_logger.debug("Could not get keyhandle driver " + str(e))
                 num_enums = get_enum_by_name(keyhandle_driver, "Count")
 
                 attached = False
@@ -97,10 +108,14 @@ def _WINDOWS_USB_CHECK_DRIVER(device):
                     
                 keyhandle_driver.Close()
                 i += 1
-        keyhandle_sn = winreg.OpenKey(keyhandle_device, sn)
+        try:
+            keyhandle_sn = winreg.OpenKey(keyhandle_device, sn)
+        except Exception as e:
+            naeusb_logger.debug("Could not get keyhandle sn " + str(e))
+
         service = get_enum_by_name(keyhandle_sn, "Service")
         if service is None:
-            naeusb_logger.info("Could not find service name in device {}".format(sn))
+            naeusb_logger.debug("Could not find service name in device {}".format(sn))
 
         keyhandle_sn.Close()
         keyhandle_device.Close()
@@ -273,7 +288,7 @@ class NAEUSB_Backend:
         if os.name == "nt":
             for dev in dev_list:
                 win_driver = _WINDOWS_USB_CHECK_DRIVER(dev)
-                if (win_driver != "usbccgp") and (win_driver != "WINUSB"):
+                if (win_driver.lower() != "usbccgp") and (win_driver.upper() != "WINUSB"):
                     naeusb_logger.warning("Invalid driver {} detected. If you have connection problems, try upgrading your driver".format(win_driver))
                     naeusb_logger.warning("See https://chipwhisperer.readthedocs.io/en/latest/drivers.html for more information")
         if not (idProduct is None):
