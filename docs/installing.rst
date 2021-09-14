@@ -104,7 +104,8 @@ Windows Installer
 .. warning:: Windows Subsystem for Linux (WSL) seems to interfere with
             :code:`%%bash` blocks. If you get an error about not being
             able to find make, or something about needing to install 
-            a Linux distribution, try changing :code:`%%bash` to :code:`%%sh`.
+            a Linux distribution, try disabling WSL or 
+            changing :code:`%%bash` to :code:`%%sh`.
 
 If you want to run a native Windows installation of ChipWhisperer, your best 
 bet is to run the Windows installer, which takes care of getting the 
@@ -113,7 +114,7 @@ prerequisites for you. The steps for using the installer are as follows:
  * Navigate to the ChipWhisperer release page on Github: `releases`_
 
  * Find the latest ChipWhisperer Windows install executable (currently 
-   :code:`Chipwhisperer.v5.5.0.Setup.64-bit.exe`)
+   :code:`Chipwhisperer.v5.5.2.Setup.64-bit.exe`)
  
  * Run the executable and choose the path you want to install ChipWhisperer at. 
    You must have read/write permissions for the location you install to, so 
