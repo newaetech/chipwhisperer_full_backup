@@ -119,6 +119,12 @@ For example, to flash new firmware to a CW305::
     >>> import chipwhisperer as cw
     >>> cw.program_sam_firmware(hardware_type='cw305')
 
+*********************
+Old Firmware Upgrade
+*********************
+
+For ChipWhisperer versions earlier than 5.6, see :ref:`api-scope-update`.
+
 ***************
 Troubleshooting
 ***************

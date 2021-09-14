@@ -44,7 +44,9 @@ you. Note that Linux users may find it easier to do a manual install (
    the ChipWhisperer hardware.
 
  * Download a ChipWhisperer virtual machine image release or build it
-   yourself using Vagrant.
+   yourself using Vagrant. VM images come as .7z files and can be found on our 
+   `GitHub releases page`_, typically being called :code:`ChipWhisperer.Jupyter.7z`
+   or similar.
 
  * Unzip the VirtualBox image, go to *Machine* > *Add* in VirtualBox and select
    the VM that was unzipped.
@@ -87,6 +89,8 @@ You are now ready to use ChipWhisperer. Open Chrome/Firefox and
 type **localhost:8888** into the address bar. This will give you access to
 the Jupyter Notebook server running in the virtual machine.
 
+.. _Github releases page: https://github.com/newaetech/chipwhisperer/releases
+
 .. _VirtualBox: https://www.virtualbox.org/wiki/Downloads
 
 .. _install-windows-exe:
@@ -96,6 +100,11 @@ Windows Installer
 *****************
 .. note:: Beginning with ChipWhisperer 5.5, the Windows installer includes
           everything you need to run ChipWhisperer!
+
+.. warning:: Windows Subsystem for Linux (WSL) seems to interfere with
+            :code:`%%bash` blocks. If you get an error about not being
+            able to find make, or something about needing to install 
+            a Linux distribution, try changing :code:`%%bash` to :code:`%%sh`.
 
 If you want to run a native Windows installation of ChipWhisperer, your best 
 bet is to run the Windows installer, which takes care of getting the 
@@ -166,8 +175,8 @@ latest features/bug fixes, but we also keep each major release on master.
 .. note::
 
    On Unix based OS (Mac, Linux, etc), python often links to python2. You
-   may need to replace python and pip calls with python3 and pip3 calls,
-   respectively
+   may need to replace python calls with python3 (e.g. :code:`python3 -m pip install...` 
+   instead of :code:`python -m pip install...`.)
 
 If you have Git already set up, this is easy to do:
 

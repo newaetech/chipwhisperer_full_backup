@@ -32,11 +32,15 @@ The following commands are provided if you want to get right into using ChipWhis
 
 .. code:: bash
 
-    sudo apt update && sudo apt ugrade
-    sudo apt install python3 python3-pip libusb-dev make git avr-libc gcc-avr gcc-arm-none-eabi libusb-1.0.0-dev
-    sudo printf "SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b3e\", ATTRS{idProduct}==\"ace[0-9]|c[3-6][0-9][0-9]\", TAG+=\"uaccess\"" >> /etc/udev/rules.d/50-newae.rules
+    sudo apt update && sudo apt upgrade
+    sudo apt install python3 python3-pip libusb-dev make git avr-libc gcc-avr gcc-arm-none-eabi libusb-1.0-0-dev
+    sudo bash -c 'printf "SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b3e\", ATTRS{idProduct}==\"*\", TAG+=\"uaccess\"" >> /etc/udev/rules.d/50-newae.rules'
+    sudo bash -c 'printf "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"2b3e\", ATTRS{idProduct}==\"*\", TAG+=\"uaccess\"" >> /etc/udev/rules.d/50-newae.rules'
+    sudo bash -c 'printf "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"03eb\", ATTRS{idProduct}==\"6124\", TAG+=\"uaccess\"" >> /etc/udev/rules.d/50-newae.rules'
     sudo udevadm control --reload-rules
     sudo usermod -a -G dialout $USER
+
+Once that's done, you should logout and login, or reboot your system.
 
 You are now ready to move on to :ref:`install-repo`.
 
@@ -72,7 +76,7 @@ as **libusb1** to work. Install using:
 
 .. code:: bash
 
-    sudo apt install libusb-dev make libusb-1.0.0-dev
+    sudo apt install libusb-dev make libusb-1.0-0-dev
 
 You'll probably want to pick up git as well:
 
@@ -104,13 +108,17 @@ file called :code:`/etc/udev/rules.d/50-newae.rules`. The contents of this file 
 .. code::
 
     # Match all CW devices
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace[0-9]|c[3-6][0-9][0-9]", TAG+="uaccess"
+    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="*", TAG+="uaccess"
+    SUBSYSTEM=="tty", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="*", TAG+="uaccess"
+    SUBSYSTEM=="tty", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="6124", TAG+="uaccess"
 
-The following command will put this into the proper file:
+The following commands will put this into the proper file:
 
 .. code:: bash
 
-    sudo printf "SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b3e\", ATTRS{idProduct}==\"ace[0-9]|c[3-6][0-9][0-9]\", TAG+=\"uaccess\"" >> /etc/udev/rules.d/50-newae.rules
+    sudo bash -c 'printf "SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b3e\", ATTRS{idProduct}==\"*\", TAG+=\"uaccess\"" >> /etc/udev/rules.d/50-newae.rules'
+    sudo bash -c 'printf "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"2b3e\", ATTRS{idProduct}==\"*\", TAG+=\"uaccess\"" >> /etc/udev/rules.d/50-newae.rules'
+    sudo bash -c 'printf "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"03eb\", ATTRS{idProduct}==\"6124\", TAG+=\"uaccess\"" >> /etc/udev/rules.d/50-newae.rules'
 
 Alternatively, you can just copy :code:`chipwhisperer/hardware/50-newae.rules`
 to :code:`/etc/udev/rules.d/`.
@@ -132,6 +140,8 @@ the USB firmware on your ChipWhisperer and use the ChipWhisperer's serial port:
 .. code:: bash
 
     sudo usermod -a -G dialout YOUR-USERNAME
+
+Once that's done, reboot your system, or logout and login again.
 
 ChipWhisperer
 =============
