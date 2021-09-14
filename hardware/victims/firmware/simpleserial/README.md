@@ -48,29 +48,28 @@ The following commands are reserved by SimpleSerial v1:
 * `'y'`: Get the number of Simpleserial commands on the target
 * `'w'`: Get Simpleserial commands
 
-## SimpleSerial v2.0
+## SimpleSerial v2.1
 
 All communication is initiated by the capture board. The capture board begins
 communication by sending a packet:
 
-`[cmd, scmd, dlen, data_0, data_1, ..., data_n, CRC (poly=0xA6)]`
+`[cmd, scmd, dlen, data_0, data_1, ..., data_n, CRC (poly=0x4D)]`
 
 cmd indicates the desired command, `scmd` indicates a sub-command, `dlen` is the
-length of the data, data is binary data, and the crc is a CRC of polynomial 0xA6
+length of the data, data is binary data, and the crc is a CRC of polynomial 0x4D
 of the entire packet (from `cmd` to `data_n`). All bytes in the packet may take
 any 8-bit binary value, except `dlen`, which is limited to less than 250.
-Therefore, only 249 bytes can
-be sent per packet.
+Therefore, only 249 bytes can be sent per packet.
 
 If the target board needs to respond with data, it sends back:
 
-`[cmd, dlen, data_0, data_1, ..., data_n, CRC (poly=0xA6)]`
+`[cmd, dlen, data_0, data_1, ..., data_n, CRC (poly=0x4D)]`
 
 Whether or not the device sends back data, the device will send back an error
 packet to tell the capture board that
 it is done its operation:
 
-`['e', 0x01, error, CRC (poly=0xA6)]`
+`['e', 0x01, error, CRC (poly=0x4D)]`
 
 Before being sent, all packets are [Consistent Overhead Byte Stuffing
 (COBS)](https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing) and
@@ -103,6 +102,11 @@ The following commands are reserved by SimpleSerial v2:
 
 * `'v'`: Get simpleserial version (len=0)
 * `'w'`: Get simpleserial commands
+
+### SimpleSerial V2.0
+
+As of ChipWhisperer 5.6.1, this SimpleSerial version is deprecated
+because it used an incorrect constant for its CRC (0xA6 instead of 0x4D)
 
 ## Usage from C
 

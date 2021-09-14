@@ -15,7 +15,8 @@ static int num_commands = 0;
 //#define SS_VER_2_0 2
 
 
-#define CW_CRC 0xA6
+// 0xA6 formerly 
+#define CW_CRC 0x4D 
 uint8_t ss_crc(uint8_t *buf, uint8_t len)
 {
 	unsigned int k = 0;
@@ -33,8 +34,9 @@ uint8_t ss_crc(uint8_t *buf, uint8_t len)
 // [B_STUFF, CMD, SCMD, LEN, B_STUFF, DATA..., CRC, TERM]
 
 //#define SS_VER SS_VER_2_0
-
 #if SS_VER == SS_VER_2_0
+#error "SS_VER_2_0 is deprecated! Use SS_VER_2_1 instead."
+#elif SS_VER == SS_VER_2_1
 
 
 typedef struct ss_cmd

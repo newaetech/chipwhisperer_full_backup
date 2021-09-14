@@ -106,13 +106,13 @@ class SimpleSerial2(TargetTemplate):
                 crc ^= b
                 for _ in range(8):
                     if crc & 0x80:
-                        crc = (crc << 1) ^ 0xA6
+                        crc = (crc << 1) ^ 0x4D
                         crc &= 0xFF
                     else:
                         crc <<= 1
                         crc &= 0xFF
         except:
-            target_logger.error("crc error: {}".format(buf))
+            target_logger.error("crc error: {}. Try rebuilding firmware if you only get this error.".format(buf))
         return crc
 
 

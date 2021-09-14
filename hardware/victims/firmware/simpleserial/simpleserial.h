@@ -9,6 +9,7 @@
 #define SS_VER_1_0 0
 #define SS_VER_1_1 1
 #define SS_VER_2_0 2
+#define SS_VER_2_1 3
 
 // Set up the SimpleSerial module
 // This prepares any internal commands
