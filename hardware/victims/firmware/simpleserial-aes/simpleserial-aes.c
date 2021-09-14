@@ -85,7 +85,7 @@ uint8_t enc_multi_setnum(uint8_t* t, uint8_t len)
     return 0;
 }
 
-#if SS_VER == SS_VER_2_0
+#if SS_VER == SS_VER_2_1
 uint8_t aes(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *buf)
 {
     uint8_t req_len = 0;
@@ -144,17 +144,15 @@ int main(void)
 
     /* Uncomment this to get a HELLO message for debug */
 
-/*
     putch('h');
     putch('e');
     putch('l');
     putch('l');
     putch('o');
     putch('\n');
-    */
 
 	simpleserial_init();
-    #if SS_VER == SS_VER_2_0
+    #if SS_VER == SS_VER_2_1
     simpleserial_addcmd(0x01, 16, aes);
     #else
     simpleserial_addcmd('k', 16, get_key);

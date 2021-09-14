@@ -28,7 +28,7 @@ uint8_t get_key(uint8_t* k, uint8_t len)
 	return 0x00;
 }
 
-#if SS_VER == SS_VER_2_0
+#if SS_VER == SS_VER_2_1
 uint8_t get_pt(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t* pt)
 #else
 uint8_t get_pt(uint8_t* pt, uint8_t len)
@@ -77,7 +77,7 @@ int main(void)
 
 	simpleserial_init();
 	simpleserial_addcmd('p', 16, get_pt);
-#if SS_VER != SS_VER_2_0
+#if SS_VER != SS_VER_2_1
 	simpleserial_addcmd('k', 16, get_key);
 	simpleserial_addcmd('x', 0, reset);
 #endif

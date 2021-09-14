@@ -335,7 +335,7 @@ void rsa_init(void)
  */
 uint8_t buf[128];
 uint8_t hash[32];
-#if SS_VER == SS_VER_2_0
+#if SS_VER == SS_VER_2_1
 uint8_t real_dec(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *pt)
 #else
 uint8_t real_dec(uint8_t *pt, uint8_t len)
@@ -352,7 +352,7 @@ uint8_t real_dec(uint8_t *pt, uint8_t len)
     trigger_low();
 
     //send back first 48 bytes
-#if SS_VER == SS_VER_2_0
+#if SS_VER == SS_VER_2_1
     simpleserial_put('r', 128, buf);
 #else
     simpleserial_put('r', 48, buf);
