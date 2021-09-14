@@ -29,6 +29,7 @@ Quick Install
 =============
 
 The following commands are provided if you want to get right into using ChipWhisperer.
+They have been tested on Lubuntu 21.04 and required steps may differ on other distributions of Linux.
 
 .. code:: bash
 
