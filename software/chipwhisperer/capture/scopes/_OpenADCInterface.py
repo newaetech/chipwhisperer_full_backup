@@ -2185,8 +2185,9 @@ class OpenADCInterface(util.DisableNewAttr):
         self._stream_segment_size = size
 
 
-    def setFastSMC(self, fast):
-        self.serial.set_smc_speed(fast)
+    def setFastSMC(self, active):
+        self.setFastFIFORead(active)
+        self.serial.set_smc_speed(active)
 
     def setBitsPerSample(self, bits):
         self._bits_per_sample = bits
@@ -2573,9 +2574,8 @@ class OpenADCInterface(util.DisableNewAttr):
         if self._stream_mode:
             # Stream mode adds 500mS of extra timeout on USB traffic itself...
             scope_logger.debug("Stream on!")
-            if self._is_husky:
-                self.setFastFIFORead(1)
-                self.serial.set_smc_speed(1)
+            if self._is_husky and self._fast_fifo_read_enable:
+                self.setFastSMC(1)
             self.serial.initStreamModeCapture(self._stream_len, self._sbuf, timeout_ms=int(self._timeout * 1000) + 500, \
                 is_husky=self._is_husky, segment_size=self._stream_segment_size)
 
@@ -2603,10 +2603,9 @@ class OpenADCInterface(util.DisableNewAttr):
                     self.serial.streamModeCaptureStream.stop = True
                     break
 
-            if self._is_husky:
+            if self._is_husky and self._fast_fifo_read_enable:
                 scope_logger.debug("DISABLING fast fifo read")
-                self.setFastFIFORead(0)
-                self.serial.set_smc_speed(0)
+                self.setFastSMC(0)
 
             self._stream_rx_bytes, stream_timeout = self.serial.cmdReadStream(self._is_husky)
             timeout |= stream_timeout
@@ -2831,12 +2830,12 @@ class OpenADCInterface(util.DisableNewAttr):
         else:
             if self._fast_fifo_read_enable:
                 # switch FPGA and SAM3U into fast read timing mode
-                self.setFastFIFORead(1)
-                self.serial.set_smc_speed(1)
+                self.setFastSMC(1)
             data = self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, bytesToRead)
             # switch FPGA and SAM3U back to regular read timing mode
-            self.setFastFIFORead(0)
-            self.serial.set_smc_speed(0)
+            if self._fast_fifo_read_enable:
+                scope_logger.debug("DISABLING fast fifo read")
+                self.setFastSMC(0)
 
         scope_logger.debug("XXX read %d bytes; NumberPoints=%d, bytesToRead=%d" % (len(data), NumberPoints, bytesToRead))
         if data is not None:

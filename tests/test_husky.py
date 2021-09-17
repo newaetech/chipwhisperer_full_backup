@@ -132,37 +132,41 @@ def find0to1trans(data):
 
 
 testData = [
-    # samples   presamples  testmode    clock       adcmul  bit stream  segs    segcycs desc
-    (10,        0,          'internal', 20e6,       1,      8,  False,  1,      0,      'quick'),
-    (131070,    0,          'internal', 20e6,       1,      8,  False,  1,      0,      'maxsamples8'),
-    (131070,    0,          'internal', 20e6,       1,      12, False,  1,      0,      'maxsamples12'),
-    (300,       0,          'internal', 20e6,       1,      8,  False,  10,     1000,   'evensegments8'),
-    (50,        0,          'internal', 20e6,       1,      8,  False,  100,    100,    'oddsegments8'),
-    (300,       0,          'internal', 20e6,       1,      12, False,  10,     1000,   'evensegments12'),
-    (50,        0,          'internal', 20e6,       1,      12, False,  100,    100,    'oddsegments12'),
-    (300,       30,         'internal', 20e6,       1,      12, False,  20,     500,    'presamplesegments'),
-    (131070,    0,          'internal', 10e6,       1,      12, False,  1,      0,      'slow'),
-    (131070,    0,          'internal', 80e6,       1,      12, False,  1,      0,      'fast'),
-    (131070,    0,          'internal', 180e6,      1,      12, False,  1,      0,      'fastest'),
-    (131070,    0,          'internal', 5e6,        4,      12, False,  1,      0,      '4xslow'),
-    (131070,    0,          'internal', 45e6,       4,      12, False,  1,      0,      '4xfast'),
-    (131070,    0,          'ADC',      20e6,       1,      12, False,  1,      0,      'ADCslow'),
-    (131070,    0,          'ADC',      180e6,      1,      12, False,  1,      0,      'ADCfast'),
-    (131070,    0,          'ADC',      45e6,       4,      12, False,  1,      0,      'ADC4xfast'),
+    # samples   presamples  testmode    clock       fastreads   adcmul  bit stream  segs    segcycs desc
+    (10,        0,          'internal', 20e6,       True,       1,      8,  False,  1,      0,      'quick'),
+    (131070,    0,          'internal', 20e6,       True,       1,      8,  False,  1,      0,      'maxsamples8'),
+    (131070,    0,          'internal', 20e6,       True,       1,      12, False,  1,      0,      'maxsamples12'),
+    (300,       0,          'internal', 20e6,       True,       1,      8,  False,  10,     1000,   'evensegments8'),
+    (50,        0,          'internal', 20e6,       True,       1,      8,  False,  100,    100,    'oddsegments8'),
+    (300,       0,          'internal', 20e6,       True,       1,      12, False,  10,     1000,   'evensegments12'),
+    (50,        0,          'internal', 20e6,       True,       1,      12, False,  100,    100,    'oddsegments12'),
+    (300,       30,         'internal', 20e6,       True,       1,      12, False,  20,     500,    'presamplesegments'),
+    (131070,    0,          'internal', 10e6,       True,       1,      12, False,  1,      0,      'slow'),
+    (131070,    0,          'internal', 80e6,       True,       1,      12, False,  1,      0,      'fast'),
+    (131070,    0,          'internal', 180e6,      True,       1,      12, False,  1,      0,      'fastest'),
+    (131070,    0,          'internal', 5e6,        True,       4,      12, False,  1,      0,      '4xslow'),
+    (131070,    0,          'internal', 45e6,       True,       4,      12, False,  1,      0,      '4xfast'),
+    (131070,    0,          'ADC',      20e6,       True,       1,      12, False,  1,      0,      'ADCslow'),
+    (131070,    0,          'ADC',      180e6,      True,       1,      12, False,  1,      0,      'ADCfast'),
+    (131070,    0,          'ADC',      45e6,       True,       4,      12, False,  1,      0,      'ADC4xfast'),
+    (500,       0,          'internal', 20e6,       False,      1,      12, False,  1,      0,      'slowreads'),
+    (131070,    0,          'internal', 20e6,       False,      1,      12, False,  1,      0,      'maxslowreads'),
 ]
 
 
 testTargetData = [
-    # samples   presamples  testmode    clock       adcmul  bit stream  threshold   check   segs    segcycs desc
-    (200,       0,          'internal', 20e6,       1,      8,  False,  65536,      True,   1,      0,      'quick'),
-    (131070,    0,          'internal', 15e6,       1,      12, False,  65536,      True,   1,      0,      'maxsamples12'),
-    (200000,    0,          'internal', 20e6,       1,      8,  True ,  65536,      True,   1,      0,      'quickstream8'),
-    (2000000,   0,          'internal', 16e6,       1,      12, True ,  65536,      True,   1,      0,      'longstream12'),
-    (6000000,   0,          'internal', 16e6,       1,      12, True ,  65536,      False,  1,      0,      'vlongstream12'),
-    (500000,    0,          'internal', 20e6,       1,      12, True ,  16384,      True,   1,      0,      'over'),
-    (3000000,   0,          'internal', 24e6,       1,      12, True ,  65536,      False,  1,      0,      'overflow'),
-    (200000,    0,          'internal', 15e6,       1,      12, True ,  65536,      True,   1,      0,      'postfail'),
-    (2000,      0,          'internal', 10e6,       1,      8,  False,  65536,      True,   1,      0,      'back2nostream'),
+    # samples   presamples  testmode    clock       fastreads   adcmul  bit stream  threshold   check   segs    segcycs desc
+    (200,       0,          'internal', 20e6,       True,       1,      8,  False,  65536,      True,   1,      0,      'quick'),
+    (131070,    0,          'internal', 15e6,       True,       1,      12, False,  65536,      True,   1,      0,      'maxsamples12'),
+    (200000,    0,          'internal', 20e6,       True,       1,      8,  True ,  65536,      True,   1,      0,      'quickstream8'),
+    (2000000,   0,          'internal', 16e6,       True,       1,      12, True ,  65536,      True,   1,      0,      'longstream12'),
+    (6000000,   0,          'internal', 16e6,       True,       1,      12, True ,  65536,      False,  1,      0,      'vlongstream12'),
+    (500000,    0,          'internal', 20e6,       True,       1,      12, True ,  16384,      True,   1,      0,      'over'),
+    (3000000,   0,          'internal', 24e6,       True,       1,      12, True ,  65536,      False,  1,      0,      'overflow'),
+    (200000,    0,          'internal', 15e6,       True,       1,      12, True ,  65536,      True,   1,      0,      'postfail'),
+    (2000,      0,          'internal', 10e6,       True,       1,      8,  False,  65536,      True,   1,      0,      'back2nostream'),
+    (500000,    0,          'internal', 12e6,       False,      1,      12, True ,  65536,      True,   1,      0,      'slowreads1'),
+    (2000000,   0,          'internal', 10e6,       False,      1,      12, True ,  65536,      True,   1,      0,      'slowreads2'),
 ]
 
 testGlitchOffsetData = [
@@ -221,8 +225,8 @@ def test_fw_version():
     assert scope.sam_build_date == '17:03:04 Aug 24 2021'
 
 
-@pytest.mark.parametrize("samples, presamples, testmode, clock, adcmul, bits, stream, segments, segment_cycles, desc", testData)
-def test_internal_ramp(samples, presamples, testmode, clock, adcmul, bits, stream, segments, segment_cycles, desc):
+@pytest.mark.parametrize("samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, desc", testData)
+def test_internal_ramp(samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, desc):
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = adcmul
     time.sleep(0.1)
@@ -238,6 +242,7 @@ def test_internal_ramp(samples, presamples, testmode, clock, adcmul, bits, strea
     else:
         raise ValueError
 
+    scope.sc._fast_fifo_read_enable = fastreads
     scope.adc.stream_mode = stream
     scope.adc.samples = samples
     scope.adc.presamples = presamples
@@ -253,6 +258,7 @@ def test_internal_ramp(samples, presamples, testmode, clock, adcmul, bits, strea
     raw = scope.get_last_trace(True)
     assert check_ramp(raw, testmode, samples, segment_cycles) == 0
     assert scope.adc.errors == 'no errors'
+    scope.sc._fast_fifo_read_enable = True # return to default
 
 
 def setup_glitch(offset, width, oversamp):
@@ -447,9 +453,9 @@ def test_glitch_output_doubles(reps, vco, glitches, oversamp, stepsize, desc):
 
 
 
-@pytest.mark.parametrize("samples, presamples, testmode, clock, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc", testTargetData)
+@pytest.mark.parametrize("samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc", testTargetData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_target_internal_ramp (samples, presamples, testmode, clock, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc):
+def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc):
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = adcmul
     time.sleep(0.1)
@@ -482,6 +488,7 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, adcmul, bit
     scope.io.tio2 = "serial_tx"
     scope.io.hs2 = "clkgen"
 
+    scope.sc._fast_fifo_read_enable = fastreads
     scope.adc.samples = samples
     scope.adc.presamples = presamples
     scope.adc.segments = segments
@@ -500,6 +507,7 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, adcmul, bit
     else:
         assert scope.adc.errors == 'no errors'
     if check: assert check_ramp(raw, testmode, samples, segment_cycles) == 0
+    scope.sc._fast_fifo_read_enable = True # return to default
 
 
 def test_xadc():
