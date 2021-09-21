@@ -262,9 +262,10 @@ class CW310(CW305):
     def _getCWType(self):
         return 'cwbergen'
 
-    def _dis(self):
+    def dis(self):
         if self._naeusb:
             self._naeusb.close()
+            self._naeusb = None
 
     def go_reg(self):
         """Disable USB clock (if requested), perform encryption, re-enable clock"""

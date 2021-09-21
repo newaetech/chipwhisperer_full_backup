@@ -66,6 +66,7 @@ void platform_init(void)
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
 	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 	HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_ACR_LATENCY_5WS);
+    FLASH->ACR |= 0b111 << 8; //enable ART acceleration
 
 #else
 	RCC_OscInitTypeDef RCC_OscInitStruct;
@@ -88,11 +89,10 @@ void platform_init(void)
 	RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
 	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-	HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_ACR_LATENCY_5WS);
+	HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_ACR_LATENCY_0WS); //wait states not needed for HSE
 #endif
 
 	// Configure and starts the RNG
-    FLASH->ACR |= 0b111 << 8; //enable ART acceleration
 	__HAL_RCC_RNG_CLK_ENABLE();
 	RngHandle.Instance = RNG;
 	RngHandle.State = HAL_RNG_STATE_RESET;

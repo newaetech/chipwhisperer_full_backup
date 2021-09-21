@@ -60,7 +60,7 @@ class CPAProgressiveOneSubkey(object):
 
         self.sumtq += np.sum(np.square(traces), axis=0, dtype=np.longdouble)
         self.sumt += np.sum(traces, axis=0, dtype=np.longdouble)
-        sumden2 = (np.square(self.sumt) - self.totalTraces * self.sumtq)
+        sumden2 = np.square(self.sumt) - self.totalTraces * self.sumtq
 
         #For each 0..0xFF possible value of the key byte
         for key in range(0, self.model.getPermPerSubkey()):

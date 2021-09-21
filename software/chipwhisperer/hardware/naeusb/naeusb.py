@@ -496,8 +496,8 @@ class NAEUSB:
             raise OSError("Pyserial >= 3.5 (found {}) required for this method".format(serial.__version__))
         devices = []
         for port in serial.tools.list_ports.comports():
-            if port.serial_number == self.usbtx._usbdev.serial_number.upper():
-                devices.append({"port": port.device, "interface": port.location.split('.')[-1]})
+            if port.serial_number == self.usbtx._usbdev.getSerialNumber().upper():
+                devices.append({"port": port.device, "interface": int(port.location.split('.')[-1])})
         return devices
 
     def con(self, idProduct=[0xACE2], connect_to_first=False, serial_number=None):
@@ -538,7 +538,7 @@ class NAEUSB:
         try:
             data = self.readCtrl(self.CMD_FW_VERSION, dlen=3)
             return data
-        except usb.USBError:
+        except:
             return [0, 0, 0]
 
     def sendCtrl(self, cmd, value=0, data=[]):
@@ -674,7 +674,7 @@ class NAEUSB:
         try:
             data = self.readCtrl(self.CMD_FW_VERSION, dlen=3)
             return data
-        except usb.USBError:
+        except:
             return [0, 0]
 
     def enterBootloader(self, forreal=False):

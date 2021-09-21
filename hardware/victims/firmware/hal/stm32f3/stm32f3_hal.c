@@ -29,26 +29,6 @@ void platform_init(void)
      RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
      uint32_t flash_latency = 0;
      HAL_RCC_ClockConfig(&RCC_ClkInitStruct, flash_latency);
-  #elif USE_PLL_4x
-	RCC_OscInitTypeDef RCC_OscInitStruct;
-	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-	RCC_OscInitStruct.HSEState       = RCC_HSE_BYPASS;
-	RCC_OscInitStruct.HSIState       = RCC_HSI_OFF;  // HSI is needed for the RNG
-	RCC_OscInitStruct.PLL.PLLState   = RCC_PLL_ON;  // we need PLL to use RNG
-	RCC_OscInitStruct.PLL.PLLSource  = RCC_PLLSOURCE_HSE;
-	RCC_OscInitStruct.PLL.PLLMUL    = 4;
-	RCC_OscInitStruct.PLL.PREDIV    = 1;
-	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
-        for(;;);
-    }
-
-	RCC_ClkInitTypeDef RCC_ClkInitStruct;
-	RCC_ClkInitStruct.ClockType      = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
-	RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
-	RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
-	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV4;
-	HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_ACR_LATENCY_2);
   #else
      RCC_OscInitTypeDef RCC_OscInitStruct;
      RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_HSI;
