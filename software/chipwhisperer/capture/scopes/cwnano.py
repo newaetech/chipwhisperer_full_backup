@@ -580,6 +580,7 @@ class CWNano(util.DisableNewAttr):
         self._lasttrace = None
 
         self.connectStatus = False
+        self._lasttrace_int = None
         self.disable_newattr()
 
     def default_setup(self):
