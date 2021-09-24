@@ -222,7 +222,7 @@ class Results(object):
                 if self.known_key is not None:
                     try:
                         self.pge[i] = np.where(self.maxes[i]['hyp'] == self.known_key[i])[0][0] - numnans
-                        print(self.pge)
+                        # print(self.pge)
                         if self.pge[i] < 0:
                             self.pge[i] = self.numPerms/2
                     except IndexError as e:
