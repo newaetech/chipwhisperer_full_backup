@@ -89,6 +89,11 @@ class EightBitAES128LeakageModels:
         return AES128_8bit(aes128_leakage.Mixcolumns_output)
 
     @property
+    def inverse_sbox_output_alt(self):
+        "ISbox output with correct key scheduling so it's highlighted in the jupyter callback"
+        return AES128_8bit(aes128_leakage.InvSBox_output_alt)
+
+    @property
     def shift_rows_output(self):
         """Hamming weight of shift rows output"""
         return AES128_8bit(aes128_leakage.ShiftColumns_output)
@@ -155,6 +160,7 @@ class EightBitAES128LeakageModels:
             'round_1_2_state_diff_text',
             'round_1_2_state_diff_key_mix',
             'round_1_2_state_diff_sbox',
+            'inverse_sbox_output_alt',
             't_table',
             't_table_dec'
         ]

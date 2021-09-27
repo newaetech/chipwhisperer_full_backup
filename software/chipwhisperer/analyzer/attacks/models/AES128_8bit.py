@@ -126,6 +126,17 @@ class InvSBox_output(AESLeakageHelper):
     def leakage(self, pt, ct, key, bnum):
         return self.inv_sbox(pt[bnum] ^ key[bnum])
 
+class InvSBox_output_alt(AESLeakageHelper):
+    name = 'HW: AES Inv SBox Output, First Round (Dec)'
+    c_model_enum_value = 61
+    c_model_enum_name = 'LEAK_HW_INVSBOXOUT_FIRSTROUND'
+    def leakage(self, pt, ct, key, bnum):
+        return self.inv_sbox(pt[bnum] ^ key[bnum])
+
+    def process_known_key(self, inpkey):
+        k = key_schedule_rounds(inpkey, 0, 10)
+        return k
+
 class LastroundHW(AESLeakageHelper):
     name = 'HW: AES Last-Round State'
     def leakage(self, pt, ct, key, bnum):
