@@ -477,6 +477,7 @@ class CDCI6214:
 
     @pll_src.setter
     def pll_src(self, src):
+        self._cached_adc_freq = None
         if src == "xtal":
             self.set_pll_input(True)
         elif src == "fpga":
@@ -573,6 +574,7 @@ class CDCI6214:
 
     @target_freq.setter
     def target_freq(self, freq):
+        self._cached_adc_freq = None
         self._set_target_freq = freq
         scope_logger.debug("adc_mul: {}".format(self._adc_mul))
         self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
@@ -653,6 +655,9 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
     def __init__(self, oaiface, fpga_clk_settings, mmcm1, mmcm2):
 
+        # cache ADC freq to improve capture speed 
+        self._cached_adc_freq = None
+
         self.oa = oaiface
         self.naeusb = oaiface.serial
         self.pll = CDCI6214(self.naeusb, mmcm1, mmcm2)
@@ -697,6 +702,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     
     @clkgen_src.setter
     def clkgen_src(self, clk_src):
+        self._cached_adc_freq = None
         if clk_src in ["internal", "system"]:
             self.extclk_monitor_enabled = False
             clkgen_freq = self.clkgen_freq
@@ -748,6 +754,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     @clkgen_freq.setter
     def clkgen_freq(self, freq):
         # update pll clk src
+        self._cached_adc_freq = None
         if not (self.clkgen_src in ["internal", "system"]):
             self.pll._fpga_clk_freq = self.fpga_clk_settings.freq_ctr
 
@@ -768,10 +775,12 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         :Setter: Set the adc multiplier
         """
+        self._cached_adc_freq = None
         return self.pll.adc_mul
 
     @adc_mul.setter
     def adc_mul(self, mul):
+        self._cached_adc_freq = None
         self.pll.adc_mul = mul
 
     @property
@@ -780,7 +789,12 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         Read-only
         """
-        return self.pll.adc_freq
+        if self._cached_adc_freq is None:
+            self._cached_adc_freq = self.pll.adc_freq
+
+        return self._cached_adc_freq
+        
+        # return self.pll.adc_freq
 
     @property
     def freq_ctr(self):
