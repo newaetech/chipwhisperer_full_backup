@@ -140,6 +140,18 @@ class USART(object):
             self._usb.sendCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), data[datasent:(datasent + datatosend)])
             datasent += datatosend
 
+        # if self.fw_version_str >= '0.20':
+        #     i = 1000
+        #     while self.in_waiting_tx() > 0:
+        #         # print(self.in_waiting_tx())
+        #         i -= 1
+        #         if i > 0:
+        #             time.sleep(0.001)
+        #         else:
+        #             target_logger.warning("Write timed out!")
+        #             raise OSError("Write timed out")
+
+
     def flush(self):
         """
         Flush all input buffers
@@ -171,26 +183,27 @@ class USART(object):
         Read data from input buffer, if 'dlen' is 0 everything present is read. If timeout is non-zero
         system will block for a while until data is present in buffer.
         """
+        resp = []
+
+        if timeout == 0:
+            timeout = self.timeout
 
         waiting = self.inWaiting()
 
         if dlen == 0:
             dlen = waiting
 
-        if timeout == 0:
-            timeout = self.timeout
-
-
-        resp = []
-
         # * 10 does nothing
-        while dlen and (timeout * 10) > 0:
+        while dlen and (timeout * 80) > 0:
             if waiting > 0:
                 newdata = self._usb.readCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), min(min(waiting, dlen), self._max_read))
                 resp.extend(newdata)
                 dlen -= len(newdata)
             waiting = self.inWaiting()
             timeout -= 1
+            # time.sleep(0.001)
+            if (timeout % 80) == 0:
+                time.sleep(0.001)
 
         return resp
 
@@ -215,3 +228,9 @@ class USART(object):
         if not self.fw_read:
             self.fw_read = self._usb.readFwVersion()
         return {"major": self.fw_read[0], "minor": self.fw_read[1], "debug": self.fw_read[2]}
+
+    @property
+    def fw_version_str(self):
+        if not self.fw_read:
+            self.fw_read = self._usb.readFwVersion()
+        return "{}.{}.{}".format(self.fw_read[0], self.fw_read[1], self.fw_read[2])
