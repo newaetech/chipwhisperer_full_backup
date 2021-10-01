@@ -43,10 +43,13 @@ def check_for_updates():
         other_logger.info("ChipWhisperer up to date")
         return latest_version
     else:
-        other_logger.info("ChipWhisperer update available!")
+        other_logger.warning("ChipWhisperer update available! See https://chipwhisperer.readthedocs.io/en/latest/installing.html for updating instructions")
         return latest_version
 
-check_for_updates()
+try:
+    check_for_updates()
+except:
+    other_logger.warning("Could not check ChipWhisperer version")
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 
 ktp = key_text_patterns #alias

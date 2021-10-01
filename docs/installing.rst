@@ -89,6 +89,19 @@ You are now ready to use ChipWhisperer. Open Chrome/Firefox and
 type **localhost:8888** into the address bar. This will give you access to
 the Jupyter Notebook server running in the virtual machine.
 
+Updating
+========
+
+For most updates, simply run :code:`jupyter/ChipWhisperer Updating.ipynb`. The
+first two code blocks in this notebook will update ChipWhisperer and ChipWhisperer-Jupyter,
+respectively. Starting with ChipWhisperer 5.6.1, the release page
+for each version of ChipWhisperer will indicate if it is recommended that you
+install a new VM image.
+
+.. note:: Your changes to notebooks likely will not survive a ChipWhisperer-Jupyter
+update. As such, starting with ChipWhisperer 5.6.1, the contents of the courses, demos, and
+experiements folders will be copied to the jupyter-backup folder before the update is done.
+
 .. _Github releases page: https://github.com/newaetech/chipwhisperer/releases
 
 .. _VirtualBox: https://www.virtualbox.org/wiki/Downloads
@@ -106,6 +119,11 @@ Windows Installer
             able to find make, or something about needing to install 
             a Linux distribution, try disabling WSL or 
             changing :code:`%%bash` to :code:`%%sh`.
+
+.. warning:: It is recommended that you enable long paths on Windows
+            to prevent any files from not being copied during installation.
+            Follow https://www.microfocus.com/documentation/filr/filr-4/filr-desktop/t47bx2ogpfz7.html,
+            then reboot to enable long paths
 
 If you want to run a native Windows installation of ChipWhisperer, your best 
 bet is to run the Windows installer, which takes care of getting the 
@@ -131,6 +149,19 @@ Otherwise, see :ref:`windows-drivers`.
 With this, you now have a fully functioning ChipWhisperer install. Run the 
 ChipWhisperer app, then navigate to the Jupyter folder, where tutorials for 
 running ChipWhisperer are located.
+
+Updating
+========
+
+For most updates, simply run :code:`jupyter/ChipWhisperer Updating.ipynb`. The
+first two code blocks in this notebook will update ChipWhisperer and ChipWhisperer-Jupyter,
+respectively. Starting with ChipWhisperer 5.6.1, the release page
+for each version of ChipWhisperer will indicate if it is recommended that you
+reinstall using a new Windows exe.
+
+.. note:: Your changes to notebooks likely will not survive a ChipWhisperer-Jupyter
+update. As such, starting with ChipWhisperer 5.6.1, the contents of the courses, demos, and
+experiements folders will be copied to the jupyter-backup folder before the update is done.
 
 .. _releases: https://github.com/newaetech/chipwhisperer/releases
 
@@ -212,6 +243,9 @@ you need it:
 
 Once ChipWhisperer is installed, you can :ref:`run chipwhisperer <starting>`.
 
+You can update ChipWhisperer by running :code:`git pull` in both the
+chipwhisperer and jupyter folders.
+
 .. _install-repo-pypi:
 
 PyPi
@@ -229,6 +263,10 @@ take a look at some example :ref:`tutorials <tutorials>` The tutorials are all
 written in jupyter notebook, which you don't have using this installation
 method. However, you can still take a look at the procedure and the code, and
 use it as an example of what can be accomplished using **chipwhisperer**.
+
+You can update by running::
+
+    pip install --upgrade chipwhisperer
 
 .. _install-repo-releases:
 

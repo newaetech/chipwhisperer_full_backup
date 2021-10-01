@@ -11,6 +11,7 @@ V5.6.1
     * Add force and bitstream option to `cw.scope()`
     * Improve 50-naeusb.rules
     * Add SimpleSerial 2.1 and deprecate SimpleSerial 2.0 
+    * Add ChipWhisperer version check. 
 
   Fixes:
     * Fix SS_VER_1_X and XMega simplserial-rsa
@@ -20,6 +21,8 @@ V5.6.1
     * Explicit memory ordering in bootloader-glitch
     * Cast analyzer CPA calculations to long double to avoid precision issues in large projects
     * Fix Pro screen getting stuck when capturing
+    * Checkout master branch for ChipWhisperer-Jupyter in installer
+    * Fix CW-Lite XMEGA and AVR programming being disabled (only an issue with the Black Hat 2021 release)
 
 V5.5
   New Features:
