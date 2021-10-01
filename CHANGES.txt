@@ -23,6 +23,7 @@ V5.6.1
     * Fix Pro screen getting stuck when capturing
     * Checkout master branch for ChipWhisperer-Jupyter in installer
     * Fix CW-Lite XMEGA and AVR programming being disabled (only an issue with the Black Hat 2021 release)
+    * Fix timeout length on simpleserial reads
 
 V5.5
   New Features:
