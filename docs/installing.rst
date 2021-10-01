@@ -99,8 +99,8 @@ for each version of ChipWhisperer will indicate if it is recommended that you
 install a new VM image.
 
 .. note:: Your changes to notebooks likely will not survive a ChipWhisperer-Jupyter
-update. As such, starting with ChipWhisperer 5.6.1, the contents of the courses, demos, and
-experiements folders will be copied to the jupyter-backup folder before the update is done.
+    update. As such, starting with ChipWhisperer 5.6.1, the contents of the courses, demos, and
+    experiements folders will be copied to the jupyter-backup folder before the update is done.
 
 .. _Github releases page: https://github.com/newaetech/chipwhisperer/releases
 
@@ -160,8 +160,8 @@ for each version of ChipWhisperer will indicate if it is recommended that you
 reinstall using a new Windows exe.
 
 .. note:: Your changes to notebooks likely will not survive a ChipWhisperer-Jupyter
-update. As such, starting with ChipWhisperer 5.6.1, the contents of the courses, demos, and
-experiements folders will be copied to the jupyter-backup folder before the update is done.
+    update. As such, starting with ChipWhisperer 5.6.1, the contents of the courses, demos, and
+    experiements folders will be copied to the jupyter-backup folder before the update is done.
 
 .. _releases: https://github.com/newaetech/chipwhisperer/releases
 
