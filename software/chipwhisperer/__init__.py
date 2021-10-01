@@ -23,11 +23,30 @@ from .common.utils import util
 from .capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader, get_at91_ports
 import logging
 from .logging import *
+import sys, subprocess
 
 # replace bytearray with inherited class with better repr and str.
 import builtins
 builtins.bytearray = util.bytearray
 
+def check_for_updates():
+    latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '{}==random'.format("chipwhisperer")], capture_output=True, text=True))
+    latest_version = latest_version[latest_version.find('(from versions:')+15:]
+    latest_version = latest_version[:latest_version.find(')')]
+    latest_version = latest_version.replace(' ','').split(',')[-1]
+
+    current_version = __version__
+
+    other_logger.info("CW version: {}. Latest: {}".format(current_version, latest_version))
+
+    if latest_version <= current_version:
+        other_logger.info("ChipWhisperer up to date")
+        return latest_version
+    else:
+        other_logger.info("ChipWhisperer update available!")
+        return latest_version
+
+check_for_updates()
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 
 ktp = key_text_patterns #alias

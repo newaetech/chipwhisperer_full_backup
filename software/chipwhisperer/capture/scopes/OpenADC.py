@@ -530,17 +530,31 @@ class OpenADC(util.DisableNewAttr):
             a = self.sc.capture(None)
         else:
             a = self.sc.capture(self.adc.offset, self.clock.adc_freq, samples)
+            # a = self.sc.capture(None)
+
         b = self._capture_read(samples)
         return a or b
 
     def get_last_trace(self, as_int=False):
         """Return the last trace captured with this scope.
 
+        Can return traces as floating point values (:code:`as_int=False`)
+        or as integers.
+
+        Floating point values are scaled and shifted to be between -0.5 and 0.5.
+
+        Integer values are raw readings from the ChipWhisperer ADC. The ChipWhisperer-Lite
+        has a 10-bit ADC, the Nano has an 8-bit ADC, and the Husky can read either
+        8-bits or 12-bits of ADC data.
+
         Args:
             as_int (bool): If False, return trace as a float. Otherwise, return as an int.
 
         Returns:
            Numpy array of the last capture trace.
+
+        .. versionupdated:: 5.6.1
+            Added as_int parameter
         """
         if as_int:
             return self.sc._int_data
