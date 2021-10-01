@@ -769,7 +769,7 @@ class CWNano(util.DisableNewAttr):
         Returns:
            Numpy array of the last capture trace.
 
-        .. versionupdated:: 5.6.1
+        .. versionchanged:: 5.6.1
             Added as_int parameter
         """
         if as_int:
