@@ -218,11 +218,11 @@ testGlitchOutputDoublesData = [
 testRWData = [
     #address    nbytes  reps    desc
     (16,        4,      1000,   'SAMPLES'),
-    (4,         1,      1000,   'ECHO'),
+    (4,         8,      1000,   'ECHO'),
 ]
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '8/25/2021, 13:31'
+    assert scope.fpga_buildtime == '10/4/2021, 11:52'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
