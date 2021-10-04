@@ -96,6 +96,8 @@ Commands may use additional error codes to indicate the result of an operation.
 
 The default baud rate is 230400bps.
 
+**NOTE:** Only the XMEGA and STM32\* devices currently switch to this higher baud rate when building for SimpleSerial V2.1. Other devices will likely communicate at 38400bps instead.
+
 ### Reserved Commands
 
 The following commands are reserved by SimpleSerial v2:
