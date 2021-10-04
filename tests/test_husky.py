@@ -4,6 +4,7 @@ import chipwhisperer as cw
 import pytest
 import time
 import numpy as np
+import random
 
 """ 
 Args:
@@ -214,7 +215,11 @@ testGlitchOutputDoublesData = [
     (600e6,     2,          20,         1,          ''),
 ]
 
-
+testRWData = [
+    #address    nbytes  reps    desc
+    (16,        4,      1000,   'SAMPLES'),
+    (4,         1,      1000,   'ECHO'),
+]
 
 def test_fpga_version():
     assert scope.fpga_buildtime == '8/25/2021, 13:31'
@@ -223,6 +228,15 @@ def test_fw_version():
     assert scope.fw_version['major'] == 1
     assert scope.fw_version['minor'] == 10
     assert scope.sam_build_date == '17:03:04 Aug 24 2021'
+
+
+@pytest.mark.parametrize("address, nbytes, reps, desc", testRWData)
+def test_reg_rw(address, nbytes, reps, desc):
+    for i in range(reps):
+        data = int.to_bytes(random.randrange(2**(8*nbytes)), length=nbytes, byteorder='little')
+        scope.sc.sendMessage(0xc0, address, bytearray(data), Validate=False)
+        temp = scope.fpga_buildtime # just a dummy read
+        assert scope.sc.sendMessage(0x80, address, maxResp=nbytes) == data
 
 
 @pytest.mark.parametrize("samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, desc", testData)
