@@ -757,11 +757,11 @@ class CWNano(util.DisableNewAttr):
         Can return traces as floating point values (:code:`as_int=False`)
         or as integers.
 
-        Floating point values are scaled and shifted to be between -0.5 and 0.5.
+        Floating point values are scaled and shifted to be between \-0.5 and 0.5.
 
-        Integer values are raw readings from the ChipWhisperer ADC. The ChipWhisperer-Lite
-        has a 10-bit ADC, the Nano has an 8-bit ADC, and the Husky can read either
-        8-bits or 12-bits of ADC data.
+        Integer values are raw readings from the ChipWhisperer ADC. The ChipWhisperer\-Lite
+        has a 10\-bit ADC, the Nano has an 8\-bit ADC, and the Husky can read either
+        8\-bits or 12\-bits of ADC data.
 
         Args:
             as_int (bool): If False, return trace as a float. Otherwise, return as an int.
