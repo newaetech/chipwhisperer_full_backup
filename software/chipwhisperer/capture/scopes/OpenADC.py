@@ -339,7 +339,7 @@ class OpenADC(util.DisableNewAttr):
         self.ADS4128.set_defaults()
 
 
-    def con(self, sn=None, idProduct=None, bitstream=None, force=False):
+    def con(self, sn=None, idProduct=None, bitstream=None, force=False, **kwargs):
         """Connects to attached chipwhisperer hardware (Lite, Pro, or Husky)
 
         Args:
@@ -352,6 +352,9 @@ class OpenADC(util.DisableNewAttr):
 
         Returns:
             True if connection is successful, False otherwise
+
+        .. versionchanged:: 5.5
+            Added idProduct, bitstream, and force parameters.
         """
         self._saved_sn = sn
         self.scopetype = OpenADCInterface_NAEUSBChip()
@@ -573,6 +576,9 @@ class OpenADC(util.DisableNewAttr):
 
         Raises:
            IOError: Unknown failure.
+
+        .. versionadded:: 5.5
+            Added segmented capture (requires custom bitstream)
         """
 
         if self.adc.fifo_fill_mode != "segment":
@@ -596,6 +602,9 @@ class OpenADC(util.DisableNewAttr):
 
         Returns:
             2-D numpy array of the last captured traces.
+
+        .. versionadded:: 5.5
+            Added segmented capture (requires custom bitstream)
         """
 
         seg_len = self.adc.samples-1
@@ -643,6 +652,9 @@ class OpenADC(util.DisableNewAttr):
 
     def upgrade_firmware(self):
         """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
+
+        .. versionadded:: 5.6.1
+            Improved programming interface
         """
         prog = SAMFWLoader(self)
         prog.auto_program()

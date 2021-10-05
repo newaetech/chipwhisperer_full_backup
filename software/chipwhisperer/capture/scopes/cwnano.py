@@ -669,7 +669,7 @@ class CWNano(util.DisableNewAttr):
         """
         return self._getNAEUSB().get_fw_build_date()
 
-    def con(self, sn=None):
+    def con(self, sn=None, **kwargs):
         """Connects to attached chipwhisperer hardware (Nano)
 
         Args:

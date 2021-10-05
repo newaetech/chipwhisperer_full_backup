@@ -10,6 +10,11 @@ Main module for ChipWhisperer.
 """
 
 __version__ = '5.6.1'
+
+try:
+    import usb1
+except:
+    raise ImportError("Could not import usb1. usb1 is required for ChipWhisperer >= 5.6.1. Try pip install libusb1.")
 import os, os.path, time
 from zipfile import ZipFile
 
@@ -30,6 +35,12 @@ import builtins
 builtins.bytearray = util.bytearray
 
 def check_for_updates():
+    """Check if current ChipWhisperer version is the latest.
+
+    Checks pypi.
+
+    .. versionadded:: 5.6.1
+    """
     latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '{}==random'.format("chipwhisperer")], capture_output=True, text=True))
     latest_version = latest_version[latest_version.find('(from versions:')+15:]
     latest_version = latest_version[:latest_version.find(')')]
@@ -58,6 +69,9 @@ def program_sam_firmware(serial_port=None, hardware_type=None, fw_path=None):
     """Program firmware onto an erased chipwhisperer scope or target
 
     See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information
+
+    .. versionadded:: 5.6.1
+        Improved programming interface
     """
     if (hardware_type, fw_path) == (None, None):
         raise ValueError("Must specify hardware_type or fw_path, see https://chipwhisperer.readthedocs.io/en/latest/firmware.html")
@@ -229,27 +243,33 @@ def scope(scope_type=None, name=None, **kwargs):
     want to connect to can be specified by passing sn=<SERIAL_NUMBER>
 
     Args:
-       scope_type (ScopeTemplate, optional): Scope type to connect to. Types
-           can be found in chipwhisperer.scopes. If None, will try to detect
-           the type of ChipWhisperer connected. Defaults to None.
-       name (str, optional): model name of the ChipWhisperer that you want to
-           connect to. Alternative to specifying the serial number when
-           multiple ChipWhisperers, all of different type, are connected.
-           Defaults to None. Valid values:
-           * Lite
-           * Pro
-           * Husky
-       idProduct (int, optional): idProduct of the ChipWhisperer that you want to
-           connect to. Alternative to specifying the serial number when
-           multiple ChipWhisperers, all of different type, are connected.
-           Defaults to None. Valid values:
-           * 0xace2: CW-Lite
-           * 0xace3: CW-Pro
-           * 0xace5: CW-Husky
-       sn (str, optional): Serial number of ChipWhisperer that you want to
-           connect to. sn is required if more than one ChipWhisperer of the
-           same type is connected (i.e. two CWNano's or a CWLite and CWPro).
-           Defaults to None.
+        scope_type (ScopeTemplate, optional): Scope type to connect to. Types
+            can be found in chipwhisperer.scopes. If None, will try to detect
+            the type of ChipWhisperer connected. Defaults to None.
+        name (str, optional): model name of the ChipWhisperer that you want to
+            connect to. Alternative to specifying the serial number when
+            multiple ChipWhisperers, all of different type, are connected.
+            Defaults to None. Valid values:
+            * Lite
+            * Pro
+            * Husky
+        idProduct (int, optional): idProduct of the ChipWhisperer that you want to
+            connect to. Alternative to specifying the serial number when
+            multiple ChipWhisperers, all of different type, are connected.
+            Defaults to None. Valid values:
+            * 0xace2: CW-Lite
+            * 0xace3: CW-Pro
+            * 0xace5: CW-Husky
+        sn (str, optional): Serial number of ChipWhisperer that you want to
+            connect to. sn is required if more than one ChipWhisperer of the
+            same type is connected (i.e. two CWNano's or a CWLite and CWPro).
+            Defaults to None.
+        bitstream (str, optional): Path to bitstream to program. If None,
+            programs default bitstream. Optional, defaults to None. Ignored
+            on Nano.
+        force (bool, optional): If True, always erase and program
+            FPGA. If False, only erase and program FPGA if it
+            is currently blank. Defaults to False. Ignored on Nano.
 
     Returns:
         Connected scope object.
@@ -263,6 +283,9 @@ def scope(scope_type=None, name=None, **kwargs):
 
     .. versionchanged:: 5.1
         Added autodetection of scope_type
+
+    .. versionchanged:: 5.5
+            Added idProduct, name, bitstream, and force parameters.
     """
     from chipwhisperer.common.utils.util import get_cw_type
     if name is not None:
@@ -410,6 +433,8 @@ def plot(*args, **kwargs):
 
     Returns:
         A holoviews Curve object
+
+    .. versionadded:: 5.4
     """
     import holoviews as hv
     hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
