@@ -66,10 +66,12 @@
 
 //! USB Device string definitions
 
+#define CW_PROG_XMEGA 1
+
 extern char usb_serial_number[33];
 
 #define FW_VER_MAJOR 0
-#define FW_VER_MINOR 50
+#define FW_VER_MINOR 51
 #define FW_VER_DEBUG 0
 
 #define  USB_DEVICE_MANUFACTURE_NAME      "NewAE Technology Inc."
