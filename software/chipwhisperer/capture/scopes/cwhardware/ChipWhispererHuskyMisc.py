@@ -898,11 +898,16 @@ class ADS4128Settings(util.DisableNewAttr):
         self._adc_write(0x3d, 0xc0) # set offset binary output
         self._mode_cached = "normal"
 
-    def set_test_settings(self):
+    def set_test_settings(self, mode):
         self._adc_write(0x42, 0x08) # disable low-latency mode
-        self._adc_write(0x25, 0x04) # set test pattern to ramp
         self._adc_write(0x3d, 0xc0) # set offset binary output
-        self._mode_cached = "test ramp"
+        if mode == 'test ramp':
+            self._adc_write(0x25, 0x04) # set test pattern to ramp
+        elif mode == 'test alternating':
+            self._adc_write(0x25, 0x03) # set test pattern to alternating 0x555 / 0xaaa
+        else:
+            raise ValueError
+        self._mode_cached = mode
 
     def set_low_speed(self, val):
         if val:
@@ -948,8 +953,8 @@ class ADS4128Settings(util.DisableNewAttr):
         if mode == "normal":
             self.set_normal_settings()
             self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [0])
-        elif mode == "test ramp":
-            self.set_test_settings()
+        elif mode == "test ramp" or mode == "test alternating":
+            self.set_test_settings(mode)
             self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [1])
         else:
             raise ValueError("Invalid mode, only 'normal' or 'test ramp' allowed")

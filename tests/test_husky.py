@@ -62,30 +62,15 @@ scope.LA.enabled = False
 def reps(pytestconfig):
     return int(pytestconfig.getoption("reps"))
 
-def check_segmented_ramp(raw, samples, segment_cycles, verbose=False):
-    errors = 0
-    MOD = 2**scope.adc.bits_per_sample
-    current_count = raw[0]
-    for i, byte in enumerate(raw[1:]):
-        if byte != (current_count+1)%MOD:
-            if verbose: print("Byte %d: expected %d got %d" % (i, (current_count+1)%MOD, byte))
-            errors += 1
-            current_count = byte
-        else:
-            current_count += 1
-            if (i+2) % samples == 0:
-                current_count += segment_cycles - samples
-    return errors
-
 
 def check_ramp(raw, testmode, samples, segment_cycles, verbose=False):
     errors = 0
     MOD=2**scope.adc.bits_per_sample
     current_count = raw[0]
 
-    if testmode == 'ADC':
-        if segment_cycles > 0:
-            raise ValueError('not supported')
+    if testmode == 'ADCramp':
+        if segment_cycles > 0 and (samples % 4 or segment_cycles % 4):
+            raise ValueError('not supported: for ADC testing, samples and segment_cycles must be a multiple of 4')
         started = False
         for i, byte in enumerate(raw[1:]):
             if started:
@@ -104,11 +89,28 @@ def check_ramp(raw, testmode, samples, segment_cycles, verbose=False):
                         errors += 1
                     current_count = byte
                     #print(current_count)
+                if (i+2) % samples == 0:
+                    current_count = (current_count + (segment_cycles - samples)//4) % MOD
             elif byte != current_count:
                 started = True
                 #print("Starting!")
                 count4 = 0
                 current_count = byte
+
+    elif testmode == 'ADCalt':
+        if segment_cycles > 0 or scope.adc.bits_per_sample != 12:
+            raise ValueError('not supported')
+        for i, byte in enumerate(raw[1:]):
+            if current_count == 0xaaa:
+                current_count = 0x555
+            elif current_count == 0x555:
+                current_count = 0xaaa
+            else:
+                errors += 1
+                if verbose: print("Byte %d: unexpected value %0x" % current_count)
+            if byte != current_count:
+                errors += 1
+                if verbose: print("Byte %d: unexpected value %0x" % current_count)
 
     elif testmode == 'internal':
         for i, byte in enumerate(raw[1:]):
@@ -119,7 +121,7 @@ def check_ramp(raw, testmode, samples, segment_cycles, verbose=False):
             else:
                 current_count += 1
                 if (i+2) % samples == 0:
-                    current_count += segment_cycles - samples
+                    current_count = (current_count + segment_cycles - samples) % MOD
 
     else:
         return ValueError('oops')
@@ -133,27 +135,41 @@ def find0to1trans(data):
 
 
 testData = [
-    # samples   presamples  testmode    clock       fastreads   adcmul  bit stream  segs    segcycs desc
-    (10,        0,          'internal', 20e6,       True,       1,      8,  False,  1,      0,      'quick'),
-    (131070,    0,          'internal', 20e6,       True,       1,      8,  False,  1,      0,      'maxsamples8'),
-    (131070,    0,          'internal', 20e6,       True,       1,      12, False,  1,      0,      'maxsamples12'),
-    (300,       0,          'internal', 20e6,       True,       1,      8,  False,  10,     1000,   'evensegments8'),
-    (50,        0,          'internal', 20e6,       True,       1,      8,  False,  100,    100,    'oddsegments8'),
-    (300,       0,          'internal', 20e6,       True,       1,      12, False,  10,     1000,   'evensegments12'),
-    (50,        0,          'internal', 20e6,       True,       1,      12, False,  100,    100,    'oddsegments12'),
-    (300,       30,         'internal', 20e6,       True,       1,      12, False,  20,     500,    'presamplesegments'),
-    (131070,    0,          'internal', 10e6,       True,       1,      12, False,  1,      0,      'slow'),
-    (131070,    0,          'internal', 80e6,       True,       1,      12, False,  1,      0,      'fast'),
-    (131070,    0,          'internal', 180e6,      True,       1,      12, False,  1,      0,      'fastest'),
-    (131070,    0,          'internal', 5e6,        True,       4,      12, False,  1,      0,      '4xslow'),
-    (131070,    0,          'internal', 45e6,       True,       4,      12, False,  1,      0,      '4xfast'),
-    (131070,    0,          'ADC',      20e6,       True,       1,      12, False,  1,      0,      'ADCslow'),
-    (131070,    0,          'ADC',      180e6,      True,       1,      12, False,  1,      0,      'ADCfast'),
-    (131070,    0,          'ADC',      45e6,       True,       4,      12, False,  1,      0,      'ADC4xfast'),
-    (500,       0,          'internal', 20e6,       False,      1,      12, False,  1,      0,      'slowreads'),
-    (131070,    0,          'internal', 20e6,       False,      1,      12, False,  1,      0,      'maxslowreads'),
+    # samples   presamples  testmode    clock       fastreads   adcmul  bit stream  segs    segcycs reps    desc
+    (10,        0,          'internal', 20e6,       True,       1,      8,  False,  1,      0,      1,      'quick'),
+    (131070,    0,          'internal', 20e6,       True,       1,      8,  False,  1,      0,      1,      'maxsamples8'),
+    (131070,    0,          'internal', 20e6,       True,       1,      12, False,  1,      0,      1,      'maxsamples12'),
+    (300,       0,          'internal', 20e6,       True,       1,      8,  False,  10,     1000,   1,      'evensegments8'),
+    (50,        0,          'internal', 20e6,       True,       1,      8,  False,  100,    100,    1,      'oddsegments8'),
+    (300,       0,          'internal', 20e6,       True,       1,      12, False,  10,     1000,   1,      'evensegments12'),
+    (50,        0,          'internal', 20e6,       True,       1,      12, False,  100,    100,    1,      'oddsegments12'),
+    (300,       30,         'internal', 20e6,       True,       1,      12, False,  20,     500,    1,      'presamplesegments'),
+    (131070,    0,          'internal', 10e6,       True,       1,      12, False,  1,      0,      1,      'slow'),
+    (131070,    0,          'internal', 80e6,       True,       1,      12, False,  1,      0,      1,      'fast'),
+    (131070,    0,          'internal', 180e6,      True,       1,      12, False,  1,      0,      1,      'fastest'),
+    (131070,    0,          'internal', 5e6,        True,       4,      12, False,  1,      0,      1,      '4xslow'),
+    (131070,    0,          'internal', 45e6,       True,       4,      12, False,  1,      0,      1,      '4xfast'),
+    (131070,    0,          'ADCramp',  20e6,       True,       1,      12, False,  1,      0,      1,      'ADCslow'),
+    (131070,    0,          'ADCramp',  180e6,      True,       1,      12, False,  1,      0,      1,      'ADCfast'),
+    (131070,    0,          'ADCramp',  45e6,       True,       4,      12, False,  1,      0,      1,      'ADC4xfast'),
+    (131070,    0,          'ADCramp',  240e6,      True,       1,      12, False,  1,      0,      20,     'ADCfastest'),
+    (64,        0,          'ADCramp',  240e6,      True,       1,      12, False,  2047,   400,    20,     'ADCfastsegments'),
+    (300,       30,         'ADCramp',  240e6,      True,       1,      12, False,  436,    400,    20,     'ADCfastsegmentspresamples'),
+    (131070,    0,          'ADCalt',   20e6,       True,       1,      12, False,  1,      0,      10,     'ADCaltslow'),
+    (131070,    0,          'ADCalt',   240e6,      True,       1,      12, False,  1,      0,      10,     'ADCaltfast'),
+    (500,       0,          'internal', 20e6,       False,      1,      12, False,  1,      0,      1,      'slowreads'),
+    (131070,    0,          'internal', 20e6,       False,      1,      12, False,  1,      0,      1,      'maxslowreads'),
 ]
 
+testADCData = [
+    # samples   presamples  testmode    clock       fastreads   adcmul  bit stream  segs    segcycs reps    desc
+    (131070,    0,          'ADCramp',  180e6,      True,       1,      12, False,  1,      0,      10,     'ADCfast'),
+    (131070,    0,          'ADCramp',  45e6,       True,       4,      12, False,  1,      0,      10,     'ADC4xfast'),
+    (131070,    0,          'ADCramp',  240e6,      True,       1,      12, False,  1,      0,      10,     'ADCfastest'),
+    (64,        0,          'ADCramp',  240e6,      True,       1,      12, False,  2047,   400,    10,     'ADCfastsegments'),
+    (300,       30,         'ADCramp',  240e6,      True,       1,      12, False,  436,    400,    10,     'ADCfastsegmentspresamples'),
+    (131070,    0,          'ADCalt',   240e6,      True,       1,      12, False,  1,      0,      10,     'ADCaltfast'),
+]
 
 testTargetData = [
     # samples   presamples  testmode    clock       fastreads   adcmul  bit stream  threshold   check   segs    segcycs desc
@@ -239,8 +255,8 @@ def test_reg_rw(address, nbytes, reps, desc):
         assert scope.sc.sendMessage(0x80, address, maxResp=nbytes) == data
 
 
-@pytest.mark.parametrize("samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, desc", testData)
-def test_internal_ramp(samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, desc):
+@pytest.mark.parametrize("samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc", testData)
+def test_internal_ramp(samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc):
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = adcmul
     time.sleep(0.1)
@@ -250,8 +266,11 @@ def test_internal_ramp(samples, presamples, testmode, clock, fastreads, adcmul, 
     if testmode == 'internal':
         scope.adc.test_mode = True
         scope.ADS4128.mode = 'normal'
-    elif testmode == 'ADC':
+    elif testmode == 'ADCramp':
         scope.ADS4128.mode = 'test ramp'
+        scope.adc.test_mode = False
+    elif testmode == 'ADCalt':
+        scope.ADS4128.mode = 'test alternating'
         scope.adc.test_mode = False
     else:
         raise ValueError
@@ -264,14 +283,15 @@ def test_internal_ramp(samples, presamples, testmode, clock, fastreads, adcmul, 
     scope.adc.segment_cycles = segment_cycles
     scope.adc.bits_per_sample = bits
     scope.adc.clip_errors_disabled = True
-    scope.sc.arm(False)
-    scope.arm()
-    scope.sc.triggerNow()
-    scope.sc.arm(False)
-    assert scope.capture() == False
-    raw = scope.get_last_trace(True)
-    assert check_ramp(raw, testmode, samples, segment_cycles) == 0
-    assert scope.adc.errors == 'no errors'
+    for i in range(reps):
+        scope.sc.arm(False)
+        scope.arm()
+        scope.sc.triggerNow()
+        scope.sc.arm(False)
+        assert scope.capture() == False
+        raw = scope.get_last_trace(True)
+        assert check_ramp(raw, testmode, samples, segment_cycles) == 0
+        assert scope.adc.errors == 'no errors'
     scope.sc._fast_fifo_read_enable = True # return to default
 
 
