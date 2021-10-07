@@ -260,6 +260,16 @@ class CDCI6214:
             self.update_reg(0x1E, (1 << bitshift), 0b11 << bitshift)
         elif prescale_val == 6:
             self.update_reg(0x1E, (2 << bitshift), 0b11 << bitshift)
+
+    def get_prescale(self, pll_out=3):
+        reg = self.read_reg(0x1E, True)
+        if pll_out == 3:
+            bitshift = 0
+        elif pll_out == 1:
+            bitshift = 2
+
+        prescales = [4, 5, 6]
+        return prescales[(reg >> bitshift) & 0b11]
         
     def set_outdiv(self, pll_out=3, div=10):
         #todo, do one prescale for both output channels
@@ -331,7 +341,7 @@ class CDCI6214:
 
         # Adjust adc_mul if it results in an invalid adc clock
         if not adc_off:
-            while (adc_mul * target_freq) > 200E6:
+            while (adc_mul * target_freq) > 300E6:
                 adc_mul -= 1
             while (adc_mul * target_freq) < 10E6:
                 adc_mul += 1
@@ -351,12 +361,14 @@ class CDCI6214:
         okay_in_divs = np.array(okay_in_divs)
         okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) >= 1E6]
         okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) <= 100E6]
+        scope_logger.debug("OK in divs: {}".format(okay_in_divs))
         
         pll_muls = np.arange(5, 2**14)
 
         best_in_div = 0
         best_out_div = 0
         best_pll_mul = 0
+        best_prescale = 0
         best_error = float('inf')
         
         # go through all valid input divisions
@@ -370,24 +382,31 @@ class CDCI6214:
             
             # go through all the valid PLL multiples we calculated
             # and if we find better settings, update our best settings
+            scope_logger.debug("Ok PLL muls: {}".format(okay_pll_muls))
             for pll_mul in okay_pll_muls:
-                output_input = pll_input * pll_mul
-                out_div = int((output_input / target_freq) + 0.5)
-                out_div -= out_div % adc_mul
-                
-                real_target_freq = output_input / out_div
-                error = abs(target_freq - real_target_freq) / target_freq
-                if error < best_error:
-                    best_in_div = okay_in_div
-                    best_out_div = out_div
-                    best_pll_mul = pll_mul
-                    best_error = error
+                for prescale in [4, 5, 6]:
+                    output_input = pll_input * pll_mul * 5 // prescale
+                    out_div = int((output_input / target_freq) + 0.5)
+                    out_div -= out_div % adc_mul
+                    
+                    real_target_freq = output_input / out_div
+                    error = abs(target_freq - real_target_freq) / target_freq
+                    scope_logger.debug("Testing settings: in_div {} out_div {} pll_mull {} prescale {} error {} freq {}".\
+                        format(okay_in_div, out_div, pll_mul, prescale, error, real_target_freq))
+                    if error < best_error:
+                        best_in_div = okay_in_div
+                        best_out_div = out_div
+                        best_pll_mul = pll_mul
+                        best_error = error
+                        best_prescale = prescale
+                        scope_logger.info("New best: in_div {} out_div {} pll_mull {} prescale {} error {} freq {}".\
+                            format(best_in_div, best_out_div, best_pll_mul, best_prescale, best_error, real_target_freq))
                     
         if best_error == float('inf'):
             raise ValueError("Could not calculate pll settings for input {} with mul {}".format(target_freq, adc_mul))
 
         # set the output settings we found
-        self.set_prescale(3, 5)
+        self.set_prescale(3, best_prescale)
         self.set_input_div(best_in_div)
         self.set_pll_mul(best_pll_mul)
         self.set_outdiv(1, best_out_div)
@@ -520,7 +539,7 @@ class CDCI6214:
         elif not outdiv:
             return 0
         else:
-            return ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv)
+            return ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv) / (self.get_prescale(3)) * 5
 
     @property
     def adc_freq(self):
@@ -534,7 +553,7 @@ class CDCI6214:
         elif not outdiv:
             return 0
         else:
-            return ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv)
+            return ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv) / (self.get_prescale(3)) * 5
 
 
     @property
@@ -608,6 +627,8 @@ class CDCI6214:
         self._mmcm_vco_freq = vco
         if self.target_freq * muldiv > self._mmcm_vco_max:
             muldiv -= 1
+
+        scope_logger.info("Setting vco {}, muldiv: {}".format(vco, muldiv))
         self._mmcm1.set_mul(muldiv)
         self._mmcm2.set_mul(muldiv)
         self._mmcm1.set_sec_div(muldiv)
