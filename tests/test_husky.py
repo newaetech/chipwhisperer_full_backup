@@ -146,29 +146,22 @@ testData = [
     (300,       30,         'internal', 20e6,       True,       1,      12, False,  20,     500,    1,      'presamplesegments'),
     (131070,    0,          'internal', 10e6,       True,       1,      12, False,  1,      0,      1,      'slow'),
     (131070,    0,          'internal', 80e6,       True,       1,      12, False,  1,      0,      1,      'fast'),
-    (131070,    0,          'internal', 180e6,      True,       1,      12, False,  1,      0,      1,      'fastest'),
+    (131070,    0,          'internal', 200e6,      True,       1,      12, False,  1,      0,      10,     'fastest'),
+    (131070,    0,          'internal', 300e6,      True,       1,      12, False,  1,      0,      1,      'overclocked'),
     (131070,    0,          'internal', 5e6,        True,       4,      12, False,  1,      0,      1,      '4xslow'),
-    (131070,    0,          'internal', 45e6,       True,       4,      12, False,  1,      0,      1,      '4xfast'),
+    (131070,    0,          'internal', 50e6,       True,       4,      12, False,  1,      0,      1,      '4xfast'),
     (131070,    0,          'ADCramp',  20e6,       True,       1,      12, False,  1,      0,      1,      'ADCslow'),
-    (131070,    0,          'ADCramp',  180e6,      True,       1,      12, False,  1,      0,      1,      'ADCfast'),
-    (131070,    0,          'ADCramp',  45e6,       True,       4,      12, False,  1,      0,      1,      'ADC4xfast'),
-    (131070,    0,          'ADCramp',  240e6,      True,       1,      12, False,  1,      0,      20,     'ADCfastest'),
-    (64,        0,          'ADCramp',  240e6,      True,       1,      12, False,  2047,   400,    20,     'ADCfastsegments'),
-    (300,       30,         'ADCramp',  240e6,      True,       1,      12, False,  436,    400,    20,     'ADCfastsegmentspresamples'),
+    (131070,    0,          'ADCramp',  200e6,      True,       1,      12, False,  1,      0,      10,     'ADCfast'),
+    (131070,    0,          'ADCramp',  50e6,       True,       4,      12, False,  1,      0,      1,      'ADC4xfast'),
+    (131070,    0,          'ADCramp',  300e6,      True,       1,      12, False,  1,      0,      1,      'ADCoverclocked'),
+    (64,        0,          'ADCramp',  200e6,      True,       1,      12, False,  1000,   400,    10,     'ADCfastsegments'),
+    (300,       30,         'ADCramp',  200e6,      True,       1,      12, False,  200,    400,    10,     'ADCfastsegmentspresamples'),
+    (300,       30,         'ADCramp',  300e6,      True,       1,      12, False,  200,    400,    1,      'ADCoverclockedsegmentspresamples'),
     (131070,    0,          'ADCalt',   20e6,       True,       1,      12, False,  1,      0,      10,     'ADCaltslow'),
-    (131070,    0,          'ADCalt',   240e6,      True,       1,      12, False,  1,      0,      10,     'ADCaltfast'),
+    (131070,    0,          'ADCalt',   200e6,      True,       1,      12, False,  1,      0,      10,     'ADCaltfast'),
+    (131070,    0,          'ADCalt',   300e6,      True,       1,      12, False,  1,      0,      1,      'ADCaltoverclocked'),
     (500,       0,          'internal', 20e6,       False,      1,      12, False,  1,      0,      1,      'slowreads'),
     (131070,    0,          'internal', 20e6,       False,      1,      12, False,  1,      0,      1,      'maxslowreads'),
-]
-
-testADCData = [
-    # samples   presamples  testmode    clock       fastreads   adcmul  bit stream  segs    segcycs reps    desc
-    (131070,    0,          'ADCramp',  180e6,      True,       1,      12, False,  1,      0,      10,     'ADCfast'),
-    (131070,    0,          'ADCramp',  45e6,       True,       4,      12, False,  1,      0,      10,     'ADC4xfast'),
-    (131070,    0,          'ADCramp',  240e6,      True,       1,      12, False,  1,      0,      10,     'ADCfastest'),
-    (64,        0,          'ADCramp',  240e6,      True,       1,      12, False,  2047,   400,    10,     'ADCfastsegments'),
-    (300,       30,         'ADCramp',  240e6,      True,       1,      12, False,  436,    400,    10,     'ADCfastsegmentspresamples'),
-    (131070,    0,          'ADCalt',   240e6,      True,       1,      12, False,  1,      0,      10,     'ADCaltfast'),
 ]
 
 testTargetData = [
