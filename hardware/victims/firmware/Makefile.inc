@@ -49,7 +49,7 @@ TARGET-ALL = $(foreach PLAT,$(PLATFORM_LIST), $(TARGET)-$(PLAT))
 # Object files directory
 #     To put object files in current directory, use a dot (.), do NOT make
 #     this an empty or blank macro!
-OBJDIR = objdir
+OBJDIR = objdir-$(PLATFORM)
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC +=
