@@ -52,6 +52,7 @@ class ChipWhispererCommonInterface:
         """Get serial ports associated with a ChipWhisperer
 
         .. versionadded:: 5.5
+            Add get_serial_ports()
         """
         return self._getNAEUSB().get_serial_ports()
 
