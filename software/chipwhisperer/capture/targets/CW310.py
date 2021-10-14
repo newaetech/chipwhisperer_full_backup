@@ -66,6 +66,9 @@ class CW310(CW305):
         self.REG_XADC_DRP_DATA = 0x18
         self.REG_XADC_STAT     = 0x19
 
+    def _getFWPy(self):
+        from ...hardware.firmware.cwbergen import fwver
+        return fwver
         
 
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True):

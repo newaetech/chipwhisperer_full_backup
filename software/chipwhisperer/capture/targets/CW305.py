@@ -37,6 +37,7 @@ from ...hardware.naeusb.fpga import FPGA
 from ...common.utils import util
 from ...common.utils.util import camel_case_deprecated, fw_ver_required
 from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
+from ..api.cwcommon import ChipWhispererCommonInterface
 
 from chipwhisperer.logging import *
 
@@ -49,7 +50,7 @@ class CW305_USB(object):
     VCCINT_XORKEY = 0xAE
 
 
-class CW305(TargetTemplate):
+class CW305(TargetTemplate, ChipWhispererCommonInterface):
 
     """CW305 target object.
 
@@ -107,11 +108,10 @@ class CW305(TargetTemplate):
     BATCHRUN_RANDOM_KEY = 0x2
     BATCHRUN_RANDOM_PT = 0x4
 
-    def upgrade_firmware(self):
-        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
-        """
-        prog = SAMFWLoader(self)
-        prog.auto_program()
+
+    def _getFWPy(self):
+        from ...hardware.firmware.cw305 import fwver
+        return fwver
 
     def __init__(self):
         import chipwhisperer as cw
@@ -378,22 +378,6 @@ class CW305(TargetTemplate):
 
     def _getCWType(self):
         return 'cw305'
-
-    @property
-    def latest_fw(self):
-        cw_type = self._getCWType()
-        if cw_type == "cwlite":
-            from chipwhisperer.hardware.firmware.cwlite import fwver
-        elif cw_type == "cw1200":
-            from chipwhisperer.hardware.firmware.cw1200 import fwver
-        
-        ret = OrderedDict()
-        return {"major": fwver[0], "minor": fwver[1]}
-
-    @property
-    def fw_version(self):
-        a = self._naeusb.readFwVersion()
-        return {"major": a[0], "minor": a[1], "debug": a[2]}
 
     @property
     def clkusbautooff(self):

@@ -54,13 +54,13 @@ class OpenADCInterface_NAEUSBChip:
             0xACE5:FWLoaderConfig(CWHusky_Loader())
         }
 
-    def con(self, sn=None, idProduct=None, bitstream=None, force=False):
+    def con(self, sn=None, idProduct=None, bitstream=None, force=False, **kwargs):
         # try:
         if idProduct:
             nae_products = [idProduct]
         else:
             nae_products = [0xACE2, 0xACE3, 0xACE5]
-        found_id = self.ser.con(idProduct=nae_products, serial_number=sn)
+        found_id = self.ser.con(idProduct=nae_products, serial_number=sn, **kwargs)
         if force:
             self.fpga.eraseFPGA()
             time.sleep(0.5)

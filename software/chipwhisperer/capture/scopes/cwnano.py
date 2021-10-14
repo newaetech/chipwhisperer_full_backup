@@ -42,6 +42,7 @@ from ...hardware.naeusb.programmer_avr import AVRISP
 from ...hardware.naeusb.programmer_xmega import XMEGAPDI
 from ...hardware.naeusb.programmer_stm32fserial import STM32FSerial
 from ...common.utils.util import camel_case_deprecated, DelayedKeyboardInterrupt
+from ..api.cwcommon import ChipWhispererCommonInterface
 import time
 import datetime
 
@@ -523,7 +524,7 @@ class GPIOSettings(util.DisableNewAttr):
             return None
         return self.usb.set_cdc_settings(port)
 
-class CWNano(util.DisableNewAttr):
+class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
     """CWNano scope object.
 
     This class contains the public API for the CWNano hardware. It includes
@@ -583,6 +584,10 @@ class CWNano(util.DisableNewAttr):
         self._lasttrace_int = None
         self.disable_newattr()
 
+    def _getFWPy(self):
+        from ...hardware.firmware.cwnano import fwver
+        return fwver
+
     def default_setup(self):
         """ Sets up sane capture defaults for this scope
 
@@ -612,63 +617,6 @@ class CWNano(util.DisableNewAttr):
     def _getCWType(self):
         return 'cwnano'
 
-    def get_serial_ports(self):
-        """ Get the CDC serial ports associated with this scope
-
-        Returns:
-            A list of a dict with elements {'port', 'interface'}
-        """
-        return self._getNAEUSB().get_serial_ports()
-
-    @property
-    def sn(self):
-        """The serial number for this ChipWhisperer
-        """
-        return self._cwusb.snum
-
-    @property
-    def latest_fw(self):
-        """The latest available firmware as a dict::
-
-            {'major', 'minor'}
-        """
-        from chipwhisperer.hardware.firmware.cwnano import fwver
-        return {"major": fwver[0], "minor": fwver[1]}
-
-    @property
-    def latest_fw_str(self):
-        """The latest available firmware as a str::
-
-            'x.y'
-        """
-        from chipwhisperer.hardware.firmware.cwnano import fwver
-
-        return "{}.{}".format(fwver[0], fwver[1])
-
-    @property
-    def fw_version(self):
-        """a dict of the firmware version:: 
-        
-            {'major', 'minor', 'debug'}
-        """
-        a = self._cwusb.readFwVersion()
-        return {"major": a[0], "minor": a[1], "debug": a[2]}
-
-    @property
-    def fw_version_str(self):
-        """A string of the firmware version:: 
-        
-            'x.y.z'
-        """
-        a = self.sc.serial.readFwVersion()
-        return "{}.{}.{}".format(a[0], a[1], a[2])
-
-    @property
-    def sam_build_date(self):
-        """The date the SAM3U firmware was built on
-        """
-        return self._getNAEUSB().get_fw_build_date()
-
     def con(self, sn=None, **kwargs):
         """Connects to attached chipwhisperer hardware (Nano)
 
@@ -680,16 +628,16 @@ class CWNano(util.DisableNewAttr):
             True if connection is successful, False otherwise.
         """
         try:
-            possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
-            serial_numbers = []
-            if len(possible_sn) > 1:
-                if sn is None:
-                    for d in possible_sn:
-                        serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
-                    raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
-            else:
-                sn = None
-            found_id = self._cwusb.con(idProduct=[0xACE0], serial_number=sn)
+            # possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
+            # serial_numbers = []
+            # if len(possible_sn) > 1:
+            #     if sn is None:
+            #         for d in possible_sn:
+            #             serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
+            #         raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
+            # else:
+            #     sn = None
+            found_id = self._cwusb.con(idProduct=[0xACE0], serial_number=sn, **kwargs)
         except (IOError, ValueError):
             raise Warning("Could not connect to cwnano. It may have been disconnected, is in an error state, or is being used by another tool.")
         self.disable_newattr()
@@ -804,9 +752,3 @@ class CWNano(util.DisableNewAttr):
 
     def usbdev(self):
         return self._cwusb
-
-    def upgrade_firmware(self):
-        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
-        """
-        prog = SAMFWLoader(self)
-        prog.auto_program()

@@ -502,7 +502,7 @@ def get_cw_type(sn=None, idProduct=None, **kwargs):
         possible_ids = [0xace0, 0xace2, 0xace3, 0xace5]
 
     cwusb = NAEUSB_Backend()
-    device = cwusb.find(serial_number=sn, idProduct=possible_ids)
+    device = cwusb.find(serial_number=sn, idProduct=possible_ids, **kwargs)
     name = device.getProduct()
     cwusb.usb_ctx.close()
 

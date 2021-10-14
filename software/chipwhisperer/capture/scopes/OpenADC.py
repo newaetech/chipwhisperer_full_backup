@@ -38,6 +38,7 @@ from ...common.utils.util import dict_to_str, DelayedKeyboardInterrupt
 from collections import OrderedDict
 import time
 import numpy as np
+from ..api.cwcommon import ChipWhispererCommonInterface
 
 from chipwhisperer.logging import *
 
@@ -52,7 +53,7 @@ ADDR_LA_DRP_ADDR       = 68
 ADDR_LA_DRP_DATA       = 69
 ADDR_LA_DRP_RESET      = 74
 
-class OpenADC(util.DisableNewAttr):
+class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
     """OpenADC scope object.
 
@@ -114,71 +115,17 @@ class OpenADC(util.DisableNewAttr):
         # self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
         self.connectStatus = True
 
-    @property
-    def latest_fw(self):
-        """The latest available firmware as a dict::
-
-            {'major', 'minor'}
-        """
+    def _getFWPy(self):
         cw_type = self._getCWType()
         if cw_type == "cwlite":
-            from chipwhisperer.hardware.firmware.cwlite import fwver
+            from ...hardware.firmware.cwlite import fwver
         elif cw_type == "cw1200":
-            from chipwhisperer.hardware.firmware.cw1200 import fwver
+            from ...hardware.firmware.cw1200 import fwver
         elif cw_type == "cwhusky":
-            from chipwhisperer.hardware.firmware.cwhusky import fwver
+            from ...hardware.firmware.cwhusky import fwver
         else:
             raise ValueError('Unknown cw_type: %s' % cw_type)
-
-        return {"major": fwver[0], "minor": fwver[1]}
-
-    @property
-    def latest_fw_str(self):
-        """The latest available firmware as a str::
-
-            'x.y'
-        """
-        cw_type = self._getCWType()
-        if cw_type == "cwlite":
-            from chipwhisperer.hardware.firmware.cwlite import fwver
-        elif cw_type == "cw1200":
-            from chipwhisperer.hardware.firmware.cw1200 import fwver
-        elif cw_type == "cwhusky":
-            from chipwhisperer.hardware.firmware.cwhusky import fwver
-        else:
-            raise ValueError('Unknown cw_type: %s' % cw_type)
-
-        return "{}.{}".format(fwver[0], fwver[1])
-
-    @property
-    def fw_version(self):
-        """A dict of the firmware version:: 
-        
-            {'major', 'minor', 'debug'}
-        """
-        a = self.sc.serial.readFwVersion()
-        return {"major": a[0], "minor": a[1], "debug": a[2]}
-
-    @property
-    def fw_version_str(self):
-        """A string of the firmware version:: 
-        
-            'x.y.z'
-        """
-        a = self.sc.serial.readFwVersion()
-        return "{}.{}.{}".format(a[0], a[1], a[2])
-
-    @property
-    def sam_build_date(self):
-        """The date the SAM3U firmware was built on
-        """
-        return self._getNAEUSB().get_fw_build_date()
-
-    @property
-    def sn(self):
-        """The serial number for this ChipWhisperer
-        """
-        return self.scopetype.ser.snum
+        return fwver
 
     def reload_fpga(self, bitstream=None, reconnect=True):
         """(Re)loads a FPGA bitstream (even if already configured).
@@ -193,14 +140,6 @@ class OpenADC(util.DisableNewAttr):
 
     def _getNAEUSB(self):
         return self.scopetype.ser
-
-    def get_serial_ports(self):
-        """ Get the CDC serial ports associated with this scope
-
-        Returns:
-            A list of a dict with elements {'port', 'interface'}
-        """
-        return self._getNAEUSB().get_serial_ports()
 
     def default_setup(self):
         """Sets up sane capture defaults for this scope
@@ -249,6 +188,7 @@ class OpenADC(util.DisableNewAttr):
 
 
         else:
+            self.clock.adc_src = "clkgen_x4"
             while not self.clock.clkgen_locked:            
                 self.clock.reset_dcms()
                 time.sleep(0.05)
@@ -266,6 +206,7 @@ class OpenADC(util.DisableNewAttr):
                     self.adc.basic_mode = "rising_edge"
                     self.clock.clkgen_freq = 7.37e6
                     self.trigger.triggers = "tio4"
+                    self.clock.adc_src = "clkgen_x4"
                     self.io.tio1 = "serial_rx"
                     self.io.tio2 = "serial_tx"
                     self.io.hs2 = "clkgen"
@@ -359,7 +300,7 @@ class OpenADC(util.DisableNewAttr):
         self._saved_sn = sn
         self.scopetype = OpenADCInterface_NAEUSBChip()
 
-        self.scopetype.con(sn, idProduct, bitstream)
+        self.scopetype.con(sn, idProduct, bitstream, **kwargs)
         self.sc = OpenADCInterface(self.scopetype.ser) # important to instantiate this before other FPGA components, since this does an FPGA reset
         self.hwinfo = HWInformation(self.sc)
         cwtype = self._getCWType()
@@ -649,13 +590,3 @@ class OpenADC(util.DisableNewAttr):
 
     def __str__(self):
         return self.__repr__()
-
-    def upgrade_firmware(self):
-        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
-
-        .. versionadded:: 5.6.1
-            Improved programming interface
-        """
-        prog = SAMFWLoader(self)
-        prog.auto_program()
-

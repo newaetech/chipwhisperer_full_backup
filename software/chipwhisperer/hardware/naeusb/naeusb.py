@@ -193,13 +193,19 @@ class NAEUSB_Backend:
         except:
             return False
 
-    def find(self, serial_number=None, idProduct=None):
+    def find(self, serial_number=None, idProduct=None, hw_location=None):
         # check if we got anything
-        dev_list = self.get_possible_devices(idProduct)
+        dev_list = self.get_possible_devices(idProduct, attempt_access=False if hw_location else True)
         if len(dev_list) == 0:
             raise OSError("Could not find ChipWhisperer. Is it connected?")
 
         # if more than one CW, we require a serial number
+        if hw_location:
+            naeusb_logger.info("Attempting hw_location access: {}".format(hw_location))
+            dev_list = [dev for dev in dev_list if (dev.getBusNumber(), dev.getDeviceAddress()) == hw_location]
+            if len(dev_list) != 1:
+                raise OSError("Unable to find ChipWhisperer with hw_location {}, got {}".format(hw_location, dev_list))
+            return dev_list[0]
         sns = ["{}:{}".format(dev.getProduct(), dev.getSerialNumber()) for dev in dev_list]
         if (len(dev_list) > 1) and (serial_number is None):
             if len(dev_list) > 1:
@@ -218,12 +224,12 @@ class NAEUSB_Backend:
         return dev_list[0]
 
 
-    def open(self, serial_number=None, idProduct=None, connect_to_first=False):
+    def open(self, serial_number=None, idProduct=None, connect_to_first=False, hw_location=None):
         """
         Connect to device using default VID/PID
         """
 
-        self.device = self.find(serial_number, idProduct)
+        self.device = self.find(serial_number, idProduct, hw_location=hw_location)
         if connect_to_first == False:
             return
         try:
@@ -270,7 +276,7 @@ class NAEUSB_Backend:
             del self.handle
             self.handle = None
 
-    def get_possible_devices(self, idProduct=None, dictonly=True):
+    def get_possible_devices(self, idProduct=None, dictonly=True, attempt_access=False):
         """Get list of USB devices that match NewAE vendor ID (0x2b3e) and
         optionally a product ID
 
@@ -500,11 +506,11 @@ class NAEUSB:
                 devices.append({"port": port.device, "interface": int(port.location.split('.')[-1])})
         return devices
 
-    def con(self, idProduct=[0xACE2], connect_to_first=False, serial_number=None):
+    def con(self, idProduct=[0xACE2], connect_to_first=False, serial_number=None, hw_location=None):
         """
         Connect to device using default VID/PID
         """
-        self.usbtx.open(idProduct=idProduct, serial_number=serial_number, connect_to_first=True)
+        self.usbtx.open(idProduct=idProduct, serial_number=serial_number, connect_to_first=True, hw_location=hw_location)
 
 
         self.snum=self.usbtx.sn

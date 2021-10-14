@@ -400,6 +400,8 @@ class EefcFlash(object):
         self.EEFC_FCMD_CGPB = 0xc
         self.EEFC_FCMD_GGPB = 0xd
 
+        self._fsr_failed = False
+
         self.word_copy.set_words(int(size / 4))
         self.word_copy.set_stack(stack)
         self._onBufferA = True
@@ -610,19 +612,26 @@ class EefcFlash(object):
         tries = 0
         fsr1 = 0x1
 
-        while (tries <= wait_ms):
+        while (tries <= (wait_ms // 10)):
             tries = tries + 1
             fsr0 = self.samba.read_word(self.EEFC0_FSR)
             if (fsr0 & (1 << 2)):
                 raise IOError("Timeout")
 
             if (self.planes == 2):
-                fsr1 = self.samba.read_word(self.EEFC1_FSR)
-                if (fsr1 & (1 << 2)):
-                    raise IOError("Timeout")
+                try:
+                    fsr1 = self.samba.read_word(self.EEFC1_FSR)
+                    if (fsr1 & (1 << 2)):
+                        raise IOError("Timeout, fsr1: {:02X}".format(fsr1))
+                except IOError as e:
+                    print(e)
+                    fsr1 = self.samba.read_word(self.EEFC1_FSR)
+                    if (fsr1 & (1 << 2)):
+                        raise IOError("Timeout, fsr1: {:02X}".format(fsr1))
+
             if (fsr0 & fsr1 & 0x1):
-                break;
-            time.sleep(0.001)
+                break
+            time.sleep(0.01)
         if (tries > wait_ms):
             raise IOError("Timeout")
 
