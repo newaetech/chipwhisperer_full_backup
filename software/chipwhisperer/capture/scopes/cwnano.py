@@ -118,7 +118,7 @@ class ADCSettings(util.DisableNewAttr):
         resp[3] = src
         resp[4] = 1
 
-        self.usb.sendCtrl(self.USB_ADCLK_SET, 0, 5)
+        self.usb.sendCtrl(self.USB_ADCLK_SET, 0, resp)
 
     @property
     def clk_freq(self):
