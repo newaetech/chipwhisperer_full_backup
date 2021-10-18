@@ -38,6 +38,103 @@ from chipwhisperer.hardware.firmware import cwhusky as fw_cwhusky
 
 from chipwhisperer.logging import *
 
+SAM_FW_FEATURES = [
+    "WCID", #0
+    "CDC", #1
+    "VARIABLE_FPGA_PROG_SPEED", #2
+    "TX_IN_WAITING", #3
+    "RESET", #4
+    "FPGA_LOCK_RESET", #5
+    "SAM_BUILD_DATE", #6
+    "USART_SELECTION", #7
+    "SERIAL_200_BUFFER", #8
+    "EXT_FPGA_PROG", #9
+]
+
+SAM_FW_FEATURE_BY_DEVICE = {
+    0xACE0: {
+        SAM_FW_FEATURES[0]: '0.23.0',
+        SAM_FW_FEATURES[1]: '0.30.0',
+        SAM_FW_FEATURES[3]: '0.20.0',
+        SAM_FW_FEATURES[4]: '0.30.0',
+        SAM_FW_FEATURES[6]: '0.50.0',
+        SAM_FW_FEATURES[7]: '0.50.0',
+        SAM_FW_FEATURES[8]: '0.30.0'
+    },
+
+    0xACE2: {
+        SAM_FW_FEATURES[0]: '0.23.0',
+        SAM_FW_FEATURES[1]: '0.30.0',
+        SAM_FW_FEATURES[2]: '0.52.0',
+        SAM_FW_FEATURES[3]: '0.20.0',
+        SAM_FW_FEATURES[4]: '0.30.0',
+        SAM_FW_FEATURES[5]: '0.30.0',
+        SAM_FW_FEATURES[6]: '0.50.0',
+        SAM_FW_FEATURES[7]: '0.50.0',
+        SAM_FW_FEATURES[8]: '0.30.0',
+        SAM_FW_FEATURES[9]: '0.52.0'
+    },
+
+    0xACE3: {
+        SAM_FW_FEATURES[0]: '1.23.0',
+        SAM_FW_FEATURES[1]: '1.30.0',
+        SAM_FW_FEATURES[2]: '1.52.0',
+        SAM_FW_FEATURES[3]: '1.20.0',
+        SAM_FW_FEATURES[4]: '1.30.0',
+        SAM_FW_FEATURES[5]: '1.30.0',
+        SAM_FW_FEATURES[6]: '1.50.0',
+        SAM_FW_FEATURES[7]: '1.50.0',
+        SAM_FW_FEATURES[8]: '1.30.0',
+        SAM_FW_FEATURES[9]: '1.52.0'
+    },
+
+    0xACE5: {
+        SAM_FW_FEATURES[0]: '1.0.0',
+        SAM_FW_FEATURES[1]: '1.0.0',
+        SAM_FW_FEATURES[2]: '1.0.0',
+        SAM_FW_FEATURES[3]: '1.0.0',
+        SAM_FW_FEATURES[4]: '1.0.0',
+        SAM_FW_FEATURES[5]: '1.0.0',
+        SAM_FW_FEATURES[6]: '1.0.0',
+        SAM_FW_FEATURES[7]: '1.0.0',
+        SAM_FW_FEATURES[8]: '1.0.0',
+        SAM_FW_FEATURES[9]: '1.0.0'
+    },
+
+    0xC305: {
+        SAM_FW_FEATURES[0]: '0.32.0',
+        SAM_FW_FEATURES[2]: '0.52.0',
+        SAM_FW_FEATURES[4]: '0.32.0',
+        SAM_FW_FEATURES[5]: '0.32.0',
+        SAM_FW_FEATURES[6]: '0.50.0',
+    },
+
+    0xC310: {
+        SAM_FW_FEATURES[0]: '1.0.0',
+        SAM_FW_FEATURES[1]: '1.0.0',
+        SAM_FW_FEATURES[2]: '1.0.0',
+        SAM_FW_FEATURES[3]: '1.0.0',
+        SAM_FW_FEATURES[4]: '1.0.0',
+        SAM_FW_FEATURES[5]: '1.0.0',
+        SAM_FW_FEATURES[6]: '1.0.0',
+        SAM_FW_FEATURES[7]: '1.0.0',
+        SAM_FW_FEATURES[8]: '1.0.0',
+    }
+}
+
+def _check_sam_feature(feature, fw_version, prod_id):
+    if feature not in SAM_FW_FEATURES:
+        raise ValueError("Unknown feature {}".format(feature))
+    feature_set = SAM_FW_FEATURE_BY_DEVICE[prod_id]
+
+    if feature not in feature_set:
+        return False
+
+    if feature_set[feature] > fw_version:
+        return False
+
+    return True
+
 def _WINDOWS_USB_CHECK_DRIVER(device):
     """Checks which driver device is using
 
@@ -71,7 +168,7 @@ def _WINDOWS_USB_CHECK_DRIVER(device):
         try:
             keyhandle_device = winreg.OpenKey(keyhandle, subkey)
         except Exception as e:
-            naeusb_logger.debug("Could not get keyhandle device " + str(e))
+            naeusb_logger.info("Could not get keyhandle device " + str(e))
         i = 0
         address = None
         sn = None
@@ -82,13 +179,13 @@ def _WINDOWS_USB_CHECK_DRIVER(device):
             try:
                 sn = winreg.EnumKey(keyhandle_device, i)
             except Exception as e:
-                naeusb_logger.debug("Could not get sn " + str(e)) 
+                naeusb_logger.info("Could not get sn " + str(e)) 
             # print("sn: " + sn)
             keyhandle_sn = winreg.OpenKey(keyhandle_device, sn)
             with keyhandle_sn as h:
                 address = get_enum_by_name(h, "Address")
                 if address is None:
-                    naeusb_logger.debug("Could not find Address in device {}".format(sn))
+                    naeusb_logger.info("Could not find Address in device {}".format(sn))
                 service = get_enum_by_name(h, "Service")
 
                 # now we need to figure out if this device is attached
@@ -96,15 +193,15 @@ def _WINDOWS_USB_CHECK_DRIVER(device):
                 try:
                     keyhandle_driver = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\{}\\Enum".format(service))
                 except Exception as e:
-                    naeusb_logger.debug("Could not get keyhandle driver " + str(e))
+                    naeusb_logger.info("Could not get keyhandle driver " + str(e))
                 num_enums = get_enum_by_name(keyhandle_driver, "Count")
-
-                attached = False
-                for j in range(num_enums + 1):
-                    device_id = get_enum_by_name(keyhandle_driver, str(j))
-                    if device_id == "USB\\VID_{:04X}&PID_{:04X}\\{}".format(device.getVendorID(), device.getProductID(), sn):
-                        attached = True
-                        break
+                if num_enums:
+                    attached = False
+                    for j in range(num_enums + 1):
+                        device_id = get_enum_by_name(keyhandle_driver, str(j))
+                        if device_id == "USB\\VID_{:04X}&PID_{:04X}\\{}".format(device.getVendorID(), device.getProductID(), sn):
+                            attached = True
+                            break
                     
                 keyhandle_driver.Close()
                 i += 1
@@ -125,6 +222,7 @@ def _WINDOWS_USB_CHECK_DRIVER(device):
             
     except Exception as e:
         naeusb_logger.warning("Could not check driver ({}), assuming WINUSB is used".format(str(e)))
+        raise
 
 
 def packuint32(data):
@@ -294,6 +392,8 @@ class NAEUSB_Backend:
         if os.name == "nt":
             for dev in dev_list:
                 win_driver = _WINDOWS_USB_CHECK_DRIVER(dev)
+                if win_driver is None:
+                    continue
                 if (win_driver.lower() != "usbccgp") and (win_driver.upper() != "WINUSB"):
                     naeusb_logger.warning("Invalid driver {} detected. If you have connection problems, try upgrading your driver".format(win_driver))
                     naeusb_logger.warning("See https://chipwhisperer.readthedocs.io/en/latest/drivers.html for more information")
@@ -464,17 +564,22 @@ class NAEUSB:
         self.handle=None
         self.usbtx = NAEUSB_Backend()
         self.usbseralizer = self.usbtx
+        self._fw_ver = None
 
     def get_possible_devices(self, idProduct):
         return self.usbtx.get_possible_devices(idProduct)
 
     def get_cdc_settings(self):
-        return self.usbtx.readCtrl(self.CMD_CDC_SETTINGS_EN, dlen=4)
+        if self.check_feature("CDC"):
+            return self.usbtx.readCtrl(self.CMD_CDC_SETTINGS_EN, dlen=4)
+        else:
+            return [0, 0, 0, 0]
 
     def set_cdc_settings(self, port=[1, 1, 0, 0]):
-        if isinstance(port, int):
-            port = [port, port, 0, 0]
-        self.usbtx.sendCtrl(self.CMD_CDC_SETTINGS_EN, (port[0]) | (port[1] << 1) | (port[2] << 2) | (port[3] << 3))
+        if self.check_feature("CDC"):
+            if isinstance(port, int):
+                port = [port, port, 0, 0]
+            self.usbtx.sendCtrl(self.CMD_CDC_SETTINGS_EN, (port[0]) | (port[1] << 1) | (port[2] << 2) | (port[3] << 3))
 
     def set_smc_speed(self, val):
         """
@@ -485,26 +590,30 @@ class NAEUSB:
         self.usbtx.sendCtrl(self.CMD_SMC_READ_SPEED, data=[val])
 
     def get_fw_build_date(self):
-        try:
-            build_date = bytes(self.usbtx.readCtrl(0x40, dlen=100)).decode()
-            return build_date
-        except usb1.USBErrorPipe:
-            naeusb_logger.info("Build date unavailable") 
-            return "UNKNOWN"
+        if self.check_feature("SAM_BUILD_DATE"):
+            try:
+                build_date = bytes(self.usbtx.readCtrl(0x40, dlen=100)).decode()
+                return build_date
+            except usb1.USBErrorPipe:
+                naeusb_logger.info("Build date unavailable") 
+                return "UNKNOWN"
+        return "UNKNOWN"
 
     def get_serial_ports(self):
         """May have multiple com ports associated with one device, so returns a list of port + interface
         """
-        if not self.usbtx._usbdev:
-            raise OSError("Connect to device before calling this")
-        import serial.tools.list_ports
-        if serial.__version__ < '3.5':
-            raise OSError("Pyserial >= 3.5 (found {}) required for this method".format(serial.__version__))
-        devices = []
-        for port in serial.tools.list_ports.comports():
-            if port.serial_number == self.usbtx._usbdev.getSerialNumber().upper():
-                devices.append({"port": port.device, "interface": int(port.location.split('.')[-1])})
-        return devices
+        if self.check_feature("CDC"):
+            if not self.usbtx._usbdev:
+                raise OSError("Connect to device before calling this")
+            import serial.tools.list_ports
+            if serial.__version__ < '3.5':
+                raise OSError("Pyserial >= 3.5 (found {}) required for this method".format(serial.__version__))
+            devices = []
+            for port in serial.tools.list_ports.comports():
+                if port.serial_number == self.usbtx._usbdev.getSerialNumber().upper():
+                    devices.append({"port": port.device, "interface": int(port.location.split('.')[-1])})
+            return devices
+        return None
 
     def con(self, idProduct=[0xACE2], connect_to_first=False, serial_number=None, hw_location=None):
         """
@@ -541,11 +650,14 @@ class NAEUSB:
         self.snum = None
 
     def readFwVersion(self):
-        try:
-            data = self.readCtrl(self.CMD_FW_VERSION, dlen=3)
-            return data
-        except:
-            return [0, 0, 0]
+        if self._fw_ver is None:
+            try:
+                data = self.readCtrl(self.CMD_FW_VERSION, dlen=3)
+                self._fw_ver = data
+                return data
+            except:
+                return [0, 0, 0]
+        return self._fw_ver
 
     def sendCtrl(self, cmd, value=0, data=[]):
         """
@@ -676,12 +788,12 @@ class NAEUSB:
             self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(0))
         return self.streamModeCaptureStream.drx, self.streamModeCaptureStream.timeout
 
-    def readCDCSettings(self):
-        try:
-            data = self.readCtrl(self.CMD_FW_VERSION, dlen=3)
-            return data
-        except:
-            return [0, 0]
+    # def readCDCSettings(self):
+    #     try:
+    #         data = self.readCtrl(self.CMD_FW_VERSION, dlen=3)
+    #         return data
+    #     except:
+    #         return [0, 0]
 
     def enterBootloader(self, forreal=False):
         """Erase the SAM3U contents, forcing bootloader mode. Does not screw around."""
@@ -692,10 +804,20 @@ class NAEUSB:
     def reset(self):
         """ Reset the SAM3U. Requires firmware 0.30 or later
         """
-        self.sendCtrl(0x22, 0x10)
+        if self.check_feature("RESET"):
+            self.sendCtrl(0x22, 0x10)
 
     def read(self, dlen, timeout=2000):
         self.usbserializer.read(dlen, timeout)
+
+    def check_feature(self, feature):
+        prod_id = self.usbtx.device.getProductID()
+        fw_ver_list = self.readFwVersion()
+        fw_ver_str = '{}.{}.{}'.format(fw_ver_list[0], fw_ver_list[1], fw_ver_list[2])
+        ret = _check_sam_feature(feature, fw_ver_str, prod_id)
+        if not ret:
+            naeusb_logger.info("Feature {} not available".format(feature))
+        return ret
 
     class StreamModeCaptureThreadHusky(Thread):
         def __init__(self, serial, dlen, segment_size, dbuf_temp, timeout_ms=2000, is_husky=False):

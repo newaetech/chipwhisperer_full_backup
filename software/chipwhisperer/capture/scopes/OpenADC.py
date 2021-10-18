@@ -127,14 +127,14 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             raise ValueError('Unknown cw_type: %s' % cw_type)
         return fwver
 
-    def reload_fpga(self, bitstream=None, reconnect=True):
+    def reload_fpga(self, bitstream=None, reconnect=True, prog_speed=1E6):
         """(Re)loads a FPGA bitstream (even if already configured).
 
         Will cause a reconnect event, all settings become default again.
         If no bitstream specified default is used based on current
         configuration settings.
         """        
-        self.scopetype.reload_fpga(bitstream)
+        self.scopetype.reload_fpga(bitstream, prog_speed=1E6)
         self.dis()
         self.con(self._saved_sn)
 
@@ -280,7 +280,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.ADS4128.set_defaults()
 
 
-    def con(self, sn=None, idProduct=None, bitstream=None, force=False, **kwargs):
+    def con(self, sn=None, idProduct=None, bitstream=None, force=False, prog_speed=1E6, **kwargs):
         """Connects to attached chipwhisperer hardware (Lite, Pro, or Husky)
 
         Args:
@@ -300,7 +300,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self._saved_sn = sn
         self.scopetype = OpenADCInterface_NAEUSBChip()
 
-        self.scopetype.con(sn, idProduct, bitstream, **kwargs)
+        self.scopetype.con(sn, idProduct, bitstream, force, prog_speed, **kwargs)
         self.sc = OpenADCInterface(self.scopetype.ser) # important to instantiate this before other FPGA components, since this does an FPGA reset
         self.hwinfo = HWInformation(self.sc)
         cwtype = self._getCWType()
