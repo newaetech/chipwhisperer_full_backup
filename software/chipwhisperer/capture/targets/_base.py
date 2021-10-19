@@ -47,7 +47,8 @@ class TargetTemplate:
 
     def dis(self):
         """Disconnect from target"""
-        self.close()
+        # self.close()
+        self._dis()
         self.connectStatus = False
 
 
