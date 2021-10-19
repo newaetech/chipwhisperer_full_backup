@@ -25,7 +25,7 @@
 
 import time
 import logging
-from .naeusb import packuint32
+from .naeusb import packuint32, NAEUSB
 from ...logging import *
 
 class FPGA(object):
@@ -33,7 +33,7 @@ class FPGA(object):
     CMD_FPGA_STATUS = 0x15
     CMD_FPGA_PROGRAM = 0x16
 
-    def __init__(self, usb, timeout=200, prog_mask=0xA0):
+    def __init__(self, usb: NAEUSB, timeout=200, prog_mask=0xA0):
         self.sendCtrl = usb.sendCtrl
         self.readCtrl = usb.readCtrl
         self._usb = usb
@@ -95,6 +95,7 @@ class FPGA(object):
             self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x02)
 
             if programStatus == False and exceptOnDoneFailure:
+                target_logger.error("FPGA programming failed. Typically either bad bitstream or prog speed too high (current {})".format(prog_speed))
                 raise IOError("FPGA Done pin failed to go high, bad bitstream?", bitstream)
 
             return programStatus

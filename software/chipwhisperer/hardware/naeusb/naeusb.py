@@ -29,6 +29,7 @@ from threading import Thread
 import usb1
 import os
 import array
+from typing import Optional, Union
 
 from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
 from chipwhisperer.hardware.firmware import cw1200 as fw_cw1200
@@ -49,6 +50,8 @@ SAM_FW_FEATURES = [
     "USART_SELECTION", #7
     "SERIAL_200_BUFFER", #8
     "EXT_FPGA_PROG", #9
+    "FPGA_SPI_PASSTHROUGH", #10
+    "SAM3U_GPIO_MODE", #11
 ]
 
 SAM_FW_FEATURE_BY_DEVICE = {
@@ -107,6 +110,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[4]: '0.32.0',
         SAM_FW_FEATURES[5]: '0.32.0',
         SAM_FW_FEATURES[6]: '0.50.0',
+        SAM_FW_FEATURES[10]: '0.30.0',
+        SAM_FW_FEATURES[11]: '0.40.0',
     },
 
     0xC310: {
@@ -119,6 +124,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[6]: '1.0.0',
         SAM_FW_FEATURES[7]: '1.0.0',
         SAM_FW_FEATURES[8]: '1.0.0',
+        SAM_FW_FEATURES[10]: '1.0.0',
+        SAM_FW_FEATURES[11]: '1.0.0',
     }
 }
 
@@ -278,20 +285,21 @@ class NAEUSB_Backend:
         self.handle = None
         self.device = None
 
-    def usbdev(self):
+    def usbdev(self) -> usb1.USBDeviceHandle:
         """Safely get USB device, throwing error if not connected"""
 
         if not self._usbdev: raise OSError("USB Device not found. Did you connect it first?")
         return self._usbdev
 
-    def is_accessable(self, dev):
+    def is_accessable(self, dev : usb1.USBDevice) -> bool:
         try:
             dev.getSerialNumber()
             return True
         except:
             return False
 
-    def find(self, serial_number=None, idProduct=None, hw_location=None):
+    def find(self, serial_number : Optional[str]=None, idProduct : Optional[list[int]]=None, 
+        hw_location : Optional[tuple[bool, bool]]=None) -> usb1.USBDevice:
         # check if we got anything
         dev_list = self.get_possible_devices(idProduct, attempt_access=False if hw_location else True)
         if len(dev_list) == 0:
@@ -322,7 +330,8 @@ class NAEUSB_Backend:
         return dev_list[0]
 
 
-    def open(self, serial_number=None, idProduct=None, connect_to_first=False, hw_location=None):
+    def open(self, serial_number : Optional[str]=None, idProduct : Optional[list[int]]=None, 
+        connect_to_first : bool =False, hw_location : Optional[tuple[int, int]]=None) -> usb1.USBDeviceHandle:
         """
         Connect to device using default VID/PID
         """
@@ -355,7 +364,7 @@ class NAEUSB_Backend:
         else:
             self.rep = 0x81
             self.wep = 0x02
-        self._timeout = 200
+        self._timeout = 20000
 
         return self.handle
 
@@ -374,7 +383,8 @@ class NAEUSB_Backend:
             del self.handle
             self.handle = None
 
-    def get_possible_devices(self, idProduct=None, dictonly=True, attempt_access=False):
+    def get_possible_devices(self, idProduct : Optional[list[int]]=None, dictonly : bool=True, 
+        attempt_access : bool=False) -> list[usb1.USBDevice]:
         """Get list of USB devices that match NewAE vendor ID (0x2b3e) and
         optionally a product ID
 
@@ -420,7 +430,7 @@ class NAEUSB_Backend:
 
         return dev_list
 
-    def sendCtrl(self, cmd, value=0, data=[]):
+    def sendCtrl(self, cmd : int, value : int=0, data : bytearray=[]):
         """
         Send data over control endpoint
         """
@@ -431,7 +441,7 @@ class NAEUSB_Backend:
         self.handle.controlWrite(0x41, cmd, value, 0, data, timeout=self._timeout)
         #return self.usbdev().ctrl_transfer(0x41, cmd, value, 0, data, timeout=self._timeout)
 
-    def readCtrl(self, cmd, value=0, dlen=0):
+    def readCtrl(self, cmd : int, value : int=0, dlen : int=0) -> bytearray:
         """
         Read data from control endpoint
         """
@@ -443,7 +453,7 @@ class NAEUSB_Backend:
         return response
 
 
-    def cmdReadMem(self, addr, dlen):
+    def cmdReadMem(self, addr : int, dlen : int) -> bytearray:
         """
         Send command to read over external memory interface from FPGA. Automatically
         decides to use control-transfer or bulk-endpoint transfer based on data length.
@@ -475,7 +485,7 @@ class NAEUSB_Backend:
             .format("yes" if dlen >= 48 else "no", addr, dlen, data))
         return data
 
-    def cmdWriteMem(self, addr, data):
+    def cmdWriteMem(self, addr : int, data : bytearray):
         """
         Send command to write memory over external memory interface to FPGA. Automatically
         decides to use control-transfer or bulk-endpoint transfer based on data length.
@@ -511,14 +521,14 @@ class NAEUSB_Backend:
 
         return data
 
-    def cmdWriteBulk(self, data):
+    def cmdWriteBulk(self, data : bytearray):
         """
         Write data directly to the bulk endpoint.
         :param data: Data to be written
         :return:
         """
-        self.handle.bulkWrite(self.wep, data, timeout=self._timeout)
         naeusb_logger.debug("BULK WRITE: data = {}".format(data))
+        self.handle.bulkWrite(self.wep, data, timeout=self._timeout)
 
     writeBulk = cmdWriteBulk
 
@@ -530,7 +540,7 @@ class NAEUSB_Backend:
         except:
             pass
 
-    def read(self, dbuf, timeout):
+    def read(self, dbuf : bytearray, timeout : int) -> bytearray:
         resp = self.handle.bulkRead(self.rep, dbuf, timeout)
 
         naeusb_logger.debug("BULK READ: data = {}".format(dbuf))
@@ -566,22 +576,22 @@ class NAEUSB:
         self.usbseralizer = self.usbtx
         self._fw_ver = None
 
-    def get_possible_devices(self, idProduct):
+    def get_possible_devices(self, idProduct : list[int]) -> usb1.USBDevice:
         return self.usbtx.get_possible_devices(idProduct)
 
-    def get_cdc_settings(self):
+    def get_cdc_settings(self) -> list:
         if self.check_feature("CDC"):
             return self.usbtx.readCtrl(self.CMD_CDC_SETTINGS_EN, dlen=4)
         else:
             return [0, 0, 0, 0]
 
-    def set_cdc_settings(self, port=[1, 1, 0, 0]):
+    def set_cdc_settings(self, port : list=[1, 1, 0, 0]):
         if self.check_feature("CDC"):
             if isinstance(port, int):
                 port = [port, port, 0, 0]
             self.usbtx.sendCtrl(self.CMD_CDC_SETTINGS_EN, (port[0]) | (port[1] << 1) | (port[2] << 2) | (port[3] << 3))
 
-    def set_smc_speed(self, val):
+    def set_smc_speed(self, val : int):
         """
         val = 0: normal read timing
         val = 1: fast read timing, should only be used for reading ADC samples; FPGA must also be set in fast FIFO
@@ -589,7 +599,7 @@ class NAEUSB:
         """
         self.usbtx.sendCtrl(self.CMD_SMC_READ_SPEED, data=[val])
 
-    def get_fw_build_date(self):
+    def get_fw_build_date(self) -> str:
         if self.check_feature("SAM_BUILD_DATE"):
             try:
                 build_date = bytes(self.usbtx.readCtrl(0x40, dlen=100)).decode()
@@ -599,7 +609,7 @@ class NAEUSB:
                 return "UNKNOWN"
         return "UNKNOWN"
 
-    def get_serial_ports(self):
+    def get_serial_ports(self) -> Optional[dict[str, int]]:
         """May have multiple com ports associated with one device, so returns a list of port + interface
         """
         if self.check_feature("CDC"):
@@ -615,7 +625,8 @@ class NAEUSB:
             return devices
         return None
 
-    def con(self, idProduct=[0xACE2], connect_to_first=False, serial_number=None, hw_location=None):
+    def con(self, idProduct : list[int]=[0xACE2], connect_to_first : bool=False, 
+        serial_number : Optional[str]=None, hw_location : Optional[tuple[int, int]]=None) -> int:
         """
         Connect to device using default VID/PID
         """
@@ -649,7 +660,7 @@ class NAEUSB:
         self.usbtx.close()
         self.snum = None
 
-    def readFwVersion(self):
+    def readFwVersion(self) -> bytearray:
         if self._fw_ver is None:
             try:
                 data = self.readCtrl(self.CMD_FW_VERSION, dlen=3)
@@ -659,21 +670,21 @@ class NAEUSB:
                 return [0, 0, 0]
         return self._fw_ver
 
-    def sendCtrl(self, cmd, value=0, data=[]):
+    def sendCtrl(self, cmd : int, value : int=0, data : bytearray=[]):
         """
         Send data over control endpoint
         """
         # Vendor-specific, OUT, interface control transfer
         self.usbseralizer.sendCtrl(cmd, value, data)
 
-    def readCtrl(self, cmd, value=0, dlen=0):
+    def readCtrl(self, cmd : int, value : int=0, dlen : int=0) -> bytearray:
         """
         Read data from control endpoint
         """
         # Vendor-specific, IN, interface control transfer
         return self.usbseralizer.readCtrl(cmd, value, dlen)
 
-    def cmdReadMem(self, addr, dlen):
+    def cmdReadMem(self, addr : int, dlen : int) -> bytearray:
         """
         Send command to read over external memory interface from FPGA. Automatically
         decides to use control-transfer or bulk-endpoint transfer based on data length.
@@ -681,7 +692,7 @@ class NAEUSB:
 
         return self.usbseralizer.cmdReadMem(addr, dlen)
 
-    def cmdWriteMem(self, addr, data):
+    def cmdWriteMem(self, addr : int, data : bytearray):
         """
         Send command to write memory over external memory interface to FPGA. Automatically
         decides to use control-transfer or bulk-endpoint transfer based on data length.
@@ -689,7 +700,7 @@ class NAEUSB:
 
         return self.usbseralizer.cmdWriteMem(addr, data)
 
-    def writeBulkEP(self, data):
+    def writeBulkEP(self, data : bytearray):
         """
         Write directoly to the bulk endpoint.
         :param data: Data to be written.
@@ -702,7 +713,7 @@ class NAEUSB:
         """Dump all the crap left over"""
         self.usbseralizer.flushInput()
 
-    def cmdReadStream_getStatus(self):
+    def cmdReadStream_getStatus(self) -> tuple[int, int, int]:
         """
         Gets the status of the streaming mode capture, tells you samples left to stream out along
         with overflow buffer status. When an overflow occurs the samples left to stream goes to
@@ -726,12 +737,12 @@ class NAEUSB:
 
         return (samples_left_to_stream, overflow_location, unknown_overflow)
 
-    def cmdReadStream_size_of_fpgablock(self):
+    def cmdReadStream_size_of_fpgablock(self) -> int:
         """ Asks the hardware how many BYTES are read in one go from FPGA, which indicates where the sync
             bytes will be located. These sync bytes must be removed in post-processing. CW-pro only. """
         return 4096
 
-    def cmdReadStream_bufferSize(self, dlen):
+    def cmdReadStream_bufferSize(self, dlen : int):
         """
         Args:
             dlen: Number of samples to be requested (will be rounded to something else)
@@ -745,7 +756,8 @@ class NAEUSB:
         return num_totalbytes
 
 
-    def initStreamModeCapture(self, dlen, dbuf_temp, timeout_ms=1000, is_husky=False, segment_size=0):
+    def initStreamModeCapture(self, dlen : int, dbuf_temp : bytearray, timeout_ms : int=1000,
+        is_husky : bool=False, segment_size : int=0):
         #Enter streaming mode for requested number of samples
         if hasattr(self, "streamModeCaptureStream"):
             self.streamModeCaptureStream.join()
@@ -761,13 +773,13 @@ class NAEUSB:
             self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThreadPro(self, dlen, dbuf_temp, timeout_ms)
         self.streamModeCaptureStream.start()
 
-    def cmdReadStream_isDone(self, is_husky=False):
+    def cmdReadStream_isDone(self, is_husky : bool=False) -> bool:
         if is_husky:
             return self.streamModeCaptureStream.drx >= self.streamModeCaptureStream.dlen
         else:
             return self.streamModeCaptureStream.isAlive() == False
 
-    def cmdReadStream(self, is_husky=False):
+    def cmdReadStream(self, is_husky : bool=False) -> tuple[int, int]:
         """
         Gets data acquired in streaming mode.
         initStreamModeCapture should be called first in order to make it work.
@@ -795,7 +807,7 @@ class NAEUSB:
     #     except:
     #         return [0, 0]
 
-    def enterBootloader(self, forreal=False):
+    def enterBootloader(self, forreal : bool=False):
         """Erase the SAM3U contents, forcing bootloader mode. Does not screw around."""
 
         if forreal:
@@ -807,10 +819,10 @@ class NAEUSB:
         if self.check_feature("RESET"):
             self.sendCtrl(0x22, 0x10)
 
-    def read(self, dlen, timeout=2000):
+    def read(self, dlen : int, timeout : int=2000) -> bytearray:
         self.usbserializer.read(dlen, timeout)
 
-    def check_feature(self, feature):
+    def check_feature(self, feature) -> bool:
         prod_id = self.usbtx.device.getProductID()
         fw_ver_list = self.readFwVersion()
         fw_ver_str = '{}.{}.{}'.format(fw_ver_list[0], fw_ver_list[1], fw_ver_list[2])
@@ -881,7 +893,7 @@ class NAEUSB:
                     pass
             naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
 
-        def callback(self, transfer):
+        def callback(self, transfer : usb1.USBTransfer):
             """ Handle finished asynchronous bulk transfer"""
             if transfer.getStatus() == usb1.TRANSFER_CANCELLED:
                 return
@@ -902,7 +914,7 @@ class NAEUSB:
             naeusb_logger.debug("stream completed with {} bytes".format(transfer.getActualLength()))
 
     class StreamModeCaptureThreadPro(Thread):
-        def __init__(self, serial, dlen, dbuf_temp, timeout_ms=2000):
+        def __init__(self, serial, dlen : int, dbuf_temp : int, timeout_ms : int=2000):
             """
             Reads from the FIFO in streaming mode. Requires the FPGA to be previously configured into
             streaming mode and then arm'd, otherwise this may return incorrect information.
