@@ -127,7 +127,7 @@ class XilinxMMCMDRP(util.DisableNewAttr):
 
 
     def set_main_div(self, div):
-        if type(div) != int:
+        if isinstance(div, int):
             raise ValueError("Only integers are supported")
         # Set main divider:
         if div == 1:
@@ -145,7 +145,7 @@ class XilinxMMCMDRP(util.DisableNewAttr):
 
 
     def set_sec_div(self, div, clock=0):
-        if type(div) != int:
+        if isinstance(div, int):
             raise ValueError("Only integers are supported")
         if clock > 5:
             raise ValueError("Clock must be in range [0,5]")
@@ -226,9 +226,9 @@ class LEDSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['setting'] = self.setting
-        return dict
+        rtn = OrderedDict()
+        rtn['setting'] = self.setting
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -278,11 +278,11 @@ class HuskyErrors(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['XADC_status'] = self.XADC.status
-        dict['adc_errors'] = self.adc.errors
-        dict['extclk_error'] = self.clock.extclk_error
-        return dict
+        rtn = OrderedDict()
+        rtn['XADC_status'] = self.XADC.status
+        rtn['adc_errors'] = self.adc.errors
+        rtn['extclk_error'] = self.clock.extclk_error
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -306,11 +306,11 @@ class USERIOSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['debug_mode'] = self.debug_mode
-        dict['direction'] = self.direction
-        dict['drive_data'] = self.drive_data
-        return dict
+        rtn = OrderedDict()
+        rtn['debug_mode'] = self.debug_mode
+        rtn['direction'] = self.direction
+        rtn['drive_data'] = self.drive_data
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -320,7 +320,7 @@ class USERIOSettings(util.DisableNewAttr):
 
     @property
     def debug_mode(self):
-        """Set all pins to debug mode, driven by Husky. 
+        """Set all pins to debug mode, driven by Husky.
         Takes precedence over scope.userio.direction.
         Look to cwhusky_top.v for signal definitions.
         """
@@ -379,16 +379,16 @@ class XADCSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['status'] = self.status
-        dict['current temperature [C]'] = self.temp
-        dict['maximum temperature [C]'] = self.max_temp
-        dict['temperature alarm trigger [C]'] = self.temp_trigger
-        dict['temperature reset trigger [C]'] = self.temp_reset
-        dict['vccint'] = self.vccint
-        dict['vccaux'] = self.vccaux
-        dict['vccbram'] = self.vccbram
-        return dict
+        rtn = OrderedDict()
+        rtn['status'] = self.status
+        rtn['current temperature [C]'] = self.temp
+        rtn['maximum temperature [C]'] = self.max_temp
+        rtn['temperature alarm trigger [C]'] = self.temp_trigger
+        rtn['temperature reset trigger [C]'] = self.temp_reset
+        rtn['vccint'] = self.vccint
+        rtn['vccaux'] = self.vccaux
+        rtn['vccbram'] = self.vccbram
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -446,7 +446,7 @@ class XADCSettings(util.DisableNewAttr):
 
     def get_temp(self, addr=0):
         """Read XADC temperature.
-        Args: 
+        Args:
             addr (int): DRP address (0: current; 32: max; 36: min)
         Returns:
             Temperature in celcius (float).
@@ -456,7 +456,7 @@ class XADCSettings(util.DisableNewAttr):
 
     def set_temp(self, temp, addr=0):
         """Set XADC temperature thresholds.
-        Args: 
+        Args:
             addr (int): DRP address
             temp (float): temperature threshold [celcius]
         Returns:
@@ -510,16 +510,16 @@ class LASettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['present'] = self.present
-        dict['enabled'] = self.enabled
-        dict['locked'] = self.locked
-        dict['clk_source'] = self.clk_source
-        dict['trigger_source'] = self.trigger_source
-        dict['oversampling_factor'] = self.oversampling_factor
-        dict['capture_group'] = self.capture_group
-        dict['capture_depth'] = self.capture_depth
-        return dict
+        rtn = OrderedDict()
+        rtn['present'] = self.present
+        rtn['enabled'] = self.enabled
+        rtn['locked'] = self.locked
+        rtn['clk_source'] = self.clk_source
+        rtn['trigger_source'] = self.trigger_source
+        rtn['oversampling_factor'] = self.oversampling_factor
+        rtn['capture_group'] = self.capture_group
+        rtn['capture_depth'] = self.capture_depth
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -532,7 +532,7 @@ class LASettings(util.DisableNewAttr):
         What you get depends on the capture group; see the capture_group documentation.
         Args:
            source (int): signal to read
-           length (int): number of byte to read. If unspecified, returns the full capture size 
+           length (int): number of byte to read. If unspecified, returns the full capture size
                          (which is implementation-dependent and can be learned from capture_depth)
         Returns:
             Numpy array of binary values.
@@ -826,11 +826,11 @@ class ADS4128Settings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['mode'] = self.mode
-        dict['low_speed'] = self.low_speed
-        dict['hi_perf'] = self.hi_perf
-        return dict
+        rtn = OrderedDict()
+        rtn['mode'] = self.mode
+        rtn['low_speed'] = self.low_speed
+        rtn['hi_perf'] = self.hi_perf
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -857,7 +857,7 @@ class ADS4128Settings(util.DisableNewAttr):
             self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
             val = (bit << 4) + 0
             self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
-        
+
         for i in range(8):
             bit = (data >> (7-i)) & 1
             val = (bit << 4) + 1
@@ -988,6 +988,3 @@ class ADS4128Settings(util.DisableNewAttr):
     @hi_perf.setter
     def hi_perf(self, val):
         return self.set_hi_perf(val)
-
-
-

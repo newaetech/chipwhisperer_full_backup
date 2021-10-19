@@ -133,7 +133,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         Will cause a reconnect event, all settings become default again.
         If no bitstream specified default is used based on current
         configuration settings.
-        """        
+        """
         self.scopetype.reload_fpga(bitstream, prog_speed=1E6)
         self.dis()
         self.con(self._saved_sn)
@@ -189,7 +189,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
         else:
             self.clock.adc_src = "clkgen_x4"
-            while not self.clock.clkgen_locked:            
+            while not self.clock.clkgen_locked:
                 self.clock.reset_dcms()
                 time.sleep(0.05)
                 count += 1
@@ -280,7 +280,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.ADS4128.set_defaults()
 
 
-    def con(self, sn=None, idProduct=None, bitstream=None, force=False, prog_speed=1E6, **kwargs):
+    def con(self, sn=None, idProduct=None, bitstream=None, force=False, prog_speed=10E6, **kwargs):
         """Connects to attached chipwhisperer hardware (Lite, Pro, or Husky)
 
         Args:
@@ -407,7 +407,6 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             if self.digitalPattern is not None:
                 self.digitalPattern = None
 
-        # TODO Fix this hack
         if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
             self.sc.usbcon = None
 
@@ -502,7 +501,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         """
         if as_int:
             return self.sc._int_data
-        return self.data_points    
+        return self.data_points
 
     getLastTrace = util.camel_case_deprecated(get_last_trace)
 
@@ -534,7 +533,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             timeout = self.sc.capture(self.adc.offset, self.clock.adc_freq, max_fifo_size)
             timeout2 = self._capture_read(max_fifo_size-256)
 
-            return timeout or timeout2 
+            return timeout or timeout2
 
     def get_last_trace_segmented(self):
         """Return last trace assuming it was captued with segmented mode.
@@ -554,30 +553,30 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         return np.reshape(self.data_points[:num_seg*seg_len], (num_seg, seg_len))
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['sn'] = self.sn
+        rtn = {}
+        rtn['sn'] = self.sn
         if self._is_husky:
-            dict['fpga_buildtime'] = self.fpga_buildtime
-        dict['fw_version'] = self.fw_version
-        dict['gain']    = self.gain._dict_repr()
-        dict['adc']     = self.adc._dict_repr()
-        dict['clock']   = self.clock._dict_repr()
-        dict['trigger'] = self.trigger._dict_repr()
-        dict['io']      = self.io._dict_repr()
-        dict['glitch']  = self.glitch._dict_repr()
+            rtn['fpga_buildtime'] = self.fpga_buildtime
+        rtn['fw_version'] = self.fw_version
+        rtn['gain']    = self.gain._dict_repr()
+        rtn['adc']     = self.adc._dict_repr()
+        rtn['clock']   = self.clock._dict_repr()
+        rtn['trigger'] = self.trigger._dict_repr()
+        rtn['io']      = self.io._dict_repr()
+        rtn['glitch']  = self.glitch._dict_repr()
         if self._getCWType() == "cw1200":
-            dict['SAD'] = self.SAD._dict_repr()
-            dict['decode_IO'] = self.decode_IO._dict_repr()
+            rtn['SAD'] = self.SAD._dict_repr()
+            rtn['decode_IO'] = self.decode_IO._dict_repr()
         if self._is_husky:
-            dict['ADS4128'] = self.ADS4128._dict_repr()
-            # dict['pll'] = self.pll._dict_repr()
-            dict['LA'] = self.LA._dict_repr()
-            dict['XADC'] = self.XADC._dict_repr()
-            dict['userio'] = self.userio._dict_repr()
-            dict['LEDs'] = self.LEDs._dict_repr()
-            dict['errors'] = self.errors._dict_repr()
+            rtn['ADS4128'] = self.ADS4128._dict_repr()
+            # rtn['pll'] = self.pll._dict_repr()
+            rtn['LA'] = self.LA._dict_repr()
+            rtn['XADC'] = self.XADC._dict_repr()
+            rtn['userio'] = self.userio._dict_repr()
+            rtn['LEDs'] = self.LEDs._dict_repr()
+            rtn['errors'] = self.errors._dict_repr()
 
-        return dict
+        return rtn
 
     def __repr__(self):
         # Add some extra information about ChipWhisperer type here

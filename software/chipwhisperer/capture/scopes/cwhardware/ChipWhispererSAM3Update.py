@@ -213,7 +213,8 @@ class SAMFWLoader(object):
             'cwnano',
             'cw305',
             'cw1200',
-            'cwbergen'
+            'cwbergen',
+            'cwhusky'
         ]
 
 
@@ -248,6 +249,9 @@ class SAMFWLoader(object):
                 elif hardware_type == 'cwbergen':
                     from chipwhisperer.hardware.firmware.cwbergen import getsome as getsome
                     name = 'CW310.bin'
+                elif hardware_type == 'cwhusky':
+                    from chipwhisperer.hardware.firmware.cwhusky import getsome
+                    name = 'Husky.bin'
                 self.logfunc('Loading {} firmware...'.format(hardware_type))
                 fw_data = getsome(name).read()
 

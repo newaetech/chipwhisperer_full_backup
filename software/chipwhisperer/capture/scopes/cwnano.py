@@ -58,10 +58,10 @@ class ADCSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['clk_src'] = self.clk_src
-        dict['clk_freq'] = self.clk_freq
-        dict['samples'] = self.samples
+        rtn = OrderedDict()
+        rtn['clk_src'] = self.clk_src
+        rtn['clk_freq'] = self.clk_freq
+        rtn['samples'] = self.samples
         return dict
 
     def __repr__(self):
@@ -177,9 +177,9 @@ class GlitchSettings(util.DisableNewAttr):
 
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['repeat'] = self.repeat
-        dict['ext_offset'] = self.ext_offset
+        rtn = OrderedDict()
+        rtn['repeat'] = self.repeat
+        rtn['ext_offset'] = self.ext_offset
         return dict
 
     def __repr__(self):
@@ -254,23 +254,23 @@ class GPIOSettings(util.DisableNewAttr):
 
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['tio1'] = self.tio1
-        dict['tio2'] = self.tio2
-        dict['tio3'] = self.tio3
-        dict['tio4'] = self.tio4
+        rtn = OrderedDict()
+        rtn['tio1'] = self.tio1
+        rtn['tio2'] = self.tio2
+        rtn['tio3'] = self.tio3
+        rtn['tio4'] = self.tio4
 
-        dict['pdid'] = self.pdid
-        dict['pdic'] = self.pdic
-        dict['nrst'] = self.nrst
+        rtn['pdid'] = self.pdid
+        rtn['pdic'] = self.pdic
+        rtn['nrst'] = self.nrst
 
-        #dict['glitch_lp'] = self.glitch_lp
+        #rtn['glitch_lp'] = self.glitch_lp
 
-        dict['clkout'] = self.clkout
+        rtn['clkout'] = self.clkout
 
-        dict['cdc_settings'] = self.cdc_settings
+        rtn['cdc_settings'] = self.cdc_settings
 
-        return dict
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -638,8 +638,9 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
             # else:
             #     sn = None
             found_id = self._cwusb.con(idProduct=[0xACE0], serial_number=sn, **kwargs)
-        except (IOError, ValueError):
-            raise Warning("Could not connect to cwnano. It may have been disconnected, is in an error state, or is being used by another tool.")
+        except (IOError, ValueError) as e:
+            raise Warning("Could not connect to cwnano. It may have been disconnected,\
+is in an error state, or is being used by another tool.") from e
         self.disable_newattr()
         self._is_connected = True
         self.connectStatus=True
@@ -659,7 +660,7 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
         """Arm the ADC, the trigger will be GPIO4 rising edge (fixed trigger)."""
         with DelayedKeyboardInterrupt():
             if self.connectStatus is False:
-                raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
+                raise Warning("Scope \"" + 'CWNano' + "\" is not connected. Connect it first...")
 
             self._cwusb.sendCtrl(self.REQ_ARM, 1)
 
@@ -705,11 +706,11 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
         Can return traces as floating point values (:code:`as_int=False`)
         or as integers.
 
-        Floating point values are scaled and shifted to be between \-0.5 and 0.5.
+        Floating point values are scaled and shifted to be between -0.5 and 0.5.
 
-        Integer values are raw readings from the ChipWhisperer ADC. The ChipWhisperer\-Lite
-        has a 10\-bit ADC, the Nano has an 8\-bit ADC, and the Husky can read either
-        8\-bits or 12\-bits of ADC data.
+        Integer values are raw readings from the ChipWhisperer ADC. The ChipWhisperer-Lite
+        has a 10-bit ADC, the Nano has an 8-bit ADC, and the Husky can read either
+        8-bits or 12-bits of ADC data.
 
         Args:
             as_int (bool): If False, return trace as a float. Otherwise, return as an int.
@@ -728,12 +729,12 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
 
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['fw_version'] = self.fw_version
-        dict['io']    = self.io._dict_repr()
-        dict['adc']   = self.adc._dict_repr()
-        dict['glitch'] = self.glitch._dict_repr()
-        return dict
+        rtn = OrderedDict()
+        rtn['fw_version'] = self.fw_version
+        rtn['io']    = self.io._dict_repr()
+        rtn['adc']   = self.adc._dict_repr()
+        rtn['glitch'] = self.glitch._dict_repr()
+        return rtn
 
     def __repr__(self):
         # Add some extra information about ChipWhisperer type here

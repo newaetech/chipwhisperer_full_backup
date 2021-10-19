@@ -30,11 +30,13 @@ import logging
 from .logging import *
 import sys, subprocess
 
+from typing import Optional, Union
+
 # replace bytearray with inherited class with better repr and str.
 import builtins
 builtins.bytearray = util.bytearray
 
-def check_for_updates():
+def check_for_updates() -> str:
     """Check if current ChipWhisperer version is the latest.
 
     Checks pypi.
@@ -65,7 +67,8 @@ except:
 
 ktp = key_text_patterns #alias
 
-def program_sam_firmware(serial_port=None, hardware_type=None, fw_path=None):
+def program_sam_firmware(serial_port : Optional[str]=None, 
+    hardware_type : Optional[str]=None, fw_path : Optional[str]=None):
     """Program firmware onto an erased chipwhisperer scope or target
 
     See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information
@@ -88,7 +91,7 @@ def program_sam_firmware(serial_port=None, hardware_type=None, fw_path=None):
     prog = SAMFWLoader(None)
     prog.program(serial_port, hardware_type=hardware_type, fw_path=fw_path)
 
-def program_target(scope, prog_type, fw_path, **kwargs):
+def program_target(scope : scopes.ScopeTypes, prog_type, fw_path : str, **kwargs):
     """Program the target using the programmer <type>
 
     Programmers can be found in the programmers submodule
@@ -125,7 +128,7 @@ def program_target(scope, prog_type, fw_path, **kwargs):
 
 
 
-def open_project(filename):
+def open_project(filename : str):
     """Load an existing project from disk.
 
     Args:
@@ -144,7 +147,7 @@ def open_project(filename):
     return proj
 
 
-def create_project(filename, overwrite=False):
+def create_project(filename : str, overwrite : bool=False):
     """Create a new project with the path <filename>.
 
     If <overwrite> is False, raise an OSError if this path already exists.
@@ -175,7 +178,7 @@ def create_project(filename, overwrite=False):
     return proj
 
 
-def import_project(filename, file_type='zip', overwrite=False):
+def import_project(filename : str, file_type : str='zip', overwrite : bool=False):
     """Import and open a project.
 
     Will import the **filename** by extracting to the current working
