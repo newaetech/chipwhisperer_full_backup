@@ -29,7 +29,7 @@ from threading import Thread
 import usb1
 import os
 import array
-from typing import Optional, Union, List, Tuple
+from typing import Optional, Union, List, Tuple, Dict
 
 from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
 from chipwhisperer.hardware.firmware import cw1200 as fw_cw1200
@@ -609,7 +609,7 @@ class NAEUSB:
                 return "UNKNOWN"
         return "UNKNOWN"
 
-    def get_serial_ports(self) -> Optional[dict[str, int]]:
+    def get_serial_ports(self) -> Optional[Dict[str, int]]:
         """May have multiple com ports associated with one device, so returns a list of port + interface
         """
         if self.check_feature("CDC"):
