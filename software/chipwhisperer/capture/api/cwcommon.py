@@ -47,7 +47,6 @@ class ChipWhispererCommonInterface:
     def sn(self):
         return self._getNAEUSB().snum
 
-    @property
     def get_serial_ports(self):
         """Get serial ports associated with a ChipWhisperer
 
