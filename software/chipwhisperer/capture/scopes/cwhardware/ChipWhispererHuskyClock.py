@@ -1,4 +1,4 @@
-from _typeshed import OpenBinaryMode
+# from _typeshed import OpenBinaryMode
 from ....common.utils.util import dict_to_str, DelayedKeyboardInterrupt
 from ....common.utils import util
 from ....logging import *

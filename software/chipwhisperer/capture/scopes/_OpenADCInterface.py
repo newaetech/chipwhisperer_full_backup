@@ -17,7 +17,7 @@ from collections import OrderedDict
 import copy
 
 from chipwhisperer.logging import *
-from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP
+#from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP
 
 ADDR_GAIN       = 0
 ADDR_SETTINGS   = 1
@@ -1320,6 +1320,7 @@ class ClockSettings(util.DisableNewAttr):
     _readMask = [0x1f, 0xff, 0xff, 0xfd]
 
     def __init__(self, oaiface, hwinfo=None):
+        from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP
         self.oa = oaiface
         self._hwinfo = hwinfo
         self._freqExt = 10e6

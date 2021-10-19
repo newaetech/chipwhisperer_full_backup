@@ -13,8 +13,8 @@ __version__ = '5.6.1'
 
 try:
     import usb1
-except:
-    raise ImportError("Could not import usb1. usb1 is required for ChipWhisperer >= 5.6.1. Try pip install libusb1.")
+except Exception as e:
+    raise ImportError("Could not import usb1. usb1 is required for ChipWhisperer >= 5.6.1. Try pip install libusb1.") from e
 import os, os.path, time
 from zipfile import ZipFile
 

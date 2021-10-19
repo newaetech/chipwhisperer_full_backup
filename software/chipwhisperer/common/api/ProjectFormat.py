@@ -415,11 +415,11 @@ class Project(Parameterized):
         ram = util.convert_to_str(self.config)
 
     def hasDiffs(self):
-        if self.dirty.value(): return True
+        # if self.dirty.value(): return True
 
-        #added, removed, changed = self.checkDiff()
-        if (len(added) + len(removed) + len(changed)) == 0:
-            return False
+        # #added, removed, changed = self.checkDiff()
+        # if (len(added) + len(removed) + len(changed)) == 0:
+        #     return False
         return True
 
     def consolidate(self, keepOriginals = True):
@@ -488,12 +488,12 @@ class Project(Parameterized):
 
         if file_type == 'zip':
             file_path = os.path.abspath(file_path)
-            with zipfile.ZipFile(file_path, 'w', zipfile.ZIP_DEFLATED) as zip:
+            with zipfile.ZipFile(file_path, 'w', zipfile.ZIP_DEFLATED) as myzip:
                 common_path = os.path.commonpath(file_paths)
                 for file in file_paths:
                     relative_path = os.path.relpath(file, common_path)
-                    zip.write(file, arcname=relative_path)
-                    export_file_path = os.path.abspath(zip.filename)
+                    myzip.write(file, arcname=relative_path)
+                    export_file_path = os.path.abspath(myzip.filename)
         else:
             raise ValueError('{} not supported'.format(file_type))
 
