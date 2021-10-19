@@ -142,7 +142,7 @@ def _check_sam_feature(feature, fw_version, prod_id):
 
     return True
 
-def _WINDOWS_USB_CHECK_DRIVER(device):
+def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
     """Checks which driver device is using
 
     Checks whether the device is connected to the PC (harder than you'd think)
@@ -267,7 +267,7 @@ NEWAE_PIDS = {
 
 class NAEUSB_Backend:
     """
-    Backend to talk to the USB device. TODO: Need to make one for pyusb as people might still require libusb0
+    Backend to talk to the USB device.
     """
 
     CMD_READMEM_BULK = 0x10
