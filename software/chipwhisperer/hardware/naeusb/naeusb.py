@@ -29,7 +29,7 @@ from threading import Thread
 import usb1
 import os
 import array
-from typing import Optional, Union
+from typing import Optional, Union, List, Tuple
 
 from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
 from chipwhisperer.hardware.firmware import cw1200 as fw_cw1200
@@ -298,8 +298,8 @@ class NAEUSB_Backend:
         except:
             return False
 
-    def find(self, serial_number : Optional[str]=None, idProduct : Optional[list[int]]=None, 
-        hw_location : Optional[tuple[bool, bool]]=None) -> usb1.USBDevice:
+    def find(self, serial_number : Optional[str]=None, idProduct : Optional[List[int]]=None, 
+        hw_location : Optional[Tuple[bool, bool]]=None) -> usb1.USBDevice:
         # check if we got anything
         dev_list = self.get_possible_devices(idProduct, attempt_access=False if hw_location else True)
         if len(dev_list) == 0:
@@ -330,8 +330,8 @@ class NAEUSB_Backend:
         return dev_list[0]
 
 
-    def open(self, serial_number : Optional[str]=None, idProduct : Optional[list[int]]=None, 
-        connect_to_first : bool =False, hw_location : Optional[tuple[int, int]]=None) -> usb1.USBDeviceHandle:
+    def open(self, serial_number : Optional[str]=None, idProduct : Optional[List[int]]=None, 
+        connect_to_first : bool =False, hw_location : Optional[Tuple[int, int]]=None) -> usb1.USBDeviceHandle:
         """
         Connect to device using default VID/PID
         """
@@ -383,8 +383,8 @@ class NAEUSB_Backend:
             del self.handle
             self.handle = None
 
-    def get_possible_devices(self, idProduct : Optional[list[int]]=None, dictonly : bool=True, 
-        attempt_access : bool=False) -> list[usb1.USBDevice]:
+    def get_possible_devices(self, idProduct : Optional[List[int]]=None, dictonly : bool=True, 
+        attempt_access : bool=False) -> List[usb1.USBDevice]:
         """Get list of USB devices that match NewAE vendor ID (0x2b3e) and
         optionally a product ID
 
@@ -576,7 +576,7 @@ class NAEUSB:
         self.usbseralizer = self.usbtx
         self._fw_ver = None
 
-    def get_possible_devices(self, idProduct : list[int]) -> usb1.USBDevice:
+    def get_possible_devices(self, idProduct : List[int]) -> usb1.USBDevice:
         return self.usbtx.get_possible_devices(idProduct)
 
     def get_cdc_settings(self) -> list:
@@ -625,8 +625,8 @@ class NAEUSB:
             return devices
         return None
 
-    def con(self, idProduct : list[int]=[0xACE2], connect_to_first : bool=False, 
-        serial_number : Optional[str]=None, hw_location : Optional[tuple[int, int]]=None) -> int:
+    def con(self, idProduct : List[int]=[0xACE2], connect_to_first : bool=False, 
+        serial_number : Optional[str]=None, hw_location : Optional[Tuple[int, int]]=None) -> int:
         """
         Connect to device using default VID/PID
         """
@@ -713,7 +713,7 @@ class NAEUSB:
         """Dump all the crap left over"""
         self.usbseralizer.flushInput()
 
-    def cmdReadStream_getStatus(self) -> tuple[int, int, int]:
+    def cmdReadStream_getStatus(self) -> Tuple[int, int, int]:
         """
         Gets the status of the streaming mode capture, tells you samples left to stream out along
         with overflow buffer status. When an overflow occurs the samples left to stream goes to
@@ -779,7 +779,7 @@ class NAEUSB:
         else:
             return self.streamModeCaptureStream.isAlive() == False
 
-    def cmdReadStream(self, is_husky : bool=False) -> tuple[int, int]:
+    def cmdReadStream(self, is_husky : bool=False) -> Tuple[int, int]:
         """
         Gets data acquired in streaming mode.
         initStreamModeCapture should be called first in order to make it work.
