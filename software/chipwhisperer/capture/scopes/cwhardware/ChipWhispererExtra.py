@@ -97,35 +97,35 @@ class GPIOSettings(util.DisableNewAttr):
         return tuple(((bitmask >> i) & 0x01) for i in range(4))
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['tio1'] = self.tio1
-        dict['tio2'] = self.tio2
-        dict['tio3'] = self.tio3
-        dict['tio4'] = self.tio4
+        rtn = OrderedDict()
+        rtn['tio1'] = self.tio1
+        rtn['tio2'] = self.tio2
+        rtn['tio3'] = self.tio3
+        rtn['tio4'] = self.tio4
 
-        dict['pdid'] = self.pdid
-        dict['pdic'] = self.pdic
-        dict['nrst'] = self.nrst
+        rtn['pdid'] = self.pdid
+        rtn['pdic'] = self.pdic
+        rtn['nrst'] = self.nrst
 
-        dict['glitch_hp'] = self.glitch_hp
-        dict['glitch_lp'] = self.glitch_lp
+        rtn['glitch_hp'] = self.glitch_hp
+        rtn['glitch_lp'] = self.glitch_lp
 
-        dict['extclk_src'] = self.extclk_src
-        dict['hs2'] = self.hs2
+        rtn['extclk_src'] = self.extclk_src
+        rtn['hs2'] = self.hs2
 
-        dict['target_pwr'] = self.target_pwr
+        rtn['target_pwr'] = self.target_pwr
 
-        dict['tio_states'] = self.tio_states
+        rtn['tio_states'] = self.tio_states
 
-        dict['cdc_settings'] = self.cdc_settings
+        rtn['cdc_settings'] = self.cdc_settings
 
-        return dict
+        return rtn
 
     @property
     def tio_states(self):
         """
         Reads the logic level of the TIO pins (1-4) and
-        returns them as a tuple of the logic levels. 
+        returns them as a tuple of the logic levels.
 
         .. warning:: ChipWhisperer firmware before release 5.2.1 does not support
             reading the TIO pins!
@@ -361,8 +361,8 @@ class GPIOSettings(util.DisableNewAttr):
 
         try:
             iomode = self.TIO_VALID[pinnum][mode]
-        except KeyError:
-            raise ValueError("Invalid IO-Mode for GPIO%d: %s. Valid modes: %s" % (pinnum+1, mode, valid_modes))
+        except KeyError as e:
+            raise ValueError("Invalid IO-Mode for GPIO%d: %s. Valid modes: %s" % (pinnum+1, mode, valid_modes)) from e
 
         self.cwe.setTargetIOMode(iomode, pinnum)
 
@@ -576,9 +576,9 @@ class TriggerSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['triggers'] = self.triggers
-        dict['module'] = self.module
+        rtn = OrderedDict()
+        rtn['triggers'] = self.triggers
+        rtn['module'] = self.module
 
         return dict
 
@@ -636,7 +636,7 @@ class TriggerSettings(util.DisableNewAttr):
         if mode == self.cwe.MODE_OR: modes = "OR"
         elif mode ==  self.cwe.MODE_AND: modes = "AND"
         elif mode == self.cwe.MODE_NAND: modes = "NAND"
-        else: raise IOError("Unknown mode reported by hardware: %02x", mode)
+        else: raise IOError("Unknown mode reported by hardware: %02x" % mode)
 
         if pins & self.cwe.PIN_RTIO1:
             tstring.append("tio1")
@@ -657,7 +657,7 @@ class TriggerSettings(util.DisableNewAttr):
         if pins & self.cwe.PIN_FPA:
             tstring.append("sma")
             tstring.append(modes)
-            
+
         if pins & self.cwe.PIN_TNRST:
             tstring.append("nrst")
             tstring.append(modes)
@@ -681,7 +681,7 @@ class TriggerSettings(util.DisableNewAttr):
         triggerset = set(triggers)
         numcombined = int('and' in triggerset) + int('or' in triggerset) + int('nand' in triggerset)
         if numcombined > 1:
-           raise ValueError("Combining multiple triggers requires same logic between each combination", s)
+            raise ValueError("Combining multiple triggers requires same logic between each combination", s)
 
         if numcombined == 0 and len(triggers) > 1:
             raise ValueError("Detected more than 1 trigger pin specified, but no combination logic.", s)
@@ -735,22 +735,13 @@ class TriggerSettings(util.DisableNewAttr):
         """
         return "basic"
 
-    def _test(self):
-        #Self-test for development
-        self.triggers("tio1 OR tio2 AND tio3")
-        self.triggers("tio1 OR tio2")
-        self.triggers("tio1")
-        self.triggers("tio4 AND tio2 AND tio1")
-        self.triggers("tio1 NAND tio3")
-        self.triggers("tio1 NAND tio2 NAND")
-        self.triggers("tio1 AND tio1")
-
 class ProTrigger(TriggerSettings):
     def _dict_repr(self):
-        dict = super()._dict_repr()
-        dict['module'] = self.module
-        dict['aux_out'] = self.aux_out
-        return dict
+        rtn = {}
+        rtn = rtn.update(super()._dict_repr())
+        rtn['module'] = self.module
+        rtn['aux_out'] = self.aux_out
+        return rtn
 
     @property
     def module(self):
@@ -852,7 +843,7 @@ class ChipWhispererExtra(object):
     #    self.cwADV.setIOPattern(strToPattern("\n"), clkdiv=clkdivider)
 
 
-class CWExtraSettings(object):
+class CWExtraSettings:
     PIN_FPA = 0x01
     PIN_TNRST = 0x02
     PIN_RTIO1 = 0x04

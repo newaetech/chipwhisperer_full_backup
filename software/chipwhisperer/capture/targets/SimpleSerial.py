@@ -64,7 +64,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
       * :meth:`target.get_simpleserial_commands <.SimpleSerial.get_simpleserial_commands>`
 
     .. warning::
-        The CWLite, CW1200, and CWNano have a 128 byte read buffer and a 128 
+        The CWLite, CW1200, and CWNano have a 128 byte read buffer and a 128
         byte send buffer. If the read buffer overflows, a warning message
         will be printed. Prior to firmware 0.20, the send buffer can silently
         overflow. In ChipWhisperer 5.4, this is upgraded to a 200 byte read/send buffer.
@@ -97,14 +97,14 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         return self.__repr__()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['output_len'] = self.output_len
+        rtn = OrderedDict()
+        rtn['output_len'] = self.output_len
 
-        dict['baud']     = self.baud
-        dict['simpleserial_last_read'] = self.simpleserial_last_read
-        dict['simpleserial_last_sent'] = self.simpleserial_last_sent
-        #dict['protver'] = self.protver
-        return dict
+        rtn['baud']     = self.baud
+        rtn['simpleserial_last_read'] = self.simpleserial_last_read
+        rtn['simpleserial_last_sent'] = self.simpleserial_last_sent
+        #rtn['protver'] = self.protver
+        return rtn
 
     @property
     def simpleserial_last_read(self):
@@ -207,7 +207,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         self.simpleserial_write('y', bytearray())
         num_commands = self.simpleserial_read('r', 1, timeout=timeout, ack=ack)
         self.simpleserial_write('w', bytearray())
-        
+
         cmd_packet = self.simpleserial_read('r', num_commands[0]*3, timeout=timeout, ack=ack)
         command_list = []
         for i in range(num_commands[0]):
@@ -563,6 +563,3 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Added public method for in_waiting_tx().
         """
         return self.ser.inWaitingTX()
-
-
-

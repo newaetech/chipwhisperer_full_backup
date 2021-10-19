@@ -25,7 +25,9 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+from chipwhisperer.logging import *
 from ....common.utils.util import dict_to_str
+from .._OpenADCInterface import OpenADCInterface
 from collections import OrderedDict
 from copy import copy
 
@@ -37,9 +39,8 @@ CODE_USART      = 0x01
 ADDR_DECODECFG = 57
 ADDR_DECODEDATA = 58
 
-from chipwhisperer.logging import *
 
-class ChipWhispererDecodeTrigger(object):
+class ChipWhispererDecodeTrigger:
     """
     Communicates and drives the Digital Pattern Match module inside the FPGA.
 
@@ -53,7 +54,7 @@ class ChipWhispererDecodeTrigger(object):
         scope.decode_IO.trigger_pattern = ['r']
     """
     _name = 'I/O Decoder Trigger Module'
-    def __init__(self, oa):
+    def __init__(self, oa : OpenADCInterface):
         self.oa = oa
         self.pattern = None
 
@@ -69,11 +70,11 @@ class ChipWhispererDecodeTrigger(object):
         return dict_to_str(self._dict_repr)
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['trigger_pattern'] = self.trigger_pattern
-        dict['rx_baud'] = self.rx_baud
-        dict['decode_type'] = self.decode_type
-        return dict
+        rtn = OrderedDict()
+        rtn['trigger_pattern'] = self.trigger_pattern
+        rtn['rx_baud'] = self.rx_baud
+        rtn['decode_type'] = self.decode_type
+        return rtn
 
     @property
     def trigger_pattern(self):
@@ -135,8 +136,8 @@ class ChipWhispererDecodeTrigger(object):
             # If we can't evaluate the string, give up now
             try:
                 tl = eval(tp)
-            except Exception:
-                scope_logger.error("IO Decode Trigger: could not evaluate string %s"%tp)
+            except Exception as e:
+                scope_logger.error("IO Decode Trigger: could not evaluate string %s, err = %s"%(tp, e))
                 return
         else:
             tl = tp
@@ -159,7 +160,7 @@ class ChipWhispererDecodeTrigger(object):
         for i in range(0, len(tl)):
             tli = tl[i]
             # "XX" and "xx" are don't care signals
-            if tli == "XX" or tli == "xx":
+            if tli in ("XX", "xx"):
                 pass
             # Other strings need to be length 1
             elif (isinstance(tli, str)) and (len(tli) != 1):
@@ -200,9 +201,9 @@ class ChipWhispererDecodeTrigger(object):
         else:
             raise ValueError("Unknown decode type {}. Must be 'USART'".format(typ))
 
-    def set_decodetype(self, type):
+    def set_decodetype(self, decode_type):
         data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
-        data[0] = (data[0] & 0xF0) | type
+        data[0] = (data[0] & 0xF0) | decode_type
         self.oa.sendMessage(CODE_WRITE, ADDR_DECODECFG, data)
 
     def get_decodetype(self):

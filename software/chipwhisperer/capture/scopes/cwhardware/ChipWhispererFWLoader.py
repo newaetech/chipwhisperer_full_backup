@@ -39,8 +39,9 @@ from chipwhisperer.common.api.settings import Settings
 
 from chipwhisperer.logging import *
 
-class CW_Loader(object):
+class CW_Loader:
     """ Base class for ChipWhisperer targets that help loading of FPGA data """
+    name = ""
 
     def __init__(self):
         self._release_mode = self.read_setting("fpga-bitstream-mode","builtin")
@@ -70,13 +71,13 @@ class CW_Loader(object):
 
     def fpga_bitstream_date(self):
         """ In 'debug' mode returns date bitstream was modified, returns 'None' in release mode """
-        
+
         if self._release_mode != "debug":
             return None
         else:
             bsdate = os.path.getmtime(self._bsLoc)
             return time.ctime(bsdate)
-        
+
     def fpga_bitstream(self):
         """ Returns FPGA bitstream in use (either debug or release) """
         if self._release_mode == "builtin":
@@ -100,7 +101,7 @@ class CW_Loader(object):
             return open(self._bsLoc, "rb")
         else:
             raise ValueError("Internal Error - self._release_mode set to invalid value: %s"%str(self._release_mode))
-            
+
     def setFPGAMode(self, release_mode):
         """
         Selects where configuration data comes from:
@@ -140,7 +141,7 @@ class CWLite_Loader(CW_Loader):
         self.save_bsLoc()
         self.save_bsZipLoc()
 
-        if self.driver.isFPGAProgrammed() == False:
+        if self.driver.isFPGAProgrammed() is False:
             self.driver.FPGAProgram(self.fpga_bitstream())
         else:
             scope_logger.info("FPGA Configuration skipped - detected already programmed")

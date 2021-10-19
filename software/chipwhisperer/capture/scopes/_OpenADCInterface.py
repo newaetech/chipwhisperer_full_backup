@@ -173,10 +173,10 @@ class HWInformation(util.DisableNewAttr):
         return self.oa.hwMaxSamples
 
     def sysFrequency(self, force=False):
-        if (self.sysFreq > 0) & (force == False):
+        if (self.sysFreq > 0) & (force is False):
             return self.sysFreq
 
-        '''Return the system clock frequency in specific firmware version'''
+        # '''Return the system clock frequency in specific firmware version'''
         temp = self.oa.sendMessage(CODE_READ, ADDR_SYSFREQ, maxResp=4)
         freq = int.from_bytes(temp, byteorder='little')
 
@@ -203,11 +203,11 @@ class GainSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['mode'] = self.mode
-        dict['gain'] = self.gain
-        dict['db'] = self.db
-        return dict
+        rtn = OrderedDict()
+        rtn['mode'] = self.mode
+        rtn['gain'] = self.gain
+        rtn['db'] = self.db
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -460,31 +460,31 @@ class TriggerSettings(util.DisableNewAttr):
         self._cached_segments = 1 # Husky streaming capture breaks if left as None
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['state']      = self.state
-        dict['basic_mode'] = self.basic_mode
-        dict['timeout']    = self.timeout
-        dict['offset']     = self.offset
-        dict['presamples'] = self.presamples
-        dict['samples']    = self.samples
-        dict['decimate']   = self.decimate
-        dict['trig_count'] = self.trig_count
+        rtn = OrderedDict()
+        rtn['state']      = self.state
+        rtn['basic_mode'] = self.basic_mode
+        rtn['timeout']    = self.timeout
+        rtn['offset']     = self.offset
+        rtn['presamples'] = self.presamples
+        rtn['samples']    = self.samples
+        rtn['decimate']   = self.decimate
+        rtn['trig_count'] = self.trig_count
         if self._is_pro or self._is_lite:
-            dict['fifo_fill_mode'] = self.fifo_fill_mode
+            rtn['fifo_fill_mode'] = self.fifo_fill_mode
         if self._is_pro or self._is_husky:
-            dict['stream_mode'] = self.stream_mode
+            rtn['stream_mode'] = self.stream_mode
         if self._is_husky:
-            dict['test_mode'] = self.test_mode
-            dict['bits_per_sample'] = self.bits_per_sample
-            dict['segments'] = self.segments
-            dict['segment_cycles'] = self.segment_cycles
-            dict['clip_errors_disabled'] = self.clip_errors_disabled
-            dict['errors'] = self.errors
+            rtn['test_mode'] = self.test_mode
+            rtn['bits_per_sample'] = self.bits_per_sample
+            rtn['segments'] = self.segments
+            rtn['segment_cycles'] = self.segment_cycles
+            rtn['clip_errors_disabled'] = self.clip_errors_disabled
+            rtn['errors'] = self.errors
             # keep these hidden:
-            #dict['stream_segment_size'] = self.stream_segment_size
-            #dict['stream_segment_threshold'] = self.stream_segment_threshold
+            #rtn['stream_segment_size'] = self.stream_segment_size
+            #rtn['stream_segment_threshold'] = self.stream_segment_threshold
 
-        return dict
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -845,7 +845,7 @@ class TriggerSettings(util.DisableNewAttr):
         elif mode == "segment":
             mask = 2
         else:
-            raise ValueError("Invalid option for fifo mode: {}".format(mask))
+            raise ValueError("Invalid option for fifo mode: {}".format(mode))
 
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         result[3] &= ~(0x30)
@@ -1329,26 +1329,26 @@ class ClockSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
+        rtn = OrderedDict()
         if self._is_husky:
-            dict['enabled'] = self.enabled
-        dict['adc_src']    = self.adc_src
-        dict['adc_phase']  = self.adc_phase
-        dict['adc_freq']   = self.adc_freq
-        dict['adc_rate']   = self.adc_rate
-        dict['adc_locked'] = self.adc_locked
+            rtn['enabled'] = self.enabled
+        rtn['adc_src']    = self.adc_src
+        rtn['adc_phase']  = self.adc_phase
+        rtn['adc_freq']   = self.adc_freq
+        rtn['adc_rate']   = self.adc_rate
+        rtn['adc_locked'] = self.adc_locked
 
-        dict['freq_ctr']     = self.freq_ctr
-        dict['freq_ctr_src'] = self.freq_ctr_src
+        rtn['freq_ctr']     = self.freq_ctr
+        rtn['freq_ctr_src'] = self.freq_ctr_src
 
-        dict['clkgen_src']    = self.clkgen_src
-        dict['extclk_freq']   = self.extclk_freq
-        dict['clkgen_mul']    = self.clkgen_mul
-        dict['clkgen_div']    = self.clkgen_div
-        dict['clkgen_freq']   = self.clkgen_freq
-        dict['clkgen_locked'] = self.clkgen_locked
+        rtn['clkgen_src']    = self.clkgen_src
+        rtn['extclk_freq']   = self.extclk_freq
+        rtn['clkgen_mul']    = self.clkgen_mul
+        rtn['clkgen_div']    = self.clkgen_div
+        rtn['clkgen_freq']   = self.clkgen_freq
+        rtn['clkgen_locked'] = self.clkgen_locked
 
-        return dict
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -1518,12 +1518,12 @@ class ClockSettings(util.DisableNewAttr):
     @freq_ctr_src.setter
     def freq_ctr_src(self, src):
         if src == "clkgen":
-            s = 1
+            s_int = 1
         elif src == "extclk":
-            s = 0
+            s_int = 0
         else:
             raise ValueError("Invalid clock source for frequency counter. Valid values: 'clkgen', 'extclk'.", src)
-        self._set_freqcounter_src(s)
+        self._set_freqcounter_src(s_int)
 
     @property
     def clkgen_src(self):
@@ -1740,8 +1740,7 @@ class ClockSettings(util.DisableNewAttr):
             self._set_husky_clkgen_mul(mul)
         else:
             # TODO: raise ValueError?
-            if mul < 2:
-                mul = 2
+            mul = max(mul, 2)
             self._setClkgenMul(mul)
 
     def _setClkgenMul(self, mul):
@@ -1756,7 +1755,7 @@ class ClockSettings(util.DisableNewAttr):
 
     def _set_husky_clkgen_mul(self, mul):
         # calculate register value:
-        if type(mul) != int:
+        if isinstance(mul, int):
             raise ValueError("Only integers are supported")
         self.mmcm.set_mul(mul)
 
@@ -1995,8 +1994,8 @@ class ClockSettings(util.DisableNewAttr):
         '''Set the phase adjust, range -255 to 255'''
         try:
             phase_int = int(phase)
-        except ValueError:
-            raise TypeError("Can't convert %s to int" % phase)
+        except ValueError as e:
+            raise TypeError("Can't convert %s to int" % phase) from e
 
         if self._is_husky:
             if phase_int < -32767 or phase_int > 32767:
@@ -2722,7 +2721,7 @@ class OpenADCInterface(util.DisableNewAttr):
         else:
             datapoints = []
 
-            if NumberPoints == None:
+            if NumberPoints is None:
                 NumberPoints = 0x1000
 
             if self.ddrMode:
@@ -2736,7 +2735,7 @@ class OpenADCInterface(util.DisableNewAttr):
                     NumberPackages = NumberPackages + 1
 
                 start = 0
-                self.setDDRAddress(0)
+                # self.setDDRAddress(0) # this is no longer implemented? Should we remove this path?
 
 
                 BytesPerPackage = 257
@@ -2948,7 +2947,7 @@ class OpenADCInterface(util.DisableNewAttr):
 
         #print len(fpData)
 
-        if trigfound == False:
+        if trigfound is False:
             scope_logger.warning('Trigger not found in ADC data. No data reported!')
             scope_logger.debug('Trigger not found typically caused by the actual \
             capture starting too late after the trigger event happens')
@@ -2958,38 +2957,38 @@ class OpenADCInterface(util.DisableNewAttr):
         #Ensure that the trigger point matches the requested by padding/chopping
         diff = self.presamples_desired - trigsamp
         if diff > 0:
-               #fpData = [pad]*diff + fpData
-               fpData = np.append([pad]*diff, fpData)
-               scope_logger.warning('Pretrigger not met: Do not use downsampling and pretriggering at same time.')
-               scope_logger.debug('Pretrigger not met: can attempt to increase presampleTempMargin(in the code).')
+            #fpData = [pad]*diff + fpData
+            fpData = np.append([pad]*diff, fpData)
+            scope_logger.warning('Pretrigger not met: Do not use downsampling and pretriggering at same time.')
+            scope_logger.debug('Pretrigger not met: can attempt to increase presampleTempMargin(in the code).')
         else:
-               fpData = fpData[-diff:]
+            fpData = fpData[-diff:]
 
         scope_logger.debug("Processed data, ended up with %d samples total"%len(fpData))
 
         return fpData
 
-if __name__ == "__main__":
-    import serial
+# if __name__ == "__main__":
+#     import serial
 
-    ser = serial.Serial()
-    ser.port     = "com6"
-    ser.baudrate = 512000
-    ser.timeout  = 1.0
+#     ser = serial.Serial()
+#     ser.port     = "com6"
+#     ser.baudrate = 512000
+#     ser.timeout  = 1.0
 
-    try:
-        ser.open()
-    except serial.SerialException as e:
-        print("Could not open %s" % ser.name)
-        sys.exit()
-    except ValueError as s:
-        print("Invalid settings for serial port")
-        ser.close()
-        ser = None
-        sys.exit()
+#     try:
+#         ser.open()
+#     except serial.SerialException as e:
+#         print("Could not open %s" % ser.name)
+#         sys.exit()
+#     except ValueError as e:
+#         print("Invalid settings for serial port")
+#         ser.close()
+#         ser = None
+#         sys.exit()
 
-    adc = OpenADCInterface(ser)
-    adc.devicePresent()
+#     adc = OpenADCInterface(ser)
+#     adc.devicePresent()
 
-    adc_settings = OpenADCSettings()
-    adc_settings.setInterface(adc)
+#     adc_settings = OpenADCSettings()
+#     adc_settings.setInterface(adc)

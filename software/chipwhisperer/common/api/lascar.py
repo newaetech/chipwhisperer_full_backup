@@ -1,4 +1,10 @@
-from lascar.container import Container, TraceBatchContainer
+try:
+    import lascar
+    from lascar.container import Container, TraceBatchContainer
+    from lascar import *
+    from lascar.tools.aes import sbox, inv_sbox
+except ImportError as e:
+    print("Unable to import LASCAR")
 
 import numpy as np
 class CWContainer(Container):
@@ -19,8 +25,6 @@ class CWContainer(Container):
     def __setitem__(self, key, value):
         TraceBatchContainer.__setitem__(self, key, value)
 
-from lascar import *
-from lascar.tools.aes import sbox, inv_sbox
 
 #The following leakage models copied from /chipwhisperer/analyzer/attacks/models/AES128_8bit.py and
 # massaged into Lascar Version

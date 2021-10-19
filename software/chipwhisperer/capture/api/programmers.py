@@ -193,11 +193,6 @@ class AVRProgrammer(Programmer):
         avr.program(filename, memtype, verify)
 
     @save_and_restore_pins
-    def autoProgram(self, hexfile, erase, verify, logfunc, waitfunc):
-        avr = self.scope.scopetype.avr
-        avr.autoProgram(hexfile, erase, verify, logfunc, waitfunc)
-
-    @save_and_restore_pins
     def close(self):
         avr = self.scope.scopetype.avr
         try:
@@ -229,7 +224,7 @@ class XMEGAProgrammer(Programmer):
         if chip is None:
             self.log("Detected Unknown Chip, sig=%2x %2x %2x" % (sig[0], sig[1], sig[2]))
         else:
-             self.log("Detected %s" % chip.name)
+            self.log("Detected %s" % chip.name)
 
     @save_and_restore_pins
     def erase(self, memtype="chip"):

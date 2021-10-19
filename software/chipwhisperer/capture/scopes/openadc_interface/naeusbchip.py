@@ -71,14 +71,14 @@ class OpenADCInterface_NAEUSBChip:
         self.last_id = found_id
 
         self.getFWConfig().setInterface(self.fpga)
-        # XXX: need to comment this out?
+
         try:
             if bitstream is None:
                 if not self.fpga.isFPGAProgrammed():
                     self.fpga.FPGAProgram(self.getFWConfig().loader.fpga_bitstream(), prog_speed=prog_speed)
             else:
-                bsdata = open(bitstream, "rb")
-                self.fpga.FPGAProgram(bsdata, prog_speed=prog_speed)
+                with open(bitstream, "rb") as bsdata:
+                    self.fpga.FPGAProgram(bsdata, prog_speed=prog_speed)
         except:
             self.ser.close()
             raise

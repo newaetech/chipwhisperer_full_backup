@@ -26,6 +26,7 @@
 #=================================================
 from collections import OrderedDict
 from ....common.utils import util
+from .._OpenADCInterface import OpenADCInterface
 
 from ....logging import *
 import numpy as np
@@ -66,7 +67,7 @@ class XilinxDRP(util.DisableNewAttr):
         Talks to something like reg_mmcm_drp.v.
     '''
     _name = 'Xilinx DRP Access'
-    def __init__(self, oaiface, data_address, address_address, reset_address = None):
+    def __init__(self, oaiface : OpenADCInterface, data_address, address_address, reset_address = None):
         self.oa = oaiface
         self.data = data_address
         self.addr = address_address
@@ -97,7 +98,7 @@ class XilinxDRP(util.DisableNewAttr):
         """Pulse reset to associated IP block (intended for MMCM blocks, which
         need to be reset when their M/D parameters are updated).
         """
-        if self.reset_address == None:
+        if self.reset_address is None:
             raise ValueError("Reset not defined for this DRP interface")
         self.oa.sendMessage(CODE_WRITE, self.reset_address, [1])
         self.oa.sendMessage(CODE_WRITE, self.reset_address, [0])
@@ -221,7 +222,7 @@ class LEDSettings(util.DisableNewAttr):
     '''
     _name = 'Husky LEDs Setting'
 
-    def __init__(self, oaiface):
+    def __init__(self, oaiface : OpenADCInterface):
         self.oa = oaiface
         self.disable_newattr()
 
@@ -270,7 +271,7 @@ class HuskyErrors(util.DisableNewAttr):
     '''
     _name = 'Husky Errors'
 
-    def __init__(self, oaiface, XADC, adc, clock):
+    def __init__(self, oaiface : OpenADCInterface, XADC, adc, clock):
         self.oa = oaiface
         self.XADC = XADC
         self.adc = adc
@@ -301,7 +302,7 @@ class USERIOSettings(util.DisableNewAttr):
     '''
     _name = 'USERIO Control'
 
-    def __init__(self, oaiface):
+    def __init__(self, oaiface : OpenADCInterface):
         self.oa = oaiface
         self.disable_newattr()
 
@@ -373,7 +374,7 @@ class XADCSettings(util.DisableNewAttr):
     '''
     _name = 'Husky XADC Setting'
 
-    def __init__(self, oaiface):
+    def __init__(self, oaiface : OpenADCInterface):
         self.oa = oaiface
         self.drp = XilinxDRP(oaiface, ADDR_XADC_DRP_DATA, ADDR_XADC_DRP_ADDR)
         self.disable_newattr()
@@ -503,7 +504,7 @@ class LASettings(util.DisableNewAttr):
     '''
     _name = 'Husky Logic Analyzer Setting'
 
-    def __init__(self, oaiface, mmcm):
+    def __init__(self, oaiface : OpenADCInterface, mmcm):
         # oaiface = OpenADCInterface
         self.oa = oaiface
         self._mmcm = mmcm
@@ -818,7 +819,7 @@ class ADS4128Settings(util.DisableNewAttr):
     '''
     _name = 'Husky ADS4128 ADC Setting'
 
-    def __init__(self, oaiface):
+    def __init__(self, oaiface : OpenADCInterface):
         # oaiface = OpenADCInterface
         self.oa = oaiface
         self.adc_reset()
@@ -953,7 +954,7 @@ class ADS4128Settings(util.DisableNewAttr):
         if mode == "normal":
             self.set_normal_settings()
             self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [0])
-        elif mode == "test ramp" or mode == "test alternating":
+        elif mode in ("test ramp", "test alernating"):
             self.set_test_settings(mode)
             self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [1])
         else:

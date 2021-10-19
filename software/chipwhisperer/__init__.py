@@ -43,7 +43,8 @@ def check_for_updates() -> str:
 
     .. versionadded:: 5.6.1
     """
-    latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '{}==random'.format("chipwhisperer")], capture_output=True, text=True))
+    latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '{}==random'.format("chipwhisperer")],
+                        capture_output=True, text=True))
     latest_version = latest_version[latest_version.find('(from versions:')+15:]
     latest_version = latest_version[:latest_version.find(')')]
     latest_version = latest_version.replace(' ','').split(',')[-1]
@@ -67,7 +68,7 @@ except:
 
 ktp = key_text_patterns #alias
 
-def program_sam_firmware(serial_port : Optional[str]=None, 
+def program_sam_firmware(serial_port : Optional[str]=None,
     hardware_type : Optional[str]=None, fw_path : Optional[str]=None):
     """Program firmware onto an erased chipwhisperer scope or target
 
@@ -166,7 +167,7 @@ def create_project(filename : str, overwrite : bool=False):
     """
     filename = project.ensure_cwp_extension(filename)
 
-    if os.path.isfile(filename) and (overwrite == False):
+    if os.path.isfile(filename) and (overwrite is False):
         raise OSError("File " + filename + " already exists")
 
     # If the user gives a relative path including ~, expand to the absolute path
@@ -231,7 +232,7 @@ def import_project(filename : str, file_type : str='zip', overwrite : bool=False
     return proj
 
 
-def scope(scope_type=None, name=None, **kwargs):
+def scope(scope_type : Optional[scopes.ScopeTypes]=None, name : Optional[str]=None, **kwargs):
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the
@@ -303,19 +304,21 @@ def scope(scope_type=None, name=None, **kwargs):
 
     if scope_type is None:
         scope_type = get_cw_type(**kwargs)
-    scope = scope_type()
+    rtn = scope_type()
     try:
-        scope.con(**kwargs)
+        rtn.con(**kwargs)
     except IOError:
         scope_logger.error("ChipWhisperer error state detected. Resetting and retrying connection...")
-        scope._getNAEUSB().reset()
+        rtn._getNAEUSB().reset()
         time.sleep(2)
-        scope = scope_type()
-        scope.con(**kwargs)
-    return scope
+        rtn = scope_type()
+        rtn.con(**kwargs)
+    return rtn
 
 
-def target(scope, target_type=targets.SimpleSerial, **kwargs):
+def target(scope : Optional[scopes.ScopeTypes],
+    target_type : Union[targets.SimpleSerialTypes, targets.FPGATypes]=targets.SimpleSerial,
+    **kwargs):
     """Create a target object and connect to it.
 
     Args:
@@ -330,17 +333,16 @@ def target(scope, target_type=targets.SimpleSerial, **kwargs):
     Returns:
         Connected target object specified by target_type.
     """
-    target = target_type()
-    target.con(scope, **kwargs)
+    rtn = target_type()
+    rtn.con(scope, **kwargs)
 
-    # need to check 
-    if scope and (isinstance(target, targets.SimpleSerial) or isinstance(target, targets.SimpleSerial2)):
-        if isinstance(scope, scopes.CWNano) and not fw_ver_compare(scope.fw_version, {"major": 0, "minor": 24}):
-            target.ser.cwlite_usart._max_read = 128
-            target_logger.warning("Old firmware: limiting max serial read")
+    # need to check
+    if scope and scope._getNAEUSB().check_feature("SERIAL_200_BUFFER"):
+        rtn.ser.cwlite_usart._max_read = 128
     return target
 
-def capture_trace(scope, target, plaintext, key=None, ack=True):
+def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plaintext : bytearray,
+    key : Optional[bytearray]=None, ack : bool=True):
     """Capture a trace, sending plaintext and key
 
     Does all individual steps needed to capture a trace (arming the scope
@@ -418,7 +420,7 @@ def capture_trace(scope, target, plaintext, key=None, ack=True):
 
 def plot(*args, **kwargs):
     """Get a plotting object for use in Jupyter.
-    
+
     Uses a Holoviews/Bokeh plot with a width of 800 and
     a height of 600. You must have Holoviews and Bokeh
     installed, as well as be working in a Jupyter

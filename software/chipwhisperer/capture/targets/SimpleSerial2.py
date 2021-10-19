@@ -101,6 +101,7 @@ class SimpleSerial2(TargetTemplate):
             return "Invalid frame length"
         if e == SimpleSerial2_Err.ERR_FRAME_BYTE:
             return "Frame byte in expected spot"
+        return "Unknown error"
 
     @staticmethod
     def _calc_crc(buf):
@@ -224,7 +225,7 @@ class SimpleSerial2(TargetTemplate):
         except:
             pass
         return bytearray(rtn)
-    
+
     def is_done(self):
         """Required on other platforms
         """
@@ -276,7 +277,7 @@ class SimpleSerial2(TargetTemplate):
 
         The packet will be valid if:
 
-            * All requested reads return the requested characters 
+            * All requested reads return the requested characters
             * No frame bytes except the terminator are read
             * The packet doesn't end with a frame byte
             * If an ack packet isn't received
@@ -393,7 +394,7 @@ class SimpleSerial2(TargetTemplate):
             response = response.decode('latin-1')
             response += self.read(1000, timeout=glitch_timeout)
             return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
-        
+
         try:
             rv = self.simpleserial_wait_ack()
             if rv is None:
@@ -469,14 +470,14 @@ class SimpleSerial2(TargetTemplate):
         if response is None or len(response) < recv_len:
             self.flush_on_error()
             target_logger.warning("Read timed out" + response)
-            return
+            return None
 
         response = bytearray(response.encode('latin-1'))
         if (self._frame_byte in response and len(response) == 3) or \
             (self._frame_byte in response[:-1] and len(response) != 3):
             target_logger.warning(f"Unexpected frame byte in {response}")
             self.flush_on_error()
-            return
+            return None
         next_frame = self._unstuff_data(response)
         target_logger.debug("Unstuffed first read: {}".format(next_frame))
         if cmd and response[1] != cmd:
@@ -492,7 +493,7 @@ class SimpleSerial2(TargetTemplate):
             if x is None:
                 target_logger.warning("Read timed out")
                 self.flush_on_error()
-                return
+                return None
             if len(x) != (l + 2):
                 target_logger.warning(f"Didn't get all data {len(x)}, {l+2}")
                 target_logger.warning(bytearray(x.encode('latin-1')))
@@ -511,7 +512,7 @@ class SimpleSerial2(TargetTemplate):
         if pay_len and l != pay_len:
             target_logger.warning(f"Unexpected length {l}, {pay_len}")
             self.flush_on_error()
-            return
+            return None
 
         crc = self._calc_crc(response[1:-2]) #calc crc for all bytes except last (crc)
         if crc != response[-2]:
@@ -575,7 +576,6 @@ class SimpleSerial2(TargetTemplate):
 
         Sends 10 0x00 bytes, sleeps for 0.05 seconds, then flushes the serial buffer
         """
-        import time
         self.write([0x00]*2) # make sure target not processing a command
         time.sleep(0.05)
         self.flush()
@@ -670,7 +670,7 @@ class SimpleSerial2_CDC(SimpleSerial2):
         target = cw.target(scope, cw.targets.SimpleSerial2_CDC)
 
     Upon connection, this target object will using USB info from
-    the scope object to figure out which serial port to use. You 
+    the scope object to figure out which serial port to use. You
     can also specify the serial port manually using the dev_path
     parameter. ::
 
@@ -709,8 +709,8 @@ class SimpleSerial2_CDC(SimpleSerial2):
                 dev_path = ports[0]['port']
         self.dev_path = dev_path
         self.ser = serial.Serial(dev_path, baudrate=230400, timeout=0.25)
-            
-                
+
+
     def write(self, data):
         #data = bytearray(data)
         self.ser.write(data)
@@ -723,7 +723,7 @@ class SimpleSerial2_CDC(SimpleSerial2):
 
     def in_waiting(self):
         return self.ser.in_waiting
-    
+
     def flush(self):
         self.ser.reset_input_buffer()
 

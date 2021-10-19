@@ -36,7 +36,7 @@ CODE_READ   = 0x80
 CODE_WRITE  = 0xC0
 
 
-class ChipWhispererSAD(object):
+class ChipWhispererSAD:
     """Communicates with the SAD module inside the CW Pro
 
     This submodule is only available on the ChipWhisperer1200 Pro
@@ -65,10 +65,10 @@ class ChipWhispererSAD(object):
         self.sadref = [0]
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['threshold'] = self.threshold
-        dict['reference'] = self.reference
-        return dict
+        rtn = OrderedDict()
+        rtn['threshold'] = self.threshold
+        rtn['reference'] = self.reference
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())

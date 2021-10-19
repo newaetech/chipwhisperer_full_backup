@@ -24,6 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+from ....logging import *
 import zipfile
 import datetime
 from collections import OrderedDict
@@ -37,7 +38,6 @@ glitchreadbackaddr = 56
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
 
-from chipwhisperer.logging import *
 
 # sign extend b low bits in x
 # from "Bit Twiddling Hacks"
@@ -72,27 +72,27 @@ class GlitchSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
+        rtn = OrderedDict()
 
         if self._is_husky:
-            dict['enabled'] = self.enabled
-            dict['mmcm_locked'] = self.mmcm_locked
-        dict['clk_src'] = self.clk_src
-        dict['width'] = self.width
+            rtn['enabled'] = self.enabled
+            rtn['mmcm_locked'] = self.mmcm_locked
+        rtn['clk_src'] = self.clk_src
+        rtn['width'] = self.width
         if not self._is_husky:
-            dict['width_fine'] = self.width_fine
-        dict['offset'] = self.offset
+            rtn['width_fine'] = self.width_fine
+        rtn['offset'] = self.offset
         if not self._is_husky:
-            dict['offset_fine'] = self.offset_fine
-        dict['trigger_src'] = self.trigger_src
-        dict['arm_timing'] = self.arm_timing
-        dict['ext_offset'] = self.ext_offset
-        dict['repeat'] = self.repeat
-        dict['output'] = self.output
+            rtn['offset_fine'] = self.offset_fine
+        rtn['trigger_src'] = self.trigger_src
+        rtn['arm_timing'] = self.arm_timing
+        rtn['ext_offset'] = self.ext_offset
+        rtn['repeat'] = self.repeat
+        rtn['output'] = self.output
         if self._is_husky:
-            dict['phase_shift_steps'] = self.phase_shift_steps
+            rtn['phase_shift_steps'] = self.phase_shift_steps
         
-        return dict
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -270,8 +270,8 @@ class GlitchSettings(util.DisableNewAttr):
             glitch_logger.error("N/A for Husky")
         try:
             int_val = int(value)
-        except ValueError:
-            raise TypeError("Can't convert %s to integer" % value, value)
+        except ValueError as e:
+            raise TypeError("Can't convert %s to integer" % value, value) from e
 
         if int_val < -255 or int_val > 255:
             raise ValueError("New fine width is outside range [-255, 255]")
@@ -330,8 +330,8 @@ class GlitchSettings(util.DisableNewAttr):
             glitch_logger.error("N/A for Husky")
         try:
             int_val = int(value)
-        except ValueError:
-            raise TypeError("Can't convert %s to integer" % value, value)
+        except ValueError as e:
+            raise TypeError("Can't convert %s to integer" % value, value) from e
 
         if int_val < -255 or int_val > 255:
             raise ValueError("New fine offset is outside range [-255, 255]")
@@ -363,8 +363,8 @@ class GlitchSettings(util.DisableNewAttr):
     def trigger_src(self, src):
         try:
             trig_idx = self._glitch_triggers.index(src)
-        except ValueError:
-            raise ValueError("Can't set glitch trigger to %s; valid values: %s" % (src, self._glitch_triggers), src)
+        except ValueError as e:
+            raise ValueError("Can't set glitch trigger to %s; valid values: %s" % (src, self._glitch_triggers), src) from e
 
         self.cwg.setGlitchTrigger(trig_idx)
 
@@ -445,8 +445,8 @@ class GlitchSettings(util.DisableNewAttr):
     def ext_offset(self, offset):
         try:
             int_val = int(offset)
-        except ValueError:
-            raise TypeError("Can't convert %s to integer" % offset, offset)
+        except ValueError as e:
+            raise TypeError("Can't convert %s to integer" % offset, offset) from e
 
         if int_val < 0 or int_val >= 2**32:
             raise ValueError("New trigger offset %d is outside range [0, 2**32)" % int_val)
@@ -478,11 +478,11 @@ class GlitchSettings(util.DisableNewAttr):
     def repeat(self, value):
         try:
             int_val = int(value)
-        except ValueError:
-            raise TypeError("Can't convert %s to integer" % value, value)
+        except ValueError as e:
+            raise TypeError("Can't convert %s to integer" % value, value) from e
 
         if int_val < 1 or int_val > 8192:
-            raise ValueError("New repeat value %d is outside range [1, 8192]", int_val)
+            raise ValueError("New repeat value %d is outside range [1, 8192]" % int_val)
 
         self.cwg.setNumGlitches(int_val)
 
@@ -517,8 +517,8 @@ class GlitchSettings(util.DisableNewAttr):
     def output(self, value):
         try:
             output_idx = self._output_modes.index(value)
-        except ValueError:
-            raise ValueError("Can't set glitch mode to %s; valid values: %s" % (value, self._output_modes), value)
+        except ValueError as e:
+            raise ValueError("Can't set glitch mode to %s; valid values: %s" % (value, self._output_modes), value) from e
         self.cwg.setGlitchType(output_idx)
 
 class ChipWhispererGlitch(object):
@@ -616,9 +616,9 @@ class ChipWhispererGlitch(object):
                 glitch_logger.warning('Partial Reconfiguration DISABLED: Debug bitstream mode')
                 self.prEnabled = False
 
-        except IOError as e:
-            glitch_logger.error(str(e))
-            self.prEnabled = False
+        # except IOError as e: # same as OSError
+        #     glitch_logger.error(str(e))
+        #     self.prEnabled = False
         except ValueError as e:
             glitch_logger.error(str(e))
             self.prEnabled = False
@@ -643,7 +643,7 @@ class ChipWhispererGlitch(object):
             self.prCon.con(oa)
 
             # Check this is actually working
-            if self.prCon.isPresent() == False:
+            if self.prCon.isPresent() is False:
                 self.prEnabled = False
                 glitch_logger.warning('Partial Reconfiguration block not detected, PR disabled')
                 return
@@ -824,7 +824,7 @@ class ChipWhispererGlitch(object):
 
     def setTriggerOffset(self, offset):
         offset = int(offset)
-        """Set offset between trigger event and glitch in clock cycles"""
+        # """Set offset between trigger event and glitch in clock cycles"""
         cmd = bytearray(4)
         cmd[0] = ((offset >> 0) & 0xFF)
         cmd[1] = ((offset >> 8) & 0xFF)

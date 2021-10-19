@@ -23,3 +23,4 @@ except ImportError:
 # from .SmartCard import SmartCard #Tied to GUI
 SimpleSerialTypes = Union[SimpleSerial, SimpleSerial2, SimpleSerial2_CDC]
 FPGATypes = Union[CW305, CW305_ECC, CW310]
+TargetTypes = Union[FPGATypes, SimpleSerialTypes]
