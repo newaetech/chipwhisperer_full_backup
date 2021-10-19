@@ -308,7 +308,7 @@ def scope(scope_type=None, name=None, **kwargs):
         scope._getNAEUSB().reset()
         time.sleep(2)
         scope = scope_type()
-        scope.con(sn)
+        scope.con(**kwargs)
     return scope
 
 

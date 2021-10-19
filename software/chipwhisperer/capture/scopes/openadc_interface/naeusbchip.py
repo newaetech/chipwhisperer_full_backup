@@ -54,7 +54,7 @@ class OpenADCInterface_NAEUSBChip:
             0xACE5:FWLoaderConfig(CWHusky_Loader())
         }
 
-    def con(self, sn=None, idProduct=None, bitstream=None, force=False, **kwargs):
+    def con(self, sn=None, idProduct=None, bitstream=None, force=False, prog_speed=1E6, **kwargs):
         # try:
         if idProduct:
             nae_products = [idProduct]
@@ -63,6 +63,7 @@ class OpenADCInterface_NAEUSBChip:
         found_id = self.ser.con(idProduct=nae_products, serial_number=sn, **kwargs)
         if force:
             self.fpga.eraseFPGA()
+            scope_logger.debug("Forcing new firmware")
             time.sleep(0.5)
 
         if found_id != self.last_id:
@@ -73,15 +74,16 @@ class OpenADCInterface_NAEUSBChip:
         # XXX: need to comment this out?
         try:
             if bitstream is None:
-                self.getFWConfig().loadRequired()
+                if not self.fpga.isFPGAProgrammed():
+                    self.fpga.FPGAProgram(self.getFWConfig().loader.fpga_bitstream(), prog_speed=prog_speed)
             else:
                 bsdata = open(bitstream, "rb")
-                self.fpga.FPGAProgram(bsdata)
+                self.fpga.FPGAProgram(bsdata, prog_speed=prog_speed)
         except:
             self.ser.close()
             raise
 
-    def reload_fpga(self, bitstream):
+    def reload_fpga(self, bitstream, prog_speed=1E6):
         if bitstream is None:
             raise NotImplementedError("Oops I forgot about that")
         
@@ -92,7 +94,7 @@ class OpenADCInterface_NAEUSBChip:
         bsdata = open(bitstream, "rb")
 
         try:
-            self.fpga.FPGAProgram(bsdata)
+            self.fpga.FPGAProgram(bsdata, prog_speed=prog_speed)
         except:
             self.ser.close()
             raise

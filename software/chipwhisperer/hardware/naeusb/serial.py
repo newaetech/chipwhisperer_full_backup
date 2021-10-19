@@ -103,10 +103,11 @@ class USART(object):
         target_logger.info("Serial baud rate = {}".format(baud))
 
         try:
-            self.tx_buf_in_wait = False
-            a = self.fw_version
-            if a["major"] > 0 or a["minor"] >= 20:
-                self.tx_buf_in_wait = True
+            self.tx_buf_in_wait = self._usb.check_feature("TX_IN_WAITING")
+            # self.tx_buf_in_wait = False
+            # a = self.fw_version
+            # if a["major"] > 0 or a["minor"] >= 20:
+            #     self.tx_buf_in_wait = True
         except OSError:
             pass
 
@@ -170,13 +171,14 @@ class USART(object):
         # print data
         return data[0]
 
-    @fw_ver_required(0, 20)
+    # @fw_ver_required(0, 20)
     def in_waiting_tx(self):
         """
         Get number of bytes in tx buffer
         """
-        data = self._usartRxCmd(self.USART_CMD_NUMWAIT_TX, dlen=4)
-        return data[0]
+        if self._usb.check_feature("TX_IN_WAITING"):
+            data = self._usartRxCmd(self.USART_CMD_NUMWAIT_TX, dlen=4)
+            return data[0]
 
     def read(self, dlen=0, timeout=0):
         """

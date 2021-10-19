@@ -79,6 +79,12 @@ class SimpleSerial2(TargetTemplate):
         self.last_key = bytearray(16)
         self._output_len = 16
 
+    def close(self):
+        self.ser.close()
+
+    def dis(self):
+        self.close()
+
     @staticmethod
     def strerror(self, e):
         """Get string error message based on integer error e
@@ -679,6 +685,9 @@ class SimpleSerial2_CDC(SimpleSerial2):
     def __init__(self):
         super().__init__()
         self.ser = None
+
+    def close(self):
+        self.ser.dis()
 
     def con(self, scope, dev_path=None, interface=None, flush_on_err=True):
         import serial

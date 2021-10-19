@@ -488,7 +488,7 @@ def camel_case_deprecated(func):
 
 
 
-def get_cw_type(sn=None, idProduct=None, **kwargs):
+def get_cw_type(sn=None, idProduct=None, hw_location=None, **kwargs):
     """ Gets the scope type of the connected ChipWhisperer
     If multiple connected, sn must be specified
     """
@@ -502,7 +502,7 @@ def get_cw_type(sn=None, idProduct=None, **kwargs):
         possible_ids = [0xace0, 0xace2, 0xace3, 0xace5]
 
     cwusb = NAEUSB_Backend()
-    device = cwusb.find(serial_number=sn, idProduct=possible_ids, **kwargs)
+    device = cwusb.find(serial_number=sn, idProduct=possible_ids, hw_location=hw_location)
     name = device.getProduct()
     cwusb.usb_ctx.close()
 

@@ -50,7 +50,7 @@
 #define  USB_DEVICE_PRODUCT_ID            0xACE0
 
 #define FW_VER_MAJOR 0
-#define FW_VER_MINOR 50
+#define FW_VER_MINOR 52
 #define FW_VER_DEBUG 0
 
 #define  USB_DEVICE_MAJOR_VERSION         1

@@ -71,10 +71,12 @@ class CW310(CW305):
         return fwver
         
 
-    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True):
+    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=10E6):
         # add more stuff later
         self._naeusb.con(idProduct=[0xC310])
         # self.pll.cdce906init()
+        if fpga_id:
+            target_logger.warning("fpga_id is currently unused")
 
         if defines_files is None:
             if fpga_id is None:
@@ -87,8 +89,8 @@ class CW310(CW305):
         if slurp:
             self.slurp_defines(verilog_defines)
 
-        if bsfile:
-            status = self.fpga.FPGAProgram(open(bsfile, "rb"))
+        if bsfile and (force or not self.fpga.isFPGAProgrammed()):
+            status = self.fpga.FPGAProgram(open(bsfile, "rb"), prog_speed=prog_speed)
 
 
     def _xadc_drp_write(self, addr, data):

@@ -25,18 +25,20 @@
 
 import time
 import logging
-from .naeusb import packuint32
+from .naeusb import packuint32, NAEUSB
+from ...logging import *
 
 class FPGA(object):
 
     CMD_FPGA_STATUS = 0x15
     CMD_FPGA_PROGRAM = 0x16
 
-    def __init__(self, usb, timeout=200):
+    def __init__(self, usb: NAEUSB, timeout=200, prog_mask=0xA0):
         self.sendCtrl = usb.sendCtrl
         self.readCtrl = usb.readCtrl
         self._usb = usb
         self._timeout = timeout
+        self._prog_mask = prog_mask
 
     def isFPGAProgrammed(self):
         """
@@ -51,21 +53,27 @@ class FPGA(object):
             return False
 
     def eraseFPGA(self):
-        self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA0)
+        self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00)
         time.sleep(0.001)
-        self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA1)
+        self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x01)
         time.sleep(0.001)
 
-    def FPGAProgram(self, bitstream=None, exceptOnDoneFailure=True):
+    def FPGAProgram(self, bitstream=None, exceptOnDoneFailure=True, prog_speed=1E6):
         """
         Program FPGA with a bitstream, or if not bitstream passed just erases FPGA
         """
 
         # Erase the FPGA by toggling PROGRAM pin, setup
         # NAEUSB chip for FPGA programming
-        self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA0)
+        prog_data = []
+        if self._usb.check_feature("VARIABLE_FPGA_PROG_SPEED"):
+            naeusb_logger.info("Using prog speed of {}".format(int(prog_speed)))
+            prog_data = packuint32(int(prog_speed))
+
+
+        self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00, data=prog_data)
         time.sleep(0.001)
-        self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA1)
+        self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x01)
 
         time.sleep(0.001)
 
@@ -84,15 +92,16 @@ class FPGA(object):
                 wait -= 1
 
             # Exit FPGA programming mode
-            self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA2)
+            self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x02)
 
             if programStatus == False and exceptOnDoneFailure:
+                target_logger.error("FPGA programming failed. Typically either bad bitstream or prog speed too high (current {})".format(prog_speed))
                 raise IOError("FPGA Done pin failed to go high, bad bitstream?", bitstream)
 
             return programStatus
         else:
             # No bitstream, exit programming mode
-            self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA2)
+            self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x02)
             return False
 
     def _FPGADownloadBitstream(self, fwFileLike):

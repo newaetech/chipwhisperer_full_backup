@@ -176,6 +176,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxx")
         self.ser.flush()
 
+    def dis(self):
+        self.close()
 
     def close(self):
         if self.ser != None:
