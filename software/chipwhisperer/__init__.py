@@ -345,7 +345,7 @@ def target(scope : Optional[scopes.ScopeTypes],
     return target
 
 def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plaintext : bytearray,
-    key : Optional[bytearray]=None, ack : bool=True) -> Optional[Trace]:
+    key : Optional[bytearray]=None, ack : bool=True, poll_done : bool=False) -> Optional[Trace]:
     """Capture a trace, sending plaintext and key
 
     Does all individual steps needed to capture a trace (arming the scope
@@ -363,6 +363,12 @@ def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plain
             bytearray. If None, don't send key. Defaults to None.
         ack (bool, optional): Check for ack when reading response from target.
             Defaults to True.
+        poll_done (bool, optional): poll Husky to find out when it's done
+            capturing, instead of calculating the capture time based on the
+            capture parameters. Useful for long trigger-based segmented
+            captures.  Can also result in slightly faster captures when the
+            number of samples is high. Defaults to False. Supported by Husky
+            only.
 
     Returns:
         :class:`Trace <chipwhisperer.common.traces.Trace>` or None if capture
@@ -387,6 +393,9 @@ def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plain
 
     .. versionchanged:: 5.2
         Added ack parameter and use of target.output_len
+
+    .. versionchanged:: 5.6.1
+        Added poll_done parameter for Husky
     """
 
     import signal
@@ -399,7 +408,7 @@ def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plain
     if plaintext:
         target.simpleserial_write('p', plaintext)
 
-    ret = scope.capture()
+    ret = scope.capture(poll_done=poll_done)
 
     i = 0
     while not target.is_done():

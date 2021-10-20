@@ -54,6 +54,9 @@ ADDR_LA_DRP_ADDR       = 68
 ADDR_LA_DRP_DATA       = 69
 ADDR_LA_DRP_RESET      = 74
 
+CODE_READ              = 0x80
+CODE_WRITE             = 0xC0
+
 class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
     """OpenADC scope object.
@@ -268,6 +271,10 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
     @property
     def fpga_buildtime(self):
+        """When the FPGA bitfile was generated. Husky only.
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
         return self.sc.hwInfo.get_fpga_buildtime()
 
     def reset_fpga(self):
@@ -278,6 +285,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.sc.reset_fpga()
         self.adc._clear_caches()
         self.sc._clear_caches()
+        self.gain._clear_caches()
         self.ADS4128.set_defaults()
 
 
@@ -432,6 +440,11 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
             self.advancedSettings.armPostScope()
 
+            # For Husky, scope.adc parameters must be cached before startCaptureThread turns on fast read mode,
+            # because we won't be able to read them from the FPGA once fast read mode is turned on:
+            if self._is_husky:
+                self.adc._update_caches()
+
             self.sc.startCaptureThread()
         except Exception:
             self.dis()
@@ -451,26 +464,40 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         return False
 
 
-    def capture(self):
+    def capture(self, poll_done=False):
         """Captures trace. Scope must be armed before capturing.
-
+        Args:
+            poll_done (bool, optional): Supported by Husky only. Poll
+                Husky to find out when it's done capturing, instead of
+                calculating the capture time based on the capture parameters.
+                Can result in slightly faster captures when the number of
+                samples is high. Defaults to False.
         Returns:
            True if capture timed out, false if it didn't.
 
         Raises:
            IOError: Unknown failure.
+
+        .. versionchanged:: 5.6.1
+            Added poll_done parameter for Husky
         """
-        # need adc offset, adc_freq, samples
+        if self._is_husky and self.adc.segments > 1 and self.adc.presamples and self.adc.samples % 3:
+            raise ValueError('When using segments with presamples, the number of samples per segment (scope.adc.samples) must be a multiple of 3.')
+
+        if self._is_husky and (self.adc.decimate > 1) and (self.adc.presamples or self.adc.segments > 1):
+            raise ValueError('When decimate (%d) is used, presamples or segments cannot be used.' % self.adc.decimate)
+
+        if self.adc.stream_mode and (not self._is_husky):
+            a = self.sc.capture(None)
+        else:
+            a = self.sc.capture(self.adc.offset, self.clock.adc_freq, self.adc.samples, self.adc.segments, self.adc.segment_cycles, poll_done)
+
+        # _capture_read() must be given the total number of samples to read; in the case of Husky, self.adc.samples
+        # is the number of samples *per segment*, so adjust accordingly:
         if self._is_husky:
             samples = self.adc.samples * self.adc.segments
         else:
             samples = self.adc.samples
-        if self.adc.stream_mode and (not self.sc._is_husky):
-            a = self.sc.capture(None)
-        else:
-            a = self.sc.capture(self.adc.offset, self.clock.adc_freq, samples)
-            # a = self.sc.capture(None)
-
         b = self._capture_read(samples)
         return a or b
 
@@ -585,3 +612,37 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
     def __str__(self):
         return self.__repr__()
+
+    def upgrade_firmware(self):
+        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
+
+        .. versionadded:: 5.6.1
+            Improved programming interface
+        """
+        prog = SAMFWLoader(self)
+        prog.auto_program()
+
+    def fpga_reg_read(self, addr, numbytes):
+        """Convenience method to read an FPGA register. Intended for debug/development.
+        Args:
+            addr (int): FPGA address to read.
+            numbytes (int): number of bytes to read.
+
+        Returns:
+            read result: list of <numbytes> bytes.
+
+        .. versionadded:: 5.6.1
+        """
+        return list(self.sc.sendMessage(CODE_READ, addr, maxResp=numbytes))
+
+    def fpga_reg_write(self, addr, listofbytes):
+        """Convenience method to write an FPGA register. Intended for debug/development.
+        Args:
+            addr (int): FPGA address to write.
+            listofbytes (int array): list of bytes to write.
+
+        .. versionadded:: 5.6.1
+        """
+        return self.sc.sendMessage(CODE_WRITE, addr, listofbytes)
+
+

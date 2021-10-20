@@ -43,6 +43,7 @@ class CDCI6214:
         self.set_prescale(1, 5)
         self._fpga_clk_freq = 48E6
         self._glitch = None
+        self._cached_adc_freq = None
 
     def write_reg(self, addr, data):
         """Write to a CDCI6214 Register over I2C
@@ -546,15 +547,18 @@ class CDCI6214:
     def adc_freq(self):
         """The actual calculated adc_clock freq. Read only
         """
-        indiv = self.get_input_div()
-        outdiv = self.get_outdiv(3)
-        if not indiv:
-            scope_logger.warning("Input divisor not set!")
-            return None
-        elif not outdiv:
-            return 0
-        else:
-            return ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv) / (self.get_prescale(3)) * 5
+        if self._cached_adc_freq is None:
+            indiv = self.get_input_div()
+            outdiv = self.get_outdiv(3)
+            if not indiv:
+                scope_logger.warning("Input divisor not set!")
+                return None
+            elif not outdiv:
+                return 0
+            else:
+                self._cached_adc_freq = ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv) / (self.get_prescale(3)) * 5
+
+        return self._cached_adc_freq
 
 
     @property
