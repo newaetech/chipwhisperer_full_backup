@@ -26,7 +26,7 @@
 #=================================================
 import time
 from ....capture.utils.SerialProtocols import CWCalcClkDiv as calcClkDiv
-from ....capture.utils.SerialProtocols import strToBits as strToBits
+from ....capture.utils.SerialProtocols import strToBits
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -288,7 +288,7 @@ class CWUniversalSerial(object):
         self.setRunTx(False)
         self.setRunRx(False)
         self.writeClockDiv(65)#3125
-        tosend = self.proc.bitsToTxPattern(self.proc.strToBits("Hello"), 4)
+        tosend = self.proc.bitsToTxPattern(strToBits("Hello"), 4)
         for i in range(0, len(tosend)):
             self.writeSequence(i, tosend[i])
         self.setMaxTx(len(tosend))

@@ -262,7 +262,7 @@ class CW310(CW305):
         #send reset on pdo bus
         # self._naeusb.sendCtrl(0x43, 0, [0x28, 0x1A])
         # self._naeusb.sendCtrl(0x44, 0, [0x26])
-        self.usb_i2c.write(0x1A, 0x26)
+        self.usb_i2c_write(0x1A, 0x26)
 
     def _getCWType(self):
         return 'cwbergen'
@@ -390,7 +390,7 @@ class CW310(CW305):
         self._io.pin_set_state("PA1", 1)
         
         resp = input("Did both go or stay on? [y/n]")
-        if "y" == resp or "Y" == resp:
+        if resp == "y" or resp == "Y":
             print("Temp LEDs ok")
             
         print("Setting temp LEDs low")
@@ -399,7 +399,7 @@ class CW310(CW305):
         self._io.pin_set_state("PA1", 0)
         
         resp = input("Did both go or stay off? [y/n]")
-        if "y" == resp or "Y" == resp:
+        if resp == "y" or resp == "Y":
             print("Temp LEDs ok")
 
 
@@ -691,7 +691,7 @@ class FPGAIO:
             pinname (str): Name such as "PB22", "USB_A20", or "M2".
         """      
         if isinstance(pinname, int):
-            return datain
+            return pinname
 
         pinname = pinname.upper()
 

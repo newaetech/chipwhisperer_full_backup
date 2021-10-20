@@ -201,4 +201,3 @@ class ChipWhispererSAD:
 
         self.oa.sendMessage(CODE_WRITE, saddataaddr, wavedata, Validate=False)
         self.start()
-

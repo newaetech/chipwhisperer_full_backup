@@ -25,6 +25,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+from chipwhisperer.logging import *
+from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, \
      ChipWhispererSAD, ChipWhispererHuskyClock
 from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP, LEDSettings, HuskyErrors, \
@@ -40,7 +42,6 @@ import time
 import numpy as np
 from ..api.cwcommon import ChipWhispererCommonInterface
 
-from chipwhisperer.logging import *
 
 
 ADDR_GLITCH1_DRP_ADDR  = 62
@@ -115,7 +116,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         # self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
         self.connectStatus = True
 
-    def _getFWPy(self):
+    def _getFWPy(self) -> str:
         cw_type = self._getCWType()
         if cw_type == "cwlite":
             from ...hardware.firmware.cwlite import fwver
@@ -138,7 +139,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.dis()
         self.con(self._saved_sn)
 
-    def _getNAEUSB(self):
+    def _getNAEUSB(self) -> NAEUSB:
         return self.scopetype.ser
 
     def default_setup(self):
@@ -223,13 +224,13 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                 self.dis()
                 raise e
 
-    def getCurrentScope(self):
+    def getCurrentScope(self) -> OpenADCInterface:
         return self.scopetype
 
-    def setCurrentScope(self, scope):
+    def setCurrentScope(self, scope : OpenADCInterface):
         self.scopetype = scope
 
-    def _getCWType(self):
+    def _getCWType(self) -> str:
         """Find out which type of ChipWhisperer this device is.
 
         Returns:
@@ -323,14 +324,9 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
         util.chipwhisperer_extra = self.advancedSettings
 
-        if cwtype == "cwrev2" or cwtype == "cw1200":
-            self.SAD = ChipWhispererSAD.ChipWhispererSAD(self.sc)
-
         if cwtype == "cw1200":
+            self.SAD = ChipWhispererSAD.ChipWhispererSAD(self.sc)
             self.decode_IO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.sc)
-
-        if cwtype == "cwcrev2":
-            self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.sc)
 
         if cwtype == "cwhusky":
             # self.pll = ChipWhispererHuskyClock.CDCI6214(self.sc)

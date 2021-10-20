@@ -1,3 +1,4 @@
+# pylint skip-file
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -112,9 +113,9 @@ class TraceWhisperer():
             # check the FW version here:
             fw_latest = [1,1]
             if self._naeusb.readFwVersion()[0] < fw_latest[0]:
-               tracewhisperer_logger.warning('Your PhyWhisperer firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
+                tracewhisperer_logger.warning('Your PhyWhisperer firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
                                      '. Suggested to update firmware, as you may experience errors.')
- 
+
             self._fpga = FPGA(self._naeusb)
             if not self._fpga.isFPGAProgrammed() or force_bitfile:
                 if not bs:
@@ -245,10 +246,10 @@ class TraceWhisperer():
 
 
     def set_board_rev(self, rev):
-        """For development only - the rev3 board has different pin assignments. 
+        """For development only - the rev3 board has different pin assignments.
         The board revision must be set correctly both here and in the FPGA. This convenience
         function ensures both are set properly.
-        Args: 
+        Args:
             rev (int): 3 or 4
         """
         assert rev in [3,4]
@@ -279,7 +280,7 @@ class TraceWhisperer():
 
     def _send_tms_byte(self, data):
         """Bit-bang 8 bits of data on TMS/TCK (LSB first).
-        Args: 
+        Args:
             data (int): 8 bits data to send.
         """
         for i in range(8):
@@ -428,7 +429,7 @@ class TraceWhisperer():
 
     def check_fifo_errors(self, underflow=0, overflow=0):
         """Check whether an underflow or overflow occured on the capture FIFO.
-        
+
         Args:
             underflow (int, optional): expected status, 0 or 1
             overflow (int, optional): expected status, 0 or 1
@@ -478,7 +479,7 @@ class TraceWhisperer():
         for i in nameb:
             names += hex(i)[2:]
         return bytearray.fromhex(names).decode()
-        
+
 
     def test_itm(self, port=1):
         """Print test string via ITM using specified port number.
@@ -494,7 +495,7 @@ class TraceWhisperer():
 
     def read_capture_data(self):
         """Read captured trace data.
-        
+
         Returns: List of captured entries. Each list element is itself a 3-element list,
         containing the 3 bytes that make up a capture entry. Can be parsed by get_rule_match_times()
         or get_raw_trace_packets(). See defines_trace.v for definition of the FIFO
@@ -726,5 +727,3 @@ class TraceWhisperer():
         for frame in raw:
             binout.write(bytes(frame[1]))
         binout.close()
-
-

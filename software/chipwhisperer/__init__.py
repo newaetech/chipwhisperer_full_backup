@@ -43,8 +43,11 @@ def check_for_updates() -> str:
 
     .. versionadded:: 5.6.1
     """
-    latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '{}==random'.format("chipwhisperer")],
-                        capture_output=True, text=True))
+    latest_version = subprocess.run([sys.executable, '-m', 'pip', 'install', '{}==random'.format("chipwhisperer")],
+                        capture_output=True, text=True, check=True)
+    if not latest_version:
+        raise IOError("Could not check chipwhisperer version")
+    latest_version = str(latest_version)
     latest_version = latest_version[latest_version.find('(from versions:')+15:]
     latest_version = latest_version[:latest_version.find(')')]
     latest_version = latest_version.replace(' ','').split(',')[-1]
@@ -342,7 +345,7 @@ def target(scope : Optional[scopes.ScopeTypes],
     return target
 
 def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plaintext : bytearray,
-    key : Optional[bytearray]=None, ack : bool=True):
+    key : Optional[bytearray]=None, ack : bool=True) -> Optional[Trace]:
     """Capture a trace, sending plaintext and key
 
     Does all individual steps needed to capture a trace (arming the scope
@@ -386,7 +389,7 @@ def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plain
         Added ack parameter and use of target.output_len
     """
 
-    import signal, logging
+    import signal
 
     if key:
         target.set_key(key, ack=ack)

@@ -82,7 +82,7 @@ def save_and_restore_pins(func):
 
 
 
-class Programmer(object):
+class Programmer:
     lastFlashedFile = "unknown"
     _scope = None
     pin_setup = {}

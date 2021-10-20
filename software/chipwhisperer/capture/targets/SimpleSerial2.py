@@ -86,7 +86,7 @@ class SimpleSerial2(TargetTemplate):
         self.close()
 
     @staticmethod
-    def strerror(self, e):
+    def strerror(e):
         """Get string error message based on integer error e
         """
         if e == SimpleSerial2_Err.OK:
@@ -252,7 +252,7 @@ class SimpleSerial2(TargetTemplate):
         """
         rtn = self.read_cmd('e')
         if not rtn:
-            target_logger.error(f"Device did not ack")
+            target_logger.error("Device did not ack")
             return
         if rtn[3] != 0x00:
             target_logger.error(f"Device reported error {hex(rtn[3])}")

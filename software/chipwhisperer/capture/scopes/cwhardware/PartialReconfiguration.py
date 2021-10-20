@@ -31,7 +31,7 @@ import pickle
 class PartialReconfigData(object):
     """ Handles a single partial reconfiguration file. """
     def load(self, fname):
-        self.configData = pickle.load(open(fname, 'r'))
+        self.configData = pickle.load(open(fname, 'rb'))
         klist = list(self.configData['values'].keys())
         self.limits = (min(klist), max(klist))
 

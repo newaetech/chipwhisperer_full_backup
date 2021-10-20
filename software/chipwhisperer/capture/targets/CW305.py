@@ -116,6 +116,15 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
     def __init__(self):
         import chipwhisperer as cw
         TargetTemplate.__init__(self)
+
+        #NOTE: default values to make linter happy - these are never correct
+        self.REG_CRYPT_KEY = None
+        self.REG_CRYPT_TEXTIN = None
+        self.REG_CRYPT_GO = None
+        self.REG_USER_LED = None
+        self.REG_CRYPT_CIPHEROUT = None
+        self.REG_BUILDTIME = None
+
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6)
         self.fpga = FPGA(self._naeusb)
@@ -144,8 +153,10 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             defines_files (list): list of Verilog define files to parse
         """
         self.verilog_define_matches = 0
-        if type(defines_files) != list:
-            target_logger.error('defines_files must be provided as a list (even it it contains a single element)')
+
+        if (defines_files is None) or (type(defines_files) != list):
+            raise ValueError('defines_files must be provided as a list (even if it contains a single element)')
+
         for i,defines_file in enumerate(defines_files):
             if type(defines_file) == io.BytesIO:
                 defines = io.TextIOWrapper(defines_file)
@@ -153,7 +164,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
                 if not os.path.isfile(defines_file):
                     target_logger.error('Cannot find %s. Please specify the location of %s on your filesystem.' % 
                                    (defines_files, self.default_verilog_defines))
-                defines = open(defines_file, 'r')
+                defines = open(defines_file, 'r', encoding='utf-8')
             define_regex_base  =   re.compile(r'`define')
             define_regex_reg   =   re.compile(r'`define\s+?REG_')
             define_regex_radix =   re.compile(r'`define\s+?(\w+).+?\'([bdh])([0-9a-fA-F]+)')
@@ -182,7 +193,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             defines.close()
         # make sure everything is cool:
         if self.verilog_define_matches != self.registers:
-            target_logger.warning("Trouble parsing Verilog defines files (%s): didn't find the right number of defines; expected %d, got %d.\n" % (defines_file, self.registers, self.verilog_define_matches) +
+            target_logger.warning("Trouble parsing Verilog defines files (%s): didn't find the right number of defines; expected %d, got %d.\n" % (defines_files, self.registers, self.verilog_define_matches) +
                             "Ensure that the Verilog defines files above are the same that were used to build the bitfile.")
 
 
@@ -281,8 +292,6 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             defines_files (list, optional): path to cw305_defines.v
             slurp (bool, optional): Whether or not to slurp the Verilog defines.
         """
-
-        from datetime import datetime
         self._naeusb.con(idProduct=[0xC305])
         if not fpga_id is None:
             if fpga_id not in ('100t', '35t'):
@@ -521,12 +530,12 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         for b in range(batchsize):
             if random_key:
                 for j in range(16):
-                    key[b][15-j] = seed >> 24;
+                    key[b][15-j] = seed >> 24
                     seed += ((seed*seed)&0xffffffff) | 0x5
                     seed &= 0xffffffff
             if random_pt:
                 for j in range(16):
-                    pt[b][15-j] = seed >> 24;
+                    pt[b][15-j] = seed >> 24
                     seed += ((seed*seed)&0xffffffff) | 0x5
                     seed &= 0xffffffff
         return key,pt
@@ -546,7 +555,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         if len(data) > (256+addr):
             raise IOError("Write will overflow at location: 0x%04x"%(256))
 
-        return self._naeusb.cmdWriteSam3U(addr, data)
+        return self._naeusb.cmdWriteMem(addr, data)
 
     # @fw_ver_required(0, 30)
     def spi_mode(self, enable=True, timeout=200, bsfile=None, prog_speed=10E6):
@@ -567,7 +576,6 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             A FPGASPI object which can be used to erase/program/verify/read the SPI
             chip on the CW305.
         """
-        from datetime import datetime
         if not self._getNAEUSB().check_feature("FPGA_SPI_PASSTHROUGH"):
             target_logger.error("SPI mode requires fw 0.30.0 or newer. You have {}".format(self.fw_version_str))
             return
@@ -808,7 +816,7 @@ class FPGASPI:
             ValueError: length is bigger than a page
         """
         if length > self.PAGE_SIZE:
-            raise ValueError(f"Data too long {len(data)} vs {self.PAGE_SIZE}")
+            raise ValueError(f"Data too long {length} vs {self.PAGE_SIZE}")
             
         self.set_cs_pin(False)
         cmd = [self.READ, (addr >> 16)&0xFF, (addr >> 8)&0xFF, addr & 0xFF]
@@ -1187,7 +1195,7 @@ class FPGAIO:
             pinname (str): Name such as "PB22", "USB_A20", or "M2".
         """      
         if isinstance(pinname, int):
-            return datain
+            return pinname # TODO: is this right?
 
         pinname = pinname.upper()
 

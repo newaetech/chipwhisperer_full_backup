@@ -43,7 +43,7 @@ class CW305_ECC(CW305):
 
         import chipwhisperer as cw
         scope = cw.scope()
-        target = cw.target(scope, cw.targets.CW305_ECC, 
+        target = cw.target(scope, cw.targets.CW305_ECC,
                            bsfile=<valid FPGA bitstream file>)
 
     Note that connecting to the CW305_ECC includes programming the CW305 FPGA.
@@ -58,6 +58,12 @@ class CW305_ECC(CW305):
 
     def __init__(self):
         import chipwhisperer as cw
+        self.REG_CRYPT_GX = 0
+        self.REG_CRYPT_GY = 0
+        self.REG_CRYPT_K = 0
+        self.REG_CRYPT_RX = 0
+        self.REG_CRYPT_RY = 0
+
         super().__init__()
         self._clksleeptime = 150 # need lots of idling time
         self.curve = Curve.get_curve('NIST-P256')
@@ -72,10 +78,10 @@ class CW305_ECC(CW305):
 
     def capture_trace(self, scope, k, operation="pmult", Px=None, Py=None, check=True):
         """Capture a trace, running the specified test vector or operation (pmult or siggen).
-    
+
         Does all individual steps needed to capture a trace (arming the scope,
         running the test vector or operation, getting the trace data back, etc.)
-    
+
         Args:
             scope (ScopeTemplate): Scope object to use for capture.
             k (int): multiplier for pmult
@@ -92,7 +98,7 @@ class CW305_ECC(CW305):
 
         Raises:
             Warning or OSError: Error during capture.
-    
+
         """
         scope.arm()
         if scope._is_husky:
@@ -166,6 +172,7 @@ class CW305_ECC(CW305):
         Rx = int.from_bytes(self.fpga_read(self.REG_CRYPT_RX, 32), byteorder='little')
         Ry = int.from_bytes(self.fpga_read(self.REG_CRYPT_RY, 32), byteorder='little')
 
+
         # optionally check result:
         if check:
             P = Point(Px, Py, self.curve)
@@ -185,15 +192,12 @@ class CW305_ECC(CW305):
 
 
     def new_point(self, tries=100, bits=256):
-         for i in range(tries):
-             x = random.getrandbits(bits)
-             y = self.curve.y_recover(x)
-             if x > 0 and y:
-                 P = Point(x, y, self.curve, check=True)
-                 # shouldn't be necessary but let's check anwyway:
-                 assert self.curve.is_on_curve(P)
-                 return P
-         raise ValueError("Failed to generate a random point after %d tries!" % self.tries)
-
-
-
+        for i in range(tries):
+            x = random.getrandbits(bits)
+            y = self.curve.y_recover(x)
+            if x > 0 and y:
+                P = Point(x, y, self.curve, check=True)
+                # shouldn't be necessary but let's check anwyway:
+                assert self.curve.is_on_curve(P)
+                return P
+        raise ValueError("Failed to generate a random point after %d tries!" % tries)

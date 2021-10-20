@@ -33,7 +33,7 @@ def get_at91_ports():
     return at91_ports
 
 
-class SAMFWLoader(object):
+class SAMFWLoader:
     """ Object for easy reprogramming of ChipWhisperers
 
     See https://chipwhisperer.readthedocs.io/en/latest/firmware.html
@@ -292,5 +292,3 @@ class SAMFWLoader(object):
             self.logfunc("Verify FAILED!")
             sam.ser.close()
             return False
-
-

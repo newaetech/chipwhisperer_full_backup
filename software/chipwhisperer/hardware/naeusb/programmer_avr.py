@@ -32,7 +32,7 @@ from .naeusb import packuint32
 # NOTE: These objects are currently manually maintained. Eventually it will be automatically created
 #      from avrdude.conf, but I'd like to test with a few more devices before doing that.
 
-class AVRBase(object):
+class AVRBase:
     name = "INVALID DEVICE"
     signature = [0xFF, 0xFF, 0xFF]
     timeout = 200

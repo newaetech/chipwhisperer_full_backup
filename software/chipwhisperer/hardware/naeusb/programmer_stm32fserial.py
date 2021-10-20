@@ -45,59 +45,59 @@ def close_on_fail(func):
 #From ST AN2606, See Section 50 (Device-dependent bootloader parameters), Page 244/268 on Rev 30 of document
 #http://www.st.com/content/ccc/resource/technical/document/application_note/b9/9b/16/3a/12/1e/40/0c/CD00167594.pdf/files/CD00167594.pdf/jcr:content/translations/en.CD00167594.pdf
 
-class STM32FDummy(object):
+class STM32FDummy:
     signature = 0x000
     name = "Unknown STM32F"
 
-class STM32F03xx4(object):
+class STM32F03xx4:
     signature = 0x444
     name = "STM32F03xx4/03xx6"
 
-class STM32F04xxx(object):
+class STM32F04xxx:
     signature = 0x445
     name = "STM32F04xxx"
 
-class STM32F071(object):
+class STM32F071:
     signature = 0x448
     name = "STM32F071xx/STM32F072xx"
 
-class STM32F10xxx_LD(object):
+class STM32F10xxx_LD:
     signature = 0x412
     name = "STM32F10xxx Low-density"
 
-class STM32F10xxx_MD(object):
+class STM32F10xxx_MD:
     signature = 0x410
     name = "STM32F10xxx Medium-density"
 
-class STM32F10xxx_HD(object):
+class STM32F10xxx_HD:
     signature = 0x414
     name = "STM32F10xxx High-density"
 
-class STM32F10xxx_XL(object):
+class STM32F10xxx_XL:
     signature = 0x416
     name = "STM32F10xxx XL-density"
 
-class STM32F10xxx_MDV(object):
+class STM32F10xxx_MDV:
     signature = 0x420
     name = "STM32F10xxx Medium-density value line"
 
-class STM32F10xxx_HDV(object):
+class STM32F10xxx_HDV:
     signature = 0x428
     name = "STM32F10xxx High-density value line"
 
-class STM32F2(object):
+class STM32F2:
     signature = 0x411
     name = "STM32F2"
 
-class STM32F303cBC(object):
+class STM32F303cBC:
     signature = 0x422
     name = "STM32F302xB(C)/303xB(C)"
 
-class STM32F40xxx(object):
+class STM32F40xxx:
     signature = 0x413
     name = "STM32F40xxx/41xxx"
 
-class STM32L56xxx(object):
+class STM32L56xxx:
     signature = 0x472
     name = "STM32L56xxx"
 
@@ -110,7 +110,7 @@ def print_fun(s):
 class CmdException(Exception):
     pass
 
-class STM32FSerial(object):
+class STM32FSerial:
     """
     Class for programming an STM32F device using a serial port or ChipWhisperer-Serial
     """
@@ -365,11 +365,11 @@ class STM32FSerial(object):
     def cmdGet(self):
         if self.cmdGeneric(0x00):
             target_logger.info("*** Get command");
-            len = self.sp.read(1)[0]
+            length = self.sp.read(1)[0]
             version = self.sp.read(1)[0]
             target_logger.info("    Bootloader version: " + hex(version))
             #dat = map(lambda c: hex(self.sp.read(len))
-            dat = list(map(hex, self.sp.read(len)))
+            dat = list(map(hex, self.sp.read(length)))
             if '0x44' in dat:
                 self.extended_erase = 1
             else:
@@ -394,8 +394,8 @@ class STM32FSerial(object):
     def cmdGetID(self):
         if self.cmdGeneric(0x02):
             target_logger.debug("*** GetID command")
-            len = self.sp.read(1)[0]
-            id = self.sp.read(len + 1)
+            length = self.sp.read(1)[0]
+            id = self.sp.read(length + 1)
             self._wait_for_ask("0x02 end")
             return reduce(lambda x, y: x * 0x100 + y, id)
         else:

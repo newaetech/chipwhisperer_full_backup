@@ -34,8 +34,14 @@ class TargetTemplate:
     def __init__(self):
         pass
 
+    def getName(self):
+        return ""
+
     def setSomething(self):
         """Here you would send value to the reader hardware"""
+        pass
+
+    def _dis(self):
         pass
 
     def __del__(self):
@@ -138,13 +144,13 @@ class TargetTemplate:
         """Based on key & text get expected if known, otherwise returns None"""
         # e.g. for AES we can do this:
         return None
-        """if AES and hasattr(self, 'key') and hasattr(self, 'input') and self.input and self.key:
-            cipher = AES.new(bytes(self.key), AES.MODE_ECB)
-            ct = cipher.encrypt(bytes(self.input))
-            ct = bytearray(ct)
-            return ct
-        else:
-            return None"""
+        # """if AES and hasattr(self, 'key') and hasattr(self, 'input') and self.input and self.key:
+        #     cipher = AES.new(bytes(self.key), AES.MODE_ECB)
+        #     ct = cipher.encrypt(bytes(self.input))
+        #     ct = bytearray(ct)
+        #     return ct
+        # else:
+        #     return None"""
 
     def validateSettings(self):
         # return [("warn", "Target Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]

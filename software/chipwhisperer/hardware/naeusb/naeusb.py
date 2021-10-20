@@ -301,7 +301,7 @@ class NAEUSB_Backend:
     def find(self, serial_number : Optional[str]=None, idProduct : Optional[List[int]]=None, 
         hw_location : Optional[Tuple[bool, bool]]=None) -> usb1.USBDevice:
         # check if we got anything
-        dev_list = self.get_possible_devices(idProduct, attempt_access=False if hw_location else True)
+        dev_list = self.get_possible_devices(idProduct, attempt_access=(not hw_location))
         if len(dev_list) == 0:
             raise OSError("Could not find ChipWhisperer. Is it connected?")
 
@@ -331,14 +331,14 @@ class NAEUSB_Backend:
 
 
     def open(self, serial_number : Optional[str]=None, idProduct : Optional[List[int]]=None, 
-        connect_to_first : bool =False, hw_location : Optional[Tuple[int, int]]=None) -> usb1.USBDeviceHandle:
+        connect_to_first : bool =False, hw_location : Optional[Tuple[int, int]]=None) -> Optional[usb1.USBDeviceHandle]:
         """
         Connect to device using default VID/PID
         """
 
         self.device = self.find(serial_number, idProduct, hw_location=hw_location)
         if connect_to_first == False:
-            return
+            return None
         try:
             self.handle = self.device.open()
         except usb1.USBError as e:
@@ -430,7 +430,7 @@ class NAEUSB_Backend:
 
         return dev_list
 
-    def sendCtrl(self, cmd : int, value : int=0, data : bytearray=[]):
+    def sendCtrl(self, cmd : int, value : int=0, data : bytearray=bytearray()):
         """
         Send data over control endpoint
         """
@@ -573,7 +573,7 @@ class NAEUSB:
         self._usbdev = None
         self.handle=None
         self.usbtx = NAEUSB_Backend()
-        self.usbseralizer = self.usbtx
+        self.usbserializer = self.usbtx
         self._fw_ver = None
 
     def get_possible_devices(self, idProduct : List[int]) -> usb1.USBDevice:
@@ -585,7 +585,7 @@ class NAEUSB:
         else:
             return [0, 0, 0, 0]
 
-    def set_cdc_settings(self, port : list=[1, 1, 0, 0]):
+    def set_cdc_settings(self, port : list=(1, 1, 0, 0)):
         if self.check_feature("CDC"):
             if isinstance(port, int):
                 port = [port, port, 0, 0]
@@ -625,7 +625,7 @@ class NAEUSB:
             return devices
         return None
 
-    def con(self, idProduct : List[int]=[0xACE2], connect_to_first : bool=False, 
+    def con(self, idProduct : List[int]=(0xACE2), connect_to_first : bool=False, 
         serial_number : Optional[str]=None, hw_location : Optional[Tuple[int, int]]=None) -> int:
         """
         Connect to device using default VID/PID
@@ -670,19 +670,19 @@ class NAEUSB:
                 return [0, 0, 0]
         return self._fw_ver
 
-    def sendCtrl(self, cmd : int, value : int=0, data : bytearray=[]):
+    def sendCtrl(self, cmd : int, value : int=0, data : bytearray=bytearray()):
         """
         Send data over control endpoint
         """
         # Vendor-specific, OUT, interface control transfer
-        self.usbseralizer.sendCtrl(cmd, value, data)
+        self.usbserializer.sendCtrl(cmd, value, data)
 
     def readCtrl(self, cmd : int, value : int=0, dlen : int=0) -> bytearray:
         """
         Read data from control endpoint
         """
         # Vendor-specific, IN, interface control transfer
-        return self.usbseralizer.readCtrl(cmd, value, dlen)
+        return self.usbserializer.readCtrl(cmd, value, dlen)
 
     def cmdReadMem(self, addr : int, dlen : int) -> bytearray:
         """
@@ -690,7 +690,7 @@ class NAEUSB:
         decides to use control-transfer or bulk-endpoint transfer based on data length.
         """
 
-        return self.usbseralizer.cmdReadMem(addr, dlen)
+        return self.usbserializer.cmdReadMem(addr, dlen)
 
     def cmdWriteMem(self, addr : int, data : bytearray):
         """
@@ -698,7 +698,7 @@ class NAEUSB:
         decides to use control-transfer or bulk-endpoint transfer based on data length.
         """
 
-        return self.usbseralizer.cmdWriteMem(addr, data)
+        return self.usbserializer.cmdWriteMem(addr, data)
 
     def writeBulkEP(self, data : bytearray):
         """
@@ -707,11 +707,11 @@ class NAEUSB:
         :return:
         """
 
-        return self.usbseralizer.writeBulk(data)
+        return self.usbserializer.writeBulk(data)
 
     def flushInput(self):
         """Dump all the crap left over"""
-        self.usbseralizer.flushInput()
+        self.usbserializer.flushInput()
 
     def cmdReadStream_getStatus(self) -> Tuple[int, int, int]:
         """
@@ -777,7 +777,8 @@ class NAEUSB:
         if is_husky:
             return self.streamModeCaptureStream.drx >= self.streamModeCaptureStream.dlen
         else:
-            return self.streamModeCaptureStream.isAlive() == False
+            return self.streamModeCaptureStream.drx >= self.streamModeCaptureStream.dlen
+            # return self.streamModeCaptureStream.isAlive() == False
 
     def cmdReadStream(self, is_husky : bool=False) -> Tuple[int, int]:
         """
