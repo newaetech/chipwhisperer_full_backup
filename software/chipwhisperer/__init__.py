@@ -44,7 +44,7 @@ def check_for_updates() -> str:
     .. versionadded:: 5.6.1
     """
     latest_version = subprocess.run([sys.executable, '-m', 'pip', 'install', '{}==random'.format("chipwhisperer")],
-                        capture_output=True, text=True, check=True)
+                        capture_output=True, text=True, check=False)
     if not latest_version:
         raise IOError("Could not check chipwhisperer version")
     latest_version = str(latest_version)
@@ -65,8 +65,8 @@ def check_for_updates() -> str:
 
 try:
     check_for_updates()
-except:
-    other_logger.warning("Could not check ChipWhisperer version")
+except Exception as e:
+    other_logger.warning("Could not check ChipWhisperer version, error {}".format(e))
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 
 ktp = key_text_patterns #alias

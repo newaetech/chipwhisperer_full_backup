@@ -200,6 +200,8 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
     def get_fpga_buildtime(self):
         """Returns date and time when FPGA bitfile was generated.
         """
+        if self.REG_BUILDTIME is None:
+            target_logger.error("target.REG_BUILDTIME unset. Have you given target a verilog defines file?")
         raw = self.fpga_read(self.REG_BUILDTIME, 4)
         # definitions: Xilinx XAPP1232
         day = raw[3] >> 3
@@ -357,18 +359,27 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
 
     def loadEncryptionKey(self, key):
         """Write encryption key to FPGA"""
+        if self.REG_CRYPT_KEY is None:
+            target_logger.error("target.REG_CRYPT_KEY unset. Have you given target a verilog defines file?")
+            return
         self.key = key
         key = key[::-1]
         self.fpga_write(self.REG_CRYPT_KEY, key)
 
     def loadInput(self, inputtext):
         """Write input to FPGA"""
+        if self.REG_CRYPT_TEXTIN is None:
+            target_logger.error("target.REG_CRYPT_TEXTIN unset. Have you given target a verilog defines file?")
+            return
         self.input = inputtext
         text = inputtext[::-1]
         self.fpga_write(self.REG_CRYPT_TEXTIN, text)
 
     def is_done(self):
         """Check if FPGA is done"""
+        if (self.REG_CRYPT_GO is None) or (self.REG_USER_LED is None):
+            target_logger.error("target.REG_CRYPT_GO or target.REG_USER_LED unset. Have you given target a verilog defines file?")
+            return
         result = self.fpga_read(self.REG_CRYPT_GO, 1)[0]
         if result == 0x01:
             return False
@@ -380,6 +391,9 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
 
     def readOutput(self):
         """"Read output from FPGA"""
+        if self.REG_CRYPT_CIPHEROUT is None:
+            target_logger.error("target.REG_CRYPT_CIPHEROUT unset. Have you given target a verilog defines file?")
+            return
         data = self.fpga_read(self.REG_CRYPT_CIPHEROUT, 16)
         data = data[::-1]
         #self.newInputData.emit(util.list2hexstr(data))
@@ -421,6 +435,9 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
 
     def go(self):
         """Disable USB clock (if requested), perform encryption, re-enable clock"""
+        if (self.REG_USER_LED is None):
+            target_logger.error("target.REG_USER_LED unset. Have you given target a verilog defines file?")
+            return
         if self.clkusbautooff:
             self.usb_clk_setenabled(False)
 
