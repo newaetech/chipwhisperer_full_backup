@@ -712,6 +712,7 @@ class LASettings(util.DisableNewAttr):
             6: D6
             7: D7
             8: CK
+        group 3: internal trigger signals, for debug/development (refer to Verilog source)
 
         :Getter:
            Return the capture group currently in use.
@@ -804,8 +805,8 @@ class LASettings(util.DisableNewAttr):
         return self._mmcm.get_mul()
 
     def _setCaptureGroup(self, group):
-        if group > 2:
-            raise ValueError("Group must be in range 0-2")
+        if group > 3:
+            raise ValueError("Group must be in range 0-3")
         self.oa.sendMessage(CODE_WRITE, ADDR_LA_CAPTURE_GROUP, [group], Validate=False)
 
     def _getCaptureGroup(self):
