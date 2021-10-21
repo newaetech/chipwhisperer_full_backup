@@ -15,7 +15,7 @@ class ChipWhispererCommonInterface:
         raise NotImplementedError("_getFWPy method required")
 
     @property
-    def latest_fw(self) -> Dict[int, int]:
+    def latest_fw(self) -> Dict[str, int]:
         fwver = self._getFWPy()
         return {"major": fwver[0], "minor": fwver[1]}
 
@@ -25,7 +25,7 @@ class ChipWhispererCommonInterface:
         return "{}.{}.0".format(fwver[0], fwver[1])
 
     @property
-    def fw_version(self) -> Dict[int, int, int]:
+    def fw_version(self) -> Dict[str, int]:
         a = self._getNAEUSB().readFwVersion()
         return {"major": a[0], "minor": a[1], "debug": a[2]}
 
