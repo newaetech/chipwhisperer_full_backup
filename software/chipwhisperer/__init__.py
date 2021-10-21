@@ -342,7 +342,7 @@ def target(scope : Optional[scopes.ScopeTypes],
     # need to check
     if scope and scope._getNAEUSB().check_feature("SERIAL_200_BUFFER"):
         rtn.ser.cwlite_usart._max_read = 128
-    return target
+    return rtn
 
 def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plaintext : bytearray,
     key : Optional[bytearray]=None, ack : bool=True, poll_done : bool=False) -> Optional[Trace]:
