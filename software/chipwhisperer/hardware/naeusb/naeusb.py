@@ -176,6 +176,7 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
             keyhandle_device = winreg.OpenKey(keyhandle, subkey)
         except Exception as e:
             naeusb_logger.info("Could not get keyhandle device " + str(e))
+            return None
         i = 0
         address = None
         sn = None
@@ -187,12 +188,14 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
                 sn = winreg.EnumKey(keyhandle_device, i)
             except Exception as e:
                 naeusb_logger.info("Could not get sn " + str(e)) 
+                return None
             # print("sn: " + sn)
             keyhandle_sn = winreg.OpenKey(keyhandle_device, sn)
             with keyhandle_sn as h:
                 address = get_enum_by_name(h, "Address")
                 if address is None:
                     naeusb_logger.info("Could not find Address in device {}".format(sn))
+                    return None
                 service = get_enum_by_name(h, "Service")
 
                 # now we need to figure out if this device is attached
@@ -201,6 +204,7 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
                     keyhandle_driver = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\{}\\Enum".format(service))
                 except Exception as e:
                     naeusb_logger.info("Could not get keyhandle driver " + str(e))
+                    return None
                 num_enums = get_enum_by_name(keyhandle_driver, "Count")
                 if num_enums:
                     attached = False
@@ -216,10 +220,12 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
             keyhandle_sn = winreg.OpenKey(keyhandle_device, sn)
         except Exception as e:
             naeusb_logger.debug("Could not get keyhandle sn " + str(e))
+            return None
 
         service = get_enum_by_name(keyhandle_sn, "Service")
         if service is None:
             naeusb_logger.debug("Could not find service name in device {}".format(sn))
+            return None
 
         keyhandle_sn.Close()
         keyhandle_device.Close()
@@ -229,7 +235,7 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
             
     except Exception as e:
         naeusb_logger.warning("Could not check driver ({}), assuming WINUSB is used".format(str(e)))
-        raise
+        return None
 
 
 def packuint32(data):

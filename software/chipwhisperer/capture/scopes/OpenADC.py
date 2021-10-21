@@ -466,6 +466,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
     def capture(self, poll_done=False):
         """Captures trace. Scope must be armed before capturing.
+
         Args:
             poll_done (bool, optional): Supported by Husky only. Poll
                 Husky to find out when it's done capturing, instead of
@@ -480,6 +481,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
         .. versionchanged:: 5.6.1
             Added poll_done parameter for Husky
+
         """
         if self._is_husky and self.adc.segments > 1 and self.adc.presamples and self.adc.samples % 3:
             raise ValueError('When using segments with presamples, the number of samples per segment (scope.adc.samples) must be a multiple of 3.')
