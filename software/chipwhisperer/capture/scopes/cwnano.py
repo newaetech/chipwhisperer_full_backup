@@ -637,6 +637,8 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
             #         raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
             # else:
             #     sn = None
+            if "idProduct" in kwargs:
+                del kwargs['idProduct']
             found_id = self._cwusb.con(idProduct=[0xACE0], serial_number=sn, **kwargs)
         except (IOError, ValueError) as e:
             raise Warning("Could not connect to cwnano. It may have been disconnected,\
