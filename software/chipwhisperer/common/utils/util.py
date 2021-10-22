@@ -349,7 +349,7 @@ def dict_to_str(input_dict, indent=""):
     # Build string
     ret = ""
     for n in input_dict:
-        if type(input_dict[n]) in (dict, OrderedDict):
+        if isinstance(input_dict[n], dict):
             ret += indent + str(n) + ' = '
             ret += '\n' + dict_to_str(input_dict[n], indent+"    ")
         else:

@@ -235,7 +235,11 @@ def import_project(filename : str, file_type : str='zip', overwrite : bool=False
     return proj
 
 
-def scope(scope_type : type=None, name : Optional[str]=None, **kwargs) -> scopes.ScopeTypes:
+def scope(scope_type : Type[scopes.ScopeTypes]=None, name : Optional[str]=None, 
+    sn : Optional[str]=None, idProduct : Optional[int]=None,
+    bitstream : Optional[str]=None, force : bool=False,
+    prog_speed : int=int(10E6),
+    **kwargs) -> scopes.ScopeTypes:
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the
@@ -250,33 +254,43 @@ def scope(scope_type : type=None, name : Optional[str]=None, **kwargs) -> scopes
     want to connect to can be specified by passing sn=<SERIAL_NUMBER>
 
     Args:
-        scope_type (ScopeTemplate, optional): Scope type to connect to. Types
+        scope_type: Scope type to connect to. Types
             can be found in chipwhisperer.scopes. If None, will try to detect
             the type of ChipWhisperer connected. Defaults to None.
-        name (str, optional): model name of the ChipWhisperer that you want to
+        name: model name of the ChipWhisperer that you want to
             connect to. Alternative to specifying the serial number when
             multiple ChipWhisperers, all of different type, are connected.
             Defaults to None. Valid values:
+
             * Lite
+
             * Pro
+
             * Husky
-        idProduct (int, optional): idProduct of the ChipWhisperer that you want to
+
+        idProduct: idProduct of the ChipWhisperer that you want to
             connect to. Alternative to specifying the serial number when
             multiple ChipWhisperers, all of different type, are connected.
             Defaults to None. Valid values:
+
             * 0xace2: CW-Lite
+
             * 0xace3: CW-Pro
+
             * 0xace5: CW-Husky
-        sn (str, optional): Serial number of ChipWhisperer that you want to
+
+        sn: Serial number of ChipWhisperer that you want to
             connect to. sn is required if more than one ChipWhisperer of the
             same type is connected (i.e. two CWNano's or a CWLite and CWPro).
             Defaults to None.
-        bitstream (str, optional): Path to bitstream to program. If None,
+        bitstream: Path to bitstream to program. If None,
             programs default bitstream. Optional, defaults to None. Ignored
             on Nano.
-        force (bool, optional): If True, always erase and program
+        force: If True, always erase and program
             FPGA. If False, only erase and program FPGA if it
             is currently blank. Defaults to False. Ignored on Nano.
+        prog_speed: Sets the FPGA programming speed for Lite, Pro, and Husky.
+            If you get programming errors, try turning this down.
 
     Returns:
         Connected scope object.
@@ -295,6 +309,10 @@ def scope(scope_type : type=None, name : Optional[str]=None, **kwargs) -> scopes
             Added idProduct, name, bitstream, and force parameters.
     """
     from chipwhisperer.common.utils.util import get_cw_type
+    if isinstance(prog_speed, float):
+        prog_speed = int(prog_speed)
+
+    kwargs.update(locals())
     if name is not None:
         if name == 'Husky':
             kwargs['idProduct'] = 0xace5
@@ -307,7 +325,7 @@ def scope(scope_type : type=None, name : Optional[str]=None, **kwargs) -> scopes
 
     if scope_type is None:
         scope_type = get_cw_type(**kwargs)
-    rtn = scope_type()
+    rtn : scopes.ScopeTypes = scope_type()
     try:
         rtn.con(**kwargs)
     except IOError:

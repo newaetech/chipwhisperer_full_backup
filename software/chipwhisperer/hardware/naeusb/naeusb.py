@@ -640,7 +640,7 @@ class NAEUSB:
         return None
 
     def con(self, idProduct : Tuple[int]=(0xACE2,), connect_to_first : bool=False, 
-        serial_number : Optional[str]=None, hw_location : Optional[Tuple[int, int]]=None) -> int:
+        serial_number : Optional[str]=None, hw_location : Optional[Tuple[int, int]]=None, **kwargs) -> int:
         """
         Connect to device using default VID/PID
         """

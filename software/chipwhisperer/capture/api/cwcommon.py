@@ -16,6 +16,7 @@ class ChipWhispererCommonInterface:
 
     @property
     def latest_fw(self) -> Dict[str, int]:
+        "Get the newest firmware as a dict with elements major, minor and debug"
         fwver = self._getFWPy()
         return {"major": fwver[0], "minor": fwver[1]}
 
@@ -26,6 +27,7 @@ class ChipWhispererCommonInterface:
 
     @property
     def fw_version(self) -> Dict[str, int]:
+        "Get current firmware version as a dict with elements major, minor and debug"
         a = self._getNAEUSB().readFwVersion()
         return {"major": a[0], "minor": a[1], "debug": a[2]}
 
@@ -49,6 +51,10 @@ class ChipWhispererCommonInterface:
 
     @property
     def sn(self) -> str:
+        """The USB serial number of this scope. 
+        
+        Can be passed to cw.scope() to specify which ChipWhisperer to connect to
+        """
         return self._getNAEUSB().snum
 
     def get_serial_ports(self) -> Optional[List[Dict[str, int]]]:

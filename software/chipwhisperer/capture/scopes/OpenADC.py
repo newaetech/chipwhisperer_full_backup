@@ -145,7 +145,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.con(self._saved_sn)
 
     def _getNAEUSB(self) -> NAEUSB:
-        return self.scopetype.serial
+        return self.scopetype.ser
 
     def default_setup(self):
         """Sets up sane capture defaults for this scope
@@ -229,10 +229,10 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                 self.dis()
                 raise e
 
-    def getCurrentScope(self) -> OpenADCInterface:
+    def getCurrentScope(self) -> OpenADCInterface_NAEUSBChip:
         return self.scopetype
 
-    def setCurrentScope(self, scope : OpenADCInterface):
+    def setCurrentScope(self, scope : OpenADCInterface_NAEUSBChip):
         self.scopetype = scope
 
     def _getCWType(self) -> str:
@@ -466,11 +466,11 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         return False
 
 
-    def capture(self, poll_done=False):
+    def capture(self, poll_done : bool =False) -> bool:
         """Captures trace. Scope must be armed before capturing.
 
         Args:
-            poll_done (bool, optional): Supported by Husky only. Poll
+            poll_done: Supported by Husky only. Poll
                 Husky to find out when it's done capturing, instead of
                 calculating the capture time based on the capture parameters.
                 Can result in slightly faster captures when the number of
@@ -505,7 +505,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         b = self._capture_read(samples)
         return a or b
 
-    def get_last_trace(self, as_int=False):
+    def get_last_trace(self, as_int : bool=False) -> np.ndarray:
         """Return the last trace captured with this scope.
 
         Can return traces as floating point values (:code:`as_int=False`)
@@ -518,7 +518,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         8-bits or 12-bits of ADC data.
 
         Args:
-            as_int (bool): If False, return trace as a float. Otherwise, return as an int.
+            as_int: If False, return trace as a float. Otherwise, return as an int.
 
         Returns:
            Numpy array of the last capture trace.
