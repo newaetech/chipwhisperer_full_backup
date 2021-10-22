@@ -35,5 +35,5 @@ jobs:
           python -m pip install mypy
       - name: Run Mypy
         run: >-
-          mypy -p chipwhisperer
+          python -m mypy -p chipwhisperer
           
