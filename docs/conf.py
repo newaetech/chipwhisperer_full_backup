@@ -37,9 +37,27 @@ release = '5.6.1'
 extensions = [
 	'sphinx.ext.napoleon',
 	'sphinx.ext.autodoc',
+    'sphinx_autodoc_typehints',
 	'sphinx.ext.todo',
-    'sphinxcontrib.images'
+    'sphinxcontrib.images',
+    # 'sphinx_autodoc_typehints'
 ]
+
+#napoleon settings
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+napoleon_include_init_with_doc = False
+napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
+napoleon_use_param = True
+napoleon_use_rtype = True
+napoleon_preprocess_types = False
+napoleon_type_aliases = None
+napoleon_attr_annotations = True
 
 # explicitly set the master document to index.rst
 master_doc = 'index'

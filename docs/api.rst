@@ -298,7 +298,7 @@ OpenADC Scope
 
     .. automethod:: chipwhisperer.capture.scopes.OpenADC.reload_fpga
 
-    .. automethod:: chipwhisperer.capture.api.cwcommon.ChipWhispererCommonInterface.get_serial_ports
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.get_serial_ports
 
     .. automethod:: chipwhisperer.capture.scopes.OpenADC.dis
 
@@ -451,7 +451,7 @@ ChipWhisperer Nano Scope
 
     .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.get_last_trace
 
-    .. automethod:: chipwhisperer.capture.api.cwcommon.ChipWhispererCommonInterface.get_serial_ports
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.get_serial_ports
 
     .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.con
 
