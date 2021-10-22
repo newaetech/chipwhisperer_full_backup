@@ -14,6 +14,7 @@ setup(
     url='https://www.chipwhisperer.com',
     packages=find_packages('software'),
     package_dir={'': 'software'},
+    package_data={'', 'software/chipwhisperer/py.typed'},
     install_requires=[
         'configobj',
         'pyserial',
