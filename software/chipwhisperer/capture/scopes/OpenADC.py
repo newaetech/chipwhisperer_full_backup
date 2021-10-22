@@ -491,6 +491,9 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         if self._is_husky and (self.adc.decimate > 1) and (self.adc.presamples or self.adc.segments > 1):
             raise ValueError('When decimate (%d) is used, presamples or segments cannot be used.' % self.adc.decimate)
 
+        if self._is_husky and (self.adc.segments > 1) and (self.adc.samples * self.adc.segments > self.adc.oa.hwMaxSegmentSamples) and (not self.adc.stream_mode):
+            raise ValueError('When using segments and stream mode is disabled, the maximum total number of samples is %d.' % self.adc.oa.hwMaxSegmentSamples)
+
         if self.adc.stream_mode and (not self._is_husky):
             a = self.sc.capture(None)
         else:
