@@ -496,6 +496,10 @@ class GPIOSettings(util.DisableNewAttr):
         """
         return self.cwe.getTargetPowerState()
 
+    @target_pwr.setter
+    def target_pwr(self, power):
+        self.cwe.setTargetPowerState(power)
+
     @property
     def glitch_hp(self):
         """Whether the high-power crowbar MOSFET is enabled.
@@ -536,9 +540,6 @@ class GPIOSettings(util.DisableNewAttr):
     def glitch_lp(self, active):
         self.cwe.setTargetGlitchOut('B', active)
 
-    @target_pwr.setter
-    def target_pwr(self, power):
-        self.cwe.setTargetPowerState(power)
 
     def reset_target(self, initial_state=1, reset_state=0, reset_delay=0.01, postreset_delay=0.01):
         raise NotImplementedError()

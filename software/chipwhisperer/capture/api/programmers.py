@@ -25,6 +25,7 @@
 #=================================================
 import logging
 from chipwhisperer.common.utils import util
+from ..scopes import ScopeTypes
 from chipwhisperer.hardware.naeusb.programmer_avr import supported_avr
 from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import supported_stm32f
@@ -33,59 +34,14 @@ from functools import wraps
 
 from chipwhisperer.logging import *
 
-def save_and_restore_pins(func):
-    """Decorator to save and restore pins needed to comunicate and program hardware
-
-        Purpose: to move from changing pins in the background needed to communicate
-         with the hardware and leaving them changed (very confusing), to saving the
-         pin states before the function is called, changing them during function
-         executation and restoring them after the function is done executing
-         (less confusing).
-        """
-    @wraps(func) # updates func_wrapper aatributes to be same
-    def func_wrapper(self, *args, **kwargs):
-
-        #If no scope, we don't do any pin magic
-        if self.scope is None:
-            return func(self, *args, **kwargs)
-
-        pin_setup = {
-            'pdic': self.scope.io.pdic,
-            'pdid': self.scope.io.pdid,
-            'nrst': self.scope.io.nrst,
-        }
-        target_logger.debug('Saving pdic, pdid, and nrst pin configuration')
-        # setup the pins so that so communication to the target is possible
-        # Important: during the execution of func, the pin values may change if
-        # the function is related to reprogramming or resetting the device. Example:
-        # the stm32f uses the toggling of the nrst and pdic pins for resetting
-        # and boot mode setting respectively
-        target_logger.debug('Changing pdic, pdid, and nrst pin configuration')
-        if pin_setup['pdic'] != 'high_z':
-            self.scope.io.pdic = 'high_z'
-        if pin_setup['pdid'] != 'high_z':
-            self.scope.io.pdid = 'high_z'
-        if pin_setup['nrst'] != 'high_z':
-            self.scope.io.nrst = 'high_z'
-        try:
-            val = func(self, *args, **kwargs)
-        finally:
-            target_logger.debug('Restoring pdic, pdid, and nrst pin configuration')
-            if self.scope.io.pdic != pin_setup['pdic']:
-                self.scope.io.pdic = pin_setup['pdic']
-            if self.scope.io.pdid != pin_setup['pdid']:
-                self.scope.io.pdid = pin_setup['pdid']
-            if self.scope.io.nrst != pin_setup['nrst']:
-                self.scope.io.nrst = pin_setup['nrst']
-        return val # only returns value when decorating a function with return value
-    return func_wrapper
+from typing import Dict, Optional
 
 
 
 class Programmer:
     lastFlashedFile = "unknown"
-    _scope = None
-    pin_setup = {}
+    _scope : Optional[ScopeTypes] = None
+    # pin_setup = {}
 
     def __init__(self):
         self.newTextLog = util.Signal()
@@ -141,6 +97,52 @@ class Programmer:
     def autoProgram(self, hexfile, erase, verify, logfunc, waitfunc):
         raise NotImplementedError
 
+def save_and_restore_pins(func):
+    """Decorator to save and restore pins needed to comunicate and program hardware
+
+        Purpose: to move from changing pins in the background needed to communicate
+         with the hardware and leaving them changed (very confusing), to saving the
+         pin states before the function is called, changing them during function
+         executation and restoring them after the function is done executing
+         (less confusing).
+        """
+    @wraps(func) # updates func_wrapper aatributes to be same
+    def func_wrapper(self : Programmer, *args, **kwargs):
+
+        #If no scope, we don't do any pin magic
+        if self.scope is None:
+            return func(self, *args, **kwargs)
+
+        pin_setup : Dict[str, str]= {
+            'pdic': self.scope.io.pdic,
+            'pdid': self.scope.io.pdid,
+            'nrst': self.scope.io.nrst,
+        }
+        target_logger.debug('Saving pdic, pdid, and nrst pin configuration')
+        # setup the pins so that so communication to the target is possible
+        # Important: during the execution of func, the pin values may change if
+        # the function is related to reprogramming or resetting the device. Example:
+        # the stm32f uses the toggling of the nrst and pdic pins for resetting
+        # and boot mode setting respectively
+        target_logger.debug('Changing pdic, pdid, and nrst pin configuration')
+        if pin_setup['pdic'] != 'high_z':
+            self.scope.io.pdic = 'high_z'
+        if pin_setup['pdid'] != 'high_z':
+            self.scope.io.pdid = 'high_z'
+        if pin_setup['nrst'] != 'high_z':
+            self.scope.io.nrst = 'high_z'
+        try:
+            val = func(self, *args, **kwargs)
+        finally:
+            target_logger.debug('Restoring pdic, pdid, and nrst pin configuration')
+            if self.scope.io.pdic != pin_setup['pdic']:
+                self.scope.io.pdic = pin_setup['pdic']
+            if self.scope.io.pdid != pin_setup['pdid']:
+                self.scope.io.pdid = pin_setup['pdid']
+            if self.scope.io.nrst != pin_setup['nrst']:
+                self.scope.io.nrst = pin_setup['nrst']
+        return val # only returns value when decorating a function with return value
+    return func_wrapper
 
 class AVRProgrammer(Programmer):
     def __init__(self, slow_clock = False):

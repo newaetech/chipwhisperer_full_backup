@@ -27,7 +27,7 @@ from ....logging import *
 import time
 
 def get_at91_ports():
-    from serial.tools import list_ports
+    from serial.tools import list_ports # type: ignore
 
     at91_ports = [port.device for port in list_ports.comports() if (port.vid, port.pid) == (0x03EB, 0x6124)]
     return at91_ports
@@ -173,7 +173,7 @@ class SAMFWLoader:
 
         Autodetects comport and hardware type.
         """
-        import serial.tools.list_ports
+        import serial.tools.list_ports # type: ignore
         if not self._hw_type:
             raise OSError("Unable to detect chipwhisperer hardware type")
         before = serial.tools.list_ports.comports()

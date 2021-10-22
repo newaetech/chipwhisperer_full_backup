@@ -30,7 +30,7 @@ import os.path
 import random
 from ...common.traces import Trace
 from .CW305 import CW305, CW305_USB
-from ecpy.curves import Curve, Point
+from ecpy.curves import Curve, Point # type: ignore
 
 from chipwhisperer.logging import *
 

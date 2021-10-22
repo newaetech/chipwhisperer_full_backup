@@ -690,7 +690,7 @@ class SimpleSerial2_CDC(SimpleSerial2):
         self.ser.dis()
 
     def con(self, scope, dev_path=None, interface=None, flush_on_err=True):
-        import serial
+        import serial # type: ignore
         self._flush_on_err = flush_on_err
         if dev_path is None:
             ports = scope.get_serial_ports()

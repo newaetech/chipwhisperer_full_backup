@@ -59,8 +59,8 @@ analyzerPlots = analyzer_plots
 # current_trace_iteration = 0
 current_trace_iteration = 0
 def _default_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
-    import pandas as pd
-    from IPython.display import clear_output
+    import pandas as pd # type: ignore
+    from IPython.display import clear_output # type: ignore
     global current_trace_iteration
     attack_results = attack.results
     key = attack.known_key()

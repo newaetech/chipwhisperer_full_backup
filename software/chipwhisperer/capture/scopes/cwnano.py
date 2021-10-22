@@ -665,7 +665,7 @@ is in an error state, or is being used by another tool.") from e
             self._cwusb.sendCtrl(self.REQ_ARM, 1)
 
 
-    def capture(self):
+    def capture(self, poll_done=False):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
 
         with DelayedKeyboardInterrupt():

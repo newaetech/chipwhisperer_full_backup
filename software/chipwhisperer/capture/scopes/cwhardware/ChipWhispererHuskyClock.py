@@ -522,6 +522,12 @@ class CDCI6214:
         """
         return self._adc_mul
 
+    @adc_mul.setter
+    def adc_mul(self, adc_mul):
+        self._adc_mul = adc_mul
+        scope_logger.debug("adc_mul: {}".format(adc_mul))
+        self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
+
     @property
     def target_freq(self):
         """The target clock frequency.
@@ -542,6 +548,14 @@ class CDCI6214:
             return 0
         else:
             return ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv) / (self.get_prescale(3)) * 5
+
+    @target_freq.setter
+    def target_freq(self, freq):
+        self._cached_adc_freq = None
+        self._set_target_freq = freq
+        scope_logger.debug("adc_mul: {}".format(self._adc_mul))
+        self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
+        self.update_fpga_vco(self._mmcm_vco_freq)
 
     @property
     def adc_freq(self):
@@ -596,13 +610,6 @@ class CDCI6214:
     def get_pll_mul(self):
         return self.read_reg(0x1D, True) & 0x3FFF
 
-    @target_freq.setter
-    def target_freq(self, freq):
-        self._cached_adc_freq = None
-        self._set_target_freq = freq
-        scope_logger.debug("adc_mul: {}".format(self._adc_mul))
-        self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
-        self.update_fpga_vco(self._mmcm_vco_freq)
 
     def update_fpga_vco(self, vco):
         """Set the FPGA clock glitch PLL's VCO frequency.
@@ -642,11 +649,6 @@ class CDCI6214:
         self._mmcm2.set_main_div(1)
         self._mmcm_muldiv = muldiv
 
-    @adc_mul.setter
-    def adc_mul(self, adc_mul):
-        self._adc_mul = adc_mul
-        scope_logger.debug("adc_mul: {}".format(adc_mul))
-        self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
 
     @property
     def pll_locked(self):

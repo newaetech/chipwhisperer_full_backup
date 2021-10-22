@@ -26,10 +26,10 @@ import time
 import warnings
 import math
 from threading import Thread
-import usb1
+import usb1  # type: ignore
 import os
 import array
-from typing import Optional, Union, List, Tuple, Dict
+from typing import Optional, Union, List, Tuple, Dict, cast
 
 from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
 from chipwhisperer.hardware.firmware import cw1200 as fw_cw1200
@@ -179,7 +179,7 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
             return None
         i = 0
         address = None
-        sn = None
+        sn : str = ""
         attached = False
 
         # get devices that are connected and have the same port number
@@ -263,7 +263,7 @@ def packuint16(data):
 
 #List of all NewAE PID's
 NEWAE_VID = 0x2B3E
-NEWAE_PIDS = {
+NEWAE_PIDS : Dict[int, Dict[str, Union[str, List[int]]]]= {
     0xACE2: {'name': "ChipWhisperer-Lite",     'fwver': fw_cwlite.fwver},
     0xACE3: {'name': "ChipWhisperer-CW1200",   'fwver': fw_cw1200.fwver},
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fw_cw305.fwver},
@@ -305,7 +305,7 @@ class NAEUSB_Backend:
             return False
 
     def find(self, serial_number : Optional[str]=None, idProduct : Optional[List[int]]=None, 
-        hw_location : Optional[Tuple[bool, bool]]=None) -> usb1.USBDevice:
+        hw_location : Optional[Tuple[int, int]]=None) -> usb1.USBDevice:
         # check if we got anything
         dev_list = self.get_possible_devices(idProduct, attempt_access=(not hw_location))
         if len(dev_list) == 0:
@@ -581,6 +581,7 @@ class NAEUSB:
         self.usbtx = NAEUSB_Backend()
         self.usbserializer = self.usbtx
         self._fw_ver = None
+        self.streamModeCaptureStream = None
 
     def get_possible_devices(self, idProduct : List[int]) -> usb1.USBDevice:
         return self.usbtx.get_possible_devices(idProduct)
@@ -591,10 +592,10 @@ class NAEUSB:
         else:
             return [0, 0, 0, 0]
 
-    def set_cdc_settings(self, port : list=(1, 1, 0, 0)):
+    def set_cdc_settings(self, port : Tuple=(1, 1, 0, 0)):
         if self.check_feature("CDC"):
             if isinstance(port, int):
-                port = [port, port, 0, 0]
+                port = (port, port, 0, 0)
             self.usbtx.sendCtrl(self.CMD_CDC_SETTINGS_EN, (port[0]) | (port[1] << 1) | (port[2] << 2) | (port[3] << 3))
 
     def set_smc_speed(self, val : int):
@@ -615,13 +616,13 @@ class NAEUSB:
                 return "UNKNOWN"
         return "UNKNOWN"
 
-    def get_serial_ports(self) -> Optional[Dict[str, int]]:
+    def get_serial_ports(self) -> Optional[List[Dict[str, int]]]:
         """May have multiple com ports associated with one device, so returns a list of port + interface
         """
         if self.check_feature("CDC"):
             if not self.usbtx._usbdev:
                 raise OSError("Connect to device before calling this")
-            import serial.tools.list_ports
+            import serial.tools.list_ports # type: ignore
             if serial.__version__ < '3.5':
                 raise OSError("Pyserial >= 3.5 (found {}) required for this method".format(serial.__version__))
             devices = []
@@ -631,7 +632,7 @@ class NAEUSB:
             return devices
         return None
 
-    def con(self, idProduct : List[int]=(0xACE2), connect_to_first : bool=False, 
+    def con(self, idProduct : Tuple[int]=(0xACE2,), connect_to_first : bool=False, 
         serial_number : Optional[str]=None, hw_location : Optional[Tuple[int, int]]=None) -> int:
         """
         Connect to device using default VID/PID
@@ -643,12 +644,14 @@ class NAEUSB:
         fwver = self.readFwVersion()
         naeusb_logger.info('SAM3U Firmware version = %d.%d b%d' % (fwver[0], fwver[1], fwver[2]))
 
+
+        fw_latest : List[int] = [0, 0]
+
         if self.usbtx.pid in NEWAE_PIDS:
             name = NEWAE_PIDS[self.usbtx.pid]['name']
-            fw_latest = NEWAE_PIDS[self.usbtx.pid]['fwver']
+            fw_latest = cast(List[int], NEWAE_PIDS[self.usbtx.pid]['fwver'])
         else:
             name = "Unknown (PID = %04x)"%self.usbtx.pid
-            fw_latest = [0, 0]
 
         latest = fwver[0] > fw_latest[0] or (fwver[0] == fw_latest[0] and fwver[1] >= fw_latest[1])
         if not latest:
@@ -673,7 +676,7 @@ class NAEUSB:
                 self._fw_ver = data
                 return data
             except:
-                return [0, 0, 0]
+                return bytearray([0, 0, 0])
         return self._fw_ver
 
     def sendCtrl(self, cmd : int, value : int=0, data : bytearray=bytearray()):
@@ -718,125 +721,6 @@ class NAEUSB:
     def flushInput(self):
         """Dump all the crap left over"""
         self.usbserializer.flushInput()
-
-    def cmdReadStream_getStatus(self) -> Tuple[int, int, int]:
-        """
-        Gets the status of the streaming mode capture, tells you samples left to stream out along
-        with overflow buffer status. When an overflow occurs the samples left to stream goes to
-        zero.
-        samples_left_to_stream is number of samples not yet streamed out of buffer.
-        overflow_lcoation is the value of samples_left_to_stream when a buffer overflow occured.
-        unknown_overflow is a flag indicating if an overflow occured at an unknown time.
-        Returns:
-            Tuple indicating (samples_left_to_stream, overflow_location, unknown_overflow)
-        """
-        data = self.readCtrl(self.CMD_MEMSTREAM, dlen=9)
-
-        status = data[0]
-        samples_left_to_stream = unpackuint32(data[1:5])
-        overflow_location = unpackuint32(data[5:9])
-
-        if status == 0:
-            unknown_overflow = False
-        else:
-            unknown_overflow = True
-
-        return (samples_left_to_stream, overflow_location, unknown_overflow)
-
-    def cmdReadStream_size_of_fpgablock(self) -> int:
-        """ Asks the hardware how many BYTES are read in one go from FPGA, which indicates where the sync
-            bytes will be located. These sync bytes must be removed in post-processing. CW-pro only. """
-        return 4096
-
-    def cmdReadStream_bufferSize(self, dlen : int):
-        """
-        Args:
-            dlen: Number of samples to be requested (will be rounded to something else)
-        Returns:
-            Tuple: (Size of temporary buffer required, actual samples in buffer)
-        """
-        num_samplebytes = int(math.ceil(float(dlen) * 4 / 3))
-        num_blocks = int(math.ceil(float(num_samplebytes) / 4096))
-        num_totalbytes = num_samplebytes + num_blocks
-        num_totalbytes = int(math.ceil(float(num_totalbytes) / 4096) * 4096)
-        return num_totalbytes
-
-
-    def initStreamModeCapture(self, dlen : int, dbuf_temp : bytearray, timeout_ms : int=1000,
-        is_husky : bool=False, segment_size : int=0):
-        #Enter streaming mode for requested number of samples
-        if hasattr(self, "streamModeCaptureStream"):
-            self.streamModeCaptureStream.join()
-        if is_husky:
-            data=list(int.to_bytes(segment_size, length=4, byteorder='little')) + \
-                list(int.to_bytes(3, length=4, byteorder='little')) + list(int.to_bytes(dlen, length=4, byteorder="little"))
-        else:
-            data = packuint32(dlen)
-        self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=data)
-        if is_husky:
-            self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThreadHusky(self, dlen, segment_size, dbuf_temp, timeout_ms, is_husky)
-        else:
-            self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThreadPro(self, dlen, dbuf_temp, timeout_ms)
-        self.streamModeCaptureStream.start()
-
-    def cmdReadStream_isDone(self, is_husky : bool=False) -> bool:
-        if is_husky:
-            return self.streamModeCaptureStream.drx >= self.streamModeCaptureStream.dlen
-        else:
-            return self.streamModeCaptureStream.drx >= self.streamModeCaptureStream.dlen
-            # return self.streamModeCaptureStream.isAlive() == False
-
-    def cmdReadStream(self, is_husky : bool=False) -> Tuple[int, int]:
-        """
-        Gets data acquired in streaming mode.
-        initStreamModeCapture should be called first in order to make it work.
-        """
-        self.streamModeCaptureStream.join()
-        # Flush input buffers in case anything was left
-        try:
-            #self.cmdReadMem(self.rep)
-            self.usbtx.read(4096, timeout=10)
-            self.usbtx.read(4096, timeout=10)
-            self.usbtx.read(4096, timeout=10)
-            self.usbtx.read(4096, timeout=10)
-        except:
-            pass
-
-        # Ensure stream mode disabled
-        if not is_husky:
-            self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(0))
-        return self.streamModeCaptureStream.drx, self.streamModeCaptureStream.timeout
-
-    # def readCDCSettings(self):
-    #     try:
-    #         data = self.readCtrl(self.CMD_FW_VERSION, dlen=3)
-    #         return data
-    #     except:
-    #         return [0, 0]
-
-    def enterBootloader(self, forreal : bool=False):
-        """Erase the SAM3U contents, forcing bootloader mode. Does not screw around."""
-
-        if forreal:
-            self.sendCtrl(0x22, 3)
-
-    def reset(self):
-        """ Reset the SAM3U. Requires firmware 0.30 or later
-        """
-        if self.check_feature("RESET"):
-            self.sendCtrl(0x22, 0x10)
-
-    def read(self, dlen : int, timeout : int=2000) -> bytearray:
-        self.usbserializer.read(dlen, timeout)
-
-    def check_feature(self, feature) -> bool:
-        prod_id = self.usbtx.device.getProductID()
-        fw_ver_list = self.readFwVersion()
-        fw_ver_str = '{}.{}.{}'.format(fw_ver_list[0], fw_ver_list[1], fw_ver_list[2])
-        ret = _check_sam_feature(feature, fw_ver_str, prod_id)
-        if not ret:
-            naeusb_logger.info("Feature {} not available".format(feature))
-        return ret
 
     class StreamModeCaptureThreadHusky(Thread):
         def __init__(self, serial, dlen, segment_size, dbuf_temp, timeout_ms=2000, is_husky=False):
@@ -921,7 +805,7 @@ class NAEUSB:
             naeusb_logger.debug("stream completed with {} bytes".format(transfer.getActualLength()))
 
     class StreamModeCaptureThreadPro(Thread):
-        def __init__(self, serial, dlen : int, dbuf_temp : int, timeout_ms : int=2000):
+        def __init__(self, serial, dlen : int, dbuf_temp : bytearray, timeout_ms : int=2000):
             """
             Reads from the FIFO in streaming mode. Requires the FPGA to be previously configured into
             streaming mode and then arm'd, otherwise this may return incorrect information.
@@ -952,6 +836,126 @@ class NAEUSB:
             diff = time.time() - start
             naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
             naeusb_logger.info("Expected {}".format(len(self.dbuf_temp)))
+
+    def cmdReadStream_getStatus(self) -> Tuple[int, int, int]:
+        """
+        Gets the status of the streaming mode capture, tells you samples left to stream out along
+        with overflow buffer status. When an overflow occurs the samples left to stream goes to
+        zero.
+        samples_left_to_stream is number of samples not yet streamed out of buffer.
+        overflow_lcoation is the value of samples_left_to_stream when a buffer overflow occured.
+        unknown_overflow is a flag indicating if an overflow occured at an unknown time.
+        Returns:
+            Tuple indicating (samples_left_to_stream, overflow_location, unknown_overflow)
+        """
+        data = self.readCtrl(self.CMD_MEMSTREAM, dlen=9)
+
+        status = data[0]
+        samples_left_to_stream = unpackuint32(data[1:5])
+        overflow_location = unpackuint32(data[5:9])
+
+        if status == 0:
+            unknown_overflow = False
+        else:
+            unknown_overflow = True
+
+        return (samples_left_to_stream, overflow_location, unknown_overflow)
+
+    def cmdReadStream_size_of_fpgablock(self) -> int:
+        """ Asks the hardware how many BYTES are read in one go from FPGA, which indicates where the sync
+            bytes will be located. These sync bytes must be removed in post-processing. CW-pro only. """
+        return 4096
+
+    def cmdReadStream_bufferSize(self, dlen : int):
+        """
+        Args:
+            dlen: Number of samples to be requested (will be rounded to something else)
+        Returns:
+            Tuple: (Size of temporary buffer required, actual samples in buffer)
+        """
+        num_samplebytes = int(math.ceil(float(dlen) * 4 / 3))
+        num_blocks = int(math.ceil(float(num_samplebytes) / 4096))
+        num_totalbytes = num_samplebytes + num_blocks
+        num_totalbytes = int(math.ceil(float(num_totalbytes) / 4096) * 4096)
+        return num_totalbytes
+
+
+    def initStreamModeCapture(self, dlen : int, dbuf_temp : bytearray, timeout_ms : int=1000,
+        is_husky : bool=False, segment_size : int=0):
+        #Enter streaming mode for requested number of samples
+        if self.streamModeCaptureStream:
+            self.streamModeCaptureStream.join()
+        if is_husky:
+            data=list(int.to_bytes(segment_size, length=4, byteorder='little')) + \
+                list(int.to_bytes(3, length=4, byteorder='little')) + list(int.to_bytes(dlen, length=4, byteorder="little"))
+        else:
+            data = packuint32(dlen)
+        self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=bytearray(data))
+        if is_husky:
+            self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThreadHusky(self, dlen, segment_size, dbuf_temp, timeout_ms, is_husky)
+        else:
+            self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThreadPro(self, dlen, dbuf_temp, timeout_ms)
+        self.streamModeCaptureStream.start()
+
+    def cmdReadStream_isDone(self, is_husky : bool=False) -> bool:
+        if is_husky:
+            return self.streamModeCaptureStream.drx >= self.streamModeCaptureStream.dlen
+        else:
+            return self.streamModeCaptureStream.drx >= self.streamModeCaptureStream.dlen
+            # return self.streamModeCaptureStream.isAlive() == False
+
+    def cmdReadStream(self, is_husky : bool=False) -> Tuple[int, int]:
+        """
+        Gets data acquired in streaming mode.
+        initStreamModeCapture should be called first in order to make it work.
+        """
+        self.streamModeCaptureStream.join()
+        # Flush input buffers in case anything was left
+        try:
+            #self.cmdReadMem(self.rep)
+            self.usbtx.read(4096, timeout=10)
+            self.usbtx.read(4096, timeout=10)
+            self.usbtx.read(4096, timeout=10)
+            self.usbtx.read(4096, timeout=10)
+        except:
+            pass
+
+        # Ensure stream mode disabled
+        if not is_husky:
+            self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(0))
+        return self.streamModeCaptureStream.drx, self.streamModeCaptureStream.timeout
+
+    # def readCDCSettings(self):
+    #     try:
+    #         data = self.readCtrl(self.CMD_FW_VERSION, dlen=3)
+    #         return data
+    #     except:
+    #         return [0, 0]
+
+    def enterBootloader(self, forreal : bool=False):
+        """Erase the SAM3U contents, forcing bootloader mode. Does not screw around."""
+
+        if forreal:
+            self.sendCtrl(0x22, 3)
+
+    def reset(self):
+        """ Reset the SAM3U. Requires firmware 0.30 or later
+        """
+        if self.check_feature("RESET"):
+            self.sendCtrl(0x22, 0x10)
+
+    def read(self, dlen : int, timeout : int=2000) -> bytearray:
+        return self.usbserializer.read(dlen, timeout)
+
+    def check_feature(self, feature) -> bool:
+        prod_id = self.usbtx.device.getProductID()
+        fw_ver_list = self.readFwVersion()
+        fw_ver_str = '{}.{}.{}'.format(fw_ver_list[0], fw_ver_list[1], fw_ver_list[2])
+        ret = _check_sam_feature(feature, fw_ver_str, prod_id)
+        if not ret:
+            naeusb_logger.info("Feature {} not available".format(feature))
+        return ret
+
 
 if __name__ == '__main__':
     import chipwhisperer as cw

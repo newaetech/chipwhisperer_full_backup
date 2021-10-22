@@ -432,13 +432,13 @@ class XADCSettings(util.DisableNewAttr):
     def temp_trigger(self):
         return self.get_temp(0x50)
 
-    @property
-    def temp_reset(self):
-        return self.get_temp(0x54)
-
     @temp_trigger.setter
     def temp_trigger(self, temp):
         return self.set_temp(temp, 0x50)
+
+    @property
+    def temp_reset(self):
+        return self.get_temp(0x54)
 
     @temp_reset.setter
     def temp_reset(self, temp):

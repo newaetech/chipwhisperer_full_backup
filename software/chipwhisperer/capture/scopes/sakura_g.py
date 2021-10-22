@@ -1,13 +1,13 @@
 import logging
 import sys
-import chipwhisperer.capture.scopes._qt as openadc_qt
+import chipwhisperer.capture.scopes._qt as openadc_qt # type: ignore
 from .OpenADC import OpenADC
 from collections import OrderedDict
 #from chipwhisperer.common.utils.pluginmanager import Plugin
 #from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 from chipwhisperer.common.utils.util import dict_to_str, DelayedKeyboardInterrupt
 try:
-    import ftd2xx as ft
+    import ftd2xx as ft # type: ignore
 except:
     ft = None
 

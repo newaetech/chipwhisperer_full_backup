@@ -1,5 +1,5 @@
-import matplotlib.pyplot as plt
-from tqdm import tnrange
+import matplotlib.pyplot as plt # type: ignore
+from tqdm import tnrange # type: ignore
 import numpy as np
 
 class CoefficientVsTracesNumber:

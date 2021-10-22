@@ -1,6 +1,6 @@
 from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from ...hardware.naeusb.naeusb import NAEUSB
-from typing import Callable, Union, Dict, Tuple
+from typing import Callable, Union, Dict, Tuple, cast, List, Optional
 
 import io
 
@@ -11,7 +11,7 @@ class ChipWhispererCommonInterface:
     def _getNAEUSB(self) -> NAEUSB:
         raise NotImplementedError("_getNAEUSB() method required")
 
-    def _getFWPy(self) -> Callable[[bool], Union[str, io.BytesIO]]:
+    def _getFWPy(self) -> List[int]:
         raise NotImplementedError("_getFWPy method required")
 
     @property
@@ -51,7 +51,7 @@ class ChipWhispererCommonInterface:
     def sn(self) -> str:
         return self._getNAEUSB().snum
 
-    def get_serial_ports(self) -> Tuple[str, int]:
+    def get_serial_ports(self) -> Optional[List[Dict[str, int]]]:
         """Get serial ports associated with a ChipWhisperer
 
         .. versionadded:: 5.5

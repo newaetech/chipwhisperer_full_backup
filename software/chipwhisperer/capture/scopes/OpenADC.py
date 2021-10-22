@@ -42,6 +42,8 @@ import time
 import numpy as np
 from ..api.cwcommon import ChipWhispererCommonInterface
 
+from typing import List
+
 
 
 ADDR_GLITCH1_DRP_ADDR  = 62
@@ -119,14 +121,14 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         # self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
         self.connectStatus = True
 
-    def _getFWPy(self) -> str:
+    def _getFWPy(self) -> List[int]:
         cw_type = self._getCWType()
         if cw_type == "cwlite":
             from ...hardware.firmware.cwlite import fwver
         elif cw_type == "cw1200":
-            from ...hardware.firmware.cw1200 import fwver
+            from ...hardware.firmware.cw1200 import fwver # type: ignore
         elif cw_type == "cwhusky":
-            from ...hardware.firmware.cwhusky import fwver
+            from ...hardware.firmware.cwhusky import fwver # type: ignore
         else:
             raise ValueError('Unknown cw_type: %s' % cw_type)
         return fwver
@@ -143,7 +145,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.con(self._saved_sn)
 
     def _getNAEUSB(self) -> NAEUSB:
-        return self.scopetype.ser
+        return self.scopetype.serial
 
     def default_setup(self):
         """Sets up sane capture defaults for this scope

@@ -23,7 +23,6 @@ import os.path
 # import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader, CWHusky_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
-from chipwhisperer.common.utils.util import DictType, camel_case_deprecated
 from chipwhisperer.logging import *
 
 from chipwhisperer.hardware.naeusb.fpga import FPGA

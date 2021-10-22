@@ -183,7 +183,7 @@ class AES(object):
 
 
 class AES256_8bit(ModelsBase):
-    SHIFT = []
+    SHIFT = [] # type: ignore
 
     INVSHIFT = [0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11]
 

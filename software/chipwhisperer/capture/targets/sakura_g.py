@@ -27,7 +27,7 @@
 import logging
 import time
 
-import chipwhisperer.capture.scopes._qt as openadc_qt
+import chipwhisperer.capture.scopes._qt as openadc_qt # type: ignore
 from ._base import TargetTemplate
 #from chipwhisperer.capture.scopes.openadc_interface import ftdi
 from chipwhisperer.common.utils import util
@@ -36,7 +36,7 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.logging import *
 
 try:
-    import ftd2xx as ft
+    import ftd2xx as ft # type: ignore
 except OSError:  # Also catches WindowsError
     raise ImportError
 

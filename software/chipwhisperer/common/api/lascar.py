@@ -1,8 +1,8 @@
 try:
-    import lascar
-    from lascar.container import Container, TraceBatchContainer
-    from lascar import *
-    from lascar.tools.aes import sbox, inv_sbox
+    import lascar # type: ignore
+    from lascar.container import Container, TraceBatchContainer # type: ignore
+    from lascar import * # type: ignore
+    from lascar.tools.aes import sbox, inv_sbox # type: ignore
 except ImportError as e:
     print("Unable to import LASCAR")
 
@@ -50,9 +50,8 @@ def lastround_HD_gen(byte):
         return hamming(st9 ^ st10)
     return selection_with_guess
 
-import pandas as pd
-from IPython.display import clear_output
-import numpy as np
+import pandas as pd # type: ignore
+from IPython.display import clear_output # type: ignore
 import chipwhisperer as cw
 from chipwhisperer.analyzer.attacks._stats import Results
 import chipwhisperer.analyzer as cwa

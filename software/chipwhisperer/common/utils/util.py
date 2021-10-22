@@ -31,13 +31,6 @@ import weakref
 from functools import wraps
 import warnings
 
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    DictType = OrderedDict
-except ImportError:
-    DictType = dict
-
 
 def getRootDir():
     path = os.path.join(os.path.dirname(__file__), "../../../")
@@ -307,19 +300,6 @@ class Command:
     def __call__(self, *args, **kwargs):
         return self.callback(*self.args, **self.kwargs)
 
-if __name__ == '__main__':
-    class test(object):
-        def m(self):
-            print("here")
-
-        def __del__(self):
-            print("deleted")
-
-    x = test()
-    y = x.m
-    x = None
-    y()
-
 class DisableNewAttr(object):
     """Provides an ability to disable setting new attributes in a class, useful to prevent typos.
 
@@ -379,7 +359,7 @@ def dict_to_str(input_dict, indent=""):
     return ret
 
 
-class bytearray(bytearray):
+class bytearray(bytearray): # type: ignore
     """bytearray with better repr and str methods.
 
     Overwrites the __repr__ and __str__ methods of the builtin bytearray class
@@ -488,12 +468,13 @@ def camel_case_deprecated(func):
 
 
 
-def get_cw_type(sn=None, idProduct=None, hw_location=None, **kwargs):
+def get_cw_type(sn=None, idProduct=None, hw_location=None, **kwargs) -> type:
     """ Gets the scope type of the connected ChipWhisperer
     If multiple connected, sn must be specified
     """
     from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, NAEUSB_Backend
     from chipwhisperer.capture import scopes
+    # from ...capture.scopes import ScopeTypes
     # todo: pyusb as well
 
     if idProduct:

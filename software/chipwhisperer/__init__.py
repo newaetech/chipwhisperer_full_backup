@@ -12,7 +12,7 @@ Main module for ChipWhisperer.
 __version__ = '5.6.1'
 
 try:
-    import usb1
+    import usb1 # type: ignore
 except Exception as e:
     raise ImportError("Could not import usb1. usb1 is required for ChipWhisperer >= 5.6.1. Try pip install libusb1.") from e
 import os, os.path, time
@@ -30,11 +30,11 @@ import logging
 from .logging import *
 import sys, subprocess
 
-from typing import Optional, Union
+from typing import Optional, Type, Union
 
 # replace bytearray with inherited class with better repr and str.
 import builtins
-builtins.bytearray = util.bytearray
+builtins.bytearray = util.bytearray # type: ignore
 
 def check_for_updates() -> str:
     """Check if current ChipWhisperer version is the latest.
@@ -43,11 +43,11 @@ def check_for_updates() -> str:
 
     .. versionadded:: 5.6.1
     """
-    latest_version = subprocess.run([sys.executable, '-m', 'pip', 'install', '{}==random'.format("chipwhisperer")],
-                        capture_output=True, text=True, check=False)
+    latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '{}==random'.format("chipwhisperer")],
+                        capture_output=True, text=True, check=False))
     if not latest_version:
         raise IOError("Could not check chipwhisperer version")
-    latest_version = str(latest_version)
+    latest_version = latest_version
     latest_version = latest_version[latest_version.find('(from versions:')+15:]
     latest_version = latest_version[:latest_version.find(')')]
     latest_version = latest_version.replace(' ','').split(',')[-1]
@@ -235,7 +235,7 @@ def import_project(filename : str, file_type : str='zip', overwrite : bool=False
     return proj
 
 
-def scope(scope_type : Optional[scopes.ScopeTypes]=None, name : Optional[str]=None, **kwargs):
+def scope(scope_type : type=None, name : Optional[str]=None, **kwargs) -> scopes.ScopeTypes:
     """Create a scope object and connect to it.
 
     This function allows any type of scope to be created. By default, the
@@ -320,8 +320,8 @@ def scope(scope_type : Optional[scopes.ScopeTypes]=None, name : Optional[str]=No
 
 
 def target(scope : Optional[scopes.ScopeTypes],
-    target_type : Union[targets.SimpleSerialTypes, targets.FPGATypes]=targets.SimpleSerial,
-    **kwargs):
+    target_type : type = targets.SimpleSerial,
+    **kwargs) -> targets.TargetTypes:
     """Create a target object and connect to it.
 
     Args:
@@ -453,6 +453,6 @@ def plot(*args, **kwargs):
 
     .. versionadded:: 5.4
     """
-    import holoviews as hv
+    import holoviews as hv # type: ignore
     hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
     return hv.Curve(*args, **kwargs).opts(width=800, height=600)
