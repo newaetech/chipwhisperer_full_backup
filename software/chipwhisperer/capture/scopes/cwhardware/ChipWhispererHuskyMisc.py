@@ -128,7 +128,7 @@ class XilinxMMCMDRP(util.DisableNewAttr):
 
 
     def set_main_div(self, div):
-        if isinstance(div, int):
+        if not isinstance(div, int):
             raise ValueError("Only integers are supported")
         # Set main divider:
         if div == 1:
@@ -146,7 +146,7 @@ class XilinxMMCMDRP(util.DisableNewAttr):
 
 
     def set_sec_div(self, div, clock=0):
-        if isinstance(div, int):
+        if not isinstance(div, int):
             raise ValueError("Only integers are supported")
         if clock > 5:
             raise ValueError("Clock must be in range [0,5]")
