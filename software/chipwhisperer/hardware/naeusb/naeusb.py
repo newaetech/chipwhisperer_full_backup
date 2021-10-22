@@ -285,9 +285,16 @@ class NAEUSB_Backend:
     def __init__(self):
         self._usbdev = None
         self._timeout = 500
+        self.device = None
+        self.handle = None
 
-        self.usb_ctx = usb1.USBContext()
-        self.usb_ctx.open()
+        try:
+            self.usb_ctx = usb1.USBContext()
+            self.usb_ctx.open()
+        except OSError as e:
+            # naeusb_logger.error("Could not import libusb dll. Try pip uninstall libusb1, then pip install libusb1")
+            self.usb_ctx = None
+            raise OSError("Could not import libusb dll. Try \npip uninstall libusb1\npip install libusb1") from e
         self.handle = None
         self.device = None
 
