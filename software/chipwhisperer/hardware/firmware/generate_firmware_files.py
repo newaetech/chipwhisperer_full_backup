@@ -9,7 +9,7 @@ import binascii
 hwdir = r"../../../../hardware/"
 
 #List of versions, file-names, and object name
-cw305_v = [0, 52]
+cw305_v = [0, 53]
 cw305_files = [("SAM3U_CW305.bin", os.path.join(hwdir, r"victims/cw305_artixtarget/fw/sam3u/CW305_SAM3U_FW/src/ChipWhisperer-CW305-SAM3U1C.bin")),
                 ("SPI_flash_100t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/spiflash_feedthrough/spiflash_feedthrough.runs/impl_100t/cw305_top.bit")),
                 ("SPI_flash_35t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/spiflash_feedthrough/spiflash_feedthrough.runs/impl_35t/cw305_top.bit")),

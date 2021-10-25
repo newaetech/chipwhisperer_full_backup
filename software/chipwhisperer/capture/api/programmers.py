@@ -41,7 +41,7 @@ from typing import Dict, Optional
 class Programmer:
     lastFlashedFile = "unknown"
     _scope : Optional[ScopeTypes] = None
-    # pin_setup = {}
+    pin_setup : Dict[str, str] = {}
 
     def __init__(self):
         self.newTextLog = util.Signal()

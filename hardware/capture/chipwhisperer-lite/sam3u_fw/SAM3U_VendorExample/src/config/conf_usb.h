@@ -38,6 +38,7 @@
 #define _CONF_USB_H_
 
 #include "compiler.h"
+#include "usb_protocol.h"
 
 //#warning You must refill the following definitions with a correct values
 
@@ -90,43 +91,6 @@ extern char usb_serial_number[33];
 //#define  USB_DEVICE_HS_SUPPORT
 #endif
 //@}
-#if 0
-#define UDI_VENDOR_STRING_ID     0x10
-#define UDI_CDC_COMM_STRING_ID_0 0x11
-//#define UDI_CDC_COMM_STRING_ID_1 0x12
-
-
-#define VENDOR_STRING "CWLite Interface"
-#define CDC_DATA_STRING_0 "CWLite USART"
-//#define CDC_DATA_STRING_1 "CW310 USART Debug Interface"
-
-static inline const char *get_extra_str(uint8_t id)
-{
-	if (id == UDI_VENDOR_STRING_ID)
-	return VENDOR_STRING;
-	if (id == UDI_CDC_COMM_STRING_ID_0)
-	return CDC_DATA_STRING_0;
-	//if (id == UDI_CDC_COMM_STRING_ID_1)
-	//return CDC_DATA_STRING_1;
-	return NULL;
-	
-}
-
-static inline uint8_t get_extra_str_length(uint8_t id)
-{
-	if (id == UDI_VENDOR_STRING_ID)
-	return sizeof(VENDOR_STRING)-1;
-	if (id == UDI_CDC_COMM_STRING_ID_0)
-	return sizeof(CDC_DATA_STRING_0)-1;
-	//if (id == UDI_CDC_COMM_STRING_ID_1)
-	//return sizeof(CDC_DATA_STRING_1)-1;
-	return 0;
-	
-}
-
-#define UDC_GET_EXTRA_STRING() (str_length = get_extra_str_length(udd_g_ctrlreq.req.wValue & 0xff), str = get_extra_str(udd_g_ctrlreq.req.wValue & 0xff))
-
-#endif
 /**
  * USB Device Callbacks definitions (Optional)
  * @{
@@ -290,10 +254,17 @@ bool main_setup_in_received(void);
 #define  UDI_VENDOR_IFACE_NUMBER     0
 
 #define UDI_COMPOSITE_DESC_T \
-udi_vendor_desc_t udi_vendor; \
-usb_iad_desc_t udi_iad;\
-udi_cdc_comm_desc_t udi_cdc_comm; \
-udi_cdc_data_desc_t udi_cdc_data; 
+	udi_vendor_desc_t udi_vendor; \
+union { \
+struct { \
+	usb_iad_desc_t udi_iad;\
+	udi_cdc_comm_desc_t udi_cdc_comm; \
+	udi_cdc_data_desc_t udi_cdc_data; \
+},\
+struct {\
+	udi_vendor_desc_t udi_vendor_mpsse; \
+}\
+}
 
 
 //! USB Interfaces descriptor value for Full Speed
@@ -301,7 +272,7 @@ udi_cdc_data_desc_t udi_cdc_data;
 .udi_vendor = UDI_VENDOR_DESC_FS, \
 .udi_iad = UDI_CDC_IAD_DESC_0, \
 .udi_cdc_comm              = UDI_CDC_COMM_DESC_0, \
-.udi_cdc_data              = UDI_CDC_DATA_DESC_0_FS, 
+.udi_cdc_data              = UDI_CDC_DATA_DESC_0_FS,  
 
 #define UDI_COMPOSITE_DESC_HS \
 .udi_vendor = UDI_VENDOR_DESC_HS, \
@@ -312,13 +283,90 @@ udi_cdc_data_desc_t udi_cdc_data;
 //! USB Interface APIs
 #define UDI_COMPOSITE_API &udi_api_vendor, \
 &udi_api_cdc_comm, \
-&udi_api_cdc_data,
+&udi_api_cdc_data, 
+
 /**
  * USB Device Driver Configuration
  * @{
  */
 //@}
+UDC_DESC_STORAGE udi_api_t *mpsse_udi_apis[2] = {
+	&udi_api_vendor,
+	&udi_api_vendor
+};
 
+// #define  UDI_CDC_DATA_EP_IN_0          (5 | USB_EP_DIR_IN)  // TX
+// #define  UDI_CDC_DATA_EP_OUT_0         (6 | USB_EP_DIR_OUT) // RX
+udi_vendor_desc_t mpsse_desc = {
+	.iface0.bLength            = sizeof(usb_iface_desc_t),\
+	.iface0.bDescriptorType    = USB_DT_INTERFACE,\
+	.iface0.bInterfaceNumber   = UDI_CDC_COMM_IFACE_NUMBER_0,\
+	.iface0.bAlternateSetting  = 0 /*1*/,\
+	.iface0.bNumEndpoints      = UDI_VENDOR_EP_NB,\
+	.iface0.bInterfaceClass    = VENDOR_CLASS,\
+	.iface0.bInterfaceSubClass = VENDOR_SUBCLASS,\
+	.iface0.bInterfaceProtocol = VENDOR_PROTOCOL,\
+	.iface0.iInterface         = UDI_VENDOR_STRING_ID,\
+	.ep_bulk_in.bLength                = sizeof(usb_ep_desc_t),\
+	.ep_bulk_in.bDescriptorType        = USB_DT_ENDPOINT,\
+	.ep_bulk_in.bEndpointAddress       = UDI_CDC_DATA_EP_IN_0,\
+	.ep_bulk_in.bmAttributes           = USB_EP_TYPE_BULK,\
+	.ep_bulk_in.bInterval              = 0,\
+	.ep_bulk_out.bLength               = sizeof(usb_ep_desc_t),\
+	.ep_bulk_out.bDescriptorType       = USB_DT_ENDPOINT,\
+	.ep_bulk_out.bEndpointAddress      = UDI_CDC_DATA_EP_OUT_0,\
+	.ep_bulk_out.bmAttributes          = USB_EP_TYPE_BULK,\
+	.ep_bulk_out.bInterval             = 0,
+
+# define UDI_VENDOR_EPS_BULK_DESC_FS \
+	.ep_bulk_in.wMaxPacketSize         = LE16(UDI_VENDOR_EPS_SIZE_BULK_FS),\
+	.ep_bulk_out.wMaxPacketSize        = LE16(UDI_VENDOR_EPS_SIZE_BULK_FS),
+
+# define UDI_VENDOR_EPS_BULK_DESC_HS \
+	.ep_bulk_in.wMaxPacketSize         = LE16(UDI_VENDOR_EPS_SIZE_BULK_HS),\
+	.ep_bulk_out.wMaxPacketSize        = LE16(UDI_VENDOR_EPS_SIZE_BULK_HS),
+};
+
+COMPILER_WORD_ALIGNED
+UDC_DESC_STORAGE udc_desc_t udc_desc_fs_mpsse = {
+	.conf.bLength              = sizeof(usb_conf_desc_t),
+	.conf.bDescriptorType      = USB_DT_CONFIGURATION,
+	.conf.wTotalLength         = LE16(sizeof(udc_desc_t)),
+	.conf.bNumInterfaces       = USB_DEVICE_NB_INTERFACE,
+	.conf.bConfigurationValue  = 2,
+	.conf.iConfiguration       = 0,
+	.conf.bmAttributes         = USB_CONFIG_ATTR_MUST_SET | USB_DEVICE_ATTR,
+	.conf.bMaxPower            = USB_CONFIG_MAX_POWER(USB_DEVICE_POWER),
+	.udi_vendor				   = UDI_VENDOR_DESC_FS,
+	.udi_vendor_mpsse		   = mpsse_desc
+};
+
+COMPILER_WORD_ALIGNED
+UDC_DESC_STORAGE udc_desc_t udc_desc_hs_mpsse = {
+	.conf.bLength              = sizeof(usb_conf_desc_t),
+	.conf.bDescriptorType      = USB_DT_CONFIGURATION,
+	.conf.wTotalLength         = LE16(sizeof(udc_desc_t)),
+	.conf.bNumInterfaces       = USB_DEVICE_NB_INTERFACE,
+	.conf.bConfigurationValue  = 2,
+	.conf.iConfiguration       = 0,
+	.conf.bmAttributes         = USB_CONFIG_ATTR_MUST_SET | USB_DEVICE_ATTR,
+	.conf.bMaxPower            = USB_CONFIG_MAX_POWER(USB_DEVICE_POWER),
+	.udi_vendor 			   = UDI_VENDOR_DESC_HS,
+	.udi_vendor_mpsse		   = mpsse_desc
+};
+
+#define USB_EXTRA_FS_DESC ,{\
+	.desc		= (usb_conf_desc_t UDC_DESC_STORAGE*)&udc_desc_fs_mpsse,\
+	.udi_apis	= mpsse_udi_apis,\
+}
+
+#define USB_EXTRA_HS_DESC ,{\
+	.desc		= (usb_conf_desc_t UDC_DESC_STORAGE*)&udc_desc_hs_mpsse,\
+	.udi_apis	= mpsse_udi_apis,\
+}
+
+// #include "udd.h"
+// #include "udc_desc.h"
 //! The includes of classes and other headers must be done at the end of this file to avoid compile error
 #include "udi_vendor.h"
 #include "udi_cdc.h"
@@ -333,5 +381,7 @@ udi_cdc_data_desc_t udi_cdc_data;
 /* Declaration of callbacks used by USB
 #include "callback_def.h"
 */
+
+
 
 #endif // _CONF_USB_H_

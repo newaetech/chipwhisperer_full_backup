@@ -47,7 +47,6 @@ def check_for_updates() -> str:
                         capture_output=True, text=True, check=False))
     if not latest_version:
         raise IOError("Could not check chipwhisperer version")
-    latest_version = latest_version
     latest_version = latest_version[latest_version.find('(from versions:')+15:]
     latest_version = latest_version[:latest_version.find(')')]
     latest_version = latest_version.replace(' ','').split(',')[-1]
@@ -313,6 +312,7 @@ def scope(scope_type : Type[scopes.ScopeTypes]=None, name : Optional[str]=None,
         prog_speed = int(prog_speed)
 
     kwargs.update(locals())
+    del kwargs["name"]
     if name is not None:
         if name == 'Husky':
             kwargs['idProduct'] = 0xace5
