@@ -209,6 +209,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         year = ((raw[2] >> 1) & 0x3f) + 2000
         hour = ((raw[2] & 0x1) << 4) + (raw[1] >> 4)
         minute = ((raw[1] & 0xf) << 2) + (raw[0] >> 6)
+        return "{}/{}/{}, {:02d}:{:02d}".format(month, day, year, hour, minute)
         return "FPGA build time: {}/{}/{}, {}:{}".format(month, day, year, hour, minute)
 
 

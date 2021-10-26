@@ -5,6 +5,8 @@ from ...hardware.naeusb.naeusb import NAEUSB
 from ...hardware.naeusb.pll_cdce906 import PLLCDCE906
 from ...hardware.naeusb.fpga import FPGA
 from ...logging import *
+from collections import OrderedDict
+from ...common.utils import util
 
 class CW310(CW305):
     """CW310 Bergen Board target object.
@@ -66,6 +68,29 @@ class CW310(CW305):
         self.REG_XADC_DRP_DATA = 0x18
         self.REG_XADC_STAT     = 0x19
 
+    def _dict_repr(self):
+        rtn = OrderedDict()
+        rtn['fpga_buildtime'] = self.get_fpga_buildtime()
+        rtn['xadc_status'] = self.xadc_status
+        rtn['max temp'] = self.get_xadc_temp(maximum=True)
+        rtn['temp'] = self.get_xadc_temp()
+        rtn['max vccint'] = self.get_xadc_vcc('vccint', maximum=True)
+        rtn['max vccbram'] = self.get_xadc_vcc('vccbram', maximum=True)
+        rtn['max vccaux'] = self.get_xadc_vcc('vccaux', maximum=True)
+        rtn['current vccint'] = self.get_xadc_vcc('vccint')
+        rtn['current vccbram'] = self.get_xadc_vcc('vccbram')
+        rtn['current vccaux'] = self.get_xadc_vcc('vccaux')
+        rtn['vaux0'] = self.get_xadc_vaux(0)
+        rtn['vaux1'] = self.get_xadc_vaux(1)
+        rtn['vaux8'] = self.get_xadc_vaux(8)
+        return rtn
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
     def _getFWPy(self):
         from ...hardware.firmware.cwbergen import fwver
         return fwver
@@ -114,32 +139,72 @@ class CW310(CW305):
         raw = self.fpga_read(self.REG_XADC_DRP_DATA, 2)
         return raw[0] + (raw[1] << 8)
 
+    @property
+    def xadc_status(self):
+        """Read XADC alarm status bits
+        :Getter: Returns status string.
 
-    def get_xadc_temp(self):
+        :Setter: Clear the XADC status error bits (they are sticky).
+        """
+        raw = self.fpga_read(self.REG_XADC_STAT, 1)[0]
+        stat = ''
+        if raw & 1:  stat += 'Over temperature alarm, '
+        if raw & 2:  stat += 'User temperature alarm, '
+        if raw & 4:  stat += 'VCCint alarm, '
+        if raw & 8:  stat += 'VCCaux alarm, '
+        if raw & 16: stat += 'VCCbram alarm, '
+        if stat == '':
+            stat = 'good'
+        return stat
+
+    @xadc_status.setter
+    def xadc_status(self, clear):
+        self.fpga_write(self.REG_XADC_STAT, [0x0])
+
+
+    def get_xadc_temp(self, maximum=False):
         """Read XADC temperature.
-        Args: none
+        Args: 
+            maximum (bool): if True, return the maximum observed temperature (since last reset);
+                otherwise, return current measured temperature
         Returns:
             Temperature in celcius (float).
         """
-        raw = self._xadc_drp_read(0)
+        if maximum:
+            addr = 0x20
+        else:
+            addr = 0x0
+        raw = self._xadc_drp_read(addr)
         return (raw>>4) * 503.975/4096 - 273.15 # ref: UG480
 
 
-    def get_xadc_vcc(self, rail='vccint'):
+    def get_xadc_vcc(self, rail='vccint', maximum=False):
         """Read XADC vcc.
         Args:
             rail (string): 'vccint', 'vccaux', or 'vccbram'
+            maximum (bool): if True, return the maximum observed voltage (since last reset);
+                otherwise, return current measured voltage
         Returns:
             voltage (float).
         """
-        if rail == 'vccint':
-            addr = 1
-        elif rail == 'vccaux':
-            addr = 2
-        elif rail == 'vccbram':
-            addr = 6
-        else:
+        if rail not in ('vccint', 'vccaux', 'vccbram'):
             raise ValueError("Invalid rail")
+
+        if not maximum:
+            if rail == 'vccint':
+                addr = 0x01
+            elif rail == 'vccaux':
+                addr = 0x02
+            elif rail == 'vccbram':
+                addr = 0x06
+        else:
+            if rail == 'vccint':
+                addr = 0x21
+            elif rail == 'vccaux':
+                addr = 0x22
+            elif rail == 'vccbram':
+                addr = 0x23
+
         raw = self._xadc_drp_read(addr)
         return (raw>>4)/4096 * 3 # ref: UG480
 
@@ -154,7 +219,7 @@ class CW310(CW305):
         assert n in [0, 1, 8]
         addr = n + 0x10
         raw = self._xadc_drp_read(addr)
-        return raw/4096 # ref: UG480
+        return (raw>>4)/4096 # ref: UG480
 
     def _i2c_write(self, data):
         self._naeusb.sendCtrl(self.USB_I2C_DATA, 0, data)
