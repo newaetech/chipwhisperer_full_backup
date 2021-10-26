@@ -52,6 +52,7 @@ SAM_FW_FEATURES = [
     "EXT_FPGA_PROG", #9
     "FPGA_SPI_PASSTHROUGH", #10
     "SAM3U_GPIO_MODE", #11
+    "FPGA_TARGET_BULK_WRITE", #12
 ]
 
 SAM_FW_FEATURE_BY_DEVICE = {
@@ -112,6 +113,7 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[6]: '0.50.0',
         SAM_FW_FEATURES[10]: '0.30.0',
         SAM_FW_FEATURES[11]: '0.40.0',
+        SAM_FW_FEATURES[12]: '0.53.0',
     },
 
     0xC310: {
@@ -126,6 +128,7 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[8]: '1.0.0',
         SAM_FW_FEATURES[10]: '1.0.0',
         SAM_FW_FEATURES[11]: '1.0.0',
+        SAM_FW_FEATURES[12]: '1.1.0',
     }
 }
 
