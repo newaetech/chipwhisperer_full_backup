@@ -523,7 +523,7 @@ class NAEUSB_Backend:
 
         # Get data
         if cmd == self.CMD_WRITEMEM_BULK:
-            data = self.handle.bulkWrite(self.wep, data, timeout=self._timeout)
+            self.handle.bulkWrite(self.wep, data, timeout=self._timeout)
         else:
             #logging.warning("Write ignored")
 
@@ -532,7 +532,7 @@ class NAEUSB_Backend:
         naeusb_logger.debug("FPGA_WRITE: bulk: {}, addr: {:08X}, dlen: {:08X}, response: {}"\
             .format("yes" if dlen >= 48 else "no", addr, dlen, data))
 
-        return data
+        return None
 
     def cmdWriteBulk(self, data : bytearray):
         """
