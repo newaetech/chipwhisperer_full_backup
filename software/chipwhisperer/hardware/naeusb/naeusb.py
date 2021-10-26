@@ -52,6 +52,7 @@ SAM_FW_FEATURES = [
     "EXT_FPGA_PROG", #9
     "FPGA_SPI_PASSTHROUGH", #10
     "SAM3U_GPIO_MODE", #11
+    "FPGA_TARGET_BULK_WRITE", #12
 ]
 
 SAM_FW_FEATURE_BY_DEVICE = {
@@ -112,6 +113,7 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[6]: '0.50.0',
         SAM_FW_FEATURES[10]: '0.30.0',
         SAM_FW_FEATURES[11]: '0.40.0',
+        SAM_FW_FEATURES[12]: '0.53.0',
     },
 
     0xC310: {
@@ -126,6 +128,7 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[8]: '1.0.0',
         SAM_FW_FEATURES[10]: '1.0.0',
         SAM_FW_FEATURES[11]: '1.0.0',
+        SAM_FW_FEATURES[12]: '1.1.0',
     }
 }
 
@@ -523,7 +526,7 @@ class NAEUSB_Backend:
 
         # Get data
         if cmd == self.CMD_WRITEMEM_BULK:
-            data = self.handle.bulkWrite(self.wep, data, timeout=self._timeout)
+            self.handle.bulkWrite(self.wep, data, timeout=self._timeout)
         else:
             #logging.warning("Write ignored")
 
@@ -532,7 +535,7 @@ class NAEUSB_Backend:
         naeusb_logger.debug("FPGA_WRITE: bulk: {}, addr: {:08X}, dlen: {:08X}, response: {}"\
             .format("yes" if dlen >= 48 else "no", addr, dlen, data))
 
-        return data
+        return None
 
     def cmdWriteBulk(self, data : bytearray):
         """
