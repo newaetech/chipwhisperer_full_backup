@@ -26,12 +26,13 @@ from datetime import datetime
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 
+from chipwhisperer.logging import *
 from .naeusb import packuint32
 
 # NOTE: These objects are currently manually maintained. Eventually it will be automatically created
 #      from avrdude.conf, but I'd like to test with a few more devices before doing that.
 
-class AVRBase(object):
+class AVRBase:
     name = "INVALID DEVICE"
     signature = [0xFF, 0xFF, 0xFF]
     timeout = 200
@@ -334,6 +335,7 @@ class AVRISP(object):
 
         # Check status
         if checkStatus:
+            time.sleep(0.01)
             status = self._avrDoRead(cmd=0x0020, dlen=2)
             if status[1] != 0x00:
                 status_txt = "0x%02x"%status[1]
@@ -436,7 +438,7 @@ class AVRISP(object):
         """
         Read lock byte and return value.
         """
-        return self._readFuseLockSig(self.ISP_CMD_READ_LOCK_ISP, [0xAC, 0xE0, 0x00, 0x00], 4)
+        return self._readFuseLockSig(self.ISP_CMD_READ_LOCK_ISP, [0x58, 0x00, 0x00, 0x00], 4)
 
 
     def writeFuse(self, fusename, value):
@@ -552,7 +554,7 @@ class AVRISP(object):
         pagesize = memspec["pagesize"]
 
         if addr % pagesize:
-            logging.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
+            target_logger.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
 
         self._avrDoWrite(self.ISP_CMD_LOAD_ADDRESS, data=[0, 0, 0, 0])
 

@@ -4,10 +4,13 @@
 Prerequisites
 #############
 
-One for installing ChipWhisperer do not require prior installation of
-the following prerequisites (:ref:`install-virtual-machine`). However,
-if you want more control over where, and how you install the prerequisites,
-the prerequisite installation process for your operating system is detailed below.
+.. note:: We recommend using Python 3.7 as it seems to have the best general compatability; however,
+        any version >= 3.6 should work. Python 2.x does **NOT** work with this codebase.
+
+If you're using our virtual machine or Windows installer, 
+you can proceed directly to :ref:`install`. Otherwise,
+select our operating system below for instructions on
+installing required software for ChipWhisperer:
 
  * :ref:`GNU/Linux <prerequisites-linux>`
  * :ref:`Windows <prerequisites-windows>`
@@ -19,7 +22,39 @@ the prerequisite installation process for your operating system is detailed belo
 GNU/Linux
 *********
 
-There is only manual install available on GNU/Linux.
+There is only manual install available on GNU/Linux, besides the VM; however, it is much
+easier to grab all the required prerequisites than on Windows.
+
+Quick Install
+=============
+
+The following commands are provided if you want to get right into using ChipWhisperer.
+They have been tested on Lubuntu 21.04 and required steps may differ on other distributions of Linux.
+
+.. code:: bash
+
+    sudo apt update && sudo apt upgrade
+    sudo apt install python3 python3-pip libusb-dev make git avr-libc gcc-avr gcc-arm-none-eabi libusb-1.0-0-dev
+    sudo bash -c 'printf "SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b3e\", ATTRS{idProduct}==\"*\", TAG+=\"uaccess\"\\n" >> /etc/udev/rules.d/50-newae.rules'
+    sudo bash -c 'printf "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"2b3e\", ATTRS{idProduct}==\"*\", TAG+=\"uaccess\", SYMLINK+=\"cw_serial%n\"\\n" >> /etc/udev/rules.d/50-newae.rules'
+    sudo bash -c 'printf "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"03eb\", ATTRS{idProduct}==\"6124\", TAG+=\"uaccess\", SYMLINK += \"cw_bootloader%n\"\\n" >> /etc/udev/rules.d/50-newae.rules'
+    sudo udevadm control --reload-rules
+    sudo usermod -a -G dialout $USER
+
+Once that's done, you should logout and login, or reboot your system.
+
+You are now ready to move on to :ref:`install-repo`.
+
+We go through each of these commands below:
+
+Update Packages
+===============
+
+Make sure your packages are up to date before installing anything
+
+.. code:: bash
+
+    sudo apt update && sudo apt upgrade
 
 Python
 ======
@@ -34,17 +69,21 @@ On Ubuntu or similar:
 
     sudo apt install python3 python3-pip
 
-
 Packages
 ========
 
 There are some packages required for **chipwhisperer** and its dependencies such
-as **pyusb** to work. Install using:
+as **libusb1** to work. Install using:
 
 .. code:: bash
 
-    sudo apt install libusb-dev make
+    sudo apt install libusb-dev make libusb-1.0-0-dev
 
+You'll probably want to pick up git as well:
+
+.. code:: bash
+
+    sudo apt install git
 
 Compilers
 =========
@@ -64,36 +103,28 @@ The Arm Toolchain can be installed using:
 Hardware Drivers
 ================
 
-The driver for Linux is built in; however, you need to allow your user account to access the peripheral. To do so, you'll have to make a file called :code:`/etc/udev/rules.d/99-newae.rules`. The contents of this file should be:
+The driver for Linux is built in; however, you need to allow your user account to access the peripheral. To do so, you'll have to make a 
+file called :code:`/etc/udev/rules.d/50-newae.rules`. The contents of this file should be:
 
 .. code::
 
-    # CW-Lite
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace2", MODE="0664", GROUP="plugdev"
+    # Match all CW devices
+    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="*", TAG+="uaccess"
+    SUBSYSTEM=="tty", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="*", TAG+="uaccess", SYMLINK+="cw_serial%n"
+    SUBSYSTEM=="tty", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="6124", TAG+="uaccess", SYMLINK+="cw_bootloader%n"
 
-    # CW-1200
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace3", MODE="0664", GROUP="plugdev"
-
-    # CW-Nano
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace0", MODE="0664", GROUP="plugdev"
-
-    # CW-305 (Artix Target)
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="c305", MODE="0664", GROUP="plugdev"
-
-    # CW-CR2
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="8613", MODE="0664", GROUP="plugdev"
-    SUBSYSTEM=="usb", ATTRS{idVendor}=="221a", ATTRS{idProduct}=="0100", MODE="0664", GROUP="plugdev"
-
-Alternatively, you can just copy :code:`chipwhisperer/hardware/99-newae.rules`
-to :code:`/etc/udev/rules.d/`.
-
-Then add your username to the plugdev group:
+The following commands will put this into the proper file:
 
 .. code:: bash
 
-    sudo usermod -a -G plugdev YOUR-USERNAME
+    sudo bash -c 'printf "SUBSYSTEM==\"usb\", ATTRS{idVendor}==\"2b3e\", ATTRS{idProduct}==\"*\", TAG+=\"uaccess\"\\n" >> /etc/udev/rules.d/50-newae.rules'
+    sudo bash -c 'printf "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"2b3e\", ATTRS{idProduct}==\"*\", TAG+=\"uaccess\", SYMLINK+=\"cw_serial%n\"\\n" >> /etc/udev/rules.d/50-newae.rules'
+    sudo bash -c 'printf "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"03eb\", ATTRS{idProduct}==\"6124\", TAG+=\"uaccess\", SYMLINK += \"cw_bootloader%n\"\\n" >> /etc/udev/rules.d/50-newae.rules'
 
-And reset the udev system:
+Alternatively, you can just copy :code:`chipwhisperer/hardware/50-newae.rules`
+to :code:`/etc/udev/rules.d/`.
+
+Next, reset the udev system:
 
 .. code:: bash
 
@@ -102,20 +133,21 @@ And reset the udev system:
 Finally log out & in again for the group change to take effect.
 
 You can always find the latest version of this file on
-`Github <https://github.com/newaetech/chipwhisperer/blob/master/hardware/99-newae.rules>`_.
+`Github <https://github.com/newaetech/chipwhisperer/blob/develop/hardware/50-newae.rules>`_.
 
 You should also add your username to the dialout group, which will allow you to reprogram
-the USB firmware on your ChipWhisperer:
+the USB firmware on your ChipWhisperer and use the ChipWhisperer's serial port:
 
 .. code:: bash
 
     sudo usermod -a -G dialout YOUR-USERNAME
 
+Once that's done, reboot your system, or logout and login again.
+
 ChipWhisperer
 =============
 
 You are now ready to move on to :ref:`install-repo`.
-
 
 .. _prerequisites-windows:
 
@@ -123,14 +155,17 @@ You are now ready to move on to :ref:`install-repo`.
 Windows Manual
 **************
 
+Starting with ChipWhisperer 5.5, all of the Windows prerequisites
+will can be installed by using our :ref:`install-windows-exe`. If
+you don't want to use our installer, you should grab
+the following programs:
+
 Python
 ======
 
 For any of the other installation methods, you'll need to have Python
 3 installed on your computer. If you already a recent version of
-Python installed (3.6.x+), you can skip this step. Note that Python
-2.x will **not** work with this codebase. There's also a bit of setup
-that's needed to get other tools and prepare other drivers.
+Python installed (3.6.x+), you can skip this step. 
 
 The recommend method of installing Python is to use a distribution
 called `WinPython`_. This setup avoids installing Python globally, and
@@ -168,13 +203,14 @@ notebooks.
 Installing Hardware Drivers
 ===========================
 
- * Plug in the ChipWhisperer to your computer
- * If the "New Hardware Found" wizard doesn't prompt you for drivers,
-   go to the control panel, find your device, and select "Update Drivers"
- * You can find drivers on the ChipWhisperer `releases`_ section. They
-   come as a zip file, so you'll need to extract them first.
+As of ChipWhisperer firmware \*.23, your ChipWhisperer will automatically
+configure as a WinUSB device, meaning no manual driver installation is
+required.
+
+If your ChipWhisperer has older firmware, see :ref:`our driver help page.<windows-drivers>`
 
 .. _releases: https://github.com/newaetech/chipwhisperer/releases
+.. _firmware_update: https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update
 
 
 Make
@@ -245,31 +281,24 @@ the board. You can install it using **brew**:
 Python
 ======
 
-You will require a python version >= to 3.5. You can get the binary from the
-`Python Software Foundation's website`_. Choose one of the stable versions that
-has an installer for your machine. You can also run this command in your terminal:
+The best way to install Python on Mac is in a Python virtualenv. The steps
+for this are found at https://opensource.com/article/19/5/python-3-default-mac.
+A quick summary is:
 
 .. code:: bash
 
-    brew install python3
+    brew install pyenv
+    pyenv install 3.7.7
+    pyenv global 3.7.7
+    echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.zshrc
 
-You will have to check the version this downloads. It is best to have python 3.7.x
-
+Then launch a new terminal and run
 
 .. code:: bash
 
     python --version
 
-If this installs a version lower than 3.5, just download and manually install the
-Python interpreter from the `Python Software Foundation's website`_. If you
-download and install the python interpreter manually from the website it should
-be available on the bash terminal after installation as:
-
-.. code:: bash
-
-    python3.7
-
-or the equivalent for your version.
+and make sure it reports that you're using Python 3.7.7.
 
 Compilers
 =========
@@ -293,5 +322,3 @@ You are now ready for :ref:`installing <install-repo>` ChipWhisperer.
 
 .. _Python Software Foundation's website: https://www.python.org/downloads/mac-osx/
 .. _ARM website: https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads
-
-

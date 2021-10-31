@@ -1,11 +1,9 @@
-import logging
 import time
-import chipwhisperer as cw
 
-from chipwhisperer.common.utils import util
 from ._base import TargetTemplate
 from .simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
 
+from chipwhisperer.logging import *
 class SimpleSerial2_Err:
     OK = 0
     ERR_CMD = 1
@@ -43,6 +41,7 @@ class SimpleSerial2(TargetTemplate):
       * :meth:`target.set_key <.SimpleSerial2.set_key>`
       * :meth:`target.close <.SimpleSerial2.close>`
       * :meth:`target.con <.SimpleSerial2.con>`
+      * :meth:`target.get_simpleserial_commands <.SimpleSerial2.get_simpleserial_commands>`
 
     The protocol is as follows:
 
@@ -80,8 +79,14 @@ class SimpleSerial2(TargetTemplate):
         self.last_key = bytearray(16)
         self._output_len = 16
 
+    def close(self):
+        self.ser.close()
+
+    def dis(self):
+        self.close()
+
     @staticmethod
-    def strerror(self, e):
+    def strerror(e):
         """Get string error message based on integer error e
         """
         if e == SimpleSerial2_Err.OK:
@@ -96,6 +101,7 @@ class SimpleSerial2(TargetTemplate):
             return "Invalid frame length"
         if e == SimpleSerial2_Err.ERR_FRAME_BYTE:
             return "Frame byte in expected spot"
+        return "Unknown error"
 
     @staticmethod
     def _calc_crc(buf):
@@ -107,13 +113,13 @@ class SimpleSerial2(TargetTemplate):
                 crc ^= b
                 for _ in range(8):
                     if crc & 0x80:
-                        crc = (crc << 1) ^ 0xA6
+                        crc = (crc << 1) ^ 0x4D
                         crc &= 0xFF
                     else:
                         crc <<= 1
                         crc &= 0xFF
         except:
-            print(buf)
+            target_logger.error("crc error: {}. Try rebuilding firmware if you only get this error.".format(buf))
         return crc
 
 
@@ -145,12 +151,12 @@ class SimpleSerial2(TargetTemplate):
             buf[n] = self._frame_byte
             n += tmp
             if (n == 0) and (tmp == 0):
-                logging.error("Infinite loop in unstuff data")
-                logging.error(buf)
+                target_logger.error("Infinite loop in unstuff data")
+                target_logger.error(buf)
                 return
             sentinel += 1
-            if sentinel > 30:
-                logging.error(f"{buf}, {n}, {tmp}")
+            if sentinel > len(buf):
+                target_logger.error(f"{buf}, {n}, {tmp}")
                 return
         if n > l:
             return n
@@ -219,7 +225,7 @@ class SimpleSerial2(TargetTemplate):
         except:
             pass
         return bytearray(rtn)
-    
+
     def is_done(self):
         """Required on other platforms
         """
@@ -246,12 +252,12 @@ class SimpleSerial2(TargetTemplate):
         """
         rtn = self.read_cmd('e')
         if not rtn:
-            logging.warning(f"Device did not ack")
+            target_logger.error("Device did not ack")
             return
         if rtn[3] != 0x00:
-            logging.warning(f"Device reported error {hex(rtn[3])}")
+            target_logger.error(f"Device reported error {hex(rtn[3])}")
             self.flush_on_error()
-            print(bytearray(rtn))
+            target_logger.error(bytearray(rtn))
         return rtn[3:-2]
 
 
@@ -271,7 +277,7 @@ class SimpleSerial2(TargetTemplate):
 
         The packet will be valid if:
 
-            * All requested reads return the requested characters 
+            * All requested reads return the requested characters
             * No frame bytes except the terminator are read
             * The packet doesn't end with a frame byte
             * If an ack packet isn't received
@@ -338,7 +344,7 @@ class SimpleSerial2(TargetTemplate):
 
         next_frame = self._unstuff_data(response)
         if cmd and response[1] != cmd:
-            logging.warning(f"Unexpected start to command {response[1]}")
+            target_logger.warning(f"Unexpected start to command {response[1]}")
 
         l = response[2]
 
@@ -346,14 +352,14 @@ class SimpleSerial2(TargetTemplate):
             # user didn't specify, do second read based on sent length
             x = self.read(l+2, timeout=timeout)
             if x is None:
-                print("Read timed out")
+                target_logger.warning("Read timed out")
                 response = response.decode('latin-1')
                 response += self.read(1000, timeout=glitch_timeout)
                 return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
             if len(x) != (l + 2):
-                print(f"Didn't get all data {len(x)}, {l+2}")
-                print(bytearray(x.encode('latin-1')))
-                print(response)
+                target_logger.warning(f"Didn't get all data {len(x)}, {l+2}")
+                target_logger.warning(bytearray(x.encode('latin-1')))
+                target_logger.warning(response)
                 response = response.decode('latin-1')
                 response += self.read(1000, timeout=glitch_timeout)
                 return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
@@ -363,7 +369,7 @@ class SimpleSerial2(TargetTemplate):
 
             # need to do second unstuff since we read stuff after last one
             if self._frame_byte in response[3:-1]:
-                #logging.warning(f"Unexpected frame byte in {response}")
+                #target_logger.warning(f"Unexpected frame byte in {response}")
                 response = response.decode('latin-1')
                 response += self.read(1000, timeout=glitch_timeout)
                 return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
@@ -371,24 +377,24 @@ class SimpleSerial2(TargetTemplate):
             self._unstuff_data(resp_cpy)
             response[next_frame:] = resp_cpy[:]
         if pay_len and l != pay_len:
-            logging.warning(f"Unexpected length {l}, {pay_len}")
+            target_logger.warning(f"Unexpected length {l}, {pay_len}")
             response = response.decode('latin-1')
             response += self.read(1000, timeout=glitch_timeout)
             return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
 
         crc = self._calc_crc(response[1:-2]) #calc crc for all bytes except last (crc)
         if crc != response[-2]:
-            logging.warning(f"Invalid CRC. Expected {crc} got {response[-2]}")
+            target_logger.warning(f"Invalid CRC. Expected {crc} got {response[-2]}")
             response = response.decode('latin-1')
             response += self.read(1000, timeout=glitch_timeout)
             return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
 
         if response[-1] != self._frame_byte:
-            logging.warning(f"Did not receive end of frame, got {response[-1]}")
+            target_logger.warning(f"Did not receive end of frame, got {response[-1]}")
             response = response.decode('latin-1')
             response += self.read(1000, timeout=glitch_timeout)
             return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
-        
+
         try:
             rv = self.simpleserial_wait_ack()
             if rv is None:
@@ -401,6 +407,36 @@ class SimpleSerial2(TargetTemplate):
             return {'valid': False, 'payload': None, 'full_response': response, 'rv': None}
 
         return {'valid': True, 'payload': bytearray(response[3:-2]), 'full_response': response, 'rv': rv}
+
+    def get_simpleserial_commands(self, timeout=250, flush_on_err=None, ack=True):
+        """Gets available simpleserial commands for target
+
+        Args:
+            timeout (int, optional): Value to use for timeouts during initial
+                read of expected data in ms. If 0, block until all expected
+                data is returned. Defaults to 250.
+            flush_on_err (bool/None, optional): If True, reset/flush the serial lines.
+                If False, don't. If None, determine via whether or not flush_on_err
+                was True or False when passed to con()
+            ack (bool, optional): Wait for ack after sending key. Defaults to
+                True.
+
+        Returns:
+            List of dics with fields 'cmd' command_byte, 'len' 0x00, 'flags' 0x00
+        """
+        self.flush()
+        self.simpleserial_write('w', [])
+        cmd_packet = self.read_cmd('r', None, timeout, flush_on_err)
+        if ack:
+            self.read_cmd('e')
+
+        num_commands = cmd_packet[2]
+        command_list = []
+        for i in range(num_commands):
+            command_list.append({"cmd": bytes([cmd_packet[3+i]]), "len": 0x00, "flags": 0x00})
+
+        return command_list
+
 
     def read_cmd(self, cmd=None, pay_len=None, timeout=250, flush_on_err=None):
         """Read and decode simpleserial-v2 command
@@ -429,58 +465,68 @@ class SimpleSerial2(TargetTemplate):
         else:
             recv_len = 5 + pay_len #cmd, len, data, crc
         response = self.read(recv_len, timeout=timeout)
+        target_logger.debug("1st read: {}".format(response))
+
         if response is None or len(response) < recv_len:
             self.flush_on_error()
-            print("Read timed out" + response)
-            return
+            target_logger.warning("Read timed out" + response)
+            return None
 
         response = bytearray(response.encode('latin-1'))
         if (self._frame_byte in response and len(response) == 3) or \
             (self._frame_byte in response[:-1] and len(response) != 3):
-            logging.warning(f"Unexpected frame byte in {response}")
+            target_logger.warning(f"Unexpected frame byte in {response}")
             self.flush_on_error()
-            return
+            return None
         next_frame = self._unstuff_data(response)
+        target_logger.debug("Unstuffed first read: {}".format(next_frame))
         if cmd and response[1] != cmd:
-            logging.warning(f"Unexpected start to command {response[1]}")
+            target_logger.warning(f"Unexpected start to command {response[1]}")
 
         l = response[2]
 
         if not pay_len:
             # user didn't specify, do second read based on sent length
+            target_logger.debug("Length not specified, reading {} bytes (plus CRC and frame byte) based on packet".format(l))
             x = self.read(l+2, timeout=timeout)
+            target_logger.debug("Second read: {}".format(x))
             if x is None:
-                print("Read timed out")
+                target_logger.warning("Read timed out")
                 self.flush_on_error()
-                return
+                return None
             if len(x) != (l + 2):
-                print(f"Didn't get all data {len(x)}, {l+2}")
-                print(bytearray(x.encode('latin-1')))
-                print(response)
+                target_logger.warning(f"Didn't get all data {len(x)}, {l+2}")
+                target_logger.warning(bytearray(x.encode('latin-1')))
+                target_logger.warning(response)
             response.extend(bytearray(x.encode('latin-1')))
             pay_len = len(response) - 5
 
             # need to do second unstuff since we read stuff after last one
             if self._frame_byte in response[3:-1]:
-                logging.warning(f"Unexpected frame byte in {response}")
+                target_logger.warning(f"Unexpected frame byte in {response}")
                 self.flush_on_error()
             resp_cpy = response[next_frame:]
+            target_logger.debug("Unstuffing {}".format(resp_cpy))
             self._unstuff_data(resp_cpy)
             response[next_frame:] = resp_cpy[:]
         if pay_len and l != pay_len:
-            logging.warning(f"Unexpected length {l}, {pay_len}")
+            target_logger.warning(f"Unexpected length {l}, {pay_len}")
             self.flush_on_error()
-            return
+            return None
 
         crc = self._calc_crc(response[1:-2]) #calc crc for all bytes except last (crc)
         if crc != response[-2]:
-            logging.warning(f"Invalid CRC. Expected {crc} got {response[-2]}")
+            target_logger.warning(f"Invalid CRC. Expected {crc} got {response[-2]}")
 
         if response[-1] != self._frame_byte:
-            logging.warning(f"Did not receive end of frame, got {response[-1]}")
+            target_logger.warning(f"Did not receive end of frame, got {response[-1]}")
+
+        target_logger.debug("Correct CRC {}".format(crc))
 
         if not flush_on_err is None:
             self._flush_on_err = tmp
+
+        target_logger.info("Received: {}".format(response))
 
         return response
 
@@ -498,6 +544,8 @@ class SimpleSerial2(TargetTemplate):
         """
         if num_char == 0:
             num_char = self.ser.inWaiting()
+        if timeout == 0:
+            timeout = 1000000000000
         return self.ser.read(num_char, timeout)
 
     def send_cmd(self, cmd, scmd, data):
@@ -519,8 +567,8 @@ class SimpleSerial2(TargetTemplate):
         buf.append(0x00)
         buf = self._stuff_data(buf)
         self.write(buf)
-        #print(bytearray(buf))
-        #print(bytearray(self._unstuff_data(buf)))
+        target_logger.debug("Sending: {}".format(bytearray(buf)))
+        target_logger.debug("Unstuffed data: {}".format(bytearray(self._unstuff_data(buf))))
 
     def reset_comms(self):
         """ Try to reset communication with the target and put it in
@@ -528,7 +576,6 @@ class SimpleSerial2(TargetTemplate):
 
         Sends 10 0x00 bytes, sleeps for 0.05 seconds, then flushes the serial buffer
         """
-        import time
         self.write([0x00]*2) # make sure target not processing a command
         time.sleep(0.05)
         self.flush()
@@ -610,3 +657,93 @@ class SimpleSerial2(TargetTemplate):
             The number of characters waiting to be sent to the target
         """
         return self.ser.inWaitingTX()
+
+class SimpleSerial2_CDC(SimpleSerial2):
+    """Target Option for Using SSV2 with a CDC Port
+
+    .. versionadded:: 5.5
+        Added CDC SSV2
+
+    Currently, the easiest way to use it is::
+
+        scope = cw.scope()
+        target = cw.target(scope, cw.targets.SimpleSerial2_CDC)
+
+    Upon connection, this target object will using USB info from
+    the scope object to figure out which serial port to use. You
+    can also specify the serial port manually using the dev_path
+    parameter. ::
+
+        target = cw.target(scope, cw.targets.SimpleSerial2_CDC, dev_path='COM5')
+
+    Other than that, usage is mostly the same as regular simpleserial
+    V2, except the read timeout is always fixed to 250ms.
+
+    It does offer better performance than the regular SSV2 object
+    if reading serial data back from the target.
+    """
+    def __init__(self):
+        super().__init__()
+        self.ser = None
+
+    def close(self):
+        self.ser.dis()
+
+    def con(self, scope, dev_path=None, interface=None, flush_on_err=True):
+        import serial # type: ignore
+        self._flush_on_err = flush_on_err
+        if dev_path is None:
+            ports = scope.get_serial_ports()
+            if len(ports) == 0:
+                raise OSError("No port associated with scope found, please specify via dev_path")
+            final_port = None
+            if len(ports) > 1:
+                for port in ports:
+                    if port['interface'] == interface:
+                        final_port = port
+                        break
+                if final_port is None:
+                    raise ValueError("Invalid interface {}, found {}".format(interface, ports))
+                dev_path = final_port['port']
+            else:
+                dev_path = ports[0]['port']
+        self.dev_path = dev_path
+        self.ser = serial.Serial(dev_path, baudrate=230400, timeout=0.25)
+
+
+    def write(self, data):
+        #data = bytearray(data)
+        self.ser.write(data)
+
+    def read(self, num_char = 0, timeout = 250):
+        self.ser.timeout = timeout/1000
+        if num_char == 0:
+            num_char = self.ser.in_waiting
+        return self.ser.read(num_char).decode('latin-1')
+
+    def in_waiting(self):
+        return self.ser.in_waiting
+
+    def flush(self):
+        self.ser.reset_input_buffer()
+
+    def in_waiting_tx(self):
+        return self.ser.out_waiting
+
+    @property
+    def baud(self):
+        """The current baud rate of the serial connection.
+
+        :Getter: Return the current baud rate.
+
+        :Setter: Set a new baud rate. Valid baud rates are any integer in the
+            range [500, 2000000].
+
+        Raises:
+            AttributeError: Target doesn't allow baud to be changed.
+        """
+        return self.ser.baud
+
+    @baud.setter
+    def baud(self, new_baud):
+        self.ser.baud = new_baud

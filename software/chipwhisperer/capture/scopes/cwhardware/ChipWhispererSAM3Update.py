@@ -22,30 +22,22 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+from ....hardware.naeusb.bootloader_sam3u import Samba
+from ....logging import *
+import time
+
+def get_at91_ports():
+    from serial.tools import list_ports # type: ignore
+
+    at91_ports = [port.device for port in list_ports.comports() if (port.vid, port.pid) == (0x03EB, 0x6124)]
+    return at91_ports
 
 
-import os.path
-try:
-    from chipwhisperer.common.utils import serialport as scan
-except ImportError:
-    class scan:
-        @staticmethod
-        def scan():
-            return ["pyserial not installed"]
-from chipwhisperer.common.utils import util
-from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
-
-#The firmware files, may still be useful
-
-from chipwhisperer.common.utils.util import camel_case_deprecated
-
-class SAMFWLoader(object):
+class SAMFWLoader:
     """ Object for easy reprogramming of ChipWhisperers
 
-    This will work with the Lite, the Pro, and
-    the Nano. If the ChipWhisperer has already been erased, pass None instead
-    of the scope object and skip the enter_bootloader() call. Will also work
-    for the CW305.
+    See https://chipwhisperer.readthedocs.io/en/latest/firmware.html
+    for information on how to update.
 
     Can autoprogram if the ChipWhisperer's firmware has not already been erased.
 
@@ -113,10 +105,10 @@ class SAMFWLoader(object):
 
          #. Using the firmware_path::
 
-                # the firmware file is included with chipwhisperer 
+                # the firmware file is included with chipwhisperer
                 # and is the .bin file from the FW build
-                # (ChipWhisperer Lite) chipwhisperer\hardware\capture\chipwhisperer-lite\sam3u_fw\SAM3U_VendorExample\Debug 
-                # directory. 
+                # (ChipWhisperer Lite) chipwhisperer\\hardware\\capture\\chipwhisperer-lite\\sam3u_fw\\SAM3U_VendorExample\\Debug
+                # directory.
                 programmer.program(<port>, <path to firmware file>)
 
          #. Using the hardware_type (recommended)::
@@ -135,6 +127,7 @@ class SAMFWLoader(object):
         self._hw_type = None
         if scope:
             self.usb = scope._getNAEUSB()
+            self.scope = scope
             self._hw_type = scope._getCWType()
         if logfunc is None:
             logfunc = lambda *args, **kwargs: None
@@ -171,29 +164,30 @@ class SAMFWLoader(object):
 
 
         else:
-            self.logfunc("""Entering bootloader mode...
-            Please wait until the ChipWhisperer shows up as a serial port. Once it has, call
-            the program(COMPORT, FWPATH) to program the ChipWhisperer
-
-            Default firmware can be found at chipwhisperer/hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin""")
+            self.logfunc("""Entering bootloader mode...""")
             self.usb.enterBootloader(True)
+            del self.scope
 
     def auto_program(self):
         """Erase and program firmware of ChipWhisperer
 
         Autodetects comport and hardware type.
         """
-        import time, serial.tools.list_ports
+        import serial.tools.list_ports # type: ignore
         if not self._hw_type:
             raise OSError("Unable to detect chipwhisperer hardware type")
         before = serial.tools.list_ports.comports()
-        before = [b.device for b in before]
-        time.sleep(0.5)
+        before = get_at91_ports()
+        # time.sleep(0.5)
         self.enter_bootloader(True)
-        time.sleep(1.5)
-        after = serial.tools.list_ports.comports()
-        after = [a.device for a in after]
-        candidate = list(set(before) ^ set(after))
+        time.sleep(0.5)
+        candidate = []
+        i = 0
+        while (candidate == []) and (i < 10):
+            after = get_at91_ports()
+            candidate = list((set(before) ^ set(after)) & set(after)) # make sure we only grab the serial ports from after
+            time.sleep(0.1)
+
         if len(candidate) == 0:
             raise OSError("Could not detect COMPORT. Continue using programmer.program()")
         com = candidate[0]
@@ -218,7 +212,9 @@ class SAMFWLoader(object):
             'cwlite',
             'cwnano',
             'cw305',
-            'cw1200'
+            'cw1200',
+            'cwbergen',
+            'cwhusky'
         ]
 
 
@@ -239,17 +235,23 @@ class SAMFWLoader(object):
                 raise TypeError(message.format(hardware_type, ', '.join(type_whitelist)))
             else:
                 if hardware_type == 'cwlite':
-                    from chipwhisperer.hardware.firmware.cwlite import getsome as getsome
+                    from chipwhisperer.hardware.firmware.cwlite import getsome
                     name = 'SAM3U_CW1173.bin'
                 elif hardware_type == 'cwnano':
-                    from chipwhisperer.hardware.firmware.cwnano import getsome as getsome
+                    from chipwhisperer.hardware.firmware.cwnano import getsome
                     name = 'SAM3U_CWNANO.bin'
                 elif hardware_type == 'cw305':
-                    from chipwhisperer.hardware.firmware.cw305 import getsome as getsome
+                    from chipwhisperer.hardware.firmware.cw305 import getsome
                     name = 'SAM3U_CW305.bin'
                 elif hardware_type == 'cw1200':
-                    from chipwhisperer.hardware.firmware.cw1200 import getsome as getsome
+                    from chipwhisperer.hardware.firmware.cw1200 import getsome
                     name = 'CW1200_SAM3UFW.bin'
+                elif hardware_type == 'cwbergen':
+                    from chipwhisperer.hardware.firmware.cwbergen import getsome
+                    name = 'CW310.bin'
+                elif hardware_type == 'cwhusky':
+                    from chipwhisperer.hardware.firmware.cwhusky import getsome
+                    name = 'Husky.bin'
                 self.logfunc('Loading {} firmware...'.format(hardware_type))
                 fw_data = getsome(name).read()
 
@@ -269,13 +271,24 @@ class SAMFWLoader(object):
         self.logfunc("Programmed!\nVerifying...")
         if sam.verify(fw_data):
             self.logfunc("Verify OK!")
-            sam.flash.setBootFlash(True)
-            self.logfunc("Bootloader disabled. Please power cycle device.")
+            sam.flash.setBootFlash(1)
+
+            i = 0
+            while not sam.flash.getBootFlash():
+                time.sleep(0.05)
+                i += 1
+                if i > 10:
+                    sam.ser.close()
+                    self.logfunc("Upgrade succeded")
+                    self.logfunc("Unable to set boot flash, please power cycle")
+                    return True
+
+            self.logfunc("Resetting...")
+            sam.reset()
+            self.logfunc("Upgrade successful")
             sam.ser.close()
             return True
         else:
             self.logfunc("Verify FAILED!")
             sam.ser.close()
             return False
-
-

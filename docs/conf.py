@@ -22,11 +22,11 @@ sys.path.insert(0, os.path.abspath('./../software'))
 # -- Project information -----------------------------------------------------
 
 project = 'ChipWhisperer'
-copyright = "2020, NewAE Technology Inc."
+copyright = "2021, NewAE Technology Inc."
 author = "NewAE Technology Inc."
 
 # The full version, including alpha/beta/rc tags
-release = '5.4.0'
+release = '5.6.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -37,9 +37,27 @@ release = '5.4.0'
 extensions = [
 	'sphinx.ext.napoleon',
 	'sphinx.ext.autodoc',
+    'sphinx_autodoc_typehints',
 	'sphinx.ext.todo',
-    'sphinxcontrib.images'
+    'sphinxcontrib.images',
+    # 'sphinx_autodoc_typehints'
 ]
+
+#napoleon settings
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+napoleon_include_init_with_doc = False
+napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
+napoleon_use_param = True
+napoleon_use_rtype = True
+napoleon_preprocess_types = False
+napoleon_type_aliases = None
+napoleon_attr_annotations = True
 
 # explicitly set the master document to index.rst
 master_doc = 'index'
@@ -168,6 +186,9 @@ def generate_contributing(app, config):
 
     print('Generating contributing.rst')
     pypandoc.convert_file('../contributing.md', 'rst', outputfile='contributing.rst')
+
+    print('Generating simpleserial.rst')
+    pypandoc.convert_file('../hardware/victims/firmware/simpleserial/README.md', 'rst', outputfile='simpleserial.rst')
             
 
 

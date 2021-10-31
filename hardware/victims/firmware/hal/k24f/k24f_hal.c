@@ -7,6 +7,7 @@
 #include "fsl_clock.h"
 #include "clock_config.h"
 #include "fsl_mmcau.h"
+#include "fsl_rnga.h"
 
 #include <stdint.h>
 
@@ -16,6 +17,8 @@ static uint32_t AES_KEY_SCH[44];
 void platform_init(void)
 {
      BOARD_BootClockRUN();
+     RNGA_Init(RNG);
+     RNGA_SetMode(RNG, kRNGA_ModeNormal);
 }
 
 void init_uart(void)
@@ -75,6 +78,13 @@ char getch(void)
 void putch(char c)
 {
      UART_WriteBlocking(UART1, &c, 1);
+}
+
+uint32_t get_rand(void)
+{
+     uint32_t value;
+     RNGA_GetRandomData(RNG, &value, sizeof(value));
+     return value;
 }
 
 //nothing needed?

@@ -27,8 +27,8 @@
 #include "mbedtls/rsa.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/oid.h"
-uint8_t sig_chunk_1(uint8_t *pt);
-uint8_t sig_chunk_2(uint8_t *pt);
+uint8_t sig_chunk_1(uint8_t *pt, uint8_t len);
+uint8_t sig_chunk_2(uint8_t *pt, uint8_t len);
 #define mbedtls_calloc calloc
 #define mbedtls_free free
 
@@ -335,10 +335,10 @@ void rsa_init(void)
  */
 uint8_t buf[128];
 uint8_t hash[32];
-#if SS_VER == SS_VER_2_0
+#if SS_VER == SS_VER_2_1
 uint8_t real_dec(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *pt)
 #else
-uint8_t real_dec(uint8_t *pt)
+uint8_t real_dec(uint8_t *pt, uint8_t len)
 #endif
 {
     int ret = 0;
@@ -352,7 +352,7 @@ uint8_t real_dec(uint8_t *pt)
     trigger_low();
 
     //send back first 48 bytes
-#if SS_VER == SS_VER_2_0
+#if SS_VER == SS_VER_2_1
     simpleserial_put('r', 128, buf);
 #else
     simpleserial_put('r', 48, buf);
@@ -360,20 +360,20 @@ uint8_t real_dec(uint8_t *pt)
     return ret;
 }
 
-uint8_t sig_chunk_1(uint8_t *pt)
+uint8_t sig_chunk_1(uint8_t *pt, uint8_t len)
 {
      simpleserial_put('r', 48, buf + 48);
      return 0x00;
 }
 
-uint8_t sig_chunk_2(uint8_t *pt)
+uint8_t sig_chunk_2(uint8_t *pt, uint8_t len)
 {
      simpleserial_put('r', 128 - 48 * 2, buf + 48*2);
      return 0x00;
 }
 
 
-uint8_t get_pt(uint8_t *pt)
+uint8_t get_pt(uint8_t *pt, uint8_t len)
 {
 }
 

@@ -35,51 +35,51 @@
 uint8_t pt[16];   	// Plaintext
 uint8_t ct[16];   	// Ciphertext
 
-void update_key(uint8_t* k)
+void update_key(uint8_t* k, uint8_t len)
 {
 	aes_indep_key(k);
 }
 
-void encrypt(uint8_t* pt)
+void encrypt(uint8_t* pt, uint8_t len)
 {
 	trigger_high();
 	static uint8_t input[16];
 	static uint8_t output[16];
-	
-	// Find input 
+
+	// Find input
 	switch(BLOCK_MODE)
 	{
 		case ECB:
 			for(int i = 0; i < 16; i++)
 				input[i] = pt[i];
 			break;
-			
+
 		case CBC:
 			for(int i = 0; i < 16; i++)
 				input[i] = pt[i] ^ ct[i];
 			break;
-			
+
 		case CFB:
 			for(int i = 0; i < 16; i++)
 				input[i] = ct[i];
 			break;
-			
+
 		case OFB:
 			for(int i = 0; i < 16; i++)
 				input[i] = output[i];
 			break;
-			
+
 		case CTR:
 			// Poor man's CTR: just a 1 byte counter (can encrypt 256 blocks)
 			input[0]++;
 			break;
 	}
-	
+
 	// Encrypt in place
 	for(int i = 0; i < 16; i++)
 		output[i] = input[i];
 	aes_indep_enc(output);
-	
+
 	// Use output to calculate new ciphertext
 	switch(BLOCK_MODE)
 	{
@@ -88,7 +88,7 @@ void encrypt(uint8_t* pt)
 			for(int i = 0; i < 16; i++)
 				ct[i] = output[i];
 			break;
-			
+
 		case CFB:
 		case OFB:
 		case CTR:
@@ -97,11 +97,11 @@ void encrypt(uint8_t* pt)
 			break;
 	}
 	trigger_low();
-	
+
 	simpleserial_put('r', 16, ct);
 }
 
-void no_op(uint8_t* x)
+void no_op(uint8_t* x, uint8_t len)
 {
 }
 
@@ -111,9 +111,9 @@ uint8_t tmp[KEY_LENGTH] = {DEFAULT_KEY};
 int main(void)
 {
     platform_init();
-	init_uart();	
+	init_uart();
 	trigger_setup();
-	
+
  	/* Uncomment this to get a HELLO message for debug */
 	/*
 	putch('h');
@@ -123,7 +123,7 @@ int main(void)
 	putch('o');
 	putch('\n');
 	*/
-			
+
 	//Initial key
 	aes_indep_init();
 	aes_indep_key(tmp);

@@ -1,12 +1,13 @@
 import logging
 try:
-    import scared
-    import estraces
+    import scared # type: ignore
+    import estraces # type: ignore
 except:
     raise ImportError("Could not import scared. Scared is currently required for this attack")
 
 import numpy as np
-from tqdm.autonotebook import trange
+from tqdm.autonotebook import trange # type: ignore
+from typing import List
 
 gal1=np.array(range(0,256), dtype='uint8')
 gal2=np.array((
@@ -115,8 +116,8 @@ def round_gen(plaintext, guesses, cmpgn, lut_in, lut_out, hd, gal):
         res[:,i,:] = np.bitwise_xor(new_pt, gal_lut[gal][scared.aes.sub_bytes(np.bitwise_xor(plaintext, guess))])
     return res
 
-leakage_cmpgns_col = []
-leakage_cmpgns_row = []
+# leakage_cmpgns_col : List[]= []
+# leakage_cmpgns_row = []
 
 class AttackMixColumns:
     """ Class for attacking after MixColumns using a variable vector plaintext
@@ -294,14 +295,14 @@ def test_lut():
     assert lut_mix_column_col[0][0] == 0
 
 
-if __name__ == "__main__":
-    #print(lut_mix_column_col)
-    for i in lut_mix_column_col:
-        print(i)
+# if __name__ == "__main__":
+#     #print(lut_mix_column_col)
+#     for i in lut_mix_column_col:
+#         print(i)
 
-        print("--------")
+#         print("--------")
 
-    for i in lut_mix_column_row:
-        print(i)
+#     for i in lut_mix_column_row:
+#         print(i)
 
-        print("--------")
+#         print("--------")

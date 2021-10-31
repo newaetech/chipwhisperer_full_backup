@@ -1,0 +1,880 @@
+Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2019.1 (win64) Build 2552052 Fri May 24 14:49:42 MDT 2019
+| Date         : Mon Mar 29 22:46:16 2021
+| Host         : qed running 64-bit major release  (build 9200)
+| Command      : report_methodology -file cw305_ecc_p256_pmul_top_methodology_drc_routed.rpt -pb cw305_ecc_p256_pmul_top_methodology_drc_routed.pb -rpx cw305_ecc_p256_pmul_top_methodology_drc_routed.rpx
+| Design       : cw305_ecc_p256_pmul_top
+| Device       : xc7a100tftg256-2
+| Speed File   : -2
+| Design State : Fully Routed
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Report Methodology
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+             Max violations: <unlimited>
+             Violations found: 148
++-----------+------------------+-------------------------------------------------+------------+
+| Rule      | Severity         | Description                                     | Violations |
++-----------+------------------+-------------------------------------------------+------------+
+| TIMING-6  | Critical Warning | No common primary clock between related clocks  | 2          |
+| TIMING-7  | Critical Warning | No common node between related clocks           | 2          |
+| LUTAR-1   | Warning          | LUT drives async reset alert                    | 6          |
+| PDRC-190  | Warning          | Suboptimally placed synchronized register chain | 11         |
+| SYNTH-4   | Warning          | Shallow depth for a dedicated block RAM         | 74         |
+| TIMING-9  | Warning          | Unknown CDC Logic                               | 1          |
+| TIMING-18 | Warning          | Missing input or output delay                   | 3          |
+| XDCH-2    | Warning          | Same min and max delay values on IO port        | 49         |
++-----------+------------------+-------------------------------------------------+------------+
+
+2. REPORT DETAILS
+-----------------
+TIMING-6#1 Critical Warning
+No common primary clock between related clocks  
+The clocks tio_clkin and usb_clk are related (timed together) but they have no common primary clock. The design could fail in hardware. To find a timing path between these clocks, run the following command: report_timing -from [get_clocks tio_clkin] -to [get_clocks usb_clk]
+Related violations: <none>
+
+TIMING-6#2 Critical Warning
+No common primary clock between related clocks  
+The clocks usb_clk and tio_clkin are related (timed together) but they have no common primary clock. The design could fail in hardware. To find a timing path between these clocks, run the following command: report_timing -from [get_clocks usb_clk] -to [get_clocks tio_clkin]
+Related violations: <none>
+
+TIMING-7#1 Critical Warning
+No common node between related clocks  
+The clocks tio_clkin and usb_clk are related (timed together) but they have no common node. The design could fail in hardware. To find a timing path between these clocks, run the following command: report_timing -from [get_clocks tio_clkin] -to [get_clocks usb_clk]
+Related violations: <none>
+
+TIMING-7#2 Critical Warning
+No common node between related clocks  
+The clocks usb_clk and tio_clkin are related (timed together) but they have no common node. The design could fail in hardware. To find a timing path between these clocks, run the following command: report_timing -from [get_clocks usb_clk] -to [get_clocks tio_clkin]
+Related violations: <none>
+
+LUTAR-1#1 Warning
+LUT drives async reset alert  
+LUT cell U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/subtractor_inst/add32_c_mask_i_1__3, with 2 or more inputs, drives asynchronous preset/clear pin(s) U_curve_mul_256_B/FSM_onehot_fsm_state_reg[0]/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[10]/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[11]/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[12]/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[13]/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[13]_rep/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[13]_rep__0/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[13]_rep__1/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[1]/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[1]_rep/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[1]_rep__0/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[2]/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[3]/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[5]/CLR, U_curve_mul_256_B/FSM_onehot_fsm_state_reg[6]/CLR (the first 15 of 569 listed). The LUT may glitch and trigger an unexpected reset, even if it is a properly timed path.
+Related violations: <none>
+
+LUTAR-1#2 Warning
+LUT drives async reset alert  
+LUT cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_RD/U_RD_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_rdfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gwrrd_rst_sync_stage[2].rrst_inst/ngwrdrst.grst.g7serrst.rd_rst_reg[2]_i_1, with 2 or more inputs, drives asynchronous preset/clear pin(s) dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_RD/U_RD_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_rdfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rd_rst_reg_reg[0]/PRE, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_RD/U_RD_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_rdfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rd_rst_reg_reg[1]/PRE, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_RD/U_RD_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_rdfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rd_rst_reg_reg[2]/PRE. The LUT may glitch and trigger an unexpected reset, even if it is a properly timed path.
+Related violations: <none>
+
+LUTAR-1#3 Warning
+LUT drives async reset alert  
+LUT cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_RD/U_RD_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_rdfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gwrrd_rst_sync_stage[2].wrst_inst/ngwrdrst.grst.g7serrst.wr_rst_reg[2]_i_1, with 2 or more inputs, drives asynchronous preset/clear pin(s) dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_RD/U_RD_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_rdfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.wr_rst_reg_reg[0]/PRE, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_RD/U_RD_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_rdfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.wr_rst_reg_reg[1]/PRE, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_RD/U_RD_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_rdfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.wr_rst_reg_reg[2]/PRE. The LUT may glitch and trigger an unexpected reset, even if it is a properly timed path.
+Related violations: <none>
+
+LUTAR-1#4 Warning
+LUT drives async reset alert  
+LUT cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_WR/U_WR_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_wrfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gwrrd_rst_sync_stage[2].rrst_inst/ngwrdrst.grst.g7serrst.rd_rst_reg[2]_i_1, with 2 or more inputs, drives asynchronous preset/clear pin(s) dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_WR/U_WR_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_wrfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rd_rst_reg_reg[0]/PRE, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_WR/U_WR_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_wrfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rd_rst_reg_reg[1]/PRE, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_WR/U_WR_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_wrfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rd_rst_reg_reg[2]/PRE. The LUT may glitch and trigger an unexpected reset, even if it is a properly timed path.
+Related violations: <none>
+
+LUTAR-1#5 Warning
+LUT drives async reset alert  
+LUT cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_WR/U_WR_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_wrfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gwrrd_rst_sync_stage[2].wrst_inst/ngwrdrst.grst.g7serrst.wr_rst_reg[2]_i_1, with 2 or more inputs, drives asynchronous preset/clear pin(s) dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_WR/U_WR_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_wrfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.wr_rst_reg_reg[0]/PRE, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_WR/U_WR_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_wrfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.wr_rst_reg_reg[1]/PRE, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD6_WR/U_WR_FIFO/SUBCORE_FIFO.xsdbm_v3_0_0_wrfifo_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.wr_rst_reg_reg[2]/PRE. The LUT may glitch and trigger an unexpected reset, even if it is a properly timed path.
+Related violations: <none>
+
+LUTAR-1#6 Warning
+LUT drives async reset alert  
+LUT cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.U_ICON/U_CMD/iTDO_i_1, with 2 or more inputs, drives asynchronous preset/clear pin(s) dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.U_ICON/U_CMD/iTARGET_reg[10]/CLR, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.U_ICON/U_CMD/iTARGET_reg[11]/CLR, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.U_ICON/U_CMD/iTARGET_reg[12]/CLR, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.U_ICON/U_CMD/iTARGET_reg[13]/CLR, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.U_ICON/U_CMD/iTARGET_reg[14]/CLR, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.U_ICON/U_CMD/iTARGET_reg[15]/CLR, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.U_ICON/U_CMD/iTARGET_reg[6]/CLR, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.U_ICON/U_CMD/iTARGET_reg[7]/CLR, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.U_ICON/U_CMD/iTARGET_reg[8]/CLR, dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.U_ICON/U_CMD/iTARGET_reg[9]/CLR. The LUT may glitch and trigger an unexpected reset, even if it is a properly timed path.
+Related violations: <none>
+
+PDRC-190#1 Warning
+Suboptimally placed synchronized register chain  
+The FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD2/stat_reg_reg[0] in site SLICE_X53Y87 is part of a synchronized register chain that is suboptimally placed as the load FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD2/stat_reg_1_reg[0] is not placed in the same (SLICE) site.
+Related violations: <none>
+
+PDRC-190#2 Warning
+Suboptimally placed synchronized register chain  
+The FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD2/stat_reg_reg[1] in site SLICE_X52Y86 is part of a synchronized register chain that is suboptimally placed as the load FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD2/stat_reg_1_reg[1] is not placed in the same (SLICE) site.
+Related violations: <none>
+
+PDRC-190#3 Warning
+Suboptimally placed synchronized register chain  
+The FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD2/stat_reg_reg[2] in site SLICE_X53Y85 is part of a synchronized register chain that is suboptimally placed as the load FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD2/stat_reg_1_reg[2] is not placed in the same (SLICE) site.
+Related violations: <none>
+
+PDRC-190#4 Warning
+Suboptimally placed synchronized register chain  
+The FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD2/stat_reg_reg[3] in site SLICE_X53Y83 is part of a synchronized register chain that is suboptimally placed as the load FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD2/stat_reg_1_reg[3] is not placed in the same (SLICE) site.
+Related violations: <none>
+
+PDRC-190#5 Warning
+Suboptimally placed synchronized register chain  
+The FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD3/stat_reg_reg[0] in site SLICE_X51Y82 is part of a synchronized register chain that is suboptimally placed as the load FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD3/stat_reg_1_reg[0] is not placed in the same (SLICE) site.
+Related violations: <none>
+
+PDRC-190#6 Warning
+Suboptimally placed synchronized register chain  
+The FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD3/stat_reg_reg[1] in site SLICE_X52Y82 is part of a synchronized register chain that is suboptimally placed as the load FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD3/stat_reg_1_reg[1] is not placed in the same (SLICE) site.
+Related violations: <none>
+
+PDRC-190#7 Warning
+Suboptimally placed synchronized register chain  
+The FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD3/stat_reg_reg[2] in site SLICE_X51Y84 is part of a synchronized register chain that is suboptimally placed as the load FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD3/stat_reg_1_reg[2] is not placed in the same (SLICE) site.
+Related violations: <none>
+
+PDRC-190#8 Warning
+Suboptimally placed synchronized register chain  
+The FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD3/stat_reg_reg[3] in site SLICE_X50Y82 is part of a synchronized register chain that is suboptimally placed as the load FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD3/stat_reg_1_reg[3] is not placed in the same (SLICE) site.
+Related violations: <none>
+
+PDRC-190#9 Warning
+Suboptimally placed synchronized register chain  
+The FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD7_STAT/stat_reg_reg[0] in site SLICE_X48Y82 is part of a synchronized register chain that is suboptimally placed as the load FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD7_STAT/stat_reg_1_reg[0] is not placed in the same (SLICE) site.
+Related violations: <none>
+
+PDRC-190#10 Warning
+Suboptimally placed synchronized register chain  
+The FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD7_STAT/stat_reg_reg[1] in site SLICE_X48Y84 is part of a synchronized register chain that is suboptimally placed as the load FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD7_STAT/stat_reg_1_reg[1] is not placed in the same (SLICE) site.
+Related violations: <none>
+
+PDRC-190#11 Warning
+Suboptimally placed synchronized register chain  
+The FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD7_STAT/stat_reg_reg[2] in site SLICE_X47Y84 is part of a synchronized register chain that is suboptimally placed as the load FDRE cell dbg_hub/inst/BSCANID.u_xsdbm_id/CORE_XSDB.UUT_MASTER/U_ICON_INTERFACE/U_CMD7_STAT/stat_reg_1_reg[2] is not placed in the same (SLICE) site.
+Related violations: <none>
+
+SYNTH-4#1 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/bram_rx/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#2 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/bram_ry/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#3 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/bram_rz/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#4 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/bram_rz1/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#5 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/bram_tx/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#6 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/bram_ty/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#7 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/bram_tz/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#8 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_r/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#9 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_r_dbl/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#10 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_r_plus_s/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#11 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_s/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#12 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_s_dbl/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#13 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_u/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#14 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_u_half/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#15 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_u_minus_v/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#16 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_u_minus_v_half/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#17 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_v/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#18 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_v_half/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#19 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_v_minus_u/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#20 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/invertor/buf_v_minus_u_half/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#21 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/bram_t1/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#22 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/bram_t2/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#23 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/bram_t3/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#24 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/bram_t4/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#25 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#26 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/bram_diff_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#27 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/bram_sum0_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#28 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/bram_sum1_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#29 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[1].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#30 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[2].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#31 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[3].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#32 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[4].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#33 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[5].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#34 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[6].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#35 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[7].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#36 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[8].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#37 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[9].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#38 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/bram_rx/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#39 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/bram_ry/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#40 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/bram_rz/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#41 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/bram_rz1/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#42 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/bram_tx/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#43 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/bram_ty/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#44 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/bram_tz/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#45 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_r/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#46 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_r_dbl/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#47 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_r_plus_s/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#48 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_s/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#49 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_s_dbl/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#50 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_u/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#51 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_u_half/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#52 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_u_minus_v/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#53 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_u_minus_v_half/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#54 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_v/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#55 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_v_half/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#56 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_v_minus_u/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#57 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/invertor/buf_v_minus_u_half/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#58 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/bram_t1/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#59 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/bram_t2/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#60 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/bram_t3/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#61 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/bram_t4/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#62 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (4 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#63 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/reduce_256_inst/bram_diff_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#64 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/reduce_256_inst/bram_sum0_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#65 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/reduce_256_inst/bram_sum1_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#66 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[1].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#67 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[2].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#68 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[3].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#69 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[4].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#70 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[5].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#71 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[6].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#72 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[7].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#73 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[8].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+SYNTH-4#74 Warning
+Shallow depth for a dedicated block RAM  
+The instance U_curve_mul_256_B/worker/modular_multiplier_inst/reduce_256_inst/gen_z_bram[9].bram_c_inst/bram_reg is implemented as block RAM but is better mapped onto distributed LUT RAM for the following reason: The depth (3 address bits) is shallow. Please use attribute (* ram_style = "distributed" *)  to instruct Vivado to infer distributed LUT RAM.
+Related violations: <none>
+
+TIMING-9#1 Warning
+Unknown CDC Logic  
+One or more asynchronous Clock Domain Crossing has been detected between 2 clock domains through a set_false_path or a set_clock_groups or set_max_delay -datapath_only constraint but no double-registers logic synchronizer has been found on the side of the capture clock. It is recommended to run report_cdc for a complete and detailed CDC coverage. Please consider using XPM_CDC to avoid Critical severities
+Related violations: <none>
+
+TIMING-18#1 Warning
+Missing input or output delay  
+An input delay is missing on k16_sel relative to clock(s) tio_clkin
+Related violations: <none>
+
+TIMING-18#2 Warning
+Missing input or output delay  
+An input delay is missing on pushbutton relative to clock(s) tio_clkin
+Related violations: <none>
+
+TIMING-18#3 Warning
+Missing input or output delay  
+An input delay is missing on usb_trigger relative to clock(s) tio_clkin
+Related violations: <none>
+
+XDCH-2#1 Warning
+Same min and max delay values on IO port  
+The same input delay of 0.000 ns has been defined on port 'j16_sel' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 0.000 [get_ports j16_sel]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 91)
+Related violations: <none>
+
+XDCH-2#2 Warning
+Same min and max delay values on IO port  
+The same input delay of 0.000 ns has been defined on port 'k16_sel' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 0.000 [get_ports k16_sel]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 92)
+Related violations: <none>
+
+XDCH-2#3 Warning
+Same min and max delay values on IO port  
+The same input delay of 0.500 ns has been defined on port 'pushbutton' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock [get_clocks usb_clk] -add_delay 0.500 [get_ports pushbutton]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 93)
+Related violations: <none>
+
+XDCH-2#4 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[0]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#5 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[10]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#6 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[11]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#7 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[12]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#8 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[13]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#9 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[14]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#10 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[15]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#11 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[16]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#12 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[17]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#13 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[18]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#14 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[19]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#15 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[1]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#16 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[20]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#17 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[2]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#18 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[3]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#19 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[4]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#20 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[5]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#21 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[6]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#22 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[7]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#23 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[8]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#24 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_addr[9]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_addr]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 84)
+Related violations: <none>
+
+XDCH-2#25 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_cen' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_cen]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 87)
+Related violations: <none>
+
+XDCH-2#26 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_data[0]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 85)
+Related violations: <none>
+
+XDCH-2#27 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_data[1]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 85)
+Related violations: <none>
+
+XDCH-2#28 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_data[2]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 85)
+Related violations: <none>
+
+XDCH-2#29 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_data[3]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 85)
+Related violations: <none>
+
+XDCH-2#30 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_data[4]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 85)
+Related violations: <none>
+
+XDCH-2#31 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_data[5]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 85)
+Related violations: <none>
+
+XDCH-2#32 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_data[6]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 85)
+Related violations: <none>
+
+XDCH-2#33 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_data[7]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 85)
+Related violations: <none>
+
+XDCH-2#34 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_rdn' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_rdn]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 88)
+Related violations: <none>
+
+XDCH-2#35 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_trigger' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_trigger]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 86)
+Related violations: <none>
+
+XDCH-2#36 Warning
+Same min and max delay values on IO port  
+The same input delay of 2.000 ns has been defined on port 'usb_wrn' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_input_delay -clock usb_clk -add_delay 2.000 [get_ports usb_wrn]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 89)
+Related violations: <none>
+
+XDCH-2#37 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'led1' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports led1]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 95)
+Related violations: <none>
+
+XDCH-2#38 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'led2' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports led2]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 96)
+Related violations: <none>
+
+XDCH-2#39 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'led3' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports led3]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 97)
+Related violations: <none>
+
+XDCH-2#40 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'tio_clkout' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports tio_clkout]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 100)
+Related violations: <none>
+
+XDCH-2#41 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'tio_trigger' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports tio_trigger]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 99)
+Related violations: <none>
+
+XDCH-2#42 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'usb_data[0]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 98)
+Related violations: <none>
+
+XDCH-2#43 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'usb_data[1]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 98)
+Related violations: <none>
+
+XDCH-2#44 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'usb_data[2]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 98)
+Related violations: <none>
+
+XDCH-2#45 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'usb_data[3]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 98)
+Related violations: <none>
+
+XDCH-2#46 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'usb_data[4]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 98)
+Related violations: <none>
+
+XDCH-2#47 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'usb_data[5]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 98)
+Related violations: <none>
+
+XDCH-2#48 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'usb_data[6]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 98)
+Related violations: <none>
+
+XDCH-2#49 Warning
+Same min and max delay values on IO port  
+The same output delay of 0.000 ns has been defined on port 'usb_data[7]' relative to clock usb_clk for both max and min. Make sure this reflects the design intent.
+set_output_delay -clock usb_clk 0.000 [get_ports usb_data]
+Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.srcs/constrs_1/imports/ecc_p256_pmul/cw305_main.xdc (Line: 98)
+Related violations: <none>
+
+

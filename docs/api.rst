@@ -181,6 +181,9 @@ OpenADC Scope
         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.tio_states
             :annotation: scope.io.tio_states
 
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings.cdc_settings
+            :annotation: scope.io.cdc_settings
+
 
     .. attribute:: trigger
         :annotation: scope.trigger
@@ -295,24 +298,91 @@ OpenADC Scope
 
     .. automethod:: chipwhisperer.capture.scopes.OpenADC.reload_fpga
 
-    .. method:: dis()
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.get_serial_ports
 
-        Disconnects the current scope object.
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.dis
 
-        :return: A boolean of whether the disconnect was successful.
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.con
 
-    .. method:: con(sn=None)
+    .. automethod:: chipwhisperer.capture.scopes.OpenADC.upgrade_firmware
 
-        Connects to attached chipwhisperer hardware (Lite or Pro)
+    .. autoattribute:: chipwhisperer.capture.scopes.OpenADC.sn
 
-        :param sn: The serial number of the attached device. Does not need to be
-            specified unless there are multiple device attached.
+    .. autoattribute:: chipwhisperer.capture.scopes.OpenADC.latest_fw
 
-        :return: A boolean of whether the connection was successful.
+    .. autoattribute:: chipwhisperer.capture.scopes.OpenADC.fw_version
 
-        :raises:
-            :OSError: Raised when there is issues connecting to the hardware, such as
-                user not having the correct device permissions to access the hardware.
+    .. autoattribute:: chipwhisperer.capture.scopes.OpenADC.fw_version_str
+
+    .. autoattribute:: chipwhisperer.capture.scopes.OpenADC.sam_build_date
+
+
+.. _api-scope-husky:
+
+ChipWhisperer_Husky
+===================
+
+.. Mostly the same as the CWPro, with some additional upgraded settings.
+
+.. It also includes a PLL class (which may be integrated into :code:`scope.clock`
+.. in the future). This class's default setup is to use 7.37MHz for the target
+.. clock and a x4 multiple for the ADC clock.
+
+.. Like with the FPGA based clock, the target clock on the Husky 
+.. can be set directly::
+
+..     scope.pll.target_freq = 7.37E6
+
+.. The ADC clock is set as a positive integer multiple of the target clock::
+
+..     scope.pll.adc_mul = 4
+
+.. In order to ensure a clean multiple for the ADC, the PLL
+.. settings for the whole chip are changed if :code:`adc_mul` or :code:`target_freq`
+.. are changed. This means the target clock will drop out for a short period if
+.. either are changed.
+
+.. The PLL can use either an onboard XTAL, or a clock output from the onboard FPGA.
+.. The FPGA setting can be set to use an external clock (HS1, usually). Otherwise,
+.. the XTAL setting is recommended as it results in much less jitter on the ADC::
+
+..     scope.pll.pll_src = 'xtal' # XTAL default
+..     scope.pll.pll_src = 'fpga' # FPGA 
+
+.. Like with the other FPGA ChipWhisperers, the phase of the clock can be changed.
+.. In this case, a positive unitless phase between 0 and 31 can be applied to either output clock::
+
+..     # +5 phase to adc
+..     scope.pll.adc_delay = 5
+
+..     # +5 to both - same as both = 0
+..     scope.pll.target_delay = 5
+
+.. Additional functionality, such as resetting the chip and resynchronizing the output clocks
+.. are available, but aren't typically needed.
+
+..     .. attribute:: pll
+
+..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.pll_src
+..             :annotation: scope.pll.pll_src
+
+..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.target_freq
+..             :annotation: scope.pll.target_freq
+
+..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.adc_mul
+..             :annotation: scope.pll.adc_mul
+
+..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.adc_freq
+..             :annotation: scope.pll.adc_freq
+
+..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.pll_locked
+..             :annotation: scope.pll.pll_locked
+
+..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.adc_delay
+..             :annotation: scope.pll.adc_delay
+
+..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.target_delay
+..             :annotation: scope.pll.target_delay
 
 
 .. _api-scope-cwnano:
@@ -361,6 +431,9 @@ ChipWhisperer Nano Scope
         .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.clkout
             :annotation: scope.io.clkout
 
+        .. autoattribute:: chipwhisperer.capture.scopes.cwnano.GPIOSettings.cdc_settings
+            :annotation: scope.io.cdc_settings
+
     .. attribute:: glitch
         :annotation: scope.glitch
 
@@ -378,25 +451,23 @@ ChipWhisperer Nano Scope
 
     .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.get_last_trace
 
-    .. method:: dis()
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.get_serial_ports
 
-        Disconnects the current scope object.
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.con
 
-        :return: A boolean of whether the disconnect was successful.
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.dis
 
-    .. method:: con(sn=None)
+    .. automethod:: chipwhisperer.capture.scopes.cwnano.CWNano.upgrade_firmware
 
-        Connects to attached chipwhisperer hardware (ChipWhisperer Nano)
+    .. autoattribute:: chipwhisperer.capture.scopes.cwnano.CWNano.sn
 
-        :param sn: The serial number of the attached device. Does not need to be
-            specified unless there are multiple device attached.
+    .. autoattribute:: chipwhisperer.capture.scopes.cwnano.CWNano.latest_fw
 
-        :return: A boolean of whether the connection was successful.
+    .. autoattribute:: chipwhisperer.capture.scopes.cwnano.CWNano.fw_version
 
-        :raises:
-            :OSError: Raised when there is issues connecting to the hardware, such as
-                user not having the correct device permissions to access the hardware.
+    .. autoattribute:: chipwhisperer.capture.scopes.cwnano.CWNano.fw_version_str
 
+    .. autoattribute:: chipwhisperer.capture.scopes.cwnano.CWNano.sam_build_date
 
 .. _api-scope-update:
 
@@ -478,6 +549,8 @@ Simple Serial Target
 
     .. automethod:: con
 
+    .. automethod:: get_simpleserial_commands
+
     .. autoattribute:: baud
 
     .. autoattribute:: output_len
@@ -523,7 +596,14 @@ Simple Serial V2 Target
 
     .. automethod:: con
 
+    .. automethod:: get_simpleserial_commands
+
     .. autoattribute:: baud
+
+Simple Serial V2 CDC Target
+===========================
+
+.. autoclass:: chipwhisperer.targets.SimpleSerial2_CDC
 
 .. _api-target-cw305:
 
@@ -539,6 +619,10 @@ CW305 FPGA Target
     .. automethod:: spi_mode
 
     .. automethod:: _con
+
+    .. automethod:: fpga_write
+
+    .. automethod:: fpga_read
 
     .. autoattribute:: clksleeptime
 
@@ -609,6 +693,28 @@ CW305 SAM3U IO Control
     .. automethod:: spi1_transfer
 
 .. _api-target-program:
+
+CW310
+=====
+
+.. autoclass:: chipwhisperer.capture.targets.CW310.CW310
+
+    .. automethod:: usb_set_voltage
+
+    .. automethod:: usb_set_current
+
+    .. automethod:: usb_negotiate_pdo
+
+    .. automethod:: gpio_mode
+
+    .. automethod:: _con
+
+    .. automethod:: fpga_write
+
+    .. automethod:: fpga_read
+
+    .. autoattribute:: chipwhisperer.capture.targets.CW310.CW310.cdc_settings
+        :annotation: target.cdc_settings
 
 Program
 =======

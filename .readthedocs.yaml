@@ -7,17 +7,17 @@ sphinx:
 
 build:
   image: stable
+  apt_packages:
+    - libusb-1.0.0-dev
 
 python:
-  version: 3.6
+  version: 3.7
   install:
     - requirements: software/requirements.txt
-    - requirements: jupyter/requirements.txt
     - method: setuptools
       path: .
 
 submodules:
   include:
     - tutorials
-    - jupyter
   recursive: true

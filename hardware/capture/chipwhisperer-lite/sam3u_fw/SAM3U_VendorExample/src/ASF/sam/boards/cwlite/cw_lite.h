@@ -82,6 +82,9 @@
  * - \ref cortexm3
  */
 
+#define CW_PROG_XMEGA
+#define CW_PROG_AVR
+
 /** Name of the board */
 #define BOARD_NAME "ChipWhisperer-Lite"
 /** Board definition */
@@ -93,6 +96,8 @@
 
 /*----------------------------------------------------------------------------*/
 //! Pins ADC
+
+
 #define PINS_ADC12B_TRIG  PIO_PA2_IDX
 #define PINS_ADC12B_TRIG_FLAG  (PIO_PERIPH_B | PIO_DEFAULT)
 #define PINS_ADC_TRIG  PIO_PA17_IDX
@@ -305,6 +310,8 @@
 */
 
 //! USART0 (Target Communication)
+
+#define CW_USE_USART0
 #define USART_TARGET USART0
 
 #define PIN_USART0_RXD	         (PIO_PA19_IDX)

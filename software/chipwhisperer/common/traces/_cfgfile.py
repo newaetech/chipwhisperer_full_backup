@@ -30,7 +30,7 @@ import os
 #import pstats, cProfile #For profiling support (not 100% needed)
 
 try:
-    from configobj import ConfigObj  # import the module
+    from configobj import ConfigObj  # type: ignore
 except ImportError:
     print("ERROR: configobj (https://pypi.python.org/pypi/configobj/) is required for this program")
     sys.exit()

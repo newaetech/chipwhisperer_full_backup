@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2021, NewAE Technology Inc
 # All rights reserved.
 #
 # Authors: Colin O'Flynn
@@ -24,12 +24,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
 import time
 from collections import OrderedDict
-from functools import partial
 from . import ChipWhispererGlitch
-from chipwhisperer.common.utils import util
+from ....common.utils import util
+
+from ....logging import *
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
@@ -97,33 +97,35 @@ class GPIOSettings(util.DisableNewAttr):
         return tuple(((bitmask >> i) & 0x01) for i in range(4))
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['tio1'] = self.tio1
-        dict['tio2'] = self.tio2
-        dict['tio3'] = self.tio3
-        dict['tio4'] = self.tio4
+        rtn = OrderedDict()
+        rtn['tio1'] = self.tio1
+        rtn['tio2'] = self.tio2
+        rtn['tio3'] = self.tio3
+        rtn['tio4'] = self.tio4
 
-        dict['pdid'] = self.pdid
-        dict['pdic'] = self.pdic
-        dict['nrst'] = self.nrst
+        rtn['pdid'] = self.pdid
+        rtn['pdic'] = self.pdic
+        rtn['nrst'] = self.nrst
 
-        dict['glitch_hp'] = self.glitch_hp
-        dict['glitch_lp'] = self.glitch_lp
+        rtn['glitch_hp'] = self.glitch_hp
+        rtn['glitch_lp'] = self.glitch_lp
 
-        dict['extclk_src'] = self.extclk_src
-        dict['hs2'] = self.hs2
+        rtn['extclk_src'] = self.extclk_src
+        rtn['hs2'] = self.hs2
 
-        dict['target_pwr'] = self.target_pwr
+        rtn['target_pwr'] = self.target_pwr
 
-        dict['tio_states'] = self.tio_states
+        rtn['tio_states'] = self.tio_states
 
-        return dict
+        rtn['cdc_settings'] = self.cdc_settings
+
+        return rtn
 
     @property
     def tio_states(self):
         """
         Reads the logic level of the TIO pins (1-4) and
-        returns them as a tuple of the logic levels. 
+        returns them as a tuple of the logic levels.
 
         .. warning:: ChipWhisperer firmware before release 5.2.1 does not support
             reading the TIO pins!
@@ -188,6 +190,32 @@ class GPIOSettings(util.DisableNewAttr):
                 return _tio_api_alias[tio_setting]
         except KeyError:
             return "?"
+
+    @property
+    def cdc_settings(self):
+        """Check or set whether USART settings can be changed via the USB CDC connection
+
+        i.e. whether you can change USART settings (baud rate, 8n1) via a serial client like PuTTY
+
+        :getter: An array of length four for four possible CDC serial ports (though only one is used)
+
+        :setter: Can set either via an integer (which sets both ports) or an array of length 4 (which sets each port)
+
+        Returns None if using firmware before the CDC port was added
+        """
+        rawver = self.cwe.oa.serial.readFwVersion()
+        ver = '{}.{}'.format(rawver[0], rawver[1])
+        if ver < '0.30':
+            return None
+        return self.cwe.oa.serial.get_cdc_settings()
+
+    @cdc_settings.setter
+    def cdc_settings(self, port):
+        rawver = self.cwe.oa.serial.readFwVersion()
+        ver = '{}.{}'.format(rawver[0], rawver[1])
+        if ver < '0.30':
+            return None
+        return self.cwe.oa.serial.set_cdc_settings(port)
 
     @property
     def tio1(self):
@@ -333,8 +361,8 @@ class GPIOSettings(util.DisableNewAttr):
 
         try:
             iomode = self.TIO_VALID[pinnum][mode]
-        except KeyError:
-            raise ValueError("Invalid IO-Mode for GPIO%d: %s. Valid modes: %s" % (pinnum+1, mode, valid_modes))
+        except KeyError as e:
+            raise ValueError("Invalid IO-Mode for GPIO%d: %s. Valid modes: %s" % (pinnum+1, mode, valid_modes)) from e
 
         self.cwe.setTargetIOMode(iomode, pinnum)
 
@@ -468,6 +496,10 @@ class GPIOSettings(util.DisableNewAttr):
         """
         return self.cwe.getTargetPowerState()
 
+    @target_pwr.setter
+    def target_pwr(self, power):
+        self.cwe.setTargetPowerState(power)
+
     @property
     def glitch_hp(self):
         """Whether the high-power crowbar MOSFET is enabled.
@@ -508,9 +540,6 @@ class GPIOSettings(util.DisableNewAttr):
     def glitch_lp(self, active):
         self.cwe.setTargetGlitchOut('B', active)
 
-    @target_pwr.setter
-    def target_pwr(self, power):
-        self.cwe.setTargetPowerState(power)
 
     def reset_target(self, initial_state=1, reset_state=0, reset_delay=0.01, postreset_delay=0.01):
         raise NotImplementedError()
@@ -548,9 +577,9 @@ class TriggerSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['triggers'] = self.triggers
-        dict['module'] = self.module
+        rtn = OrderedDict()
+        rtn['triggers'] = self.triggers
+        rtn['module'] = self.module
 
         return dict
 
@@ -608,7 +637,7 @@ class TriggerSettings(util.DisableNewAttr):
         if mode == self.cwe.MODE_OR: modes = "OR"
         elif mode ==  self.cwe.MODE_AND: modes = "AND"
         elif mode == self.cwe.MODE_NAND: modes = "NAND"
-        else: raise IOError("Unknown mode reported by hardware: %02x", mode)
+        else: raise IOError("Unknown mode reported by hardware: %02x" % mode)
 
         if pins & self.cwe.PIN_RTIO1:
             tstring.append("tio1")
@@ -629,7 +658,7 @@ class TriggerSettings(util.DisableNewAttr):
         if pins & self.cwe.PIN_FPA:
             tstring.append("sma")
             tstring.append(modes)
-            
+
         if pins & self.cwe.PIN_TNRST:
             tstring.append("nrst")
             tstring.append(modes)
@@ -653,7 +682,7 @@ class TriggerSettings(util.DisableNewAttr):
         triggerset = set(triggers)
         numcombined = int('and' in triggerset) + int('or' in triggerset) + int('nand' in triggerset)
         if numcombined > 1:
-           raise ValueError("Combining multiple triggers requires same logic between each combination", s)
+            raise ValueError("Combining multiple triggers requires same logic between each combination", s)
 
         if numcombined == 0 and len(triggers) > 1:
             raise ValueError("Detected more than 1 trigger pin specified, but no combination logic.", s)
@@ -707,22 +736,13 @@ class TriggerSettings(util.DisableNewAttr):
         """
         return "basic"
 
-    def _test(self):
-        #Self-test for development
-        self.triggers("tio1 OR tio2 AND tio3")
-        self.triggers("tio1 OR tio2")
-        self.triggers("tio1")
-        self.triggers("tio4 AND tio2 AND tio1")
-        self.triggers("tio1 NAND tio3")
-        self.triggers("tio1 NAND tio2 NAND")
-        self.triggers("tio1 AND tio1")
-
 class ProTrigger(TriggerSettings):
     def _dict_repr(self):
-        dict = super()._dict_repr()
-        dict['module'] = self.module
-        dict['aux_out'] = self.aux_out
-        return dict
+        rtn = {}
+        rtn = rtn.update(super()._dict_repr())
+        rtn['module'] = self.module
+        rtn['aux_out'] = self.aux_out
+        return rtn
 
     @property
     def module(self):
@@ -804,6 +824,7 @@ class ChipWhispererExtra(object):
         #self.cwADV = CWAdvTrigger()
 
         self.cwEXTRA = CWExtraSettings(oa, cwtype)
+        #if cwtype == "cwhusky":
         self.enableGlitch = True
         if self.enableGlitch:
             self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(cwtype, scope, oa)
@@ -823,7 +844,7 @@ class ChipWhispererExtra(object):
     #    self.cwADV.setIOPattern(strToPattern("\n"), clkdiv=clkdivider)
 
 
-class CWExtraSettings(object):
+class CWExtraSettings:
     PIN_FPA = 0x01
     PIN_TNRST = 0x02
     PIN_RTIO1 = 0x04
@@ -874,6 +895,11 @@ class CWExtraSettings(object):
             hasGlitchOut=True
             hasPLL=False
             hasAux=True
+        elif cwtype == "cwhusky":
+            hasFPAFPB=False
+            hasGlitchOut=False # TODO-temporary
+            hasPLL=False
+            hasAux=False
         else:
             raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
 
@@ -1352,7 +1378,7 @@ class CWPLLDriver(object):
         if bnew != bold:
             self.writeByte(11, bnew)
 
-        logging.debug('%x, %x' % (bnew, self.readByte(11)))
+        scope_logger.debug('%x, %x' % (bnew, self.readByte(11)))
 
     def readByte(self, regaddr, slaveaddr=0x69):
         d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])

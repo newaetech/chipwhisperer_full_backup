@@ -1,3 +1,4 @@
+# pylint skip-file
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -23,18 +24,17 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
 import time
 import re
 import math
-import pkg_resources
+import pkg_resources # type: ignore
 import chipwhisperer as cw
-from chipwhisperer.common.utils import util
-from chipwhisperer.common.traces import Trace
-from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
-from chipwhisperer.hardware.naeusb.fpga import FPGA
+from ...common.utils import util
+from ...hardware.naeusb.naeusb import NAEUSB
+from ...hardware.naeusb.fpga import FPGA
+from ...logging import *
 
-class TraceWhisperer():
+class TraceWhisperer:
 
     """ Trace interface object.
 
@@ -113,9 +113,9 @@ class TraceWhisperer():
             # check the FW version here:
             fw_latest = [1,1]
             if self._naeusb.readFwVersion()[0] < fw_latest[0]:
-               logging.warning('Your PhyWhisperer firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
-                               '. Suggested to update firmware, as you may experience errors.')
- 
+                tracewhisperer_logger.warning('Your PhyWhisperer firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
+                                     '. Suggested to update firmware, as you may experience errors.')
+
             self._fpga = FPGA(self._naeusb)
             if not self._fpga.isFPGAProgrammed() or force_bitfile:
                 if not bs:
@@ -188,7 +188,7 @@ class TraceWhisperer():
                             self.verilog_define_matches += 1
                             setattr(self, match.group(1), int(match.group(2),10) + block_offset)
                         else:
-                            logging.warning("Couldn't parse line: %s", define)
+                            tracewhisperer_logger.warning("Couldn't parse line: %s", define)
             defines.close()
         # make sure everything is cool:
         assert self.verilog_define_matches == self.expected_verilog_defines, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected %d, got %d" % (defines_file, self.expected_verilog_defines, self.verilog_define_matches)
@@ -219,9 +219,9 @@ class TraceWhisperer():
             self._scope.clock.clkgen_freq = new_target_clock
             self._ss.baud = int(self._base_baud * (new_target_clock/self._base_target_clock))
             self.swo_target_clock_ratio = self._usb_clock / new_target_clock
-            logging.info("Ensure target is in SWD mode, e.g. using jtag_to_swd().")
+            tracewhisperer_logger.info("Ensure target is in SWD mode, e.g. using jtag_to_swd().")
         else:
-            logging.error('Invalid mode %s: specify "trace" or "swo"', mode)
+            tracewhisperer_logger.error('Invalid mode %s: specify "trace" or "swo"', mode)
 
 
     def set_capture_mode(self, mode, counts=0):
@@ -242,14 +242,14 @@ class TraceWhisperer():
             self.fpga_write(self.REG_COUNT_WRITES, [1])
             self.fpga_write(self.REG_CAPTURE_LEN, int.to_bytes(counts, length=4, byteorder='little'))
         else:
-            logging.error('Invalid mode %s')
+            tracewhisperer_logger.error('Invalid mode %s')
 
 
     def set_board_rev(self, rev):
-        """For development only - the rev3 board has different pin assignments. 
+        """For development only - the rev3 board has different pin assignments.
         The board revision must be set correctly both here and in the FPGA. This convenience
         function ensures both are set properly.
-        Args: 
+        Args:
             rev (int): 3 or 4
         """
         assert rev in [3,4]
@@ -280,7 +280,7 @@ class TraceWhisperer():
 
     def _send_tms_byte(self, data):
         """Bit-bang 8 bits of data on TMS/TCK (LSB first).
-        Args: 
+        Args:
             data (int): 8 bits data to send.
         """
         for i in range(8):
@@ -330,7 +330,7 @@ class TraceWhisperer():
             if printresult:
                 print(self._ss.read().split('\n')[0])
         else:
-            logging.error('Register %s does not exist.', reg)
+            tracewhisperer_logger.error('Register %s does not exist.', reg)
 
 
     def get_reg(self, reg):
@@ -344,7 +344,7 @@ class TraceWhisperer():
             time.sleep(0.1)
             return self._ss.read().split('\n')[0][1:]
         else:
-            logging.error('Register %s does not exist.', reg)
+            tracewhisperer_logger.error('Register %s does not exist.', reg)
 
 
     def set_pattern_match(self, index, pattern, mask=[0xff]*8):
@@ -429,7 +429,7 @@ class TraceWhisperer():
 
     def check_fifo_errors(self, underflow=0, overflow=0):
         """Check whether an underflow or overflow occured on the capture FIFO.
-        
+
         Args:
             underflow (int, optional): expected status, 0 or 1
             overflow (int, optional): expected status, 0 or 1
@@ -479,7 +479,7 @@ class TraceWhisperer():
         for i in nameb:
             names += hex(i)[2:]
         return bytearray.fromhex(names).decode()
-        
+
 
     def test_itm(self, port=1):
         """Print test string via ITM using specified port number.
@@ -495,7 +495,7 @@ class TraceWhisperer():
 
     def read_capture_data(self):
         """Read captured trace data.
-        
+
         Returns: List of captured entries. Each list element is itself a 3-element list,
         containing the 3 bytes that make up a capture entry. Can be parsed by get_rule_match_times()
         or get_raw_trace_packets(). See defines_trace.v for definition of the FIFO
@@ -727,5 +727,3 @@ class TraceWhisperer():
         for frame in raw:
             binout.write(bytes(frame[1]))
         binout.close()
-
-

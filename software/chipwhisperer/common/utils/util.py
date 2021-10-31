@@ -28,16 +28,8 @@ import collections
 import os.path
 import shutil
 import weakref
-import numpy as np
 from functools import wraps
 import warnings
-
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    DictType = OrderedDict
-except ImportError:
-    DictType = dict
 
 
 def getRootDir():
@@ -146,6 +138,7 @@ def binarylist2bytearray(bitlist, nrBits=8):
 
 
 def bytearray2binarylist(bytes, nrBits=8):
+    import numpy as np
     init = np.array([], dtype=bool)
     for byte in bytes:
         init = np.concatenate((init, np.unpackbits(np.uint8(byte))[8 - nrBits:]), axis=0)
@@ -307,19 +300,6 @@ class Command:
     def __call__(self, *args, **kwargs):
         return self.callback(*self.args, **self.kwargs)
 
-if __name__ == '__main__':
-    class test(object):
-        def m(self):
-            print("here")
-
-        def __del__(self):
-            print("deleted")
-
-    x = test()
-    y = x.m
-    x = None
-    y()
-
 class DisableNewAttr(object):
     """Provides an ability to disable setting new attributes in a class, useful to prevent typos.
 
@@ -369,7 +349,7 @@ def dict_to_str(input_dict, indent=""):
     # Build string
     ret = ""
     for n in input_dict:
-        if type(input_dict[n]) in (dict, OrderedDict):
+        if isinstance(input_dict[n], dict):
             ret += indent + str(n) + ' = '
             ret += '\n' + dict_to_str(input_dict[n], indent+"    ")
         else:
@@ -379,7 +359,7 @@ def dict_to_str(input_dict, indent=""):
     return ret
 
 
-class bytearray(bytearray):
+class bytearray(bytearray): # type: ignore
     """bytearray with better repr and str methods.
 
     Overwrites the __repr__ and __str__ methods of the builtin bytearray class
@@ -479,7 +459,7 @@ def camel_case_deprecated(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        warnings.warn('{} function is deprecated use {} instead.'.format(cc_func, func.__name__))
+        warnings.warn('{} function is deprecated use {} instead. This function will be removed in ChipWhisperer 5.7.0'.format(cc_func, func.__name__))
         return func(*args, *kwargs)
 
     wrapper.__name__ = underscore_to_camelcase(func.__name__)
@@ -487,40 +467,32 @@ def camel_case_deprecated(func):
     return wrapper
 
 
-def get_cw_type(sn=None):
-    """ Gets the scope type of the connected ChipWhisperer
 
+def get_cw_type(sn=None, idProduct=None, hw_location=None, **kwargs) -> type:
+    """ Gets the scope type of the connected ChipWhisperer
     If multiple connected, sn must be specified
     """
-    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
+    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, NAEUSB_Backend
     from chipwhisperer.capture import scopes
-    possible_ids = [0xace0, 0xace2, 0xace3]
+    # from ...capture.scopes import ScopeTypes
+    # todo: pyusb as well
 
-    cwusb = NAEUSB()
-    possible_sn = cwusb.get_possible_devices(idProduct=possible_ids)
-    name = ""
-    if len(possible_sn) == 0:
-        raise OSError("USB Device not found. Did you connect it first?")
-
-    if (len(possible_sn) > 1):
-        if sn is None:
-            serial_numbers = []
-            for d in possible_sn:
-                serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
-            raise Warning("Multiple chipwhisperers connected, but device and/or serial number not specified.\nDevices:\n{}".format(serial_numbers))
-        else:
-            for d in possible_sn:
-                if d['sn'] == sn:
-                    name = d['product']
+    if idProduct:
+        possible_ids = [idProduct]
     else:
-        name = possible_sn[0]['product']
+        possible_ids = [0xace0, 0xace2, 0xace3, 0xace5]
 
-    #print(name)
-    if (name == "ChipWhisperer Lite") or (name == "ChipWhisperer CW1200"):
+    cwusb = NAEUSB_Backend()
+    device = cwusb.find(serial_number=sn, idProduct=possible_ids, hw_location=hw_location)
+    name = device.getProduct()
+    cwusb.usb_ctx.close()
+
+    if (name == "ChipWhisperer Lite") or (name == "ChipWhisperer CW1200") or (name == "ChipWhisperer Husky"):
         return scopes.OpenADC
     elif name == "ChipWhisperer Nano":
         return scopes.CWNano
-
+    else:
+        raise OSError("Got chipwhisperer with unknown name {} (ID = {})".format(name, possible_ids))
 import time
 def better_delay(ms):
     t = time.perf_counter() + ms / 1000

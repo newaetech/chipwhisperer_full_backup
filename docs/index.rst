@@ -91,3 +91,7 @@ Here is more information about changes, and contribution.
 
     contributing
     Change Log <changes.rst>
+    SimpleSerial <simpleserial.rst>
+    Updating Firmware <firmware.rst>
+    Logging <logging.rst>
+    Drivers <drivers.rst>

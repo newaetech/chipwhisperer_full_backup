@@ -40,8 +40,8 @@ def getHW(byte):
 class ModelsBase(Parameterized):
     _name = 'Crypto Model'
 
-    hwModels = util.DictType()
-    hwModels_toStr = []
+    hwModels = {} # type: ignore
+    hwModels_toStr = [] # type: ignore
 
     ##Generate this table with:
     #HW = []

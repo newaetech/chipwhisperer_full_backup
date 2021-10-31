@@ -1,7 +1,76 @@
-???
- New Features:
-    * Segmented memory mode allows super-fast captures (>2000 traces/second) on short operations 
-    * API to reload bitstream on ChipWhisperer for debug
+V5.6.1
+  New Features:
+    * ChipWhisperer-Husky and CW310 Bergen Board support
+    * Add `scope.fw_version_str()`
+    * Switch from pyusb to libusb1 - deprecates libusb0.dll on Windows
+    * Add `as_int` parameter to `scope.get_last_trace()` to return traces as integers
+    * Add driver detection for Windows
+    * Add force and bitstream option to `cw.scope()`
+    * Improve 50-naeusb.rules
+    * Add SimpleSerial 2.1 and deprecate SimpleSerial 2.0 
+    * Add ChipWhisperer version check. 
+    * Add SAM3U firmware feature list and checks
+    * Add common interface for USB scopes/targets
+    * Add ability to connect to scope via hardware location
+
+  Fixes:
+    * Fix SS_VER_1_X and XMega simplserial-rsa
+    * Fix SSV2 unstuff data for >30 zeros
+    * Fix AVR lock bits read
+    * Fix nano connect status
+    * Explicit memory ordering in bootloader-glitch
+    * Cast analyzer CPA calculations to long double to avoid precision issues in large projects
+    * Fix Pro screen getting stuck when capturing
+    * Checkout master branch for ChipWhisperer-Jupyter in installer
+    * Fix timeout length on simpleserial reads
+    * More versionadded/versionchanged for docs
+    * Fix FPGA target.dis()
+
+  Firmware:
+    * CWLite: 0.52.0
+    * CWNano: 0.52.0
+    * CWPro : 1.52.0
+    * CW305 : 0.52.0
+    * CWHusky: 1.0.0
+    * CWBergen: 1.0.0
+    * New Features:
+      * Lite/Pro/Husky external FPGA programming
+      * Variable FPGA programming speed
+      * Firmware now uses generic naeusb firmware
+      * New firmware build date command `sam_build_date()` (scope/target)
+    * Fixes:
+      * CDC settings now works with older CW versions again (pipe error fixed)
+      * XMEGA/AVR programming works on Lite/Pro again (only issue with Black Hat 2021 firmware)
+
+
+
+V5.5
+  New Features:
+    * Re-add SAKURA-G support
+    * **TraceWhisperer cleanup + convenience functions**
+    * ChipWhisperer firmware `auto_program()`
+    * **Add segmented capture to ChipWhisperer, allowing for super fast capture**
+    * **Add simpleserial-ecc**
+    * **New demo: uECC attack**
+    * **New ChipWhisperer Firmware: CDC serial ports for UART communication (i.e. communication with `"COMX"`/`"/dev/ttyACMX"`**
+    * **New target class: SimpleSerial2_CDC with automatic serial port detection (no need to figure out `"COMX"`/`"/dev/ttyACMX"`)**
+    * Add simpleserial documentation (thanks @coastalwhite !)
+    * Add new simpleserial commands to get available commands
+    * Add maskedAES for more targets (thanks @jmichelp !)
+    * Add better method for loading new CW bitstream
+    * Add avr-gcc and arm-gcc to installer (optional)
+
+  Fixes:
+    * Add CWPro aux_out
+    * Update ESP32 build for newer build system version
+    * Reset Xmega if programming fails (should prevent programming from immediately failing next call)
+    * Setup script improvements
+    * Fix outdated 99-rules.newae
+    * Fix voltage range on CW305 VCCINT
+    * Fix STM32F4 HW floating point (thanks @mcsmonk !)
+    * Fix Nano crash when >128 bytes read from USART
+    * VM now supports uploading firmware to chipwhisperer
+    * Fix pipe error caused by interrupting USB communications
 
 V5.4
   New Features:

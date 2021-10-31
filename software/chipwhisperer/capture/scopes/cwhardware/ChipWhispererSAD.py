@@ -24,14 +24,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import logging
-import struct
-import base64
-import copy
-
 import numpy as np
 from collections import OrderedDict
-from chipwhisperer.common.utils import util
+from ....common.utils import util
+
+from ....logging import *
 
 sadcfgaddr  = 53
 saddataaddr = 54
@@ -39,7 +36,7 @@ CODE_READ   = 0x80
 CODE_WRITE  = 0xC0
 
 
-class ChipWhispererSAD(object):
+class ChipWhispererSAD:
     """Communicates with the SAD module inside the CW Pro
 
     This submodule is only available on the ChipWhisperer1200 Pro
@@ -68,10 +65,10 @@ class ChipWhispererSAD(object):
         self.sadref = [0]
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['threshold'] = self.threshold
-        dict['reference'] = self.reference
-        return dict
+        rtn = OrderedDict()
+        rtn['threshold'] = self.threshold
+        rtn['reference'] = self.reference
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -204,4 +201,3 @@ class ChipWhispererSAD(object):
 
         self.oa.sendMessage(CODE_WRITE, saddataaddr, wavedata, Validate=False)
         self.start()
-

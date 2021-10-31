@@ -25,7 +25,7 @@
 
 from chipwhisperer.common.utils.util import camel_case_deprecated
 
-class AcqKeyTextPattern_Base(object):
+class AcqKeyTextPattern_Base:
     _name = "Key/Text Pattern"
 
     def __init__(self):
@@ -88,15 +88,12 @@ class AcqKeyTextPattern_Base(object):
         return self._text_len
 
     def validateKey(self):
-        if len(self._key) != self.key_len:
-            raise IOError("Key Length Wrong for Given Target, %d != %d" % (self.key_len, len(self.key)))
+        pass
 
     def validateText(self):
-        if len(self._textin) != self.text_len:
-            raise IOError("Plaintext Length Wrong for Given Target, %d != %d" % (self.text_len, len(self.textin)))
+        pass
 
     def _initPattern(self):
-        """Perform any extra init stuff required. Called at the end of main init() & when target changed."""
         pass
 
     def setInitialKey(self, initialKey, binaryKey=False):

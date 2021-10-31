@@ -10,3 +10,21 @@
 [submodule "tutorials"]
 	path = tutorials
 	url = https://github.com/newaetech/chipwhisperer-tutorials.git
+[submodule "hardware/victims/firmware/crypto/SecAESSTM32"]
+	path = hardware/victims/firmware/crypto/SecAESSTM32
+	url = https://github.com/ANSSI-FR/SecAESSTM32.git
+[submodule "hardware/victims/firmware/crypto/masked-bit-sliced-aes-128"]
+	path = hardware/victims/firmware/crypto/masked-bit-sliced-aes-128
+	url = https://github.com/sebastien-riou/masked-bit-sliced-aes-128
+[submodule "hardware/victims/firmware/crypto/Higher-Order-Masked-AES-128"]
+	path = hardware/victims/firmware/crypto/Higher-Order-Masked-AES-128
+	url = https://github.com/knarfrank/Higher-Order-Masked-AES-128
+[submodule "hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src/naeusb"]
+	path = hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src/naeusb
+	url = https://github.com/newaetech/naeusb.git
+[submodule "hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src/naeusb"]
+	path = hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src/naeusb
+	url = https://github.com/newaetech/naeusb.git
+[submodule "hardware/victims/cw305_artixtarget/fw/sam3u/CW305_SAM3U_FW/src/naeusb"]
+	path = hardware/victims/cw305_artixtarget/fw/sam3u/CW305_SAM3U_FW/src/naeusb
+	url = https://github.com/newaetech/naeusb.git

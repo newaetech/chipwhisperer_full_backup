@@ -16,5 +16,6 @@ fastdtw==0.3.4
 Cython>=0.29.14
 pypandoc==1.3.3
 tqdm>=4.40.0
-
+ipython #needed for rtd
 ECPy==0.10.0
+sphinx_autodoc_typehints==1.12.0

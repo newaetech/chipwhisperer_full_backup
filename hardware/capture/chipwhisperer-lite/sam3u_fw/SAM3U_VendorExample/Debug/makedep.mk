@@ -2,47 +2,47 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
+src\ASF\common\services\usb\class\cdc\device\udi_cdc.c
+
+src\ASF\common\services\usb\class\composite\device\udi_composite_desc.c
+
 src\ASF\sam\drivers\chipid\chipid.c
 
-src\ccdebug\chipcon.c
+src\naeusb\circbuffer.c
 
-src\scard\at88sc102_highlevel.c
+src\naeusb\fpga_program.c
 
-src\scard\at88sc102_lowlevel.c
+src\naeusb\ISPProtocol.c
 
-src\scard\iso7816.c
+src\naeusb\ISPTarget.c
 
-src\scard_usb.c
+src\naeusb\naeusb.c
 
-src\usb_xmem.c
+src\naeusb\naeusb_default.c
+
+src\naeusb\naeusb_openadc.c
+
+src\naeusb\naeusb_usart.c
+
+src\naeusb\usb_xmem.c
+
+src\naeusb\V2Protocol.c
+
+src\naeusb\V2ProtocolParams.c
+
+src\naeusb\XMEGANVM.c
+
+src\naeusb\XPROGNewAE.c
+
+src\naeusb\XPROGTarget.c
+
+src\naeusb\XPROGTimeout.c
 
 src\ASF\sam\drivers\efc\efc.c
 
 src\ASF\sam\drivers\tc\tc.c
 
 src\ASF\sam\services\flash_efc\flash_efc.c
-
-src\circbuffer.c
-
-src\isp\ISPProtocol.c
-
-src\isp\ISPTarget.c
-
-src\isp\V2Protocol.c
-
-src\isp\V2ProtocolParams.c
-
-src\usb.c
-
-src\pdi\XPROGTimeout.c
-
-src\usart_driver.c
-
-src\pdi\XMEGANVM.c
-
-src\pdi\XPROGNewAE.c
-
-src\pdi\XPROGTarget.c
 
 src\ASF\common\services\delay\sam\cycle_counter.c
 
@@ -53,8 +53,6 @@ src\ASF\common\services\clock\sam3u\sysclk.c
 src\ASF\common\services\sleepmgr\sam\sleepmgr.c
 
 src\ASF\common\services\usb\class\vendor\device\udi_vendor.c
-
-src\ASF\common\services\usb\class\vendor\device\udi_vendor_desc.c
 
 src\ASF\common\services\usb\udc\udc.c
 
@@ -93,8 +91,6 @@ src\ASF\sam\utils\cmsis\sam3u\source\templates\gcc\startup_sam3u.c
 src\ASF\sam\utils\cmsis\sam3u\source\templates\system_sam3u.c
 
 src\ASF\sam\utils\syscalls\gcc\syscalls.c
-
-src\fpga_program.c
 
 src\main.c
 

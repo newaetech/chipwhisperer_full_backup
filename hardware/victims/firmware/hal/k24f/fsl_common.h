@@ -40,9 +40,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#if defined(__ICCARM__)
+//#if defined(__ICCARM__)
 #include <stddef.h>
-#endif
+//#endif
 
 #include "fsl_device_registers.h"
 

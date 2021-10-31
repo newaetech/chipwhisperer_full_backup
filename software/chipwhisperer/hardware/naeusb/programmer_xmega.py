@@ -25,6 +25,7 @@ import logging, os, time
 from datetime import datetime
 from .naeusb import packuint32
 from chipwhisperer.capture.utils.programming_files import FileReader
+from chipwhisperer.logging import *
 
 XMEGAMEM_TYPE_APP = 1
 XMEGAMEM_TYPE_BOOT = 2
@@ -52,6 +53,7 @@ class XMEGA16A4(object):
     memtypes = {
        "signature":{"offset":0x1000090, "size":3},
        "flash":{"offset":0x0800000, "size":0x00005000, "pagesize":0x100, "type":XMEGAMEM_TYPE_APP},
+       "boot":{"offset":0x0805000, "size":0x00001000, "pagesize":0x100, "type":XMEGAMEM_TYPE_BOOT},
        "eeprom":{"offset":0x08c0000, "size":0x0400, "pagesize":0x20, "readsize":0x100, "type":XMEGAMEM_TYPE_EEPROM},
        "fuse1":{"offset":0x8f0021, "size":1},
        "fuse2":{"offset":0x8f0022, "size":1},
@@ -66,6 +68,7 @@ class XMEGA128A4U(object):
     memtypes = {
        "signature":{"offset":0x1000090, "size":3},
        "flash":{"offset":0x0800000, "size":0x00022000, "pagesize":0x100, "type":XMEGAMEM_TYPE_APP},
+       "boot":{"offset":0x0822000, "size":0x00002000, "pagesize":0x100, "type":XMEGAMEM_TYPE_BOOT},
        "eeprom":{"offset":0x08c0000, "size":0x0800, "pagesize":0x20, "readsize":0x100, "type":XMEGAMEM_TYPE_EEPROM},
        "fuse1":{"offset":0x8f0021, "size":1},
        "fuse2":{"offset":0x8f0022, "size":1},
@@ -80,6 +83,7 @@ class XMEGA128D4(object):
     memtypes = {
        "signature":{"offset":0x1000090, "size":3},
        "flash":{"offset":0x0800000, "size":0x00022000, "pagesize":0x100, "type":XMEGAMEM_TYPE_APP},
+       "boot":{"offset":0x0822000, "size":0x00002000, "pagesize":0x100, "type":XMEGAMEM_TYPE_BOOT},
        "eeprom":{"offset":0x08c0000, "size":0x0800, "pagesize":0x20, "readsize":0x100, "type":XMEGAMEM_TYPE_EEPROM},
        "fuse1":{"offset":0x8f0021, "size":1},
        "fuse2":{"offset":0x8f0022, "size":1},
@@ -94,6 +98,7 @@ class XMEGA128A3U(object):
     memtypes = {
        "signature":{"offset":0x1000090, "size":3},
        "flash":{"offset":0x0800000, "size":0x00022000, "pagesize":0x100, "type":XMEGAMEM_TYPE_APP},
+       "boot":{"offset":0x0822000, "size":0x00002000, "pagesize":0x100, "type":XMEGAMEM_TYPE_BOOT},
        "eeprom":{"offset":0x08c0000, "size":0x0800, "pagesize":0x20, "readsize":0x100, "type":XMEGAMEM_TYPE_EEPROM},
        "fuse1":{"offset":0x8f0021, "size":1},
        "fuse2":{"offset":0x8f0022, "size":1},
@@ -144,6 +149,8 @@ class XMEGAPDI(object):
     XPROG_SET_RAMBUF = 0x22
     """PDI Command: Write data to RAMBUF"""
 
+    XPROG_WRITE_BOOT = 0x2C
+
     XPROG_PARAM_TIMEOUT = 0x08
     """Parameter: Timeout"""
 
@@ -154,6 +161,9 @@ class XMEGAPDI(object):
 
     XPROG_ERASE_APP = 2
     """Erase type: Application Section"""
+
+    XPROG_ERASE_BOOT = 3
+    """Erase bootloader"""
 
     # Maximum size of buffer in our system
     MAX_BUFFER_SIZE = 256
@@ -183,12 +193,12 @@ class XMEGAPDI(object):
                 (data[1] == t.signature[1]) and
                 (data[2] == t.signature[2])):
 
-                logging.debug("Detected known XMEGA: %s"%t.name)
+                target_logger.debug("Detected known XMEGA: %s"%t.name)
                 self.setChip(t)
                 return data, t
 
         #No known chip found?
-        logging.debug("Detected unknown XMEGA: %02x %02x %02x"%(data[0], data[1], data[2]))
+        target_logger.debug("Detected unknown XMEGA: %02x %02x %02x"%(data[0], data[1], data[2]))
         return data, None
 
     def erase(self, memtype="chip"):
@@ -196,6 +206,8 @@ class XMEGAPDI(object):
             self.eraseApp()
         elif memtype == "chip":
             self.eraseChip()
+        elif memtype == "bootloader":
+            self.eraseBootloader()
         else:
             raise ValueError("Invalid memtype: %s" % memtype)
 
@@ -420,7 +432,7 @@ class XMEGAPDI(object):
         pagesize = memspec["pagesize"]
 
         if addr % pagesize:
-            logging.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
+            target_logger.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
 
         while memwritten < len(data):
 
@@ -477,6 +489,10 @@ class XMEGAPDI(object):
     def eraseChip(self):
         self.validate_mode()
         self._xmegaDoWrite(self.XPROG_CMD_ERASE, data=[self.XPROG_ERASE_CHIP, 0, 0, 0, 0])
+
+    def eraseBootloader(self):
+        self.validate_mode()
+        self._xmegaDoWrite(self.XPROG_CMD_ERASE, data=[self.XPROG_ERASE_BOOT, 0, 0, 0, 0])
 
     def eraseApp(self):
         self.validate_mode()

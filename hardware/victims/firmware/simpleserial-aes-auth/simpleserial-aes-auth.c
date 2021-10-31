@@ -24,25 +24,25 @@
 
 uint8_t expected[16];
 
-uint8_t get_exp(uint8_t* t)
+uint8_t get_exp(uint8_t* t, uint8_t len)
 {
 	for(int i = 0; i < 16; i++)
 		expected[i] = t[i];
 	return 0x00;
 }
 
-uint8_t get_key(uint8_t* k)
+uint8_t get_key(uint8_t* k, uint8_t len)
 {
 	aes_indep_key(k);
 	return 0x00;
 }
 
-uint8_t get_pt(uint8_t* pt)
+uint8_t get_pt(uint8_t* pt, uint8_t len)
 {
 	trigger_high();
 	aes_indep_enc(pt); /* encrypting the data block */
 	trigger_low();
-	
+
 	uint8_t ret = 0x10;
 	for(int i = 0; i < 16; i++)
 	{
@@ -52,16 +52,16 @@ uint8_t get_pt(uint8_t* pt)
 			break;
 		}
 	}
-	
+
 	pt[0] = ret;
 	for(int i = 1; i < 16; i++)
 		pt[i] = 0;
-	
+
 	simpleserial_put('r', 16, pt);
 	return 0x00;
 }
 
-uint8_t reset(uint8_t* x)
+uint8_t reset(uint8_t* x, uint8_t len)
 {
     // Reset key here if needed
 	return 0x00;

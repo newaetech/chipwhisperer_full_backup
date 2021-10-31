@@ -1,3 +1,4 @@
+# pylint: skip-file
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -26,9 +27,9 @@
 #=================================================
 import logging
 
-from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
-from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
-from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
+from ....capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
+from ....capture.utils.SerialProtocols import strToBits as strToBits
+from ....common.utils.parameter import Parameter, Parameterized, setupSetParam
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -36,6 +37,7 @@ CODE_WRITE      = 0xC0
 ADDR_TRIGCLKDIV = 36
 ADDR_TRIGIOPROG = 37
 
+from chipwhisperer.logging import *
 
 class CWAdvTrigger(object):
     def __init__(self, oa):
@@ -219,7 +221,7 @@ class ChipWhispererDigitalPattern(Parameterized):
         patt = eval(patt, {}, {})
 
         if len(patt) > 1:
-            logging.warning('IO Pattern too large! Restricted.')
+            scope_logger.warning('IO Pattern too large! Restricted.')
             self.findParam('trigpatt').setValue(patt[0])
             return
 

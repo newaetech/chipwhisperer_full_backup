@@ -27,7 +27,7 @@ import time
 import os
 from .naeusb import packuint32
 from chipwhisperer.common.utils.util import fw_ver_required
-
+from chipwhisperer.logging import *
 class USART(object):
     """
     USART Class communicates with NewAE USB Interface to read/write data over control endpoint.
@@ -42,7 +42,7 @@ class USART(object):
     USART_CMD_NUMWAIT = 0x0014
     USART_CMD_NUMWAIT_TX = 0x0018
 
-    def __init__(self, usb, timeout=200):
+    def __init__(self, usb, timeout=200, usart_num=0):
         """
         Set the USB communications instance.
         """
@@ -60,6 +60,7 @@ class USART(object):
         # and don't want to spam them
         self.tx_buf_in_wait = False
         self.fw_read = None
+        self._usart_num = usart_num
 
     def init(self, baud=115200, stopbits=1, parity="none"):
         """
@@ -99,13 +100,14 @@ class USART(object):
 
         self._usartTxCmd(self.USART_CMD_INIT, cmdbuf)
         self._usartTxCmd(self.USART_CMD_ENABLE)
-        print("Serial baud rate = {}".format(baud))
+        target_logger.info("Serial baud rate = {}".format(baud))
 
         try:
-            self.tx_buf_in_wait = False
-            a = self.fw_version
-            if a["major"] > 0 or a["minor"] >= 20:
-                self.tx_buf_in_wait = True
+            self.tx_buf_in_wait = self._usb.check_feature("TX_IN_WAITING")
+            # self.tx_buf_in_wait = False
+            # a = self.fw_version
+            # if a["major"] > 0 or a["minor"] >= 20:
+            #     self.tx_buf_in_wait = True
         except OSError:
             pass
 
@@ -136,8 +138,20 @@ class USART(object):
             # to make this faster, but okay for now...
             if self.tx_buf_in_wait:
                 datatosend = min(datatosend, 128-self.in_waiting_tx())
-            self._usb.sendCtrl(self.CMD_USART0_DATA, 0, data[datasent:(datasent + datatosend)])
+            self._usb.sendCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), data[datasent:(datasent + datatosend)])
             datasent += datatosend
+
+        # if self.fw_version_str >= '0.20':
+        #     i = 1000
+        #     while self.in_waiting_tx() > 0:
+        #         # print(self.in_waiting_tx())
+        #         i -= 1
+        #         if i > 0:
+        #             time.sleep(0.001)
+        #         else:
+        #             target_logger.warning("Write timed out!")
+        #             raise OSError("Write timed out")
+
 
     def flush(self):
         """
@@ -157,38 +171,41 @@ class USART(object):
         # print data
         return data[0]
 
-    @fw_ver_required(0, 20)
+    # @fw_ver_required(0, 20)
     def in_waiting_tx(self):
         """
         Get number of bytes in tx buffer
         """
-        data = self._usartRxCmd(self.USART_CMD_NUMWAIT_TX, dlen=4)
-        return data[0]
+        if self._usb.check_feature("TX_IN_WAITING"):
+            data = self._usartRxCmd(self.USART_CMD_NUMWAIT_TX, dlen=4)
+            return data[0]
 
     def read(self, dlen=0, timeout=0):
         """
         Read data from input buffer, if 'dlen' is 0 everything present is read. If timeout is non-zero
         system will block for a while until data is present in buffer.
         """
+        resp = []
+
+        if timeout == 0:
+            timeout = self.timeout
 
         waiting = self.inWaiting()
 
         if dlen == 0:
             dlen = waiting
 
-        if timeout == 0:
-            timeout = self.timeout
-
-
-        resp = []
-
-        while dlen and (timeout * 10) > 0:
+        # * 10 does nothing
+        while dlen and (timeout) > 0:
             if waiting > 0:
-                newdata = self._usb.readCtrl(self.CMD_USART0_DATA, 0, min(min(waiting, dlen), self._max_read))
+                newdata = self._usb.readCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), min(min(waiting, dlen), self._max_read))
                 resp.extend(newdata)
                 dlen -= len(newdata)
             waiting = self.inWaiting()
             timeout -= 1
+            # time.sleep(0.001)
+            if (timeout % 10) == 0:
+                time.sleep(0.01)
 
         return resp
 
@@ -199,17 +216,23 @@ class USART(object):
         """
 
         # windex selects interface
-        self._usb.sendCtrl(self.CMD_USART0_CONFIG, cmd, data)
+        self._usb.sendCtrl(self.CMD_USART0_CONFIG, (self._usart_num << 8) | cmd, data)
 
     def _usartRxCmd(self, cmd, dlen=1):
         """
         Read the result of some command (internal function).
         """
         # windex selects interface, set to 0
-        return self._usb.readCtrl(self.CMD_USART0_CONFIG, cmd, dlen)
+        return self._usb.readCtrl(self.CMD_USART0_CONFIG, cmd | (self._usart_num << 8), dlen)
 
     @property
     def fw_version(self):
         if not self.fw_read:
             self.fw_read = self._usb.readFwVersion()
         return {"major": self.fw_read[0], "minor": self.fw_read[1], "debug": self.fw_read[2]}
+
+    @property
+    def fw_version_str(self):
+        if not self.fw_read:
+            self.fw_read = self._usb.readFwVersion()
+        return "{}.{}.{}".format(self.fw_read[0], self.fw_read[1], self.fw_read[2])

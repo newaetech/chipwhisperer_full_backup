@@ -33,6 +33,7 @@ from chipwhisperer.common.utils.aes_tables import t_table_hw, t_table_hw_dec
 from .base import ModelsBase
 from chipwhisperer.analyzer.attacks.models.aes.key_schedule import key_schedule_rounds
 from chipwhisperer.common.utils.util import camel_case_deprecated
+from typing import Optional
 
 class AESLeakageHelper(object):
 
@@ -40,8 +41,8 @@ class AESLeakageHelper(object):
     name = 'AES Leakage Model (unnamed)'
 
     #c model enumeration value, if a C model exists for this device
-    c_model_enum_value = None
-    c_model_enum_name = None
+    c_model_enum_value : Optional[int]= None
+    c_model_enum_name : Optional[str] = None
 
     INVSHIFT_undo = [0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11]
 
@@ -126,6 +127,17 @@ class InvSBox_output(AESLeakageHelper):
     def leakage(self, pt, ct, key, bnum):
         return self.inv_sbox(pt[bnum] ^ key[bnum])
 
+class InvSBox_output_alt(AESLeakageHelper):
+    name = 'HW: AES Inv SBox Output, First Round (Dec)'
+    c_model_enum_value = 61
+    c_model_enum_name = 'LEAK_HW_INVSBOXOUT_FIRSTROUND'
+    def leakage(self, pt, ct, key, bnum):
+        return self.inv_sbox(pt[bnum] ^ key[bnum])
+
+    def process_known_key(self, inpkey):
+        k = key_schedule_rounds(inpkey, 0, 10)
+        return k
+
 class LastroundHW(AESLeakageHelper):
     name = 'HW: AES Last-Round State'
     def leakage(self, pt, ct, key, bnum):
@@ -177,7 +189,7 @@ class SBoxInOutDiff(AESLeakageHelper):
 
 class SBoxInputSuccessive(AESLeakageHelper):
     name = 'HD: AES SBox Input i to i+1'
-    c_model_enum_name = 4
+    c_model_enum_value = 4
     c_model_enum_name = 'LEAK_HD_SBOX_IN_SUCCESSIVE'
     def leakage(self, pt, ct, key, bnum):
         st1 = pt[bnum] ^ key[bnum]
@@ -278,9 +290,9 @@ class AES128_8bit(ModelsBase):
     """
     _name = 'AES 128'
 
-    hwModels = OrderedDict((mod.name, mod) for mod in (enc_list+dec_list) )
+    hwModels = OrderedDict((mod.name, mod) for mod in (enc_list+dec_list) ) # type: ignore
 
-    hw_models = OrderedDict((mod.__name__, mod) for mod in (enc_list+dec_list))
+    hw_models = OrderedDict((mod.__name__, mod) for mod in (enc_list+dec_list)) # type: ignore
 
     def __init__(self, model=SBox_output, bitmask=0xFF):
         ModelsBase.__init__(self, 16, 256, model=model)

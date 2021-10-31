@@ -1,0 +1,12 @@
+#-----------------------------------------------------------
+# Vivado v2019.1 (64-bit)
+# SW Build 2552052 on Fri May 24 14:49:42 MDT 2019
+# IP Build 2548770 on Fri May 24 18:01:18 MDT 2019
+# Start of session at: Mon Mar 29 22:33:16 2021
+# Process ID: 29168
+# Current directory: Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.runs/ila_1_synth_1
+# Command line: vivado.exe -log ila_1.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source ila_1.tcl
+# Log file: Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.runs/ila_1_synth_1/ila_1.vds
+# Journal file: Y:/fpga/vivado_examples/ecc_p256_pmul/v6/v6.runs/ila_1_synth_1\vivado.jou
+#-----------------------------------------------------------
+source ila_1.tcl -notrace

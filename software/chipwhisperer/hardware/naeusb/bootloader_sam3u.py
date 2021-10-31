@@ -35,7 +35,7 @@
 
 import logging
 
-import serial
+import serial # type: ignore
 import time
 
 class Samba(object):
@@ -65,7 +65,8 @@ class Samba(object):
 
         # Binary mode
         ser.write("N#".encode("ascii"))
-        ser.read(2)
+        res = ser.read(2)
+        # print(res)
 
         cid = self.chip_id()
 
@@ -77,14 +78,14 @@ class Samba(object):
         #if eproc == 3 and ((0x80 <= arch <= 0x8a) or (0x93 <= arch <= 0x9a)):
         #    logging.info('FWUP: Detected SAM3')
 
-        self.flash = self.get_flash_instance(cid)
+        self.setup_device_specific(cid)
 
         logging.info('FWUP: Detected ' + self.flash.name)
         return True
 
 
 
-    def get_flash_instance(self, chipid):
+    def setup_device_specific(self, chipid):
 
         chipid = chipid & 0x7fffffe0
 
@@ -94,17 +95,27 @@ class Samba(object):
 
         if chipid == 0x28000960 or chipid == 0x28100960:
             flash = EefcFlash(self, "ATSAM3U4", 0xE0000, 1024, 256, 2, 32, 0x20001000, 0x20008000, 0x400e0800, False)
+            self.rstc_addr = 0x400E1200
         elif chipid == 0x280a0760 or chipid == 0x281a0760:
             flash = EefcFlash(self, "ATSAM3U2", 0x80000, 512, 256, 1, 16, 0x20001000, 0x20004000, 0x400e0800, False)
+            self.rstc_addr = 0x400E1200
         elif chipid == 0x28090560 or chipid == 0x28190560:
             flash = EefcFlash(self, "ATSAM3U1", 0x80000, 256, 256, 1, 8, 0x20001000, 0x20002000, 0x400e0800, False)
+            self.rstc_addr = 0x400E1200
         elif chipid == 0x29970ce0:
-            flash = EefcFlash(self, "at91sam4sd16b", 0x400000, 2048, 512, 2, 256, 0x20001000, 0x20010000, 0x400e0a00, False);
+            flash = EefcFlash(self, "at91sam4sd16b", 0x400000, 2048, 512, 2, 256, 0x20001000, 0x20010000, 0x400e0a00, False)
+            self.rstc_addr = 0x400E1400
+        elif chipid == 0x286e0a60 or chipid == 0x285e0a60  or chipid == 0x284e0a60 :
+            flash = EefcFlash(self, "ATSAM3X8", 0x80000, 2048, 256, 2, 32, 0x20001000, 0x20010000, 0x400e0a00, False)
+            self.rstc_addr = 0x400E1A00
         else:
             raise AttributeError("FWUP: Unsupported ChipID = %x" % chipid)
 
-        return flash
+        self.flash = flash
 
+    def reset(self):
+        """ Reset via RSTC register """
+        self.write_word(self.rstc_addr, 0xA500000D)
 
     def chip_id(self):
         """ Read chip-id """
@@ -116,7 +127,12 @@ class Samba(object):
             cid = self.read_word(0xfffff240)
         # Else use the Atmel SAM3 registers
         else:
+            #This works on SAM3U/SAM4S
             cid = self.read_word(0x400e0740)
+
+            #SAM3x seems to be different - easily detected
+            if cid == 0:
+                cid = self.read_word(0x400e0940)
 
         return cid
 
@@ -384,6 +400,8 @@ class EefcFlash(object):
         self.EEFC_FCMD_CGPB = 0xc
         self.EEFC_FCMD_GGPB = 0xd
 
+        self._fsr_failed = False
+
         self.word_copy.set_words(int(size / 4))
         self.word_copy.set_stack(stack)
         self._onBufferA = True
@@ -594,19 +612,26 @@ class EefcFlash(object):
         tries = 0
         fsr1 = 0x1
 
-        while (tries <= wait_ms):
+        while (tries <= (wait_ms // 10)):
             tries = tries + 1
             fsr0 = self.samba.read_word(self.EEFC0_FSR)
             if (fsr0 & (1 << 2)):
                 raise IOError("Timeout")
 
             if (self.planes == 2):
-                fsr1 = self.samba.read_word(self.EEFC1_FSR)
-                if (fsr1 & (1 << 2)):
-                    raise IOError("Timeout")
+                try:
+                    fsr1 = self.samba.read_word(self.EEFC1_FSR)
+                    if (fsr1 & (1 << 2)):
+                        raise IOError("Timeout, fsr1: {:02X}".format(fsr1))
+                except IOError as e:
+                    print(e)
+                    fsr1 = self.samba.read_word(self.EEFC1_FSR)
+                    if (fsr1 & (1 << 2)):
+                        raise IOError("Timeout, fsr1: {:02X}".format(fsr1))
+
             if (fsr0 & fsr1 & 0x1):
-                break;
-            time.sleep(0.001)
+                break
+            time.sleep(0.01)
         if (tries > wait_ms):
             raise IOError("Timeout")
 

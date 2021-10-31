@@ -49,7 +49,7 @@ TARGET-ALL = $(foreach PLAT,$(PLATFORM_LIST), $(TARGET)-$(PLAT))
 # Object files directory
 #     To put object files in current directory, use a dot (.), do NOT make
 #     this an empty or blank macro!
-OBJDIR = objdir
+OBJDIR = objdir-$(PLATFORM)
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC +=
@@ -105,7 +105,7 @@ CSTANDARD = -std=gnu99
 
 
 # Place -D or -U options here for C sources
-CDEFS += -DF_CPU=$(F_CPU)UL -DSS_VER_2_0=2 -DSS_VER_1_1=1 -DSS_VER_1_0=0
+CDEFS += -DF_CPU=$(F_CPU)UL -DSS_VER_2_0=2 -DSS_VER_2_1=3 -DSS_VER_1_1=1 -DSS_VER_1_0=0
 
 
 # Place -D or -U options here for ASM sources
@@ -319,7 +319,7 @@ ALL_ASFLAGS = $(MCU_FLAGS) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 # Default target.
-all: clean_objs $(OBJDIR) .dep begin gccversion build sizeafter fastnote end
+all: clean_objs .dep begin gccversion build sizeafter fastnote end
 
 allquick: begin gccversion build sizeafter end
 
@@ -367,9 +367,9 @@ sizeafter: build
 	@echo $(MSG_SIZE_AFTER)
 	@$(ELFSIZE)
 
-$(OBJDIR): makeobjdir
+$(OBJ): | $(OBJDIR)
 
-makeobjdir:
+$(OBJDIR):
 	$(MAKEDIR) $(OBJDIR) $(call AdjustPath,$(OBJDIR),$(MKDIR_LIST) )
 
 .dep:
@@ -550,7 +550,7 @@ clean_list :
 .PHONY : all allquick begin finish end sizeafter gccversion \
 build elf hex eep lss sym coff extcoff \
 clean clean_list clean_print clean_objs program debug gdb-config \
-fastnote makeobjdir
+fastnote
 
 # saveplatform: Save the platform into the file Makefile.target
 saveplatform:

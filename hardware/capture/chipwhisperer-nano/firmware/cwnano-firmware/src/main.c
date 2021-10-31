@@ -40,6 +40,11 @@
 #include <asf.h>
 #include "led.h"
 #include "main.h"
+#include "conf_usb.h"
+#include "circbuffer.h"
+#include "naeusb_default.h"
+#include "naeusb_usart.h"
+#include "naeusb_nano.h"
 
 //Serial Number - will be read by device ID
 char usb_serial_number[33] = "000000000000DEADBEEF";
@@ -73,12 +78,17 @@ int main (void)
 	cwnano_adc_init();
 	
 	cpu_irq_enable();
-			
-	// The main loop manages only the power mode
-	// because the USB management is done by interrupt
+	
+	naeusb_register_handlers();
+	naeusart_register_handlers();
+	nano_register_handlers();
+
 	while (true) {
-		;//sleepmgr_enter_sleep();
+		//sleepmgr_enter_sleep();
+		cdc_send_to_pc();
+				
 	}
+	
 }
 
 
