@@ -200,6 +200,8 @@ class STM32FSerial:
         fsize = f.maxaddr() - f.minaddr()
         fdata = f.tobinarray(start=f.minaddr())
         startaddr = f.minaddr()
+        if isinstance(self._chip, STM32F03xx4) and (fsize > 16384):
+            target_logger.error("Your STM32F0 has a max of 0x4000 flash, but this firmware is 0x{:04X}. Firmware/programming may not work!".format(fsize))
 
         logfunc("Attempting to program %d bytes at 0x%x"% (fsize, startaddr))
 
