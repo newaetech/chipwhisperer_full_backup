@@ -120,7 +120,7 @@ class CW310(CW305):
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=10E6):
         # add more stuff later
         self._naeusb.con(idProduct=[0xC310])
-        # self.pll.cdce906init()
+        self.pll.cdce906init()
         if fpga_id:
             target_logger.warning("fpga_id is currently unused")
 
