@@ -37,7 +37,6 @@
 #include "conf_usb.h"
 #include "udd.h"
 #include "udc_desc.h"
-#include "MPSSE_descriptors.h"
 
 /**
  * \defgroup udi_group_desc Descriptors for a USB Device
