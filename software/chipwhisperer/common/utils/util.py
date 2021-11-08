@@ -31,6 +31,7 @@ import weakref
 from functools import wraps
 import warnings
 from ...logging import *
+from typing import List
 
 
 def getRootDir():
@@ -320,7 +321,7 @@ class DisableNewAttr(object):
     """
     _new_attributes_disabled = False
     _new_attributes_disabled_strict = False
-    _read_only_attrs = []
+    _read_only_attrs : List[str] = []
 
     def __init__(self):
         self.enable_newattr()

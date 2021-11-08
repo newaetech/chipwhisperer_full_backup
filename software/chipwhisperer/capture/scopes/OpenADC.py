@@ -42,7 +42,7 @@ import time
 import numpy as np
 from ..api.cwcommon import ChipWhispererCommonInterface
 
-from typing import List
+from typing import List, Dict, Any
 
 
 
@@ -588,7 +588,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         return np.reshape(self.data_points[:num_seg*seg_len], (num_seg, seg_len))
 
     def _dict_repr(self) -> dict:
-        rtn = {}
+        rtn : Dict[str, Any] = {}
         rtn['sn'] = self.sn
         if self._is_husky:
             rtn['fpga_buildtime'] = self.fpga_buildtime
