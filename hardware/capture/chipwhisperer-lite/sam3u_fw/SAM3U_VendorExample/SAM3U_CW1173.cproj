@@ -710,6 +710,12 @@
     <Compile Include="src\naeusb\naeusb_default.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\naeusb\naeusb_mpsse.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\naeusb_mpsse.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\naeusb\naeusb_openadc.c">
       <SubType>compile</SubType>
     </Compile>
@@ -720,6 +726,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\naeusb\naeusb_usart.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\udc.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\naeusb\usart_driver.h">
@@ -1178,9 +1187,6 @@
     <None Include="src\ASF\common\services\usb\usb_protocol.h">
       <SubType>compile</SubType>
     </None>
-    <Compile Include="src\ASF\common\services\usb\udc\udc.c">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\ASF\common\services\usb\udc\udc.h">
       <SubType>compile</SubType>
     </Compile>

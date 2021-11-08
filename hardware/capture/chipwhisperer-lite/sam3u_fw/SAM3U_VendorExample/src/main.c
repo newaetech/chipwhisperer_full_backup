@@ -150,6 +150,7 @@ int main(void)
 	while (true) {
         // if we've received stuff on USART, send it back to the PC
 		cdc_send_to_pc();
+		MPSSE_main_sendrecv_byte();
 		
 	}
 }
