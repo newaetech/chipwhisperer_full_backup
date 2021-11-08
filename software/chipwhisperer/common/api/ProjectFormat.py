@@ -36,6 +36,7 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 import copy
 from chipwhisperer.common.traces import Trace
+from ...logging import *
 import shutil
 
 try:
@@ -678,7 +679,8 @@ class Traces:
             TypeError: When trying to append something other than a trace.
         """
         if not isinstance(trace, Trace):
-            raise TypeError("Expected Trace object, got {}.".format(trace))
+            other_logger.error("Invalid type appended to traces. Try appending cw.Trace(trace_data, textin, textout, key)")
+            raise TypeError("Expected Trace object, got {}.".format(type(trace)))
 
         if self.cur_trace_num > self.seg_ind_max:
             self.cur_seg = self.project.segments.new()

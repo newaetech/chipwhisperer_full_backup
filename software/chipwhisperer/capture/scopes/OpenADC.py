@@ -108,6 +108,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
     def __init__(self):
         # self.qtadc = openadc_qt.OpenADCQt()
         # self
+        self.enable_newattr()
 
         # Bonus Modules for ChipWhisperer
         self.advancedSettings = None
@@ -120,6 +121,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
         # self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
         self.connectStatus = True
+        # self.disable_newattr()
 
     def _getFWPy(self) -> List[int]:
         cw_type = self._getCWType()
@@ -389,6 +391,8 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.glitch.enabled = False
             self.LA.enabled = False
 
+        module_list = [x for x in self.__dict__ if isinstance(self.__dict__[x], util.DisableNewAttr)]
+        self.add_read_only(module_list)
         self.disable_newattr()
         self._is_connected = True
         self.connectStatus = True
@@ -582,7 +586,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
         return np.reshape(self.data_points[:num_seg*seg_len], (num_seg, seg_len))
 
-    def _dict_repr(self):
+    def _dict_repr(self) -> dict:
         rtn = {}
         rtn['sn'] = self.sn
         if self._is_husky:

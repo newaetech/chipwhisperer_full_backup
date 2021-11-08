@@ -31,8 +31,9 @@ from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
 from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import STM32FSerial
 from chipwhisperer.hardware.naeusb.serial import USART
+from ....common.utils.util import DisableNewAttr
 
-class OpenADCInterface_NAEUSBChip:
+class OpenADCInterface_NAEUSBChip(DisableNewAttr):
     _name = "NewAE USB (CWLite/CW1200)"
 
     def __init__(self):

@@ -581,7 +581,7 @@ class TriggerSettings(util.DisableNewAttr):
         rtn['triggers'] = self.triggers
         rtn['module'] = self.module
 
-        return dict
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -817,7 +817,7 @@ class DataTrigger(util.DisableNewAttr):
     pass
 
 
-class ChipWhispererExtra(object):
+class ChipWhispererExtra(util.DisableNewAttr):
     _name = 'CW Extra'
 
     def __init__(self, cwtype, scope, oa):

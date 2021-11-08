@@ -643,6 +643,8 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
         except (IOError, ValueError) as e:
             raise Warning("Could not connect to cwnano. It may have been disconnected,\
 is in an error state, or is being used by another tool.") from e
+        module_list = [x for x in self.__dict__ if isinstance(self.__dict__[x], util.DisableNewAttr)]
+        self.add_read_only(module_list)
         self.disable_newattr()
         self._is_connected = True
         self.connectStatus=True

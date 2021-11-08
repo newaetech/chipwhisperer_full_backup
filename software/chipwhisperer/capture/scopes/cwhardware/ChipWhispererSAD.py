@@ -36,7 +36,7 @@ CODE_READ   = 0x80
 CODE_WRITE  = 0xC0
 
 
-class ChipWhispererSAD:
+class ChipWhispererSAD(util.DisableNewAttr):
     """Communicates with the SAD module inside the CW Pro
 
     This submodule is only available on the ChipWhisperer1200 Pro

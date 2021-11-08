@@ -26,7 +26,7 @@
 #=================================================
 
 from chipwhisperer.logging import *
-from ....common.utils.util import dict_to_str
+from ....common.utils.util import dict_to_str, DisableNewAttr
 from .._OpenADCInterface import OpenADCInterface
 from collections import OrderedDict
 from copy import copy
@@ -40,7 +40,7 @@ ADDR_DECODECFG = 57
 ADDR_DECODEDATA = 58
 
 
-class ChipWhispererDecodeTrigger:
+class ChipWhispererDecodeTrigger(DisableNewAttr):
     """
     Communicates and drives the Digital Pattern Match module inside the FPGA.
 
