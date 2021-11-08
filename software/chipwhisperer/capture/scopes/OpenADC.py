@@ -405,6 +405,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         Returns:
             True if the disconnection was successful, False otherwise.
         """
+        self._read_only_attrs = [] # disable read only stuff
         if self.scopetype is not None:
             self.scopetype.dis()
             if self.advancedSettings is not None:

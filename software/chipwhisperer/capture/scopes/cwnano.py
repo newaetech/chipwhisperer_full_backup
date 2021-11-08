@@ -656,6 +656,7 @@ is in an error state, or is being used by another tool.") from e
         Returns:
             True if the disconnection was successful, False otherwise.
         """
+        self._read_only_attrs = []
         self.usbdev().close()
         self._is_connected = False
         return True
