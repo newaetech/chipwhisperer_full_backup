@@ -253,7 +253,7 @@ testRWData = [
 ]
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '10/19/2021, 12:01'
+    assert scope.fpga_buildtime == '11/11/2021, 10:17'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1

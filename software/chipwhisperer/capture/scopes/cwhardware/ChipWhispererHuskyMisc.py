@@ -382,13 +382,15 @@ class XADCSettings(util.DisableNewAttr):
     def _dict_repr(self):
         rtn = OrderedDict()
         rtn['status'] = self.status
-        rtn['current temperature [C]'] = self.temp
-        rtn['maximum temperature [C]'] = self.max_temp
-        rtn['temperature alarm trigger [C]'] = self.temp_trigger
-        rtn['temperature reset trigger [C]'] = self.temp_reset
-        rtn['vccint'] = self.vccint
-        rtn['vccaux'] = self.vccaux
-        rtn['vccbram'] = self.vccbram
+        rtn['current temperature [C]'] = '%.1f' % self.temp
+        rtn['maximum temperature [C]'] = '%.1f' % self.max_temp
+        rtn['user temperature alarm trigger [C]'] = '%.1f' % self.temp_trigger
+        rtn['user temperature reset trigger [C]'] = '%.1f' % self.temp_reset
+        rtn['device temperature alarm trigger [C]'] = '%.1f' % self.ot_temp_trigger
+        rtn['device temperature reset trigger [C]'] = '%.1f' % self.ot_temp_reset
+        rtn['vccint'] = '%.3f' % self.vccint
+        rtn['vccaux'] = '%.3f' % self.vccaux
+        rtn['vccbram'] = '%.3f' % self.vccbram
         return rtn
 
     def __repr__(self):
@@ -422,14 +424,23 @@ class XADCSettings(util.DisableNewAttr):
 
     @property
     def temp(self):
+        """Returns the current FPGA temperature.
+        """
         return self.get_temp(0)
 
     @property
     def max_temp(self):
+        """Returns the highest observed FPGA temperature.
+        """
         return self.get_temp(32)
 
     @property
     def temp_trigger(self):
+        """FPGA user temperature trigger.
+        If the FPGA temperature exceeds this value, an error is flagged, and
+        all clock-generating modules are shut down until the temperature
+        returns below temp_reset (since they are very power hungry).
+        """
         return self.get_temp(0x50)
 
     @temp_trigger.setter
@@ -438,12 +449,33 @@ class XADCSettings(util.DisableNewAttr):
 
     @property
     def temp_reset(self):
+        """FPGA user temperature reset.
+        When the FPGA temperature returns below this value, the error condition
+        triggered by temp_trigger is cleared.
+        """
         return self.get_temp(0x54)
 
     @temp_reset.setter
     def temp_reset(self, temp):
         return self.set_temp(temp, 0x54)
 
+    @property
+    def ot_temp_trigger(self):
+        """FPGA over-temperature trigger.
+        If the FPGA temperature exceeds this value, an error is flagged, and
+        all clock-generating modules are shut down until the temperature
+        returns below ot_temp_reset (since they are very power hungry).
+        Read-only.
+        """
+        return self.get_temp(0x53)
+
+    @property
+    def ot_temp_reset(self):
+        """FPGA over-temperature reset.
+        When the FPGA temperature returns below this value, the error condition
+        triggered by ot_temp_trigger is cleared.
+        """
+        return self.get_temp(0x57)
 
     def get_temp(self, addr=0):
         """Read XADC temperature.
@@ -469,14 +501,20 @@ class XADCSettings(util.DisableNewAttr):
 
     @property
     def vccint(self):
+        """Returns the current VCCint value.
+        """
         return self.get_vcc('vccint')
 
     @property
     def vccaux(self):
+        """Returns the current VCCaux value.
+        """
         return self.get_vcc('vccaux')
 
     @property
     def vccbram(self):
+        """Returns the current VCCbram value.
+        """
         return self.get_vcc('vccbram')
 
 
@@ -955,11 +993,11 @@ class ADS4128Settings(util.DisableNewAttr):
         if mode == "normal":
             self.set_normal_settings()
             self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [0])
-        elif mode in ("test ramp", "test alernating"):
+        elif mode in ("test ramp", "test alternating"):
             self.set_test_settings(mode)
             self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [1])
         else:
-            raise ValueError("Invalid mode, only 'normal' or 'test ramp' allowed")
+            raise ValueError("Invalid mode, only 'normal', 'test ramp' or 'test alternating' allowed")
 
 
     @property
