@@ -682,6 +682,7 @@ class CDCI6214:
 class ChipWhispererHuskyClock(util.DisableNewAttr):
 
     def __init__(self, oaiface : OpenADCInterface, fpga_clk_settings : ClockSettings, mmcm1, mmcm2):
+        super().__init__()
 
         # cache ADC freq to improve capture speed
         self._cached_adc_freq = None

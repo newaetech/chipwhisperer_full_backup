@@ -68,6 +68,7 @@ class XilinxDRP(util.DisableNewAttr):
     '''
     _name = 'Xilinx DRP Access'
     def __init__(self, oaiface : OAI.OpenADCInterface, data_address, address_address, reset_address = None):
+        super().__init__()
         self.oa = oaiface
         self.data = data_address
         self.addr = address_address
@@ -110,6 +111,7 @@ class XilinxMMCMDRP(util.DisableNewAttr):
     '''
     _name = 'Xilinx MMCM DRP'
     def __init__(self, drp):
+        super().__init__()
         self.drp = drp
         self.disable_newattr()
 
@@ -223,6 +225,7 @@ class LEDSettings(util.DisableNewAttr):
     _name = 'Husky LEDs Setting'
 
     def __init__(self, oaiface : OAI.OpenADCInterface):
+        super().__init__()
         self.oa = oaiface
         self.disable_newattr()
 
@@ -272,6 +275,7 @@ class HuskyErrors(util.DisableNewAttr):
     _name = 'Husky Errors'
 
     def __init__(self, oaiface : OAI.OpenADCInterface, XADC, adc, clock):
+        super().__init__()
         self.oa = oaiface
         self.XADC = XADC
         self.adc = adc
@@ -303,6 +307,7 @@ class USERIOSettings(util.DisableNewAttr):
     _name = 'USERIO Control'
 
     def __init__(self, oaiface : OAI.OpenADCInterface):
+        super().__init__()
         self.oa = oaiface
         self.disable_newattr()
 
@@ -375,6 +380,7 @@ class XADCSettings(util.DisableNewAttr):
     _name = 'Husky XADC Setting'
 
     def __init__(self, oaiface : OAI.OpenADCInterface):
+        super().__init__()
         self.oa = oaiface
         self.drp = XilinxDRP(oaiface, ADDR_XADC_DRP_DATA, ADDR_XADC_DRP_ADDR)
         self.disable_newattr()
@@ -544,6 +550,7 @@ class LASettings(util.DisableNewAttr):
 
     def __init__(self, oaiface : OAI.OpenADCInterface, mmcm):
         # oaiface = OpenADCInterface
+        super().__init__()
         self.oa = oaiface
         self._mmcm = mmcm
         self.disable_newattr()
@@ -859,6 +866,7 @@ class ADS4128Settings(util.DisableNewAttr):
     _name = 'Husky ADS4128 ADC Setting'
 
     def __init__(self, oaiface : OAI.OpenADCInterface):
+        super().__init__()
         # oaiface = OpenADCInterface
         self.oa = oaiface
         self.adc_reset()

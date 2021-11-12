@@ -69,6 +69,7 @@ _gpio_api_alias = {_gpio_alias[n]: n for n in _gpio_alias}
 class GPIOSettings(util.DisableNewAttr):
 
     def __init__(self, cwextra):
+        super().__init__()
         self.cwe = cwextra
 
         # This stuff actually matters, used with _tio_alias above
@@ -560,6 +561,7 @@ class GPIOSettings(util.DisableNewAttr):
 
 class TriggerSettings(util.DisableNewAttr):
     def __init__(self, cwextra):
+        super().__init__()
         self.cwe = cwextra
 
         self.supported_tpins = {
@@ -821,6 +823,7 @@ class ChipWhispererExtra(util.DisableNewAttr):
     _name = 'CW Extra'
 
     def __init__(self, cwtype, scope, oa):
+        super().__init__()
         #self.cwADV = CWAdvTrigger()
 
         self.cwEXTRA = CWExtraSettings(oa, cwtype)

@@ -55,6 +55,7 @@ class ChipWhispererDecodeTrigger(DisableNewAttr):
     """
     _name = 'I/O Decoder Trigger Module'
     def __init__(self, oa : OpenADCInterface):
+        super().__init__()
         self.oa = oa
         self.pattern = None
 

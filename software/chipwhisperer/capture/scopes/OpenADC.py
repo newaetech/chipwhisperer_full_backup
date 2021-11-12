@@ -108,6 +108,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
     def __init__(self):
         # self.qtadc = openadc_qt.OpenADCQt()
         # self
+        super().__init__()
         self.enable_newattr()
 
         # Bonus Modules for ChipWhisperer

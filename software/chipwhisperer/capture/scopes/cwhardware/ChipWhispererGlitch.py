@@ -66,6 +66,7 @@ class GlitchSettings(util.DisableNewAttr):
     ]
 
     def __init__(self, cwglitch):
+        super().__init__()
         self.cwg = cwglitch
         self._is_husky = self.cwg.cwtype == 'cwhusky'
         self.pll = None

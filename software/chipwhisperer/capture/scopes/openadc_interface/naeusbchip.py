@@ -37,6 +37,7 @@ class OpenADCInterface_NAEUSBChip(DisableNewAttr):
     _name = "NewAE USB (CWLite/CW1200)"
 
     def __init__(self):
+        super().__init__()
         self.ser = NAEUSB()
 
         self.fpga = FPGA(self.ser)

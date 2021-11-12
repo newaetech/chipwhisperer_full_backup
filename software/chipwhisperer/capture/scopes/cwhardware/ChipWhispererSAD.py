@@ -58,6 +58,7 @@ class ChipWhispererSAD(util.DisableNewAttr):
     STATUS_START_MASK = 1 << 1
 
     def __init__(self, oa):
+        super().__init__()
 
         self.oldlow = None
         self.oldhigh = None

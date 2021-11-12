@@ -54,6 +54,7 @@ class ADCSettings(util.DisableNewAttr):
 
 
     def __init__(self, usb):
+        super().__init__()
         self.usb = usb
         self.disable_newattr()
 

@@ -324,6 +324,7 @@ class DisableNewAttr(object):
     _read_only_attrs : List[str] = []
 
     def __init__(self):
+        self._read_only_attrs = []
         self.enable_newattr()
 
     def disable_newattr(self):
