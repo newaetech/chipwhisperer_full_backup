@@ -628,6 +628,7 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
         Returns:
             True if connection is successful, False otherwise.
         """
+        self._read_only_attrs = []
         try:
             # possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
             # serial_numbers = []

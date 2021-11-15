@@ -311,6 +311,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         .. versionchanged:: 5.5
             Added idProduct, bitstream, and force parameters.
         """
+        self._read_only_attrs = []
         self._saved_sn = sn
         self.scopetype = OpenADCInterface_NAEUSBChip()
 
