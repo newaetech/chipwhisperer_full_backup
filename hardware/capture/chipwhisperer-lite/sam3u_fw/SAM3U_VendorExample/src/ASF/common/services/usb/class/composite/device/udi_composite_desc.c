@@ -47,8 +47,6 @@
 
 /**INDENT-OFF**/
 
-#define USB_NUM_CONFIGRUATIONS 2
-
 //! USB Device Descriptor
 COMPILER_WORD_ALIGNED
 UDC_DESC_STORAGE usb_dev_desc_t udc_device_desc = {
