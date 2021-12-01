@@ -242,9 +242,10 @@ bool main_setup_in_received(void);
 #define  UDI_VENDOR_EP_BULK_OUT      (0x02 | USB_EP_DIR_OUT)
 
 #define NAEUSB_MPSSE_SUPPORT 1
+
 #if NAEUSB_MPSSE_SUPPORT == 1
-#define  UDI_MPSSE_EP_BULK_IN		 (0x06 | USB_EP_DIR_IN)
-#define  UDI_MPSSE_EP_BULK_OUT		 (0x05 | USB_EP_DIR_OUT)
+#define  UDI_MPSSE_EP_BULK_IN		 (0x05 | USB_EP_DIR_IN)
+#define  UDI_MPSSE_EP_BULK_OUT		 (0x06 | USB_EP_DIR_OUT)
 #endif
 
 /**
