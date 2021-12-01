@@ -147,6 +147,11 @@ SECTIONS
         _ezero = .;
     } > sram0
 
+    .mpssemem (NOLOAD) :
+    {
+        KEEP(*(.mpssemem))
+    } > sram1
+
     /* stack section */
     .stack (NOLOAD):
     {
@@ -155,12 +160,8 @@ SECTIONS
         . = . + __stack_size__;
         . = ALIGN(8);
         _estack = .;
-    } > sram0
-
-    .mpssemem (NOLOAD) :
-    {
-        KEEP(*(.mpssemem))
     } > sram1
+
     
     . = ALIGN(4); 
     _end = . ; 
