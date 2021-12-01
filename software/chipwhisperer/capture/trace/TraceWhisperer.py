@@ -32,7 +32,13 @@ import chipwhisperer as cw
 from ...common.utils import util
 from ...hardware.naeusb.naeusb import NAEUSB
 from ...hardware.naeusb.fpga import FPGA
+from ..scopes.cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP
 from ...logging import *
+from collections import OrderedDict
+import numpy as np
+
+CODE_READ       = 0x80
+CODE_WRITE      = 0xC0
 
 class TraceWhisperer:
 
@@ -99,7 +105,7 @@ class TraceWhisperer:
         self._base_baud = 38400
         self._usb_clock = 96e6
         self._uart_clock = self._usb_clock * 2
-        self.expected_verilog_defines = 107
+        self.expected_verilog_defines = 115
         self.swo_mode = False
         self.board_rev = 4
         self._scope = scope
@@ -127,7 +133,41 @@ class TraceWhisperer:
             self._naeusb = target._naeusb
 
         self.slurp_defines(defines_files)
+        self.drp = XilinxDRP(self, self.REG_TRIGGER_DRP_DATA, self.REG_TRIGGER_DRP_ADDR, self.REG_TRIGGER_DRP_RESET)
+        self.mmcm = XilinxMMCMDRP(self.drp)
+
         self._set_defaults()
+
+    def sendMessage(self, mode, address, payload=None, Validate=False, maxResp=None, readMask=None):
+        """TODO
+        """
+        if Validate or readMask:
+            raise ValueError("Not implemented!")
+        if mode == CODE_READ:
+            return self.fpga_read(address, maxResp)
+        elif mode == CODE_WRITE:
+            return self.fpga_write(address, payload)
+
+
+    def _dict_repr(self):
+        rtn = OrderedDict()
+        rtn['fpga_buildtime']   = self.fpga_buildtime
+        rtn['synced']           = self.synced
+        rtn['trigger_freq']     = self.trigger_freq
+        rtn['fe_clock_alive']   = self.fe_clock_alive
+        rtn['trace_mode']       = self.trace_mode
+        if self.trace_mode == 'SWO':
+            rtn['swo_div']      = self.swo_div
+            rtn['acpr']         = self.acpr
+
+        return rtn
+
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
 
 
     def _set_defaults(self):
@@ -194,6 +234,14 @@ class TraceWhisperer:
         assert self.verilog_define_matches == self.expected_verilog_defines, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected %d, got %d" % (defines_file, self.expected_verilog_defines, self.verilog_define_matches)
 
 
+    @property 
+    def trace_mode(self):
+        if self.swo_mode:
+            return "SWO"
+        else:
+            return "parallel trace"
+
+
     def set_trace_mode(self, mode, swo_div=8, acpr=0):
         """Set trace or SWO mode. SWO mode is only available on CW610 platform.
         For SWO mode, we also adjust the target clock to match the SWO parameters.
@@ -206,7 +254,7 @@ class TraceWhisperer:
             self.swo_mode = False
             self.set_reg('TPI_SPPR', '00000000')
             self.fpga_write(self.REG_SWO_ENABLE, [0])
-        elif mode == 'swo':
+        elif mode in ['swo', 'SWO']:
             if self.platform == 'CW305':
                 raise ValueError('CW305 does not support SWO mode')
             self.swo_mode = True
@@ -222,6 +270,43 @@ class TraceWhisperer:
             tracewhisperer_logger.info("Ensure target is in SWD mode, e.g. using jtag_to_swd().")
         else:
             tracewhisperer_logger.error('Invalid mode %s: specify "trace" or "swo"', mode)
+
+    @property
+    def swo_div(self):
+        """TODO explain relation to clock!
+
+        :Getter: TODO
+
+        :Setter: TODO
+
+        Raises:
+           ValueError: TODO
+
+        """
+        return self.fpga_read(self.REG_SWO_BITRATE_DIV, 1)[0] + 1 # not a typo: hardware requires -1; doing this is easier than fixing the hardware
+
+    @swo_div.setter
+    def swo_div(self, swo_div):
+        return self.fpga_write(self.REG_SWO_BITRATE_DIV, [swo_div-1]) # not a typo: hardware requires -1; doing this is easier than fixing the hardware
+
+    @property
+    def acpr(self):
+        """TODO explain relation to clock!
+
+        :Getter: TODO
+
+        :Setter: TODO
+
+        Raises:
+           ValueError: TODO
+
+        """
+        return self.get_reg('TPI_ACPR')
+
+    @acpr.setter
+    def acpr(self, acpr):
+        return self.set_reg('TPI_ACPR', '%08x' % acpr)
+
 
 
     def set_capture_mode(self, mode, counts=0):
@@ -247,6 +332,7 @@ class TraceWhisperer:
 
     def set_board_rev(self, rev):
         """For development only - the rev3 board has different pin assignments.
+        TODO: FPGA register does nothing now, but Python needs to know, for jtag_to_swd to work properly.
         The board revision must be set correctly both here and in the FPGA. This convenience
         function ensures both are set properly.
         Args:
@@ -372,13 +458,62 @@ class TraceWhisperer:
         """Arms trace sniffer for capture; also checks sync status.
         """
         self.fpga_write(self.REG_ARM, [1])
-        self.synced()
+        assert self.synced, 'Not synchronized!'
 
-
-    def synced(self):
-        """Checks that trace trigger module is synchronized.
+    @property
+    def trigger_freq(self):
+        """TODO
         """
-        assert self.fpga_read(self.REG_SYNCHRONIZED, 1)[0] == 1, 'Not synchronized!'
+        raw = int.from_bytes(self.fpga_read(self.REG_TRIGGER_FREQ, 4), byteorder='little')
+        freq = raw * 96e6 / float(pow(2,23))
+        return freq
+
+    @trigger_freq.setter
+    def trigger_freq(self, freq, vcomin=600e6, vcomax=1200e6):
+        """Calculate Multiply & Divide settings based on input frequency"""
+        input_freq = self._scope.clock.clkgen_freq # TODO: this is assuming we're using target_clk; should measure fe_clk in FPGA and use that instead
+        lowerror = 1e99
+        best = (0,0,0)
+        for maindiv in range(1,6):
+            mmin = int(np.ceil(vcomin/input_freq*maindiv))
+            mmax = int(np.ceil(vcomax/input_freq*maindiv))
+            for mul in range(mmin,mmax+1):
+                if mul/maindiv < vcomin/input_freq or mul/maindiv > vcomax/input_freq:
+                    continue
+                for secdiv in range(1,127):
+                    calcfreq = input_freq*mul/maindiv/secdiv
+                    err = abs(freq - calcfreq)
+                    if err < lowerror:
+                        lowerror = err
+                        best = (mul, maindiv, secdiv)
+        if best == (0,0,0):
+            raise ValueError("Couldn't find a legal div/mul combination")
+        self.mmcm.set_mul(best[0])
+        self.mmcm.set_main_div(best[1])
+        self.mmcm.set_sec_div(best[2])
+
+
+    @property
+    def fe_clock_alive(self):
+        """TODO
+        """
+        read1 = int.from_bytes(self.fpga_read(self.REG_FE_CLOCK_COUNT, 3), byteorder='little')
+        dummy = self.fpga_read(self.REG_ARM, 1)
+        read2 = int.from_bytes(self.fpga_read(self.REG_FE_CLOCK_COUNT, 3), byteorder='little')
+        if read1 == read2:
+            return False
+        else:
+            return True
+
+
+    @property
+    def synced(self):
+        """Check if trace trigger module is synchronized.
+        """
+        if self.fe_clock_alive and self.fpga_read(self.REG_SYNCHRONIZED, 1)[0] == 1:
+            return True
+        else:
+            return False
 
 
     def resync(self):
@@ -388,7 +523,7 @@ class TraceWhisperer:
         setup/hold violations (clock edge too close to data edge).
         """
         self.fpga_write(self.REG_TRACE_RESET_SYNC, [1])
-        self.synced()
+        assert self.synced, 'Not synchronized!'
 
 
     def is_done(self):
@@ -450,7 +585,8 @@ class TraceWhisperer:
             return False
 
 
-    def get_fpga_buildtime(self):
+    @property
+    def fpga_buildtime(self):
         """Returns date and time when FPGA bitfile was generated.
         """
         raw = self.fpga_read(addr=self.REG_BUILDTIME, readlen=4)
@@ -460,7 +596,11 @@ class TraceWhisperer:
         year = ((raw[2] >> 1) & 0x3f) + 2000
         hour = ((raw[2] & 0x1) << 4) + (raw[1] >> 4)
         minute = ((raw[1] & 0xf) << 2) + (raw[0] >> 6)
-        return "FPGA build time: {}/{}/{}, {}:{}".format(month, day, year, hour, minute)
+        return "{}/{}/{}, {:02d}:{:02d}".format(month, day, year, hour, minute)
+
+    def get_fpga_buildtime(self):
+        # TODO-just for backwards compatibility, need to deprecate
+        return self.fpga_buildtime
 
 
     def get_fw_buildtime(self):
