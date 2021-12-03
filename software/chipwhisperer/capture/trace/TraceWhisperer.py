@@ -107,7 +107,6 @@ class TraceWhisperer:
         self._uart_clock = self._usb_clock * 2
         self.expected_verilog_defines = 115
         self.swo_mode = False
-        self.board_rev = 4
         self._scope = scope
         # Detect whether we exist on CW305 or CW610 based on the target we're given:
         if target._name == 'Simple Serial':
@@ -330,17 +329,9 @@ class TraceWhisperer:
             tracewhisperer_logger.error('Invalid mode %s')
 
 
-    def set_board_rev(self, rev):
-        """For development only - the rev3 board has different pin assignments.
-        TODO: FPGA register does nothing now, but Python needs to know, for jtag_to_swd to work properly.
-        The board revision must be set correctly both here and in the FPGA. This convenience
-        function ensures both are set properly.
-        Args:
-            rev (int): 3 or 4
-        """
-        assert rev in [3,4]
-        self.board_rev = rev
-        self.fpga_write(self.REG_BOARD_REV, [rev])
+    @property
+    def board_rev(self):
+        return self.fpga_read(self.REG_BOARD_REV, 1)[0]
 
 
     def jtag_to_swd(self):
