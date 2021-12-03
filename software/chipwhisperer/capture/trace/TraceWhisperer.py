@@ -105,7 +105,7 @@ class TraceWhisperer:
         self._base_baud = 38400
         self._usb_clock = 96e6
         self._uart_clock = self._usb_clock * 2
-        self.expected_verilog_defines = 115
+        self.expected_verilog_defines = 116
         self.swo_mode = False
         self._scope = scope
         # Detect whether we exist on CW305 or CW610 based on the target we're given:
@@ -153,6 +153,7 @@ class TraceWhisperer:
         rtn['fpga_buildtime']   = self.fpga_buildtime
         rtn['synced']           = self.synced
         rtn['trigger_freq']     = self.trigger_freq
+        rtn['fe_freq']          = self.fe_freq
         rtn['fe_clock_alive']   = self.fe_clock_alive
         rtn['trace_mode']       = self.trace_mode
         if self.trace_mode == 'SWO':
@@ -451,6 +452,16 @@ class TraceWhisperer:
         self.fpga_write(self.REG_ARM, [1])
         assert self.synced, 'Not synchronized!'
 
+
+    @property
+    def fe_freq(self):
+        """TODO
+        """
+        raw = int.from_bytes(self.fpga_read(self.REG_FE_FREQ, 4), byteorder='little')
+        freq = raw * 96e6 / float(pow(2,23))
+        return freq
+
+
     @property
     def trigger_freq(self):
         """TODO
@@ -462,14 +473,16 @@ class TraceWhisperer:
     @trigger_freq.setter
     def trigger_freq(self, freq, vcomin=600e6, vcomax=1200e6):
         """Calculate Multiply & Divide settings based on input frequency"""
-        input_freq = self._scope.clock.clkgen_freq # TODO: this is assuming we're using target_clk; should measure fe_clk in FPGA and use that instead
+        if not self.fe_clock_alive:
+            raise ValueError("FE clock not present, cannot calculate proper M/D settings")
+        input_freq = self.fe_freq
         lowerror = 1e99
         best = (0,0,0)
         for maindiv in range(1,6):
             mmin = int(np.ceil(vcomin/input_freq*maindiv))
             mmax = int(np.ceil(vcomax/input_freq*maindiv))
             for mul in range(mmin,mmax+1):
-                if mul/maindiv < vcomin/input_freq or mul/maindiv > vcomax/input_freq:
+                if mul/maindiv < vcomin/input_freq or mul/maindiv > vcomax/input_freq or mul >= 2**7:
                     continue
                 for secdiv in range(1,127):
                     calcfreq = input_freq*mul/maindiv/secdiv
