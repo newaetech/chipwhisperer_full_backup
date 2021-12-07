@@ -1173,107 +1173,105 @@ class ARM_debug_registers(util.DisableNewAttr):
     def DWT_CTRL(self):
         return self._get('DWT_CTRL')
 
-    @property
-    def DWT_COMP0(self):
-        return self._get('DWT_COMP0')
-
-    @property
-    def DWT_COMP1(self): 
-        return self._get('DWT_COMP1')
-
-    @property
-    def ETM_CR(self): 
-        return self._get('ETM_CR')
-
-    @property
-    def ETM_TESSEICR(self): 
-        return self._get('ETM_TESSEICR')
-
-    @property
-    def ETM_TEEVR(self): 
-        return self._get('ETM_TEEVR')
-
-    @property
-    def ETM_TECR1(self): 
-        return self._get('ETM_TECR1')
-
-    @property
-    def ETM_TRACEIDR(self): 
-        return self._get('ETM_TRACEIDR')
-
-    @property
-    def TPI_ACPR(self): 
-        return self._get('TPI_ACPR')
-
-    @property
-    def TPI_SPPR(self): 
-        return self._get('TPI_SPPR')
-
-    @property
-    def TPI_FFCR(self): 
-        return self._get('TPI_FFCR')
-
-    @property
-    def TPI_CSPSR(self): 
-        return self._get('TPI_CSPSR')
-
-    @property
-    def ITM_TCR(self): 
-        return self._get('ITM_TCR')
-
-
     @DWT_CTRL.setter
     def DWT_CTRL(self, val): 
         self._set('DWT_CTRL', val)
+
+    @property
+    def DWT_COMP0(self):
+        return self._get('DWT_COMP0')
 
     @DWT_COMP0.setter
     def DWT_COMP0(self, val): 
         self._set('DWT_COMP0', val)
 
+    @property
+    def DWT_COMP1(self): 
+        return self._get('DWT_COMP1')
+
     @DWT_COMP1.setter
     def DWT_COMP1(self, val): 
         self._set('DWT_COMP1', val)
+
+    @property
+    def ETM_CR(self): 
+        return self._get('ETM_CR')
 
     @ETM_CR.setter
     def ETM_CR(self, val): 
         self._set('ETM_CR', val)
 
+    @property
+    def ETM_TESSEICR(self): 
+        return self._get('ETM_TESSEICR')
+
     @ETM_TESSEICR.setter
     def ETM_TESSEICR(self, val): 
         self._set('ETM_TESSEICR', val)
+
+    @property
+    def ETM_TEEVR(self): 
+        return self._get('ETM_TEEVR')
 
     @ETM_TEEVR.setter
     def ETM_TEEVR(self, val): 
         self._set('ETM_TEEVR', val)
 
+    @property
+    def ETM_TECR1(self): 
+        return self._get('ETM_TECR1')
+
     @ETM_TECR1.setter
     def ETM_TECR1(self, val): 
         self._set('ETM_TECR1', val)
+
+    @property
+    def ETM_TRACEIDR(self): 
+        return self._get('ETM_TRACEIDR')
 
     @ETM_TRACEIDR.setter
     def ETM_TRACEIDR(self, val): 
         self._set('ETM_TRACEIDR', val)
 
+    @property
+    def TPI_ACPR(self): 
+        return self._get('TPI_ACPR')
+
     @TPI_ACPR.setter
     def TPI_ACPR(self, val): 
         self._set('TPI_ACPR', val)
+
+    @property
+    def TPI_SPPR(self): 
+        return self._get('TPI_SPPR')
 
     @TPI_SPPR.setter
     def TPI_SPPR(self, val): 
         self._set('TPI_SPPR', val)
 
+    @property
+    def TPI_FFCR(self): 
+        return self._get('TPI_FFCR')
+
     @TPI_FFCR.setter
     def TPI_FFCR(self, val): 
         self._set('TPI_FFCR', val)
+
+    @property
+    def TPI_CSPSR(self): 
+        return self._get('TPI_CSPSR')
 
     @TPI_CSPSR.setter
     def TPI_CSPSR(self, val): 
         self._set('TPI_CSPSR', val)
 
+    @property
+    def ITM_TCR(self): 
+        return self._get('ITM_TCR')
+
     @ITM_TCR.setter
     def ITM_TCR(self, val): 
         self._set('ITM_TCR', val)
-
 
     def _set(self, reg, data, printresult=False):
         """Set a Cortex debug register
