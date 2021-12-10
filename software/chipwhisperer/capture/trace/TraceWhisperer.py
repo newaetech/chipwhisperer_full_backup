@@ -151,6 +151,7 @@ class TraceWhisperer(util.DisableNewAttr):
             rtn['swo_div']      = self.swo_div
         else:
             rtn['trace_width']  = self.trace_width
+        rtn['leds']             = self.leds
         rtn['clock']            = self.clock._dict_repr()
         rtn['capture']          = self.capture._dict_repr()
         rtn['target_registers'] = self.target_registers._dict_repr()
@@ -296,6 +297,33 @@ class TraceWhisperer(util.DisableNewAttr):
         if div < 1:
             raise ValueError
         return self.fpga_write(self.REG_SWO_BITRATE_DIV, [div-1]) # not a typo: hardware requires -1; doing this is easier than fixing the hardware
+
+    @property
+    def leds(self):
+        """Set the meaning of the armed/capturing LEDs.
+
+        Args:
+            mode (str): "normal": as labeled (armed/capturing)
+                        "hearbeat": armed = front-end clock heartbeat; capturing = trace clock heartbeat
+        """
+        raw = self.fpga_read(self.REG_LED_SELECT, 1)[0]
+        if raw == 0:
+            return 'normal'
+        elif raw == 1:
+            return 'hearbeat'
+        else:
+            raise ValueError
+
+    @leds.setter
+    def leds(self, mode):
+        if mode == 'normal':
+            val = 0
+        elif mode == 'heartbeat':
+            val = 1
+        else:
+            raise ValueError
+        return self.fpga_write(self.REG_LED_SELECT, [val])
+
 
     @property
     def trace_width(self):
