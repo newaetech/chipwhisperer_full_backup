@@ -76,11 +76,11 @@ class TraceWhisperer(util.DisableNewAttr):
     def __init__(self, target, scope, defines_files=None, bs='', force_bitfile=False):
         """
         Args:
-            target: SimpleSerial target
-            scope: CW scope
-            naeusb: NewAE USB interface
-            platform (string): CW305 or CW610 (PhyWhisperer)
+            target: SimpleSerial target object
+            scope: CW scope object
+            bs (string): FPGA bitfile (default is used if not specified)
             defines_files (list of 2 strings): path to defines_trace.v and defines_pw.v
+            force_bitfile (bool): force loading of FPGA bitfile, even if FPGA is already programmed.
         """
         super().__init__()
         self._trace_port_width = 4
@@ -151,7 +151,8 @@ class TraceWhisperer(util.DisableNewAttr):
             rtn['swo_div']      = self.swo_div
         else:
             rtn['trace_width']  = self.trace_width
-        rtn['leds']             = self.leds
+        if self.platform == 'CW610':
+            rtn['leds']             = self.leds
         rtn['clock']            = self.clock._dict_repr()
         rtn['capture']          = self.capture._dict_repr()
         rtn['target_registers'] = self.target_registers._dict_repr()
@@ -306,13 +307,16 @@ class TraceWhisperer(util.DisableNewAttr):
             mode (str): "normal": as labeled (armed/capturing)
                         "hearbeat": armed = front-end clock heartbeat; capturing = trace clock heartbeat
         """
-        raw = self.fpga_read(self.REG_LED_SELECT, 1)[0]
-        if raw == 0:
+        if self.platform == 'CW305':
             return 'normal'
-        elif raw == 1:
-            return 'hearbeat'
         else:
-            raise ValueError
+            raw = self.fpga_read(self.REG_LED_SELECT, 1)[0]
+            if raw == 0:
+                return 'normal'
+            elif raw == 1:
+                return 'hearbeat'
+            else:
+                raise ValueError
 
     @leds.setter
     def leds(self, mode):
@@ -855,7 +859,8 @@ class clock(util.DisableNewAttr):
     def _dict_repr(self):
         rtn = OrderedDict()
         rtn['fe_clock_alive']   = self.fe_clock_alive
-        rtn['fe_clock_src']     = self.fe_clock_src
+        if self.main.platform == 'CW610':
+            rtn['fe_clock_src']     = self.fe_clock_src
         rtn['fe_freq']          = self.fe_freq
         rtn['trigger_locked']   = self.trigger_locked
         rtn['trigger_freq']     = self.trigger_freq
@@ -936,15 +941,18 @@ class clock(util.DisableNewAttr):
         Args:
             src (str): "target_clock", "trace_clock" or "usb_clock"
         """
-        raw = self.main.fpga_read(self.main.REG_FE_CLOCK_SEL, 1)[0]
-        if raw == 0:
+        if self.main.platform == 'CW305':
             return 'target_clock'
-        elif raw == 1:
-            return 'trace_clock'
-        elif raw == 2:
-            return 'usb_clock'
         else:
-            raise ValueError("Unexpected value: %d" % raw)
+            raw = self.main.fpga_read(self.main.REG_FE_CLOCK_SEL, 1)[0]
+            if raw == 0:
+                return 'target_clock'
+            elif raw == 1:
+                return 'trace_clock'
+            elif raw == 2:
+                return 'usb_clock'
+            else:
+                raise ValueError("Unexpected value: %d" % raw)
 
     @fe_clock_src.setter
     def fe_clock_src(self, src):
