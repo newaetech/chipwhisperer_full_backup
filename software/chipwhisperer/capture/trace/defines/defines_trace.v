@@ -64,6 +64,16 @@
 
 `define REG_REVERSE_TRACEDATA   6'h24
 
+`define REG_FE_CLOCK_SEL        6'h25
+`define REG_STAT                6'h26
+`define REG_TRIGGER_FREQ        6'h27
+`define REG_FE_FREQ             6'h28
+`define REG_FE_CLOCK_COUNT      6'h29
+
+`define REG_TRIGGER_DRP_ADDR    6'h2a
+`define REG_TRIGGER_DRP_DATA    6'h2b
+`define REG_TRIGGER_DRP_RESET   6'h2c
+
 // FIFO bitfields:
 //                   31 30 29 28 27 26 25 24   23 22 21 20 19 18 17 16   15 14 13 12 11 10  9  8   7  6  5  4  3  2  1  0
 //                 +------------------------++------------------+-----++------------------------++------------------------+
