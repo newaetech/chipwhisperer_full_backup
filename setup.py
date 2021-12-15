@@ -23,7 +23,8 @@ setup(
         'ECpy',
         'fastdtw',
         'Cython',
-        'tqdm'
+        'tqdm',
+        'phywhisperer'
     ],
     project_urls={
         'Documentation': 'https://chipwhisperer.readthedocs.io',
