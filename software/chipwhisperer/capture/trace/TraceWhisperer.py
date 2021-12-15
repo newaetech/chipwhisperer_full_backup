@@ -30,8 +30,12 @@ import math
 import pkg_resources # type: ignore
 import chipwhisperer as cw
 from ...common.utils import util
-from ...hardware.naeusb.naeusb import NAEUSB
-from ...hardware.naeusb.fpga import FPGA
+#from ...hardware.naeusb.naeusb import NAEUSB
+#from ...hardware.naeusb.fpga import FPGA
+
+import phywhisperer.interface.naeusb as NAE
+import phywhisperer.interface.program_fpga as LLINT
+
 from ..scopes.cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP
 from ...logging import *
 from collections import OrderedDict
@@ -95,7 +99,7 @@ class TraceWhisperer(util.DisableNewAttr):
         if target._name == 'Simple Serial':
             self.platform = 'CW610'
             self._ss = target
-            self._naeusb = NAEUSB()
+            self._naeusb = NAE.NAEUSB()
             self._naeusb.con(idProduct=[0xC610])
             # we're using the CW NAEUSB, which has no knowledge of PW firmware, so let's manually
             # check the FW version here:
@@ -104,7 +108,8 @@ class TraceWhisperer(util.DisableNewAttr):
                 tracewhisperer_logger.warning('Your PhyWhisperer firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
                                      '. Suggested to update firmware, as you may experience errors.')
 
-            self._fpga = FPGA(self._naeusb)
+            #self._fpga = FPGA(self._naeusb)
+            self._fpga = LLINT.PhyWhispererUSB(self._naeusb)
             if not self._fpga.isFPGAProgrammed() or force_bitfile:
                 if not bs:
                     bs = pkg_resources.resource_filename('chipwhisperer', 'hardware/firmware/tracewhisperer_top.bit')
@@ -122,6 +127,7 @@ class TraceWhisperer(util.DisableNewAttr):
         if self.board_rev == 3:
             self.tms_bit = 0
             self.tck_bit = 2
+            tracewhisperer_logger.warning("Using FPGA bitfile built for rev-3 board, make sure this is what you intend!")
         elif self.board_rev == 4:
             self.tms_bit = 0
             self.tck_bit = 1
