@@ -344,8 +344,8 @@ class USERIOSettings(util.DisableNewAttr):
     def direction(self):
         """Set the direction of the USERIO data pins (D0-D7) with an
         8-bit integer, where bit <x> determines the direction of D<x>;
-        bit x = 0: D<x> is driven by Husky.
-        bit x = 1: D<x> is an input to Husky.
+        bit x = 0: D<x> is an input to Husky.
+        bit x = 1: D<x> is driven by Husky.
         Note that scope.userio.debug_mode takes precedence.
         Use with care.
         """
