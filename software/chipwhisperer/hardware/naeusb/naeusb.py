@@ -981,6 +981,14 @@ class NAEUSB:
             naeusb_logger.info("Feature {} not available".format(feature))
         return ret
 
+    def feature_list(self):
+        feature_list = []
+        for feature in SAM_FW_FEATURES:
+            if self.check_feature(feature):
+                feature_list.append(feature)
+
+        return feature_list
+
 
 if __name__ == '__main__':
     import chipwhisperer as cw

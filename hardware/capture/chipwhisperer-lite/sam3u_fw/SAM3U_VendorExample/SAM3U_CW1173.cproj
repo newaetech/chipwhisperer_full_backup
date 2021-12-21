@@ -518,7 +518,7 @@
   </armgcc.linker.libraries.LibrarySearchPaths>
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
   <armgcc.linker.memorysettings.ExternalRAM />
-  <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam/utils/linker_scripts/sam3u/sam3u2/gcc/flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
+  <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/naeusb/flash_sam3u2.ld</armgcc.linker.miscellaneous.LinkerFlags>
   <armgcc.assembler.general.IncludePaths>
     <ListValues>
       <Value>../src/ASF/common/services/usb/class/cdc</Value>
@@ -671,9 +671,6 @@
     <None Include="src\ASF\common\services\usb\class\composite\device\udi_composite_conf.h">
       <SubType>compile</SubType>
     </None>
-    <Compile Include="src\ASF\common\services\usb\class\composite\device\udi_composite_desc.c">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\ASF\sam\drivers\chipid\chipid.c">
       <SubType>compile</SubType>
     </Compile>
@@ -729,6 +726,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\naeusb\udc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\udi_composite_desc.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\naeusb\usart_driver.h">

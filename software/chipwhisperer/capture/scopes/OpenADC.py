@@ -164,7 +164,12 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                     break
                 except:
                     pass
-            self.default_setup()
+            try:
+                self.default_setup()
+            except:
+                raise IOError("Could not reconnect to ChipWhisperer. \
+                    Try connecting manually and running \
+                        scope.default_setup(); scope.io.cwe.setAVRISPMode(1)")
             self.io.cwe.setAVRISPMode(1)
             self.dis()
 

@@ -4,8 +4,6 @@
 
 src\ASF\common\services\usb\class\cdc\device\udi_cdc.c
 
-src\ASF\common\services\usb\class\composite\device\udi_composite_desc.c
-
 src\ASF\sam\drivers\chipid\chipid.c
 
 src\naeusb\circbuffer.c
@@ -27,6 +25,8 @@ src\naeusb\naeusb_openadc.c
 src\naeusb\naeusb_usart.c
 
 src\naeusb\udc.c
+
+src\naeusb\udi_composite_desc.c
 
 src\naeusb\usb_xmem.c
 
