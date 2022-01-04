@@ -290,11 +290,25 @@ bool main_setup_in_received(void);
 #define  UDI_VENDOR_IFACE_NUMBER     0
 
 #define UDI_COMPOSITE_DESC_T \
-udi_vendor_desc_t udi_vendor; \
-usb_iad_desc_t udi_iad;\
-udi_cdc_comm_desc_t udi_cdc_comm; \
-udi_cdc_data_desc_t udi_cdc_data; 
+	udi_vendor_desc_t udi_vendor; \
+union { \
+struct { \
+	usb_iad_desc_t udi_iad;\
+	udi_cdc_comm_desc_t udi_cdc_comm; \
+	udi_cdc_data_desc_t udi_cdc_data; \
+};\
+struct {\
+	udi_vendor_desc_t udi_vendor_mpsse; \
+};\
+};
 
+#define NAEUSB_MPSSE_SUPPORT 1
+#define MPSSE_SWD_SUPPORT 1
+
+#if NAEUSB_MPSSE_SUPPORT == 1
+#define  UDI_MPSSE_EP_BULK_IN		 (0x05 | USB_EP_DIR_IN)
+#define  UDI_MPSSE_EP_BULK_OUT		 (0x06 | USB_EP_DIR_OUT)
+#endif
 
 //! USB Interfaces descriptor value for Full Speed
 #define UDI_COMPOSITE_DESC_FS \
