@@ -16,6 +16,7 @@ Args:
 
 scope = cw.scope(name='Husky')
 target = cw.target(scope)
+scope.errors.clear()
 
 # TODO: program FW?
 scope.sc.reset_fpga()
@@ -201,6 +202,21 @@ testTargetData = [
     (2000000,   0,          'internal', 10e6,       False,      1,      12, True ,  65536,      True,   1,      0,      'slowreads2'),
 ]
 
+testSegmentData = [
+    # offset    presamples  samples clock       adcmul  seg_count   segs    segcycs desc
+    (0,         0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset'),
+    (0,         10,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset_presamp'),
+    (10,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset10'),
+    (50,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50'),
+    (50,        20,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_presamp'),
+    (0,         0,          90,    7.37e6,     4,      True,       20,     29356,  'segments_counter_no_offset'),
+    (0,         30,         90,    7.37e6,     4,      True,       20,     29356,  'segments_counter_no_offset_presamp'),
+    (10,        0,          90,    7.37e6,     4,      True,       20,     29356,  'segments_counter_offset10'),
+    (50,        0,          90,    7.37e6,     4,      True,       20,     29356,  'segments_counter_offset50'),
+    (50,        40,         90,    7.37e6,     4,      True,       20,     29356,  'segments_counter_offset50_presamp'),
+]
+
+
 testGlitchOffsetData = [
     # offset    oversamp    desc
     (0,         40,         ''),
@@ -253,7 +269,7 @@ testRWData = [
 ]
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '12/10/2021, 12:01'
+    assert scope.fpga_buildtime == '1/4/2022, 22:42'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -625,6 +641,96 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
         errors, first_error = check_ramp(raw, testmode, samples, segment_cycles)
         assert errors == 0, "%d errors; First error: %d" % (errors, first_error)
     scope.sc._fast_fifo_read_enable = True # return to default
+
+
+@pytest.mark.parametrize("offset, presamples, samples, clock, adcmul, seg_count, segs, segcycs, desc", testSegmentData)
+@pytest.mark.skipif(not target_attached, reason='No target detected')
+def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, segcycs, desc):
+    # This requires a specific target firmware to work properly:
+    # simpleserial-aes where the number of triggers can be set via 's' commmand.
+    # The segcycs value for seg_count=True requires a very specific firmware, otherwise the test is likely to fail.
+    errors = 0
+    scope.clock.clkgen_freq =clock
+    scope.clock.adc_mul = adcmul
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    #assert scope.clock.adc_freq == clock * adcmul
+    #target.baud = 38400 * clock / 1e6 / 7.37
+    target.baud = 38400
+
+    scope.adc.test_mode = False
+    scope.ADS4128.mode = 'normal'
+
+    scope.io.nrst = 0
+    time.sleep(0.1)
+    scope.io.nrst = 'high_z'
+    time.sleep(0.1)
+
+    target.flush()
+    target.write('x\n')
+    time.sleep(0.2)
+    assert target.read() != ''
+
+    scope.adc.basic_mode = "rising_edge"
+    scope.trigger.triggers = "tio4"
+    scope.io.tio1 = "serial_rx"
+    scope.io.tio2 = "serial_tx"
+    scope.io.hs2 = "clkgen"
+
+    scope.adc.samples = samples
+    scope.adc.presamples = presamples
+    scope.adc.segments = segs
+    scope.adc.segment_cycles = segcycs
+    scope.adc.segment_cycle_counter_en = seg_count
+    scope.adc.offset = offset
+    scope.adc.stream_mode = False
+    scope.adc.bits_per_sample = 12
+    scope.adc.clip_errors_disabled = False
+
+    scope.gain.db = 10
+
+    target.set_key(bytearray(16))
+    target.simpleserial_write('s', bytearray([0, segs]))
+    scope.arm()
+    target.simpleserial_write('f', bytearray(16))
+    ret = scope.capture()
+    if ret:
+        print("Timeout.")
+        errors += 1
+    time.sleep(0.1)
+    if not target.is_done():
+        print("Target did not finish.")
+        errors += 1
+    wave = scope.get_last_trace()
+    r = target.simpleserial_read('r', target.output_len)
+
+    rounds = []
+    rounds_off_by_one = []
+    for i in range(segs):
+        rounds.append(wave[i*samples:(i+1)*samples-1])
+        rounds_off_by_one.append(wave[i*samples+1:(i+1)*samples])
+
+    # check for errors two ways: point-by-point difference, and sum of SAD
+    for i in range(1, segs):
+        if max(abs(rounds[0] - rounds[i])) > max(abs(wave))/5:
+            errors += 1
+
+    # Strategy: SAD between two rounds should be a "small" number. Instead of
+    # defining "small", we take the ratio of SAD and SAD with an artificially
+    # shifted trace. If this is not a big number, something is wrong.
+    ratios = []
+    for i in range(1, segs):
+        ratio = np.sum(abs(rounds[i] - rounds[0])) / np.sum(abs(rounds_off_by_one[i] - rounds[0]))
+        if ratio < 1:
+            ratio = 1/ratio
+        ratios.append(ratio)
+        if ratio < 4:
+            errors += 1
+            bad_ratio = ratio
+
+    #assert errors == 0, "Ratios = %s; errors: %s" % (ratios, scope.adc.errors)
+    assert errors == 0
+
 
 
 def test_xadc():
