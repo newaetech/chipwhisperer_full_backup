@@ -16,7 +16,10 @@ python:
     - method: setuptools
       path: .
 
+#submodules:
+#  include:
+#    - tutorials
+#  recursive: true
+
 submodules:
-  include:
-    - tutorials
-  recursive: true
+  exclude: all
