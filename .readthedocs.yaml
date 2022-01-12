@@ -10,7 +10,7 @@ build:
     - libusb-1.0.0-dev
 
 python:
-  version: 3.9
+  version: 3.8
   install:
     - requirements: software/requirements.txt
     - method: setuptools
