@@ -6,11 +6,12 @@ sphinx:
   fail_on_warning: true
 
 build:
+  image: stable
   apt_packages:
     - libusb-1.0.0-dev
 
 python:
-  version: 3.8
+  version: 3.7
   install:
     - requirements: software/requirements.txt
     - method: setuptools
