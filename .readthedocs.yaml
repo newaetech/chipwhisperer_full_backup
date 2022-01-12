@@ -3,14 +3,14 @@ version: 2
 sphinx:
   builder: html
   configuration: docs/conf.py
-  fail_on_warning: false
+  fail_on_warning: true
 
 build:
   apt_packages:
     - libusb-1.0.0-dev
 
 python:
-  version: 3.8
+  version: 3.9
   install:
     - requirements: software/requirements.txt
     - method: setuptools
