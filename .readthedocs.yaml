@@ -1,9 +1,9 @@
-version: stable
+version: 2.0
 
 sphinx:
   builder: html
   configuration: docs/conf.py
-  fail_on_warning: true
+  fail_on_warning: false
 
 build:
   image: stable
