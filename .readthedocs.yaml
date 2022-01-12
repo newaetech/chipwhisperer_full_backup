@@ -6,7 +6,7 @@ sphinx:
   fail_on_warning: false
 
 build:
-  os: ubuntu-18.04
+  os: ubuntu-20.04
   apt_packages:
     - libusb-1.0.0-dev
 
