@@ -1,4 +1,4 @@
-version: 2.0
+version: 2
 
 sphinx:
   builder: html
@@ -6,7 +6,7 @@ sphinx:
   fail_on_warning: false
 
 build:
-  image: stable
+  image: latest
   apt_packages:
     - libusb-1.0.0-dev
 
