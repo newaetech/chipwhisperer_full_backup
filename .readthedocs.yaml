@@ -17,10 +17,7 @@ python:
     - method: setuptools
       path: .
 
-#submodules:
-#  include:
-#    - tutorials
-#  recursive: true
-
 submodules:
-  exclude: all
+  include:
+    - tutorials
+  recursive: true
