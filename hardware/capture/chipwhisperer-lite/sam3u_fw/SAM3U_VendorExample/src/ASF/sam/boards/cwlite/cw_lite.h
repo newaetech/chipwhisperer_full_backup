@@ -84,6 +84,7 @@
 
 #define CW_PROG_XMEGA
 #define CW_PROG_AVR
+#define CW_TARGET_SPI
 
 /** Name of the board */
 #define BOARD_NAME "ChipWhisperer-Lite"
