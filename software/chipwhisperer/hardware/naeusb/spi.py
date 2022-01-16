@@ -114,18 +114,27 @@ class SPI(object):
 
         if start:
             self.set_cs(False)
+        
+         
 
         if len(data) <= 64:
-            self.transfer_max64(data, writeonly=writeonly)
+            readdata = self.transfer_max64(data, writeonly=writeonly)
         else:
             si = 0
             chunk = 64
             ei = si + chunk
             nowdone = False
+            readdata = []
 
             while True:
-                self.transfer_max64(data[si:ei], writeonly=writeonly)
-                #print("%d %d: %d"%(ei, si, len(data[si:ei])))
+                wdata = data[si:ei]
+                if len(wdata):
+                    rdata = self.transfer_max64(wdata, writeonly=writeonly)
+                    if writeonly is True:
+                        readdata = None
+                    else:
+                        readdata.extend(rdata)
+                    #print("%d %d: %d"%(ei, si, len(data[si:ei])))
 
                 if nowdone:
                     break
@@ -139,10 +148,16 @@ class SPI(object):
         
         if stop:
             self.set_cs(True)
+        
+        return readdata
     
     def transfer_max64(self, data, writeonly=False):
         """Transfers up to 64 bytes, normally internal function as no CS control!
         """
+
+        if len(data) == 0:
+            raise ValueError("Length of input data must be > 0")
+
         self.sendCtrl(self.CMD_SPI, self.SPI_CMD_DATA, data)
 
         #Ignore input data

@@ -22,7 +22,8 @@
 #==========================================================================
 
 from typing import cast
-import time
+import time, os, logging
+from ...logging import *
 from chipwhisperer.hardware.naeusb.fpga import FPGA
 from chipwhisperer.hardware.naeusb.spi import SPI
 from chipwhisperer.common.utils import util
@@ -87,6 +88,14 @@ class LatticeICE40(FPGASlaveSPI):
         """Program bitstream file. By default uses a faster mode, you can set
            `sck_speed` up to around 20E6 successfully."""
         
+        filestats = os.stat(bs_path)
+        modtime = time.ctime(filestats.st_mtime)
+
+        target_logger.info("Bitstream modified time : ", modtime )
+
+        #Need to take control of ISP lines for erase to work
+        util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(False)
+
         self.erase_and_init()
 
         if use_fast_usb:
@@ -111,7 +120,7 @@ class LatticeICE40(FPGASlaveSPI):
                 spi = SPI(self.scope._getNAEUSB())
                 spi.enable(sck_speed)
                 spi.transfer(data, writeonly=True)
-                spi.transfer([0]*128, writeonly=True)
+                spi.transfer([0]*256, writeonly=True)
             finally:
                 spi.disable()
         
