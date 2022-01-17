@@ -88,7 +88,7 @@ class SPI(object):
         if self.cs_line_obj:
             setattr(self.cs_line_obj, self.cs_line_attr, state)
     
-    def enable(self, speed: int=100E3, set_cs_high=True):
+    def enable(self, speed=400E3, set_cs_high=True):
         """Enables the SPI interface, which takes control of SPI lines & nRST."""
         speed_data = packuint32(int(speed))
 
