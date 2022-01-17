@@ -126,3 +126,78 @@ class LatticeICE40(FPGASlaveSPI):
         
         #PDIC doesn't support read, oops!
         #cdone = getattr(self.scope.io, self.cdone)
+
+    def check_busy(self, spi, preclocks=600):
+        """Sending 0x05, 0x00 seems to check if device is busy, needs some SCK toggles w/o CS being low first."""
+        spi.transfer([0xFF]*preclocks, stop=False, start=False, writeonly=True)
+        resp = spi.transfer([0x05, 0x00])
+        return resp[1]
+
+    def wait_until_notbusy(self, spi, max_times=5):
+        """Potentially checks if device is busy or not (unknown exact command)"""
+        for i in range(0, max_times):
+            bsy = self.check_busy(spi)
+            if bsy == 0x01:
+                continue
+            elif bsy == 0x00:
+                return
+            else:
+                raise IOError("Invalid busy response: 0x%02X"%bsy)
+        raise IOError("Device never indicated ready.")
+
+    def check_idcode(self, csname="pdid"):
+        """Reads idcode (this is undocumented feature of ICE40 so very beta).
+        
+        Requires MISO connection (not always required). Only tested with certain
+        devices, so if this fails try programming anyway.
+        """
+
+        #Need to take control of ISP lines for erase to work
+        util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(False)
+
+        self.erase_and_init()
+
+        try:
+            spi = SPI(self.scope._getNAEUSB(), cs_line=(self.scope.io, csname))
+            spi.enable(1E6)
+            spi.transfer([0x7E, 0xAA, 0x99, 0x7E, 0x01, 0x0E])
+
+            self.wait_until_notbusy(spi)
+
+            spi.transfer([0xFF]*2, stop=False, start=False, writeonly=True)
+            spi.transfer([0x82, 0x00, 0x00, 0x20, 0x00, 0x15, 0xF2, 0xF0, 0xA2, 0x00, 0x00, 0x00])
+
+            self.wait_until_notbusy(spi)
+
+            spi.transfer([0xFF]*2, stop=False, start=False, writeonly=True)
+            spi.transfer([0x83, 0x00, 0x00, 0x25, 0x20])
+
+            self.wait_until_notbusy(spi)
+
+            spi.transfer([0xFF]*2, stop=False, start=False, writeonly=True)
+            spi.transfer([0x03], stop=False)
+            full_idcode = spi.transfer([0x0]*13, start=False, stop=False)
+
+            # I think this is ID code? No documentation though.
+            # Ohter bytes
+            idcode = full_idcode[12]
+
+            #Other data used for finerprinting(? not done by ice)
+            full_afteridcode = spi.transfer([0x0]*128, start=False)
+
+            # ice programmer does the following, shouldn't matter since we are done with
+            # the idcoe read by now?
+            self.wait_until_notbusy(spi)
+            spi.transfer([0xFF]*2, stop=False, start=False, writeonly=True)
+            spi.transfer([0x83, 0x00, 0x00, 0x25, 0x00])
+        finally:
+            spi.disable()
+        
+        if idcode == 0x20:
+            name = "iCE40UP5K"
+        elif idcode == 0x12:
+            name = "iCE5LP4K"
+        else:
+            name = "unknown"
+        
+        return (name, idcode, list(full_idcode), list(full_afteridcode))
