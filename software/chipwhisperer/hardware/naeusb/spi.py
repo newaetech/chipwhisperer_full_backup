@@ -53,6 +53,7 @@ class SPI(object):
     SPI_CMD_NRST_LOW = 0xA5
     SPI_CMD_NRST_HIGH = 0xA6
     SPI_CMD_NRST_INPUT = 0xA7
+    SPI_CMD_TOGGLE_SCK = 0xA8
 
     def __init__(self, usb: NAEUSB, timeout=200, nrst_default="high", cs_line=None):
         self.sendCtrl = usb.sendCtrl
@@ -167,4 +168,14 @@ class SPI(object):
         # Read already happened on HW side, this just reads back from buffer
         readdata = self.readCtrl(self.CMD_SPI, self.SPI_CMD_DATA, len(data))
         return readdata
+    
+    def toggle_sck(self, toggles, mosistate=False):
+        """Toggles SCK line an aribtrary number of times (sometimes required for synchronizing states).
+        
+        Does not respect the SCK setting, only uses a fixed SCK value."""
+
+        if toggles < 1 or toggles > 0xFF:
+            raise ValueError("Toggles must be in range 1 to 255")
+
+        self.sendCtrl(self.CMD_SPI, self.SPI_CMD_TOGGLE_SCK, [int(toggles), int(mosistate)])
         

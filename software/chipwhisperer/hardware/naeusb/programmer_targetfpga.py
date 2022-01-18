@@ -84,7 +84,7 @@ class LatticeICE40(FPGASlaveSPI):
         time.sleep(0.001)
         setattr(self.scope.io, self.csline, True)
 
-    def program(self, bs_path, sck_speed=1E6, use_fast_usb=True):
+    def program(self, bs_path, sck_speed=1E6, use_fast_usb=True, start=True):
         """Program bitstream file. By default uses a faster mode, you can set
            `sck_speed` up to around 20E6 successfully."""
         
@@ -97,6 +97,10 @@ class LatticeICE40(FPGASlaveSPI):
         util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(False)
 
         self.erase_and_init()
+
+        if start is False:
+            #Only supported with slow SPI
+            use_fast_usb = False
 
         if use_fast_usb:
             bsfile = open(bs_path, "rb")
@@ -116,16 +120,130 @@ class LatticeICE40(FPGASlaveSPI):
             bsfile = open(bs_path, "rb")
             data = bsfile.read()
             bsfile.close()
+
+            if start is False:
+                if list(data[-3:]) != [1, 6, 0]:
+                    #Check our crappy hack works, force user to change it
+                    raise IOError("Expected bitstream to end with 0x01 0x06 0x00, got: %s"%data[-3:])
+                data = data[:-3]
+
             try:
                 spi = SPI(self.scope._getNAEUSB())
                 spi.enable(sck_speed)
                 spi.transfer(data, writeonly=True)
-                spi.transfer([0]*256, writeonly=True)
+                if start is True:
+                    spi.transfer([0]*256, writeonly=True)
             finally:
-                spi.disable()
+                if start is True:
+                    spi.disable()
         
         #PDIC doesn't support read, oops!
         #cdone = getattr(self.scope.io, self.cdone)
+    
+    def read_block(self, spi, blocksize, cmd, shiftamount=5):
+        """Read a block, used with readback mode"""
+
+        HUGE_HACK = [0x00]
+        res = spi.transfer(cmd + HUGE_HACK) # Should end 0xF8, 0x00
+        if bytes(res[-3:-1]) != b'\xf8\x00': # Change to [-2:] if HUGE_HACK removed
+            print("Error? %s %s"%(blocksize, cmd))
+            
+        # These 5 toggles need to be with previous transaction or things seem to mess up.
+        # As a MAJOR HACK we sent an extra 8 cycles with previous transaction. This means
+        # everything is now off as 3 bits got read already. Options are toggle 5 bits now
+        # and throw away that first byte, or fix it after. Right now we fix it after. Also seems
+        # the final CRAM needs only 4 instead of 5? Not really investigated... a later problem
+        #spi.toggle_sck(5)
+        
+        # lattice puts a 1ms delay here it seems, not sure if needed
+        time.sleep(0.001)
+        
+        #Top 3 bits of res[-1] valid only
+        data = [res[-1]] + spi.transfer([0x00]* (blocksize) ) 
+        
+        #Now bit-shift an ENTIRE ARRAY (this is horrible), throw away last element
+        data = [(((data[i] << shiftamount) & 0xff) | (data[i+1] >> (8-shiftamount))) for i in range(0, len(data)-1)]
+        
+        return data
+
+    def readback(self, sck_speed=1E6, device="iCE40UP5K"):
+        """Readback CRAM + BRAM data. Must have NOT started FPGA for this to work.
+
+        Example::
+            lattice = LatticeICE40(scope)
+
+            lattice.erase_and_init()
+            lattice.program("example_file.bin"", sck_speed=20E6, start=False)
+            cram, bram = lattice.readback()
+            lattice.start()
+        """
+        # The following is done WITHOUT setting cs low - leave CS high
+        setattr(self.scope.io, self.csline, True)
+
+        spi = SPI(self.scope._getNAEUSB())
+        spi.enable(10E6)
+
+        if device.lower() == "ice40up5k":
+            cmd1 = [0x11, 0x00] + [0]*126
+            cram_cmds = [[0x7E, 0xAA, 0x99, 0x7E, 0x92, 0x00, 0x20, 0x62, 0x02, 0xB3, 0x82, 0x00, 0x00, 0x72, 0x01, 0x50, 0x11, 0x00, 0x01, 0x02, 0x00, 0x00],
+                        [0x7E, 0xAA, 0x99, 0x7E, 0x72, 0x00, 0xB0, 0x11, 0x01, 0x01, 0x02, 0x00, 0x00],
+                        [0x7E, 0xAA, 0x99, 0x7E, 0x72, 0x01, 0x50, 0x11, 0x02, 0x01, 0x02, 0x00, 0x00],
+                        [0x7E, 0xAA, 0x99, 0x7E, 0x72, 0x00, 0xB0, 0x11, 0x03, 0x01, 0x02, 0x00, 0x00]]
+            blocksize_read = [29064, 15224, 29064, 15224]
+            #No idea why final CRAM has different shift amount - see notes below
+            blocksize_shiftamount = [5, 5, 5, 4]
+            blocksize = 29064
+
+            bram_cmds = [[0x7E, 0xAA, 0x99, 0x7E, 0x62, 0x00, 0x9F, 0x72, 0x00, 0x80, 0x11, 0x00, 0x82, 0x00, 0x00, 0x01, 0x04, 0x00, 0x00],
+                        [0x7E, 0xAA, 0x99, 0x7E, 0x82, 0x00, 0x80, 0x01, 0x04, 0x00, 0x00],
+                        [0x7E, 0xAA, 0x99, 0x7E, 0x11, 0x01, 0x62, 0x00, 0x4F, 0x82, 0x00, 0x00, 0x01, 0x04, 0x00, 0x00],
+                        [0x7E, 0xAA, 0x99, 0x7E, 0x82, 0x00, 0x80, 0x01, 0x04, 0x00, 0x00],
+                        [0x7E, 0xAA, 0x99, 0x7E, 0x62, 0x00, 0x9F, 0x11, 0x02, 0x82, 0x00, 0x00, 0x01, 0x04, 0x00, 0x00],
+                        [0x7E, 0xAA, 0x99, 0x7E, 0x82, 0x00, 0x80, 0x01, 0x04, 0x00, 0x00],
+                        [0x7E, 0xAA, 0x99, 0x7E, 0x62, 0x00, 0x4F, 0x11, 0x03, 0x82, 0x00, 0x00, 0x01, 0x04, 0x00, 0x00],
+                        [0x7E, 0xAA, 0x99, 0x7E, 0x82, 0x00, 0x80, 0x01, 0x04, 0x00, 0x00],
+                        ]
+            bram_blocksize = [2560, 2560, 1280, 1280, 2560, 2560, 1280, 1280]
+            bram_shiftamount = [5, 5, 5, 5, 5, 5, 5, 5]
+        else:
+            raise NotImplementedError("Only ice40UP5K supported for readback")
+
+        #Initial clocks after bitstream loaded
+        spi.transfer([0xFF]*126, writeonly=True)
+            
+        #The following is done with CS high (inactive)
+        spi.transfer(cmd1)
+        time.sleep(0.002)
+        spi.transfer([1, 2, 0, 0])
+        spi.toggle_sck(5)
+
+        time.sleep(0.002)
+
+        #Setup first block
+        spi.transfer([0x00]*blocksize)
+
+        cram = []
+
+        for i in range(0, len(blocksize_read)):
+            cram.append( self.read_block(spi, blocksize_read[i], cram_cmds[i], blocksize_shiftamount[i]) )
+
+        bram = []
+
+        for i in range(0, len(bram_blocksize)):
+            bram.append( self.read_block(spi, bram_blocksize[i], bram_cmds[i], bram_shiftamount[i]) )
+            
+        #Exit this mode so we can finish start sequence
+        spi.transfer([0x7E, 0xAA, 0x99, 0x7E, 0x01, 0x0B])
+
+        return (cram, bram)
+
+    def start(self, sck_speed=1E6):
+        #Finally send go command + extra clocks, need CS pin again
+        spi = SPI(self.scope._getNAEUSB(), cs_line=(self.scope.io, self.csline))
+        spi.enable(sck_speed)
+        spi.transfer([1, 6, 0])
+        spi.transfer([0]*256, writeonly=True)
+        spi.disable()
 
     def check_busy(self, spi, preclocks=600):
         """Sending 0x05, 0x00 seems to check if device is busy, needs some SCK toggles w/o CS being low first."""
