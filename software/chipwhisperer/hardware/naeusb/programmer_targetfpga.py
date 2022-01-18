@@ -146,7 +146,7 @@ class LatticeICE40(FPGASlaveSPI):
         HUGE_HACK = [0x00]
         res = spi.transfer(cmd + HUGE_HACK) # Should end 0xF8, 0x00
         if bytes(res[-3:-1]) != b'\xf8\x00': # Change to [-2:] if HUGE_HACK removed
-            print("Error? %s %s"%(blocksize, cmd))
+            raise IOError("Sync Error, expected F8 00, got %02x %02x with %s %s"%(res[-3], res[-1], blocksize, cmd))
             
         # These 5 toggles need to be with previous transaction or things seem to mess up.
         # As a MAJOR HACK we sent an extra 8 cycles with previous transaction. This means
