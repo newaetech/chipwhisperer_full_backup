@@ -50,10 +50,10 @@
 #define  USB_DEVICE_PRODUCT_ID            0xACE0
 
 #define FW_VER_MAJOR 0
-#define FW_VER_MINOR 52
+#define FW_VER_MINOR 60
 #define FW_VER_DEBUG 0
 
-#define  USB_DEVICE_MAJOR_VERSION         1
+#define  USB_DEVICE_MAJOR_VERSION         9
 #define  USB_DEVICE_MINOR_VERSION         0
 #define  USB_DEVICE_POWER                 400 // Consumption on Vbus line (mA)
 #define  USB_DEVICE_ATTR                \
@@ -166,7 +166,7 @@ void main_suspend_action(void);
 //! Note:
 //! It is possible to define an IN and OUT endpoints with the same number on XMEGA product only
 //! E.g. MSC class can be have IN endpoint 0x81 and OUT endpoint 0x01
-#define  USB_DEVICE_MAX_EP             6 // 0 to max endpoint requested by interfaces
+#define  USB_DEVICE_MAX_EP             7 // 0 to max endpoint requested by interfaces
 //@}
 
 //@}
@@ -236,8 +236,8 @@ extern void my_callback_config(uint8_t port, usb_cdc_line_coding_t * cfg);
  * @{
  */
 //! Endpoints' numbers used by single or first CDC port
-#define  UDI_CDC_DATA_EP_IN_0          (5 | USB_EP_DIR_IN)  // TX
-#define  UDI_CDC_DATA_EP_OUT_0         (6 | USB_EP_DIR_OUT) // RX
+#define  UDI_CDC_DATA_EP_IN_0          (6 | USB_EP_DIR_IN)  // TX
+#define  UDI_CDC_DATA_EP_OUT_0         (7 | USB_EP_DIR_OUT) // RX
 #define  UDI_CDC_COMM_EP_0             (3 | USB_EP_DIR_IN)  // Notify endpoint
 
 //! Interface numbers used by single or first CDC port
@@ -306,8 +306,8 @@ struct {\
 #define MPSSE_SWD_SUPPORT 1
 
 #if NAEUSB_MPSSE_SUPPORT == 1
-#define  UDI_MPSSE_EP_BULK_IN		 (0x05 | USB_EP_DIR_IN)
-#define  UDI_MPSSE_EP_BULK_OUT		 (0x06 | USB_EP_DIR_OUT)
+#define  UDI_MPSSE_EP_BULK_IN		 (0x06 | USB_EP_DIR_IN)
+#define  UDI_MPSSE_EP_BULK_OUT		 (0x07 | USB_EP_DIR_OUT)
 #endif
 
 //! USB Interfaces descriptor value for Full Speed

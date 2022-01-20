@@ -554,7 +554,7 @@
   </armgcc.linker.libraries.LibrarySearchPaths>
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
   <armgcc.linker.memorysettings.ExternalRAM />
-  <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/flash_sam4s.ld</armgcc.linker.miscellaneous.LinkerFlags>
+  <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/naeusb/flash_sam4s.ld</armgcc.linker.miscellaneous.LinkerFlags>
   <armgcc.assembler.general.IncludePaths>
     <ListValues>
       <Value>../src/ASF/common/boards</Value>
@@ -834,9 +834,6 @@
       <SubType>compile</SubType>
     </None>
     <Compile Include="src\ASF\common\services\usb\class\vendor\device\udi_vendor.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\ASF\common\services\usb\udc\udc.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\ASF\sam\drivers\chipid\chipid.c">
@@ -1353,9 +1350,6 @@
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\naeusb\.git">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\naeusb\flash.ld">
       <SubType>compile</SubType>
     </None>
     <None Include="src\naeusb\README.md">
