@@ -8,6 +8,25 @@ class ChipWhispererCommonInterface:
     def __init__(self):
         pass
 
+    def enable_MPSSE(self, enable=1):
+        """Enable or disable MPSSE mode
+        """
+        if enable:
+            self._getNAEUSB().enable_MPSSE()
+        else:
+            self.reset_sam3u()
+        pass
+
+    def check_feature(self, name):
+        """Check if a feature is available on this ChipWhisperer
+        """
+        return self._getNAEUSB().check_feature(name)
+
+    def feature_list(self) -> List[str]:
+        """Returns a list of supported features that depend on device/firmware version
+        """
+        return self._getNAEUSB().feature_list()
+
     def _getNAEUSB(self) -> NAEUSB:
         raise NotImplementedError("_getNAEUSB() method required")
 

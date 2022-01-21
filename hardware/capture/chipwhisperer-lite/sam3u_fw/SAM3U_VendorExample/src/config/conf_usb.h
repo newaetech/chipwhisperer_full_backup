@@ -38,6 +38,7 @@
 #define _CONF_USB_H_
 
 #include "compiler.h"
+#include "usb_protocol.h"
 
 //#warning You must refill the following definitions with a correct values
 
@@ -49,7 +50,7 @@
 #define  USB_DEVICE_VENDOR_ID             0x2B3E
 #define  USB_DEVICE_PRODUCT_ID            0xACE2
 
-#define  USB_DEVICE_MAJOR_VERSION         1
+#define  USB_DEVICE_MAJOR_VERSION         9
 #define  USB_DEVICE_MINOR_VERSION         0
 #define  USB_DEVICE_POWER                 500 // Consumption on Vbus line (mA)
 #define  USB_DEVICE_ATTR                \
@@ -57,7 +58,7 @@
 
 #define FW_VER_DEBUG 0
 #define FW_VER_MAJOR 0
-#define FW_VER_MINOR 52
+#define FW_VER_MINOR 60
 // (USB_CONFIG_ATTR_SELF_POWERED)
 // (USB_CONFIG_ATTR_REMOTE_WAKEUP|USB_CONFIG_ATTR_SELF_POWERED)
 // (USB_CONFIG_ATTR_REMOTE_WAKEUP|USB_CONFIG_ATTR_BUS_POWERED)
@@ -90,43 +91,6 @@ extern char usb_serial_number[33];
 //#define  USB_DEVICE_HS_SUPPORT
 #endif
 //@}
-#if 0
-#define UDI_VENDOR_STRING_ID     0x10
-#define UDI_CDC_COMM_STRING_ID_0 0x11
-//#define UDI_CDC_COMM_STRING_ID_1 0x12
-
-
-#define VENDOR_STRING "CWLite Interface"
-#define CDC_DATA_STRING_0 "CWLite USART"
-//#define CDC_DATA_STRING_1 "CW310 USART Debug Interface"
-
-static inline const char *get_extra_str(uint8_t id)
-{
-	if (id == UDI_VENDOR_STRING_ID)
-	return VENDOR_STRING;
-	if (id == UDI_CDC_COMM_STRING_ID_0)
-	return CDC_DATA_STRING_0;
-	//if (id == UDI_CDC_COMM_STRING_ID_1)
-	//return CDC_DATA_STRING_1;
-	return NULL;
-	
-}
-
-static inline uint8_t get_extra_str_length(uint8_t id)
-{
-	if (id == UDI_VENDOR_STRING_ID)
-	return sizeof(VENDOR_STRING)-1;
-	if (id == UDI_CDC_COMM_STRING_ID_0)
-	return sizeof(CDC_DATA_STRING_0)-1;
-	//if (id == UDI_CDC_COMM_STRING_ID_1)
-	//return sizeof(CDC_DATA_STRING_1)-1;
-	return 0;
-	
-}
-
-#define UDC_GET_EXTRA_STRING() (str_length = get_extra_str_length(udd_g_ctrlreq.req.wValue & 0xff), str = get_extra_str(udd_g_ctrlreq.req.wValue & 0xff))
-
-#endif
 /**
  * USB Device Callbacks definitions (Optional)
  * @{
@@ -277,6 +241,14 @@ bool main_setup_in_received(void);
 #define  UDI_VENDOR_EP_BULK_IN       (0x01 | USB_EP_DIR_IN)
 #define  UDI_VENDOR_EP_BULK_OUT      (0x02 | USB_EP_DIR_OUT)
 
+#define NAEUSB_MPSSE_SUPPORT 1
+#define MPSSE_SWD_SUPPORT 1
+
+#if NAEUSB_MPSSE_SUPPORT == 1
+#define  UDI_MPSSE_EP_BULK_IN		 (0x05 | USB_EP_DIR_IN)
+#define  UDI_MPSSE_EP_BULK_OUT		 (0x06 | USB_EP_DIR_OUT)
+#endif
+
 /**
  * \name UDD Configuration
  */
@@ -290,10 +262,17 @@ bool main_setup_in_received(void);
 #define  UDI_VENDOR_IFACE_NUMBER     0
 
 #define UDI_COMPOSITE_DESC_T \
-udi_vendor_desc_t udi_vendor; \
-usb_iad_desc_t udi_iad;\
-udi_cdc_comm_desc_t udi_cdc_comm; \
-udi_cdc_data_desc_t udi_cdc_data; 
+	udi_vendor_desc_t udi_vendor; \
+union { \
+struct { \
+	usb_iad_desc_t udi_iad;\
+	udi_cdc_comm_desc_t udi_cdc_comm; \
+	udi_cdc_data_desc_t udi_cdc_data; \
+};\
+struct {\
+	udi_vendor_desc_t udi_vendor_mpsse; \
+};\
+};
 
 
 //! USB Interfaces descriptor value for Full Speed
@@ -301,7 +280,7 @@ udi_cdc_data_desc_t udi_cdc_data;
 .udi_vendor = UDI_VENDOR_DESC_FS, \
 .udi_iad = UDI_CDC_IAD_DESC_0, \
 .udi_cdc_comm              = UDI_CDC_COMM_DESC_0, \
-.udi_cdc_data              = UDI_CDC_DATA_DESC_0_FS, 
+.udi_cdc_data              = UDI_CDC_DATA_DESC_0_FS,  
 
 #define UDI_COMPOSITE_DESC_HS \
 .udi_vendor = UDI_VENDOR_DESC_HS, \
@@ -312,13 +291,16 @@ udi_cdc_data_desc_t udi_cdc_data;
 //! USB Interface APIs
 #define UDI_COMPOSITE_API &udi_api_vendor, \
 &udi_api_cdc_comm, \
-&udi_api_cdc_data,
+&udi_api_cdc_data, 
+
 /**
  * USB Device Driver Configuration
  * @{
  */
 //@}
 
+// #include "udd.h"
+// #include "udc_desc.h"
 //! The includes of classes and other headers must be done at the end of this file to avoid compile error
 #include "udi_vendor.h"
 #include "udi_cdc.h"
@@ -333,5 +315,7 @@ udi_cdc_data_desc_t udi_cdc_data;
 /* Declaration of callbacks used by USB
 #include "callback_def.h"
 */
+
+
 
 #endif // _CONF_USB_H_

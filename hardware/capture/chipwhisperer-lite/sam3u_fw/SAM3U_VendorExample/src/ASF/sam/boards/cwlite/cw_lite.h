@@ -239,6 +239,8 @@
 #define SPI_SPCK_GPIO       (PIO_PA15_IDX)
 #define SPI_SPCK_FLAGS (PIO_PERIPH_A | PIO_DEFAULT)
 
+
+
 #if 0 //REMOVE CODE
 
 /** SPI chip select 0 pin definition. (Only one configuration is possible) */
@@ -374,5 +376,26 @@
 
 /** Address for transferring data bytes to the nandflash. */
 #define BOARD_NF_DATA_ADDR      0x61000000
+
+//! XMEGA PDI Programming Pins
+#define PIN_PDIDTX_GPIO			  (PIO_PA20_IDX)
+#define PIN_PDIDTX_OUT_FLAGS	  (PIO_TYPE_PIO_OUTPUT_0 | PIO_DEFAULT)
+#define PIN_PDIDTX_IN_FLAGS		  (PIO_TYPE_PIO_INPUT | PIO_DEFAULT)
+#define PIN_PDIDTX_USART_FLAGS    (PIO_PERIPH_A | PIO_DEFAULT)
+
+#define PIN_PDIDRX_GPIO			  (PIO_PA21_IDX)
+#define PIN_PDIDRX_FLAGS		  (PIO_TYPE_PIO_INPUT | PIO_DEFAULT)
+#define PIN_PDIDRX_USART_FLAGS    (PIO_PERIPH_A | PIO_DEFAULT)
+
+#define PIN_PDIC_GPIO			  (PIO_PA24_IDX)
+#define PIN_PDIC_OUT_FLAGS		  (PIO_TYPE_PIO_OUTPUT_0 | PIO_DEFAULT)
+#define PIN_PDIC_IN_FLAGS		  (PIO_TYPE_PIO_INPUT | PIO_DEFAULT)
+#define PIN_PDIC_USART_FLAGS	  (PIO_PERIPH_B | PIO_DEFAULT)
+
+#define MPSSE_SCK_GPIO SPI_SPCK_GPIO
+#define MPSSE_DOUT_GPIO SPI_MOSI_GPIO
+#define MPSSE_DIN_GPIO SPI_MISO_GPIO
+#define MPSSE_TMS_GPIO PIN_PDIDTX_GPIO
+#define MPSSE_GPIOL0 PIN_PDIC_GPIO
 
 #endif  // _SAM3U_EK_H_

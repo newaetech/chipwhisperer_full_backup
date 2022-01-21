@@ -47,6 +47,7 @@ SAM_FW_FEATURES = [
     "FPGA_SPI_PASSTHROUGH", #10
     "SAM3U_GPIO_MODE", #11
     "FPGA_TARGET_BULK_WRITE", #12
+    "MPSSE", #13
 ]
 
 SAM_FW_FEATURE_BY_DEVICE = {
@@ -57,7 +58,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[4]: '0.30.0',
         SAM_FW_FEATURES[6]: '0.50.0',
         SAM_FW_FEATURES[7]: '0.50.0',
-        SAM_FW_FEATURES[8]: '0.30.0'
+        SAM_FW_FEATURES[8]: '0.30.0',
+        SAM_FW_FEATURES[13]: '0.60.0'
     },
 
     0xACE2: {
@@ -70,7 +72,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[6]: '0.50.0',
         SAM_FW_FEATURES[7]: '0.50.0',
         SAM_FW_FEATURES[8]: '0.30.0',
-        SAM_FW_FEATURES[9]: '0.52.0'
+        SAM_FW_FEATURES[9]: '0.52.0',
+        SAM_FW_FEATURES[13]: '0.60.0'
     },
 
     0xACE3: {
@@ -83,7 +86,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[6]: '1.50.0',
         SAM_FW_FEATURES[7]: '1.50.0',
         SAM_FW_FEATURES[8]: '1.30.0',
-        SAM_FW_FEATURES[9]: '1.52.0'
+        SAM_FW_FEATURES[9]: '1.52.0',
+        SAM_FW_FEATURES[13]: '1.60.0'
     },
 
     0xACE5: {
@@ -96,7 +100,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[6]: '1.0.0',
         SAM_FW_FEATURES[7]: '1.0.0',
         SAM_FW_FEATURES[8]: '1.0.0',
-        SAM_FW_FEATURES[9]: '1.0.0'
+        SAM_FW_FEATURES[9]: '1.0.0',
+        SAM_FW_FEATURES[13]: '1.1.0'
     },
 
     0xC305: {
@@ -123,6 +128,7 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[10]: '1.0.0',
         SAM_FW_FEATURES[11]: '1.0.0',
         SAM_FW_FEATURES[12]: '1.1.0',
+        SAM_FW_FEATURES[13]: '1.2.0'
     }
 }
 
@@ -596,6 +602,14 @@ class NAEUSB:
         else:
             return [0, 0, 0, 0]
 
+    def enable_MPSSE(self):
+        if self.check_feature("MPSSE"):
+            try:
+                self.sendCtrl(0x22, 0x42)
+            except usb1.USBError:
+                pass
+            self.close()
+
     def set_cdc_settings(self, port : Tuple=(1, 1, 0, 0)):
         if self.check_feature("CDC"):
             if isinstance(port, int):
@@ -884,6 +898,7 @@ class NAEUSB:
         return num_totalbytes
 
 
+
     def initStreamModeCapture(self, dlen : int, dbuf_temp : bytearray, timeout_ms : int=1000,
         is_husky : bool=False, segment_size : int=0):
         #Enter streaming mode for requested number of samples
@@ -959,6 +974,14 @@ class NAEUSB:
         if not ret:
             naeusb_logger.info("Feature {} not available".format(feature))
         return ret
+
+    def feature_list(self):
+        feature_list = []
+        for feature in SAM_FW_FEATURES:
+            if self.check_feature(feature):
+                feature_list.append(feature)
+
+        return feature_list
 
 
 if __name__ == '__main__':

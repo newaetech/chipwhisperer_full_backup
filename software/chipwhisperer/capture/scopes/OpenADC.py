@@ -150,6 +150,32 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
     def _getNAEUSB(self) -> NAEUSB:
         return self.scopetype.ser
 
+    def enable_MPSSE(self, enable=1):
+        sn = self.sn
+        if enable:
+            self.io.cwe.setAVRISPMode(1)
+        else:
+            self.io.cwe.setAVRISPMode(0)
+        super().enable_MPSSE(enable)
+
+        if enable and (not self._is_husky):
+            # non husky needs to be setup after MPSSE is setup
+            for i in range(10):
+                time.sleep(0.50)
+                try:
+                    self.con(sn=sn)
+                    break
+                except:
+                    pass
+            try:
+                self.default_setup()
+            except:
+                raise IOError("Could not reconnect to ChipWhisperer. \
+                    Try connecting manually and running \
+                        scope.default_setup(); scope.io.cwe.setAVRISPMode(1)")
+            self.io.cwe.setAVRISPMode(1)
+            self.dis()
+
     def default_setup(self):
         """Sets up sane capture defaults for this scope
 
