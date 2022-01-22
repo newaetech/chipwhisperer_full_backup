@@ -23,7 +23,7 @@ Both SWD and JTAG are supported.
 
 .. warning::
     On Windows only a single process can control a USB device, so you need to disconnect from Python when using
-    OpenOCD. See :ref:`Limitations` for other limitations and details.
+    OpenOCD. See :ref:`debug_sec_limitations` for other limitations and details.
 
 **************************
 Checking for MPSSE Support
@@ -182,6 +182,8 @@ connection, halt, and load commands can be replaced with:
 .. code:: bash
 
     arm-none-eabi-gdb /path/to/fw.elf -ex "target extended-remote localhost:3333" -ex "monitor reset halt" -ex "load"
+
+.. _debug_sec_limitations:
 
 ***********
 Limitations
