@@ -123,6 +123,11 @@ the STM32F3 via SWD using the ChipWhisperer-Lite:
     ftdi vid_pid 0x2b3e 0xace2
     source [target/stm32f3x.cfg]
 
+.. note::
+    The FTDI emulation mode means no special patches are needed for ChipWhisperer support, and forks of OpenOCD (which
+    are common where support for a new device has been added by a vendor) should "just work". However the format of the
+    OpenOCD configuration file is not always consistent, so you may need to adjust the cw_openocd.cfg file.
+
 Programming via OpenOCD
 =======================
 
