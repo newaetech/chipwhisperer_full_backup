@@ -21,6 +21,10 @@ soft core running on the FPGA.
 
 Both SWD and JTAG are supported.
 
+.. warning::
+    On Windows only a single process can control a USB device, so you need to disconnect from Python when using
+    OpenOCD. See :ref:`Limitations` for other limitations and details.
+
 **************************
 Checking for MPSSE Support
 **************************
@@ -101,7 +105,7 @@ with an error. The general command line configuration is:
 
     /path/to/openocd -f /path/to/cw_openocd.cfg -c "transport select <jtag or swd>" -c "ftdi vid_pid <VID> <PID>" -f "target/my_target.cfg"
 
-For example, to connect to an STM32F3 over SWD using the ChipWhisperer-Lite:
+For example, to connect to an STM32F3 over SWD using the ChipWhisperer-Lite (PID 0xace2)
 
 .. code:: bash
 

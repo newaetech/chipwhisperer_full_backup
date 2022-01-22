@@ -150,7 +150,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
     def _getNAEUSB(self) -> NAEUSB:
         return self.scopetype.ser
 
-    def enable_MPSSE(self, enable=1):
+    def enable_MPSSE(self, enable=True):
         sn = self.sn
         if enable:
             self.io.cwe.setAVRISPMode(1)
@@ -175,6 +175,11 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                         scope.default_setup(); scope.io.cwe.setAVRISPMode(1)")
             self.io.cwe.setAVRISPMode(1)
             self.dis()
+    
+    def finish_mpsse_setup(self, set_defaults=True):
+        if set_defaults:
+            self.default_setup()
+        self.io.cwe.setAVRISPMode(1)
 
     def default_setup(self):
         """Sets up sane capture defaults for this scope

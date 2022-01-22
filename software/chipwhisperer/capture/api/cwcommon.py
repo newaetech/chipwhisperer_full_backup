@@ -8,7 +8,7 @@ class ChipWhispererCommonInterface:
     def __init__(self):
         pass
 
-    def enable_MPSSE(self, enable=1):
+    def enable_MPSSE(self, enable=True):
         """Enable or disable MPSSE mode
         """
         if enable:
