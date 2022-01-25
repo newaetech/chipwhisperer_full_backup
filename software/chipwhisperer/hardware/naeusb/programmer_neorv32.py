@@ -192,6 +192,6 @@ class Neorv32Programmer:
         target_logger.debug(b"Response to upload of data: " + resp)
 
         if b"OK" not in resp:
-            raise IOError("Upload failed - bootloader responded with %b"%resp)
+            raise IOError(b"Upload failed - bootloader responded with " + resp)
 
         boot_resp = self.do_cmd("e", expected="Booting", resp_read_len=13)
