@@ -43,6 +43,10 @@ cwbergen_files = [("CW310.bin", os.path.join(hwdir, r"victims/cw310_bergenboard/
 cwnano_v = [0, 60]
 #hardware\capture\chipwhisperer-nano\firmware\cwnano-firmware\Debug\cwnano-firmware.bin
 cwnano_files = [("SAM3U_CWNANO.bin", os.path.join(hwdir, r"capture/chipwhisperer-nano/firmware/cwnano-firmware/Debug/cwnano-firmware.bin"))]
+
+
+target_ice40_neorv32_files = [("neorv32_iCE40CW312_MinimalBoot_directclk_7370KHz.bit", r"C:\dev\neorv32-setups\osflow\neorv32_iCE40CW312_MinimalBoot.bit")]
+
 #List of files to generate
 file_list = [
     ("cwnano.py" , cwnano_v , cwnano_files),
@@ -51,6 +55,7 @@ file_list = [
     ("cw1200.py", cw1200_v, cw1200_files),
     ("cwhusky.py", cwhusky_v, cwhusky_files),
     ("cwbergen.py", cwbergen_v, cwbergen_files),
+#    ("cwtargetice40.py", [0,0], target_ice40_neorv32_files)
 ]
 
 for fdata in file_list:
