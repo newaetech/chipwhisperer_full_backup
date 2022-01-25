@@ -84,14 +84,27 @@ class LatticeICE40(FPGASlaveSPI):
         time.sleep(0.001)
         setattr(self.scope.io, self.csline, True)
 
-    def program(self, bs_path, sck_speed=1E6, use_fast_usb=True, start=True):
+    def program(self, bs_path_or_data, sck_speed=1E6, use_fast_usb=True, start=True):
         """Program bitstream file. By default uses a faster mode, you can set
            `sck_speed` up to around 20E6 successfully."""
-        
-        filestats = os.stat(bs_path)
-        modtime = time.ctime(filestats.st_mtime)
 
-        target_logger.info("Bitstream modified time : ", modtime )
+
+        # No-body has 5K path lengths right !?
+        if len(bs_path_or_data) < 5E3:
+            bs_path = bs_path_or_data
+            bs_data = None
+        else:
+            bs_path = None
+            bs_data = bs_path_or_data
+
+            if use_fast_usb:
+                logging.info("Falling back to 'slow' USB when data is passed")
+        
+        if bs_path:
+            filestats = os.stat(bs_path)
+            modtime = time.ctime(filestats.st_mtime)
+
+            target_logger.info("Bitstream modified time : ", modtime )
 
         #Need to take control of ISP lines for erase to work
         util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(False)
@@ -102,7 +115,7 @@ class LatticeICE40(FPGASlaveSPI):
             #Only supported with slow SPI
             use_fast_usb = False
 
-        if use_fast_usb:
+        if use_fast_usb and bs_path:
             bsfile = open(bs_path, "rb")
             try:
                 fastfpga = FPGA(self.scope._getNAEUSB(), prog_mask=0xB0)
@@ -117,9 +130,12 @@ class LatticeICE40(FPGASlaveSPI):
                 util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(False)
                 bsfile.close()
         else:
-            bsfile = open(bs_path, "rb")
-            data = bsfile.read()
-            bsfile.close()
+            if bs_path:
+                bsfile = open(bs_path, "rb")
+                data = bsfile.read()
+                bsfile.close()
+            else:
+                data = bs_data
 
             if start is False:
                 if list(data[-3:]) != [1, 6, 0]:
