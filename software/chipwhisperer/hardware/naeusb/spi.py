@@ -58,6 +58,7 @@ class SPI(object):
     def __init__(self, usb: NAEUSB, timeout=200, nrst_default="high", cs_line=None):
         self.sendCtrl = usb.sendCtrl
         self.readCtrl = usb.readCtrl
+        usb.check_feature("TARGET_SPI", raise_exception=True)
         self._usb = usb
         self._timeout = timeout
 

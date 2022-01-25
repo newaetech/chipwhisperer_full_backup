@@ -48,7 +48,11 @@ SAM_FW_FEATURES = [
     "SAM3U_GPIO_MODE", #11
     "FPGA_TARGET_BULK_WRITE", #12
     "MPSSE", #13
+    "TARGET_SPI", #14
 ]
+
+class CWFirmwareError(Exception):
+    pass
 
 SAM_FW_FEATURE_BY_DEVICE = {
     0xACE0: {
@@ -73,7 +77,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[7]: '0.50.0',
         SAM_FW_FEATURES[8]: '0.30.0',
         SAM_FW_FEATURES[9]: '0.52.0',
-        SAM_FW_FEATURES[13]: '0.60.0'
+        SAM_FW_FEATURES[13]: '0.60.0',
+        SAM_FW_FEATURES[14]: '0.60.0'
     },
 
     0xACE3: {
@@ -87,7 +92,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[7]: '1.50.0',
         SAM_FW_FEATURES[8]: '1.30.0',
         SAM_FW_FEATURES[9]: '1.52.0',
-        SAM_FW_FEATURES[13]: '1.60.0'
+        SAM_FW_FEATURES[13]: '1.60.0',
+        SAM_FW_FEATURES[14]: '1.60.0'
     },
 
     0xACE5: {
@@ -101,7 +107,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[7]: '1.0.0',
         SAM_FW_FEATURES[8]: '1.0.0',
         SAM_FW_FEATURES[9]: '1.0.0',
-        SAM_FW_FEATURES[13]: '1.1.0'
+        SAM_FW_FEATURES[13]: '1.1.0',
+        SAM_FW_FEATURES[14]: '1.1.0'
     },
 
     0xC305: {
@@ -966,13 +973,15 @@ class NAEUSB:
     def read(self, dlen : int, timeout : int=2000) -> bytearray:
         return self.usbserializer.read(dlen, timeout)
 
-    def check_feature(self, feature) -> bool:
+    def check_feature(self, feature, raise_exception=False) -> bool:
         prod_id = self.usbtx.device.getProductID()
         fw_ver_list = self.readFwVersion()
         fw_ver_str = '{}.{}.{}'.format(fw_ver_list[0], fw_ver_list[1], fw_ver_list[2])
         ret = _check_sam_feature(feature, fw_ver_str, prod_id)
         if not ret:
             naeusb_logger.info("Feature {} not available".format(feature))
+            if raise_exception:
+                raise CWFirmwareError("Feature {} not available. FW {} required (have {})".format(feature, SAM_FW_FEATURE_BY_DEVICE[prod_id][feature], fw_ver_str))
         return ret
 
     def feature_list(self):

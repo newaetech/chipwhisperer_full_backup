@@ -55,6 +55,7 @@ class Neorv32Programmer:
         """
 
         self.scope = scope
+        scope._getNAEUSB().check_feature("TARGET_SPI", raise_exception=True)
         if hasattr(scope, 'usart'):
             self._cwserial = scope.usart
         else:
