@@ -30,6 +30,34 @@ from datetime import datetime
 from chipwhisperer.hardware.naeusb.programmer_targetfpga import LatticeICE40
 from functools import reduce, wraps
 from chipwhisperer.logging import *
+import numpy as np
+
+def gen_app_binary(rom):
+    """Replicate image_gen.c from the neorv32 project
+    """
+    signature = 0x4788CAFE
+    if not isinstance(rom, bytes):
+        rom = rom.read()
+
+    checksum = np.uint32(0)
+    size = 0
+    for i in range(0, len(rom), 4):
+        tmp = rom[i]
+        tmp |= (rom[i+1] << 8)
+        tmp |= (rom[i+2] << 16)
+        tmp |= (rom[i+3] << 24)
+        checksum += np.uint32(tmp)
+        # checksum &= 0xFFFFFFFF
+        size += 4
+
+    checksum = (~checksum) + 1
+    new_rom = bytes([(signature >> (i*8)) & 0xFF for i in range(4)])
+    new_rom += bytes([(size >> (i*8)) & 0xFF for i in range(4)])
+    new_rom += bytes([(checksum >> (i*8)) & 0xFF for i in range(4)])
+    new_rom += rom
+    return new_rom
+     
+
 
 def print_fun(s):
     print(s)
@@ -184,8 +212,9 @@ class Neorv32Programmer:
         
         # Upload
         self.do_cmd("u", "Awaiting neorv32_exe.bin... ")
+        new_rom = gen_app_binary(romdata)
 
-        self.sp.write(romdata)
+        self.sp.write(new_rom)
 
         time.sleep(0.1)
         resp = bytes(self.sp.read())
