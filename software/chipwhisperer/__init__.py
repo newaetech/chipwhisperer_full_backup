@@ -47,7 +47,7 @@ def check_for_updates() -> str:
     pv = str(subprocess.run([sys.executable, '-m', 'pip', '--version'], capture_output=True, text=True, check=False))
 
     pip_version = pv[pv.find("stdout=\'pip")+12:pv.find(" from")]
-    if pip_version < '21.0.0':
+    if pip_version < '21.1.0':
         other_logger.warning("Old pip version: {}, unable to do CW version check".format(pip_version))
         return
 
