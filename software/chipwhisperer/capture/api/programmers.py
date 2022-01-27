@@ -29,6 +29,7 @@ from ..scopes import ScopeTypes
 from chipwhisperer.hardware.naeusb.programmer_avr import supported_avr
 from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import supported_stm32f
+from chipwhisperer.hardware.naeusb.programmer_neorv32 import Neorv32Programmer
 
 from functools import wraps
 
@@ -143,6 +144,33 @@ def save_and_restore_pins(func):
                 self.scope.io.nrst = pin_setup['nrst']
         return val # only returns value when decorating a function with return value
     return func_wrapper
+
+class NEORV32Programmer(Programmer):
+
+    @save_and_restore_pins
+    def find(self):
+        if self.scope is None:
+            raise ValueError("Programmer not yet setup")
+
+        self.neorv = Neorv32Programmer(self.scope)
+        self.neorv.open_port()
+        pass
+
+    @save_and_restore_pins
+    def erase(self):
+        pass
+
+    @save_and_restore_pins
+    def program(self, filename: str, memtype="flash", verify=True):
+        if filename.endswith(".hex"):
+            scope_logger.error(".bin file required for NEORV32Programmer. Attempting to access .bin file at .hex location")
+            filename = filename.replace(".hex", ".bin")
+        self.neorv.program(filename)
+        pass
+
+    def close(self):
+        pass
+    
 
 class AVRProgrammer(Programmer):
     def __init__(self, slow_clock = False):
