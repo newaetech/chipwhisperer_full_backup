@@ -2,6 +2,7 @@ TOP=iCE40UP5K_SS_example
 FREQ=20
 
 all: synth pnr pack prog
+bitfile: synth pnr pack
 
 synth:
 	yosys -p 'synth_ice40 -top $(TOP) -json $(TOP).json' \
@@ -14,7 +15,7 @@ synth:
 	-l yosys.log
 
 pnr:
-	nextpnr-ice40 --up5k --package sg48 \
+	nextpnr-ice40 --up5k --package uwg30 \
 	--asc $(TOP).asc \
 	--pcf up5k.pcf \
 	--json $(TOP).json \
