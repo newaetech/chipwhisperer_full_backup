@@ -51,7 +51,8 @@ ADDR_LA_CLOCK_SOURCE    = 71
 ADDR_LA_TRIGGER_SOURCE  = 72
 ADDR_LA_POWERDOWN       = 73
 ADDR_LA_DRP_RESET       = 74
-ADDR_LA_EXISTS          = 75
+ADDR_LA_MANUAL_CAPTURE  = 75
+ADDR_COMPONENTS_EXIST   = 96
 ADDR_LA_CAPTURE_GROUP   = 76
 ADDR_LA_CAPTURE_DEPTH   = 77
 ADDR_LA_READ_SELECT     = 78
@@ -59,6 +60,7 @@ ADDR_LA_READ_SELECT     = 78
 ADDR_USERIO_CW_DRIVEN   = 86
 ADDR_USERIO_DEBUG_DRIVEN= 87
 ADDR_USERIO_DRIVE_DATA  = 88
+ADDR_TRACE_EN           = 0xc0 + 0x2d
 
 
 class XilinxDRP(util.DisableNewAttr):
@@ -274,12 +276,13 @@ class HuskyErrors(util.DisableNewAttr):
     '''
     _name = 'Husky Errors'
 
-    def __init__(self, oaiface : OAI.OpenADCInterface, XADC, adc, clock):
+    def __init__(self, oaiface : OAI.OpenADCInterface, XADC, adc, clock, trace):
         super().__init__()
         self.oa = oaiface
         self.XADC = XADC
         self.adc = adc
         self.clock = clock
+        self.trace = trace
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -287,6 +290,7 @@ class HuskyErrors(util.DisableNewAttr):
         rtn['XADC_status'] = self.XADC.status
         rtn['adc_errors'] = self.adc.errors
         rtn['extclk_error'] = self.clock.extclk_error
+        rtn['trace_errors'] = self.trace.errors
         return rtn
 
     def __repr__(self):
@@ -299,6 +303,7 @@ class HuskyErrors(util.DisableNewAttr):
         self.XADC.status = 0
         self.adc.errors = 0
         self.clock.extclk_error = 0
+        self.trace.errors = 0
 
 
 class USERIOSettings(util.DisableNewAttr):
@@ -313,7 +318,7 @@ class USERIOSettings(util.DisableNewAttr):
 
     def _dict_repr(self):
         rtn = OrderedDict()
-        rtn['debug_mode'] = self.debug_mode
+        rtn['mode'] = self.mode
         rtn['direction'] = self.direction
         rtn['drive_data'] = self.drive_data
         return rtn
@@ -325,28 +330,43 @@ class USERIOSettings(util.DisableNewAttr):
         return self.__repr__()
 
     @property
-    def debug_mode(self):
-        """Set all pins to debug mode, driven by Husky.
-        Takes precedence over scope.userio.direction.
-        Look to cwhusky_top.v for signal definitions.
+    def mode(self):
+        """Set mode for USERIO pins:
+            "normal": as defined by scope.userio.direction.
+            "trace": for target trace capture.
+            "debug": for FPGA debug (look to cwhusky_top.v for signal definitions).
         """
-        return self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_DRIVEN, maxResp=1)[0]
-
-    @debug_mode.setter
-    def debug_mode(self, setting):
-        if setting:
-            val = 1
+        debug = self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_DRIVEN, maxResp=1)[0]
+        trace = self.oa.sendMessage(CODE_READ, ADDR_TRACE_EN, maxResp=1)[0]
+        if trace:
+            return "trace"
+        elif debug:
+            return "debug"
         else:
-            val = 0
-        self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [val])
+            return "normal"
+
+    @mode.setter
+    def mode(self, setting):
+        if setting == 'normal':
+            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [0])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
+        elif setting == 'trace':
+            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [0])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [1])
+        elif setting == 'debug':
+            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [1])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
+        else:
+            raise ValueError("Invalid mode; use normal/trace/debug")
 
     @property
     def direction(self):
         """Set the direction of the USERIO data pins (D0-D7) with an
         8-bit integer, where bit <x> determines the direction of D<x>;
-        bit x = 0: D<x> is driven by Husky.
-        bit x = 1: D<x> is an input to Husky.
-        Note that scope.userio.debug_mode takes precedence.
+        bit x = 0: D<x> is an input to Husky.
+        bit x = 1: D<x> is driven by Husky.
+        When scope.userio.mode is not "normal", then this setting is controlled
+        by the FPGA and cannot be changed by the user.
         Use with care.
         """
         return self.oa.sendMessage(CODE_READ, ADDR_USERIO_CW_DRIVEN, maxResp=1)[0]
@@ -598,6 +618,14 @@ class LASettings(util.DisableNewAttr):
         """
         self._mmcm.drp.reset()
 
+
+    def trigger_now(self):
+        """TODO
+        """
+        self.oa.sendMessage(CODE_WRITE, ADDR_LA_MANUAL_CAPTURE, [1], Validate=False)
+        self.oa.sendMessage(CODE_WRITE, ADDR_LA_MANUAL_CAPTURE, [0], Validate=False)
+
+
     @staticmethod
     def _bytes_to_bits(bytelist):
         bitlist = []
@@ -612,13 +640,11 @@ class LASettings(util.DisableNewAttr):
         """ Return whether the logic analyzer functionality is present in this build (True or False).
         If it is not present, none of the functionality of this class is available.
         """
-        raw = self.oa.sendMessage(CODE_READ, ADDR_LA_EXISTS, Validate=False, maxResp=2)
-        if raw == bytearray([0, 0]):
-            return False
-        elif raw == bytearray([0x41, 0x4c]):
+        raw = self.oa.sendMessage(CODE_READ, ADDR_COMPONENTS_EXIST, Validate=False, maxResp=1)[0]
+        if raw & 1:
             return True
         else:
-            raise ValueError("Unexpected: read %s" % raw)
+            return False
 
     @property
     def locked(self):
@@ -690,6 +716,7 @@ class LASettings(util.DisableNewAttr):
                             domain. This comes before "glitch", since there is
                             a clock domain crossing from "glitch_source" to "glitch"
          * "HS1": The HS1 input clock.
+         * "manual": with scope.LA.trigger_now
 
         :Getter:
            Return the trigger source currently in use
@@ -759,6 +786,7 @@ class LASettings(util.DisableNewAttr):
             7: D7
             8: CK
         group 3: internal trigger signals, for debug/development (refer to Verilog source)
+        group 4: internal trace data
 
         :Getter:
            Return the capture group currently in use.
@@ -823,8 +851,10 @@ class LASettings(util.DisableNewAttr):
             val = [2]
         elif source == 'HS1':
             val = [3]
+        elif source == 'manual':
+            val = [5]
         else:
-            raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', or 'HS1'")
+            raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', 'HS1', or 'manual'")
         self.oa.sendMessage(CODE_WRITE, ADDR_LA_TRIGGER_SOURCE, val, Validate=False)
 
     def _getTriggerSource(self):
@@ -837,6 +867,8 @@ class LASettings(util.DisableNewAttr):
             return 'glitch_source'
         elif raw == 3:
             return 'HS1'
+        elif raw == 5:
+            return 'manual'
         else:
             raise ValueError("Unexpected: read %d" % raw)
 
@@ -848,10 +880,10 @@ class LASettings(util.DisableNewAttr):
         self._mmcm.set_sec_div(1)
 
     def _getOversamplingFactor(self):
-        return self._mmcm.get_mul()
+        return self._mmcm.get_mul() // (self._mmcm.get_main_div() * self._mmcm.get_sec_div())
 
     def _setCaptureGroup(self, group):
-        if group > 3:
+        if group > 4:
             raise ValueError("Group must be in range 0-3")
         self.oa.sendMessage(CODE_WRITE, ADDR_LA_CAPTURE_GROUP, [group], Validate=False)
 

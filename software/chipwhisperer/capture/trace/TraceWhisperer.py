@@ -43,6 +43,10 @@ import numpy as np
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
+ADDR_COMPONENTS_EXIST  = 96
+ADDR_LA_DRP_ADDR       = 68
+ADDR_LA_DRP_DATA       = 69
+ADDR_LA_DRP_RESET      = 74
 
 class TraceWhisperer(util.DisableNewAttr):
 
@@ -77,7 +81,7 @@ class TraceWhisperer(util.DisableNewAttr):
     longsync = [255, 255, 255, 127]
     shortsync = [255, 127]
 
-    def __init__(self, target, scope, defines_files=None, bs='', force_bitfile=False):
+    def __init__(self, target, scope, husky=False, defines_files=None, bs='', force_bitfile=False, trace_reg_select=None, main_reg_select=None):
         """
         Args:
             target: SimpleSerial target object
@@ -85,6 +89,8 @@ class TraceWhisperer(util.DisableNewAttr):
             bs (string): FPGA bitfile (default is used if not specified)
             defines_files (list of 2 strings): path to defines_trace.v and defines_pw.v
             force_bitfile (bool): force loading of FPGA bitfile, even if FPGA is already programmed.
+            trace_reg_select (int): mapping of FPGA register address space. Don't touch.
+            main_reg_select (int): mapping of FPGA register address space. Don't touch.
         """
         super().__init__()
         self._trace_port_width = 4
@@ -92,11 +98,16 @@ class TraceWhisperer(util.DisableNewAttr):
         self._base_baud = 38400
         self._usb_clock = 96e6
         self._uart_clock = self._usb_clock * 2
-        self.expected_verilog_defines = 117
+        self.expected_verilog_defines = 119
         self.swo_mode = False
         self._scope = scope
+
+        if husky:
+            self.platform = 'Husky'
+            self._ss = target
+
         # Detect whether we exist on CW305 or CW610 based on the target we're given:
-        if target._name == 'Simple Serial':
+        elif target._name == 'Simple Serial':
             self.platform = 'CW610'
             self._ss = target
             self._naeusb = NAE.NAEUSB()
@@ -114,17 +125,21 @@ class TraceWhisperer(util.DisableNewAttr):
                 if not bs:
                     bs = pkg_resources.resource_filename('chipwhisperer', 'hardware/firmware/tracewhisperer_top.bit')
                 self._fpga.FPGAProgram(open(bs, 'rb'), exceptOnDoneFailure=False)
+
         else:
             self.platform = 'CW305'
             self._ss = cw.target(scope)
             self._naeusb = target._naeusb
 
-        self.slurp_defines(defines_files)
-        self.target_registers = ARM_debug_registers(self._ss)
+        self.slurp_defines(defines_files, trace_reg_select, main_reg_select)
+        self.target_registers = ARM_debug_registers(self)
         self.clock = clock(self)
         self.capture = capture(self)
 
-        if self.board_rev == 3:
+        if husky:
+            self.tms_bit = 0
+            self.tck_bit = 1
+        elif self.board_rev == 3:
             self.tms_bit = 0
             self.tck_bit = 2
             tracewhisperer_logger.warning("Using FPGA bitfile built for rev-3 board, make sure this is what you intend!")
@@ -149,7 +164,11 @@ class TraceWhisperer(util.DisableNewAttr):
 
     def _dict_repr(self):
         rtn = OrderedDict()
-        rtn['fpga_buildtime']   = self.fpga_buildtime
+        if self.platform == 'Husky':
+            rtn['present']   = self.present
+            rtn['enabled']   = self.enabled
+        else:
+            rtn['fpga_buildtime']   = self.fpga_buildtime
         rtn['errors']           = self.errors
         rtn['trace_synced']     = self.trace_synced
         rtn['trace_mode']       = self.trace_mode
@@ -161,7 +180,8 @@ class TraceWhisperer(util.DisableNewAttr):
             rtn['leds']             = self.leds
         rtn['clock']            = self.clock._dict_repr()
         rtn['capture']          = self.capture._dict_repr()
-        rtn['target_registers'] = self.target_registers._dict_repr()
+        if self._ss:
+            rtn['target_registers'] = self.target_registers._dict_repr()
 
         return rtn
 
@@ -177,8 +197,6 @@ class TraceWhisperer(util.DisableNewAttr):
         """ Set some registers which for various reasons don't reset to what we want them to.
         """
         self.fpga_write(self.REG_CAPTURE_WHILE_TRIG, [1])
-        # TODO- temporary for development:
-        self.fpga_write(self.REG_REVERSE_TRACEDATA, [0])
 
 
     def reset_fpga(self):
@@ -190,7 +208,7 @@ class TraceWhisperer(util.DisableNewAttr):
         self._set_defaults()
 
 
-    def slurp_defines(self, defines_files=None):
+    def slurp_defines(self, defines_files=None, trace_reg_select=None, main_reg_select=None):
         """ Parse Verilog defines file so we can access register and bit
         definitions by name and avoid 'magic numbers'.
         """
@@ -210,9 +228,16 @@ class TraceWhisperer(util.DisableNewAttr):
                     match = define_regex_radix.search(define)
                     if reg:
                         if i == 0:
-                            block_offset = self.TRACE_REG_SELECT << 6
+                            if trace_reg_select:
+                                select = trace_reg_select
+                            else:
+                                select = self.TRACE_REG_SELECT
                         else:
-                            block_offset = self.MAIN_REG_SELECT << 6
+                            if main_reg_select:
+                                select = main_reg_select
+                            else:
+                                select = self.MAIN_REG_SELECT
+                        block_offset = select << 6
                     else:
                         block_offset = 0
                     if match:
@@ -236,9 +261,63 @@ class TraceWhisperer(util.DisableNewAttr):
         assert self.verilog_define_matches == self.expected_verilog_defines, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected %d, got %d" % (defines_file, self.expected_verilog_defines, self.verilog_define_matches)
 
 
+    @property
+    def present(self):
+        """ Return whether the trace functionality is present in this build (True or False).
+        If it is not present, none of the functionality of this class is available.
+        """
+        if self.platform == 'Husky':
+            raw = self.fpga_read(ADDR_COMPONENTS_EXIST, 1)[0]
+            if raw & 2:
+                return True
+            else:
+                return False
+        else:
+            return True
+
+
+    @property 
+    def enabled(self):
+        """Controls whether trace data collecting is enabled or not. Mostly affects configuration
+        of the front 20-pin header.
+        Args:
+            enable (bool)
+        """
+        return self.fpga_read(self.REG_TRACE_EN, 1)[0]
+
+    @enabled.setter 
+    def enabled(self, enable):
+        self.fpga_write(self.REG_TRACE_EN, [enable])
+
+
+    @property 
+    def target(self):
+        """Set the target object. Not strictly necessary for TraceWhisperer operation; it is used for
+        setting/getting the target debug registers, which is done with SimpleSerial communication with
+        the target. If you don't require this, then you don't need to set this property.
+        Args:
+            target: SimpleSerial target object
+        """
+        return self._ss
+
+    @target.setter 
+    def target(self, target):
+        self._ss = target
+
+
     @property 
     def trace_mode(self):
-        """Set trace or SWO mode. SWO mode is only available on CW610 platform.
+        """Set trace or SWO mode. SWO mode is only available on the Husky and CW610 platforms.
+        For SWO mode, the following connections are needed, from the target to the Husky or CW610 front header:
+            - TMS to D0
+            - TCK to D1
+            - TDO to D2
+        For trace mode, the following connections are needed, from the target to the Husky or CW610 front header:
+            - TRACEDATA[0] to D4
+            - TRACEDATA[1] to D5
+            - TRACEDATA[2] to D6
+            - TRACEDATA[3] to D7
+            - TRACECLOCK   to CK
         Args:
             mode (string): 'parallel' or 'swo'
         """
@@ -250,13 +329,20 @@ class TraceWhisperer(util.DisableNewAttr):
     @trace_mode.setter 
     def trace_mode(self, mode):
         if mode in ['swo', 'SWO']:
+            if self.platform == 'CW305':
+                tracewhisperer_logger.error('CW305 does not support SWO mode')
             self.swo_mode = True
             self.fpga_write(self.REG_SWO_ENABLE, [1])
             self.target_registers.TPI_SPPR = '00000002'
+            if self.platform == 'Husky':
+                assert self._scope.LA.present, 'Cannot use this operation mode without the LA component.'
+                self._scope.LA.enabled = True
         elif mode == "parallel":
             self.swo_mode = False
             self.fpga_write(self.REG_SWO_ENABLE, [0])
             self.target_registers.TPI_SPPR = '00000000'
+        else:
+            raise ValueError('Invalid mode (swo/parallel)')
 
 
 
@@ -275,7 +361,7 @@ class TraceWhisperer(util.DisableNewAttr):
             self.fpga_write(self.REG_SWO_ENABLE, [0])
         elif mode in ['swo', 'SWO']:
             if self.platform == 'CW305':
-                raise ValueError('CW305 does not support SWO mode')
+                tracewhisperer_logger.error('CW305 does not support SWO mode')
             self.swo_mode = True
             self.target_registers.TPI_SPPR = '00000002'
             self.target_registers.TPI_ACPR = acpr
@@ -292,7 +378,7 @@ class TraceWhisperer(util.DisableNewAttr):
 
     @property
     def swo_div(self):
-        """Set the number of trigger_clock cycles per SWO bit.
+        """Set the number of swo_clock cycles per SWO bit.
 
         Args:
             div (int): number of cycles per SWO bit.
@@ -353,8 +439,8 @@ class TraceWhisperer(util.DisableNewAttr):
         return self.fpga_write(self.REG_TRACE_WIDTH, [width])
 
     def check_clocks(self):
-        tracewhisperer_logger.warning('Deprecated, use trace.clock.trigger_locked instead.')
-        return self.clock.trigger_locked
+        tracewhisperer_logger.warning('Deprecated, use trace.clock.swo_clock_locked instead.')
+        return self.clock.swo_clock_locked
 
     def set_capture_mode(self, mode, counts=0):
         """Determine the duration of the trace capture.
@@ -382,7 +468,11 @@ class TraceWhisperer(util.DisableNewAttr):
     def board_rev(self):
         """Obtain board revision from the FPGA bitfile.
         """
-        return self.fpga_read(self.REG_BOARD_REV, 1)[0]
+        if self.platform == 'Husky':
+            tracewhisperer_logger.warning("N/A for Husky")
+            return None
+        else:
+            return self.fpga_read(self.REG_BOARD_REV, 1)[0]
 
 
     def jtag_to_swd(self):
@@ -390,32 +480,40 @@ class TraceWhisperer(util.DisableNewAttr):
         (reference: https://developer.arm.com/documentation/ka001179/1-0/)
         Args: none
         """
-        self.fpga_write(self.REG_USERIO_PWDRIVEN, [(1<<self.tms_bit) + (1<<self.tck_bit)])
-        self.fpga_write(self.REG_USERIO_DATA, [1<<self.tms_bit])
-        self._line_reset()
-        self._send_tms_byte(0x9e)
-        self._send_tms_byte(0xe7)
-        self._line_reset()
-        self.fpga_write(self.REG_USERIO_DATA, [1<<self.tms_bit])
-        self.fpga_write(self.REG_USERIO_PWDRIVEN, [0])
+        if self.platform == 'Husky':
+            # TODO: slurp
+            reg_pwdriven = 86
+            reg_data = 88
+        else:
+            reg_pwdriven = self.REG_USERIO_PWDRIVEN
+            reg_data = self.REG_USERIO_DATA
+
+        self.fpga_write(reg_pwdriven, [(1<<self.tms_bit) + (1<<self.tck_bit)])
+        self.fpga_write(reg_data, [1<<self.tms_bit])
+        self._line_reset(reg_data)
+        self._send_tms_byte(reg_data, 0x9e)
+        self._send_tms_byte(reg_data, 0xe7)
+        self._line_reset(reg_data)
+        self.fpga_write(reg_data, [1<<self.tms_bit])
+        self.fpga_write(reg_pwdriven, [0])
 
 
-    def _send_tms_byte(self, data):
+    def _send_tms_byte(self, addr, data):
         """Bit-bang 8 bits of data on TMS/TCK (LSB first).
         Args:
             data (int): 8 bits data to send.
         """
         for i in range(8):
             bit = (data & 2**i) >> i
-            self.fpga_write(self.REG_USERIO_DATA, [bit<<self.tms_bit])
-            self.fpga_write(self.REG_USERIO_DATA, [(1<<self.tck_bit) + (bit<<self.tms_bit)])
+            self.fpga_write(addr, [bit<<self.tms_bit])
+            self.fpga_write(addr, [(1<<self.tck_bit) + (bit<<self.tms_bit)])
 
 
-    def _line_reset(self, num_bytes=8):
+    def _line_reset(self, addr, num_bytes=8):
         """Bit-bang a line reset on TMS/TCK.
         Args: none
         """
-        for i in range(num_bytes): self._send_tms_byte(0xff)
+        for i in range(num_bytes): self._send_tms_byte(addr, 0xff)
 
 
 
@@ -454,6 +552,7 @@ class TraceWhisperer(util.DisableNewAttr):
         """Arms trace sniffer for capture; also checks sync status.
         """
         assert self.trace_synced, 'Not synchronized!'
+        assert self.enabled, 'Not enabled!'
         self.fpga_write(self.REG_ARM, [1])
 
 
@@ -517,7 +616,10 @@ class TraceWhisperer(util.DisableNewAttr):
         # on CW305, change word address to byte address (CW610 uses addressing differently)
         if self.platform == 'CW305':
             addr = addr << 7
-        return self._naeusb.cmdWriteMem(addr, data)
+        if self.platform == 'Husky':
+            return self._scope.sc.sendMessage(CODE_WRITE, addr, data)
+        else:
+            return self._naeusb.cmdWriteMem(addr, data)
 
 
     def fpga_read(self, addr, readlen=4):
@@ -533,7 +635,10 @@ class TraceWhisperer(util.DisableNewAttr):
         # on CW305, change word address to byte address (CW610 uses addressing differently)
         if self.platform == 'CW305':
             addr = addr << 7
-        data = self._naeusb.cmdReadMem(addr, readlen)
+        if self.platform == 'Husky':
+            data = self._scope.sc.sendMessage(CODE_READ, addr, maxResp=readlen)
+        else:
+            data = self._naeusb.cmdReadMem(addr, readlen)
         return data
 
 
@@ -582,9 +687,13 @@ class TraceWhisperer(util.DisableNewAttr):
     def get_fw_buildtime(self):
         """Returns date and time when target FW was compiled.
         """
-        self._ss.simpleserial_write('i', b'')
-        time.sleep(0.1)
-        return self._ss.read().split('\n')[0]
+        if self._ss is None:
+            tracewhisperer_logger.error("Target must be connected for this to work (e.g. scope.trace.target = target)")
+            return None
+        else:
+            self._ss.simpleserial_write('i', b'')
+            time.sleep(0.1)
+            return self._ss.read().split('\n')[0]
 
 
     def phywhisperer_name(self):
@@ -604,9 +713,12 @@ class TraceWhisperer(util.DisableNewAttr):
             port (int): ITM port number to use.
 
         """
-        self._ss.simpleserial_write('t', bytearray([port]))
-        time.sleep(0.1)
-        print(self._ss.read().split('\n')[0])
+        if self._ss is None:
+            tracewhisperer_logger.error("Target must be connected for this to work (e.g. scope.trace.target = target)")
+        else:
+            self._ss.simpleserial_write('t', bytearray([port]))
+            time.sleep(0.1)
+            print(self._ss.read().split('\n')[0])
 
 
     def read_capture_data(self):
@@ -687,7 +799,7 @@ class TraceWhisperer(util.DisableNewAttr):
             elif command == self.FE_FIFO_CMD_TIME:
                 timecounter += raw[0] + (raw[1] << 8)
             elif command == self.FE_FIFO_CMD_STAT:
-                raise ValueError("Unexpected STAT command, not supported by this method; maybe try get_raw_trace_packets() instead?")
+                tracewhisperer_logger.error("Unexpected STAT command, not supported by this method; maybe try get_raw_trace_packets() instead?")
             elif command == self.FE_FIFO_CMD_STRM:
                 pass
         return times
@@ -827,8 +939,11 @@ class TraceWhisperer(util.DisableNewAttr):
             postinit (int): DWT_CTRL.POSTINIT bits
             postreset (int): DWT_CTRL.POSTRESET bits
         """
-        self.target_registers.cached_values[self.target_registers.regs['DWT_CTRL']] = None # this may change DTW_CTRL, so uncache it
-        self.simpleserial_write('c', bytearray([enable, cyctap, postinit, postreset]), printresult=False)
+        if self._ss is None:
+            tracewhisperer_logger.error("Target must be connected for this to work (e.g. scope.trace.target = target)")
+        else:
+            self.target_registers.cached_values[self.target_registers.regs['DWT_CTRL']] = None # this may change DTW_CTRL, so uncache it
+            self.simpleserial_write('c', bytearray([enable, cyctap, postinit, postreset]), printresult=False)
 
 
     def write_raw_capture(self, raw, filename='raw.bin', presyncs=8):
@@ -858,18 +973,21 @@ class clock(util.DisableNewAttr):
     def __init__(self, main):
         super().__init__()
         self.main = main
-        self.drp = XilinxDRP(main, main.REG_TRIGGER_DRP_DATA, main.REG_TRIGGER_DRP_ADDR, main.REG_TRIGGER_DRP_RESET)
+        if self.main.platform == 'Husky':
+            self.drp = XilinxDRP(main, ADDR_LA_DRP_DATA, ADDR_LA_DRP_ADDR, ADDR_LA_DRP_RESET)
+        else:
+            self.drp = XilinxDRP(main, main.REG_TRIGGER_DRP_DATA, main.REG_TRIGGER_DRP_ADDR, main.REG_TRIGGER_DRP_RESET)
         self.mmcm = XilinxMMCMDRP(self.drp)
         self.disable_newattr()
 
     def _dict_repr(self):
         rtn = OrderedDict()
         rtn['fe_clock_alive']   = self.fe_clock_alive
-        if self.main.platform == 'CW610':
+        if self.main.platform == 'CW610' or self.main.platform == 'Husky':
             rtn['fe_clock_src']     = self.fe_clock_src
         rtn['fe_freq']          = self.fe_freq
-        rtn['trigger_locked']   = self.trigger_locked
-        rtn['trigger_freq']     = self.trigger_freq
+        rtn['swo_clock_locked']   = self.swo_clock_locked
+        rtn['swo_clock_freq']     = self.swo_clock_freq
         return rtn
 
     def __repr__(self):
@@ -887,39 +1005,51 @@ class clock(util.DisableNewAttr):
         return freq
 
     @property
-    def trigger_freq(self):
-        """Measured clock frequency of the trigger clock, which is used for both (a) trigger generation
+    def swo_clock_freq(self):
+        """Measured clock frequency of the SWO sampling clock, which is used for both (a) trigger generation
            and (b) SWO sampling.
         """
         raw = int.from_bytes(self.main.fpga_read(self.main.REG_TRIGGER_FREQ, 4), byteorder='little')
         freq = raw * 96e6 / float(pow(2,23))
         return freq
 
-    @trigger_freq.setter
-    def trigger_freq(self, freq, vcomin=600e6, vcomax=1200e6):
+    @swo_clock_freq.setter
+    def swo_clock_freq(self, freq, vcomin=600e6, vcomax=1200e6):
         """Calculate Multiply & Divide settings based on input frequency"""
         if not self.fe_clock_alive:
-            raise ValueError("FE clock not present, cannot calculate proper M/D settings")
-        input_freq = self.fe_freq
-        lowerror = 1e99
-        best = (0,0,0)
-        for maindiv in range(1,6):
-            mmin = int(np.ceil(vcomin/input_freq*maindiv))
-            mmax = int(np.ceil(vcomax/input_freq*maindiv))
-            for mul in range(mmin,mmax+1):
-                if mul/maindiv < vcomin/input_freq or mul/maindiv > vcomax/input_freq or mul >= 2**7:
-                    continue
-                for secdiv in range(1,127):
-                    calcfreq = input_freq*mul/maindiv/secdiv
-                    err = abs(freq - calcfreq)
-                    if err < lowerror:
-                        lowerror = err
-                        best = (mul, maindiv, secdiv)
-        if best == (0,0,0):
-            raise ValueError("Couldn't find a legal div/mul combination")
-        self.mmcm.set_mul(best[0])
-        self.mmcm.set_main_div(best[1])
-        self.mmcm.set_sec_div(best[2])
+            tracewhisperer_logger.error("FE clock not present, cannot calculate proper M/D settings")
+        if self.main.platform == 'Husky':
+            assert self.main._scope.LA.clk_source == 'pll'
+            input_freq = self.main._scope.clock.clkgen_freq
+            factor = int(freq / input_freq)
+            # TODO: dunno why but calling set_sec_div with anything other than 1 doesn't work, so for now let's
+            # just do it this way, but really we should be using 'best' as calculated below!
+            # Check that DRP object has the right addresses???
+            self.mmcm.set_mul(factor)
+            self.mmcm.set_main_div(1)
+            self.mmcm.set_sec_div(1)
+        else:
+            input_freq = self.fe_freq
+            lowerror = 1e99
+            best = (0,0,0)
+            for maindiv in range(1,6):
+                mmin = int(np.ceil(vcomin/input_freq*maindiv))
+                mmax = int(np.ceil(vcomax/input_freq*maindiv))
+                for mul in range(mmin,mmax+1):
+                    if mul/maindiv < vcomin/input_freq or mul/maindiv > vcomax/input_freq or mul >= 2**7:
+                        continue
+                    for secdiv in range(1,127):
+                        calcfreq = input_freq*mul/maindiv/secdiv
+                        err = abs(freq - calcfreq)
+                        if err < lowerror:
+                            lowerror = err
+                            best = (mul, maindiv, secdiv)
+            if best == (0,0,0):
+                tracewhisperer_logger.error("Couldn't find a legal div/mul combination")
+            self.mmcm.set_mul(best[0])
+            self.mmcm.set_main_div(best[1])
+            self.mmcm.set_sec_div(best[2])
+
 
     @property
     def fe_clock_alive(self):
@@ -933,8 +1063,8 @@ class clock(util.DisableNewAttr):
             return True
 
     @property 
-    def trigger_locked(self):
-        """Indicates whether the FPGA MMCM which generates the trigger clock is locked.
+    def swo_clock_locked(self):
+        """Indicates whether the FPGA MMCM which generates the SWO sampling / trigger clock is locked.
         """
         if self.main.fpga_read(self.main.REG_MMCM_LOCKED, 1)[0] & 2:
             return True
@@ -969,7 +1099,7 @@ class clock(util.DisableNewAttr):
         elif src == 'usb_clock':
             val = 2
         else:
-            raise ValueError
+            raise ValueError('Invalid source (target_clock/trace_clock/usb_clock)')
         self.main.fpga_write(self.main.REG_FE_CLOCK_SEL, [val])
 
 
@@ -1059,6 +1189,7 @@ class capture(util.DisableNewAttr):
     @property
     def trigger_source(self):
         """ Set whether firmware trigger or trace trigger is used to enable recording of trace data.
+        To use the firmware trigger on CW610, it must be connected to the side connector 'PC' pin.
         Args:
             source (str or int): "firmware trigger": Use target-generated trigger to initiate trace capture.
                                  int: use matching trace data to initiate trace capture, with given rule number.
@@ -1180,30 +1311,37 @@ class ARM_debug_registers(util.DisableNewAttr):
             'ITM_TCR':      0xc
            }
 
-    def __init__(self, serial):
+    def __init__(self, main):
         super().__init__()
         # oaiface = OpenADCInterface
-        self._ss = serial
+        #self._ss = main._ss
+        #self._ss = serial
+        self.main = main
         self.cached_values = [None] * len(self.regs)
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = OrderedDict()
-        rtn['DWT_CTRL']     = self.DWT_CTRL
-        rtn['DWT_COMP0']    = self.DWT_COMP0
-        rtn['DWT_COMP1']    = self.DWT_COMP1
-        rtn['ETM_CR']       = self.ETM_CR
-        rtn['ETM_TESSEICR'] = self.ETM_TESSEICR
-        rtn['ETM_TEEVR']    = self.ETM_TEEVR
-        rtn['ETM_TECR1']    = self.ETM_TECR1
-        rtn['ETM_TRACEIDR'] = self.ETM_TRACEIDR
-        rtn['TPI_ACPR']     = self.TPI_ACPR
-        rtn['TPI_SPPR']     = self.TPI_SPPR
-        rtn['TPI_FFCR']     = self.TPI_FFCR
-        rtn['TPI_CSPSR']    = self.TPI_CSPSR
-        rtn['ITM_TCR']      = self.ITM_TCR
+        if self.main._ss is None:
+            tracewhisperer_logger.error("Target must be connected for this to work (e.g. scope.trace.target = target)")
+            return OrderedDict()
 
-        return rtn
+        else:
+            rtn = OrderedDict()
+            rtn['DWT_CTRL']     = self.DWT_CTRL
+            rtn['DWT_COMP0']    = self.DWT_COMP0
+            rtn['DWT_COMP1']    = self.DWT_COMP1
+            rtn['ETM_CR']       = self.ETM_CR
+            rtn['ETM_TESSEICR'] = self.ETM_TESSEICR
+            rtn['ETM_TEEVR']    = self.ETM_TEEVR
+            rtn['ETM_TECR1']    = self.ETM_TECR1
+            rtn['ETM_TRACEIDR'] = self.ETM_TRACEIDR
+            rtn['TPI_ACPR']     = self.TPI_ACPR
+            rtn['TPI_SPPR']     = self.TPI_SPPR
+            rtn['TPI_FFCR']     = self.TPI_FFCR
+            rtn['TPI_CSPSR']    = self.TPI_CSPSR
+            rtn['ITM_TCR']      = self.ITM_TCR
+
+            return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -1322,7 +1460,10 @@ class ARM_debug_registers(util.DisableNewAttr):
             data (int or string): 32-bit integer or 8-character hex string, value to write to
                                   specified register (e.g. '1000F004')
         """
-        if reg in self.regs:
+        if self.main._ss is None:
+            tracewhisperer_logger.error("Target must be connected for this to work (e.g. scope.trace.target = target)")
+
+        elif reg in self.regs:
             if type(data) == str:
                 data_str = data
                 data_int = int(data, 16)
@@ -1334,10 +1475,10 @@ class ARM_debug_registers(util.DisableNewAttr):
 
             self.cached_values[self.regs[reg]] = data_int
             data = '%02x' % self.regs[reg] + data_str
-            self._ss.simpleserial_write('s', util.hexStrToByteArray(data))
+            self.main._ss.simpleserial_write('s', util.hexStrToByteArray(data))
             time.sleep(0.1)
             if printresult:
-                print(self._ss.read().split('\n')[0])
+                print(self.main._ss.read().split('\n')[0])
         else:
             tracewhisperer_logger.error('Register %s does not exist.', reg)
 
@@ -1347,14 +1488,17 @@ class ARM_debug_registers(util.DisableNewAttr):
         Args:
             reg (string): Register to read. See self.regs for available registers.
         """
-        if reg in self.regs:
+        if self.main._ss is None:
+            tracewhisperer_logger.error("Target must be connected for this to work (e.g. scope.trace.target = target)")
+            return None
+        elif reg in self.regs:
             if self.cached_values[self.regs[reg]]:
                 val = self.cached_values[self.regs[reg]]
             else:
                 data = '%02x' % self.regs[reg] + '00000000'
-                self._ss.simpleserial_write('g', util.hexStrToByteArray(data))
+                self.main._ss.simpleserial_write('g', util.hexStrToByteArray(data))
                 time.sleep(0.1)
-                val = int(self._ss.read().split('\n')[0][1:], 16)
+                val = int(self.main._ss.read().split('\n')[0][1:], 16)
                 self.cached_values[self.regs[reg]] = val
             return '%08x' % val
         else:
