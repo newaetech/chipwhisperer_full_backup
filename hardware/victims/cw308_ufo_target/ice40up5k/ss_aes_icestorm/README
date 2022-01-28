@@ -1,0 +1,18 @@
+Initial version for iCE40 UltraPlus breakout board.
+
+Building the FPGA bitfile requires the Icestorm toolchain. Installation
+instructions are here: http://bygone.clairexen.net/icestorm/
+
+It should also be possible to build with Apio (https://github.com/FPGAwars/apio) which you may find easier to install.
+
+Connect the following Header B pins to ChipWhisperer:
+- 45A_G1 to HS2
+- 42B to IO2
+- 43A to IO1
+- 38B to IO4
+- ground
+
+Keep all SW2 switches low.
+- set 37A switch high to use 8 MHz on-board clock instead of CW clock
+- set 36B to get a "clock alive" blue LED flash
+
