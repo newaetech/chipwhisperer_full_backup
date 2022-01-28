@@ -17,10 +17,10 @@ class ChipWhispererCommonInterface:
             self.reset_sam3u()
         pass
 
-    def check_feature(self, name):
+    def check_feature(self, name, raise_exception=False):
         """Check if a feature is available on this ChipWhisperer
         """
-        return self._getNAEUSB().check_feature(name)
+        return self._getNAEUSB().check_feature(name, raise_exception=raise_exception)
 
     def feature_list(self) -> List[str]:
         """Returns a list of supported features that depend on device/firmware version

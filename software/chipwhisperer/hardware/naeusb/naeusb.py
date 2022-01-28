@@ -610,7 +610,7 @@ class NAEUSB:
             return [0, 0, 0, 0]
 
     def enable_MPSSE(self):
-        if self.check_feature("MPSSE"):
+        if self.check_feature("MPSSE", True):
             try:
                 self.sendCtrl(0x22, 0x42)
             except usb1.USBError:
@@ -644,7 +644,7 @@ class NAEUSB:
     def get_serial_ports(self) -> Optional[List[Dict[str, int]]]:
         """May have multiple com ports associated with one device, so returns a list of port + interface
         """
-        if self.check_feature("CDC"):
+        if self.check_feature("CDC", True):
             if not self.usbtx._usbdev:
                 raise OSError("Connect to device before calling this")
             import serial.tools.list_ports # type: ignore
@@ -967,7 +967,7 @@ class NAEUSB:
     def reset(self):
         """ Reset the SAM3U. Requires firmware 0.30 or later
         """
-        if self.check_feature("RESET"):
+        if self.check_feature("RESET", True):
             self.sendCtrl(0x22, 0x10)
 
     def read(self, dlen : int, timeout : int=2000) -> bytearray:

@@ -169,7 +169,7 @@ class NEORV32Programmer(Programmer):
         pass
 
     def close(self):
-        pass
+        self.neorv.close_port()
     
 
 class AVRProgrammer(Programmer):
