@@ -105,6 +105,9 @@ define KNOWN_PLATFORMS
 | CW308_        | CW308T-MPC5676R (NXP MPC5676R)        |
 |   MPC5676R    |                                       |
 +---------------|---------------------------------------+
+| CW308_NEORV   | CW308/CW312-iCE40 with neorv32        |
+|               |   (RISC-V) soft-core processor.       |
++---------------|---------------------------------------+
 
 Options to define platform:
 (1) Run make with PLATFORM specified as follows:
@@ -230,8 +233,10 @@ else ifeq ($(PLATFORM),CW308_RX65N)
  PLTNAME = CW308T: RX65N
 else ifeq ($(PLATFORM),CW308_MPC5676R)
  HAL = mpc5676r
+ PLTNAME = CW308T: MPC5676R Target
 else ifeq ($(PLATFORM),CW308_NEORV32)
  HAL = neorv32
+ PLTNAME = iCE40 Target with neorv softcore
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
 endif
