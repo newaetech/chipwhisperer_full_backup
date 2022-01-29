@@ -64,7 +64,9 @@ MEMORY
 /* rom and iodev sections should NOT be modified by the user at all! */
 /* rom section: first value of ORIGIN/LENGTH => bootloader ROM; second value of ORIGIN/LENGTH => maximum *logical* size of instruction memory */
 
-  rom   (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 32K : 2048M
+/* ChipWhisperer target does't have SPI attached flash, so limit of 64K is instruction memory size */
+
+  rom   (rx) : ORIGIN = DEFINED(make_bootloader) ? 0xFFFF0000 : 0x00000000, LENGTH = DEFINED(make_bootloader) ? 32K : 64K
   iodev (rw) : ORIGIN = 0xFFFFFE00, LENGTH = 512
 
 }
