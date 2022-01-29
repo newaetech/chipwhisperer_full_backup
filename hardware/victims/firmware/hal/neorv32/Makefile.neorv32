@@ -9,12 +9,33 @@ ASRC += crt0.S
 
 MCU_FLAGS = -march=rv32i -mabi=ilp32 
 
+# If you are missing 'which' (Windows uses 'where') you can change
+# program, or just fix the values for CC. On RISC-V we autodetect as
+# the documentation for neorv32 suggests to download pre-built 32-bit
+# compilers, but users will often have 64-bit compiler already if on Linux.
+
+ifeq (, $(shell which riscv64-unknown-elf-gcc))
+ifeq (, $(shell which riscv32-unknown-elf-gcc))
+$error ("Could not find riscv32-unknown-elf-gcc or riscv64-unknown-elf-gcc")
+else
+# which was successful - use 32-bit gcc
+CC = riscv32-unknown-elf-gcc
+OBJCOPY = riscv32-unknown-elf-objcopy
+OBJDUMP = riscv32-unknown-elf-objdump
+SIZE = riscv32-unknown-elf-size
+AR = riscv32-unknown-elf-ar rcs
+NM = riscv32-unknown-elf-nm
+endif #END of which riscv32-unknown-elf-gcc test
+
+else #ELSE of which riscv64-unknown-elf-gcc test
+# which was successful - use 64-bit gcc
 CC = riscv64-unknown-elf-gcc
 OBJCOPY = riscv64-unknown-elf-objcopy
 OBJDUMP = riscv64-unknown-elf-objdump
 SIZE = riscv64-unknown-elf-size
 AR = riscv64-unknown-elf-ar rcs
 NM = riscv64-unknown-elf-nm
+endif 
 
 #Output Format = Binary for this target
 FORMAT = binary
