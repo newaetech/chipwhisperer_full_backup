@@ -47,7 +47,4 @@ CPPFLAGS += -falign-functions=4 -falign-labels=4 -falign-loops=4 -falign-jumps=4
 ASFLAGS += -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv -Wl,--gc-sections -lm -lc -lgcc -lc
 ASFLAGS += -falign-functions=4 -falign-labels=4 -falign-loops=4 -falign-jumps=4
 
-#CDEFS += -DSTM32F303xC -DSTM32F3 -DSTM32 -DDEBUG
-#CPPDEFS += -DSTM32F303xC -DSTM32F3 -DSTM32 -DDEBUG
-
 LDFLAGS += -T $(HALPATH)/neorv32/neorv32.ld
