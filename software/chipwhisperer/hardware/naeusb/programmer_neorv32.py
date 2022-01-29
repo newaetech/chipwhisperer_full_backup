@@ -129,6 +129,8 @@ class Neorv32Programmer:
             bsdata = f.read()
             f.close()
         
+        # TODO - currently this uses the 'slower' SPI programming mode as the 'fast' mode only works when passed a file. The fast
+        # mode could be made to work fairly easily as getsome() returns a file-like object.
         fpga.program(bsdata)
 
         target_logger.info("iCE40 DONE pin not supported. Maybe it worked!?")
@@ -191,13 +193,18 @@ class Neorv32Programmer:
         return resp.decode('ascii')
 
     @close_on_fail
-    def program(self, romfilename, bsfile=None):
+    def program(self, romfilename, bsfile=None, check_rom_size=True):
         """Programs memory type, dealing with opening filename as either .hex or .bin file"""
         self.lastFlashedFile = romfilename
 
         f = open(romfilename, "rb")
         romdata = f.read()
         f.close()
+
+        if check_rom_size:
+            if len(romdata) > 64000:
+                raise ValueError("This function uploads data to 'code RAM', so limited to 64KB." +
+                                  " Binary appears to be too large, got %d bytes"%len(romdata))
 
         # NB - open_port MUST have been called before this or else the start-up messages
         # will be lost.
