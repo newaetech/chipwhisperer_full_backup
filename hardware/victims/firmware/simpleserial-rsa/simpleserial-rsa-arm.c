@@ -32,6 +32,40 @@ uint8_t sig_chunk_2(uint8_t *pt, uint8_t len);
 #define mbedtls_calloc calloc
 #define mbedtls_free free
 
+// MWC random number implementation - https://en.wikipedia.org/wiki/Multiply-with-carry_pseudorandom_number_generator
+#define PHI 0x9e3779b9
+
+static uint32_t Q[4096], c = 362436;
+
+void init_rand(uint32_t x)
+{
+    int i;
+
+    Q[0] = x;
+    Q[1] = x + PHI;
+    Q[2] = x + PHI + PHI;
+
+    for (i = 3; i < 4096; i++)
+            Q[i] = Q[i - 3] ^ Q[i - 2] ^ PHI ^ i;
+}
+
+uint32_t rand_cmwc(void)
+{
+    uint64_t t, a = 18782LL;
+    static uint32_t i = 4095;
+    uint32_t x, r = 0xfffffffe;
+    i = (i + 1) & 4095;
+    t = a * Q[i] + c;
+    c = (t >> 32);
+    x = t + c;
+    if (x < c) {
+            x++;
+            c++;
+    }
+    return (Q[i] = r - x);
+}
+
+
 static int myrand( void *rng_state, unsigned char *output, size_t len )
 {
      size_t i;
@@ -40,7 +74,9 @@ static int myrand( void *rng_state, unsigned char *output, size_t len )
           rng_state  = NULL;
 
      for( i = 0; i < len; ++i )
-          output[i] = rand();
+          output[i] = rand_cmwc(); //rand(); Reduce external lib dependancies
+                                   // by using above rand_cmwc(). The rand()
+                                   // call had issues on neorv32 it seemed.
 
      return( 0 );
 }
@@ -296,6 +332,8 @@ cleanup:
 
 void rsa_init(void)
 {
+    init_rand(0);
+
     mbedtls_rsa_init( &rsa_ctx, MBEDTLS_RSA_PKCS_V15, 0 );
     simpleserial_addcmd('1', 0, sig_chunk_1);
     simpleserial_addcmd('2', 0, sig_chunk_2);
