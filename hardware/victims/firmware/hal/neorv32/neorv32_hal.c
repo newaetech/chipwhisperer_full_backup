@@ -13,14 +13,6 @@ void platform_init(void)
 //     neorv32_uart0_print("Error! No GPIO unit synthesized!\n");
 //     return 1; // nope, no GPIO unit synthesized
 //   }
-
-  // capture all exceptions and give debug info via UART
-  // this is not required, but keeps us safe
-//   neorv32_rte_setup();
-
-//   // say hello
-//   neorv32_uart0_print("Blinking LED demo program\n");
-//   blink_led_c();
 }
 
 /**********************************************************************//**
@@ -46,6 +38,10 @@ void init_uart(void)
   #define BAUD_RATE 38400
   #endif
   neorv32_uart0_setup(BAUD_RATE, PARITY_NONE, FLOW_CONTROL_NONE);
+
+  // capture all exceptions and give debug info via UART
+  // this is not required, but keeps us safe
+  neorv32_rte_setup();
 }
 
 void trigger_setup(void)
