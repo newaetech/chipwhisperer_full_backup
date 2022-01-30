@@ -30,7 +30,7 @@ void rsa_init(void);
 uint8_t real_dec(uint8_t * pt, uint8_t len);
 uint8_t get_pt(uint8_t * pt, uint8_t len);
 
-#if defined(__arm__)
+#if defined(__arm__) || defined(__riscv__) || defined(__riscv)
 
 uint8_t sig_chunk_1(uint8_t *pt, uint8_t len);
 uint8_t sig_chunk_2(uint8_t *pt, uint8_t len);
@@ -47,7 +47,7 @@ int main(void)
 
     simpleserial_init();
     simpleserial_addcmd('t', 0,  real_dec);
-    #if (SS_VER != SS_VER_2_1) && defined(__arm__)
+    #if (SS_VER != SS_VER_2_1) && (defined(__arm__) || defined(__riscv__) || defined(__riscv))
     simpleserial_addcmd('1', 0,  sig_chunk_1);
     simpleserial_addcmd('2', 0,  sig_chunk_2);
     #endif

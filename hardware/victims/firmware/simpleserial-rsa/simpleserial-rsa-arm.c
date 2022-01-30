@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#if defined(__arm__)
+#if defined(__arm__) || defined(__riscv__) || defined(__riscv)
 
 #include "mbedtls/rsa.h"
 #include "mbedtls/sha256.h"
