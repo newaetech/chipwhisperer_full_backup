@@ -25,13 +25,13 @@ import os
 import array
 from typing import Optional, Union, List, Tuple, Dict, cast
 
-from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
-from chipwhisperer.hardware.firmware import cw1200 as fw_cw1200
-from chipwhisperer.hardware.firmware import cw305  as fw_cw305
-from chipwhisperer.hardware.firmware import cwnano  as fw_nano
-from chipwhisperer.hardware.firmware import cwhusky as fw_cwhusky
+from ..firmware import cwlite as fw_cwlite
+from ..firmware import cw1200 as fw_cw1200
+from ..firmware import cw305  as fw_cw305
+from ..firmware import cwnano  as fw_nano
+from ..firmware import cwhusky as fw_cwhusky
 
-from chipwhisperer.logging import *
+from ...logging import *
 
 SAM_FW_FEATURES = [
     "WCID", #0

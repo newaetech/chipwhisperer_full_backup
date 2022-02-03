@@ -22,7 +22,7 @@
 #==========================================================================
 import time
 import logging
-from chipwhisperer.common.utils import util
+from ...common.utils import util
 from .naeusb import packuint32, NAEUSB
 from ...logging import *
 

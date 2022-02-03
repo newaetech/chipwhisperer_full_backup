@@ -38,7 +38,7 @@ from ...common.utils.util import camel_case_deprecated, fw_ver_required
 from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from ..api.cwcommon import ChipWhispererCommonInterface
 
-from chipwhisperer.logging import *
+from ...logging import *
 
 class CW305_USB(object):
     REQ_SYSCFG = 0x22

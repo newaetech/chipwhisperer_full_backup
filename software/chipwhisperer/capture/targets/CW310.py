@@ -128,7 +128,7 @@ class CW310(CW305):
             if fpga_id is None:
                 verilog_defines = [self.default_verilog_defines_full_path]
             else:
-                from chipwhisperer.hardware.firmware.cw305 import getsome
+                from ...hardware.firmware.cw305 import getsome
                 verilog_defines = [getsome(self.default_verilog_defines)]
         else:
             verilog_defines = defines_files

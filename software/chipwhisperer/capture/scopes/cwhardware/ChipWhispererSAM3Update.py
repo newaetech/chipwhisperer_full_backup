@@ -235,22 +235,22 @@ class SAMFWLoader:
                 raise TypeError(message.format(hardware_type, ', '.join(type_whitelist)))
             else:
                 if hardware_type == 'cwlite':
-                    from chipwhisperer.hardware.firmware.cwlite import getsome
+                    from ....hardware.firmware.cwlite import getsome
                     name = 'SAM3U_CW1173.bin'
                 elif hardware_type == 'cwnano':
-                    from chipwhisperer.hardware.firmware.cwnano import getsome
+                    from ....hardware.firmware.cwnano import getsome
                     name = 'SAM3U_CWNANO.bin'
                 elif hardware_type == 'cw305':
-                    from chipwhisperer.hardware.firmware.cw305 import getsome
+                    from ....hardware.firmware.cw305 import getsome
                     name = 'SAM3U_CW305.bin'
                 elif hardware_type == 'cw1200':
-                    from chipwhisperer.hardware.firmware.cw1200 import getsome
+                    from ....hardware.firmware.cw1200 import getsome
                     name = 'CW1200_SAM3UFW.bin'
                 elif hardware_type == 'cwbergen':
-                    from chipwhisperer.hardware.firmware.cwbergen import getsome
+                    from ....hardware.firmware.cwbergen import getsome
                     name = 'CW310.bin'
                 elif hardware_type == 'cwhusky':
-                    from chipwhisperer.hardware.firmware.cwhusky import getsome
+                    from ....hardware.firmware.cwhusky import getsome
                     name = 'Husky.bin'
                 self.logfunc('Loading {} firmware...'.format(hardware_type))
                 fw_data = getsome(name).read()
