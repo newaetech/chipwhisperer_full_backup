@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2014-2022, NewAE Technology Inc
+# All rights reserved.
+#
+#
+# Find this and more at newae.com - this file is part of the chipwhisperer
+# project, http://www.chipwhisperer.com 
+#
+#=================================================
+
 from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from ...hardware.naeusb.naeusb import NAEUSB
 from typing import Callable, Union, Dict, Tuple, cast, List, Optional

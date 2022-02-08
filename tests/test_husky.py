@@ -14,9 +14,20 @@ Args:
 
 """
 
+print('\n\n\n\n**************************************************************************************')
+print('* IMPORTANT NOTE:                                                                    *')
+print('* This script is intended for basic regression testing of Husky during               *')
+print('* development. If you are having issues connecting to your Husky or target           *')
+print('* device, running this script is unlikely to provide you with useful information.    *')
+print('* Instead, seek assistance on forum.newae.com or discord by providing details of     *')
+print('* your setup (including the target), and the full error log from your Jupyter        *')
+print('* notebook.                                                                          *')
+print('**************************************************************************************\n\n')
+
 scope = cw.scope(name='Husky')
 target = cw.target(scope)
 scope.errors.clear()
+verbose = False
 
 # TODO: program FW?
 scope.sc.reset_fpga()
@@ -43,7 +54,7 @@ target.flush()
 target.write('x\n')
 time.sleep(0.2)
 resp = target.read()
-print("Got: %s" % resp)
+#print("Got: %s" % resp)
 if resp == '':
     target_attached = False
 else:
@@ -269,7 +280,7 @@ testRWData = [
 ]
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '1/4/2022, 22:42'
+    assert scope.fpga_buildtime == '1/28/2022, 11:49'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -630,7 +641,7 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
     scope.adc.clip_errors_disabled = True
     ret = cw.capture_trace(scope, target, text, key)
     raw = scope.get_last_trace(True)
-    print('Words read before error: %d ' % int.from_bytes(scope.sc.sendMessage(0x80, 47, maxResp=4), byteorder='little'))
+    if verbose: print('Words read before error: %d ' % int.from_bytes(scope.sc.sendMessage(0x80, 47, maxResp=4), byteorder='little'))
     if desc == 'overflow':
         assert 'fast FIFO' in scope.adc.errors
         scope.errors.clear()
@@ -695,11 +706,11 @@ def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, 
     target.simpleserial_write('f', bytearray(16))
     ret = scope.capture()
     if ret:
-        print("Timeout.")
+        if verbose: print("Timeout.")
         errors += 1
     time.sleep(0.1)
     if not target.is_done():
-        print("Target did not finish.")
+        if verbose: print("Target did not finish.")
         errors += 1
     wave = scope.get_last_trace()
     r = target.simpleserial_read('r', target.output_len)
