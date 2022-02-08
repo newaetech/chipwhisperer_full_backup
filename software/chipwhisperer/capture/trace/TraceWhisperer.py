@@ -283,10 +283,18 @@ class TraceWhisperer(util.DisableNewAttr):
         Args:
             enable (bool)
         """
-        return self.fpga_read(self.REG_TRACE_EN, 1)[0]
+        raw = self.fpga_read(self.REG_TRACE_EN, 1)[0]
+        if raw == 1:
+            return True
+        else:
+            return False
 
     @enabled.setter 
     def enabled(self, enable):
+        # only one of Trace/LA can be enabled at once:
+        if enable:
+            self._scope.LA.enabled = False
+            self._scope.LA.clkgen_enabled = True
         self.fpga_write(self.REG_TRACE_EN, [enable])
 
 
@@ -336,7 +344,8 @@ class TraceWhisperer(util.DisableNewAttr):
             self.target_registers.TPI_SPPR = '00000002'
             if self.platform == 'Husky':
                 assert self._scope.LA.present, 'Cannot use this operation mode without the LA component.'
-                self._scope.LA.enabled = True
+                # disable LA, 
+                self._scope.LA.enabled = False
         elif mode == "parallel":
             self.swo_mode = False
             self.fpga_write(self.REG_SWO_ENABLE, [0])
@@ -737,14 +746,15 @@ class TraceWhisperer(util.DisableNewAttr):
         assert self.fifo_empty() == False, 'FIFO is empty'
 
         # then check that no underflows or overflows occurred during capture:
-        assert self.errors is None
+        if  self.errors:
+            tracewhisperer_logger.warning("FIFO errors occured: %s" % self.errors)
 
         while not self.fifo_empty():
             data.append(self.fpga_read(self.REG_SNIFF_FIFO_RD, 4)[1:4])
 
         if len(data): # maybe we only got empty reads
             if data[-1][2] & 2**self.FE_FIFO_STAT_UNDERFLOW:
-                logging.warning("Capture FIFO underflowed!")
+                tracewhisperer_logger.warning("Capture FIFO underflowed!")
 
         return data
 
@@ -985,6 +995,9 @@ class clock(util.DisableNewAttr):
         rtn['fe_clock_alive']   = self.fe_clock_alive
         if self.main.platform == 'CW610' or self.main.platform == 'Husky':
             rtn['fe_clock_src']     = self.fe_clock_src
+        if self.main.platform == 'Husky':
+            #rtn['clkgen_enabled'] = self.main._scope.LA.clkgen_enabled
+            rtn['clkgen_enabled'] = self.clkgen_enabled
         rtn['fe_freq']          = self.fe_freq
         rtn['swo_clock_locked']   = self.swo_clock_locked
         rtn['swo_clock_freq']     = self.swo_clock_freq
@@ -995,6 +1008,21 @@ class clock(util.DisableNewAttr):
 
     def __str__(self):
         return self.__repr__()
+
+    @property
+    def clkgen_enabled(self):
+        """Controls whether the Xilinx MMCM used to generate the samplign clock
+        is powered on or not.  7-series MMCMs are power hungry. In the Husky
+        FPGA, MMCMs are estimated to consume close to half of the FPGA's power.
+        If you run into temperature issues and don't require the logic analyzer
+        or debug trace functionality, power down this MMCM.
+        """
+        return self.main._scope.LA.clkgen_enabled
+
+    @clkgen_enabled.setter
+    def clkgen_enabled(self, enable):
+        self.main._scope.LA.clkgen_enabled = enable
+
 
     @property
     def fe_freq(self):

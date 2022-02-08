@@ -357,7 +357,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.ADS4128 = ADS4128Settings(self.sc)
             self.XADC = XADCSettings(self.sc)
             self.LEDs = LEDSettings(self.sc)
-            self.LA = LASettings(self.sc, self.la_mmcm)
+            self.LA = LASettings(oaiface=self.sc, mmcm=self.la_mmcm, scope=self)
             self.userio = USERIOSettings(self.sc)
             self.trace = TraceWhisperer(husky=True, target=None, scope=self, trace_reg_select=3, main_reg_select=2)
             self.errors = HuskyErrors(self.sc, self.XADC, self.adc, self.clock, self.trace)
