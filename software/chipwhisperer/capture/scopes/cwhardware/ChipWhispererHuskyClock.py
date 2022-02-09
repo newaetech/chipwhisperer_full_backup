@@ -346,7 +346,7 @@ class CDCI6214:
         if not adc_off:
             while (adc_mul * target_freq) > 200E6:
                 adc_mul -= 1
-            while (adc_mul * target_freq) < 10E6:
+            while (adc_mul * target_freq) < 1E6:
                 adc_mul += 1
         else:
             # since the output div for the target freq
@@ -355,7 +355,7 @@ class CDCI6214:
             adc_mul = 1
 
         if old_mul != adc_mul:
-            scope_logger.error("ADC frequency must be between 10MHz and 200MHz - ADC mul as been adjusted to {}".format(adc_mul))
+            scope_logger.error("ADC frequency must be between 1MHz and 200MHz - ADC mul as been adjusted to {}".format(adc_mul))
 
 
         scope_logger.debug("adc_mul: {}".format(adc_mul))
