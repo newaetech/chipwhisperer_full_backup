@@ -1,27 +1,12 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014, NewAE Technology Inc
+# Copyright (c) 2014-2022, NewAE Technology Inc
 # All rights reserved.
 #
-# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
-# project, http://www.assembla.com/spaces/chipwhisperer
+# project, http://www.chipwhisperer.com 
 #
-#    This file is part of chipwhisperer.
-#
-#    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    chipwhisperer is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Lesser General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
 from chipwhisperer.common.utils import util
@@ -29,6 +14,7 @@ from ..scopes import ScopeTypes
 from chipwhisperer.hardware.naeusb.programmer_avr import supported_avr
 from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import supported_stm32f
+from chipwhisperer.hardware.naeusb.programmer_neorv32 import Neorv32Programmer
 
 from functools import wraps
 
@@ -41,7 +27,7 @@ from typing import Dict, Optional
 class Programmer:
     lastFlashedFile = "unknown"
     _scope : Optional[ScopeTypes] = None
-    # pin_setup = {}
+    pin_setup : Dict[str, str] = {}
 
     def __init__(self):
         self.newTextLog = util.Signal()
@@ -143,6 +129,35 @@ def save_and_restore_pins(func):
                 self.scope.io.nrst = pin_setup['nrst']
         return val # only returns value when decorating a function with return value
     return func_wrapper
+
+class NEORV32Programmer(Programmer):
+
+    @save_and_restore_pins
+    def find(self):
+        if self.scope is None:
+            raise ValueError("Programmer not yet setup")
+
+        self.neorv = Neorv32Programmer(self.scope)
+        self.neorv.open_port()
+        pass
+
+    @save_and_restore_pins
+    def erase(self):
+        pass
+
+    @save_and_restore_pins
+    def program(self, filename: str, memtype="flash", verify=True):
+        if filename.endswith(".hex"):
+            scope_logger.error(".bin file required for NEORV32Programmer. Attempting to access .bin file at .hex location")
+            filename = filename.replace(".hex", ".bin")
+        self.neorv.program(filename)
+        pass
+
+    def close(self):
+        self.neorv.close_port()
+    
+class iCE40Programmer(Programmer):
+    pass
 
 class AVRProgrammer(Programmer):
     def __init__(self, slow_clock = False):

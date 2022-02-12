@@ -324,12 +324,13 @@ all: clean_objs .dep begin gccversion build sizeafter fastnote end
 allquick: begin gccversion build sizeafter end
 
 # Change the build target to build a HEX file or a library.
-build: elf hex eep lss sym
+build: elf hex bin eep lss sym
 #build: lib
 
 
 elf: $(TARGET-PLAT).elf
 hex: $(TARGET-PLAT).hex
+bin: $(TARGET-PLAT).bin
 eep: $(TARGET-PLAT).eep
 lss: $(TARGET-PLAT).lss
 sym: $(TARGET-PLAT).sym
@@ -422,6 +423,11 @@ endif
 	@$(ECHO_BLANK)
 	@echo $(MSG_FLASH) $@
 	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .lock -R .signature $< $@
+
+%.bin: %.elf
+	@$(ECHO_BLANK)
+	@echo $(MSG_FLASH) $@
+	$(OBJCOPY) -O binary -R .eeprom -R .fuse -R .lock -R .signature $< $@
 
 
 %.eep: %.elf
@@ -523,6 +529,7 @@ clean_print :
 clean_all_objs :
 	$(REMOVE) $(addsuffix .hex,$(TARGET-ALL))
 	$(REMOVE) $(addsuffix .eep,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .bin,$(TARGET-ALL))
 	$(REMOVE) $(addsuffix .cof,$(TARGET-ALL))
 	$(REMOVE) $(addsuffix .elf,$(TARGET-ALL))
 	$(REMOVE) $(addsuffix .map,$(TARGET-ALL))
@@ -548,7 +555,7 @@ clean_list :
 
 # Listing of phony targets.
 .PHONY : all allquick begin finish end sizeafter gccversion \
-build elf hex eep lss sym coff extcoff \
+build elf hex bin eep lss sym coff extcoff \
 clean clean_list clean_print clean_objs program debug gdb-config \
 fastnote
 

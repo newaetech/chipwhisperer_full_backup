@@ -38,7 +38,7 @@ from ...common.utils.util import camel_case_deprecated, fw_ver_required
 from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from ..api.cwcommon import ChipWhispererCommonInterface
 
-from chipwhisperer.logging import *
+from ...logging import *
 
 class CW305_USB(object):
     REQ_SYSCFG = 0x22
@@ -593,9 +593,9 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             A FPGASPI object which can be used to erase/program/verify/read the SPI
             chip on the CW305.
         """
-        if not self._getNAEUSB().check_feature("FPGA_SPI_PASSTHROUGH"):
-            target_logger.error("SPI mode requires fw 0.30.0 or newer. You have {}".format(self.fw_version_str))
-            return
+        self._getNAEUSB().check_feature("FPGA_SPI_PASSTHROUGH", True)
+            # target_logger.error("SPI mode requires fw 0.30.0 or newer. You have {}".format(self.fw_version_str))
+            # return
         if self._fpga_id is None and bsfile is None:
             target_logger.warning("CW305 requires passthrough bitstream to program SPI chip, but file/chip not specified")
         else:
@@ -629,8 +629,8 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         Returns:
             A FPGAIO object which can be used to access IO on the CW305.
         """
-        if not self._getNAEUSB().check_feature("SAM3U_GPIO_MODE"):
-            target_logger.error("GPIO mode requires fw 0.40.0 or newer. You have {}".format(self.fw_version_str))
+        self._getNAEUSB().check_feature("SAM3U_GPIO_MODE", True)
+            # target_logger.error("GPIO mode requires fw 0.40.0 or newer. You have {}".format(self.fw_version_str))
         io = FPGAIO(self._naeusb, timeout)
         return io
 

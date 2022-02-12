@@ -740,8 +740,7 @@ class TriggerSettings(util.DisableNewAttr):
 
 class ProTrigger(TriggerSettings):
     def _dict_repr(self):
-        rtn = {}
-        rtn = rtn.update(super()._dict_repr())
+        rtn = super()._dict_repr()
         rtn['module'] = self.module
         rtn['aux_out'] = self.aux_out
         return rtn

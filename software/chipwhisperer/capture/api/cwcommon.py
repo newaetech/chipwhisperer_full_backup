@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2014-2022, NewAE Technology Inc
+# All rights reserved.
+#
+#
+# Find this and more at newae.com - this file is part of the chipwhisperer
+# project, http://www.chipwhisperer.com 
+#
+#=================================================
+
 from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from ...hardware.naeusb.naeusb import NAEUSB
 from typing import Callable, Union, Dict, Tuple, cast, List, Optional
@@ -7,6 +18,25 @@ import io
 class ChipWhispererCommonInterface:
     def __init__(self):
         pass
+
+    def enable_MPSSE(self, enable=True):
+        """Enable or disable MPSSE mode
+        """
+        if enable:
+            self._getNAEUSB().enable_MPSSE()
+        else:
+            self.reset_sam3u()
+        pass
+
+    def check_feature(self, name, raise_exception=False):
+        """Check if a feature is available on this ChipWhisperer
+        """
+        return self._getNAEUSB().check_feature(name, raise_exception=raise_exception)
+
+    def feature_list(self) -> List[str]:
+        """Returns a list of supported features that depend on device/firmware version
+        """
+        return self._getNAEUSB().feature_list()
 
     def _getNAEUSB(self) -> NAEUSB:
         raise NotImplementedError("_getNAEUSB() method required")

@@ -45,6 +45,7 @@
 #include "naeusb_default.h"
 #include "naeusb_usart.h"
 #include "naeusb_nano.h"
+#include "naeusb_mpsse.h"
 
 //Serial Number - will be read by device ID
 char usb_serial_number[33] = "000000000000DEADBEEF";
@@ -82,10 +83,12 @@ int main (void)
 	naeusb_register_handlers();
 	naeusart_register_handlers();
 	nano_register_handlers();
+	mpsse_register_handlers();
 
 	while (true) {
 		//sleepmgr_enter_sleep();
 		cdc_send_to_pc();
+		MPSSE_main_sendrecv_byte();
 				
 	}
 	

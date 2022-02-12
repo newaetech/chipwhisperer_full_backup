@@ -9,7 +9,7 @@ import binascii
 hwdir = r"../../../../hardware/"
 
 #List of versions, file-names, and object name
-cw305_v = [0, 52]
+cw305_v = [0, 53]
 cw305_files = [("SAM3U_CW305.bin", os.path.join(hwdir, r"victims/cw305_artixtarget/fw/sam3u/CW305_SAM3U_FW/src/ChipWhisperer-CW305-SAM3U1C.bin")),
                 ("SPI_flash_100t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/spiflash_feedthrough/spiflash_feedthrough.runs/impl_100t/cw305_top.bit")),
                 ("SPI_flash_35t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/spiflash_feedthrough/spiflash_feedthrough.runs/impl_35t/cw305_top.bit")),
@@ -25,24 +25,28 @@ cwcr2_v = [0, 11]
 cwcr2_files = [("cwrev2_firmware.zip",  os.path.join(hwdir, r"capture/chipwhisperer-rev2/cwrev2_firmware.zip")),
                ("OpenADC.ihx", os.path.join(hwdir, r"capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"))]
 
-cwlite_v = [0, 52]
+cwlite_v = [0, 60]
 cwlite_files = [("cwlite_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-lite/cwlite_firmware.zip")),
                 ("SAM3U_CW1173.bin", os.path.join(hwdir, r"capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin"))]
 
-cw1200_v = [1, 52]
+cw1200_v = [1, 60]
 cw1200_files = [("cw1200_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/cw1200_firmware.zip")),
                 ("CW1200_SAM3UFW.bin", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/CW1200_SAM3UFW.bin"))]
 
-cwhusky_v = [1, 0]
+cwhusky_v = [1, 1]
 cwhusky_files = [("husky_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-husky/husky_firmware.zip")),
                 ("Husky.bin", os.path.join(hwdir, r"capture/chipwhisperer-husky/ChipWhisperer-Husky-SAM3U1C.bin"))]
 
-cwbergen_v = [1, 0]
+cwbergen_v = [1, 2]
 cwbergen_files = [("CW310.bin", os.path.join(hwdir, r"victims/cw310_bergenboard/CW310.bin"))]
 
-cwnano_v = [0, 52]
+cwnano_v = [0, 60]
 #hardware\capture\chipwhisperer-nano\firmware\cwnano-firmware\Debug\cwnano-firmware.bin
 cwnano_files = [("SAM3U_CWNANO.bin", os.path.join(hwdir, r"capture/chipwhisperer-nano/firmware/cwnano-firmware/Debug/cwnano-firmware.bin"))]
+
+
+target_ice40_neorv32_files = [("neorv32_iCE40CW312_MinimalBoot_directclk_7370KHz.bit", r"C:\dev\neorv32-setups\osflow\neorv32_iCE40CW312_MinimalBoot.bit")]
+
 #List of files to generate
 file_list = [
     ("cwnano.py" , cwnano_v , cwnano_files),
@@ -51,6 +55,7 @@ file_list = [
     ("cw1200.py", cw1200_v, cw1200_files),
     ("cwhusky.py", cwhusky_v, cwhusky_files),
     ("cwbergen.py", cwbergen_v, cwbergen_files),
+#    ("cwtargetice40.py", [0,0], target_ice40_neorv32_files)
 ]
 
 for fdata in file_list:

@@ -503,7 +503,7 @@
   <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
   <armgcc.compiler.optimization.DebugLevel>Maximum (-g3)</armgcc.compiler.optimization.DebugLevel>
   <armgcc.compiler.warnings.AllWarnings>True</armgcc.compiler.warnings.AllWarnings>
-  <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500 -Wno-attributes -I ../src/naeusb</armgcc.compiler.miscellaneous.OtherFlags>
+  <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu11 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500 -Wno-attributes -I ../src/naeusb</armgcc.compiler.miscellaneous.OtherFlags>
   <armgcc.linker.libraries.Libraries>
     <ListValues>
       <Value>libarm_cortexM3l_math</Value>
@@ -518,7 +518,7 @@
   </armgcc.linker.libraries.LibrarySearchPaths>
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
   <armgcc.linker.memorysettings.ExternalRAM />
-  <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam/utils/linker_scripts/sam3u/sam3u2/gcc/flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
+  <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/naeusb/flash_sam3u2.ld</armgcc.linker.miscellaneous.LinkerFlags>
   <armgcc.assembler.general.IncludePaths>
     <ListValues>
       <Value>../src/ASF/common/services/usb/class/cdc</Value>
@@ -671,9 +671,6 @@
     <None Include="src\ASF\common\services\usb\class\composite\device\udi_composite_conf.h">
       <SubType>compile</SubType>
     </None>
-    <Compile Include="src\ASF\common\services\usb\class\composite\device\udi_composite_desc.c">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\ASF\sam\drivers\chipid\chipid.c">
       <SubType>compile</SubType>
     </Compile>
@@ -710,6 +707,12 @@
     <Compile Include="src\naeusb\naeusb_default.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\naeusb\naeusb_mpsse.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\naeusb_mpsse.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\naeusb\naeusb_openadc.c">
       <SubType>compile</SubType>
     </Compile>
@@ -720,6 +723,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\naeusb\naeusb_usart.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\udc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\naeusb\udi_composite_desc.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\naeusb\usart_driver.h">
@@ -1178,9 +1187,6 @@
     <None Include="src\ASF\common\services\usb\usb_protocol.h">
       <SubType>compile</SubType>
     </None>
-    <Compile Include="src\ASF\common\services\usb\udc\udc.c">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\ASF\common\services\usb\udc\udc.h">
       <SubType>compile</SubType>
     </Compile>

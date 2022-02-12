@@ -25,13 +25,13 @@ import os
 import array
 from typing import Optional, Union, List, Tuple, Dict, cast
 
-from chipwhisperer.hardware.firmware import cwlite as fw_cwlite
-from chipwhisperer.hardware.firmware import cw1200 as fw_cw1200
-from chipwhisperer.hardware.firmware import cw305  as fw_cw305
-from chipwhisperer.hardware.firmware import cwnano  as fw_nano
-from chipwhisperer.hardware.firmware import cwhusky as fw_cwhusky
+from ..firmware import cwlite as fw_cwlite
+from ..firmware import cw1200 as fw_cw1200
+from ..firmware import cw305  as fw_cw305
+from ..firmware import cwnano  as fw_nano
+from ..firmware import cwhusky as fw_cwhusky
 
-from chipwhisperer.logging import *
+from ...logging import *
 
 SAM_FW_FEATURES = [
     "WCID", #0
@@ -47,7 +47,12 @@ SAM_FW_FEATURES = [
     "FPGA_SPI_PASSTHROUGH", #10
     "SAM3U_GPIO_MODE", #11
     "FPGA_TARGET_BULK_WRITE", #12
+    "MPSSE", #13
+    "TARGET_SPI", #14
 ]
+
+class CWFirmwareError(Exception):
+    pass
 
 SAM_FW_FEATURE_BY_DEVICE = {
     0xACE0: {
@@ -57,7 +62,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[4]: '0.30.0',
         SAM_FW_FEATURES[6]: '0.50.0',
         SAM_FW_FEATURES[7]: '0.50.0',
-        SAM_FW_FEATURES[8]: '0.30.0'
+        SAM_FW_FEATURES[8]: '0.30.0',
+        SAM_FW_FEATURES[13]: '0.60.0'
     },
 
     0xACE2: {
@@ -70,7 +76,9 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[6]: '0.50.0',
         SAM_FW_FEATURES[7]: '0.50.0',
         SAM_FW_FEATURES[8]: '0.30.0',
-        SAM_FW_FEATURES[9]: '0.52.0'
+        SAM_FW_FEATURES[9]: '0.52.0',
+        SAM_FW_FEATURES[13]: '0.60.0',
+        SAM_FW_FEATURES[14]: '0.60.0'
     },
 
     0xACE3: {
@@ -83,7 +91,9 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[6]: '1.50.0',
         SAM_FW_FEATURES[7]: '1.50.0',
         SAM_FW_FEATURES[8]: '1.30.0',
-        SAM_FW_FEATURES[9]: '1.52.0'
+        SAM_FW_FEATURES[9]: '1.52.0',
+        SAM_FW_FEATURES[13]: '1.60.0',
+        SAM_FW_FEATURES[14]: '1.60.0'
     },
 
     0xACE5: {
@@ -96,7 +106,9 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[6]: '1.0.0',
         SAM_FW_FEATURES[7]: '1.0.0',
         SAM_FW_FEATURES[8]: '1.0.0',
-        SAM_FW_FEATURES[9]: '1.0.0'
+        SAM_FW_FEATURES[9]: '1.0.0',
+        SAM_FW_FEATURES[13]: '1.1.0',
+        SAM_FW_FEATURES[14]: '1.1.0'
     },
 
     0xC305: {
@@ -123,6 +135,7 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[10]: '1.0.0',
         SAM_FW_FEATURES[11]: '1.0.0',
         SAM_FW_FEATURES[12]: '1.1.0',
+        SAM_FW_FEATURES[13]: '1.2.0'
     }
 }
 
@@ -596,6 +609,14 @@ class NAEUSB:
         else:
             return [0, 0, 0, 0]
 
+    def enable_MPSSE(self):
+        if self.check_feature("MPSSE", True):
+            try:
+                self.sendCtrl(0x22, 0x42)
+            except usb1.USBError:
+                pass
+            self.close()
+
     def set_cdc_settings(self, port : Tuple=(1, 1, 0, 0)):
         if self.check_feature("CDC"):
             if isinstance(port, int):
@@ -623,7 +644,7 @@ class NAEUSB:
     def get_serial_ports(self) -> Optional[List[Dict[str, int]]]:
         """May have multiple com ports associated with one device, so returns a list of port + interface
         """
-        if self.check_feature("CDC"):
+        if self.check_feature("CDC", True):
             if not self.usbtx._usbdev:
                 raise OSError("Connect to device before calling this")
             import serial.tools.list_ports # type: ignore
@@ -884,6 +905,7 @@ class NAEUSB:
         return num_totalbytes
 
 
+
     def initStreamModeCapture(self, dlen : int, dbuf_temp : bytearray, timeout_ms : int=1000,
         is_husky : bool=False, segment_size : int=0):
         #Enter streaming mode for requested number of samples
@@ -945,20 +967,30 @@ class NAEUSB:
     def reset(self):
         """ Reset the SAM3U. Requires firmware 0.30 or later
         """
-        if self.check_feature("RESET"):
+        if self.check_feature("RESET", True):
             self.sendCtrl(0x22, 0x10)
 
     def read(self, dlen : int, timeout : int=2000) -> bytearray:
         return self.usbserializer.read(dlen, timeout)
 
-    def check_feature(self, feature) -> bool:
+    def check_feature(self, feature, raise_exception=False) -> bool:
         prod_id = self.usbtx.device.getProductID()
         fw_ver_list = self.readFwVersion()
         fw_ver_str = '{}.{}.{}'.format(fw_ver_list[0], fw_ver_list[1], fw_ver_list[2])
         ret = _check_sam_feature(feature, fw_ver_str, prod_id)
         if not ret:
             naeusb_logger.info("Feature {} not available".format(feature))
+            if raise_exception:
+                raise CWFirmwareError("Feature {} not available. FW {} required (have {})".format(feature, SAM_FW_FEATURE_BY_DEVICE[prod_id][feature], fw_ver_str))
         return ret
+
+    def feature_list(self):
+        feature_list = []
+        for feature in SAM_FW_FEATURES:
+            if self.check_feature(feature):
+                feature_list.append(feature)
+
+        return feature_list
 
 
 if __name__ == '__main__':

@@ -2,28 +2,14 @@
 # HIGHLEVEL_CLASSLOAD_FAIL_FUNC_WARN
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2022, NewAE Technology Inc
 # All rights reserved.
 #
 # Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
-# project, http://www.assembla.com/spaces/chipwhisperer
+# project, http://www.chipwhisperer.com
 #
-#    This file is part of chipwhisperer.
-#
-#    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    chipwhisperer is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Lesser General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 from chipwhisperer.logging import *
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
@@ -150,6 +136,37 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
     def _getNAEUSB(self) -> NAEUSB:
         return self.scopetype.ser
+
+    def enable_MPSSE(self, enable=True):
+        sn = self.sn
+        if enable:
+            self.io.cwe.setAVRISPMode(1)
+        else:
+            self.io.cwe.setAVRISPMode(0)
+        super().enable_MPSSE(enable)
+
+        if enable and (not self._is_husky):
+            # non husky needs to be setup after MPSSE is setup
+            for i in range(10):
+                time.sleep(0.50)
+                try:
+                    self.con(sn=sn)
+                    break
+                except:
+                    pass
+            try:
+                self.default_setup()
+            except:
+                raise IOError("Could not reconnect to ChipWhisperer. \
+                    Try connecting manually and running \
+                        scope.default_setup(); scope.io.cwe.setAVRISPMode(1)")
+            self.io.cwe.setAVRISPMode(1)
+            self.dis()
+    
+    def finish_mpsse_setup(self, set_defaults=True):
+        if set_defaults:
+            self.default_setup()
+        self.io.cwe.setAVRISPMode(1)
 
     def default_setup(self):
         """Sets up sane capture defaults for this scope

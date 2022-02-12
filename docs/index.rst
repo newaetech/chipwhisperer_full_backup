@@ -95,3 +95,4 @@ Here is more information about changes, and contribution.
     Updating Firmware <firmware.rst>
     Logging <logging.rst>
     Drivers <drivers.rst>
+    ChipWhisperer as a Debugger <debugging.rst>

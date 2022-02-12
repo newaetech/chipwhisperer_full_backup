@@ -19,21 +19,31 @@
 #include <stdio.h>
 #include "hal.h"
 
-
+#ifndef uart_puts
 void uart_puts(char * s){
     while(*s){
         putch(*(s++));
     }
 }
+#endif
+
+/* Some embedded libs don't have va_start() / vsprintf(), so we use macro instead of
+   the 'more correct' solution here. String buffer is static to ensure compiler
+   doesn't do anything weird and just keeps it around, for purpose of this file
+   no risk of exploding the ram. */
+#ifndef uart_printf
+#define uart_printf(...)  {static char str[64]; sprintf(str, __VA_ARGS__); uart_puts(str);}
+#endif
+
 
 void glitch_infinite(void)
 {
-    char str[64];
+    
     unsigned int k = 0;
     //Declared volatile to avoid optimizing away loop.
     //This also adds lots of SRAM access
     volatile uint16_t i, j;
-    volatile uint32_t cnt;
+    volatile unsigned int cnt;
     while(1){
         cnt = 0;
         trigger_high();
@@ -43,8 +53,7 @@ void glitch_infinite(void)
                 cnt++;
             }
         }
-        sprintf(str, "%lu %d %d %d\n", cnt, i, j, k++);
-        uart_puts(str);
+        uart_printf("%u %u %u %u\n", cnt, i, j, k++);
     }
 }
 

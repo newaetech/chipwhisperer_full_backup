@@ -29,6 +29,7 @@
 #include "naeusb_default.h"
 #include "naeusb_openadc.h"
 #include "naeusb_usart.h"
+#include "naeusb_mpsse.h"
 #include <string.h>
 
 //Serial Number - will be read by device ID
@@ -142,12 +143,14 @@ int main(void)
 	naeusb_register_handlers();
 	naeusart_register_handlers();
 	openadc_register_handlers();
+	mpsse_register_handlers();
 	
 	// The main loop manages only the power mode
 	// because the USB management is done by interrupt
 	while (true) {
         // if we've received stuff on USART, send it back to the PC
 		cdc_send_to_pc();
+		MPSSE_main_sendrecv_byte();
 		
 	}
 }

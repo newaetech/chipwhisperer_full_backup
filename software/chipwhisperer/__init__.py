@@ -43,11 +43,18 @@ def check_for_updates() -> str:
 
     .. versionadded:: 5.6.1
     """
+    # need to check pip version as old ones don't work for our version check
+    pv = str(subprocess.run([sys.executable, '-m', 'pip', '--version'], capture_output=True, text=True, check=False))
+
+    pip_version = pv[pv.find("stdout=\'pip")+12:pv.find(" from")]
+    if pip_version < '21.1.0':
+        other_logger.warning("Old pip version: {}, unable to do CW version check".format(pip_version))
+        return ""
+
     latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '{}==random'.format("chipwhisperer")],
                         capture_output=True, text=True, check=False))
     if not latest_version:
         raise IOError("Could not check chipwhisperer version")
-    latest_version = latest_version
     latest_version = latest_version[latest_version.find('(from versions:')+15:]
     latest_version = latest_version[:latest_version.find(')')]
     latest_version = latest_version.replace(' ','').split(',')[-1]
@@ -313,6 +320,7 @@ def scope(scope_type : Type[scopes.ScopeTypes]=None, name : Optional[str]=None,
         prog_speed = int(prog_speed)
 
     kwargs.update(locals())
+    del kwargs["name"]
     if name is not None:
         if name == 'Husky':
             kwargs['idProduct'] = 0xace5

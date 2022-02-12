@@ -58,7 +58,7 @@ class FPGA(object):
         self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x01)
         time.sleep(0.001)
 
-    def FPGAProgram(self, bitstream=None, exceptOnDoneFailure=True, prog_speed=1E6):
+    def FPGAProgram(self, bitstream=None, exceptOnDoneFailure=True, prog_speed=1E6, starting_offset=0x7C):
         """
         Program FPGA with a bitstream, or if not bitstream passed just erases FPGA
         """
@@ -80,7 +80,7 @@ class FPGA(object):
         # Download actual bitstream now if present
         if bitstream:
             # Run the download which should program FPGA
-            self._FPGADownloadBitstream(bitstream)
+            self._FPGADownloadBitstream(bitstream, starting_offset=starting_offset)
 
             wait = 5
             while wait > 0:
@@ -104,7 +104,7 @@ class FPGA(object):
             self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x02)
             return False
 
-    def _FPGADownloadBitstream(self, fwFileLike):
+    def _FPGADownloadBitstream(self, fwFileLike, starting_offset=0x7C, ending_clock_bytes=32):
         """
         Performs actual bitstream download, do not call directly, call FPGAProgram
         """
@@ -123,9 +123,9 @@ class FPGA(object):
         # Might need a few extra CCLKs at end to finish off, and as written elsewhere this is done with DO=1
         # Perhaps micro should add these instead? For now this should be reliable enough (things worked even w/o this it seemed, so this is
         # a just in case item)
-        inputStream += bytes([0xff] * 32)
+        inputStream += bytes([0xff] * ending_clock_bytes)
 
-        inputStream = inputStream[0x7C:]
+        inputStream = inputStream[starting_offset:]
 
         j = transactionBytes
         for i in range(0, len(buffer_)):

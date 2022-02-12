@@ -653,7 +653,7 @@ void udd_enable(void)
 	// Cortex-M3, uses NVIC, no need to register IRQ handler
 	// Here, only the Device mode is possible,
 	// UDPHS interrupt is UDD interrupt
-	NVIC_SetPriority((IRQn_Type) ID_UDPHS, UDD_USB_INT_LEVEL);
+	NVIC_SetPriority((IRQn_Type) ID_UDPHS, UDD_USB_INT_LEVEL - 1);
 	NVIC_EnableIRQ((IRQn_Type) ID_UDPHS);
 
 	// Reset internal variables
