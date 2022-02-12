@@ -18,6 +18,7 @@ from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern,
 from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP, LEDSettings, HuskyErrors, \
         USERIOSettings, XADCSettings, LASettings, ADS4128Settings
 from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings
+from ..trace import TraceWhisperer
 
 from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
@@ -373,9 +374,10 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.ADS4128 = ADS4128Settings(self.sc)
             self.XADC = XADCSettings(self.sc)
             self.LEDs = LEDSettings(self.sc)
-            self.errors = HuskyErrors(self.sc, self.XADC, self.adc, self.clock)
-            self.LA = LASettings(self.sc, self.la_mmcm)
+            self.LA = LASettings(oaiface=self.sc, mmcm=self.la_mmcm, scope=self)
             self.userio = USERIOSettings(self.sc)
+            self.trace = TraceWhisperer(husky=True, target=None, scope=self, trace_reg_select=3, main_reg_select=2)
+            self.errors = HuskyErrors(self.sc, self.XADC, self.adc, self.clock, self.trace)
         else:
             self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
 
@@ -624,7 +626,10 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         if self._is_husky:
             rtn['ADS4128'] = self.ADS4128._dict_repr()
             # rtn['pll'] = self.pll._dict_repr()
-            rtn['LA'] = self.LA._dict_repr()
+            if self.LA.present:
+                rtn['LA'] = self.LA._dict_repr()
+            if self.trace.present:
+                rtn['trace'] = self.trace._dict_repr()
             rtn['XADC'] = self.XADC._dict_repr()
             rtn['userio'] = self.userio._dict_repr()
             rtn['LEDs'] = self.LEDs._dict_repr()

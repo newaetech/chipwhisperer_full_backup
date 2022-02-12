@@ -23,6 +23,16 @@ USAGE:
 
 """
 
+print('\n\n\n\n**************************************************************************************')
+print('* IMPORTANT NOTE:                                                                    *')
+print('* This script is intended for basic regression testing of CW-lite/pro glitching      *')
+print('* during  development. If you are having issues connecting to your CW-lite or target *')
+print('* device, running this script is unlikely to provide you with useful information.    *')
+print('* Instead, seek assistance on forum.newae.com or discord by providing details of     *')
+print('* your setup (including the target), and the full error log from your Jupyter        *')
+print('* notebook.                                                                          *')
+print('**************************************************************************************\n\n')
+
 
 @pytest.fixture()
 def target(pytestconfig):
@@ -54,10 +64,13 @@ def test_connect(target):
     # setup Husky LA:
     hscope.clock.clkgen_src = 'system'
     hscope.clock.clkgen_freq = 10e6
+    hscope.LA.clkgen_enabled = True
     hscope.LA.enabled = True
     hscope.LA.oversampling_factor = 50
-    hscope.LA.capture_group = 1 # 20-pin header
+    hscope.LA.capture_group = 'CW 20-pin'
     hscope.LA.trigger_source = "glitch_source"
+    hscope.LA.capture_depth = 512
+    hscope.LA.downsample = 1
     hscope.io.hs2 = 'clkgen'
     hscope.glitch.enabled = True
     hscope.glitch.clk_src = 'pll'
@@ -151,7 +164,7 @@ testGlitchOutputDoublesData = [
 
 
 def test_hfpga_version():
-    assert hscope.fpga_buildtime == '11/11/2021, 10:17'
+    assert hscope.fpga_buildtime == '2/8/2022, 11:50'
 
 
 def test_hfw_version():
@@ -219,9 +232,11 @@ def test_coarse_offset(target, reps, loose, positive, width, oversamp, desc):
         observed_offsets = []
         for i,o in enumerate(range(START,STOP,INCR)):
             scope.glitch.offset = float(o)
+            hscope.LA.arm()
             hscope.glitch.manual_trigger()
-            glitchouts.append(hscope.LA.read_capture(4))
-            sources.append(hscope.LA.read_capture(5))
+            raw = hscope.LA.read_capture_data()
+            glitchouts.append(hscope.LA.extract(raw, 4))
+            sources.append(hscope.LA.extract(raw, 5))
             actual_offsets.append(scope.glitch.offset)
 
         for i,o in enumerate(range(START,STOP,INCR)):
@@ -320,8 +335,10 @@ def test_coarse_width(reps, loose, positive, offset, oversamp, desc):
         observed_widths = []
         for i,o in enumerate(range(START,STOP,INCR)):
             scope.glitch.width = float(o)
+            hscope.LA.arm()
             hscope.glitch.manual_trigger()
-            glitchouts.append(hscope.LA.read_capture(4))
+            raw = hscope.LA.read_capture_data()
+            glitchouts.append(hscope.LA.extract(raw, 4))
             actual_widths.append(scope.glitch.width)
 
         for i,o in enumerate(range(START,STOP,INCR)):
@@ -404,9 +421,11 @@ def test_fine_offset(reps, loose, coarse_offset, width, oversamp, desc):
         assert scope.glitch.offset_fine == -255, "Looks like we're trying to operate out of range here!"
         for i in range(STEPS):
             actual_offsets.append(scope.glitch.offset_fine)
+            hscope.LA.arm()
             hscope.glitch.manual_trigger()
-            glitchouts.append(hscope.LA.read_capture(4))
-            sources.append(hscope.LA.read_capture(5))
+            raw = hscope.LA.read_capture_data()
+            glitchouts.append(hscope.LA.extract(raw, 4))
+            sources.append(hscope.LA.extract(raw, 5))
             scope.glitch.offset_fine += INCR
 
         for i in range(STEPS):
@@ -514,8 +533,10 @@ def test_fine_width(reps, loose, coarse_width, offset, oversamp, desc):
         assert scope.glitch.width_fine == -255, "Looks like we're trying to operate out of range here!"
         for i in range(STEPS):
             actual_widths.append(scope.glitch.width_fine)
+            hscope.LA.arm()
             hscope.glitch.manual_trigger()
-            glitchouts.append(hscope.LA.read_capture(4))
+            raw = hscope.LA.read_capture_data()
+            glitchouts.append(hscope.LA.extract(raw, 4))
             scope.glitch.width_fine += INCR
 
         for i in range(STEPS):
@@ -595,8 +616,10 @@ def test_glitch_output_doubles(reps, glitches, oversamp, fine_step, desc):
                 scope.glitch.offset_fine = offset_fine
                 if scope.glitch.offset_fine != offset_fine:
                     continue
+                hscope.LA.arm()
                 scope.glitch.manual_trigger()
-                glitchout = hscope.LA.read_capture(4)
+                raw = hscope.LA.read_capture_data()
+                glitchout = hscope.LA.extract(raw, 4)
                 glitchlen = len(np.where(glitchout > 0)[0])
                 cycles = glitchlen/oversamp
 
@@ -621,6 +644,7 @@ def test_hxadc():
 def test_shutdown():
     # not actually a test, just turn off Husky MMCMs when we're done
     hscope.LA.enabled = False
+    hscope.LA.clkgen_enabled = False
     hscope.glitch.enabled = False
 
 

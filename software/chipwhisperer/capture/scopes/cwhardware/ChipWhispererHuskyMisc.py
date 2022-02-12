@@ -51,14 +51,19 @@ ADDR_LA_CLOCK_SOURCE    = 71
 ADDR_LA_TRIGGER_SOURCE  = 72
 ADDR_LA_POWERDOWN       = 73
 ADDR_LA_DRP_RESET       = 74
-ADDR_LA_EXISTS          = 75
+ADDR_LA_MANUAL_CAPTURE  = 75
+ADDR_COMPONENTS_EXIST   = 96
 ADDR_LA_CAPTURE_GROUP   = 76
 ADDR_LA_CAPTURE_DEPTH   = 77
-ADDR_LA_READ_SELECT     = 78
+ADDR_LA_DOWNSAMPLE      = 78
+ADDR_LA_ARM             = 98
+ADDR_LA_ENABLED         = 99
 
 ADDR_USERIO_CW_DRIVEN   = 86
 ADDR_USERIO_DEBUG_DRIVEN= 87
 ADDR_USERIO_DRIVE_DATA  = 88
+ADDR_USERIO_READ        = 97
+ADDR_TRACE_EN           = 0xc0 + 0x2d
 
 
 class XilinxDRP(util.DisableNewAttr):
@@ -274,12 +279,13 @@ class HuskyErrors(util.DisableNewAttr):
     '''
     _name = 'Husky Errors'
 
-    def __init__(self, oaiface : OAI.OpenADCInterface, XADC, adc, clock):
+    def __init__(self, oaiface : OAI.OpenADCInterface, XADC, adc, clock, trace):
         super().__init__()
         self.oa = oaiface
         self.XADC = XADC
         self.adc = adc
         self.clock = clock
+        self.trace = trace
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -287,6 +293,7 @@ class HuskyErrors(util.DisableNewAttr):
         rtn['XADC_status'] = self.XADC.status
         rtn['adc_errors'] = self.adc.errors
         rtn['extclk_error'] = self.clock.extclk_error
+        rtn['trace_errors'] = self.trace.errors
         return rtn
 
     def __repr__(self):
@@ -299,6 +306,7 @@ class HuskyErrors(util.DisableNewAttr):
         self.XADC.status = 0
         self.adc.errors = 0
         self.clock.extclk_error = 0
+        self.trace.errors = 0
 
 
 class USERIOSettings(util.DisableNewAttr):
@@ -313,9 +321,10 @@ class USERIOSettings(util.DisableNewAttr):
 
     def _dict_repr(self):
         rtn = OrderedDict()
-        rtn['debug_mode'] = self.debug_mode
+        rtn['mode'] = self.mode
         rtn['direction'] = self.direction
         rtn['drive_data'] = self.drive_data
+        rtn['status'] = self.status
         return rtn
 
     def __repr__(self):
@@ -325,20 +334,34 @@ class USERIOSettings(util.DisableNewAttr):
         return self.__repr__()
 
     @property
-    def debug_mode(self):
-        """Set all pins to debug mode, driven by Husky.
-        Takes precedence over scope.userio.direction.
-        Look to cwhusky_top.v for signal definitions.
+    def mode(self):
+        """Set mode for USERIO pins:
+            "normal": as defined by scope.userio.direction.
+            "trace": for target trace capture.
+            "debug": for FPGA debug (look to cwhusky_top.v for signal definitions).
         """
-        return self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_DRIVEN, maxResp=1)[0]
-
-    @debug_mode.setter
-    def debug_mode(self, setting):
-        if setting:
-            val = 1
+        debug = self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_DRIVEN, maxResp=1)[0]
+        trace = self.oa.sendMessage(CODE_READ, ADDR_TRACE_EN, maxResp=1)[0]
+        if trace:
+            return "trace"
+        elif debug:
+            return "debug"
         else:
-            val = 0
-        self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [val])
+            return "normal"
+
+    @mode.setter
+    def mode(self, setting):
+        if setting == 'normal':
+            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [0])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
+        elif setting == 'trace':
+            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [0])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [1])
+        elif setting == 'debug':
+            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [1])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
+        else:
+            raise ValueError("Invalid mode; use normal/trace/debug")
 
     @property
     def direction(self):
@@ -346,7 +369,8 @@ class USERIOSettings(util.DisableNewAttr):
         8-bit integer, where bit <x> determines the direction of D<x>;
         bit x = 0: D<x> is an input to Husky.
         bit x = 1: D<x> is driven by Husky.
-        Note that scope.userio.debug_mode takes precedence.
+        When scope.userio.mode is not "normal", then this setting is controlled
+        by the FPGA and cannot be changed by the user.
         Use with care.
         """
         return self.oa.sendMessage(CODE_READ, ADDR_USERIO_CW_DRIVEN, maxResp=1)[0]
@@ -371,6 +395,12 @@ class USERIOSettings(util.DisableNewAttr):
         else:
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DRIVE_DATA, [setting])
 
+    @property
+    def status(self):
+        """Returns current value of header pins. LSB=D0, MSB=CK.
+        """
+        raw = self.oa.sendMessage(CODE_READ, ADDR_USERIO_READ, maxResp=2)
+        return int.from_bytes(raw, byteorder='little')
 
 
 
@@ -548,23 +578,28 @@ class LASettings(util.DisableNewAttr):
     '''
     _name = 'Husky Logic Analyzer Setting'
 
-    def __init__(self, oaiface : OAI.OpenADCInterface, mmcm):
+    def __init__(self, oaiface : OAI.OpenADCInterface, mmcm, scope):
         # oaiface = OpenADCInterface
         super().__init__()
         self.oa = oaiface
         self._mmcm = mmcm
+        self._scope = scope
         self.disable_newattr()
 
     def _dict_repr(self):
         rtn = OrderedDict()
         rtn['present'] = self.present
         rtn['enabled'] = self.enabled
+        rtn['clkgen_enabled'] = self.clkgen_enabled
         rtn['locked'] = self.locked
         rtn['clk_source'] = self.clk_source
         rtn['trigger_source'] = self.trigger_source
         rtn['oversampling_factor'] = self.oversampling_factor
+        rtn['downsample'] = self.downsample
         rtn['capture_group'] = self.capture_group
         rtn['capture_depth'] = self.capture_depth
+        if self.enabled:
+            rtn['errors'] = self.errors
         return rtn
 
     def __repr__(self):
@@ -585,18 +620,20 @@ class LASettings(util.DisableNewAttr):
         Raises:
            ValueError: invalid source
         """
-        if source > 8:
-            raise ValueError('Source must be in range 0-8')
-        if length == None:
-            length = self.capture_depth // 8
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_READ_SELECT, [source], Validate=False)
-        raw = self.oa.sendMessage(CODE_READ, ADDR_LA_READ_SELECT, Validate=False, maxResp=length)
-        return self._bytes_to_bits(raw)
+        scope_logger.error("Obsolete. Use read_capture_data() and extract() instead.")
 
     def reset_MMCM(self):
         """Reset the sampling clock's MMCM.
         """
         self._mmcm.drp.reset()
+
+
+    def trigger_now(self):
+        """Trigger the capture manually.
+        """
+        self.oa.sendMessage(CODE_WRITE, ADDR_LA_MANUAL_CAPTURE, [1], Validate=False)
+        self.oa.sendMessage(CODE_WRITE, ADDR_LA_MANUAL_CAPTURE, [0], Validate=False)
+
 
     @staticmethod
     def _bytes_to_bits(bytelist):
@@ -612,13 +649,11 @@ class LASettings(util.DisableNewAttr):
         """ Return whether the logic analyzer functionality is present in this build (True or False).
         If it is not present, none of the functionality of this class is available.
         """
-        raw = self.oa.sendMessage(CODE_READ, ADDR_LA_EXISTS, Validate=False, maxResp=2)
-        if raw == bytearray([0, 0]):
-            return False
-        elif raw == bytearray([0x41, 0x4c]):
+        raw = self.oa.sendMessage(CODE_READ, ADDR_COMPONENTS_EXIST, Validate=False, maxResp=1)[0]
+        if raw & 1:
             return True
         else:
-            raise ValueError("Unexpected: read %s" % raw)
+            return False
 
     @property
     def locked(self):
@@ -632,26 +667,71 @@ class LASettings(util.DisableNewAttr):
 
     @property
     def capture_depth(self):
-        """Returns the number of bits captured for each signal. This is a buildtime-defined parameter,
-        so use this method to learn how much data this particular build can capture.
+        """Number of bits captured for each signal.
+        Args:
+            depth (int): capture <depth> samples of each signal. 16-bit value, in range [1, 16376].
         """
         raw = self.oa.sendMessage(CODE_READ, ADDR_LA_CAPTURE_DEPTH, Validate=False, maxResp=2)
         return int.from_bytes(raw, byteorder='little')
 
+    @capture_depth.setter
+    def capture_depth(self, depth):
+        if depth > 16376:
+            raise ValueError("Maximum capture depth is 16376")
+        if depth % 2:
+            depth -= 1
+        self.oa.sendMessage(CODE_WRITE, ADDR_LA_CAPTURE_DEPTH, int.to_bytes(depth, length=2, byteorder='little'), Validate=False)
+
+
     @property
     def enabled(self):
+        """Controls whether this block is active for recording data. The LA
+        and trace components share the same FPGA storage, so they cannot be
+        simultaneously enabled.
+        """
+        raw = self.oa.sendMessage(CODE_READ, ADDR_LA_ENABLED, Validate=False, maxResp=1)[0]
+        if raw:
+            return True
+        else:
+            return False
+
+    @enabled.setter
+    def enabled(self, enable):
+        if enable:
+            val = [1]
+            # only one of Trace/LA can be enabled at once:
+            self._scope.trace.enabled = False
+            self.clkgen_enabled = True
+        else:
+            val = [0]
+        self.oa.sendMessage(CODE_WRITE, ADDR_LA_ENABLED, val, Validate=False)
+        self.reset_MMCM()
+
+    @property
+    def clkgen_enabled(self):
         """Controls whether the Xilinx MMCM used to generate the samplign clock
         is powered on or not.  7-series MMCMs are power hungry. In the Husky
         FPGA, MMCMs are estimated to consume close to half of the FPGA's power.
         If you run into temperature issues and don't require the logic analyzer
-        functionality, power down this MMCM.
+        or debug trace functionality, power down this MMCM.
         """
-        return self._getEnabled()
+        raw = self.oa.sendMessage(CODE_READ, ADDR_LA_POWERDOWN, Validate=False, maxResp=1)[0]
+        if raw == 1:
+            return False
+        elif raw == 0:
+            return True
+        else:
+            raise ValueError("Unexpected: read %d" % raw)
 
-    @enabled.setter
-    def enabled(self, enable):
-        self._setEnabled(enable)
+    @clkgen_enabled.setter
+    def clkgen_enabled(self, enable):
+        if enable:
+            val = [0]
+        else:
+            val = [1]
+        self.oa.sendMessage(CODE_WRITE, ADDR_LA_POWERDOWN, val, Validate=False)
         self.reset_MMCM()
+
 
     @property
     def clk_source(self):
@@ -679,17 +759,135 @@ class LASettings(util.DisableNewAttr):
         self._setClkSource(enable)
         self.reset_MMCM()
 
+    def arm(self):
+        self.oa.sendMessage(CODE_WRITE, ADDR_LA_ARM, [1], Validate=False)
+
+    @property
+    def errors(self):
+        """Indicate whether internal FPGA errors have occurred.
+           Write to clear.
+        """
+        # note this does (almost) the exact same thing as scope.trace.errors
+        stat = ""
+        fifo_stat = self.oa.sendMessage(CODE_READ, self._scope.trace.REG_SNIFF_FIFO_STAT, Validate=False, maxResp=1)[0]
+        if (fifo_stat & 2) >> 1:
+            stat += "FIFO underflow, "
+        if (fifo_stat & 16) >> 4:
+            stat += "FIFO overflow, "
+        if stat:
+            return stat
+        else:
+            return None
+
+    @errors.setter
+    def errors(self, val):
+        self.oa.sendMessage(CODE_WRITE, self._scope.trace.REG_CLEAR_ERRORS, [1], Validate=False)
+
+
+    def read_capture_data(self, check_empty=False):
+        """Read captured data.
+
+        Returns: List of captured entries. Each list element is itself a 3-element list,
+        containing the 3 bytes that make up a capture entry. Use extract() to parse.
+
+        """
+        # note this does the exact same thing as scope.trace.read_capture_data()
+        data = []
+        # first check for FIFO to not be empty:
+        assert self.fifo_empty() == False, 'FIFO is empty'
+
+        # then check that no underflows or overflows occurred during capture:
+        if  self.errors:
+            scope_logger.warning("FIFO errors occured: %s" % self.errors)
+
+        if check_empty:
+            # check if FIFO is empty before reading every word... much slower! for development
+            while not self.fifo_empty():
+                data.append(self.oa.sendMessage(CODE_READ, self._scope.trace.REG_SNIFF_FIFO_RD, Validate=False, maxResp=4)[1:4])
+        else:
+            # 4 bytes of REG_SNIFF_FIFO_RD carries 2 samples of each signal, hence we read capture_depth*2 bytes:
+            raw = self.oa.sendMessage(CODE_READ, self._scope.trace.REG_SNIFF_FIFO_RD, Validate=False, maxResp=self.capture_depth*2)
+            for i in range(self.capture_depth//2):
+                data.append(raw[i*4+1: i*4+4])
+
+        if len(data): # maybe we only got empty reads
+            if data[-1][2] & 2**self._scope.trace.FE_FIFO_STAT_UNDERFLOW:
+                scope_logger.warning("Capture FIFO underflowed!")
+
+        return data
+
+    @staticmethod
+    def extract(raw, index):
+        """
+        """
+        bitlist = []
+        if index == 0:
+            byte_index = 0
+            bit0_index = 0
+            bit1_index = 1
+        elif index == 1:
+            byte_index = 0
+            bit0_index = 2
+            bit1_index = 3
+        elif index == 2:
+            byte_index = 0
+            bit0_index = 4
+            bit1_index = 5
+        elif index == 3:
+            byte_index = 0
+            bit0_index = 6
+            bit1_index = 7
+        elif index == 4:
+            byte_index = 1
+            bit0_index = 0
+            bit1_index = 1
+        elif index == 5:
+            byte_index = 1
+            bit0_index = 2
+            bit1_index = 3
+        elif index == 6:
+            byte_index = 1
+            bit0_index = 4
+            bit1_index = 5
+        elif index == 7:
+            byte_index = 1
+            bit0_index = 6
+            bit1_index = 7
+        elif index == 8:
+            byte_index = 2
+            bit0_index = 0
+            bit1_index = 1
+        else:
+            raise ValueError
+        for i, x in enumerate(raw):
+            bitlist.append((x[byte_index] >> bit1_index) & 0x01)
+            bitlist.append((x[byte_index] >> bit0_index) & 0x01)
+        return np.asarray(bitlist)
+
+    def fifo_empty(self):
+        """Returns True if the capture FIFO is empty, False otherwise.
+        """
+        # note this does the exact same thing as scope.trace.fifo_empty()
+        if self.oa.sendMessage(CODE_READ, self._scope.trace.REG_SNIFF_FIFO_STAT, Validate=False, maxResp=1)[0] & 1:
+            return True
+        else:
+            return False
+
+
     @property
     def trigger_source(self):
         """The trigger used by the logic analyzer to capture.
 
-        There are two different sources:
+        There are several different sources:
          * "glitch": The internal glitch trigger.
          * "capture": The internal ADC capture trigger.
          * "glitch_source": The internal glitch trigger in the source clock
                             domain. This comes before "glitch", since there is
                             a clock domain crossing from "glitch_source" to "glitch"
          * "HS1": The HS1 input clock.
+
+         In addition, capture can be triggered manually, irrespective of the trigger_source
+         setting, by calling scope.LA.trigger_now()
 
         :Getter:
            Return the trigger source currently in use
@@ -724,12 +922,26 @@ class LASettings(util.DisableNewAttr):
     def oversampling_factor(self, factor):
         self._setOversamplingFactor(factor)
 
+
+    @property
+    def downsample(self):
+        """Downsample setting.
+        Args:
+            downsample (int): capture every <downsample> samples. 16-bit value, in range [1, 2**16].
+        """
+        return self._getDownsample()
+
+    @downsample.setter
+    def downsample(self, factor):
+        self._setDownsample(factor)
+
+
     @property
     def capture_group(self):
         """Sets which group of signals are captured.
 
         There are three groups. The signals captured for each group are as follows:
-        group 0 (glitch):
+        'glitch' (group 0):
             0: glitch output
             1: source clock of glitch module
             2: glitch internal MMCM1 (offset) output
@@ -738,7 +950,7 @@ class LASettings(util.DisableNewAttr):
             5: capture trigger
             6: glitch enable
             7. glitch trigger in its source clock domain (e.g. signal 1 of this group)
-        group 1 (20-pin connector):
+        'CW 20-pin' (group 1):
             0: IO1
             1: IO2
             2: IO3
@@ -748,7 +960,7 @@ class LASettings(util.DisableNewAttr):
             6: AUX MCX
             7: TRIG MCX
             8: ADC sampling clock
-        group 2 (front USERIO header):
+        'USERIO 20-pin' (group 2):
             0: D0
             1: D1
             2: D2
@@ -758,7 +970,8 @@ class LASettings(util.DisableNewAttr):
             6: D6
             7: D7
             8: CK
-        group 3: internal trigger signals, for debug/development (refer to Verilog source)
+        'trigger debug' (group 3)
+        'internal trace' (group 4)
 
         :Getter:
            Return the capture group currently in use.
@@ -772,25 +985,9 @@ class LASettings(util.DisableNewAttr):
         return self._getCaptureGroup()
 
     @capture_group.setter
-    def capture_group(self, factor):
-        self._setCaptureGroup(factor)
+    def capture_group(self, group):
+        self._setCaptureGroup(group)
 
-
-    def _setEnabled(self, enable):
-        if enable:
-            val = [0]
-        else:
-            val = [1]
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_POWERDOWN, val, Validate=False)
-
-    def _getEnabled(self):
-        raw = self.oa.sendMessage(CODE_READ, ADDR_LA_POWERDOWN, Validate=False, maxResp=1)[0]
-        if raw == 1:
-            return False
-        elif raw == 0:
-            return True
-        else:
-            raise ValueError("Unexpected: read %d" % raw)
 
     def _setClkSource(self, source):
         if source == 'target':
@@ -824,7 +1021,7 @@ class LASettings(util.DisableNewAttr):
         elif source == 'HS1':
             val = [3]
         else:
-            raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', or 'HS1'")
+            raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', 'HS1', or 'manual'")
         self.oa.sendMessage(CODE_WRITE, ADDR_LA_TRIGGER_SOURCE, val, Validate=False)
 
     def _getTriggerSource(self):
@@ -848,16 +1045,48 @@ class LASettings(util.DisableNewAttr):
         self._mmcm.set_sec_div(1)
 
     def _getOversamplingFactor(self):
-        return self._mmcm.get_mul()
+        return self._mmcm.get_mul() // (self._mmcm.get_main_div() * self._mmcm.get_sec_div())
+
+    def _setDownsample(self, factor):
+        if factor < 1 or factor > 2**16:
+            raise ValueError("Error: downsample value out of range.")
+        factor -= 1
+        self.oa.sendMessage(CODE_WRITE, ADDR_LA_DOWNSAMPLE, int.to_bytes(factor, length=2, byteorder='little'), Validate=False)
+
+    def _getDownsample(self):
+        return int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_LA_DOWNSAMPLE, Validate=False, maxResp=2), byteorder='little') + 1
+
 
     def _setCaptureGroup(self, group):
-        if group > 3:
-            raise ValueError("Group must be in range 0-3")
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_CAPTURE_GROUP, [group], Validate=False)
+        if group == 'glitch':
+            num = 0
+        elif group == 'CW 20-pin':
+            num = 1
+        elif group == 'USERIO 20-pin':
+            num = 2
+        elif group == 'trigger debug':
+            num = 3
+        elif group == 'internal trace':
+            num = 4
+        else:
+            raise ValueError("invalid group name")
+        self.oa.sendMessage(CODE_WRITE, ADDR_LA_CAPTURE_GROUP, [num], Validate=False)
 
     def _getCaptureGroup(self):
-        return self.oa.sendMessage(CODE_READ, ADDR_LA_CAPTURE_GROUP, Validate=False, maxResp=1)[0]
-
+        num = self.oa.sendMessage(CODE_READ, ADDR_LA_CAPTURE_GROUP, Validate=False, maxResp=1)[0]
+        if num == 0:
+            group = 'glitch'
+        elif num == 1:
+            group = 'CW 20-pin'
+        elif num == 2:
+            group = 'USERIO 20-pin'
+        elif num == 3:
+            group = 'trigger debug'
+        elif num == 4:
+            group = 'internal trace'
+        else:
+            raise ValueError("invalid group name")
+        return group
 
 
 class ADS4128Settings(util.DisableNewAttr):

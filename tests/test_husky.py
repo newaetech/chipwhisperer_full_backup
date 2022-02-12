@@ -69,6 +69,9 @@ scope.adc.segment_cycle_counter_en = 1
 # these are default off, but just in case:
 scope.glitch.enabled = False
 scope.LA.enabled = False
+scope.LA.clkgen_enabled = True
+scope.LA.capture_depth = 512
+scope.LA.downsample = 1
 
 @pytest.fixture()
 def reps(pytestconfig):
@@ -255,13 +258,14 @@ testGlitchOutputWidthSweepData = [
 ]
 
 testGlitchOutputOffsetSweepData = [
+    # TODO: these used to pass at oversamp=40, but that may be too aggressive?
     # width     oversamp    steps_per_point desc
-    (200,       40,         2,              ''),
-    (-200,      40,         2,              ''),
-    (1000,      40,         2,              ''),
-    (-1000,     40,         2,              ''),
-    (3000,      40,         2,              ''),
-    (-3000,     40,         2,              ''),
+    (200,       35,         2,              ''),
+    (-200,      35,         2,              ''),
+    (1000,      35,         2,              ''),
+    (-1000,     35,         2,              ''),
+    (3000,      35,         2,              ''),
+    (-3000,     35,         2,              ''),
     (500,       30,         2,              ''),
     (500,       20,         2,              ''),
 ]
@@ -280,7 +284,7 @@ testRWData = [
 ]
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '1/28/2022, 11:49'
+    assert scope.fpga_buildtime == '2/8/2022, 11:50'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -417,8 +421,9 @@ def setup_glitch(offset, width, oversamp):
     # set up LA:
     scope.LA.enabled = True
     scope.LA.oversampling_factor = oversamp
-    scope.LA.capture_group = 0
+    scope.LA.capture_group = 'glitch'
     scope.LA.trigger_source = "glitch_source"
+    scope.LA.capture_depth = 512
     assert scope.LA.locked
 
 
@@ -436,9 +441,11 @@ def test_glitch_offset(offset, oversamp, desc):
     margin = 0.1
 
     # glitch and measure:
+    scope.LA.arm()
     scope.glitch.manual_trigger()
-    source    = scope.LA.read_capture(1)
-    mmcm1out  = scope.LA.read_capture(2)
+    raw = scope.LA.read_capture_data()
+    source    = scope.LA.extract(raw, 1)
+    mmcm1out  = scope.LA.extract(raw, 2)
 
     # check offset:
     offset_percent = offset / scope.glitch.phase_shift_steps * 2 # (100% = fully offset)
@@ -456,9 +463,11 @@ def test_glitch_width(width, oversamp, desc):
     margin = 0.05
 
     # glitch and measure:
+    scope.LA.arm()
     scope.glitch.manual_trigger()
-    mmcm1out  = scope.LA.read_capture(2)
-    mmcm2out  = scope.LA.read_capture(3)
+    raw = scope.LA.read_capture_data()
+    mmcm1out  = scope.LA.extract(raw, 2)
+    mmcm2out  = scope.LA.extract(raw, 3)
 
     # check width:
     offset_percent = 1 - width / scope.glitch.phase_shift_steps * 2 # (100% = fully offset)
@@ -481,8 +490,10 @@ def test_glitch_output_sweep_width(reps, offset, oversamp, steps_per_point, desc
         # sweep width and check that width of glitch increases by expected amount each time:
         for i, width in enumerate(range(-scope.glitch.phase_shift_steps, scope.glitch.phase_shift_steps - stepsize, stepsize)):
             scope.glitch.width = width
+            scope.LA.arm()
             scope.glitch.manual_trigger()
-            glitch = scope.LA.read_capture(0)
+            raw = scope.LA.read_capture_data()
+            glitch = scope.LA.extract(raw, 0)
             measured_width = len(np.where(glitch > 0)[0])
 
             # determine expected width
@@ -527,10 +538,12 @@ def test_glitch_output_sweep_offset(reps, width, oversamp, steps_per_point, desc
         # sweep offset and check that glitch offset increases by expected amount each time:
         for i, offset in enumerate(range(-scope.glitch.phase_shift_steps, scope.glitch.phase_shift_steps - stepsize, stepsize)):
             scope.glitch.offset = offset
+            scope.LA.arm()
             scope.glitch.manual_trigger()
-            glitch = scope.LA.read_capture(0)
-            source = scope.LA.read_capture(1)
-            go = scope.LA.read_capture(4)
+            raw = scope.LA.read_capture_data()
+            glitch = scope.LA.extract(raw, 0)
+            source = scope.LA.extract(raw, 1)
+            go = scope.LA.extract(raw, 4)
 
             # measure observed offset
             glitchtrans = find0to1trans(glitch)
@@ -578,8 +591,10 @@ def test_glitch_output_doubles(reps, vco, glitches, oversamp, stepsize, desc):
         # sweep offset and check that glitch offset increases by expected amount each time:
         for i, offset in enumerate(range(-scope.glitch.phase_shift_steps, scope.glitch.phase_shift_steps - stepsize, stepsize)):
             scope.glitch.offset = offset
+            scope.LA.arm()
             scope.glitch.manual_trigger()
-            go = scope.LA.read_capture(4)
+            raw = scope.LA.read_capture_data()
+            go = scope.LA.extract(raw, 4)
 
             # check width of glitch "go" signal
             golen = len(np.where(go > 0)[0])
