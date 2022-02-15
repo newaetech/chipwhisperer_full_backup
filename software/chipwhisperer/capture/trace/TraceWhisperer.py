@@ -1124,6 +1124,8 @@ class clock(util.DisableNewAttr):
             val = 0
         elif src == 'trace_clock':
             val = 1
+            if self.main.platform == 'Husky':
+                tracewhisperer_logger.warning("trace_clock may not sample trace data properly on Husky; recommend using target_clock instead.")
         elif src == 'usb_clock':
             val = 2
         else:
