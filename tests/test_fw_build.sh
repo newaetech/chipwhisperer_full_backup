@@ -19,6 +19,7 @@ function test()
                     echo $retVal
                     if [ $retVal -ne 0 ]; then
                         echo "Firmware build failed"
+                        echo "command make PLATFORM=$j CRYPTO_TARGET=$i CRYPTO_OPTIONS=$k SS_VER=$l failed"
                         exit $retVal
                     fi
                 done
