@@ -53,10 +53,10 @@ z=("AES128C")
 
 test x y z sver
 
-x=("CWLITEXMEGA")
-y=("MASKEDAES")
-z=("VERSION1" "VERSION2")
+# x=("CWLITEXMEGA")
+# y=("MASKEDAES")
+# z=("VERSION1" "VERSION2")
 
-test x y z sver
+# test x y z sver
 
 echo "All tests okay"
