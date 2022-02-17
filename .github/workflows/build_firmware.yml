@@ -22,18 +22,10 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-      - name: Setup Python 3.9
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.9
-      - name: Install ChipWhisperer
-        run: >-
-          python setup.py install
       - name: Install compilers
         run: >- 
-          sudo apt install -y make build-essential libssl-dev zlib1g-dev libbz2-dev
-          sudo apt install -y gcc-avr avr-libc gcc-arm-none-eabi
+          sudo apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev
+          sudo apt-get install -y gcc-avr avr-libc gcc-arm-none-eabi
       - name: Build firmware
         run: >-
           cd tests
