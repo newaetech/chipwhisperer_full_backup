@@ -1,0 +1,41 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Build Firmware
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the develop branch
+  push:
+  pull_request:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  fwbuild:
+    # The type of runner that the job will run on
+    name: Build all firmware to make sure everything works
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Setup Python 3.9
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
+      - name: Install ChipWhisperer
+        run: >-
+          python setup.py install
+      - name: Install compilers
+        run: >- 
+          sudo apt install -y make build-essential libssl-dev zlib1g-dev libbz2-dev
+          sudo apt install -y gcc-avr avr-libc gcc-arm-none-eabi
+      - name: Build firmware
+        run: >-
+          cd tests
+          sh test_fw_build.sh
+
