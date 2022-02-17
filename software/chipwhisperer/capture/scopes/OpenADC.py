@@ -18,7 +18,11 @@ from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern,
 from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP, LEDSettings, HuskyErrors, \
         USERIOSettings, XADCSettings, LASettings, ADS4128Settings
 from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings
-from ..trace import TraceWhisperer
+try:
+    from ..trace import TraceWhisperer
+except Exception as e:
+    tracewhisperer_logger.info("Could not import TraceWhisperer: {}".format(e))
+    TraceWhisperer = None
 
 from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
@@ -353,6 +357,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.glitch_mmcm1 = None
         self.glitch_mmcm2 = None
         self.la_mmcm = None
+        self.trace = None
 
         util.chipwhisperer_extra = self.advancedSettings
 
@@ -376,7 +381,8 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.LEDs = LEDSettings(self.sc)
             self.LA = LASettings(oaiface=self.sc, mmcm=self.la_mmcm, scope=self)
             self.userio = USERIOSettings(self.sc)
-            self.trace = TraceWhisperer(husky=True, target=None, scope=self, trace_reg_select=3, main_reg_select=2)
+            if TraceWhisperer:
+                self.trace = TraceWhisperer(husky=True, target=None, scope=self, trace_reg_select=3, main_reg_select=2)
             self.errors = HuskyErrors(self.sc, self.XADC, self.adc, self.clock, self.trace)
         else:
             self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
@@ -628,7 +634,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             # rtn['pll'] = self.pll._dict_repr()
             if self.LA.present:
                 rtn['LA'] = self.LA._dict_repr()
-            if self.trace.present:
+            if self.trace and self.trace.present:
                 rtn['trace'] = self.trace._dict_repr()
             rtn['XADC'] = self.XADC._dict_repr()
             rtn['userio'] = self.userio._dict_repr()
