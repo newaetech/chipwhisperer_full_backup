@@ -22,7 +22,7 @@ try:
     from ..trace import TraceWhisperer
 except Exception as e:
     tracewhisperer_logger.info("Could not import TraceWhisperer: {}".format(e))
-    TraceWhisperer = None
+    TraceWhisperer = None # type: ignore
 
 from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
