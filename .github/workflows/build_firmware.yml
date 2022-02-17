@@ -24,8 +24,9 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Install compilers
         run: >- 
-          sudo apt-fast install -y make build-essential libssl-dev zlib1g-dev libbz2-dev
-          sudo apt-fast install -y gcc-avr avr-libc gcc-arm-none-eabi
+          sudo apt-get update -y && sudo apt-get upgrade -y
+          sudo apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev
+          sudo apt-get install -y gcc-avr avr-libc gcc-arm-none-eabi
       - name: Build firmware
         run: >-
           cd tests
