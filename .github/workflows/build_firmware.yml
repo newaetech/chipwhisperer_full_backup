@@ -26,10 +26,11 @@ jobs:
       - name: Install compilers
         run: >- 
           sudo apt update -y && sudo apt-get upgrade -y
+        run: >-
           sudo apt install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
-          gcc-avr avr-libc gcc-arm-none-eabi
+        run: >-
+          sudo apt install -y gcc-avr avr-libc gcc-arm-none-eabi
       - name: Build firmware
         run: >-
-          cd tests
-          sh test_fw_build.sh
+          cd tests && sh test_fw_build.sh
 
