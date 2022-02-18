@@ -6,7 +6,7 @@
 This file is part of the ChipWhisperer Project. See www.newae.com for more details,
 or the codebase at https://github.com/newaetech/chipwhisperer .
 
-Copyright (c) 2013-2020, Colin O'Flynn <coflynn@newae.com>. All rights reserved.
+Copyright (c) 2013-2022, Colin O'Flynn <coflynn@newae.com>. All rights reserved.
 This project (and file) is released under the 2-Clause BSD License:
 
 Redistribution and use in source and binary forms, with or without 
@@ -32,6 +32,7 @@ POSSIBILITY OF SUCH DAMAGE.
 *************************************************************************/
 
 module clockglitch_s6(
+	 input wire	  reset,
 	 /* Source Clock */
 	 input wire	  source_clk,
  
@@ -39,8 +40,10 @@ module clockglitch_s6(
 	 output wire  glitched_clk,
 	 
 	 /* Glitch request */
-	 input wire        glitch_next,
+	 input wire        glitch_trigger,
+	 input wire [12:0] max_glitches,
 	 input wire [2:0]  glitch_type,
+         output reg [31:0] clockglitch_cnt,
 	  /*
 			000 = Glitch is XORd with Clock (Positive or Negative going glitch)
 		   001 = Glitch is ORd with Clock (Positive going glitch only)
@@ -122,21 +125,63 @@ module clockglitch_s6(
 	wire dcm2_clk_out;
 	
 	wire glitchstream;
+
+        reg [12:0] glitch_cnt;
+        (* ASYNC_REG = "TRUE" *) reg[2:0] glitch_trigger_pipe;
+        reg glitch_trigger_resync;
+
+        // We need to use negedge here to avoid extra glitches.
+        // The reason is that glitch_go will always lag the MMCM1 clock, and so
+        // it's clocked on posedge, the second rising edge of the clock can create
+        // an extra glitch. Perhaps the best way to understand is to switch to
+        // posedge and see what happens (using reg_la.v)
+        always @(negedge dcm1_clk_out) begin
+            if (reset) begin
+                glitch_trigger_pipe <= 0;
+                glitch_trigger_resync <= 0;
+            end
+            else begin
+                {glitch_trigger_resync, glitch_trigger_pipe} <= {glitch_trigger_pipe, glitch_trigger};
+            end
+
+        end
+
+        reg glitch_go;
+        reg glitch_go_r;
+        always @(negedge dcm1_clk_out) begin
+           glitch_go_r <= glitch_go;
+           // Careful because it's possible for glitch_trigger_resync to be > 1 cycle.
+           // Also note that max_glitches = <number of cycles to glitch> - 1
+           if (max_glitches > 0) begin
+               if (glitch_trigger_resync)
+                  glitch_go <= 'b1;
+               else if (glitch_cnt >= max_glitches)
+                  glitch_go <= 'b0;
+           end
+           else begin
+               if (glitch_go)
+                   glitch_go <= 1'b0;
+               else if (glitch_trigger_resync)
+                   glitch_go <= 1'b1;
+           end
+
+           if (glitch_go)
+              glitch_cnt <= glitch_cnt + 13'd1;
+           else
+              glitch_cnt <= 0;
+        end
+
+        always @(negedge dcm1_clk_out) begin
+           if (glitch_go_r)
+              clockglitch_cnt <= clockglitch_cnt + 32'd1;
+        end
+
+
 		
-	reg glitch_next_reg;
-	reg glitch_next_reg1;
-	//Need to think carefully about which clock to syncronize this too, and
-	//which edge. Lots of trouble as different options on outputs & adjustable
-	//phase
-	always @(negedge dcm1_clk_out) begin
-		glitch_next_reg1 <= glitch_next;
-		glitch_next_reg <= glitch_next_reg1;
-	end
-	
 	clk2glitch clk2glitch_inst(
 		.clk1(dcm1_clk_out),
 		.clk2(dcm2_clk_out),
-		.enable(glitch_next_reg),
+		.enable(glitch_go_r),
 		.glitchout(glitchstream)
 	);
 	
@@ -144,7 +189,7 @@ module clockglitch_s6(
 	                      (glitch_type == 3'b001) ? source_clk | glitchstream :
 								 (glitch_type == 3'b010) ? glitchstream :
 								 (glitch_type == 3'b011) ? source_clk :
-								 (glitch_type == 3'b100) ? glitch_next_reg :
+								 (glitch_type == 3'b100) ? glitch_go_r :
 								 1'b0;
 			
 	// DCM_SP: Digital Clock Manager
