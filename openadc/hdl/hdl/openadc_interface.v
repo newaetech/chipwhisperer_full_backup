@@ -556,6 +556,7 @@ module openadc_interface(
 		.reset_i(reset_i),
 		.reset_o(reset_intermediate),
 		.clk(reg_clk),
+		.adc_sampleclk(ADC_clk_sample),
 		.reg_address(reg_address), 
 		.reg_bytecnt(reg_bytecnt), 
 		.reg_datao(reg_datai_oadc), 
