@@ -61,7 +61,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
     To connect to one of these devices, the easiest method is::
 
         import chipwhisperer as cw
-        scope = cw.scope(type=scopes.OpenADC)
+        scope = cw.scope(scope_type=cw.scopes.OpenADC)
 
     Some sane default settings are available via::
 
