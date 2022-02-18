@@ -319,9 +319,11 @@ ALL_ASFLAGS = $(MCU_FLAGS) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 # Default target.
-all: clean_objs .dep begin gccversion build sizeafter fastnote end
+all: 
+	$(MAKE) clean_objs .dep 
+	$(MAKE) begin gccversion build sizeafter fastnote end
 
-allquick: begin gccversion build sizeafter end
+allquick: .dep begin gccversion build sizeafter end
 
 # Change the build target to build a HEX file or a library.
 build: elf hex bin eep lss sym
