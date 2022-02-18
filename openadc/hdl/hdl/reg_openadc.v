@@ -207,7 +207,7 @@ module reg_openadc(
    assign cmd_arm = arm_r2;
 
 	    
-	 assign reset_fromreg = registers_settings[0];
+	 wire   reset_fromreg = registers_settings[0];
 	 assign hilow = registers_settings[1];
 	 assign trigger_mode = registers_settings[2];
 	 assign cmd_arm_usb = registers_settings[3];

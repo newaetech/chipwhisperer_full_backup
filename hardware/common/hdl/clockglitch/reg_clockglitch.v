@@ -357,6 +357,7 @@ module reg_clockglitch(
 
 	 /* Glitch Hardware */
 	 clockglitch_s6 gc(
+                .reset(reset),
 		.source_clk(sourceclk),
 		.glitched_clk(glitchclk),
 		.glitch_trigger(glitch_trigger),

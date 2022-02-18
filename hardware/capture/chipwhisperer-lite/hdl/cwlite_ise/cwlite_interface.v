@@ -103,9 +103,13 @@ module cwlite_interface(
 	wire reset_intermediate;
 	wire clk_usb_buf;
 	
-		IBUFG IBUFG_inst (
-	.O(clk_usb_buf),
-	.I(clk_usb) );
+        `ifndef __ICARUS__
+            IBUFG IBUFG_inst (
+            .O(clk_usb_buf),
+            .I(clk_usb) );
+        `else
+            assign clk_usb_buf = clk_usb;
+        `endif
 	
 	//Change in ICAP - clock now generated outside. 
 	//TODO: Check skew is OK still

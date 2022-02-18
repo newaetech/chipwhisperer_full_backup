@@ -161,6 +161,9 @@ module openadc_interface(
 	wire			adc_capture_done;
 	wire			armed;	  
    wire        reset;                     
+	wire dcm_gen_locked;
+	wire trigger_source;
+	wire fifo_stream;
 	  
    //Divide clock by 2^24 for heartbeat LED
 	//Divide clock by 2^23 for frequency measurement

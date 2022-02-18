@@ -192,6 +192,7 @@ module clockglitch_s6(
 								 (glitch_type == 3'b100) ? glitch_go_r :
 								 1'b0;
 			
+        `ifndef __ICARUS__
 	// DCM_SP: Digital Clock Manager
 	// Spartan-6
 	// Xilinx HDL Libraries Guide, version 13.2
@@ -262,6 +263,7 @@ module clockglitch_s6(
 	.PSINCDEC(dcm2_psincdec), // 1-bit input: Phase shift increment/decrement input
 	.RST(dcm_rst) // 1-bit input: Active high reset input
 	);
+        `endif
 
 endmodule
 

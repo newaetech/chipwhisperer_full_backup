@@ -275,6 +275,7 @@ module fifo_top(
 	after the empty flag goes high to totally clear it out.
 	*/
 	
+        `ifndef __ICARUS__
 	fifoonly_adcfifo fifoonly_adcfifo_inst (
 	  .rst(fifo_rst | reset_i), // input rst
 	  .wr_clk(adc_sampleclk), // input wr_clk
@@ -288,6 +289,7 @@ module fifo_top(
 	  .overflow(fifo_overflow_int), //
 	  .rd_data_count(samples_o[31:4])
 	);
+        `endif
 	
 	always @(posedge fifo_read_fifoclk) begin
 		if (samples_o[31:4] > FIFO_FULL_SIZE_LARGEWORDS)
