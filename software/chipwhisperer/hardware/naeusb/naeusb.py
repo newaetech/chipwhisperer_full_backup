@@ -140,6 +140,9 @@ SAM_FW_FEATURE_BY_DEVICE = {
 }
 
 def _check_sam_feature(feature, fw_version, prod_id):
+    if prod_id not in SAM_FW_FEATURE_BY_DEVICE:
+        naeusb_logger.info("Features for ProdID {:04X} not stored, skipping...".format(prod_id))
+        return
     if feature not in SAM_FW_FEATURES:
         raise ValueError("Unknown feature {}".format(feature))
     feature_set = SAM_FW_FEATURE_BY_DEVICE[prod_id]

@@ -26,6 +26,7 @@
 import time
 import logging
 from .naeusb import packuint32, NAEUSB
+import usb1
 from ...logging import *
 
 class FPGA(object):
@@ -71,7 +72,12 @@ class FPGA(object):
             prog_data = packuint32(int(prog_speed))
 
 
-        self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00, data=prog_data)
+        try:
+            self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00, data=prog_data)
+        except usb1.USBError as e:
+            prog_data = []
+            naeusb_logger.warning("Got error when programming with var speed, retrying without var speed")
+            self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00, data=prog_data)
         time.sleep(0.001)
         self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x01)
 
