@@ -26,7 +26,7 @@
 import time
 import logging
 from .naeusb import packuint32, NAEUSB
-import usb1
+import usb1  # type: ignore
 from ...logging import *
 
 class FPGA(object):
