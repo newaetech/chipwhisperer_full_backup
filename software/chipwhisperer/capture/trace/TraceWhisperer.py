@@ -581,7 +581,7 @@ class TraceWhisperer(util.DisableNewAttr):
         if stat:
             return stat
         else:
-            return None
+            return False
 
     @errors.setter
     def errors(self, val):
