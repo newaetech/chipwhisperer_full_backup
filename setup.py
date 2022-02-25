@@ -24,7 +24,6 @@ setup(
         'fastdtw',
         'Cython',
         'tqdm',
-        'phywhisperer'
     ],
     project_urls={
         'Documentation': 'https://chipwhisperer.readthedocs.io',
