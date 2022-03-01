@@ -290,10 +290,10 @@ class HuskyErrors(util.DisableNewAttr):
 
     def _dict_repr(self):
         rtn = OrderedDict()
-        rtn['XADC_status'] = self.XADC.status
-        rtn['adc_errors'] = self.adc.errors
-        rtn['extclk_error'] = self.clock.extclk_error
-        rtn['trace_errors'] = self.trace.errors
+        rtn['XADC errors'] = self.XADC.errors()
+        rtn['ADC errors'] = self.adc.errors
+        rtn['extclk error'] = self.clock.extclk_error
+        rtn['trace errors'] = self.trace.errors
         return rtn
 
     def __repr__(self):
@@ -456,6 +456,12 @@ class XADCSettings(util.DisableNewAttr):
     @status.setter
     def status(self, clear):
         self.oa.sendMessage(CODE_WRITE, ADDR_XADC_STAT, [0x0])
+
+    def errors(self):
+        if self.status == 'good':
+            return False
+        else:
+            return self.status
 
 
     @property

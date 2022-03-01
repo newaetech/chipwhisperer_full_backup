@@ -33,9 +33,6 @@ from ...common.utils import util
 from ...hardware.naeusb.naeusb import NAEUSB
 from ...hardware.naeusb.fpga import FPGA
 
-# import phywhisperer.interface.naeusb as NAE
-# import phywhisperer.interface.program_fpga as LLINT
-
 from ..scopes.cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP
 from ...logging import *
 from collections import OrderedDict
@@ -120,7 +117,6 @@ class TraceWhisperer(util.DisableNewAttr):
                                      '. Suggested to update firmware, as you may experience errors.')
 
             self._fpga = FPGA(self._naeusb)
-            # self._fpga = LLINT.PhyWhispererUSB(self._naeusb)
             if not self._fpga.isFPGAProgrammed() or force_bitfile:
                 if not bs:
                     bs = pkg_resources.resource_filename('chipwhisperer', 'hardware/firmware/tracewhisperer_top.bit')
@@ -581,7 +577,7 @@ class TraceWhisperer(util.DisableNewAttr):
         if stat:
             return stat
         else:
-            return None
+            return False
 
     @errors.setter
     def errors(self, val):

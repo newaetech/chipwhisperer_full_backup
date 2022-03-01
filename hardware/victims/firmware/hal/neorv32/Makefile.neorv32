@@ -18,7 +18,7 @@ MCU_FLAGS = -march=rv32i -mabi=ilp32
 
 ifeq (, $(shell which riscv64-unknown-elf-gcc))
 ifeq (, $(shell which riscv32-unknown-elf-gcc))
-$error ("Could not find riscv32-unknown-elf-gcc or riscv64-unknown-elf-gcc")
+$(error Could not find riscv32-unknown-elf-gcc or riscv64-unknown-elf-gcc)
 else
 # which was successful - use 32-bit gcc
 CC = riscv32-unknown-elf-gcc

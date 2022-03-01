@@ -19,4 +19,3 @@ tqdm>=4.40.0
 ipython #needed for rtd
 ECPy==0.10.0
 sphinx_autodoc_typehints==1.12.0
-phywhisperer>=0.1.0

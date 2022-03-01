@@ -44,6 +44,7 @@ class CDCI6214:
         self._fpga_clk_freq = 48E6
         self._glitch = None
         self._cached_adc_freq = None
+        self._max_freq = 300e6
 
     def write_reg(self, addr, data):
         """Write to a CDCI6214 Register over I2C
@@ -344,7 +345,7 @@ class CDCI6214:
         # Adjust adc_mul if it results in an invalid adc clock
         old_mul = adc_mul
         if not adc_off:
-            while (adc_mul * target_freq) > 200E6:
+            while (adc_mul * target_freq) > self._max_freq:
                 adc_mul -= 1
             while (adc_mul * target_freq) < 1E6:
                 adc_mul += 1
@@ -355,8 +356,17 @@ class CDCI6214:
             adc_mul = 1
 
         if old_mul != adc_mul:
-            scope_logger.error("ADC frequency must be between 1MHz and 200MHz - ADC mul as been adjusted to {}".format(adc_mul))
+            self._adc_mul = adc_mul
+            scope_logger.warning("ADC frequency must be between 1MHz and {}MHz - ADC mul has been adjusted to {}".format(self._max_freq, adc_mul))
 
+        if adc_mul * target_freq > 200E6:
+            scope_logger.warning("""
+                ADC frequency exceeds specification (200 MHz). 
+                This may or may not work, depending on temperature, voltage, and luck.
+                It may not work reliably.
+                You can run scope.adc_test() to check whether ADC data is sampled properly by the FPGA,
+                but this doesn't fully verify that the ADC is working properly.
+                """)
 
         scope_logger.debug("adc_mul: {}".format(adc_mul))
 

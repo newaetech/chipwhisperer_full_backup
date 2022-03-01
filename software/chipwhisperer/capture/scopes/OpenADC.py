@@ -61,7 +61,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
     To connect to one of these devices, the easiest method is::
 
         import chipwhisperer as cw
-        scope = cw.scope(type=scopes.OpenADC)
+        scope = cw.scope(scope_type=cw.scopes.OpenADC)
 
     Some sane default settings are available via::
 
@@ -295,6 +295,171 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             return "ChipWhisperer Pro"
         elif name == "cwhusky":
             return "ChipWhisperer Husky"
+
+    def adc_test(self, samples=131070, reps=3, verbose=False):
+        """Run a series of ADC sampling tests on CW-Husky.
+
+        Useful when pushing the ADC sampling frequency, to get an idea (but
+        not a guarantee!) of whether Husky is able to sample properly at
+        this frequency. Officially, Husky supports a maximum sampling clock
+        of 200 MHz. In practice, sampling rates exceeding 300 MHz have been
+        seen to work.
+
+        Runs three different tests. For each test, we capture the sample
+        test data and verify that it's what it should be:
+
+        1. The internal test does not involve the ADC; it only verifies
+        whether the FPGA sampling circuitry is functioning correctly, by
+        generating a ramp pattern inside the FPGA itself.
+
+        2. The ADC ramp test uses an ADC-generated ramp pattern which is
+        then sampled by the FPGA.
+
+        3. The ADC alternating test uses an ADC-generated alternating
+        pattern (0x555 / 0xaaa). which is then sampled by the FPGA. The
+        purpose of this test is that the ADC value changes every clock
+        cycle, whereas in the ADC ramp test, the ADC value changes every *4*
+        clock cycles.
+
+        Note that this test does nothing to validate that the ADC's analog
+        front-end is working properly!
+
+        Args:
+            samples (int): number of ADC samples per test.
+            reps (int): number of times each test is run.
+            verbose (bool)
+
+        Returns:
+            "pass" / "fail"
+
+        .. versionadded:: 5.6.1
+        """
+
+        if not self._is_husky:
+            scope_logger.error("Only Husky supports scope.adc_test()")
+            return
+        # we're going to have to change some scope.adc settings, so save the
+        # current values, to restore them later:
+        saved_samples = self.adc.samples
+        saved_stream_mode = self.adc.stream_mode
+        saved_segments = self.adc.segments
+        saved_bits_per_sample = self.adc.bits_per_sample
+        saved_clip_errors_disabled = self.adc.clip_errors_disabled
+
+        self.adc.samples = samples
+        self.adc.stream_mode = False
+        self.adc.segments = 1
+        self.adc.bits_per_sample = 12
+        self.adc.clip_errors_disabled = True
+        mod=2**self.adc.bits_per_sample
+        errors = 0
+        first_error = None
+
+        for i in range(reps):
+            # 1. internal test (internally-generated ramp, ADC not involved)
+            self.adc.test_mode = True
+            self.ADS4128.mode = 'normal'
+            self.sc.arm(False)
+            self.arm()
+            self.sc.triggerNow()
+            self.sc.arm(False)
+            assert self.capture() == False
+            raw = self.get_last_trace(True)
+            current_count = raw[0]
+            for i, byte in enumerate(raw[1:]):
+                if byte != (current_count+1)%mod:
+                    if verbose: print("Byte %d: expected %d got %d" % (i, (current_count+1)%mod, byte))
+                    errors += 1
+                    if not first_error:
+                        first_error = i
+                    current_count = byte
+                else:
+                    current_count += 1
+                    if (i+2) % samples == 0:
+                        current_count = (current_count - samples) % mod
+            if errors:
+                scope_logger.error("%d errors in internal test. First error on sample #%d" % (errors, first_error))
+                return "fail"
+
+            # 2. ADC ramp test (ADC-generated ramp)
+            self.ADS4128.mode = 'test ramp'
+            self.adc.test_mode = False
+            self.sc.arm(False)
+            self.arm()
+            self.sc.triggerNow()
+            self.sc.arm(False)
+            assert self.capture() == False
+            raw = self.get_last_trace(True)
+            current_count = raw[0]
+            started = False
+            for i, byte in enumerate(raw[1:]):
+                if started:
+                    if count4 < 3:
+                        if byte != current_count:
+                            if verbose: print("Byte %d: expected %d got %d" % (i, current_count, byte))
+                            errors += 1
+                            if not first_error:
+                                first_error = i
+                            started = False
+                            current_count = byte
+                        count4 += 1
+                    else:
+                        count4 = 0
+                        if byte != (current_count+1)%mod:
+                            if verbose: print("Byte %d: expected %d got %d" % (i, (current_count+1)%mod, byte))
+                            errors += 1
+                            if not first_error:
+                                first_error = i
+                        current_count = byte
+                    if (i+2) % samples == 0:
+                        current_count = (current_count - (samples)//4) % mod
+                elif byte != current_count:
+                    started = True
+                    count4 = 0
+                    current_count = byte
+            if errors:
+                scope_logger.error("%d errors in internal test. First error on sample #%d" % (errors, first_error))
+                return "fail"
+
+            # 3. alternating pattern test (ADC-generated)
+            self.ADS4128.mode = 'test alternating'
+            self.adc.test_mode = False
+            self.sc.arm(False)
+            self.arm()
+            self.sc.triggerNow()
+            self.sc.arm(False)
+            assert self.capture() == False
+            raw = self.get_last_trace(True)
+            current_count = raw[0]
+            for i, byte in enumerate(raw[1:]):
+                if current_count == 0xaaa:
+                    current_count = 0x555
+                elif current_count == 0x555:
+                    current_count = 0xaaa
+                else:
+                    errors += 1
+                    if not first_error:
+                        first_error = i
+                    if verbose: print("Byte %d: unexpected value %0x" % current_count)
+                if byte != current_count:
+                    errors += 1
+                    if not first_error:
+                        first_error = i
+                    if verbose: print("Byte %d: unexpected value %0x" % current_count)
+            if errors:
+                scope_logger.error("%d errors in internal test. First error on sample #%d" % (errors, first_error))
+                return "fail"
+
+        # restore previous settings:
+        self.adc.samples = saved_samples
+        self.adc.stream_mode = saved_stream_mode
+        self.adc.segments = saved_segments
+        self.adc.bits_per_sample = saved_bits_per_sample
+        self.adc.clip_errors_disabled = saved_clip_errors_disabled
+        self.adc.test_mode = False
+        self.ADS4128.mode = 'normal'
+        return "pass"
+
 
     @property
     def fpga_buildtime(self):

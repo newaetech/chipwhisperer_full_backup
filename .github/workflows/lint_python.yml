@@ -35,5 +35,5 @@ jobs:
           python -m pip install mypy
       - name: Run Mypy
         run: >-
-          python -m mypy -p chipwhisperer --exclude TraceWhisperer.py
+          python -m mypy -p chipwhisperer
           
