@@ -573,6 +573,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                 self.glitch.pll = self.clock.pll
                 self.clock.pll._glitch = self.glitch
                 self.advancedSettings.glitch.pll = self.clock.pll
+                self.trigger = self.advancedSettings.cwEXTRA.huskytrigger
             if cwtype == "cw1200":
                 self.trigger = self.advancedSettings.cwEXTRA.protrigger
 

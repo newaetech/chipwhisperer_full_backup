@@ -95,7 +95,7 @@ class TraceWhisperer(util.DisableNewAttr):
         self._base_baud = 38400
         self._usb_clock = 96e6
         self._uart_clock = self._usb_clock * 2
-        self.expected_verilog_defines = 119
+        self.expected_verilog_defines = 122
         self.swo_mode = False
         self._scope = scope
 
@@ -289,7 +289,9 @@ class TraceWhisperer(util.DisableNewAttr):
     def enabled(self, enable):
         # only one of Trace/LA can be enabled at once:
         if enable:
-            self._scope.LA.enabled = False
+            if self._scope.LA.enabled:
+                scope_logger.warning("Can't enable scope.LA and scope.trace simultaneously; turning off scope.LA.")
+                self._scope.LA.enabled = False
             self._scope.LA.clkgen_enabled = True
         self.fpga_write(self.REG_TRACE_EN, [enable])
 
@@ -1147,6 +1149,8 @@ class capture(util.DisableNewAttr):
         rtn['rules_enabled']            = self.rules_enabled
         rtn['mode']                     = self.mode
         rtn['count']                    = self.count
+        rtn['max_triggers']             = self.max_triggers
+        rtn['triggers_generated']       = self.triggers_generated
         rtn['record_syncs']             = self.record_syncs
         rtn['matched_pattern_data']     = self.matched_pattern_data
         rtn['matched_pattern_counts']   = self.matched_pattern_counts
@@ -1211,6 +1215,35 @@ class capture(util.DisableNewAttr):
         """
         return list(self.main.fpga_read(self.main.REG_TRACE_COUNT, 8)[::-1])
 
+    @property
+    def max_triggers(self):
+        """ Maximum number of triggers to generate. Intended for trace-based 
+            triggering (i.e. scope.trigger.module = 'trace'), where the trace
+            event(s) which can generate a trigger can occur multiple times
+            (e.g. the start of an AES round). Setting this to 'x' does not mean
+            that 'x' triggers will be generated, it means that *up to* 'x'
+            triggers can be generated. This parameter is needed so that the
+            trace module knows when it is 'done'; it's also useful to
+            coordinate with e.g.  segmented capture parameters
+            (scope.adc.segments).
+        Args:
+            number (int): number from 1 to 2**16-1.
+        """
+        return int.from_bytes(self.main.fpga_read(self.main.REG_NUM_TRIGGERS, 2), byteorder='little')
+
+    @max_triggers.setter
+    def max_triggers(self, number):
+        if not 0 < number < 2**16:
+            raise ValueError("Out of allowed range")
+        else:
+            self.main.fpga_write(self.main.REG_NUM_TRIGGERS, int.to_bytes(number, length=4, byteorder='little'))
+
+    @property
+    def triggers_generated(self):
+        """ Number of triggers that were generated on the last capture cycle.
+        """
+        return self.main.fpga_read(self.main.REG_TRIGGERS_GENERATED, 1)[0]
+
 
     @property
     def trigger_source(self):
@@ -1254,29 +1287,39 @@ class capture(util.DisableNewAttr):
             mode (string): 'while_trig': capture while the trigger input is high
                            'count_cycles': capture for self.count clock cycles
                            'count_writes': capture self.count events
+                           'off': capture disabled (e.g. for trigger generation only)
         """
-        raw = self.main.fpga_read(self.main.REG_CAPTURE_WHILE_TRIG, 1)[0]
+        raw = self.main.fpga_read(self.main.REG_CAPTURE_OFF, 1)[0]
         if raw:
-            return "while_trig"
+            return "off"
         else:
-            raw = self.main.fpga_read(self.main.REG_COUNT_WRITES, 1)[0]
+            raw = self.main.fpga_read(self.main.REG_CAPTURE_WHILE_TRIG, 1)[0]
             if raw:
-                return "count_writes"
+                return "while_trig"
             else:
-                return "count_cycles"
+                raw = self.main.fpga_read(self.main.REG_COUNT_WRITES, 1)[0]
+                if raw:
+                    return "count_writes"
+                else:
+                    return "count_cycles"
 
     @mode.setter
     def mode(self, mode):
-        if mode == 'while_trig':
+        if mode == 'off':
+            self.main.fpga_write(self.main.REG_CAPTURE_OFF, [1])
+        elif mode == 'while_trig':
+            self.main.fpga_write(self.main.REG_CAPTURE_OFF, [0])
             self.main.fpga_write(self.main.REG_CAPTURE_WHILE_TRIG, [1])
         elif mode == 'count_cycles':
+            self.main.fpga_write(self.main.REG_CAPTURE_OFF, [0])
             self.main.fpga_write(self.main.REG_CAPTURE_WHILE_TRIG, [0])
             self.main.fpga_write(self.main.REG_COUNT_WRITES, [0])
         elif mode == 'count_writes':
+            self.main.fpga_write(self.main.REG_CAPTURE_OFF, [0])
             self.main.fpga_write(self.main.REG_CAPTURE_WHILE_TRIG, [0])
             self.main.fpga_write(self.main.REG_COUNT_WRITES, [1])
         else:
-            tracewhisperer_logger.error('Invalid mode %s')
+            tracewhisperer_logger.error('Invalid mode %s', mode)
 
     @property
     def count(self):

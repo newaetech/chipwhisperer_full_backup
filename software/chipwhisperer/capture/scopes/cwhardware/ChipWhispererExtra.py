@@ -757,6 +757,7 @@ class ProTrigger(TriggerSettings):
          * 'basic': Trigger on a logic level or edge
          * 'SAD':   Trigger from SAD module (CWPro only)
          * 'DECODEIO': Trigger from decode_IO module (CWPro only)
+         * 'trace': Trigger from TraceWhisperer  (CW-Husky only)
 
         :Getter: Return the active trigger module
 
@@ -808,6 +809,55 @@ class ProTrigger(TriggerSettings):
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
 
 
+class HuskyTrigger(TriggerSettings):
+    def _dict_repr(self):
+        rtn = super()._dict_repr()
+        rtn['module'] = self.module
+        return rtn
+
+    @property
+    def module(self):
+        """The trigger module in use.
+
+        The trigger modules available depend on the hardware. On the CWLite,
+        only the basic trigger module can be used; on the CW1200, the serial
+        data and SAD triggers are available too.
+
+        Available trigger modules:
+         * 'basic': Trigger on a logic level or edge
+         * 'SAD':   Trigger from SAD module (CWPro only)
+         * 'DECODEIO': Trigger from decode_IO module (CWPro only)
+         * 'trace': Trigger from TraceWhisperer  (CW-Husky only)
+
+        :Getter: Return the active trigger module
+
+        :Setter: Sets the active trigger module
+
+        Raises:
+            ValueError: module isn't one of the available strings
+        """
+        return self.last_module
+
+    @module.setter
+    def module(self, mode):
+        if mode == "basic":
+            module = self.cwe.MODULE_BASIC
+        elif mode == "SAD":
+            module = self.cwe.MODULE_SADPATTERN # TODO
+        elif mode == "DECODEIO":
+            module = self.cwe.MODULE_DECODEIO # TODO
+        elif mode == "trace":
+            module = self.cwe.MODULE_TRACE
+        else:
+            raise ValueError("Invalid mode {}. Must be 'basic', 'SAD', 'DECODEIO', or 'trace'")
+
+        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
+                                       Validate=False, maxResp=1)
+        resp[0] &= 0xF8
+        resp[0] |= module
+        resp = self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD,
+                                       resp)
+        self.last_module = mode
 
 
 class SADTrigger(util.DisableNewAttr):
@@ -861,6 +911,7 @@ class CWExtraSettings:
     MODULE_ADVPATTERN = 0x01
     MODULE_SADPATTERN = 0x02
     MODULE_DECODEIO = 0x03
+    MODULE_TRACE = 0x04
 
     CLOCK_FPA = 0x00
     CLOCK_FPB = 0x01
@@ -916,6 +967,7 @@ class CWExtraSettings:
         self.gpiomux = GPIOSettings(self)
         self.triggermux = TriggerSettings(self)
         self.protrigger = ProTrigger(self)
+        self.huskytrigger = HuskyTrigger(self)
 
 
     def _setGPIOState(self, state, IONumber):

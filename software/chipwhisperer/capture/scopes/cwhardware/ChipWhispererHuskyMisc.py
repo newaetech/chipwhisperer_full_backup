@@ -706,7 +706,9 @@ class LASettings(util.DisableNewAttr):
         if enable:
             val = [1]
             # only one of Trace/LA can be enabled at once:
-            self._scope.trace.enabled = False
+            if self._scope.trace.enabled and self._scope.trace.capture.mode != 'off':
+                scope_logger.warning("Can't enable scope.LA and scope.trace simultaneously; turning off scope.trace.")
+                self._scope.trace.enabled = False
             self.clkgen_enabled = True
         else:
             val = [0]

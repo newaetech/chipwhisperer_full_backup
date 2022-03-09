@@ -52,6 +52,9 @@
 `define REG_LED_SELECT               6'h16
 `define REG_CLEAR_ERRORS             6'h17
 
+`define REG_MULTIPLE_TRIGGERS        6'h18
+`define REG_TRIGGERS_GENERATED       6'h19
+`define REG_CAPTURE_OFF              6'h20
 
 // front end select definitions
 `define FE_SELECT_WIDTH 2

@@ -284,7 +284,7 @@ testRWData = [
 ]
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '2/8/2022, 11:50'
+    assert scope.fpga_buildtime == '3/9/2022, 15:49'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -338,7 +338,7 @@ def test_internal_ramp(samples, presamples, testmode, clock, fastreads, adcmul, 
         raw = scope.get_last_trace(True)
         errors, first_error = check_ramp(raw, testmode, samples, segment_cycles)
         assert errors == 0, "%d errors; First error: %d" % (errors, first_error)
-        assert scope.adc.errors == 'no errors'
+        assert scope.adc.errors == False
     scope.sc._fast_fifo_read_enable = True # return to default
 
 def last_zero_run(a):
@@ -391,7 +391,7 @@ def test_adc_freq_sweep(samples, presamples, freq_start, freq_stop, freq_step, t
             raw = scope.get_last_trace(True)
             errors, first_error = check_ramp(raw, testmode, samples, segment_cycles)
 
-            if errors or scope.adc.errors != 'no errors':
+            if errors or scope.adc.errors != False:
                 all_passed = False
                 #zero_start, zero_stop = last_zero_run(raw)
                 #zero_length = zero_stop - zero_start
@@ -662,7 +662,7 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
         scope.errors.clear()
         time.sleep(2)
     else:
-        assert scope.adc.errors == 'no errors'
+        assert scope.adc.errors == False
     if check: 
         errors, first_error = check_ramp(raw, testmode, samples, segment_cycles)
         assert errors == 0, "%d errors; First error: %d" % (errors, first_error)
