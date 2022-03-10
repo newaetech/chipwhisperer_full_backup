@@ -50,19 +50,23 @@ class TraceWhisperer(util.DisableNewAttr):
     """ Trace interface object.
 
     This class contains the public API for the Arm Coresight trace sniffing
-    hardware, which may exist on either the CW305 or the CW610 (PhyWhisperer)
-    platform.
+    hardware, which exists on several platforms:
+    - CW-Husky
+    - CW305, as DesignStartTrace
+    - CW610 (PhyWhisperer)
 
-    To connect, the easiest method is::
+    Connecting depends on the platform:
 
-        (a) CW305 (DesignStart) case:
+        (a) CW-Husky case: available as scope.trace, no additional steps needed.
+
+        (b) CW305 (DesignStart) case:
         import chipwhisperer as cw
         from chipwhisperer.capture.trace.TraceWhisperer import TraceWhisperer
         scope = cw.scope()
         target = cw.target(scope, targets.CW305, bsfile=<valid FPGA bitstream file>)
         trace = TraceWhisperer(target, scope)
 
-        (b) CW610 (PhyWhisperer) case:
+        (c) CW610 (PhyWhisperer) case:
         import chipwhisperer as cw
         from chipwhisperer.capture.trace.TraceWhisperer import TraceWhisperer
         scope = cw.scope()

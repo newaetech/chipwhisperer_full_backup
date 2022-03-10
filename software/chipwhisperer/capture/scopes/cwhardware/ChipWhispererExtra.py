@@ -598,7 +598,8 @@ class TriggerSettings(util.DisableNewAttr):
         The trigger module uses some combination of the scope's I/O pins to
         produce a single value, which it uses for edge/level detection or UART
         triggers. This trigger output can combine 5 pins using one of 3
-        different boolean operations.
+        different boolean operations. N/A for 'trace' trigger module (see
+        scope.trace.trace_mode for how to connect trace pins.)
 
         Pins:
          * tio1-4: Target I/O pins 1-4. Note that these pins can be in any mode.
@@ -633,95 +634,101 @@ class TriggerSettings(util.DisableNewAttr):
            ValueError: if string cannot be converted to a legal mode
         """
         #Get pin logic + combo mode
-        pins, mode = self.cwe.getPins()
+        if self.module == 'trace':
+            return 'N/A'
+        else:
+            pins, mode = self.cwe.getPins()
 
-        tstring = []
-        if mode == self.cwe.MODE_OR: modes = "OR"
-        elif mode ==  self.cwe.MODE_AND: modes = "AND"
-        elif mode == self.cwe.MODE_NAND: modes = "NAND"
-        else: raise IOError("Unknown mode reported by hardware: %02x" % mode)
+            tstring = []
+            if mode == self.cwe.MODE_OR: modes = "OR"
+            elif mode ==  self.cwe.MODE_AND: modes = "AND"
+            elif mode == self.cwe.MODE_NAND: modes = "NAND"
+            else: raise IOError("Unknown mode reported by hardware: %02x" % mode)
 
-        if pins & self.cwe.PIN_RTIO1:
-            tstring.append("tio1")
-            tstring.append(modes)
+            if pins & self.cwe.PIN_RTIO1:
+                tstring.append("tio1")
+                tstring.append(modes)
 
-        if pins & self.cwe.PIN_RTIO2:
-            tstring.append("tio2")
-            tstring.append(modes)
+            if pins & self.cwe.PIN_RTIO2:
+                tstring.append("tio2")
+                tstring.append(modes)
 
-        if pins & self.cwe.PIN_RTIO3:
-            tstring.append("tio3")
-            tstring.append(modes)
+            if pins & self.cwe.PIN_RTIO3:
+                tstring.append("tio3")
+                tstring.append(modes)
 
-        if pins & self.cwe.PIN_RTIO4:
-            tstring.append("tio4")
-            tstring.append(modes)
+            if pins & self.cwe.PIN_RTIO4:
+                tstring.append("tio4")
+                tstring.append(modes)
 
-        if pins & self.cwe.PIN_FPA:
-            tstring.append("sma")
-            tstring.append(modes)
+            if pins & self.cwe.PIN_FPA:
+                tstring.append("sma")
+                tstring.append(modes)
 
-        if pins & self.cwe.PIN_TNRST:
-            tstring.append("nrst")
-            tstring.append(modes)
+            if pins & self.cwe.PIN_TNRST:
+                tstring.append("nrst")
+                tstring.append(modes)
 
-        #Remove last useless combination mode
-        if len(tstring) > 1:
-            tstring = tstring[0:-1]
+            #Remove last useless combination mode
+            if len(tstring) > 1:
+                tstring = tstring[0:-1]
 
-        #Return a string indicating trigger mode
-        return " ".join(tstring)
+            #Return a string indicating trigger mode
+            return " ".join(tstring)
 
     @triggers.setter
     def triggers(self, s):
 
-        s = s.lower()
+        if self.module == 'trace':
+            scope_logger.error('N/A for trace module. See scope.trace.trace_mode.')
+        else:
+            s = s.lower()
 
-        #Split up string
-        triggers = s.split()
+            #Split up string
+            triggers = s.split()
 
-        #Check there is only one type of combination mode
-        triggerset = set(triggers)
-        numcombined = int('and' in triggerset) + int('or' in triggerset) + int('nand' in triggerset)
-        if numcombined > 1:
-            raise ValueError("Combining multiple triggers requires same logic between each combination", s)
+            #Check there is only one type of combination mode
+            triggerset = set(triggers)
+            numcombined = int('and' in triggerset) + int('or' in triggerset) + int('nand' in triggerset)
+            if numcombined > 1:
+                raise ValueError("Combining multiple triggers requires same logic between each combination", s)
 
-        if numcombined == 0 and len(triggers) > 1:
-            raise ValueError("Detected more than 1 trigger pin specified, but no combination logic.", s)
+            if numcombined == 0 and len(triggers) > 1:
+                raise ValueError("Detected more than 1 trigger pin specified, but no combination logic.", s)
 
-        enablelogic = 0
+            enablelogic = 0
 
-        #Figure out enabled triggers
-        for t in list(self.supported_tpins.keys()):
-            if t in triggers:
-                if triggers.count(t) != 1:
-                    raise ValueError("Pin '%s' appears %d times, only 1 apperance supported" % (t, triggers.count(t)), s)
-                enablelogic |= self.supported_tpins[t]
+            #Figure out enabled triggers
+            for t in list(self.supported_tpins.keys()):
+                if t in triggers:
+                    if triggers.count(t) != 1:
+                        raise ValueError("Pin '%s' appears %d times, only 1 apperance supported" % (t, triggers.count(t)), s)
+                    enablelogic |= self.supported_tpins[t]
 
-        #Find mode
-        if ('or' in triggerset) or (len(triggerset) == 1):
-            mode = self.cwe.MODE_OR
-            modes = "or"
-        elif 'and' in triggerset:
-            mode = self.cwe.MODE_AND
-            modes = "and"
-        elif 'nand' in triggerset:
-            mode = self.cwe.MODE_NAND
-            modes = "nand"
+            #Find mode
+            if ('or' in triggerset) or (len(triggerset) == 1):
+                mode = self.cwe.MODE_OR
+                modes = "or"
+            elif 'and' in triggerset:
+                mode = self.cwe.MODE_AND
+                modes = "and"
+            elif 'nand' in triggerset:
+                mode = self.cwe.MODE_NAND
+                modes = "nand"
 
-        #Check mode operations in correct order, no unknown things
-        expect_tpin = True
-        for t in triggers:
-            if expect_tpin:
-                if t not in list(self.supported_tpins.keys()):
-                    raise ValueError("Error processing string at expected pin '%s'. Valid pins: %s"%(t, list(self.supported_tpins.keys())), s)
-            else:
-                if t != modes:
-                    raise ValueError("Unexpected combination mode '%s'. Expected %s."%(t, modes), s)
-            expect_tpin ^= True
+            #Check mode operations in correct order, no unknown things
+            expect_tpin = True
+            for t in triggers:
+                if expect_tpin:
+                    if t not in list(self.supported_tpins.keys()):
+                        raise ValueError("Error processing string at expected pin '%s'. Valid pins: %s"%(t, list(self.supported_tpins.keys())), s)
+                else:
+                    if t != modes:
+                        raise ValueError("Unexpected combination mode '%s'. Expected %s."%(t, modes), s)
+                expect_tpin ^= True
 
-        #Finally set this thing, guess we're looking HOT
-        self.cwe.setPins(enablelogic, mode)
+            #Finally set this thing, guess we're looking HOT
+            self.cwe.setPins(enablelogic, mode)
 
     @property
     def module(self):
