@@ -343,7 +343,8 @@ class TraceWhisperer(util.DisableNewAttr):
                 tracewhisperer_logger.error('CW305 does not support SWO mode')
             self.swo_mode = True
             self.fpga_write(self.REG_SWO_ENABLE, [1])
-            self.target_registers.TPI_SPPR = '00000002'
+            if self._ss: # don't want to log an error if no target
+                self.target_registers.TPI_SPPR = '00000002'
             if self.platform == 'Husky':
                 assert self._scope.LA.present, 'Cannot use this operation mode without the LA component.'
                 # disable LA, 
@@ -351,7 +352,8 @@ class TraceWhisperer(util.DisableNewAttr):
         elif mode == "parallel":
             self.swo_mode = False
             self.fpga_write(self.REG_SWO_ENABLE, [0])
-            self.target_registers.TPI_SPPR = '00000000'
+            if self._ss: # don't want to log an error if no target
+                self.target_registers.TPI_SPPR = '00000000'
         else:
             raise ValueError('Invalid mode (swo/parallel)')
 
@@ -528,14 +530,17 @@ class TraceWhisperer(util.DisableNewAttr):
 
 
 
-    def simpleserial_write(self, cmd, data, printresult=False):
+    def simpleserial_write(self, cmd, data, printresult=False, wait=0.6):
         """Convenience function to send a simpleserial command to the simpleserial target,
         and optionally fetch and print the result.
         """
-        self._ss.simpleserial_write(cmd, data)
-        if printresult:
-            time.sleep(0.6) # ECC is slow!
-            print(self._ss.read().split('\n')[0])
+        if self._ss is None:
+            tracewhisperer_logger.error("Target must be connected for this to work (e.g. scope.trace.target = target)")
+        else:
+            self._ss.simpleserial_write(cmd, data)
+            if printresult:
+                time.sleep(wait)
+                print(self._ss.read().split('\n')[0])
 
 
     def set_pattern_match(self, index, pattern, mask=[0xff]*8):
@@ -614,7 +619,11 @@ class TraceWhisperer(util.DisableNewAttr):
     def is_done(self):
         """Calls SimpleSerial target's is_done().
         """
-        return self._ss.is_done()
+        if self._ss:
+            return self._ss.is_done()
+        else:
+            tracewhisperer_logger.error("Target must be connected for this to work (e.g. scope.trace.target = target)")
+            return False
 
 
     def fpga_write(self, addr, data):
@@ -1386,9 +1395,6 @@ class ARM_debug_registers(util.DisableNewAttr):
 
     def __init__(self, main):
         super().__init__()
-        # oaiface = OpenADCInterface
-        #self._ss = main._ss
-        #self._ss = serial
         self.main = main
         self.cached_values = [None] * len(self.regs)
         self.disable_newattr()
