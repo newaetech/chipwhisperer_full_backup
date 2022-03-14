@@ -378,7 +378,8 @@ class TraceWhisperer(util.DisableNewAttr):
             self.swo_mode = True
             self.target_registers.TPI_SPPR = '00000002'
             self.target_registers.TPI_ACPR = acpr
-            self.fpga_write(self.REG_SWO_BITRATE_DIV, [swo_div-1]) # not a typo: hardware requires -1; doing this is easier than fixing the hardware
+            self.fpga_write(self.REG_SWO_BITRATE_DIV, int.to_bytes([swo_div-1], length=2, byteorder='little')) # not a typo: hardware requires -1; doing this is easier than fixing the hardware
+
             self.fpga_write(self.REG_SWO_ENABLE, [1])
             # Next we set the target clock and update CW baud rate accordingly:
             new_target_clock = int(self._uart_clock / (swo_div * (acpr+1)))
@@ -396,13 +397,13 @@ class TraceWhisperer(util.DisableNewAttr):
         Args:
             div (int): number of cycles per SWO bit.
         """
-        return self.fpga_read(self.REG_SWO_BITRATE_DIV, 1)[0] + 1 # not a typo: hardware requires -1; doing this is easier than fixing the hardware
+        return int.from_bytes(self.fpga_read(self.REG_SWO_BITRATE_DIV, 2), byteorder='little') + 1 # not a typo: hardware requires -1; doing this is easier than fixing the hardware
 
     @swo_div.setter
     def swo_div(self, div):
         if div < 1:
             raise ValueError
-        return self.fpga_write(self.REG_SWO_BITRATE_DIV, [div-1]) # not a typo: hardware requires -1; doing this is easier than fixing the hardware
+        return self.fpga_write(self.REG_SWO_BITRATE_DIV, int.to_bytes(div-1, length=2, byteorder='little')) # not a typo: hardware requires -1; doing this is easier than fixing the hardware
 
     @property
     def leds(self):
@@ -1007,7 +1008,6 @@ class clock(util.DisableNewAttr):
         if self.main.platform == 'CW610' or self.main.platform == 'Husky':
             rtn['fe_clock_src']     = self.fe_clock_src
         if self.main.platform == 'Husky':
-            #rtn['clkgen_enabled'] = self.main._scope.LA.clkgen_enabled
             rtn['clkgen_enabled'] = self.clkgen_enabled
         rtn['fe_freq']          = self.fe_freq
         rtn['swo_clock_locked']   = self.swo_clock_locked
@@ -1160,6 +1160,7 @@ class capture(util.DisableNewAttr):
         rtn['trigger_source']           = self.trigger_source
         rtn['raw']                      = self.raw
         rtn['rules_enabled']            = self.rules_enabled
+        rtn['rules']                    = self.rules
         rtn['mode']                     = self.mode
         rtn['count']                    = self.count
         rtn['max_triggers']             = self.max_triggers
@@ -1368,6 +1369,15 @@ class capture(util.DisableNewAttr):
         for rule in rules:
             raw += 2**rule
         self.main.fpga_write(self.main.REG_PATTERN_ENABLE, [raw])
+
+    @property
+    def rules(self):
+        """Use set_pattern_match() to set these.
+        """
+        rulez = []
+        for e in self.rules_enabled:
+            rulez.append({'rule':e, 'patt':self.main.fpga_read(self.main.REG_TRACE_PATTERN0+e, 8), 'mask':self.main.fpga_read(self.main.REG_TRACE_MASK0+e, 8)})
+        return rulez
 
 
 
@@ -1582,5 +1592,148 @@ class ARM_debug_registers(util.DisableNewAttr):
             return '%08x' % val
         else:
             tracewhisperer_logger.error('Register %s does not exist.', reg)
+
+
+
+class UARTTrigger(TraceWhisperer):
+    ''' Husky UART trigger module settings.
+    Basic usage for triggering on 'r' (ASCII 0x72):
+
+        #assuming setup scope:
+        scope.trigger.triggers = 'tio1'
+        scope.trigger.module = 'UART'
+        scope.UARTTrigger.enabled = True
+        scope.UARTTrigger.baud = 38400
+        scope.UARTTrigger.set_pattern_match = (0, [0x72,0,0,0,0,0,0,0], [0xff,0,0,0,0,0,0,0])
+
+    TraceWhisperer runs on the same hardware as this, so configuration changes
+    in one affects the other and vice-versa.
+    '''
+    _name = 'UART Trigger Module'
+
+    def __init__(self, scope, trace_reg_select, main_reg_select):
+        self._baud = 0
+        self._baud_margin = 0.005
+        super().__init__(husky=True, target=None, scope=scope, trace_reg_select=trace_reg_select, main_reg_select=main_reg_select)
+        self.disable_newattr()
+
+    def _dict_repr(self):
+        rtn = OrderedDict()
+        rtn['enabled'] = self.enabled
+        rtn['baud'] = self.baud
+        rtn['sampling_clock'] = self.sampling_clock
+        rtn['rules_enabled'] = self.rules_enabled
+        rtn['rules'] = self.rules
+        rtn['matched_pattern_data'] = self.matched_pattern_data
+        rtn['matched_pattern_counts'] = self.capture.matched_pattern_counts
+        return rtn
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
+    @property 
+    def enabled(self):
+        """Controls whether trace data collecting is enabled or not. Mostly affects configuration
+        of the front 20-pin header.
+        Args:
+            enable (bool)
+        """
+        return super().enabled
+
+    @enabled.setter 
+    def enabled(self, enable):
+        # set useful defaults:
+        self.trace_mode = 'swo'
+        self.capture.mode = 'off'
+        self.clock.fe_clock_src = 'target_clock'
+        # accessing base class setter is awkward! all we want to do here is super().enabled = enable, but this is the way to do that:
+        super(UARTTrigger, self.__class__).enabled.fset(self, enable)
+
+    @property 
+    def rules_enabled(self):
+        return self.capture.rules_enabled
+
+    @rules_enabled.setter 
+    def rules_enabled(self, enable):
+        self.capture.rules_enabled = enable
+
+    @property 
+    def rules(self):
+        return self.capture.rules
+
+    @property
+    def baud(self):
+        """ Set the desired baud rate.
+        """
+        return self._baud
+
+    @baud.setter
+    def baud(self, req_baud):
+        found = False
+        freq_mul = 2 # TODO: should be able to use 1, but MMCM doesn't work correctly at that setting
+        sample_freq = self.clock.fe_freq * freq_mul
+        while True:
+            div = int(sample_freq / req_baud)
+            actual_baud = sample_freq / div
+            if abs(req_baud-actual_baud)/req_baud < self._baud_margin:
+                found = True
+                break
+            freq_mul += 1
+            sample_freq = self.clock.fe_freq * freq_mul
+            if sample_freq > 200e6:
+                break
+        if found:
+            self.clock.swo_clock_freq = sample_freq
+            self.swo_div = div
+            self._baud = actual_baud
+            tracewhisperer_logger.info("Setting baudrate to %d (freq_mul=%d)" % (actual_baud, freq_mul))
+        else:
+            tracewhisperer_logger.error("Couldn't find parameters for requested baud rate. Try increasing scope.uart._baud_margin.")
+
+
+    @property
+    def sampling_clock(self):
+        """ Shorthand for accessing the measured frequency of the sampling clock.
+            Indirectly set via 'baud' setting.
+        """
+        return self.clock.swo_clock_freq
+
+    def uart_data(self, rawdata, prepend_matched_pattern=True, return_ascii=True):
+        """ Helper functionto parse the captured UART data.
+        Args:
+            rawdata (list): raw capture data, list of lists, e.g. obtained from read_capture_data()
+            prepend_matched_pattern (bool): 
+            return_ascii (bool): return data as ASCII (otherwise hex)
+        """
+        datalist = []
+        prepend = []
+        if prepend_matched_pattern:
+            for b in self.fpga_read(self.REG_MATCHED_DATA, 8):
+                prepend.append([0, b, self.FE_FIFO_CMD_STAT])
+        for raw in prepend+rawdata:
+            command = raw[2] & 0x3
+            if command == self.FE_FIFO_CMD_STAT:
+                data = raw[1]
+                if return_ascii:
+                    datalist.append(chr(data))
+                else:
+                    datalist.append(data)
+            elif command == self.FE_FIFO_CMD_DATA:
+                print("Unexpected data command.")
+        return datalist
+
+
+    @property
+    def matched_pattern_data(self):
+        """ Return the actual trace data seen for the last matched pattern.
+        """
+        string = ''
+        raw = self.fpga_read(self.REG_MATCHED_DATA, 8)
+        for b in raw:
+            string += chr(b)
+        return string
 
 

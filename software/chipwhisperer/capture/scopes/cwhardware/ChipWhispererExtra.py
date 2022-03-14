@@ -635,7 +635,7 @@ class TriggerSettings(util.DisableNewAttr):
         """
         #Get pin logic + combo mode
         if self.module == 'trace':
-            return 'N/A'
+            return 'N/A (use scope.trace.trace_mode)'
         else:
             pins, mode = self.cwe.getPins()
 
@@ -851,12 +851,12 @@ class HuskyTrigger(TriggerSettings):
             module = self.cwe.MODULE_BASIC
         elif mode == "SAD":
             module = self.cwe.MODULE_SADPATTERN # TODO
-        elif mode == "DECODEIO":
-            module = self.cwe.MODULE_DECODEIO # TODO
+        elif mode == "UART":
+            module = self.cwe.MODULE_DECODEIO
         elif mode == "trace":
             module = self.cwe.MODULE_TRACE
         else:
-            raise ValueError("Invalid mode {}. Must be 'basic', 'SAD', 'DECODEIO', or 'trace'")
+            raise ValueError("Invalid mode {}. Must be 'basic', 'SAD', 'UART', or 'trace'")
 
         resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
                                        Validate=False, maxResp=1)

@@ -20,6 +20,7 @@ from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP, LEDSett
 from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings
 try:
     from ..trace import TraceWhisperer
+    from ..trace.TraceWhisperer import UARTTrigger
 except Exception as e:
     tracewhisperer_logger.info("Could not import TraceWhisperer: {}".format(e))
     TraceWhisperer = None # type: ignore
@@ -548,6 +549,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.userio = USERIOSettings(self.sc)
             if TraceWhisperer:
                 self.trace = TraceWhisperer(husky=True, target=None, scope=self, trace_reg_select=3, main_reg_select=2)
+                self.UARTTrigger = UARTTrigger(scope=self, trace_reg_select=3, main_reg_select=2)
             self.errors = HuskyErrors(self.sc, self.XADC, self.adc, self.clock, self.trace)
         else:
             self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
