@@ -33,8 +33,7 @@ import sys, subprocess
 from typing import Optional, Type, Union
 
 # replace bytearray with inherited class with better repr and str.
-import builtins
-builtins.bytearray = util.bytearray # type: ignore
+bytearray = util.bytearray # type: ignore
 
 def check_for_updates() -> str:
     """Check if current ChipWhisperer version is the latest.

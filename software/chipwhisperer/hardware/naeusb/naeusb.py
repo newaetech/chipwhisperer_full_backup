@@ -24,6 +24,7 @@ import usb1  # type: ignore
 import os
 import array
 from typing import Optional, Union, List, Tuple, Dict, cast
+from ...common.utils.util import bytearray # type: ignore
 
 from ..firmware import cwlite as fw_cwlite
 from ..firmware import cw1200 as fw_cw1200

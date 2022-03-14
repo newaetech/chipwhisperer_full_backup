@@ -24,9 +24,10 @@
 #=================================================
 
 import random
-from chipwhisperer.common.utils import util
+from ...common.utils import util
 from ._base import AcqKeyTextPattern_Base
-from chipwhisperer.common.utils.util import camel_case_deprecated
+from ...common.utils.util import camel_case_deprecated
+bytearray = util.bytearray # type: ignore
 
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     """Class for getting basic keys and plaintexts.
@@ -186,7 +187,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._textin[i] = random.randint(0, 255)
 
         self.validateText()
-        return self._textin
+        return util.bytearray(self._textin)
 
     def next_key(self):
         """ Returns the next key
@@ -205,4 +206,4 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
             for i in range(0, self.keyLen()):
                 self._key[i] = random.randint(0, 255)
         self.validateKey()
-        return self._key
+        return util.bytearray(self._key)
