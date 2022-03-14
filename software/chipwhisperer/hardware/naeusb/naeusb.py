@@ -166,7 +166,7 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
     """
     try:
         import winreg
-        keyhandle = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM")
+        keyhandle = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM") # type: ignore
         subkey = r"ControlSet001\Enum\USB"
         subkey += "\\VID_{:04X}&PID_{:04X}".format(device.getVendorID(), device.getProductID())
 
@@ -177,7 +177,7 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
                 myenum = None
                 naeusb_logger.debug('Looking for {}...'.format(name))
                 while enum_name != name:
-                    myenum = winreg.EnumValue(handle, cnt)
+                    myenum = winreg.EnumValue(handle, cnt) # type: ignore
                     enum_name = myenum[0]
                     cnt += 1
                     naeusb_logger.debug('Found {}'.format(enum_name))
@@ -187,7 +187,7 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
 
         # get devices with same PID/VID
         try:
-            keyhandle_device = winreg.OpenKey(keyhandle, subkey)
+            keyhandle_device = winreg.OpenKey(keyhandle, subkey) # type: ignore
         except Exception as e:
             naeusb_logger.info("Could not get keyhandle device " + str(e))
             return None
@@ -199,12 +199,12 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
         # get devices that are connected and have the same port number
         while (address != device.getPortNumber()) or (attached is False):
             try:
-                sn = winreg.EnumKey(keyhandle_device, i)
+                sn = winreg.EnumKey(keyhandle_device, i) # type: ignore
             except Exception as e:
                 naeusb_logger.info("Could not get sn " + str(e)) 
                 return None
             # print("sn: " + sn)
-            keyhandle_sn = winreg.OpenKey(keyhandle_device, sn)
+            keyhandle_sn = winreg.OpenKey(keyhandle_device, sn) # type: ignore
             with keyhandle_sn as h:
                 address = get_enum_by_name(h, "Address")
                 if address is None:
@@ -215,7 +215,7 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
                 # now we need to figure out if this device is attached
                 # Windows really doesn't make this easy...
                 try:
-                    keyhandle_driver = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\{}\\Enum".format(service))
+                    keyhandle_driver = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\{}\\Enum".format(service)) # type: ignore
                 except Exception as e:
                     naeusb_logger.info("Could not get keyhandle driver " + str(e))
                     return None
@@ -231,7 +231,7 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
                 keyhandle_driver.Close()
                 i += 1
         try:
-            keyhandle_sn = winreg.OpenKey(keyhandle_device, sn)
+            keyhandle_sn = winreg.OpenKey(keyhandle_device, sn) # type: ignore
         except Exception as e:
             naeusb_logger.debug("Could not get keyhandle sn " + str(e))
             return None
