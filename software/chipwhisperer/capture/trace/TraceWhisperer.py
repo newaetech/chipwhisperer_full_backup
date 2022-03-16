@@ -607,12 +607,12 @@ class TraceWhisperer(util.DisableNewAttr):
         """Arms trace sniffer for capture; also checks sync status.
         Args:
             check_uart (bool): check that the hardware UART state machine is not stuck,
-            and if it is, reset it. There seemed to be some bug requiring this, which may
-            be fixed now; if so, will change default to False later. (TODO)
+            and if it is, reset it. Should not be required unless trace is left enabled
+            when not used. Trace clock needs to be active for this to work.
         """
         assert self.trace_synced, 'Not synchronized!'
         assert self.enabled, 'Not enabled!'
-        if check_uart:
+        if check_uart and self.swo_mode:
             if self.uart_state != 'ERX_IDLE':
                 tracewhisperer_logger.warning("UART appears stuck, resetting it...")
                 self._uart_reset()

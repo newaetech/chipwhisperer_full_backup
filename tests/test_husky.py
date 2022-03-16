@@ -503,11 +503,7 @@ def setup_trace(interface):
         trace.swo_div = trigger_freq_mul * (acpr + 1)
         assert trace.clock.swo_clock_locked
         assert scope.userio.status & 0x4, "Are D0/1/2 connected to the target TMS/TCK/TDO?"
-    trace._uart_reset()
-    if trace.uart_state != 'ERX_IDLE':
-        tracewhisperer_logger.warning("UART appears stuck, resetting it...")
-        trace._uart_reset()
-        assert trace.uart_state == 'ERX_IDLE', 'UART is still stuck!'
+    assert trace.uart_state == 'ERX_IDLE', 'Maybe need to do a trace._uart_reset() here?'
     trace.target_registers.DWT_CTRL = 0x40000021
     trace.capture.trigger_source = 'firmware trigger'
     trace.capture.mode = 'while_trig'
@@ -904,6 +900,7 @@ def test_trace (raw_capture, interface, trigger_source, desc):
             delta = t[0] - lasttime
             assert 200 < delta < 600, "Time delta out of range: %d" % delta
             lasttime= t[0]
+    trace.enabled = False
 
 
 @pytest.mark.parametrize("interface, triggers, desc", testTraceSegmentData)
@@ -929,6 +926,7 @@ def test_segment_trace (interface, triggers, desc):
     assert len(powertrace.wave) == scope.adc.samples * triggers
     assert trace.capture.triggers_generated == triggers
     assert trace.capture.matched_pattern_data[:6] == '030820'
+    trace.enabled = False
 
 def test_xadc():
     assert scope.XADC.status == 'good'
