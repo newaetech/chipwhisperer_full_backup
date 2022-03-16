@@ -22,15 +22,32 @@ print('* device, running this script is unlikely to provide you with useful info
 print('* Instead, seek assistance on forum.newae.com or discord by providing details of     *')
 print('* your setup (including the target), and the full error log from your Jupyter        *')
 print('* notebook.                                                                          *')
+print('*                                                                                    *')
+print('* While this test can be run on a stand-alone Husky, some of the tests require a     *')
+print('* target with a specific FW (which supports segmenting and trace):                   *')
+print('* simpleserial-trace.                                                                *')
+print('* The expected .hex file and this script should be updated together.                 *')
+print('* If this FW is recompiled, the trace.set_isync_matches() call will have to be       *')
+print('* modified with updated instruction addresses.                                       *')
 print('**************************************************************************************\n\n')
 
 scope = cw.scope(name='Husky')
 target = cw.target(scope)
+scope.trace.target = target
+trace = scope.trace
 scope.errors.clear()
 verbose = False
 
+def reset_target():
+    scope.io.nrst = 0
+    time.sleep(0.2)
+    scope.io.nrst = 'high_z'
+    time.sleep(0.2)
+
+
 # TODO: program FW?
 scope.sc.reset_fpga()
+scope.adc.clip_errors_disabled = True
 scope.clock.clkgen_freq = 10e6
 scope.clock.clkgen_src = 'system'
 scope.clock.adc_mul = 1
@@ -39,32 +56,41 @@ assert scope.clock.pll.pll_locked == True
 assert scope.clock.adc_freq == 10e6
 target.baud = 38400 * 10 / 7.37
 
+scope.trigger.triggers = 'tio4'
+scope.trigger.module = 'basic'
 scope.io.tio1 = "serial_rx"
 scope.io.tio2 = "serial_tx"
 scope.io.hs2 = "clkgen"
 
 time.sleep(0.2)
-scope.io.nrst = 0
-time.sleep(0.2)
-scope.io.nrst = 'high_z'
-time.sleep(0.2)
+reset_target()
 
 # see if a target is attached:
 target.flush()
 target.write('x\n')
 time.sleep(0.2)
 resp = target.read()
-#print("Got: %s" % resp)
 if resp == '':
     target_attached = False
 else:
     target_attached = True
 
+# next, check for a particular FW:
+if target_attached:
+    target.simpleserial_write('i', b'')
+    time.sleep(0.1)
+    if target.read().split('\n')[0] == 'ChipWhisperer simpleserial-trace, compiled Mar 14 2022, 21:06:34':
+        trace_fw = True
+    else:
+        trace_fw = False
+else:
+    trace_fw = False
+
+
 ktp = cw.ktp.Basic()
 key, text = ktp.next()
 scope.adc.timeout = 3
 scope.adc.offset = 0
-scope.adc.segment_cycle_counter_en = 1
 
 # these are default off, but just in case:
 scope.glitch.enabled = False
@@ -76,7 +102,6 @@ scope.LA.downsample = 1
 @pytest.fixture()
 def reps(pytestconfig):
     return int(pytestconfig.getoption("reps"))
-
 
 def check_ramp(raw, testmode, samples, segment_cycles, verbose=False):
     errors = 0
@@ -223,11 +248,11 @@ testSegmentData = [
     (10,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset10'),
     (50,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50'),
     (50,        20,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_presamp'),
-    (0,         0,          90,    7.37e6,     4,      True,       20,     29356,  'segments_counter_no_offset'),
-    (0,         30,         90,    7.37e6,     4,      True,       20,     29356,  'segments_counter_no_offset_presamp'),
-    (10,        0,          90,    7.37e6,     4,      True,       20,     29356,  'segments_counter_offset10'),
-    (50,        0,          90,    7.37e6,     4,      True,       20,     29356,  'segments_counter_offset50'),
-    (50,        40,         90,    7.37e6,     4,      True,       20,     29356,  'segments_counter_offset50_presamp'),
+    (0,         0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset'),
+    (0,         30,         90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset_presamp'),
+    (10,        0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset10'),
+    (50,        0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50'),
+    (50,        40,         90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50_presamp'),
 ]
 
 
@@ -283,8 +308,25 @@ testRWData = [
     (4,         8,      1000,   'ECHO'),
 ]
 
+testTraceData = [
+    #raw_capture    interface  trigger_source       desc
+    (False,         'swo',     'firmware trigger',  'pattern-matched SWO trace, target-triggered'),
+    (True,          'swo',     'firmware trigger',  'raw SWO trace, target-triggered'),
+    (False,         'swo',     0,                   'pattern-matched SWO trace, trace-triggered'),
+]
+
+testTraceSegmentData = [
+    #interface  triggers    desc
+    ('swo',     1,          '1triggers'),
+    ('swo',     10,         '10triggers'),
+    ('swo',     21,         '21triggers'),
+]
+
+
+
 def test_fpga_version():
-    assert scope.fpga_buildtime == '3/9/2022, 15:49'
+    assert scope.fpga_buildtime == '3/15/2022, 10:46'
+
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -329,6 +371,7 @@ def test_internal_ramp(samples, presamples, testmode, clock, fastreads, adcmul, 
     scope.adc.segment_cycles = segment_cycles
     scope.adc.bits_per_sample = bits
     scope.adc.clip_errors_disabled = True
+    scope.adc.segment_cycle_counter_en = True
     for i in range(reps):
         scope.sc.arm(False)
         scope.arm()
@@ -340,6 +383,8 @@ def test_internal_ramp(samples, presamples, testmode, clock, fastreads, adcmul, 
         assert errors == 0, "%d errors; First error: %d" % (errors, first_error)
         assert scope.adc.errors == False
     scope.sc._fast_fifo_read_enable = True # return to default
+
+
 
 def last_zero_run(a):
     # Create an array that is 1 where a is 0, and pad each end with an extra 0.
@@ -371,6 +416,7 @@ def test_adc_freq_sweep(samples, presamples, freq_start, freq_stop, freq_step, t
     scope.adc.presamples = presamples
     scope.adc.segments = segments
     scope.adc.segment_cycles = segment_cycles
+    scope.adc.segment_cycle_counter_en = True
     scope.adc.bits_per_sample = bits
     scope.adc.clip_errors_disabled = True
 
@@ -425,6 +471,49 @@ def setup_glitch(offset, width, oversamp):
     scope.LA.trigger_source = "glitch_source"
     scope.LA.capture_depth = 512
     assert scope.LA.locked
+
+def setup_trace(interface):
+    errors = 0
+    scope.adc.segments = 1
+    scope.adc.samples = 30
+    scope.clock.clkgen_freq = 7.37e6
+    scope.clock.adc_mul = 4
+    target.baud = 38400
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    reset_target()
+    time.sleep(0.5)
+    target.baud = 38400
+    trace.enabled = True
+    if interface == 'parallel':
+        trace.clock.fe_clock_src = 'target_clock'
+        assert trace.clock.fe_clock_alive
+        trace.trace_mode = 'parallel'
+        time.sleep(0.1)
+        trace.resync()
+    elif interface == 'swo':
+        trace.clock.fe_clock_src = 'target_clock'
+        assert trace.clock.fe_clock_alive
+        trace.trace_mode = 'SWO'
+        trace.jtag_to_swd()
+        acpr = 0
+        trigger_freq_mul = 8
+        trace.clock.swo_clock_freq = scope.clock.clkgen_freq * trigger_freq_mul
+        trace.target_registers.TPI_ACPR = acpr
+        trace.swo_div = trigger_freq_mul * (acpr + 1)
+        assert trace.clock.swo_clock_locked
+        assert scope.userio.status & 0x4, "Are D0/1/2 connected to the target TMS/TCK/TDO?"
+    trace._uart_reset()
+    if trace.uart_state != 'ERX_IDLE':
+        tracewhisperer_logger.warning("UART appears stuck, resetting it...")
+        trace._uart_reset()
+        assert trace.uart_state == 'ERX_IDLE', 'UART is still stuck!'
+    trace.target_registers.DWT_CTRL = 0x40000021
+    trace.capture.trigger_source = 'firmware trigger'
+    trace.capture.mode = 'while_trig'
+    trace.set_isync_matches(addr0=0x080018c4, addr1=0x0800188c, match='both')
+    trace.set_periodic_pc_sampling(enable=0)
+
 
 
 @pytest.mark.parametrize("offset, oversamp, desc", testGlitchOffsetData)
@@ -529,7 +618,7 @@ def test_glitch_output_sweep_offset(reps, width, oversamp, steps_per_point, desc
     # 1. that the offset change as the offset setting is swept;
     # 2. that there are no "double glitches" - by looking at the glitches themselves, but also by looking
     #    at the width of the glitch "go" signal
-    margin = 2
+    margin = 3
     setup_glitch(0, width, oversamp)
     stepsize = int(scope.glitch.phase_shift_steps / scope.LA.oversampling_factor / steps_per_point)
 
@@ -641,6 +730,7 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
 
     scope.adc.basic_mode = "rising_edge"
     scope.trigger.triggers = "tio4"
+    scope.trigger.module = 'basic'
     scope.io.tio1 = "serial_rx"
     scope.io.tio2 = "serial_tx"
     scope.io.hs2 = "clkgen"
@@ -652,6 +742,7 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
     scope.adc.segment_cycles = segment_cycles
     scope.adc.stream_mode = stream
     scope.adc.stream_segment_threshold = threshold
+    scope.adc.segment_cycle_counter_en = True
     scope.adc.bits_per_sample = bits
     scope.adc.clip_errors_disabled = True
     ret = cw.capture_trace(scope, target, text, key)
@@ -673,8 +764,11 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
 @pytest.mark.skipif(not target_attached, reason='No target detected')
 def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, segcycs, desc):
     # This requires a specific target firmware to work properly:
-    # simpleserial-aes where the number of triggers can be set via 's' commmand.
+    # simpleserial-aes where the number of triggers can be set via 'n' commmand.
     # The segcycs value for seg_count=True requires a very specific firmware, otherwise the test is likely to fail.
+    # If the firmware changes, you'll need to run this capture in a notebook with segmenting disabled and manually
+    # measure the distance between each AES iteration (which should be fairly easy to do visually, and which shouldn't
+    # change much from what's here), then update the segcycs input that's provided here.
     errors = 0
     scope.clock.clkgen_freq =clock
     scope.clock.adc_mul = adcmul
@@ -699,6 +793,7 @@ def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, 
 
     scope.adc.basic_mode = "rising_edge"
     scope.trigger.triggers = "tio4"
+    scope.trigger.module = 'basic'
     scope.io.tio1 = "serial_rx"
     scope.io.tio2 = "serial_tx"
     scope.io.hs2 = "clkgen"
@@ -716,7 +811,7 @@ def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, 
     scope.gain.db = 10
 
     target.set_key(bytearray(16))
-    target.simpleserial_write('s', bytearray([0, segs]))
+    target.simpleserial_write('n', bytearray([0, segs]))
     scope.arm()
     target.simpleserial_write('f', bytearray(16))
     ret = scope.capture()
@@ -756,8 +851,84 @@ def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, 
 
     #assert errors == 0, "Ratios = %s; errors: %s" % (ratios, scope.adc.errors)
     assert errors == 0
+    scope.adc.clip_errors_disabled = True
 
 
+@pytest.mark.parametrize("raw_capture, interface, trigger_source, desc", testTraceData)
+@pytest.mark.skipif(not trace_fw, reason='No target detected or incorrect FW.')
+def test_trace (raw_capture, interface, trigger_source, desc):
+    # This requires a specific target firmware to work properly:
+    # simpleserial-aes where the number of triggers can be set via 's' commmand.
+    setup_trace(interface)
+    assert trace.uart_state == 'ERX_IDLE', 'UART is still stuck!'
+    scope.adc.clip_errors_disabled = True
+    scope.adc.segment_cycle_counter_en = False
+    scope.adc.segments = 1
+    scope.adc.samples = 300
+    trace.capture.max_triggers = 1
+    if trigger_source == 'firmware trigger':
+        scope.trigger.module = 'basic'
+        scope.trigger.triggers = 'tio4'
+        scope.trace.capture.mode = 'while_trig'
+    else:
+        scope.trigger.module = 'trace'
+        scope.trace.capture.mode = 'count_cycles'
+        scope.trace.capture.count = 30000
+    trace.capture.trigger_source = trigger_source
+    if raw_capture:
+        trace.capture.raw = True
+        trace.capture.rules_enabled = []
+    else:
+        trace.capture.raw = False
+        trace.set_pattern_match(0, [3, 8, 32])
+    trace.arm_trace()
+    powertrace = cw.capture_trace(scope, target, text, key)
+    raw = trace.read_capture_data()
+    if raw_capture:
+        if interface == 'parallel':
+            frames = trace.get_raw_trace_packets(raw, removesyncs=True, verbose=False)
+            assert False # TODO!
+        else:
+            frames = trace.get_raw_trace_packets(raw, removesyncs=False, verbose=False)
+            assert frames[0][1][:3]  == [3,8,32], "Got unexpected raw data: %s" % frames[0][1][:3]
+    else:
+        times = trace.get_rule_match_times(raw, rawtimes=False, verbose=False)
+        assert len(times) == 21, "Expected 21 events, got %d" % len(times)
+        if trigger_source == 0:
+            check_times = times[1:]
+            lasttime = times[0][0]
+        else:
+            check_times = times
+            lasttime = 0
+        for t in check_times:
+            delta = t[0] - lasttime
+            assert 200 < delta < 600, "Time delta out of range: %d" % delta
+            lasttime= t[0]
+
+
+@pytest.mark.parametrize("interface, triggers, desc", testTraceSegmentData)
+@pytest.mark.skipif(not trace_fw, reason='No target detected or incorrect FW.')
+def test_segment_trace (interface, triggers, desc):
+    errors = 0
+    scope.default_setup()
+    setup_trace(interface)
+    scope.adc.clip_errors_disabled = True
+    scope.adc.segment_cycle_counter_en = False
+    scope.trigger.module = 'trace'
+    scope.trace.capture.mode = 'off'
+    trace.capture.trigger_source = 0
+    trace.capture.raw = False
+    trace.capture.max_triggers = triggers
+    trace.set_pattern_match(0, [3, 8, 32])
+    scope.adc.presamples = 0
+    scope.adc.samples = 30
+    scope.adc.segments = triggers
+    match_count = trace.capture.matched_pattern_counts[0]
+    trace.arm_trace()
+    powertrace = cw.capture_trace(scope, target, text, key)
+    assert len(powertrace.wave) == scope.adc.samples * triggers
+    assert trace.capture.triggers_generated == triggers
+    assert trace.capture.matched_pattern_data[:6] == '030820'
 
 def test_xadc():
     assert scope.XADC.status == 'good'

@@ -55,6 +55,7 @@
 `define REG_MULTIPLE_TRIGGERS        6'h18
 `define REG_TRIGGERS_GENERATED       6'h19
 `define REG_CAPTURE_OFF              6'h20
+`define REG_BUFFER_SIZE              6'h21
 
 // front end select definitions
 `define FE_SELECT_WIDTH 2

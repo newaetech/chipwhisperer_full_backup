@@ -99,7 +99,7 @@ class TraceWhisperer(util.DisableNewAttr):
         self._base_baud = 38400
         self._usb_clock = 96e6
         self._uart_clock = self._usb_clock * 2
-        self.expected_verilog_defines = 122
+        self.expected_verilog_defines = 124
         self.swo_mode = False
         self._scope = scope
 
@@ -147,6 +147,7 @@ class TraceWhisperer(util.DisableNewAttr):
             self.tms_bit = 0
             self.tck_bit = 1
 
+        self.pattern_size = self.fpga_read(self.REG_BUFFER_SIZE, 1)[0]
         self.disable_newattr()
         self._set_defaults()
 
@@ -406,6 +407,27 @@ class TraceWhisperer(util.DisableNewAttr):
         return self.fpga_write(self.REG_SWO_BITRATE_DIV, int.to_bytes(div-1, length=2, byteorder='little')) # not a typo: hardware requires -1; doing this is easier than fixing the hardware
 
     @property
+    def uart_state(self):
+        """ Return the hardware UART state. For debug.
+        """
+        raw = self.fpga_read(self.REG_UART, 1)[0]
+        # state names from uart_core.v:
+        if   raw == 0: state ='ERX_IDLE'
+        elif raw == 1: state ='ERX_START'
+        elif raw == 2: state ='ERX_BITS'
+        elif raw == 3: state ='ERX_STOP'
+        elif raw == 4: state ='ERX_SYN'
+        else:
+            raise ValueError("Got unknown UART state: %d" % raw)
+        return state
+
+    def _uart_reset(self):
+        """ Reset the hardware UART FSM. Shouldn't be needed!
+        """
+        self.fpga_write(self.REG_UART, [1])
+
+
+    @property
     def leds(self):
         """Set the meaning of the armed/capturing LEDs.
 
@@ -544,15 +566,27 @@ class TraceWhisperer(util.DisableNewAttr):
                 print(self._ss.read().split('\n')[0])
 
 
-    def set_pattern_match(self, index, pattern, mask=[0xff]*8):
+    def set_pattern_match(self, index, pattern, mask=None, enable_rule=True):
         """Sets pattern match and mask parameters
 
         Args:
             index: match index [0-7]
-            pattern: list of 8-bit integers, pattern match value
-            mask: list of 8-bit integers, pattern mask value
+            pattern: list of 8-bit integers, pattern match value. Maximum size given by self.pattern_size.
+            mask (list, optional): list of bytes, must have same size as 'pattern' if
+                set. Defaults to [0xff]*len(pattern) if not set.
 
         """
+        if mask is None:
+            mask = [0xFF] * len(pattern)
+        if len(pattern) != len(mask):
+            raise ValueError('pattern and mask must be of same size.')
+        elif len(pattern) > self.pattern_size:
+            raise ValueError('pattern and mask cannot be more than 64 bytes.')
+        elif len(pattern) < self.pattern_size:
+            for i in range(self.pattern_size - len(pattern)):
+                pattern.append(0)
+                mask.append(0)
+
         self.fpga_write(self.REG_TRACE_PATTERN0+index, pattern)
         self.fpga_write(self.REG_TRACE_MASK0+index, mask)
         # count trailing zeros in the mask, as these determine how much time elapses from
@@ -563,13 +597,26 @@ class TraceWhisperer(util.DisableNewAttr):
             if not m:
                 trailing_zeros += 1
         self.rule_length[index] = 8-trailing_zeros
+        if enable_rule:
+            rawrules = self.fpga_read(self.REG_PATTERN_ENABLE, 1)[0]
+            rawrules |= 2**index
+            self.fpga_write(self.REG_PATTERN_ENABLE, [rawrules])
 
 
-    def arm_trace(self):
+    def arm_trace(self, check_uart=True):
         """Arms trace sniffer for capture; also checks sync status.
+        Args:
+            check_uart (bool): check that the hardware UART state machine is not stuck,
+            and if it is, reset it. There seemed to be some bug requiring this, which may
+            be fixed now; if so, will change default to False later. (TODO)
         """
         assert self.trace_synced, 'Not synchronized!'
         assert self.enabled, 'Not enabled!'
+        if check_uart:
+            if self.uart_state != 'ERX_IDLE':
+                tracewhisperer_logger.warning("UART appears stuck, resetting it...")
+                self._uart_reset()
+                assert self.uart_state == 'ERX_IDLE', 'UART is still stuck!'
         self.fpga_write(self.REG_ARM, [1])
 
 
@@ -1616,12 +1663,14 @@ class UARTTrigger(TraceWhisperer):
         self._baud_margin = 0.005
         super().__init__(husky=True, target=None, scope=scope, trace_reg_select=trace_reg_select, main_reg_select=main_reg_select)
         self.disable_newattr()
+        self.trigger_source = 0
 
     def _dict_repr(self):
         rtn = OrderedDict()
         rtn['enabled'] = self.enabled
         rtn['baud'] = self.baud
         rtn['sampling_clock'] = self.sampling_clock
+        rtn['trigger_source'] = self.trigger_source
         rtn['rules_enabled'] = self.rules_enabled
         rtn['rules'] = self.rules
         rtn['matched_pattern_data'] = self.matched_pattern_data
@@ -1735,5 +1784,30 @@ class UARTTrigger(TraceWhisperer):
         for b in raw:
             string += chr(b)
         return string
+
+    @property
+    def trigger_source(self):
+        """ Set which pattern match rule is used to generate a trigger.
+        Args:
+            rule (int)
+        """
+        if self.fpga_read(self.REG_SOFT_TRIG_ENABLE, 1)[0]:
+            return('firmware trigger')
+        else:
+            raw = self.fpga_read(self.REG_PATTERN_TRIG_ENABLE, 1)[0]
+            if raw > 0:
+                return('rule #%d' % int(math.log2(raw)))
+            else:
+                return('no rule set!')
+
+    @trigger_source.setter
+    def trigger_source(self, rule):
+        if 0 <= rule < 8:
+            self.fpga_write(self.REG_SOFT_TRIG_ENABLE, [0])
+            self.fpga_write(self.REG_SOFT_TRIG_PASSTHRU, [0])
+            self.fpga_write(self.REG_PATTERN_TRIG_ENABLE, [2**rule])
+            self.fpga_write(self.REG_TRIGGER_ENABLE, [1])
+        else:
+            raise ValueError
 
 
