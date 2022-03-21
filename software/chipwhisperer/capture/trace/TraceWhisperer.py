@@ -1698,6 +1698,7 @@ class UARTTrigger(TraceWhisperer):
         self.trace_mode = 'swo'
         self.capture.mode = 'off'
         self.clock.fe_clock_src = 'target_clock'
+        self.capture.record_syncs = True
         # accessing base class setter is awkward! all we want to do here is super().enabled = enable, but this is the way to do that:
         super(UARTTrigger, self.__class__).enabled.fset(self, enable)
 
