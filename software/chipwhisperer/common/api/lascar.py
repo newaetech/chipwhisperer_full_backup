@@ -66,6 +66,7 @@ class LascarDisplay:
 
         self.dt = dt
         self.hlk = highlight_key
+        self.dt.known_key = self.hlk
         
     def format_stat(self, stat):
         return str("{:02X}<br>{:.3f}".format(stat[0], stat[2]))

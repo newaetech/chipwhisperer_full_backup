@@ -60,11 +60,11 @@ class Results(object):
         guess_list = []
         stats = self.find_maximums()
         for i, subkey in enumerate(stats):
-            dict = OrderedDict()
-            dict['guess'] = subkey[0][0]
-            dict['correlation'] = subkey[0][2]
-            dict['pge'] = self.simple_PGE(i)
-            guess_list.append(dict)
+            guess = {}
+            guess['guess'] = subkey[0][0]
+            guess['correlation'] = subkey[0][2]
+            guess['pge'] = self.simple_PGE(i)
+            guess_list.append(guess)
 
         return guess_list
 
@@ -94,8 +94,19 @@ class Results(object):
 
         #TODO: Ensure this gets called by attack algorithms when rerunning
 
+    def calc_PGE(self, bnum):
+        if self.known_key is None:
+            raise ValueError("Set result.known_key before running this method!")
+        result = self.find_maximums()[bnum]
+        for i in range(len(result)):
+            if self.known_key[bnum] == result[i][0]:
+                return i
+
     def simple_PGE(self, bnum):
         """Returns the partial guessing entropy of subkey."""
+        if self.pge[bnum] == 255:
+            # actually have to do the calculation
+            return self.calc_PGE(bnum)
         if self.maxValid[bnum] == False:
             #TODO: should sort
             return 1
