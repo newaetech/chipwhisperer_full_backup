@@ -87,6 +87,7 @@ class LascarDisplay:
         
     def results(self): #getStatistics
         """CW Interfae Function"""
+        self.dt.known_key = self.hlk
         return self.dt
     
     def known_key(self): #knownKey
