@@ -48,6 +48,7 @@ def reset_target():
 # TODO: program FW?
 scope.sc.reset_fpga()
 scope.adc.clip_errors_disabled = True
+scope.adc.lo_gain_errors_disabled = True
 scope.clock.clkgen_freq = 10e6
 scope.clock.clkgen_src = 'system'
 scope.clock.adc_mul = 1
@@ -325,7 +326,7 @@ testTraceSegmentData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '3/15/2022, 10:46'
+    assert scope.fpga_buildtime == '3/22/2022, 15:19'
 
 
 def test_fw_version():
@@ -371,6 +372,7 @@ def test_internal_ramp(samples, presamples, testmode, clock, fastreads, adcmul, 
     scope.adc.segment_cycles = segment_cycles
     scope.adc.bits_per_sample = bits
     scope.adc.clip_errors_disabled = True
+    scope.adc.lo_gain_errors_disabled = True
     scope.adc.segment_cycle_counter_en = True
     for i in range(reps):
         scope.sc.arm(False)
@@ -419,6 +421,7 @@ def test_adc_freq_sweep(samples, presamples, freq_start, freq_stop, freq_step, t
     scope.adc.segment_cycle_counter_en = True
     scope.adc.bits_per_sample = bits
     scope.adc.clip_errors_disabled = True
+    scope.adc.lo_gain_errors_disabled = True
 
     all_passed = True
 
@@ -741,6 +744,7 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
     scope.adc.segment_cycle_counter_en = True
     scope.adc.bits_per_sample = bits
     scope.adc.clip_errors_disabled = True
+    scope.adc.lo_gain_errors_disabled = True
     ret = cw.capture_trace(scope, target, text, key)
     raw = scope.get_last_trace(True)
     if verbose: print('Words read before error: %d ' % int.from_bytes(scope.sc.sendMessage(0x80, 47, maxResp=4), byteorder='little'))
@@ -803,6 +807,7 @@ def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, 
     scope.adc.stream_mode = False
     scope.adc.bits_per_sample = 12
     scope.adc.clip_errors_disabled = False
+    scope.adc.lo_gain_errors_disabled = True
 
     scope.gain.db = 10
 
@@ -858,6 +863,7 @@ def test_trace (raw_capture, interface, trigger_source, desc):
     setup_trace(interface)
     assert trace.uart_state == 'ERX_IDLE', 'UART is still stuck!'
     scope.adc.clip_errors_disabled = True
+    scope.adc.lo_gain_errors_disabled = True
     scope.adc.segment_cycle_counter_en = False
     scope.adc.segments = 1
     scope.adc.samples = 300
@@ -910,6 +916,7 @@ def test_segment_trace (interface, triggers, desc):
     scope.default_setup()
     setup_trace(interface)
     scope.adc.clip_errors_disabled = True
+    scope.adc.lo_gain_errors_disabled = True
     scope.adc.segment_cycle_counter_en = False
     scope.trigger.module = 'trace'
     scope.trace.capture.mode = 'off'

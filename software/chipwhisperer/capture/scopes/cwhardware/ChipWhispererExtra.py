@@ -33,6 +33,7 @@ from ....logging import *
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
+ADDR_ADC_TRIGGER_LEVEL = 21
 ADDR_DATA = 33
 ADDR_LEN = 34
 ADDR_BAUD = 35
@@ -818,8 +819,12 @@ class ProTrigger(TriggerSettings):
 
 class HuskyTrigger(TriggerSettings):
     def _dict_repr(self):
-        rtn = super()._dict_repr()
+        rtn = OrderedDict()
         rtn['module'] = self.module
+        if self.module == 'ADC':
+            rtn['level'] = self.level
+        elif self.module == 'basic' or self.module == 'UART':
+            rtn['triggers'] = self.triggers
         return rtn
 
     @property
@@ -832,9 +837,10 @@ class HuskyTrigger(TriggerSettings):
 
         Available trigger modules:
          * 'basic': Trigger on a logic level or edge
-         * 'SAD':   Trigger from SAD module (CWPro only)
-         * 'DECODEIO': Trigger from decode_IO module (CWPro only)
-         * 'trace': Trigger from TraceWhisperer  (CW-Husky only)
+         * 'ADC':   Trigger on ADC sample exceeding a threshold
+         * 'SAD':   Trigger from SAD module
+         * 'UART':  Trigger from UART module
+         * 'trace': Trigger from TraceWhisperer
 
         :Getter: Return the active trigger module
 
@@ -855,8 +861,10 @@ class HuskyTrigger(TriggerSettings):
             module = self.cwe.MODULE_DECODEIO
         elif mode == "trace":
             module = self.cwe.MODULE_TRACE
+        elif mode == "ADC":
+            module = self.cwe.MODULE_ADC
         else:
-            raise ValueError("Invalid mode {}. Must be 'basic', 'SAD', 'UART', or 'trace'")
+            raise ValueError("Invalid mode {}. Must be 'basic', 'SAD', 'UART', 'ADC', or 'trace'")
 
         resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
                                        Validate=False, maxResp=1)
@@ -866,6 +874,30 @@ class HuskyTrigger(TriggerSettings):
                                        resp)
         self.last_module = mode
 
+    @property
+    def level(self):
+        """For triggering on ADC sample exceeding a treshold,
+        when scope.trigger.module = 'ADC'.
+        Sets the trigger threshold, in the range [-0.5, 0.5].
+        If positive, triggers when the ADC sample exceeds this setting;
+        if negative, triggers when the ADC sample is below this setting.
+        Only a single trigger is issued (i.e. multiple samples exceeding
+        the threshold do not each generate a trigger; cannot be used in
+        conjunction with segmented capture).
+        """
+        bits_per_sample = self.cwe.oa._bits_per_sample
+        offset = self.cwe.oa.offset
+        raw = int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_ADC_TRIGGER_LEVEL, Validate=False, maxResp=2), byteorder='little')
+        return raw / 2**bits_per_sample - offset
+
+    @level.setter
+    def level(self, val):
+        if not (-0.5 <= val <= 0.5):
+            raise ValueError("Out of range: [-0.5, 0.5]")
+        bits_per_sample = self.cwe.oa._bits_per_sample
+        offset = self.cwe.oa.offset
+        val = int((val + offset) * 2**bits_per_sample)
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_ADC_TRIGGER_LEVEL, list(int.to_bytes(val, length=2, byteorder='little')))
 
 class SADTrigger(util.DisableNewAttr):
     pass
@@ -919,6 +951,7 @@ class CWExtraSettings:
     MODULE_SADPATTERN = 0x02
     MODULE_DECODEIO = 0x03
     MODULE_TRACE = 0x04
+    MODULE_ADC = 0x05
 
     CLOCK_FPA = 0x00
     CLOCK_FPB = 0x01
