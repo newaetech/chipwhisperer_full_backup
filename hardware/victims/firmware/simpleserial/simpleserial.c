@@ -8,7 +8,7 @@
 #define MAX_SS_CMDS 16
 static int num_commands = 0;
 
-#define MAX_SS_LEN 192
+#define MAX_SS_LEN 256
 
 //#define SS_VER_1_0 0
 //#define SS_VER_1_1 1
