@@ -106,7 +106,7 @@ class Results(object):
         """Returns the partial guessing entropy of subkey."""
         if self.pge[bnum] == 255:
             # actually have to do the calculation
-            if not self.known_key:
+            if self.known_key is None:
                 return 255
             return self.calc_PGE(bnum)
         if self.maxValid[bnum] == False:
