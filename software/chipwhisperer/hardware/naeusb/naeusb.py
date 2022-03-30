@@ -620,7 +620,7 @@ class NAEUSB:
 
     def is_MPSSE_enabled(self):
         if self.check_feature("MPSSE_ENABLED"):
-            return self.readCtrl(0x22, 0x42, 1)
+            return self.readCtrl(0x22, 0x42, 1)[0] == 0x01
 
     def enable_MPSSE(self):
         if self.check_feature("MPSSE", True):
