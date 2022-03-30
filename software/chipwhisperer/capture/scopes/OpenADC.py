@@ -589,6 +589,9 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self._is_connected = True
         self.connectStatus = True
 
+        if self._getNAEUSB().is_MPSSE_enabled():
+            self.io.cwe.setAVRISPMode(1)
+
         return True
 
     def dis(self):

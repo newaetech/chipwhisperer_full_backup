@@ -50,6 +50,7 @@ SAM_FW_FEATURES = [
     "FPGA_TARGET_BULK_WRITE", #12
     "MPSSE", #13
     "TARGET_SPI", #14
+    "MPSSE_ENABLED", #15
 ]
 
 class CWFirmwareError(Exception):
@@ -64,7 +65,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[6]: '0.50.0',
         SAM_FW_FEATURES[7]: '0.50.0',
         SAM_FW_FEATURES[8]: '0.30.0',
-        SAM_FW_FEATURES[13]: '0.60.0'
+        SAM_FW_FEATURES[13]: '0.60.0',
+        SAM_FW_FEATURES[15]: '0.62.0',
     },
 
     0xACE2: {
@@ -79,7 +81,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[8]: '0.30.0',
         SAM_FW_FEATURES[9]: '0.52.0',
         SAM_FW_FEATURES[13]: '0.60.0',
-        SAM_FW_FEATURES[14]: '0.60.0'
+        SAM_FW_FEATURES[14]: '0.60.0',
+        SAM_FW_FEATURES[15]: '0.62.0',
     },
 
     0xACE3: {
@@ -94,7 +97,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[8]: '1.30.0',
         SAM_FW_FEATURES[9]: '1.52.0',
         SAM_FW_FEATURES[13]: '1.60.0',
-        SAM_FW_FEATURES[14]: '1.60.0'
+        SAM_FW_FEATURES[14]: '1.60.0',
+        SAM_FW_FEATURES[15]: '1.62.0',
     },
 
     0xACE5: {
@@ -109,7 +113,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[8]: '1.0.0',
         SAM_FW_FEATURES[9]: '1.0.0',
         SAM_FW_FEATURES[13]: '1.1.0',
-        SAM_FW_FEATURES[14]: '1.1.0'
+        SAM_FW_FEATURES[14]: '1.1.0',
+        SAM_FW_FEATURES[15]: '1.3.0',
     },
 
     0xC305: {
@@ -612,6 +617,10 @@ class NAEUSB:
             return self.usbtx.readCtrl(self.CMD_CDC_SETTINGS_EN, dlen=4)
         else:
             return [0, 0, 0, 0]
+
+    def is_MPSSE_enabled(self):
+        if self.check_feature("MPSSE_ENABLED"):
+            return self.readCtrl(0x22, 0x42, 1)
 
     def enable_MPSSE(self):
         if self.check_feature("MPSSE", True):
