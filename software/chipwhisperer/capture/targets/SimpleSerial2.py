@@ -711,7 +711,7 @@ class SimpleSerial2_CDC(SimpleSerial2):
         self.ser = None
 
     def close(self):
-        self.ser.dis()
+        self.ser.close()
 
     def con(self, scope, dev_path=None, interface=None, flush_on_err=True):
         import serial # type: ignore
