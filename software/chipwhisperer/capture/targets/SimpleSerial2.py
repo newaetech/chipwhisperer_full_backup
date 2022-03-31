@@ -186,7 +186,7 @@ class SimpleSerial2(TargetTemplate):
             return n
         return 0x00
 
-    def con(self, scope=None, flush_on_err=True):
+    def con(self, scope=None, flush_on_err=True, **kwargs):
         self.ser.con(scope)
         self._flush_on_err = flush_on_err
         self.reset_comms()

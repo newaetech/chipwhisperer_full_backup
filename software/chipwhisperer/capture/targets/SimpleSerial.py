@@ -167,7 +167,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         self.ser.connectStatus = self.connectStatus
         self.ser.selectionChanged()
 
-    def _con(self, scope = None):
+    def _con(self, scope = None, **kwargs):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
         self.ser.con(scope)
