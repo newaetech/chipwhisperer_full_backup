@@ -233,8 +233,8 @@ class GPIOSettings(util.DisableNewAttr):
         Default value is "serial_rx".
 
         :Getter:  Return one of the above strings. This shows how ChipWhisperer is 
-        driving this pin; it does not show its actual logic level. Use scope.io.tio_states
-        to see the actual logic level.
+                driving this pin; it does not show its actual logic level. Use
+                scope.io.tio_states to see the actual logic level.
 
         :Setter: Set the Target IO1 mode.
 
@@ -265,8 +265,8 @@ class GPIOSettings(util.DisableNewAttr):
         Default value is "serial_tx".
 
         :Getter:  Return one of the above strings. This shows how ChipWhisperer is 
-        driving this pin; it does not show its actual logic level. Use scope.io.tio_states
-        to see the actual logic level.
+                driving this pin; it does not show its actual logic level. Use
+                scope.io.tio_states to see the actual logic level.
 
         :Setter: Set the Target IO2 mode.
 
@@ -297,8 +297,8 @@ class GPIOSettings(util.DisableNewAttr):
         Default value is "high_z".
 
         :Getter:  Return one of the above strings. This shows how ChipWhisperer is 
-        driving this pin; it does not show its actual logic level. Use scope.io.tio_states
-        to see the actual logic level.
+                driving this pin; it does not show its actual logic level. Use
+                scope.io.tio_states to see the actual logic level.
 
         :Setter: Set the Target IO3 mode.
 
@@ -328,8 +328,8 @@ class GPIOSettings(util.DisableNewAttr):
         input.
 
         :Getter:  Return one of the above strings. This shows how ChipWhisperer is 
-        driving this pin; it does not show its actual logic level. Use scope.io.tio_states
-        to see the actual logic level.
+                driving this pin; it does not show its actual logic level. Use
+                scope.io.tio_states to see the actual logic level.
 
         :Setter: Set the Target IO4 mode
 
@@ -385,7 +385,7 @@ class GPIOSettings(util.DisableNewAttr):
          * "disabled" / "default" / "high_z" / None: undriven
 
         :Getter:  Return one of "high", "low", or "high_z". This shows how ChipWhisperer
-        is driving this pin; it does not show its actual logic level.
+                is driving this pin; it does not show its actual logic level.
 
         :Setter: Set the pin's state
 
