@@ -24,10 +24,12 @@
 
 import time
 
+
 from ._base import TargetTemplate
 from .simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
 
-from chipwhisperer.logging import *
+from ...logging import *
+from ...common.utils import util
 class SimpleSerial2_Err:
     OK = 0
     ERR_CMD = 1
@@ -35,6 +37,8 @@ class SimpleSerial2_Err:
     ERR_TIMEOUT = 3
     ERR_LEN = 4
     ERR_FRAME_BYTE = 5
+
+bytearray = util.bytearray
 
 
 class SimpleSerial2(TargetTemplate):
@@ -157,6 +161,7 @@ class SimpleSerial2(TargetTemplate):
             if (buf[i] == self._frame_byte):
                 buf[last] = i - last
                 last = i
+                target_logger.debug("Stuffing byte {}".format(i))
         return buf
 
     def _unstuff_data(self, buf):
@@ -171,6 +176,7 @@ class SimpleSerial2(TargetTemplate):
         l = len(buf) - 1
         sentinel = 0
         while n < l:
+            target_logger.debug("Unstuff position {}".format(n))
             tmp = buf[n]
             buf[n] = self._frame_byte
             n += tmp
@@ -489,11 +495,11 @@ class SimpleSerial2(TargetTemplate):
         else:
             recv_len = 5 + pay_len #cmd, len, data, crc
         response = self.read(recv_len, timeout=timeout)
-        target_logger.debug("1st read: {}".format(response))
+        target_logger.debug("1st read: {}".format(bytearray(response.encode())))
 
         if response is None or len(response) < recv_len:
             self.flush_on_error()
-            target_logger.warning("Read timed out" + response)
+            target_logger.warning("Read timed out: " + response)
             return None
 
         response = bytearray(response.encode('latin-1'))
@@ -513,7 +519,7 @@ class SimpleSerial2(TargetTemplate):
             # user didn't specify, do second read based on sent length
             target_logger.debug("Length not specified, reading {} bytes (plus CRC and frame byte) based on packet".format(l))
             x = self.read(l+2, timeout=timeout)
-            target_logger.debug("Second read: {}".format(x))
+            target_logger.debug("2nd read: {}".format(bytearray(x.encode())))
             if x is None:
                 target_logger.warning("Read timed out")
                 self.flush_on_error()
@@ -592,7 +598,8 @@ class SimpleSerial2(TargetTemplate):
         buf = self._stuff_data(buf)
         self.write(buf)
         target_logger.debug("Sending: {}".format(bytearray(buf)))
-        target_logger.debug("Unstuffed data: {}".format(bytearray(self._unstuff_data(buf))))
+        self._unstuff_data(buf)
+        target_logger.debug("Unstuffed data: {}".format(bytearray(buf)))
 
     def reset_comms(self):
         """ Try to reset communication with the target and put it in
@@ -602,7 +609,9 @@ class SimpleSerial2(TargetTemplate):
         """
         self.write([0x00]*2) # make sure target not processing a command
         time.sleep(0.05)
-        self.flush()
+        while self.in_waiting() > 0:
+            self.flush()
+            time.sleep(0.05)
 
     def write(self, data):
         self.ser.write(data)
