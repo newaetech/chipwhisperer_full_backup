@@ -38,7 +38,7 @@ class SimpleSerial2_Err:
     ERR_LEN = 4
     ERR_FRAME_BYTE = 5
 
-bytearray = util.bytearray
+bytearray = util.bytearray # type: ignore
 
 
 class SimpleSerial2(TargetTemplate):
