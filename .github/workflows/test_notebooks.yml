@@ -4,6 +4,9 @@ on: push
 
 jobs:
   run_test:
+    defaults:
+      run:
+        shell: bash
     name: Build docker image
     runs-on: self-hosted
     steps:
