@@ -9,4 +9,5 @@ jobs:
     steps:
       - name: Build image
         run: >-
+          source ~/.bashrc
           build_image
