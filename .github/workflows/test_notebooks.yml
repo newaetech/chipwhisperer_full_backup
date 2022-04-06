@@ -8,5 +8,4 @@ jobs:
     runs-on: self-hosted
     steps:
        - run: >- 
-          source ~/.bashrc &&
-          build_image
+          build_test
