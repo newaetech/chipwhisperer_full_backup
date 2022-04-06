@@ -7,7 +7,5 @@ jobs:
     name: Build docker image
     runs-on: self-hosted
     steps:
-      - name: Build image
-        run: >-
-          source ~/.bashrc
-          build_image
+       - run: source ~/.bashrc
+       - run: build_image
