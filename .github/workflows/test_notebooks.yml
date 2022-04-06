@@ -1,0 +1,12 @@
+name: Run jupyter notebook tests
+
+on: push
+
+jobs:
+  run_test:
+    name: Build docker image
+    runs-on: self-hosted
+    steps:
+      - name: Build image
+        run: >-
+          build_image
