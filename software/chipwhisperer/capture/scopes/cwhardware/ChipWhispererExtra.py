@@ -44,6 +44,11 @@ ADDR_I2CSTATUS = 47
 ADDR_I2CDATA = 48
 ADDR_IOROUTE = 55
 ADDR_IOREAD = 59
+ADDR_SAD_REF = 100
+ADDR_SAD_THRESHOLD = 101
+ADDR_SAD_BITS_PER_SAMPLE = 103
+ADDR_SAD_REF_SAMPLES = 104
+ADDR_SAD_MULTIPLE_TRIGGERS = 106
 
 # API aliases for the TIO settings
 _tio_alias = {
@@ -818,11 +823,19 @@ class ProTrigger(TriggerSettings):
 
 
 class HuskyTrigger(TriggerSettings):
+    """Husky trigger object.
+    Communicates with all the trigger modules inside CW-Husky.
+    Usage depends on the active trigger module.
+    (TODO)
+    """
+
     def _dict_repr(self):
         rtn = OrderedDict()
         rtn['module'] = self.module
         if self.module == 'ADC':
             rtn['level'] = self.level
+        if self.module == 'SAD':
+            rtn['threshold'] = self.threshold
         elif self.module == 'basic' or self.module == 'UART':
             rtn['triggers'] = self.triggers
         return rtn
@@ -856,7 +869,7 @@ class HuskyTrigger(TriggerSettings):
         if mode == "basic":
             module = self.cwe.MODULE_BASIC
         elif mode == "SAD":
-            module = self.cwe.MODULE_SADPATTERN # TODO
+            module = self.cwe.MODULE_SADPATTERN
         elif mode == "UART":
             module = self.cwe.MODULE_DECODEIO
         elif mode == "trace":
@@ -898,6 +911,89 @@ class HuskyTrigger(TriggerSettings):
         offset = self.cwe.oa.offset
         val = int((val + offset) * 2**bits_per_sample)
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_ADC_TRIGGER_LEVEL, list(int.to_bytes(val, length=2, byteorder='little')))
+
+    @property
+    def threshold(self):
+        """Threshold for SAD triggering.
+        If the sum of absolute differences for the past
+        scope.trigger._sad_reference_length ADC samples (measured in 8-bit
+        resolution) is less than <threshold>, a trigger will be generated.
+        """
+        return  int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_SAD_THRESHOLD, Validate=False, maxResp=4), byteorder='little')
+
+    @threshold.setter
+    def threshold(self, val):
+        if not (0 < val < 2**32):
+            raise ValueError("Out of range")
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SAD_THRESHOLD, list(int.to_bytes(val, length=4, byteorder='little')))
+
+    @property
+    def sad_reference(self):
+        """Reference waveform used for SAD triggering. Can be provided as integers or floats,
+        but returned as integers. Can be provided in 8-bit or 12-bit sample resolution, but
+        returned as scope.trigger._sad_bits_per_sample resolution. Can be of any length, but
+        only the first scope.trigger._sad_reference_length samples are used.
+        """
+        return list(self.cwe.oa.sendMessage(CODE_READ, ADDR_SAD_REF, Validate=False, maxResp=self._sad_reference_length))
+
+    @sad_reference.setter
+    def sad_reference(self, wave, bits_per_sample=None):
+        if bits_per_sample is None:
+            wave_bits_per_sample = self.cwe.oa._bits_per_sample
+        reflen = self._sad_reference_length
+        if len(wave) < reflen:
+            scope_logger.error('Reference provided is too short, it needs to be at least %d samples long' % reflen)
+        # first, trim and translate reference waveform to ints:
+        if type(wave[0]) is not int:
+            refints = []
+            for s in wave[:reflen]:
+                refints.append(int(s*2**wave_bits_per_sample) + 2**(wave_bits_per_sample-1))
+        else:
+            refints = wave[:reflen]
+        # next: if the reference resolution is 12 bits/sample, reduce it to 8:
+        if self._sad_bits_per_sample != 8:
+            scope_logger.error('Internal error: FPGA requires SAD reference resolution to be %d bits per sample.' % self._sad_bits_per_sample)
+        else:
+            if wave_bits_per_sample == 12:
+                for i in range(len(refints)):
+                    refints[i] = refints[i] >> 4
+            self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SAD_REF, refints)
+            
+
+    @property
+    def _sad_bits_per_sample(self):
+        """Read-only. Returns the number of bits per sample used by the SAD module (which is independent
+        of scope.adc.bits_per_sample). Build-time parameter.
+        """
+        return self.cwe.oa.sendMessage(CODE_READ, ADDR_SAD_BITS_PER_SAMPLE, Validate=False, maxResp=1)[0]
+
+    @property
+    def _sad_reference_length(self):
+        """Read-only. Returns the number of samples that are used by the SAD module. Build-time parameter.
+        """
+        return  self.cwe.oa.sendMessage(CODE_READ, ADDR_SAD_REF_SAMPLES, Validate=False, maxResp=1)[0]
+
+    @property
+    def sad_multiple_triggers(self):
+        """Set whether the SAD trigger module can issue multiple triggers once armed.
+        If False, only one trigger is issued per arming, even if multiple matching patterns are observed.
+        If True, beware that this can result in triggers being too close together which can result in
+        segmenting errors.
+        """
+        if self.cwe.oa.sendMessage(CODE_READ, ADDR_SAD_MULTIPLE_TRIGGERS, Validate=False, maxResp=1)[0]:
+            return True
+        else:
+            return False
+
+    @sad_multiple_triggers.setter
+    def sad_multiple_triggers(self, val):
+        if val:
+            self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SAD_MULTIPLE_TRIGGERS, [1])
+        else:
+            self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SAD_MULTIPLE_TRIGGERS, [0])
+
+
+
 
 class SADTrigger(util.DisableNewAttr):
     pass
