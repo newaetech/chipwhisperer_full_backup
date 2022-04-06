@@ -8,5 +8,8 @@ jobs:
     runs-on: self-hosted
     steps:
        - run: >- 
+          echo $USER &&
+          pwd &&
+          cat ~/.bashrc &&
           source ~/.bashrc &&
           build_test
