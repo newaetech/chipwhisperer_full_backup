@@ -10,7 +10,7 @@ jobs:
       - name: build_test
         shell: bash -l {0}
         run: |
-            if [ -z $(docker ps -q) ]; then
+            if [ -z "$(docker ps -q)" ]; then
               echo "Running build"
               cd ~/chipwhisperer/jupyter/tests/docker
               docker build . -t cw-testing-server
