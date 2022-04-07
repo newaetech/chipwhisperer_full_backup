@@ -11,10 +11,10 @@ jobs:
         shell: bash -l {0}
         run: >-
           bash -c '
-          echo $USER 
-          pwd 
-          cat ~/.bashrc 
-          chmod +x ~/.bashrc
-          source ~/.bashrc 
-          echo $MY_TEST_VAR 
+          echo $USER ;
+          pwd ;
+          cat ~/.bashrc ;
+          chmod +x ~/.bashrc;
+          source ~/.bashrc ;
+          echo $MY_TEST_VAR ;
           build_test '
