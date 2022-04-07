@@ -14,3 +14,4 @@ jobs:
           source ~/.bashrc 
           echo $MY_TEST_VAR 
           build_test
+        shell: /bin/bash
