@@ -7,13 +7,37 @@ jobs:
     name: Build docker image
     runs-on: self-hosted
     steps:
+      - name: Update repo
+        run: |
+            cd ~/chipwhisperer
+            git pull
+            cd jupyter
+            git pull
       - name: build_test
         shell: bash -l {0}
         run: |
             if [ -n "$(docker ps -q)" ]; then
+              echo "docker already running"
+              docker ps
               exit 1
             fi
             echo "Running build"
             cd ~/chipwhisperer/jupyter/tests/docker
             docker build . -t cw-testing-server
+
+            CURRENT_TEST_ID=$(docker run -d --privileged \
+              -v /dev:/dev \
+              -v $HOME/tutorials/:/home/cwtests/chipwhisperer/tutorials \
+              -v $HOME/results/:/home/cwtests/results \
+              -e TO_EMAILS="" \
+              -e FROM_EMAIL="" \
+              -e SENDGRID_API_KEY="" \
+              -e HOURS="once" \
+              -e CHECK_GIT="NO" \
+              cw-testing-server)
+
+            while [ -n "$(docker ps -q)" ]; do
+              echo "Running test..."
+              sleep 1
+            done
 
