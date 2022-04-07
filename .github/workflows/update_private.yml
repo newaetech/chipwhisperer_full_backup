@@ -12,4 +12,4 @@ jobs:
           workflow: private_workflow
           repo: newaetech/ChipWhisperer-Private-Tests
           token: ${{ secrets.PRIVATE_TEST_PUSH }}
-          ref: ${{ github.event.push.head.ref }}
+          ref: refs/heads/main
