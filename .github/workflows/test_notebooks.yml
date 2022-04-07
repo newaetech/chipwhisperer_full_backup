@@ -44,13 +44,15 @@ jobs:
             sleep 1
             while [ -n "$(docker ps -q)" ]; do
               echo "Running test..."
-              sleep 1
+              sleep 30
             done
       - name: check_results
         run: |
           cd ~/
           python interpret_results.py
-          if [ -n $? ]; then
-            exit 1
+          if [ $? -eq 0 ]; then
+            echo "all tests passed"
+            exit 0
           fi
+          exit 1
 
