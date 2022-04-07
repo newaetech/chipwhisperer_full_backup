@@ -26,6 +26,9 @@ jobs:
             cd ~/chipwhisperer/jupyter/tests/docker
             docker build . -t cw-testing-server
 
+            echo "Clearing results folder"
+            cd ~/results && rm -rf *
+
             CURRENT_TEST_ID=$(docker run -d --privileged \
               -v /dev:/dev \
               -v $HOME/tutorials/:/home/cwtests/chipwhisperer/tutorials \
@@ -43,4 +46,11 @@ jobs:
               echo "Running test..."
               sleep 1
             done
+      - name: check_results
+        run: |
+          cd ~/
+          python interpret_results.py
+          if [ -n $? ]; then
+            exit 1
+          fi
 
