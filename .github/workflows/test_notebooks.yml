@@ -7,11 +7,12 @@ jobs:
     name: Build docker image
     runs-on: self-hosted
     steps:
-       - run: |
-          echo $USER 
-          pwd 
-          cat ~/.bashrc 
-          source ~/.bashrc 
-          echo $MY_TEST_VAR 
-          build_test
-        shell: /bin/bash
+      - name: build_test
+      - shell: bash -l {0}
+      - run: |
+        echo $USER 
+        pwd 
+        cat ~/.bashrc 
+        source ~/.bashrc 
+        echo $MY_TEST_VAR 
+        build_test
