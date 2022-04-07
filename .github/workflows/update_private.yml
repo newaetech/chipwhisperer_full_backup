@@ -9,6 +9,6 @@ jobs:
     steps:
       - uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: run_test
+          workflow: private_workflow
           repo: newaetech/ChipWhisperer-Private-Tests
           token: ${{ secrets.PRIVATE_TEST_PUSH }}
