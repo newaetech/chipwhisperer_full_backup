@@ -9,6 +9,7 @@ jobs:
     steps:
       - name: Update repo
         run: |
+            echo "Pulling changes"
             cd ~/chipwhisperer
             git pull
             cd jupyter
