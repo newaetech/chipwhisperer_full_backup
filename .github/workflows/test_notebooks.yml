@@ -36,7 +36,9 @@ jobs:
               -e HOURS="once" \
               -e CHECK_GIT="NO" \
               cw-testing-server)
-
+            
+            echo $CURRENT_TEST_ID
+            sleep 1
             while [ -n "$(docker ps -q)" ]; do
               echo "Running test..."
               sleep 1
