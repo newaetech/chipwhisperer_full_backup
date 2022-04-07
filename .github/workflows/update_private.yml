@@ -4,9 +4,11 @@ on: push
 
 jobs:
   trigger_action:
-    - name: Invoke workflow in another repo with inputs
-      uses: benc-uk/workflow-dispatch@v1
-      with:
-        workflow: Run Tests
-        repo: newaetech/ChipWhisperer-Private-Tests
-        token: ${{ secrets.PRIVATE_TEST_PUSH }}
+    name: Push dispatch
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: test_notebooks
+          repo: newaetech/ChipWhisperer-Private-Tests
+          token: ${{ secrets.PRIVATE_TEST_PUSH }}
