@@ -10,7 +10,16 @@ jobs:
       - name: build_test
         shell: bash -l {0}
         run: |
-            export MY_TEST_VAR="hello"
-            echo $MY_TEST_VAR
+            test -z $(docker ps -q)
             cd ~/chipwhisperer/jupyter/tests/docker
             docker build . -t cw-testing-server
+            CURRENT_TEST_ID=$(docker run -d --privileged \
+              -v /dev:/dev \
+              -v $HOME/tutorials/:/home/cwtests/chipwhisperer/tutorials \
+              -v $HOME/results/:/home/cwtests/results \
+              -e TO_EMAILS="$TO_EMAILS" \
+              -e FROM_EMAIL="$FROM_EMAIL" \
+              -e SENDGRID_API_KEY="$SENDGRID_KEY" \
+              -e HOURS="$RUN_HOURS" \
+              -e CHECK_GIT="$CHECK_GIT" \
+              cw-testing-server)
