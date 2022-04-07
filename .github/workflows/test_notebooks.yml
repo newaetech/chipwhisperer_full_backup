@@ -9,12 +9,8 @@ jobs:
     steps:
       - name: build_test
         shell: bash -l {0}
-        run: >-
-          bash -c '
-          echo $USER ;
-          pwd ;
-          cat ~/.bashrc ;
-          chmod +x ~/.bashrc;
-          source ~/.bashrc ;
-          echo $MY_TEST_VAR ;
-          build_test '
+        run: |
+            export MY_TEST_VAR="hello"
+            echo $MY_TEST_VAR
+            cd ~/chipwhisperer/jupyter/tests/docker
+            docker build . -t cw-testing-server
