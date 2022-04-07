@@ -8,11 +8,11 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: build_test
-      - shell: bash -l {0}
-      - run: |
-        echo $USER 
-        pwd 
-        cat ~/.bashrc 
-        source ~/.bashrc 
-        echo $MY_TEST_VAR 
-        build_test
+        shell: bash -l {0}
+        run: |
+          echo $USER 
+          pwd 
+          cat ~/.bashrc 
+          source ~/.bashrc 
+          echo $MY_TEST_VAR 
+          build_test
