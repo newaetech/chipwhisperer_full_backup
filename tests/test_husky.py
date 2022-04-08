@@ -232,11 +232,16 @@ testSegmentData = [
 
 
 testGlitchOffsetData = [
-    # offset    oversamp    desc
-    (0,         40,         ''),
-    (400,       40,         ''),
-    (800,       40,         ''),
-    (1600,      40,         ''),
+    # clock     margin  offset    oversamp    desc
+    (10e6,      0.1,    0,         40,         ''),
+    (10e6,      0.1,    400,       40,         ''),
+    (10e6,      0.1,    800,       40,         ''),
+    (10e6,      0.1,    1600,      40,         ''),
+    (20e6,      0.2,    200,       20,         ''),
+    (20e6,      0.2,    500,       20,         ''),
+    (100e6,     0.6,    0,         5,          ''),
+    (100e6,     0.6,    50,        5,          ''),
+    (100e6,     0.6,    100,       5,          ''),
 ]
 
 testGlitchWidthData = [
@@ -248,33 +253,45 @@ testGlitchWidthData = [
 ]
 
 testGlitchOutputWidthSweepData = [
-    # offset    oversamp    steps_per_point desc
-    (0,         40,         2,              ''),
-    (600,       40,         2,              ''),
-    (1200,      40,         2,              ''),
-    (-1200,     40,         2,              ''),
-    (0,         30,         2,              ''),
-    (0,         20,         2,              ''),
+    # clock     offset    oversamp    steps_per_point desc
+    (10e6,      0,         40,         2,              ''),
+    (10e6,      600,       40,         2,              ''),
+    (10e6,      1200,      40,         2,              ''),
+    (10e6,      -1200,     40,         2,              ''),
+    (10e6,      0,         20,         4,              ''),
+    (50e6,      200,       8,          10,             ''),
+    (100e6,     400,       4,          20,             ''),
+    (200e6,     600,       2,          40,             ''),
 ]
 
 testGlitchOutputOffsetSweepData = [
     # TODO: these used to pass at oversamp=40, but that may be too aggressive?
-    # width     oversamp    steps_per_point desc
-    (200,       35,         2,              ''),
-    (-200,      35,         2,              ''),
-    (1000,      35,         2,              ''),
-    (-1000,     35,         2,              ''),
-    (3000,      35,         2,              ''),
-    (-3000,     35,         2,              ''),
-    (500,       30,         2,              ''),
-    (500,       20,         2,              ''),
+    # clock     width     oversamp    steps_per_point desc
+    (10e6,      200,       35,         2,              ''),
+    (10e6,      -200,      35,         2,              ''),
+    (10e6,      1000,      35,         2,              ''),
+    (10e6,      -1000,     35,         2,              ''),
+    (10e6,      3000,      35,         2,              ''),
+    (10e6,      -3000,     35,         2,              ''),
+    (10e6,      500,       30,         2,              ''),
+    (10e6,      500,       20,         2,              ''),
+    (50e6,      100,       8,          10,             ''),
+    (50e6,      200,       8,          10,             ''),
+    (100e6,     100,       4,          20,             ''),
+    (100e6,     150,       4,          20,             ''),
+    (125e6,     50,        4,          30,             ''),
+    (125e6,     70,        4,          30,             ''),
+    # note: finding glitches at 200 MHz doesn't work reliably because oversampling isn't high enough
 ]
 
 testGlitchOutputDoublesData = [
-    #vco        glitches    oversamp    stepsize    desc
-    (600e6,     1,          20,         1,          ''),
-    (1200e6,    1,          20,         1,          ''),
-    (600e6,     2,          20,         1,          ''),
+    clock      vco        glitches    oversamp    stepsize    desc
+    (10e6,      600e6,     1,          20,         1,          ''),
+    (10e6,      1200e6,    1,          20,         1,          ''),
+    (10e6,      600e6,     2,          20,         1,          ''),
+    (50e6,      600e6,     1,          8,          1,          ''),
+    (100e6,     600e6,     1,          4,          1,          ''),
+    (100e6,     600e6,     2,          4,          1,          ''),
 ]
 
 testRWData = [
@@ -427,18 +444,16 @@ def setup_glitch(offset, width, oversamp):
     assert scope.LA.locked
 
 
-@pytest.mark.parametrize("offset, oversamp, desc", testGlitchOffsetData)
+@pytest.mark.parametrize("clock, margin, offset, oversamp, desc", testGlitchOffsetData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
-def test_glitch_offset(offset, oversamp, desc):
-    # first set clock back to 10M:
-    scope.clock.clkgen_freq = 10e6
+def test_glitch_offset(clock, margin, offset, oversamp, desc):
+    scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = 1
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert scope.clock.adc_freq == 10e6
+    assert scope.clock.adc_freq == clock
 
     setup_glitch(offset, 0, oversamp)
-    margin = 0.1
 
     # glitch and measure:
     scope.LA.arm()
@@ -449,6 +464,7 @@ def test_glitch_offset(offset, oversamp, desc):
 
     # check offset:
     offset_percent = offset / scope.glitch.phase_shift_steps * 2 # (100% = fully offset)
+    assert offset_percent < 1, "Internal error: offset too big."
     mmcm1_not_equal = len(np.where(abs(source-mmcm1out) > 0)[0])
     points = len(source)
     ratio = mmcm1_not_equal / points
@@ -478,9 +494,15 @@ def test_glitch_width(width, oversamp, desc):
     scope.glitch.enabled = False
     scope.LA.enabled = False
 
-@pytest.mark.parametrize("offset, oversamp, steps_per_point, desc", testGlitchOutputWidthSweepData)
+@pytest.mark.parametrize("clock, offset, oversamp, steps_per_point, desc", testGlitchOutputWidthSweepData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
-def test_glitch_output_sweep_width(reps, offset, oversamp, steps_per_point, desc):
+def test_glitch_output_sweep_width(reps, clock, offset, oversamp, steps_per_point, desc):
+    scope.clock.clkgen_freq = clock
+    scope.clock.adc_mul = 1
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    assert scope.clock.adc_freq == clock
+
     margin = 2
     setup_glitch(offset, 0, oversamp)
     stepsize = int(scope.glitch.phase_shift_steps / scope.LA.oversampling_factor / steps_per_point)
@@ -521,14 +543,20 @@ def test_glitch_output_sweep_width(reps, offset, oversamp, steps_per_point, desc
     scope.LA.enabled = False
 
 
-@pytest.mark.parametrize("width, oversamp, steps_per_point, desc", testGlitchOutputOffsetSweepData)
+@pytest.mark.parametrize("clock, width, oversamp, steps_per_point, desc", testGlitchOutputOffsetSweepData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
-def test_glitch_output_sweep_offset(reps, width, oversamp, steps_per_point, desc):
+def test_glitch_output_sweep_offset(reps, clock, width, oversamp, steps_per_point, desc):
     # This doesn't verify the offset itself -- that's covered by test_glitch_offset().
     # What it does verify is:
     # 1. that the offset change as the offset setting is swept;
     # 2. that there are no "double glitches" - by looking at the glitches themselves, but also by looking
     #    at the width of the glitch "go" signal
+    scope.clock.clkgen_freq = clock
+    scope.clock.adc_mul = 1
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    assert scope.clock.adc_freq == clock
+
     margin = 2
     setup_glitch(0, width, oversamp)
     stepsize = int(scope.glitch.phase_shift_steps / scope.LA.oversampling_factor / steps_per_point)
@@ -574,13 +602,19 @@ def test_glitch_output_sweep_offset(reps, width, oversamp, steps_per_point, desc
     scope.LA.enabled = False
 
 
-@pytest.mark.parametrize("vco, glitches, oversamp, stepsize, desc", testGlitchOutputDoublesData)
+@pytest.mark.parametrize("clock, vco, glitches, oversamp, stepsize, desc", testGlitchOutputDoublesData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
-def test_glitch_output_doubles(reps, vco, glitches, oversamp, stepsize, desc):
+def test_glitch_output_doubles(reps, clock, vco, glitches, oversamp, stepsize, desc):
     # Similar to test_glitch_output_sweep_offset() but only look at the width of glitch "go".
     # Intended to be a more exhaustive test for double glitches, by sweeping with a finer increment.
     # Since double glitches are an MMCM1/offset problem (width has no effect), we save having to check for different widths.
     # Use a higher VCO frequency for finer grain, and reduce LA oversampling since that doesn't matter as much here.
+    scope.clock.clkgen_freq = clock
+    scope.clock.adc_mul = 1
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    assert scope.clock.adc_freq == clock
+
     setup_glitch(0, 0, oversamp)
     scope.clock.pll.update_fpga_vco(vco)
     scope.glitch.repeat = glitches
