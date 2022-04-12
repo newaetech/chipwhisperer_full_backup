@@ -1,6 +1,6 @@
 # ChipWhisperer
 
-[![Documentation Status](https://readthedocs.org/projects/chipwhisperer/badge/?version=latest)](https://chipwhisperer.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/chipwhisperer/badge/?version=latest)](https://chipwhisperer.readthedocs.io/en/latest/?badge=latest) | [![check_tests](https://github.com/newaetech/ChipWhisperer-Test-Results/actions/workflows/check_tests.yml/badge.svg)](https://github.com/newaetech/ChipWhisperer-Test-Results/actions/workflows/check_tests.yml)
 
 [![Discord](https://img.shields.io/discord/747196318044258365?logo=discord)](https://discord.gg/chipwhisperer) | [Hardware Docs](https://rtfm.newae.com) | [Documentation](https://chipwhisperer.readthedocs.io) | [Forum](http://forum.newae.com) | [Store](https://store.newae.com) | [NewAE](http://newae.com)
 
