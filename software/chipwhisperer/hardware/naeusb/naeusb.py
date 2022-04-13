@@ -64,7 +64,7 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[4]: '0.30.0',
         SAM_FW_FEATURES[6]: '0.50.0',
         SAM_FW_FEATURES[7]: '0.50.0',
-        SAM_FW_FEATURES[8]: '0.30.0',
+        SAM_FW_FEATURES[8]: '0.23.0',
         SAM_FW_FEATURES[13]: '0.60.0',
         SAM_FW_FEATURES[15]: '0.62.0',
     },
