@@ -169,4 +169,4 @@ galNI=gal2,gal3,gal1,gal1
 hw = [bin(i).count('1') for i in range(256)]
 
 t_table_hw = [2*hw[sbox[i]] + hw[gal2[sbox[i]]] + hw[gal3[sbox[i]]] for i in range(256)]
-t_table_hw_dec = [hw[gal9[sbox[i]]] + hw[gal11[sbox[i]]] + hw[gal13[sbox[i]]] + hw[gal14[sbox[i]]] for i in range(256)]
+t_table_hw_dec = [hw[gal9[i_sbox[i]]] + hw[gal11[i_sbox[i]]] + hw[gal13[i_sbox[i]]] + hw[gal14[i_sbox[i]]] for i in range(256)]
