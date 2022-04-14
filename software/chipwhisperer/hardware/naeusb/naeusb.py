@@ -104,7 +104,7 @@ SAM_FW_FEATURE_BY_DEVICE = {
     0xACE5: {
         SAM_FW_FEATURES[0]: '1.0.0',
         SAM_FW_FEATURES[1]: '1.0.0',
-        SAM_FW_FEATURES[2]: '1.0.0',
+        SAM_FW_FEATURES[2]: '1.1.0',
         SAM_FW_FEATURES[3]: '1.0.0',
         SAM_FW_FEATURES[4]: '1.0.0',
         SAM_FW_FEATURES[5]: '1.0.0',
@@ -696,9 +696,9 @@ class NAEUSB:
 
         latest = fwver[0] > fw_latest[0] or (fwver[0] == fw_latest[0] and fwver[1] >= fw_latest[1])
         if not latest:
-            naeusb_logger.warning('Your firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
-                             '. Suggested to update firmware, as you may experience errors' +
-                             '\nSee https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update')
+            naeusb_logger.warning('Your firmware (%d.%d) is outdated - latest is %d.%d' 
+                             % (fwver[0], fwver[1], fw_latest[0], fw_latest[1]) +
+                             'See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information')
 
         return self.usbtx.pid
 
