@@ -323,10 +323,31 @@ testTraceSegmentData = [
     ('swo',     21,         '21triggers'),
 ]
 
+testSADTriggerData = [
+    #bits   threshold   offset  reps    desc
+    (8,     25,         0,      50,     '8bits'),
+    (12,    25,         0,      50,     '12bits'),
+]
+
+testUARTTriggerData = [
+    #clock      pin     pattern     reps    desc
+    (10e6,      'tio1', 'r7DF7',    10,     'tio1_10M'),
+    (10e6,      'tio2', 'p000000',  10,     'tio2_10M'),
+    (20e6,      'tio1', 'r7DF7',    10,     'tio1_20M'),
+    (20e6,      'tio2', 'p000000',  10,     'tio2_20M'),
+]
+
+testADCTriggerData = [
+    #gain       threshold   reps    desc
+    (1,         0.9,        3,     ''),
+    (10,        0.9,        3,     ''),
+    (1,         0.5,        3,     ''),
+    (10,        0.5,        3,     ''),
+]
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '3/22/2022, 15:19'
+    assert scope.fpga_buildtime == '4/14/2022, 09:50'
 
 
 def test_fw_version():
@@ -512,7 +533,7 @@ def setup_trace(interface):
     trace.capture.mode = 'while_trig'
     trace.set_isync_matches(addr0=0x080018c4, addr1=0x0800188c, match='both')
     trace.set_periodic_pc_sampling(enable=0)
-
+    trace.capture.use_husky_arm = False
 
 
 @pytest.mark.parametrize("offset, oversamp, desc", testGlitchOffsetData)
@@ -934,6 +955,130 @@ def test_segment_trace (interface, triggers, desc):
     assert trace.capture.triggers_generated == triggers
     assert trace.capture.matched_pattern_data[:6] == '030820'
     trace.enabled = False
+
+@pytest.mark.parametrize("bits, threshold, offset, reps, desc", testSADTriggerData)
+@pytest.mark.skipif(not target_attached, reason='No target detected')
+def test_sad_trigger (bits, threshold, offset, reps, desc):
+    # TODO: there's something weird with this test where often the first call (first element of testSADTriggerData) passes
+    # and the next one fails. It's not a 8-bit/12-bit thing because if you reverse the order, the same holds. And sometimes everything passes.
+    # TBD...
+    scope.errors.clear()
+    scope.trace.enabled = False
+    scope.trace.target = None
+    scope.default_setup()
+    reset_target()
+    time.sleep(0.5)
+    target.baud = 38400
+    scope.adc.clip_errors_disabled = False
+    scope.adc.lo_gain_errors_disabled = False
+    scope.adc.segment_cycle_counter_en = False
+    scope.adc.segments = 1
+    scope.adc.samples = scope.trigger._sad_reference_length * 2
+    scope.adc.presamples = 0
+    scope.adc.bits_per_sample = bits
+    scope.adc.offset = offset
+    scope.trigger.sad_multiple_triggers = False
+
+    scope.trigger.module = 'basic'
+    scope.gain.db = 10
+    reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+    assert scope.adc.errors == False, scope.adc.errors
+
+    scope.trigger.sad_reference = reftrace.wave
+    scope.trigger.threshold = threshold
+    scope.trigger.module = 'SAD'
+
+    scope.adc.presamples = scope.trigger._sad_reference_length + 6
+    for r in range(reps):
+        sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+        assert scope.adc.errors == False
+        sad = 0
+        for i in range(scope.trigger._sad_reference_length):
+            sad += abs(reftrace.wave[i] - sadtrace.wave[i])
+        sad = int(sad*2**scope.trigger._sad_bits_per_sample)
+        assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d)' %(sad, threshold, r)
+
+
+@pytest.mark.parametrize("clock, pin, pattern, reps, desc", testUARTTriggerData)
+@pytest.mark.skipif(not target_attached, reason='No target detected')
+def test_uart_trigger (clock, pin, pattern, reps, desc):
+    scope.default_setup()
+    scope.clock.clkgen_freq = clock
+    scope.clock.adc_mul = 1
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    assert scope.clock.adc_freq == clock
+    reset_target()
+    time.sleep(0.1)
+    target.baud = 38400 * clock / 1e6 / 7.37
+
+    scope.gain.db = 10
+    scope.adc.clip_errors_disabled = False
+    scope.adc.lo_gain_errors_disabled = True
+    scope.adc.segment_cycle_counter_en = False
+    scope.adc.segments = 1
+    scope.adc.samples = 128
+    scope.adc.presamples = 0
+
+    scope.trigger.module = 'UART'
+    scope.trigger.triggers = pin
+    scope.UARTTrigger._uart_reset()
+    assert scope.UARTTrigger.uart_state == 'ERX_IDLE', 'UART is still stuck!'
+    scope.UARTTrigger.enabled = True
+    scope.UARTTrigger.baud = target.baud
+    scope.UARTTrigger.set_pattern_match(0, pattern)
+    scope.UARTTrigger.trigger_source = 0
+
+    for i in range(reps):
+        start_count = scope.UARTTrigger.matched_pattern_counts[0]
+        powertrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+        assert powertrace is not None, 'UART-triggered capture failed'
+        if pin == 'tio1':
+            ss_comm = target.simpleserial_last_read
+        elif pin == 'tio2':
+            ss_comm = target.simpleserial_last_sent
+        else:
+            raise ValueError('Not supported: please trigger from tio1 or tio2')
+        # we don't check the power trace itself (e.g. measure SAD against a tio4-triggered capture with the correct offset), but we check
+        # several other things which indirectly tell us that the UART-triggered capture worked:
+        assert ss_comm[:len(pattern)] == pattern, "Target last read (%s) doesn't match pattern (%s)" % (ss_comm, pattern)
+        assert scope.UARTTrigger.matched_pattern_data[:len(pattern)] == pattern, "matched_pattern_data (%s) doesn't match pattern (%s)" % (scope.UARTTrigger.matched_pattern_data, pattern)
+        assert scope.UARTTrigger.matched_pattern_counts[0] == (start_count + 1) % 256, "Match count didn't increase by 1"
+
+
+@pytest.mark.parametrize("gain, threshold, reps, desc", testADCTriggerData)
+@pytest.mark.skipif(not target_attached, reason='No target detected')
+def test_adc_trigger (gain, threshold, reps, desc):
+    scope.default_setup()
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    reset_target()
+    time.sleep(0.1)
+    target.baud = 38400
+    scope.gain.db = gain
+    scope.adc.clip_errors_disabled = False
+    scope.adc.lo_gain_errors_disabled = True
+    scope.adc.segment_cycle_counter_en = False
+    scope.adc.segments = 1
+    scope.adc.samples = 500
+    scope.adc.presamples = 0
+    for i in range(reps):
+        scope.trigger.module = 'basic'
+        scope.trigger.triggers = 'tio4'
+        reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+        #print("Gain:%d, max:%f, min:%f" % (gain, max(reftrace.wave), min(reftrace.wave)))
+        # 1. trigger on positive swing:
+        scope.trigger.module = 'ADC'
+        scope.trigger.level = threshold * max(reftrace.wave)
+        #print(scope.trigger.level)
+        powertrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+        assert powertrace is not None, 'ADC-triggered capture (max) failed'
+        # 1. trigger on positive swing:
+        scope.trigger.level = threshold * min(reftrace.wave)
+        #print(scope.trigger.level)
+        powertrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+        assert powertrace is not None, 'ADC-triggered capture (min) failed'
+
 
 def test_xadc():
     assert scope.XADC.status == 'good'

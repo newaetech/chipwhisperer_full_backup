@@ -605,6 +605,9 @@ class TraceWhisperer(util.DisableNewAttr):
 
     def arm_trace(self, check_uart=True):
         """Arms trace sniffer for capture; also checks sync status.
+        When used as part of Husky, it's possible for forego this and have the
+        trace module be armed by the regular Husky arm, by setting
+        scope.trace.capture.use_husky_arm to True.
         Args:
             check_uart (bool): check that the hardware UART state machine is not stuck,
             and if it is, reset it. Should not be required unless trace is left enabled
@@ -618,7 +621,6 @@ class TraceWhisperer(util.DisableNewAttr):
                 self._uart_reset()
                 assert self.uart_state == 'ERX_IDLE', 'UART is still stuck!'
         self.fpga_write(self.REG_ARM, [1])
-
 
     @property
     def errors(self):
@@ -1201,10 +1203,14 @@ class capture(util.DisableNewAttr):
         super().__init__()
         self.main = main
         self.disable_newattr()
+        if self.main.platform == 'Husky':
+            self.use_husky_arm = False
 
     def _dict_repr(self):
         rtn = OrderedDict()
         rtn['trigger_source']           = self.trigger_source
+        if self.main.platform == 'Husky':
+            rtn['use_husky_arm']        = self.use_husky_arm
         rtn['raw']                      = self.raw
         rtn['rules_enabled']            = self.rules_enabled
         rtn['rules']                    = self.rules
@@ -1426,6 +1432,25 @@ class capture(util.DisableNewAttr):
             rulez.append({'rule':e, 'patt':self.main.fpga_read(self.main.REG_TRACE_PATTERN0+e, 8), 'mask':self.main.fpga_read(self.main.REG_TRACE_MASK0+e, 8)})
         return rulez
 
+    @property
+    def use_husky_arm(self):
+        """ When used as part of Husky, it's possible for forego this and have
+        the trace/UART module be armed by the regular Husky arm, by setting
+        this to True.
+        """
+        val = self.main.fpga_read(self.main.REG_EXTERNAL_ARM, 1)[0]
+        if self.main.platform != 'Husky':
+            tracewhisperer_logger.error("Applicable to Husky only")
+            return False
+        elif val:
+            return True
+        else:
+            return False
+
+    @use_husky_arm.setter
+    def use_husky_arm(self, val):
+        if self.main.platform == 'Husky':
+            self.main.fpga_write(self.main.REG_EXTERNAL_ARM, [val])
 
 
 class ARM_debug_registers(util.DisableNewAttr):
@@ -1644,14 +1669,15 @@ class ARM_debug_registers(util.DisableNewAttr):
 
 class UARTTrigger(TraceWhisperer):
     ''' Husky UART trigger module settings.
-    Basic usage for triggering on 'r' (ASCII 0x72):
+    Basic usage for triggering on 'r':
 
         #assuming setup scope:
         scope.trigger.triggers = 'tio1'
         scope.trigger.module = 'UART'
         scope.UARTTrigger.enabled = True
         scope.UARTTrigger.baud = 38400
-        scope.UARTTrigger.set_pattern_match = (0, [0x72,0,0,0,0,0,0,0], [0xff,0,0,0,0,0,0,0])
+        scope.UARTTrigger.set_pattern_match(0, 'r')
+        scope.UARTTrigger.trigger_source = 0
 
     TraceWhisperer runs on the same hardware as this, so configuration changes
     in one affects the other and vice-versa.
@@ -1674,7 +1700,7 @@ class UARTTrigger(TraceWhisperer):
         rtn['rules_enabled'] = self.rules_enabled
         rtn['rules'] = self.rules
         rtn['matched_pattern_data'] = self.matched_pattern_data
-        rtn['matched_pattern_counts'] = self.capture.matched_pattern_counts
+        rtn['matched_pattern_counts'] = self.matched_pattern_counts
         return rtn
 
     def __repr__(self):
@@ -1699,6 +1725,7 @@ class UARTTrigger(TraceWhisperer):
         self.capture.mode = 'off'
         self.clock.fe_clock_src = 'target_clock'
         self.capture.record_syncs = True
+        self.capture.use_husky_arm = True
         # accessing base class setter is awkward! all we want to do here is super().enabled = enable, but this is the way to do that:
         super(UARTTrigger, self.__class__).enabled.fset(self, enable)
 
@@ -1737,6 +1764,8 @@ class UARTTrigger(TraceWhisperer):
                 break
         if found:
             self.clock.swo_clock_freq = sample_freq
+            if not self.clock.swo_clock_locked:
+                tracewhisperer_logger.error("SWO clock not locked!")
             self.swo_div = div
             self._baud = actual_baud
             tracewhisperer_logger.info("Setting baudrate to %d (freq_mul=%d)" % (actual_baud, freq_mul))
@@ -1787,6 +1816,13 @@ class UARTTrigger(TraceWhisperer):
         return string
 
     @property
+    def matched_pattern_counts(self):
+        """ Return the actual trace data seen for the last matched pattern.
+        """
+        return self.capture.matched_pattern_counts
+
+
+    @property
     def trigger_source(self):
         """ Set which pattern match rule is used to generate a trigger.
         Args:
@@ -1810,5 +1846,25 @@ class UARTTrigger(TraceWhisperer):
             self.fpga_write(self.REG_TRIGGER_ENABLE, [1])
         else:
             raise ValueError
+
+    def set_pattern_match(self, index, pattern, mask=None, enable_rule=True):
+        """Sets pattern match and mask parameters.
+        Allows the pattern to be specified as a string, however it may also be
+        specified as a list of ints, as is done for trace.
+
+        Args:
+            index: match index [0-7]
+            pattern: string or list of 8-bit integers, pattern match value.
+                Maximum size given by self.pattern_size.
+            mask (list, optional): list of bytes, must have same size as 'pattern' if
+                set. Defaults to [0xff]*len(pattern) if not set.
+
+        """
+        if type(pattern) is str:
+            lpattern = []
+            for c in pattern:
+                lpattern.append(ord(c))
+            pattern = lpattern
+        super().set_pattern_match(index, pattern, mask, enable_rule)
 
 

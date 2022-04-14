@@ -23,7 +23,6 @@
 `define USB_REG_SELECT               2'b01
 
 `define REG_BUILDTIME                6'h00
-`define REG_FE_SELECT                6'h01
 `define REG_SNIFF_FIFO_STAT          6'h02
 `define REG_SNIFF_FIFO_RD            6'h03
 `define REG_ARM                      6'h04
@@ -56,6 +55,7 @@
 `define REG_TRIGGERS_GENERATED       6'h19
 `define REG_CAPTURE_OFF              6'h20
 `define REG_BUFFER_SIZE              6'h21
+`define REG_EXTERNAL_ARM             6'h22
 
 // front end select definitions
 `define FE_SELECT_WIDTH 2
