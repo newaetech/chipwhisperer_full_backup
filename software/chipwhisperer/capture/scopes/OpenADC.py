@@ -550,6 +550,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             if TraceWhisperer:
                 self.trace = TraceWhisperer(husky=True, target=None, scope=self, trace_reg_select=3, main_reg_select=2)
                 self.UARTTrigger = UARTTrigger(scope=self, trace_reg_select=3, main_reg_select=2)
+            self.SAD = ChipWhispererSAD.HuskySAD(self.sc)
             self.errors = HuskyErrors(self.sc, self.XADC, self.adc, self.clock, self.trace)
         else:
             self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)

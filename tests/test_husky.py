@@ -973,29 +973,30 @@ def test_sad_trigger (bits, threshold, offset, reps, desc):
     scope.adc.lo_gain_errors_disabled = False
     scope.adc.segment_cycle_counter_en = False
     scope.adc.segments = 1
-    scope.adc.samples = scope.trigger._sad_reference_length * 2
+    scope.adc.samples = scope.SAD._sad_reference_length * 2
     scope.adc.presamples = 0
     scope.adc.bits_per_sample = bits
     scope.adc.offset = offset
-    scope.trigger.sad_multiple_triggers = False
+    scope.SAD.multiple_triggers = False
 
     scope.trigger.module = 'basic'
     scope.gain.db = 10
     reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
     assert scope.adc.errors == False, scope.adc.errors
 
-    scope.trigger.sad_reference = reftrace.wave
-    scope.trigger.threshold = threshold
+    scope.SAD.reference = reftrace.wave
+    scope.SAD.threshold = threshold
     scope.trigger.module = 'SAD'
 
-    scope.adc.presamples = scope.trigger._sad_reference_length + 6
+    scope.adc.presamples = scope.SAD._sad_reference_length + 6
     for r in range(reps):
         sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
-        assert scope.adc.errors == False
+        assert sadtrace is not None, 'SAD-triggered capture failed'
+        #assert scope.adc.errors == False
         sad = 0
-        for i in range(scope.trigger._sad_reference_length):
+        for i in range(scope.SAD._sad_reference_length):
             sad += abs(reftrace.wave[i] - sadtrace.wave[i])
-        sad = int(sad*2**scope.trigger._sad_bits_per_sample)
+        sad = int(sad*2**scope.SAD._sad_bits_per_sample)
         assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d)' %(sad, threshold, r)
 
 
