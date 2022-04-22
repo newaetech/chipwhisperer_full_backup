@@ -218,6 +218,8 @@ class HuskySAD(util.DisableNewAttr):
     """Communicates with the SAD module inside CW-Husky.
 
     This submodule is only available on ChipWhisperer Husky.
+    If you wish for the SAD capture to include the SAD pattern, set
+    scope.adc.presamples to scope.SAD._sad_reference_length + 6
 
     Example::
 
@@ -227,6 +229,7 @@ class HuskySAD(util.DisableNewAttr):
         scope.trigger.module = 'SAD'
 
         #SAD trigger active
+        scope.adc.presamples to scope.SAD._sad_reference_length + 6
         trace = cw.capture_trace(scope, data, text, key)
     """
     _name = 'Husky SAD Trigger Module'
