@@ -327,6 +327,7 @@ testSADTriggerData = [
     #bits   threshold   offset  reps    desc
     (8,     25,         0,      50,     '8bits'),
     (12,    25,         0,      50,     '12bits'),
+    (8,     25,         0,      10,     '8bits'),
 ]
 
 testUARTTriggerData = [
@@ -338,11 +339,13 @@ testUARTTriggerData = [
 ]
 
 testADCTriggerData = [
-    #gain       threshold   reps    desc
-    (1,         0.9,        3,     ''),
-    (10,        0.9,        3,     ''),
-    (1,         0.5,        3,     ''),
-    (10,        0.5,        3,     ''),
+    #gain       threshold   bits    reps    desc
+    (1,         0.9,        12,     3,     ''),
+    (10,        0.9,        12,     3,     ''),
+    (5,         0.9,        8,      3,     ''),
+    (5,         0.5,        8,      3,     ''),
+    (1,         0.5,        12,     3,     ''),
+    (10,        0.5,        12,     3,     ''),
 ]
 
 
@@ -959,9 +962,6 @@ def test_segment_trace (interface, triggers, desc):
 @pytest.mark.parametrize("bits, threshold, offset, reps, desc", testSADTriggerData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
 def test_sad_trigger (bits, threshold, offset, reps, desc):
-    # TODO: there's something weird with this test where often the first call (first element of testSADTriggerData) passes
-    # and the next one fails. It's not a 8-bit/12-bit thing because if you reverse the order, the same holds. And sometimes everything passes.
-    # TBD...
     scope.errors.clear()
     scope.trace.enabled = False
     scope.trace.target = None
@@ -989,10 +989,12 @@ def test_sad_trigger (bits, threshold, offset, reps, desc):
     scope.trigger.module = 'SAD'
 
     scope.adc.presamples = scope.SAD._sad_reference_length + 6
+    #print(scope.SAD.reference[:12])
+    #time.sleep(0.5)
     for r in range(reps):
         sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
         assert sadtrace is not None, 'SAD-triggered capture failed'
-        #assert scope.adc.errors == False
+        assert scope.adc.errors == False
         sad = 0
         for i in range(scope.SAD._sad_reference_length):
             sad += abs(reftrace.wave[i] - sadtrace.wave[i])
@@ -1047,9 +1049,9 @@ def test_uart_trigger (clock, pin, pattern, reps, desc):
         assert scope.UARTTrigger.matched_pattern_counts[0] == (start_count + 1) % 256, "Match count didn't increase by 1"
 
 
-@pytest.mark.parametrize("gain, threshold, reps, desc", testADCTriggerData)
+@pytest.mark.parametrize("gain, threshold, bits, reps, desc", testADCTriggerData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_adc_trigger (gain, threshold, reps, desc):
+def test_adc_trigger (gain, threshold, bits, reps, desc):
     scope.default_setup()
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
@@ -1063,6 +1065,7 @@ def test_adc_trigger (gain, threshold, reps, desc):
     scope.adc.segments = 1
     scope.adc.samples = 500
     scope.adc.presamples = 0
+    scope.adc.bits_per_sample = bits
     for i in range(reps):
         scope.trigger.module = 'basic'
         scope.trigger.triggers = 'tio4'

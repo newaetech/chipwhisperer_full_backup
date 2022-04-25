@@ -891,18 +891,16 @@ class HuskyTrigger(TriggerSettings):
         the threshold do not each generate a trigger; cannot be used in
         conjunction with segmented capture).
         """
-        bits_per_sample = self.cwe.oa._bits_per_sample
         offset = self.cwe.oa.offset
         raw = int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_ADC_TRIGGER_LEVEL, Validate=False, maxResp=2), byteorder='little')
-        return raw / 2**bits_per_sample - offset
+        return raw / 2**12 - offset
 
     @level.setter
     def level(self, val):
         if not (-0.5 <= val <= 0.5):
             raise ValueError("Out of range: [-0.5, 0.5]")
-        bits_per_sample = self.cwe.oa._bits_per_sample
         offset = self.cwe.oa.offset
-        val = int((val + offset) * 2**bits_per_sample)
+        val = int((val + offset) * 2**12)
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_ADC_TRIGGER_LEVEL, list(int.to_bytes(val, length=2, byteorder='little')))
 
 
