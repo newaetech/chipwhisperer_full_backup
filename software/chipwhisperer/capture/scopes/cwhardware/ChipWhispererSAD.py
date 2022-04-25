@@ -37,6 +37,7 @@ saddataaddr = 54
 # CW-Husky SAD register addresses:
 ADDR_SAD_REF = 100
 ADDR_SAD_THRESHOLD = 101
+ADDR_SAD_STATUS = 102
 ADDR_SAD_BITS_PER_SAMPLE = 103
 ADDR_SAD_REF_SAMPLES = 104
 ADDR_SAD_MULTIPLE_TRIGGERS = 106
@@ -335,5 +336,26 @@ class HuskySAD(util.DisableNewAttr):
             self.oa.sendMessage(CODE_WRITE, ADDR_SAD_MULTIPLE_TRIGGERS, [1])
         else:
             self.oa.sendMessage(CODE_WRITE, ADDR_SAD_MULTIPLE_TRIGGERS, [0])
+
+    @property
+    def status(self):
+        """SAD module status and errors.
+        Intended for debugging.
+        Write any value to clear.
+        """
+        raw = self.oa.sendMessage(CODE_READ, ADDR_SAD_STATUS, Validate=False, maxResp=1)[0]
+        stat = ''
+        if raw & 1:   stat += 'triggered, '
+        if raw & 2:   stat += 'SAD FIFO underflow, '
+        if raw & 4:   stat += 'SAD FIFO overflow, '
+        if raw & 8:   stat += 'SAD FIFO not empty, '
+        if stat == '':
+            stat = 'not triggered'
+        return stat
+
+    @status.setter
+    def status(self, val):
+        # value written doesn't matter: the write action clears the status flags
+        self.oa.sendMessage(CODE_WRITE, ADDR_SAD_STATUS, [1])
 
 

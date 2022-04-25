@@ -350,7 +350,7 @@ testADCTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '4/14/2022, 09:50'
+    assert scope.fpga_buildtime == '4/22/2022, 16:15'
 
 
 def test_fw_version():
