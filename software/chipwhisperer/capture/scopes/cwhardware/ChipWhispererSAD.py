@@ -230,7 +230,7 @@ class HuskySAD(util.DisableNewAttr):
         scope.trigger.module = 'SAD'
 
         #SAD trigger active
-        scope.adc.presamples to scope.SAD._sad_reference_length + 6
+        scope.adc.presamples = scope.SAD._sad_reference_length + 6
         trace = cw.capture_trace(scope, data, text, key)
     """
     _name = 'Husky SAD Trigger Module'
@@ -258,6 +258,10 @@ class HuskySAD(util.DisableNewAttr):
         If the sum of absolute differences for the past
         scope.trigger._sad_reference_length ADC samples (measured in 8-bit
         resolution) is less than <threshold>, a trigger will be generated.
+        Husky uses 32 samples at 8 bits resolution for SAD (independent of
+        scope.adc.bits_per_sample), while CW-Pro uses 128 samples at 10 bits
+        resolution, so if you're used to setting SAD thresholds on CW-Pro,
+        reduce threshold by a factor of about 16 for Husky.
         """
         return  int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_SAD_THRESHOLD, Validate=False, maxResp=4), byteorder='little')
 
@@ -341,6 +345,8 @@ class HuskySAD(util.DisableNewAttr):
     def status(self):
         """SAD module status and errors.
         Intended for debugging.
+        The "triggered" flag indicates that a SAD trigger has occurred, but
+        does not get cleared upon re-arming.
         Write any value to clear.
         """
         raw = self.oa.sendMessage(CODE_READ, ADDR_SAD_STATUS, Validate=False, maxResp=1)[0]
