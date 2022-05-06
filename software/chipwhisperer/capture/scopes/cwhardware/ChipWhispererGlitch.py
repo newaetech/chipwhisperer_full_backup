@@ -27,12 +27,16 @@
 from ....logging import *
 import zipfile
 import datetime
+import math
 from collections import OrderedDict
 from ....capture.scopes.cwhardware import PartialReconfiguration as pr
 from ....common.utils import util
 
 powerdownaddr = 49
+glitchrepeats = 50
 glitchaddr = 51
+glitchnumaddr = 52
+glitchstate = 53
 glitchoffsetaddr = 25
 glitchreadbackaddr = 56
 CODE_READ       = 0x80
@@ -78,6 +82,7 @@ class GlitchSettings(util.DisableNewAttr):
         if self._is_husky:
             rtn['enabled'] = self.enabled
             rtn['mmcm_locked'] = self.mmcm_locked
+            rtn['num_glitches'] = self.num_glitches
         rtn['clk_src'] = self.clk_src
         rtn['width'] = self.width
         if not self._is_husky:
@@ -215,6 +220,46 @@ class GlitchSettings(util.DisableNewAttr):
             raise ValueError("For CW-Husky only.")
         return self.cwg.getMMCMLocked()
 
+    @property
+    def num_glitches(self):
+        """The number of glitch events to generate. CW-Husky only.
+        Raises:
+           ValueError: number outside of [1, 32].
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        return self.cwg.getNumGlitches()
+
+    @num_glitches.setter
+    def num_glitches(self, num):
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        self.cwg.setNumGlitches(num)
+
+    @property
+    def actual_num_glitches(self):
+        """The number of glitches that were generated during the previous
+        glitch event (should equal scope.glitch.num_glitches; for debugging).
+        CW-Husky only.
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        return self.cwg.getActualNumGlitches()
+
+    @property
+    def state(self):
+        """Glitch FSM state. CW-Husky only. For debug.
+        Writing any value resets the FSM to its idle state.
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        return self.cwg.getState()
+
+    @state.setter
+    def state(self, ignored):
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        self.cwg.resetState()
 
 
     @property
@@ -424,6 +469,10 @@ class GlitchSettings(util.DisableNewAttr):
         be inserted at a precise moment during the target's execution to glitch
         specific instructions.
 
+        For CW-Husky when scope.glitch.num_glitches > 1, this parameter is a
+        list with scope.glitch.num_glitches elements, each element
+        representing the ext_offset value for the corresponding glitch.
+
         Has no effect when trigger_src = 'manual' or 'continuous'.
 
         .. note::
@@ -437,21 +486,13 @@ class GlitchSettings(util.DisableNewAttr):
         :Setter: Set the external trigger offset.
 
         Raises:
-           TypeError: if offset not an integer
+           TypeError: if offset not an integer, or list of integers for Husky
            ValueError: if offset outside of range [0, 2**32)
         """
-        return self.cwg.triggerOffset()
+        return self.cwg.getTriggerOffset()
 
     @ext_offset.setter
     def ext_offset(self, offset):
-        try:
-            int_val = int(offset)
-        except ValueError as e:
-            raise TypeError("Can't convert %s to integer" % offset, offset) from e
-
-        if int_val < 0 or int_val >= 2**32:
-            raise ValueError("New trigger offset %d is outside range [0, 2**32)" % int_val)
-
         self.cwg.setTriggerOffset(offset)
 
     @property
@@ -473,19 +514,11 @@ class GlitchSettings(util.DisableNewAttr):
            TypeError: if value not an integer
            ValueError: if value outside [1, 8192]
         """
-        return self.cwg.numGlitches()
+        return self.cwg.getRepeat()
 
     @repeat.setter
     def repeat(self, value):
-        try:
-            int_val = int(value)
-        except ValueError as e:
-            raise TypeError("Can't convert %s to integer" % value, value) from e
-
-        if int_val < 1 or int_val > 8192:
-            raise ValueError("New repeat value %d is outside range [1, 8192]" % int_val)
-
-        self.cwg.setNumGlitches(int_val)
+        self.cwg.setRepeat(value)
 
     @property
     def output(self):
@@ -566,6 +599,9 @@ class ChipWhispererGlitch(object):
 
         # Single-shot arm timing
         self._ssarm = 2
+
+        self._num_glitches = 1
+        self._repeat_bits = 13
 
         # Check if we've got partial reconfiguration stuff for this scope
         try:
@@ -731,6 +767,35 @@ class ChipWhispererGlitch(object):
         else:
             raise ValueError("Unexpected: read %d" % raw)
 
+    def setNumGlitches(self, num):
+        if num < 1 or num > 32:
+            raise ValueError("Allowed range: 1-32");
+        self._num_glitches = num
+        self.oa.sendMessage(CODE_WRITE, glitchnumaddr, [num-1], Validate=False)
+
+    def getNumGlitches(self):
+        return self._num_glitches
+
+    def getNumActualGlitches(self):
+        return self.oa.sendMessage(CODE_READ, glitchnumaddr, Validate=False, maxResp=1)[0]
+
+    def getState(self):
+        raw = self.oa.sendMessage(CODE_READ, glitchstate, Validate=False, maxResp=1)[0]
+        if raw == 0:
+            return 'idle'
+        elif raw == 1:
+            return 'wait'
+        elif raw == 2:
+            return 'next'
+        elif raw == 3:
+            return 'done'
+        else:
+            raise ValueError("Unexpected state value: %d" % raw)
+
+    def resetState(self):
+        self.oa.sendMessage(CODE_WRITE, glitchstate, [1], Validate=False)
+        self.oa.sendMessage(CODE_WRITE, glitchstate, [0], Validate=False)
+
     def getMMCMLocked(self):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=6)
         if ((resp[4] & 0x80) == 0x80) and ((resp[5] & 0x01) == 0x01):
@@ -823,24 +888,36 @@ class ChipWhispererGlitch(object):
         else:
             return self._offset * 100. / 256.
 
-    def setTriggerOffset(self, offset):
-        offset = int(offset)
-        # """Set offset between trigger event and glitch in clock cycles"""
-        cmd = bytearray(4)
-        cmd[0] = ((offset >> 0) & 0xFF)
-        cmd[1] = ((offset >> 8) & 0xFF)
-        cmd[2] = ((offset >> 16) & 0xFF)
-        cmd[3] = ((offset >> 24) & 0xFF)
-        self.oa.sendMessage(CODE_WRITE, glitchoffsetaddr, cmd)
+    def setTriggerOffset(self, offsets):
+        """Set offset between trigger event and glitch in clock cycles"""
+        if type(offsets) != list:
+            offsets = [offsets]
+        if not self._is_husky:
+            raise ValueError("Only Husky supports multiple offsets.")
+        raw  = 0
+        for i,offset in enumerate(offsets):
+            try:
+                int_val = int(offset)
+            except ValueError as e:
+                raise TypeError("Can't convert %s to integer" % offset, offset) from e
+            if int_val < 0 or int_val >= 2**32:
+                raise ValueError("New trigger offset %d is outside range [0, 2**32)" % int_val)
+            raw += int_val * 2**(32*i)
+        self.oa.sendMessage(CODE_WRITE, glitchoffsetaddr, list(int.to_bytes(raw, length=4*len(offsets), byteorder='little')))
 
-    def triggerOffset(self):
+    def getTriggerOffset(self):
         """Get offset between trigger event and glitch in clock cycles"""
-        cmd = self.oa.sendMessage(CODE_READ, glitchoffsetaddr, maxResp=4)
-        offset = cmd[0]
-        offset |= cmd[1] << 8
-        offset |= cmd[2] << 16
-        offset |= cmd[3] << 24
-        return offset
+        num_glitches = self.getNumGlitches()
+        raw = int.from_bytes(self.oa.sendMessage(CODE_READ, glitchoffsetaddr, maxResp=4*num_glitches), byteorder='little')
+        if num_glitches == 1:
+            return raw
+        else:
+            offsets = []
+            for i in range(num_glitches):
+                offsets.append(raw & (2**32-1))
+                raw = raw >> 32
+            return offsets
+
 
     def setGlitchOffsetFine(self, fine):
         """Set the fine glitch offset adjust, range -255 to 255"""
@@ -944,29 +1021,52 @@ class ChipWhispererGlitch(object):
         glitch_logger.info('DCM1: Phase %d, Locked %r' % (stat[0], stat[2]))
         glitch_logger.info('DCM2: Phase %d, Locked %r' % (stat[1], stat[3]))
 
-    def setNumGlitches(self, num):
+    def setRepeat(self, repeats):
         """Set number of glitches to occur after a trigger"""
-        num = int(num)
-        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+        if type(repeats) != list:
+            repeats = [repeats]
+        raw = 0
+        for i,repeat in enumerate(repeats):
+            try:
+                int_val = int(repeat)
+            except ValueError as e:
+                raise TypeError("Can't convert %s to integer" % repeat, repeat) from e
+            if int_val < 1 or int_val > 8192:
+                raise ValueError("New repeat value %d is outside range [1, 8192]" % int_val)
+            int_val = int_val-1
+            if i == 0:
+                resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+                if resp is None or len(resp) < 8:
+                    glitch_logger.warning('Glitch Module not present?')
+                    return
+                resp[6] = int_val & 0xff #LSB        
+                resp[7] = (resp[7] & self.CLKSOURCE_MASK) | ((int_val >> 8) << 2) #5-bit MSB stored in upper bits
+                self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
+            else:
+                raw += int_val * 2**(self._repeat_bits*(i-1))
+        if len(repeats) > 1:
+            bytes_to_write = math.ceil((len(repeats)-1)*self._repeat_bits/8)
+            self.oa.sendMessage(CODE_WRITE, glitchrepeats, list(int.to_bytes(raw, length=bytes_to_write, byteorder='little')))
 
-        if resp is None or len(resp) < 8:
-            glitch_logger.warning('Glitch Module not present?')
-            return
-
-        if num < 1:
-            num = 1
-        num = num-1
-        resp[6] = num & 0xff #LSB        
-        resp[7] = (resp[7] & self.CLKSOURCE_MASK) | ((num >> 8) << 2) #5-bit MSB stored in upper bits
-        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
-
-    def numGlitches(self):
+    def getRepeat(self):
         """Get number of glitches to occur after a trigger"""
+        num_glitches = self.getNumGlitches()
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         num = resp[6]
         num |= ((resp[7] & ~(self.CLKSOURCE_MASK)) >> 2) << 8
         num += 1
-        return num
+        if num_glitches == 1:
+            return num
+        else:
+            repeats = [num]
+            bytes_to_read = math.ceil((num_glitches-1)*self._repeat_bits/8)
+            raw = int.from_bytes(self.oa.sendMessage(CODE_READ, glitchrepeats, Validate=False, maxResp=bytes_to_read), byteorder='little')
+            for i in range(1, num_glitches):
+                repeats.append
+                repeats.append((raw & (2**self._repeat_bits-1)) + 1)
+                raw = raw >> self._repeat_bits
+            return repeats
+
 
     def setGlitchTrigger(self, trigger):
         """Set glitch trigger type (manual, continous, adc-trigger)"""

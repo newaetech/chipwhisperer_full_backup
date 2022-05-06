@@ -350,7 +350,7 @@ testADCTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '4/22/2022, 16:15'
+    assert scope.fpga_buildtime == '5/5/2022, 20:39'
 
 
 def test_fw_version():
@@ -1084,6 +1084,135 @@ def test_adc_trigger (gain, threshold, bits, reps, desc):
         assert powertrace is not None, 'ADC-triggered capture (min) failed'
 
 
+@pytest.mark.skipif(not target_attached, reason='No target detected')
+def test_glitch_modes (reps=3):
+    scope.default_setup()
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    reset_target()
+    time.sleep(0.1)
+    target.baud = 38400
+    scope.adc.clip_errors_disabled = True
+    scope.adc.lo_gain_errors_disabled = True
+    scope.glitch.enabled = True
+    scope.glitch.clk_src = 'pll'
+    scope.LA.enabled = True
+    scope.LA.oversampling_factor = 4
+    scope.LA.downsample = 1
+    scope.LA.capture_group = 'glitch'
+    scope.LA.trigger_source = "glitch"
+    for i in range(reps):
+        capture_depth = 20000
+        while capture_depth > 16376:
+            randomize_glitches()
+            capture_depth = scope.glitch.num_glitches * scope.LA.oversampling_factor * max(scope.glitch.ext_offset) * 2
+        scope.LA.capture_depth = capture_depth
+        scope.glitch.trigger_src = 'ext_single'
+        glitch_single(trigger=True, expected=True)
+        glitch_single(trigger=False, expected=False)
+
+        scope.glitch.trigger_src = 'ext_continuous'
+        glitch_single(trigger=False, expected=True)
+        glitch_single(trigger=True, expected=True)
+        glitch_single(trigger=False, expected=True)
+
+        scope.glitch.trigger_src = 'ext_single'
+        glitch_single(trigger=True, expected=True)
+
+        glitch_manual()
+
+        scope.glitch.trigger_src = 'ext_single'
+        glitch_single(trigger=True, expected=True)
+
+        glitch_continuous()
+
+
+def randomize_glitches():
+    scope.glitch.num_glitches = random.randrange(2, 32)
+    offsets = []
+    repeats = []
+    repeat = 0
+    for i in range(scope.glitch.num_glitches):
+        offset = random.randrange(repeat, 100)
+        repeat = random.randrange(1, 90)
+        offsets.append(offset)
+        repeats.append(repeat)
+        scope.glitch.ext_offset = offsets
+        scope.glitch.repeat = repeats
+        scope.glitch.output = 'enable_only'
+
+def glitch_single(trigger=True, expected=True):
+    assert scope.glitch.state == 'idle'
+    scope.LA.trigger_source = "glitch"
+    scope.LA.arm()
+    if trigger:
+        trace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+    else:
+        target.simpleserial_write('p', bytearray(16))
+    time.sleep(0.1)
+    if expected:
+        assert not scope.LA.fifo_empty()
+        raw = scope.LA.read_capture_data()
+        glitchenable = scope.LA.extract(raw, 6)
+        slack = scope.glitch.num_glitches * scope.LA.oversampling_factor * 2
+        expected = scope.LA.oversampling_factor * (sum(scope.glitch.repeat) + scope.glitch.num_glitches)
+        actual = len(np.where(glitchenable != 0)[0])
+        assert (expected-slack) < actual < (expected+slack), "actual=%d, expected=%d, slack=%d" % (actual, expected, slack)
+    else:
+        assert scope.LA.fifo_empty()
+        scope.LA.trigger_now()
+        raw = scope.LA.read_capture_data()
+        glitchenable = scope.LA.extract(raw, 6)
+        assert len(np.where(glitchenable != 0)[0]) == 0
+
+def glitch_manual():
+    assert scope.glitch.state == 'idle'
+    scope.glitch.trigger_src = 'manual'
+    scope.LA.trigger_source = "glitch"
+    scope.LA.arm()
+    scope.glitch.manual_trigger()
+    time.sleep(0.1)
+    assert not scope.LA.fifo_empty()
+    raw = scope.LA.read_capture_data()
+    glitchenable = scope.LA.extract(raw, 6)
+    slack = scope.LA.oversampling_factor * 2
+    expected = scope.LA.oversampling_factor * scope.glitch.repeat[0]
+    actual = len(np.where(glitchenable != 0)[0])
+    assert (expected-slack) < actual < (expected+slack), "actual=%d, expected=%d, slack=%d" % (actual, expected, slack)
+
+def glitch_continuous():
+    # let's be sure we don't fry a live target!
+    # to be extra safe, don't run any assertions until continuous mode is turned off
+    scope.io.glitch_lp = False
+    scope.io.glitch_hp = False
+    assert scope.glitch.state == 'idle'
+    errors = 0
+    scope.LA.trigger_source = "capture" # not sure why this is needed...
+    scope.glitch.trigger_src = 'continuous'
+    scope.LA.arm()
+    scope.LA.trigger_now()
+    time.sleep(0.1)
+    if scope.LA.fifo_empty():
+        errors += 1
+    raw = scope.LA.read_capture_data()
+    glitchenable = scope.LA.extract(raw, 6)
+    if len(np.where(glitchenable != 1)[0]):
+        errors += 1
+
+    scope.glitch.trigger_src = 'manual'
+    scope.LA.arm()
+    scope.LA.trigger_now()
+    time.sleep(0.1)
+    if scope.LA.fifo_empty():
+        errors += 1
+    raw = scope.LA.read_capture_data()
+    glitchenable = scope.LA.extract(raw, 6)
+    if len(np.where(glitchenable != 0)[0]):
+        errors += 1
+        print("WARNING: crowbar still active, make sure target is ok")
+    assert errors == 0
+
+
 def test_xadc():
     assert scope.XADC.status == 'good'
     if target_attached:
@@ -1091,7 +1220,10 @@ def test_xadc():
         assert scope.XADC.temp < 55.0
     assert scope.XADC.max_temp < 65.0   # things can get hotter with glitching
 
+
 def test_finish():
     # just restore some defaults:
     scope.default_setup()
+
+
 
