@@ -827,8 +827,6 @@ class HuskyTrigger(TriggerSettings):
         rtn['module'] = self.module
         if self.module == 'ADC':
             rtn['level'] = self.level
-        #elif self.module == 'SAD':
-        #    rtn['threshold'] = self.threshold
         elif self.module == 'basic' or self.module == 'UART':
             rtn['triggers'] = self.triggers
         return rtn

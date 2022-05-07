@@ -1029,7 +1029,7 @@ class LASettings(util.DisableNewAttr):
         elif source == 'HS1':
             val = [3]
         else:
-            raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', 'HS1', or 'manual'")
+            raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', or 'HS1'")
         self.oa.sendMessage(CODE_WRITE, ADDR_LA_TRIGGER_SOURCE, val, Validate=False)
 
     def _getTriggerSource(self):
