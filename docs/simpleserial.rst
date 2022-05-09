@@ -10,7 +10,7 @@ begins communication by sending a packet:
 ``[cmd, data_0, data_1, ..., data_n, '\n']``
 
 where ``cmd`` is an ASCII character indicating the desired command and
-``data`` is an ASCII representation of the data (i.e. ``0xAA`` will be
+``data`` is an ASCII representation of the data (i.e. ``0xAA`` will be
 ``'A'``, ``'A'``) The length of data is fixed by the firmware.
 
 If the target board needs to respond with data, it sends back:
@@ -86,16 +86,16 @@ The following standard errors are used:
 
 .. code:: text
 
-    0x00 - OK
-    0x01 - Invalid command
-    0x02 - Bad CRC
-    0x03 - Timeout
-    0x04 - Invalid length
-    0x05 - Unexpected frame byte (0x00)
-    0x06 - Reserved
-    ...
+   0x00 - OK
+   0x01 - Invalid command
+   0x02 - Bad CRC
+   0x03 - Timeout
+   0x04 - Invalid length
+   0x05 - Unexpected frame byte (0x00)
+   0x06 - Reserved
+   ...
 
-    0x0F - Reserved
+   0x0F - Reserved
 
 Commands may use additional error codes to indicate the result of an
 operation.
@@ -105,6 +105,8 @@ The default baud rate is 230400bps.
 **NOTE:** Only the XMEGA and STM32\* devices currently switch to this
 higher baud rate when building for SimpleSerial V2.1. Other devices will
 likely communicate at 38400bps instead.
+
+.. _reserved-commands-1:
 
 Reserved Commands
 ~~~~~~~~~~~~~~~~~
@@ -138,11 +140,11 @@ Calling it is as simple as:
 
 .. code:: c
 
-    #include "simpleserial.h"
+   #include "simpleserial.h"
 
-    // ..snip
+   // ..snip
 
-    simpleserial_init();
+   simpleserial_init();
 
 ``simpleserial_addcmd``
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -150,8 +152,8 @@ Calling it is as simple as:
 Adds a listener on the target for a specific command. Depending on the
 version of SimpleSerial you are using, the arguments are different.
 
-    **Note:** the C implementation of the SimpleSerial can only hold a
-    maximum of 16 active command.
+   **Note:** the C implementation of the SimpleSerial can only hold a
+   maximum of 16 active command.
 
 Arguments
 ^^^^^^^^^
@@ -201,26 +203,26 @@ The following is a SimpleSerial V2 example.
 
 .. code:: c
 
-    #include "simpleserial.h"
+   #include "simpleserial.h"
 
-    uint8_t set_key(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t* data)
-    {
-        // ...snip
+   uint8_t set_key(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t* data)
+   {
+       // ...snip
 
-        return 0;
-    }
+       return 0;
+   }
 
-    uint8_t encrypt_plaintext(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t* data)
-    {
-        // ...snip
+   uint8_t encrypt_plaintext(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t* data)
+   {
+       // ...snip
 
-        return 0;
-    }
+       return 0;
+   }
 
-    // ... snip
+   // ... snip
 
-    simpleserial_addcmd('k', 16, set_key);
-    simpleserial_addcmd('p', 16, encrypt_plaintext);
+   simpleserial_addcmd('k', 16, set_key);
+   simpleserial_addcmd('p', 16, encrypt_plaintext);
 
 ``simpleserial_put``
 ~~~~~~~~~~~~~~~~~~~~
@@ -228,15 +230,19 @@ The following is a SimpleSerial V2 example.
 Write some data to the serial port, which should send a packet from the
 target board to the capture board.
 
+.. _arguments-1:
+
 Arguments
 ^^^^^^^^^
 
 This function takes the following ordered arguments:
 
--  ``char`` - the **command** for the capture board (e.g. ``'z'`` for
+-  ``char`` - the **command** for the capture board (e.g. ``'z'`` for
    ack, or ``'e'`` for error).
 -  ``uint8_t`` - the **size of the data buffer**.
 -  ``uint8_t*`` - the **data buffer** of the packet send.
+
+.. _example-1:
 
 Example
 ^^^^^^^
@@ -246,21 +252,21 @@ on the usage of the ``simpleserial_put`` function).
 
 .. code:: c
 
-    #include "simpleserial.h"
+   #include "simpleserial.h"
 
-    uint8_t encrypt_plaintext(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t* data)
-    {
-        // ...snip (do the actual encryption).
+   uint8_t encrypt_plaintext(uint8_t cmd, uint8_t scmd, uint8_t dlen, uint8_t* data)
+   {
+       // ...snip (do the actual encryption).
 
-        // Send the result back to the capture board.
-        simpleserial_put('r', 16, result_buffer);
+       // Send the result back to the capture board.
+       simpleserial_put('r', 16, result_buffer);
 
-        return 0;
-    }
+       return 0;
+   }
 
-    // ... snip
+   // ... snip
 
-    simpleserial_addcmd('p', 16, encrypt_plaintext);
+   simpleserial_addcmd('p', 16, encrypt_plaintext);
 
 ``simpleserial_get``
 ~~~~~~~~~~~~~~~~~~~~
@@ -274,22 +280,24 @@ being check.
 It might return without calling a callback for several reasons:
 
 -  There are no handler listening to the command send.
--  The send packet is invalid. e.g. in SimpleSerial this could be due to
+-  The send packet is invalid. e.g. in SimpleSerial this could be due to
    data bytes not being in HexASCII format.
 -  The data buffer has an unexpected length.
+
+.. _example-2:
 
 Example
 ^^^^^^^
 
 .. code:: c
 
-    #include "simpleserial.h"
+   #include "simpleserial.h"
 
-    // ...snip
+   // ...snip
 
-    // Add a listener
-    simpleserial_addcmd('p', 16, encrypt);
+   // Add a listener
+   simpleserial_addcmd('p', 16, encrypt);
 
-    // Keep check if a command was send fitting one of the listeners.
-    while(1)
-        simpleserial_get();
+   // Keep check if a command was send fitting one of the listeners.
+   while(1)
+       simpleserial_get();

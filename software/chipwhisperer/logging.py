@@ -21,9 +21,9 @@ chipwhisperer_loggers = [
 
 ]
 for logger in chipwhisperer_loggers:
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.WARNING)
     strmhndlr = logging.StreamHandler()
-    strmhndlr.setLevel(logging.WARNING)
+    strmhndlr.setLevel(logging.DEBUG)
     strmhndlr.setFormatter(cw_formatter)
     try:
         os.mkdir(os.path.join(__file__[:-10], "logs"))

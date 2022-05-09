@@ -8,7 +8,7 @@ Over the past year, we have been making a number of changes to the USB interface
 the hood as we adapt the ChipWhisperer to a "plug and play" model for Windows. ChipWhisperer 
 devices with firmware newer than 0.23/1.23 (released November 2020) will automatically 
 configure themselves as a WinUSB device, instead of using the old and unmaintained libusb0 
-driver. This update makes ChipWhisperer "plug and play" on all Windows, Linux, and Mac – 
+driver. This update makes ChipWhisperer "plug and play" on all Windows, Linux, and Mac - 
 if you have the ChipWhisperer software, you can use your device!
 
 Since this firmware update, we have continued to support both USB drivers; however, as of 

@@ -322,68 +322,82 @@ OpenADC Scope
 ChipWhisperer_Husky
 ===================
 
-.. Mostly the same as the CWPro, with some additional upgraded settings.
+Mostly the same as the CWPro, with some additional upgraded settings.
 
-.. It also includes a PLL class (which may be integrated into :code:`scope.clock`
-.. in the future). This class's default setup is to use 7.37MHz for the target
-.. clock and a x4 multiple for the ADC clock.
+Like with the FPGA based clock, the target clock on the Husky 
+can be set directly::
 
-.. Like with the FPGA based clock, the target clock on the Husky 
-.. can be set directly::
+    scope.clock.clkgen_freq = 7.37E6
 
-..     scope.pll.target_freq = 7.37E6
+The ADC clock is set as a positive integer multiple of the target clock::
 
-.. The ADC clock is set as a positive integer multiple of the target clock::
+    scope.clock.adc_mul = 4
 
-..     scope.pll.adc_mul = 4
+In order to ensure a clean multiple for the ADC, the PLL
+settings for the whole chip are changed if :code:`adc_mul` or :code:`target_freq`
+are changed. This means the target clock will drop out for a short period if
+either are changed.
 
-.. In order to ensure a clean multiple for the ADC, the PLL
-.. settings for the whole chip are changed if :code:`adc_mul` or :code:`target_freq`
-.. are changed. This means the target clock will drop out for a short period if
-.. either are changed.
+The PLL can use either an onboard XTAL, or a clock output from the onboard FPGA.
+The FPGA setting can be set to use an external clock (HS1, usually). Otherwise,
+the XTAL setting is recommended as it results in much less jitter on the ADC::
 
-.. The PLL can use either an onboard XTAL, or a clock output from the onboard FPGA.
-.. The FPGA setting can be set to use an external clock (HS1, usually). Otherwise,
-.. the XTAL setting is recommended as it results in much less jitter on the ADC::
+    scope.clock.clkgen_src = 'system' # XTAL (default)
+    scope.pll.pll_src = 'extclk' # ext clock
 
-..     scope.pll.pll_src = 'xtal' # XTAL default
-..     scope.pll.pll_src = 'fpga' # FPGA 
+Like with the other FPGA ChipWhisperers, the phase between the target and ADC clocks can be changed.
+This is a 6 bit signed value mapped onto the same range as earlier ChipWhisperers ([-255, 255])::
 
-.. Like with the other FPGA ChipWhisperers, the phase of the clock can be changed.
-.. In this case, a positive unitless phase between 0 and 31 can be applied to either output clock::
+    # +50 phase to adc
+    scope.pll.adc_phase = 50
 
-..     # +5 phase to adc
-..     scope.pll.adc_delay = 5
+    .. attribute:: clock
 
-..     # +5 to both - same as both = 0
-..     scope.pll.target_delay = 5
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.clkgen_src
+            :annotation: scope.clock.clkgen_src
+        
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.clkgen_freq
+            :annotation: scope.clock.clkgen_freq
 
-.. Additional functionality, such as resetting the chip and resynchronizing the output clocks
-.. are available, but aren't typically needed.
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.adc_mul
+            :annotation: scope.clock.adc_mul
 
-..     .. attribute:: pll
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.adc_freq
+            :annotation: scope.clock.adc_freq
 
-..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.pll_src
-..             :annotation: scope.pll.pll_src
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.adc_phase
+            :annotation: scope.clock.adc_phase
 
-..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.target_freq
-..             :annotation: scope.pll.target_freq
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.extclk_monitor_enabled
+            :annotation: scope.clock.extclk_monitor_enabled
 
-..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.adc_mul
-..             :annotation: scope.pll.adc_mul
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.extclk_error
+            :annotation: scope.clock.extclk_error
 
-..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.adc_freq
-..             :annotation: scope.pll.adc_freq
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.extclk_tolerance
+            :annotation: scope.clock.extclk_tolerance
 
-..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.pll_locked
-..             :annotation: scope.pll.pll_locked
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.adc_src
+            :annotation: scope.clock.adc_src
 
-..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.adc_delay
-..             :annotation: scope.pll.adc_delay
+Glitching differs more substantially. To start, before you can begin glitching, you must enable
+the glitch module::
 
-..         .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyPLL.CDCI6214.target_delay
-..             :annotation: scope.pll.target_delay
+    scope.glitch.enabled = True # off by default to save power + keep FPGA cool
 
+The next difference is that the Husky has the option to use an external PLL (the same one used to generate the target/ADC clocks),
+providing a lower jitter clock source for glitching::
+
+    socpe.glitch.clk_src = "pll" # recommended over "clkgen"
+
+The final major difference is width and offset. The Husky has a single width and a single offset parameter
+which are represented as integers. This means that :code:`offset_fine` and :code:`width_fine` are gone,
+and the minimum step is now 1 instead of ~0.4 (1/256), though the full range of :code:`[-50, 50]%`` of the target clock
+is maintained.
+
+The user also now has some control over what this minimum step corresponds to as a % of the target clock.
+For a full demo, it's recommended that you read our Jupyter Notebook about glitching on the Husky, but in
+short, :code:`width` and :code:`offset` has a range of :code:`[-scope.glitch.phase_shift_steps, scope.glitch.phase_shift_steps]`
 
 .. _api-scope-cwnano:
 
@@ -468,6 +482,42 @@ ChipWhisperer Nano Scope
     .. autoattribute:: chipwhisperer.capture.scopes.cwnano.CWNano.fw_version_str
 
     .. autoattribute:: chipwhisperer.capture.scopes.cwnano.CWNano.sam_build_date
+
+.. _scope-common:
+
+Common Scope Attributes
+=======================
+
+The following methods and attributes are common to all scopes, as well as the CW305/CW310:
+
+.. autoclass:: chipwhisperer.capture.api.cwcommon.ChipWhispererCommonInterface
+
+    .. automethod:: enable_MPSSE
+
+    .. automethod:: check_feature
+
+    .. automethod:: feature_list
+
+    .. automethod:: _getNAEUSB
+
+    .. automethod:: get_serial_ports
+
+    .. automethod:: upgrade_firmware
+
+    .. automethod:: reset_sam3u
+
+    .. autoattribute:: latest_fw
+
+    .. autoattribute:: latest_fw_str
+
+    .. autoattribute:: fw_version
+
+    .. autoattribute:: fw_version_str
+
+    .. autoattribute:: sam_build_date
+
+    .. autoattribute:: sn
+
 
 .. _api-scope-update:
 

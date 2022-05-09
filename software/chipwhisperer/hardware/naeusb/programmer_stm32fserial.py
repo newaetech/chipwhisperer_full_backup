@@ -280,12 +280,7 @@ class STM32FSerial:
 
     @close_on_fail
     def reset(self):
-        if self._cwapi:
-            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'Low'])
-            self.delay_func(10)
-            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'High'])
-            self.delay_func(25)
-        elif self.scope:
+        if self.scope:
             self.scope.io.nrst = 'low'
             time.sleep(0.010)
             self.scope.io.nrst = 'high'
@@ -296,16 +291,12 @@ class STM32FSerial:
     @close_on_fail
     def set_boot(self, enter_bootloader):
         if enter_bootloader:
-            if self._cwapi:
-                self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'High'])
-            elif self.scope:
+            if self.scope:
                 self.scope.io.pdic = 'high'
             else:
                 raise ValueError('requires either scope or api to be set')
         else:
-            if self._cwapi:
-                self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'Low'])
-            elif self.scope:
+            if self.scope:
                 self.scope.io.pdic = 'low'
             else:
                 raise ValueError('requires either scope or api to be set')
@@ -334,18 +325,20 @@ class STM32FSerial:
     @close_on_fail
     def initChip(self):
         self.set_boot(True)
-        self.reset()
+        # self.reset()
+        time.sleep(1)
         fails = 0
         while fails < 5:
             try:
                 #First 2-times, try resetting. After that don't in case reset is causing garbage on lines.
                 if fails < 2:
                     self.reset()
+                    time.sleep(1)
                 try:
                     self.sp.flush()
                     self.sp.write("\x7F")
-                except AttributeError:
-                    raise AttributeError('sp attribute requires call to open_port')
+                except AttributeError as e:
+                    raise AttributeError('sp attribute requires call to open_port') from e
                 return self._wait_for_ask("Syncro")
             except CmdException:
                 target_logger.info("Sync failed with error %s, retrying..." % traceback.format_exc())

@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath('./../software'))
 # -- Project information -----------------------------------------------------
 
 project = 'ChipWhisperer'
-copyright = "2021, NewAE Technology Inc."
+copyright = "2022, NewAE Technology Inc."
 author = "NewAE Technology Inc."
 
 # The full version, including alpha/beta/rc tags
@@ -193,5 +193,5 @@ def generate_contributing(app, config):
 
 
 def setup(app):
-    app.connect('config-inited', create_tutorial_files)
+    # app.connect('config-inited', create_tutorial_files)
     app.connect('config-inited', generate_contributing)

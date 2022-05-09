@@ -34,15 +34,19 @@ You now have access to an object-oriented interface to configure the attached
 hardware. To see what is possible with this interface check out the
 :ref:`scope section <api-scope>` of the API documentation.
 
-To see longer, more in-depth examples of what the tool-chain can do, take a look
-at :ref:`tutorials-sca101` for completed versions of power analysis tutorials, as well as
-:ref:`tutorials-fault101` for completed versions of voltage and clock glitching tutorials.
-Check out all the other :ref:`tutorials <tutorials>` to see what is possible. The
-content is generated from Jupyter notebooks included with the project. It
-includes interactive plots.
-
 .. _hardware: https://rtfm.newae.com
 
+Installation
+============
+
+.. toctree::
+    :maxdepth: 2
+
+    installing
+    windows-install
+    linux-install
+    mac-install
+    virtual-box-inst
 
 Documentation
 =============
@@ -51,23 +55,7 @@ Documentation
     :maxdepth: 2
 
     getting-started
-    prerequisites
-    installing
     starting
-
-
-Jupyter Notebook Tutorials
-==========================
-
-Jupyter notebook tutorials with output included so you can follow along,
-or just check out what the ChipWhisperer tool-chain is capable of.
-
-
-.. toctree::
-    :maxdepth: 4
-
-    tutorials
-
 
 API
 ===

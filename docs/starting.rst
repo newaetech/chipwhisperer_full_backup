@@ -6,8 +6,7 @@ Starting
 
 After finishing the installation process, there are two different ways of
 using the **chipwhisperer** software. You will most likely be using a Jupyter
-server to run a Jupyter notebook inside of your browser. This will make
-following the :ref:`tutorials <tutorials>` easier.
+server to run a Jupyter notebook inside of your browser. 
 
 *****************
 Jupyter Notebooks
@@ -106,5 +105,4 @@ interpreter, use **chipwhisperer** as you normally would any python package::
     help(cw)
 
 The :ref:`Python API <api>` has all the information about what functions,
-and classes are at your disposal. You can also you the
-:ref:`tutorials <tutorials>` as a reference as well.
+and classes are at your disposal.

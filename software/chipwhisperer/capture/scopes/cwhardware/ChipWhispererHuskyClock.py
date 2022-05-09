@@ -319,7 +319,7 @@ class CDCI6214:
 
         4. The PLL output clock is then divided by a prescale value (we assume 5),
         then by an output division between 1 and 2**14. The resulting output clock
-        must be between 10MHz and 200MHz for the ADC clock.
+        must be below 200MHz for the ADC clock.
 
         To get the best output settings, we'll be calculating the output frequency
         and calculating its percent error. The settings that result in the
@@ -774,13 +774,13 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         * The minimum output frequency is 500kHz and the maximum is 350MHz
         * The ADC clock output frequency (clkgen_freq * adc_mul) must be
-        between 10MHz and 200MHz. Therefore, if you want to use
-        a clkgen_freq above 200MHz, you must set adc_mul=0
+            below 200MHz. Therefore, if you want to use
+            a clkgen_freq above 200MHz, you must set adc_mul=0
         * The accuracy of the actual clkgen_freq will depend
-        on adc_mul, as the output divisor for the clkgen_freq must divide
-        cleanly by adc_mul. For example, if you try to use a clkgen_freq
-        of 7.37MHz and and adc_mul of 16, the closest valid clkgen_freq
-        will be 7.5MHz.
+            on adc_mul, as the output divisor for the clkgen_freq must divide
+            cleanly by adc_mul. For example, if you try to use a clkgen_freq
+            of 7.37MHz and and adc_mul of 16, the closest valid clkgen_freq
+            will be 7.5MHz.
 
         :Getter: Return the calculated target clock frequency in Hz
 

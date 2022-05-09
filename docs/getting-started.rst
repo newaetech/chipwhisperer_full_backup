@@ -91,9 +91,7 @@ Tutorials
 Finally, ChipWhisperer also includes Jupyter Notebook tutorials and labs that both
 teach about side channel attacks that can be performed with ChipWhisperer,
 as well as showcase how to use the Python API. These tutorials/labs 
-are available in the `ChipWhisperer Jupyter Github repository`_. Some
-tutorials are also available as a completed static webpage over on the
-:ref:`tutorials <tutorials>` page.
+are available in the `ChipWhisperer Jupyter Github repository`_.
 
 .. _getting_started-important-links:
 
@@ -185,15 +183,6 @@ Here are some of the major changes we are most excited about:
     documentation, and the tutorials are on this site. We've now
     got a `separate site for hardware docs <https://rtfm.newae.com>`_ as well. This site will 
     be version based on releases of the software. Thank you `readthedocs`_!
-
-  * :ref:`Tutorials <tutorials>` are now auto-generated with our tutorial
-    build system. The jupyter notebooks that are included in the
-    `ChipWhisperer GitHub repository`_  in the *jupyter* submodule
-    are built with multiple different types of hardware. The output is on
-    the :ref:`tutorials <tutorials>` page of this site. Just like when you
-    complete the tutorials some of the tutorials will contain output with
-    warnings during the capture of power traces. This will make it easier
-    to know what to expect when running the tutorials yourself.
 
 .. _Mouser: https://www.mouser.com/Search/Refine?Keyword=newae
 .. _UFO target board repository: https://github.com/newaetech/chipwhisperer-target-cw308t
