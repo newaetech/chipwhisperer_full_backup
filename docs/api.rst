@@ -392,12 +392,50 @@ providing a lower jitter clock source for glitching::
 
 The final major difference is width and offset. The Husky has a single width and a single offset parameter
 which are represented as integers. This means that :code:`offset_fine` and :code:`width_fine` are gone,
-and the minimum step is now 1 instead of ~0.4 (1/256), though the full range of :code:`[-50, 50]%`` of the target clock
+and the minimum step is now 1 instead of ~0.4 (1/256), though the full range of :code:`[-50, 50]%` of the target clock
 is maintained.
 
 The user also now has some control over what this minimum step corresponds to as a % of the target clock.
 For a full demo, it's recommended that you read our Jupyter Notebook about glitching on the Husky, but in
-short, :code:`width` and :code:`offset` has a range of :code:`[-scope.glitch.phase_shift_steps, scope.glitch.phase_shift_steps]`
+short, :code:`width` and :code:`offset` has a range of :code:`[-scope.glitch.phase_shift_steps, scope.glitch.phase_shift_steps]`,
+which is adjustable by setting :code:`scope.clock.pll.update_fpga_vco(X)`, where :code:`X` is between :code:`600e6` and :code:`1200e6`
+
+    .. attribute:: glitch
+    
+        :annotation: scope.glitch
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.mmcm_locked
+            :annotation: scope.glitch.mmcm_locked
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.phase_shift_steps
+            :annotation: scope.glitch.phase_shift_steps
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.clk_src
+            :annotation: scope.glitch.clk_src
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.width
+            :annotation: scope.glitch.width
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.offset
+            :annotation: scope.glitch.offset
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.trigger_src
+            :annotation: scope.glitch.trigger_src
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.manual_trigger
+            :annotation: scope.glitch.manual_trigger
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.arm_timing
+            :annotation: scope.glitch.arm_timing
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.ext_offset
+            :annotation: scope.glitch.ext_offset
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.repeat
+            :annotation: scope.glitch.repeat
+
+        .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.output
+            :annotation: scope.glitch.output
 
 .. _api-scope-cwnano:
 

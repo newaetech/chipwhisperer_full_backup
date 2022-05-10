@@ -36,13 +36,14 @@ hardware. To see what is possible with this interface check out the
 
 .. _hardware: https://rtfm.newae.com
 
+.. _install:
+
 Installation
 ============
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    installing
     windows-install
     linux-install
     mac-install
@@ -84,3 +85,10 @@ Here is more information about changes, and contribution.
     Logging <logging.rst>
     Drivers <drivers.rst>
     ChipWhisperer as a Debugger <debugging.rst>
+
+Tutorials
+---------
+
+Completed tutorial files, which were previously available on this page, are now stored on our
+`test results Github page <https://github.com/newaetech/ChipWhisperer-Test-Results>`__ and
+are available in reStructured text (which renders on Github) and html.

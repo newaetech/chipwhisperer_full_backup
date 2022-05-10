@@ -28,8 +28,10 @@ prerequisites for you. The steps for using the installer are as follows:
 
  * Navigate to the ChipWhisperer release page on Github: `releases`_
 
+ .. image:: _images/win-installer-1.png
+
  * Find the latest ChipWhisperer Windows install executable (currently 
-   :code:`Chipwhisperer.v5.5.2.Setup.64-bit.exe`)
+   :code:`Chipwhisperer.v5.6.1.exe`)
  
  * Run the executable and choose the path you want to install ChipWhisperer at. 
    You must have read/write permissions for the location you install to, so 
@@ -40,7 +42,12 @@ prerequisites for you. The steps for using the installer are as follows:
    ChipWhisperer and whether or not you want to install make and compilers (we recommend that you
    do).
 
- * Wait for the installation to finish.
+   .. image:: _images/win-installer-2.png
+
+ * Wait for the installation to finish. Note that a second window will open before the install finishes to
+   complete additional steps.
+
+   .. image:: _images/win-installer-3.png
 
 If you're on firmware x.23 or newer, you're all set! Drivers will be automatically installed when you plug your ChipWhisperer in.
 Otherwise, see :ref:`windows-drivers`.
