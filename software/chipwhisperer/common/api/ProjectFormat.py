@@ -669,11 +669,12 @@ class Traces:
     def keys(self):
         return self._keys
 
-    def append(self, trace):
+    def append(self, trace, dtype=np.double):
         """Append a Trace containing the trace and related operation information.
 
         Args:
             trace (:class:`Trace <chipwhisperer.common.trace.Trace>`): A captured or created trace.
+            dtype: Numpy data type for storing trace.wave
 
         Raises:
             TypeError: When trying to append something other than a trace.
@@ -686,7 +687,7 @@ class Traces:
             self.cur_seg = self.project.segments.new()
             self.project.segments.append(self.cur_seg)
             self.cur_trace_num = 0
-        self.cur_seg.add_trace(*trace)
+        self.cur_seg.add_trace(*trace, dtype=dtype)
         self.cur_trace_num += 1
 
     def extend(self, iterable):
