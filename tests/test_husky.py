@@ -350,7 +350,7 @@ testADCTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '5/5/2022, 20:39'
+    assert scope.fpga_buildtime == '5/9/2022, 17:35'
 
 
 def test_fw_version():
@@ -1096,6 +1096,7 @@ def test_glitch_modes (reps=3):
     scope.adc.lo_gain_errors_disabled = True
     scope.glitch.enabled = True
     scope.glitch.clk_src = 'pll'
+    scope.glitch.state = None
     scope.LA.enabled = True
     scope.LA.oversampling_factor = 4
     scope.LA.downsample = 1
