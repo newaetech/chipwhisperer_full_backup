@@ -144,7 +144,7 @@ class GlitchSettings(util.DisableNewAttr):
 
         This DCM can be clocked from three different sources:
          * "target": The HS1 clock from the target device
-         * "clkgen": The CLKGEN DCM output (not recommended for Husky)
+         * "clkgen": The CLKGEN DCM output (N/A for Husky)
          * "pll": Husky's on-board PLL clock (Husky only)
 
         :Getter:
@@ -171,11 +171,19 @@ class GlitchSettings(util.DisableNewAttr):
         if source == "target":
             clk_val = self.cwg.CLKSOURCE0_BIT
         elif source == "clkgen":
-            clk_val = self.cwg.CLKSOURCE1_BIT
-        elif source == "pll":
-            clk_val = self.cwg.CLKSOURCE2_BIT
+            if self._is_husky:
+                glitch_logger.warning("clkgen unsupported for Husky; using pll instead.")
+                clk_val = self.cwg.CLKSOURCE2_BIT
+            else:
+                clk_val = self.cwg.CLKSOURCE1_BIT
+        elif source == 'pll':
+            if self._is_husky:
+                clk_val = self.cwg.CLKSOURCE2_BIT
+            else:
+                glitch_logger.warning("pll is only for Husky; using clkgen instead.")
+                clk_val = self.cwg.CLKSOURCE1_BIT
         else:
-            raise ValueError("Can't set glitch arm timing to %s; valid values: ('target', 'pll', 'clkgen')" % source, source)
+            raise ValueError("Can't set glitch clock source to %s; valid values: ('target', 'pll', 'clkgen')" % source)
         self.cwg.setGlitchClkSource(clk_val)
 
     @property
@@ -194,10 +202,10 @@ class GlitchSettings(util.DisableNewAttr):
 
     @property
     def enabled(self):
-        """Whether the Xilinx MMCMs used to generate glitches are powered on or not.
-        7-series MMCMs are power hungry. In the Husky FPGA, MMCMs are estimated to
-        consume half of the FPGA's power. If you run into temperature issues and don't
-        require glitching, you can power down these MMCMs.
+        """Husky only. Whether the Xilinx MMCMs used to generate glitches are
+        powered on or not. 7-series MMCMs are power hungry and are estimated
+        to consume half of the FPGA's power. If you run into temperature
+        issues and don't require glitching, you can power down these MMCMs.
 
         """
         if not self._is_husky:
@@ -213,7 +221,8 @@ class GlitchSettings(util.DisableNewAttr):
 
     @property
     def mmcm_locked(self):
-        """Whether the Xilinx MMCMs used to generate glitches are locked or not.
+        """Husky only. Whether the Xilinx MMCMs used to generate glitches are
+        locked or not.
 
         """
         if not self._is_husky:
@@ -268,29 +277,33 @@ class GlitchSettings(util.DisableNewAttr):
             raise ValueError("For CW-Husky only.")
         self.cwg.resetState()
 
-
     @property
     def width(self):
-        """The width of a single glitch pulse
+        """The width of a single glitch pulse.
         
         For CW-Husky, width is expressed as the number of phase shift steps.
+        Minimum width is obtained at 0. Maximum width is obtained at
+        scope.glitch.phase_shift_steps/2. Negative values are allowed, but -x
+        is equivalent to scope.glitch.phase_shift_steps-x. The setting rolls
+        over (+x is equivalent to scope.glitch.phase_shift_steps+x). Run the
+        notebook in jupyter/demos/husky_glitch.ipynb to visualize glitch
+        settings.
 
-        For other capture hardware, width is expressed as a percentage of one
-        period.
+        For other capture hardware (CW-lite, CW-pro), width is expressed as a
+        percentage of one period. One pulse can range from -49.8% to roughly
+        49.8% of a period. The system may not be reliable at 0%. Note that
+        negative widths are allowed; these act as if they are positive widths
+        on the other half of the clock cycle.
 
-        One pulse can range from -49.8% to roughly 49.8% of a period. The
-        system may not be reliable at 0%. Note that negative widths are allowed;
-        these act as if they are positive widths on the other half of the
-        clock cycle.
+        :Getter: Return an int (Husky) or float (others) with the current
+            glitch width.
 
-        :Getter: Return a float with the current glitch width.
-
-        :Setter: Update the glitch pulse width. The value will be adjusted to
-            the closest possible glitch width.
+        :Setter: Update the glitch pulse width. For CW-lite/pro, the value is
+            adjusted to the closest possible glitch width.
 
         Raises:
            UserWarning: Width outside of [-49.8, 49.8]. The value is rounded
-               to one of these
+               to one of these. (CW-lite/pro only)
         """
         return self.cwg.getGlitchWidth()
 
@@ -300,10 +313,10 @@ class GlitchSettings(util.DisableNewAttr):
 
     @property
     def width_fine(self):
-        """The fine adjustment value on the glitch width.
+        """The fine adjustment value on the glitch width. N/A for Husky.
 
         This is a dimensionless number that makes small adjustments to the
-        glitch pulses' width. Valid range is [-255, 255]. N/A for Husky.
+        glitch pulses' width. Valid range is [-255, 255].
 
         .. warning:: This value is write-only. Reads will always return 0.
 
@@ -332,25 +345,35 @@ class GlitchSettings(util.DisableNewAttr):
 
     @property
     def offset(self):
-        """The offset from a rising clock edge to a glitch pulse rising edge,
-        as a percentage of one period.
+        """The offset from a rising clock edge to a glitch pulse rising edge.
 
+        For CW-Husky, offset is expressed as the number of phase shift steps.
+        Minimum offset is obtained at 0 (rising edge of glitch aligned with
+        rising edge of glitch source clock). At
+        scope.glitch.phase_shift_steps/2, the glitch rising edge is aligned
+        with the glitch source clock falling edge. Negative values are
+        allowed, but -x is equivalent to scope.glitch.phase_shift_steps-x. The
+        setting rolls over (+x is equivalent to
+        scope.glitch.phase_shift_steps+x). Run the notebook in
+        jupyter/demos/husky_glitch.ipynb to visualize glitch settings.
+
+        For other capture hardware (CW-lite, CW-pro), offset is expressed 
+        as a percentage of one period.
         A pulse may begin anywhere from -49.8% to 49.8% away from a rising
         edge, allowing glitches to be swept over the entire clock cycle.
 
-        N/A for Husky.
-
         .. warning:: very large negative offset <-45 may result in double glitches
+            (CW-lite/pro only).
 
-        :Getter: Return a float with the current glitch offset.
+        :Getter: Return an int (Husky) or float (CW-lite/pro) with the current
+            glitch offset.
 
-        :Setter: Set the glitch offset. The new value is rounded to the nearest
-            possible offset.
-
+        :Setter: Set the glitch offset. For CW-lite/pro, the new value is
+            rounded to the nearest possible offset.
 
         Raises:
-           TypeError: offset not an integer
            UserWarning: value outside range [-50, 50] (value is rounded)
+               (CW-lite/pro only)
         """
         return self.cwg.getGlitchOffset()
 
@@ -360,7 +383,7 @@ class GlitchSettings(util.DisableNewAttr):
 
     @property
     def offset_fine(self):
-        """The fine adjustment value on the glitch offset.
+        """The fine adjustment value on the glitch offset. N/A for Husky.
 
         This is a dimensionless number that makes small adjustments to the
         glitch pulses' offset. Valid range is [-255, 255].
@@ -776,10 +799,10 @@ class ChipWhispererGlitch(object):
         self.oa.sendMessage(CODE_WRITE, glitchreadbackaddr, cmd, Validate=False)
 
     def getPhaseShiftSteps(self):
-        """Returns number of phase shift steps in one target pll cycle.
-        This is simply 56 times the pll glitch MMCM's multiplier, indepedent
-        of the target clock frequency.
-        (ref: Xilinx UG472 v1.14, "Dynamic Phase Shift Interface in the MMCM")
+        """Husky only. Returns number of phase shift steps in one target pll
+        cycle.  This is simply 56 times the pll glitch MMCM's multiplier,
+        indepedent of the target clock frequency.  (ref: Xilinx UG472 v1.14,
+        "Dynamic Phase Shift Interface in the MMCM")
         """
         return self.pll._mmcm_muldiv * 56
 

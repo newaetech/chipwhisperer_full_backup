@@ -16,6 +16,10 @@ you need to get your device up and running again!
     and FPGA boards like the CW310 or CW305, not for integrated
     targets or CW308 target boards
 
+.. warning:: This update method for updating firmware only works
+    for ChipWhisperer 5.6 and newer.
+    For ChipWhisperer versions earlier than 5.6, see :ref:`api-scope-update`.
+
 *********************
 Prerequisites
 *********************
