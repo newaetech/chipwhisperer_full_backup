@@ -223,6 +223,13 @@ class GlitchSettings(util.DisableNewAttr):
     @property
     def num_glitches(self):
         """The number of glitch events to generate. CW-Husky only.
+
+        Each glitch event uses the same offset and width settings. 
+        Glitch event x uses repeat[x] and ext_offset[x].
+
+        This parameter has no effect when scope.glitch.trigger_src is set to
+        "manual" or "continuous".
+
         Raises:
            ValueError: number outside of [1, 32].
         """
@@ -388,10 +395,19 @@ class GlitchSettings(util.DisableNewAttr):
         """The trigger signal for the glitch pulses.
 
         The glitch module can use four different types of triggers:
-         * "continuous": Constantly trigger glitches
-         * "manual": Only trigger glitches through API calls
-         * "ext_single": Use the trigger module. One glitch per scope arm.
-         * "ext_continuous": Use the trigger module. Many glitches per arm.
+         * "continuous": Constantly trigger glitches. The following
+            scope.glitch parameters have no bearing in this mode: ext_offset,
+            repeat, num_glitches.
+         * "manual": Only trigger glitches by calling manual_trigger(). The
+            following scope.glitch parameters have no bearing in this mode:
+            ext_offset, num_glitches.
+         * "ext_single": Use the trigger module. Once the scope is armed, one
+            set of glitch events is emitted when the trigger condition is
+            satisfied. Subsequent trigger conditions are ignored unless the
+            scope is re-armed.
+         * "ext_continuous": Use the trigger module. A set of glitch events is
+            emitted each time the trigger condition is satisfied, whether or
+            not the scope is armed.
 
          .. warning:: calling :code:`scope.arm()` in manual gitch mode will cause a glitch to trigger.
 
@@ -473,6 +489,9 @@ class GlitchSettings(util.DisableNewAttr):
         list with scope.glitch.num_glitches elements, each element
         representing the ext_offset value for the corresponding glitch.
 
+        For CW-Lite/Pro, scope.glitch.num_glitches is not supported so this is
+        a simply an integer.
+
         Has no effect when trigger_src = 'manual' or 'continuous'.
 
         .. note::
@@ -481,13 +500,16 @@ class GlitchSettings(util.DisableNewAttr):
 
         This offset must be in the range [0, 2**32).
 
-        :Getter: Return the current external trigger offset.
+        :Getter: Return the current external trigger offset(s). For CW-lite/pro
+           or when num_glitches=1, this is an integer (for backwards
+           compatibility).  Otherwise, it is a list of integers.
 
-        :Setter: Set the external trigger offset.
+        :Setter: Set the external trigger offset(s). Integer for CW-lite/pro,
+           list of integers for Husky.
 
         Raises:
            TypeError: if offset not an integer, or list of integers for Husky
-           ValueError: if offset outside of range [0, 2**32)
+           ValueError: if any offset outside of range [0, 2**32)
         """
         return self.cwg.getTriggerOffset()
 
@@ -504,15 +526,27 @@ class GlitchSettings(util.DisableNewAttr):
         the glitch module to produce stronger glitches (especially during
         voltage glitching).
 
+        For CW-Husky when scope.glitch.num_glitches > 1, this parameter is a
+        list with scope.glitch.num_glitches elements, each element
+        representing the repeat value for the corresponding glitch.
+
+        For CW-Lite/Pro, scope.glitch.num_glitches is not supported so this is
+        a simply an integer.
+
+        Has no effect when trigger_src = 'continuous'.
+
         Repeat counter must be in the range [1, 8192].
 
-        :Getter: Return the current repeat value (integer)
+        :Getter: Return the current repeat value. For CW-lite/pro or when
+           num_glitches=1, this is an integer (for backwards compatibility).
+           Otherwise, it is a list of integers.
 
-        :Setter: Set the repeat counter
+        :Setter: Set the repeat counter. Integer for CW-lite/pro, list of
+           integers for Husky.
 
         Raises:
-           TypeError: if value not an integer
-           ValueError: if value outside [1, 8192]
+           TypeError: if value not an integer, or list of integers for Husky
+           ValueError: if any value outside [1, 8192]
         """
         return self.cwg.getRepeat()
 
@@ -1093,7 +1127,7 @@ class ChipWhispererGlitch(object):
 
     def glitchManual(self, _=None):
         """
-        Cause a single glitch event to occur. Depending on setting of numGlitches() this may mean
+        Cause a single glitch event to occur. Depending on setting of scope.glitch.repeat this may mean
         multiple glitches in a row
         """
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
