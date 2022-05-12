@@ -892,7 +892,7 @@ class ChipWhispererGlitch(object):
         """Set offset between trigger event and glitch in clock cycles"""
         if type(offsets) != list:
             offsets = [offsets]
-        if not self._is_husky:
+        if len(offsets) > 1 and not self._is_husky:
             raise ValueError("Only Husky supports multiple offsets.")
         raw  = 0
         for i,offset in enumerate(offsets):
@@ -1025,6 +1025,8 @@ class ChipWhispererGlitch(object):
         """Set number of glitches to occur after a trigger"""
         if type(repeats) != list:
             repeats = [repeats]
+        if len(repeats) > 1 and not self._is_husky:
+            raise ValueError("Only Husky supports multiple offsets.")
         raw = 0
         for i,repeat in enumerate(repeats):
             try:
