@@ -35,6 +35,7 @@
 #include <stdlib.h>
 
 uint8_t pcsamp_enable;
+static uint16_t num_encryption_rounds = 10;
 
 uint8_t setreg(uint8_t* x, uint8_t len)
 {
@@ -281,6 +282,30 @@ uint8_t get_pt(uint8_t* pt, uint8_t len)
     return 0x00;
 }
 
+uint8_t enc_multi_getpt(uint8_t* pt, uint8_t len)
+{
+    aes_indep_enc_pretrigger(pt);
+
+    for(unsigned int i = 0; i < num_encryption_rounds; i++){
+        trigger_high_pcsamp();
+        aes_indep_enc(pt);
+        trigger_low_pcsamp();
+    }
+
+    aes_indep_enc_posttrigger(pt);
+	simpleserial_put('r', 16, pt);
+    return 0;
+}
+
+uint8_t enc_multi_setnum(uint8_t* t, uint8_t len)
+{
+    //Assumes user entered a number like [0, 200] to mean "200"
+    //which is most sane looking for humans I think
+    num_encryption_rounds = t[1];
+    num_encryption_rounds |= t[0] << 8;
+    return 0;
+}
+
 
 uint8_t info(uint8_t* x, uint8_t len)
 {
@@ -328,6 +353,8 @@ int main(void)
     simpleserial_addcmd('s', 5, setreg);
     simpleserial_addcmd('g', 5, getreg);
     simpleserial_addcmd('c', 4, set_pcsample_params);
+    simpleserial_addcmd('n', 2, enc_multi_setnum);
+    simpleserial_addcmd('f', 16, enc_multi_getpt);
 
     enable_trace();
 
