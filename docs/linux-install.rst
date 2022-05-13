@@ -36,8 +36,8 @@ should get you up and running:
 
     source ~/.bashrc
 
-	pyenv install 3.9.5
-	pyenv virtualenv 3.9.5 cw
+    pyenv install 3.9.5
+    pyenv virtualenv 3.9.5 cw
     pyenv activate cw
 
     cd ~/
@@ -51,6 +51,17 @@ should get you up and running:
 
     python setup.py develop
     python -m pip install -r jupyter/requirements.txt
+
+You can check that the install succeeded by navigating to :code:`chipwhisperer/jupyter`
+and running:
+
+.. code:: bash
+
+    jupyter notebook
+
+Which should open a window like the following in your browser:
+
+.. image:: _images/Jupyter\ ChipWhisperer.png
 
 Next, we'll go through those commands
 

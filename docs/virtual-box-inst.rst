@@ -17,7 +17,8 @@ VirtualBox Image
 
  * Install the VirtualBox Extension pack, which can be found on the VirtualBox 
    downloads page linked above. This is necessary for the VM to interact with 
-   the ChipWhisperer hardware.
+   the ChipWhisperer hardware. Note that the license for the Extension pack differs
+   from the base VirtualBox license: https://www.virtualbox.org/wiki/VirtualBox_PUEL
 
  * Download a ChipWhisperer virtual machine image release or build it
    yourself using Vagrant. VM images come as .7z files and can be found on our 

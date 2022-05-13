@@ -1,4 +1,5 @@
 # from _typeshed import OpenBinaryMode
+from multiprocessing.sharedctypes import Value
 from ....common.utils.util import dict_to_str, DelayedKeyboardInterrupt
 from ....common.utils import util
 from ....logging import *
@@ -978,11 +979,6 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
     @property
     def adc_src(self):
-        return "For Husky, please use scope.clock.clkgen_src and scope.clock.adc_mul instead."
-
-
-    @adc_src.setter
-    def adc_src(self, src):
         """Convenience function for backwards compatibility with how ADC clocks
         are set on CW-lite and CW-pro.
 
@@ -1001,6 +997,11 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         Raises:
            ValueError: if string not in valid settings
         """
+        return "For Husky, please use scope.clock.clkgen_src and scope.clock.adc_mul instead."
+
+
+    @adc_src.setter
+    def adc_src(self, src):
         scope_logger.warning("scope.clock.adc_src is provided for backwards compability, but scope.clock.clkgen_src and scope.clock.adc_mul should be used for Husky.")
 
         if src == "clkgen_x4":
@@ -1033,3 +1034,43 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         are managed on CW-lite and CW-pro.
         """
         return self.pll.pll_locked
+
+    @property
+    def fpga_vco_freq(self):
+        """Set the FPGA clock glitch PLL's VCO frequency.
+
+        Affects scope.glitch.phase_shift_steps
+
+        Allowed range: 600 - 1200 MHz.
+
+        :getter: Calculate vco from last set value [Hz]
+
+        :setter: Set the vco frequency [Hz]
+
+        Raises:
+            ValueError: set vco out of valid range
+        """
+        muldiv = self.pll._mmcm_muldiv
+        vco = self.pll.target_freq * muldiv
+        return vco
+
+    @fpga_vco_freq.setter
+    def fpga_vco_freq(self, vco):
+        """Set the FPGA clock glitch PLL's VCO frequency.
+
+        Affects scope.glitch.phase_shift_steps
+
+        Allowed range: 600 - 1200 MHz.
+
+        :getter: Calculate vco from last set value [Hz]
+
+        :setter: Set the vco frequency [Hz]
+
+        Raises:
+            ValueError: set vco out of valid range
+        """
+        vco = int(vco)
+        if (vco > 600e3) or (vco < 1200e3):
+            raise ValueError("Invalid VCO frequency {} (allowed range 600MHz-1200MHz".format(vco))
+
+        self.pll.update_fpga_vco(vco)

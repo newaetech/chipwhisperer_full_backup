@@ -16,6 +16,24 @@ the major ChipWhisperer release 5.6, we will no longer support libusb0. We are
 switching to a new Python USB library to take advantage of additional USB features, and this 
 new library does not support libusb0.
 
+****************************
+Checking for Correct Drivers
+****************************
+
+To check if the correct drivers are installed, plug in your ChipWhisperer and open Device Manager. Next,
+navigate to :code:`Universal Serial Bus devices` and find your ChipWhisperer device.
+Double click on the device, go to :code:`Details`, and change the :code:`Property`
+to :code:`Device instance path`. If the path includes :code:`MI_00`, then
+you have the correct drivers installed on your device. If you are unable
+to find your device, the device isn't under :code:`Universal Serial Bus devices`,
+or if path doesn't include :code:`MI_00`, then you are on old firmware and/or
+have incorrect drivers installed.
+
+A ChipWhisperer with a correctly installed driver is shown below:
+
+  .. image:: _images/Device\ Manager\ Correct.png
+    :width: 400
+
 .. _windows-change-drivers:
 
 *********************
@@ -39,6 +57,7 @@ From there, you should be able to upgrade your firmware. Instructions are at :re
 Correct Zadig settings are shown below:
 
  .. image:: _images/zadig.png
+    :width: 400
 
 
 Once that's done:
@@ -49,15 +68,21 @@ Once that's done:
  9. Select "Delete the driver software for this device" and click "Uninstall"
  10. Unplug and replug your ChipWhisperer
 
+.. warning:: It is important that the steps to uninstall the Zadig driver are followed,
+            as Zadig installation may interfere with some ChipWhipserer features.
+
 A ChipWhisperer with an incorrectly installed driver is shown below (note that "libusb-win32" has been
 replaced by "Microchip Tools" due to another driver):
 
  .. image:: _images/Device\ Manager.png
+    :width: 400
 
 Ensure you have "Delete the driver software for this device" selected when uninstalling the driver:
 
  .. image:: _images/Uninstall\ Device.png
+    :width: 400
 
 A ChipWhisperer with a correctly installed driver is shown below:
 
   .. image:: _images/Device\ Manager\ Correct.png
+    :width: 400

@@ -49,7 +49,7 @@ Then launch a new terminal and run
 
     python --version
 
-and make sure it reports that you're using Python 3.7.7.
+and make sure it reports that you're using Python 3.9.5.
 
 Compilers
 =========

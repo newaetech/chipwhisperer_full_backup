@@ -8,9 +8,6 @@ Windows Installation
 Windows Bundled Installer
 *************************
 
-.. note:: Beginning with ChipWhisperer 5.5, the Windows installer includes
-          everything you need to run ChipWhisperer!
-
 .. warning:: Windows Subsystem for Linux (WSL) seems to interfere with
             :code:`%%bash` blocks. If you get an error about not being
             able to find make, or something about needing to install 
@@ -26,9 +23,10 @@ If you want to run a native Windows installation of ChipWhisperer, your best
 bet is to run the Windows installer, which takes care of getting the 
 prerequisites for you. The steps for using the installer are as follows:
 
- * Navigate to the ChipWhisperer release page on Github: `releases`_
+ * Navigate to the `ChipWhisperer release page <https://github.com/newaetech/chipwhisperer/releases>`_ on Github.
 
  .. image:: _images/win-installer-1.png
+    :width: 800
 
  * Find the latest ChipWhisperer Windows install executable (currently 
    :code:`Chipwhisperer.v5.6.1.exe`)
@@ -43,14 +41,16 @@ prerequisites for you. The steps for using the installer are as follows:
    do).
 
    .. image:: _images/win-installer-2.png
+    :width: 600
 
  * Wait for the installation to finish. Note that a second window will open before the install finishes to
    complete additional steps.
 
    .. image:: _images/win-installer-3.png
+    :width: 800
 
-If you're on firmware x.23 or newer, you're all set! Drivers will be automatically installed when you plug your ChipWhisperer in.
-Otherwise, see :ref:`windows-drivers`.
+On ChipWhisperers with updated firmware, drivers will be automatically installed. If you run
+into issues when trying to connect, you may want to read our :ref:`page on drivers <windows-drivers>`.
 
 =====================
 Running ChipWhisperer
@@ -109,7 +109,7 @@ Compilers and Make
 ==================
 
 We recommend that you grab both `avr-gcc`_ and `arm-none-eabi-gcc`_. Once you've got them installed
-add the :code:`bin\\` folders from both to your system path.
+add the :code:`bin\ ` folders from both to your system path.
 
 ===================================
 Verifying Prerequisite Installation

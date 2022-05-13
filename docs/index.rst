@@ -42,7 +42,7 @@ Installation
 ============
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
 
     windows-install
     linux-install
@@ -58,15 +58,20 @@ Documentation
     getting-started
     starting
 
+.. _api:
+
 API
 ===
 
 Documentation specific to api functions, classes, and modules live here.
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
 
-    api
+    scope-api
+    target-api
+    capture-api
+    analyzer-api
 
 
 Additional Information
@@ -92,3 +97,16 @@ Tutorials
 Completed tutorial files, which were previously available on this page, are now stored on our
 `test results Github page <https://github.com/newaetech/ChipWhisperer-Test-Results>`__ and
 are available in reStructured text (which renders on Github) and html.
+
+Deprecated Pages
+----------------
+
+This website has been restructed for CW 5.6.1. The following pages are deprecated
+and will be removed in the future:
+
+.. toctree::
+
+    api <api.rst>
+    install <install.rst>
+    prerequisites <prerequisites.rst>
+    tutorials <tutorials.rst>

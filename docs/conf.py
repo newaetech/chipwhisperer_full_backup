@@ -93,7 +93,8 @@ html_theme_options = {
         'Our Source Code': 'https://github.com/newaetech/chipwhisperer',
     },
     'sidebar_width': '265px',
-    'page_width': '1000px',
+    'page_width': '80%',
+    'anchor': 'grey'
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -107,11 +108,21 @@ todo_include_todos = True
 # remove module names
 add_module_names = False
 
+html_css_files = ['_static/custom.css']
+
 # side bar customization
 html_sidebars = {
     'index': ['about.html', 'navigation.html', 'searchbox.html'],
-    '**': ['about_short.html', 'localtoc.html', 'searchbox.html']
+    'api': ['about.html', 'navigation.html', 'searchbox.html'],
+    'prerequisites': ['about.html', 'navigation.html', 'searchbox.html'],
+    'tutorials': ['about.html', 'navigation.html', 'searchbox.html'],
+    'install': ['about.html', 'navigation.html', 'searchbox.html'],
+    '**': ['about.html', 'localtoc.html', 'searchbox.html']
 }
+
+rst_epilog = """
+.. include:: <s5defs.txt>
+"""
 
 
 def create_tutorial_files(app, config):
@@ -188,7 +199,7 @@ def generate_contributing(app, config):
     pypandoc.convert_file('../contributing.md', 'rst', outputfile='contributing.rst')
 
     print('Generating simpleserial.rst')
-    pypandoc.convert_file('../hardware/victims/firmware/simpleserial/README.md', 'rst', outputfile='simpleserial.rst')
+    pypandoc.convert_file('../hardware/victims/firmware/simpleserial/README.rst', 'rst', outputfile='simpleserial.rst')
             
 
 
