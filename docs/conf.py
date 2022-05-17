@@ -86,7 +86,7 @@ html_theme_options = {
     'github_user': 'newaetech',
     'github_repo': 'chipwhisperer',
     'github_banner': 'true',
-    'github_button': 'true',
+    'github_button': 'false',
     'github_type': 'watch',
     'extra_nav_links': {
         'Hardware Docs': 'https://rtfm.newae.com',
@@ -112,7 +112,7 @@ html_css_files = ['_static/custom.css']
 
 # side bar customization
 html_sidebars = {
-    'index': ['about.html', 'navigation.html', 'searchbox.html'],
+    'index': ['about.html', 'testtoc.html', 'searchbox.html'],
     'api': ['about.html', 'navigation.html', 'searchbox.html'],
     'prerequisites': ['about.html', 'navigation.html', 'searchbox.html'],
     'tutorials': ['about.html', 'navigation.html', 'searchbox.html'],

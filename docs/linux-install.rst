@@ -52,7 +52,7 @@ should get you up and running:
     python setup.py develop
     python -m pip install -r jupyter/requirements.txt
 
-You can check that the install succeeded by navigating to :code:`chipwhisperer/jupyter`
+You can check that the install succeeded by navigating to :code:`chipwhisperer`
 and running:
 
 .. code:: bash
@@ -172,3 +172,14 @@ With that done, all that's left is to install ChipWhisperer:
 
     python setup.py develop
     python -m pip install -r jupyter/requirements.txt
+
+You can check that the install succeeded by navigating to :code:`chipwhisperer`
+and running:
+
+.. code:: bash
+
+    jupyter notebook
+
+Which should open a window like the following in your browser:
+
+.. image:: _images/Jupyter\ ChipWhisperer.png

@@ -30,38 +30,11 @@ The :func:`open_project <chipwhisperer.open_project>` and the
 :func:`create_project <chipwhisperer.create_project>` return a
 :class:`Project <chipwhisperer.common.api.ProjectFormat.Project>` instance.
 
-.. automodule:: chipwhisperer.common.api.ProjectFormat
-
-    .. autoclass:: Project
-
-        .. autoattribute:: location
-
-        .. autoattribute:: traces
-
-        .. autoattribute:: waves
-
-        .. autoattribute:: textins
-
-        .. autoattribute:: textouts
-
-        .. autoattribute:: keys
-
-        .. automethod:: get_filename
-
-        .. automethod:: trace_manager
-
-        .. automethod:: export
-
-        .. automethod:: save
-
-        .. automethod:: close
+    .. autoclass:: chipwhisperer.common.api.ProjectFormat.Project
+        :members: location, traces, waves, textins, textouts, keys, get_filename, trace_manager, export, save, close
 
     .. autoclass:: chipwhisperer.common.api.ProjectFormat.Traces
-
-        .. automethod:: append
-
-        .. automethod:: extend
-
+        :members: append, extend
 
 .. _api-capture-helpers:
 
@@ -109,17 +82,10 @@ This trace groups together the power trace (wave), and the process information
 that resulted in that trace such as textin, textout, and key.
 
 .. autoclass:: chipwhisperer.common.traces.Trace
+    :members:
 
-    .. autoattribute:: wave
-
-    .. autoattribute:: textin
-
-    .. autoattribute:: textout
-
-    .. autoattribute:: key
-
-    .. versionadded:: 5.1
-        Added Trace class.
+.. versionadded:: 5.1
+    Added Trace class.
 
 
 .. _api-capture-ktp:
@@ -130,9 +96,8 @@ Key Text Patterns
 There are a few different types of classes for generating key text patterns
 for your capture:
 
-  * :ref:`api-capture-ktp-basic`
-  * :ref:`api-capture-ktp-tvla_ttest`
-
+  * :class:`chipwhisperer.capture.acq_patterns.basic.AcqKeyTextPattern_Basic`
+  * :class:`chipwhisperer.capture.acq_patterns.basic.AcqKeyTextPattern_TVLATTest`
 
 .. _api-capture-ktp-basic:
 
@@ -140,17 +105,7 @@ Basic
 -----
 
 .. autoclass:: chipwhisperer.capture.acq_patterns.basic.AcqKeyTextPattern_Basic
-
-    .. autoattribute:: fixed_key
-
-    .. autoattribute:: fixed_text
-
-    .. automethod:: next
-
-    .. automethod:: next_key
-
-    .. automethod:: next_text
-
+    :members:
 
 .. _api-capture-ktp-tvla_ttest:
 
@@ -158,7 +113,4 @@ TVLA TTest
 ----------
 
 .. autoclass:: chipwhisperer.capture.acq_patterns.tvlattest.AcqKeyTextPattern_TVLATTest
-
-    .. automethod:: init
-
-    .. automethod:: next
+    :members:

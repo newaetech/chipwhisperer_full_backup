@@ -46,40 +46,7 @@ Supported Targets:
  * `CW308 UFO targets <https://rtfm.newae.com/Targets/#cw308-targets>`_
 
 .. autoclass:: chipwhisperer.targets.SimpleSerial
-
-    .. automethod:: write
-
-    .. automethod:: read
-
-    .. automethod:: simpleserial_wait_ack
-
-    .. automethod:: simpleserial_write
-
-    .. automethod:: simpleserial_read
-
-    .. automethod:: simpleserial_read_witherrors
-
-    .. automethod:: set_key
-
-    .. automethod:: in_waiting
-
-    .. automethod:: in_waiting_tx
-
-    .. automethod:: flush
-
-    .. automethod:: close
-
-    .. automethod:: con
-
-    .. automethod:: get_simpleserial_commands
-
-    .. autoattribute:: baud
-
-    .. autoattribute:: output_len
-
-    .. autoattribute:: simpleserial_last_sent
-
-    .. autoattribute:: simpleserial_last_read
+    :members:
 
 .. _api-target-simpleserial2:
 
@@ -98,40 +65,7 @@ Supported Targets:
  * `CW308 UFO targets <https://rtfm.newae.com/Targets/#cw308-targets>`_
 
 .. autoclass:: chipwhisperer.targets.SimpleSerial2
-
-    .. automethod:: write
-
-    .. automethod:: read
-
-    .. automethod:: send_cmd
-
-    .. automethod:: read_cmd
-
-    .. automethod:: reset_comms
-
-    .. automethod:: simpleserial_wait_ack
-
-    .. automethod:: simpleserial_write
-
-    .. automethod:: simpleserial_read
-
-    .. automethod:: simpleserial_read_witherrors
-
-    .. automethod:: set_key
-
-    .. automethod:: in_waiting
-
-    .. automethod:: in_waiting_tx
-
-    .. automethod:: flush
-
-    .. automethod:: close
-
-    .. automethod:: con
-
-    .. automethod:: get_simpleserial_commands
-
-    .. autoattribute:: baud
+    :members:
 
 Simple Serial V2 CDC Target
 ---------------------------
@@ -144,6 +78,7 @@ its custom USB interface.::
     target = cw.target(scope, cw.targets.SimpleSerial2_CDC) # autodetects COM (/dev/ttyACMx) port
 
 .. autoclass:: chipwhisperer.targets.SimpleSerial2_CDC
+    :members:
 
 
 FPGA Targets
@@ -165,53 +100,16 @@ Examples:
  * `Attacking AES <https://github.com/newaetech/chipwhisperer-jupyter/blob/master/demos/PA_HW_CW305_1-Attacking_AES_on_an_FPGA.ipynb>`_
  * `Attacking ECC <https://github.com/newaetech/chipwhisperer-jupyter/tree/master/demos/CW305_ECC>`_
 
+
 .. autoclass:: chipwhisperer.targets.CW305
+    :members:
 
-    .. automethod:: simpleserial_read
+target.pll
+^^^^^^^^^^
 
-    .. automethod:: simpleserial_write
+.. autoclass:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906
+    :members:
 
-    .. automethod:: spi_mode
-
-    .. automethod:: _con
-
-    .. automethod:: fpga_write
-
-    .. automethod:: fpga_read
-
-    .. autoattribute:: clksleeptime
-
-    .. autoattribute:: clkusbautooff
-
-    .. attribute:: pll
-        :annotation: target.pll
-
-        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outenable_set
-            :annotation: target.pll.pll_outenable_set
-
-        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outenable_get
-            :annotation: target.pll.pll_outenable_get
-
-        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outfreq_set
-            :annotation: target.pll.pll_outfreq_set
-
-        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outfreq_get
-            :annotation: target.pll.pll_outfreq_get
-
-        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outsource_set
-            :annotation: target.pll.pll_outsource_set
-
-        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outsource_get
-            :annotation: target.pll.pll_outsource_get
-
-        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_writedefaults
-            :annotation: target.pll.pll_writedefaults
-
-        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outslew_set
-            :annotation: target.pll.pll_outslew_set
-
-        .. autoattribute:: chipwhisperer.hardware.naeusb.pll_cdce906.PLLCDCE906.pll_outslew_get
-            :annotation: target.pll.pll_outslew_get
 
 .. _api-target-cw310:
 
@@ -263,16 +161,7 @@ CW305 SPI Program
 -----------------
 
 .. autoclass:: chipwhisperer.capture.targets.CW305.FPGASPI
-
-    .. automethod:: erase_chip
-
-    .. automethod:: erase_block
-
-    .. automethod:: program
-
-    .. automethod:: verify
-
-    .. automethod:: read
+    :members:
 
 .. _cw305-fpga-io:
 
@@ -280,16 +169,7 @@ CW305 SAM3U IO Control
 ----------------------
 
 .. autoclass:: chipwhisperer.capture.targets.CW305.FPGAIO
-
-    .. automethod:: pin_set_output
-
-    .. automethod:: pin_set_state
-
-    .. automethod:: spi1_setpins
-
-    .. automethod:: spi1_enable
-
-    .. automethod:: spi1_transfer
+    :members:
 
 .. _api-target-program:
 
@@ -304,5 +184,13 @@ types available:
   * :class:`programmers.STM32FProgrammer <chipwhisperer.capture.api.programmers.STM32FProgrammer>`
   * :class:`programmers.XMEGAProgrammer <chipwhisperer.capture.api.programmers.XMEGAProgrammer>`
   * :class:`programmers.AVRProgrammer <chipwhisperer.capture.api.programmers.AVRProgrammer>`
+
+Example::
+
+    import chipwhisperer as cw
+    # ...scope setup, firmware build, etc
+
+    cw.program_target(scope, cw.programmers.STM32FProgrammer, "/path/to/firmware.hex")
+
 
 .. autofunction:: chipwhisperer.program_target

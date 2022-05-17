@@ -69,7 +69,7 @@ Once that's done:
  10. Unplug and replug your ChipWhisperer
 
 .. warning:: It is important that the steps to uninstall the Zadig driver are followed,
-            as Zadig installation may interfere with some ChipWhipserer features.
+            as Zadig installation may interfere with some ChipWhisperer features.
 
 A ChipWhisperer with an incorrectly installed driver is shown below (note that "libusb-win32" has been
 replaced by "Microchip Tools" due to another driver):

@@ -36,6 +36,15 @@ hardware. To see what is possible with this interface check out the
 
 .. _hardware: https://rtfm.newae.com
 
+Overview
+========
+.. toctree::
+    :maxdepth: 1
+
+    Overview <getting-started.rst>
+    Running ChipWhisperer <starting.rst>
+
+
 .. _install:
 
 Installation
@@ -45,18 +54,10 @@ Installation
     :maxdepth: 2
 
     windows-install
+    drivers
     linux-install
     mac-install
     virtual-box-inst
-
-Documentation
-=============
-
-.. toctree::
-    :maxdepth: 2
-
-    getting-started
-    starting
 
 .. _api:
 
@@ -69,27 +70,35 @@ Documentation specific to api functions, classes, and modules live here.
     :maxdepth: 2
 
     scope-api
+    firmware
     target-api
     capture-api
     analyzer-api
 
 
-Additional Information
-======================
+Additional Features and Info
+============================
 
-Here is more information about changes, and contribution.
+ChipWhisperer has some additional features that you may find useful, such as target debugging
+and control over logging in Python.
 
 .. toctree::
     :maxdepth: 2
-    :glob:
+
+    ChipWhisperer as a Debugger <debugging.rst>
+    SimpleSerial <simpleserial.rst>
+    Logging <logging.rst>
+
+Other
+============================
+
+Additional information such as the changelog and contributing
+
+.. toctree::
+    :maxdepth: 1
 
     contributing
-    Change Log <changes.rst>
-    SimpleSerial <simpleserial.rst>
-    Updating Firmware <firmware.rst>
-    Logging <logging.rst>
-    Drivers <drivers.rst>
-    ChipWhisperer as a Debugger <debugging.rst>
+    Changelog <changes.rst>
 
 Tutorials
 ---------

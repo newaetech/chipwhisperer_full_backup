@@ -46,15 +46,7 @@ moved to the latest ChipWhisperer API.
 .. automodule:: chipwhisperer.analyzer.preprocessing.resync_sad
 
     .. autoclass:: ResyncSAD
-
-        .. autoattribute:: max_shift
-
-        .. autoattribute:: ref_trace
-
-        .. autoattribute:: target_window
-
-        .. automethod:: preprocess
-
+        :members: max_shift, ref_trace, target_window, preprocess
 
 .. _api-analyzer-leakage_models:
 
@@ -77,38 +69,7 @@ syntax.
 .. automodule:: chipwhisperer.analyzer.attacks.models
 
     .. autoclass:: EightBitAES128LeakageModels
-
-        .. autoattribute:: after_key_mix
-
-        .. autoattribute:: inverse_sbox_output
-
-        .. autoattribute:: last_round_state
-
-        .. autoattribute:: last_round_state_diff
-
-        .. autoattribute:: last_round_state_diff_alternate
-
-        .. autoattribute:: mix_columns_output
-
-        .. autoattribute:: plaintext_key_xor
-
-        .. autoattribute:: round_1_2_state_diff_key_mix
-
-        .. autoattribute:: round_1_2_state_diff_sbox
-
-        .. autoattribute:: round_1_2_state_diff_text
-
-        .. autoattribute:: sbox_in_out_diff
-
-        .. autoattribute:: sbox_input_successive
-
-        .. autoattribute:: sbox_output
-
-        .. autoattribute:: sbox_output_successive
-
-        .. autoattribute:: shift_rows_output
-
-        .. automethod:: new_model
+        :members: 
 
 .. _api-analyzer-cpa_attack:
 
@@ -123,10 +84,7 @@ that is ready to perform an attack is to use the
 .. automodule:: chipwhisperer.analyzer.attacks.cpa_new
 
     .. autoclass:: CPA
-
-        .. automethod:: change_project
-
-        .. automethod:: run
+        :members: change_project, run
 
 
 Results

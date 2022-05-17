@@ -26,6 +26,17 @@ div.data_html {
         margin-top: 1%;
     }
 
-    section.scopegaintest.h3 {
-        background-color: "red";
+    .toc-title {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .toc-toc {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .toc-list {
+        /* margin-left: 15px; */
+        font-size: 15px;
     }
