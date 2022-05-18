@@ -679,6 +679,11 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
     def capture(self, poll_done : bool =False) -> bool:
         """Captures trace. Scope must be armed before capturing.
 
+        Blocks until scope triggered (or times out),
+        then disarms scope and copies data back.
+
+        Read captured data out with :code:`scope.get_last_trace()`
+
         Args:
             poll_done: Supported by Husky only. Poll
                 Husky to find out when it's done capturing, instead of
