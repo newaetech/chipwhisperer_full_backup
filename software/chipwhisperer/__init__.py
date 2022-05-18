@@ -371,7 +371,9 @@ def target(scope : Optional[scopes.ScopeTypes],
     return rtn
 
 def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plaintext : bytearray,
-    key : Optional[bytearray]=None, ack : bool=True, poll_done : bool=False) -> Optional[Trace]:
+    key : Optional[bytearray]=None, ack : bool=True, poll_done : bool=False,
+    as_int : bool=False) -> Optional[Trace]:
+
     """Capture a trace, sending plaintext and key
 
     Does all individual steps needed to capture a trace (arming the scope
@@ -395,6 +397,8 @@ def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plain
             captures.  Can also result in slightly faster captures when the
             number of samples is high. Defaults to False. Supported by Husky
             only.
+        as_int (bool, optional): If False, return trace as a float. Otherwise,
+            return as an int.
 
     Returns:
         :class:`Trace <chipwhisperer.common.traces.Trace>` or None if capture
@@ -449,7 +453,7 @@ def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plain
         return None
 
     response = target.simpleserial_read('r', target.output_len, ack=ack)
-    wave = scope.get_last_trace()
+    wave = scope.get_last_trace(as_int=as_int)
 
     if len(wave) >= 1:
         return Trace(wave, plaintext, response, key)
