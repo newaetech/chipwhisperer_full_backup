@@ -74,12 +74,12 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
     scope submodules (scope.gain, scope.adc, scope.clock, scope.io,
     scope.trigger, and scope.glitch):
 
-     *  :attr:`scope.gain <.OpenADC.gain>`
-     *  :attr:`scope.adc <.OpenADC.adc>`
-     *  :attr:`scope.clock <.OpenADC.clock>`
-     *  :attr:`scope.io <.OpenADC.io>`
-     *  :attr:`scope.trigger <.OpenADC.trigger>`
-     *  :attr:`scope.glitch <.OpenADC.glitch>`
+     *  :attr:`scope.gain <chipwhisperer.capture.scopes._OpenADCInterface.GainSettings>`
+     *  :attr:`scope.adc <chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings>`
+     *  :attr:`scope.clock <chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings>`
+     *  :attr:`scope.io <chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.GPIOSettings>`
+     *  :attr:`scope.trigger <chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.TriggerSettings>`
+     *  :attr:`scope.glitch (Lite/Pro) <chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings>`
      *  :meth:`scope.default_setup <.OpenADC.default_setup>`
      *  :meth:`scope.con <.OpenADC.con>`
      *  :meth:`scope.dis <.OpenADC.dis>`
@@ -87,11 +87,13 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
      *  :meth:`scope.get_last_trace <.OpenADC.get_last_trace>`
      *  :meth:`scope.get_serial_ports <.ChipWhispererCommonInterface.get_serial_ports>`
 
-    If you have a CW1200 ChipWhisperer Pro, you have access to some additional features:
+    If you have a CW1200 ChipWhisperer Pro/Husky, you have access to some additional features:
 
-     * :attr:`scope.SAD <.OpenADC.SAD>`
-     * :attr:`scope.DecodeIO <.OpenADC.DecodeIO>`
-     * :attr:`scope.adc.stream_mode (see scope.adc for more information)`
+     * :attr:`scope.SAD <chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.ChipWhispererSAD>`
+     * :attr:`scope.DecodeIO <chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger>`
+     * :attr:`scope.adc.stream_mode <chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.stream_mode>`
+
+    Inherits from :class:`chipwhisperer.capture.api.cwcommon.ChipWhispererCommonInterface`
     """
 
     _name = "ChipWhisperer/OpenADC"
@@ -205,6 +207,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.clock.clkgen_src = 'system'
             self.clock.clkgen_freq = 7.37e6
             self.clock.adc_mul = 4
+            self.adc.clip_errors_disabled = 1
             while not self.clock.clkgen_locked:
                 count += 1
                 self.clock.reset_dcms()
@@ -286,7 +289,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         """ Gets the name of the attached scope
 
         Returns:
-            'ChipWhisperer Lite' if a Lite, 'ChipWhisperer Pro' if a Pro
+            'ChipWhisperer Lite' if a Lite, 'ChipWhisperer Pro' if a Pro, 'ChipWhisperer Husky' if a Husky
         """
         name = self._getCWType()
         if name == "cwlite":
@@ -333,6 +336,9 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             "pass" / "fail"
 
         .. versionadded:: 5.6.1
+
+        :meta private:
+
         """
 
         if not self._is_husky:
@@ -842,6 +848,9 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             read result: list of <numbytes> bytes.
 
         .. versionadded:: 5.6.1
+
+        :meta private:
+
         """
         return list(self.sc.sendMessage(CODE_READ, addr, maxResp=numbytes))
 
@@ -852,6 +861,9 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             listofbytes (int array): list of bytes to write.
 
         .. versionadded:: 5.6.1
+
+        :meta private:
+
         """
         return self.sc.sendMessage(CODE_WRITE, addr, listofbytes)
 

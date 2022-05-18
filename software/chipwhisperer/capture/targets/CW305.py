@@ -148,8 +148,10 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
     def slurp_defines(self, defines_files=None):
         """ Parse Verilog defines file so we can access register and bit
         definitions by name and avoid 'magic numbers'.
+
         Args:
             defines_files (list): list of Verilog define files to parse
+
         """
         self.verilog_define_matches = 0
 

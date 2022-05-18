@@ -117,7 +117,11 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
     @property
     def output_len(self):
-        """The length of the output expected from the crypto algorithm (in bytes)"""
+        """The length of the output expected from the crypto algorithm (in bytes):
+        
+        :meta private:
+        
+        """
         return self._output_len
 
     @output_len.setter
@@ -151,18 +155,25 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     @property
     def protver(self):
         """Get the protocol version used for the target
+
+        :meta private:
         """
         return self._proto_ver
 
     @protver.setter
     def protver(self, value):
         """Set the protocol version used for the target ('1.1', '1.0', or 'auto')
+
         """
         self._proto_ver = value
 
 
     def setConnection(self, con):
-        """I don't think this does anything"""
+        """I don't think this does anything
+        
+        :meta private:
+
+        """
         self.ser = con
         self.ser.connectStatus = self.connectStatus
         self.ser.selectionChanged()

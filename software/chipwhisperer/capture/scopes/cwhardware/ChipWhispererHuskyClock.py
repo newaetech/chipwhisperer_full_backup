@@ -919,6 +919,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     @property
     def extclk_error(self):
         """TODO
+
         :Getter: Whether the external clock monitor is enabled.
 
         :Setter: Clear the error.
@@ -1039,7 +1040,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     def fpga_vco_freq(self):
         """Set the FPGA clock glitch PLL's VCO frequency.
 
-        Affects scope.glitch.phase_shift_steps
+        Affects :attr:`scope.glitch.phase_shift_steps <chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.phase_shift_steps>`
 
         Allowed range: 600 - 1200 MHz.
 

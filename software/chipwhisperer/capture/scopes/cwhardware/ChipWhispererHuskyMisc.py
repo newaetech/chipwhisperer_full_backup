@@ -248,10 +248,12 @@ class LEDSettings(util.DisableNewAttr):
     @property
     def setting(self):
         """Front-panel LED sources.
-            0: default: green=armed, blue=capture, top red=PLL lock fail, bottom red=glitch
-            1: green: USB clock heartbeat, blue=CLKGEN clock heartbeat
-            2: green: ADC sampling clock heartbeat, blue=PLL reference clock heartbeat
-            3: green: PLL clock heartbeat, blue=external clock change detected
+
+        #. default: green=armed, blue=capture, top red=PLL lock fail, bottom red=glitch
+        #. green: USB clock heartbeat, blue=CLKGEN clock heartbeat
+        #. green: ADC sampling clock heartbeat, blue=PLL reference clock heartbeat
+        #. green: PLL clock heartbeat, blue=external clock change detected
+
         In all cases, blinking red lights indicate a temperature, voltage, or
         sampling error (see scope.XADC.status and scope.adc.errors for details),
         whlie blinking green and blue lights indicate that a frequency change
@@ -617,12 +619,15 @@ class LASettings(util.DisableNewAttr):
     def read_capture(self, source, length=None):
         """Returns captured data for specified signal source.
         What you get depends on the capture group; see the capture_group documentation.
+
         Args:
            source (int): signal to read
            length (int): number of byte to read. If unspecified, returns the full capture size
                          (which is implementation-dependent and can be learned from capture_depth)
+
         Returns:
             Numpy array of binary values.
+
         Raises:
            ValueError: invalid source
         """
@@ -674,6 +679,7 @@ class LASettings(util.DisableNewAttr):
     @property
     def capture_depth(self):
         """Number of bits captured for each signal.
+
         Args:
             depth (int): capture <depth> samples of each signal. 16-bit value, in range [1, 16376].
         """
@@ -932,6 +938,7 @@ class LASettings(util.DisableNewAttr):
     @property
     def downsample(self):
         """Downsample setting.
+
         Args:
             downsample (int): capture every <downsample> samples. 16-bit value, in range [1, 2**16].
         """
@@ -948,34 +955,40 @@ class LASettings(util.DisableNewAttr):
 
         There are three groups. The signals captured for each group are as follows:
         'glitch' (group 0):
-            0: glitch output
-            1: source clock of glitch module
-            2: glitch internal MMCM1 (offset) output
-            3: glitch internal MMCM2 (width) output
-            4: glitch trigger
-            5: capture trigger
-            6: glitch enable
-            7. glitch trigger in its source clock domain (e.g. signal 1 of this group)
+
+            #. glitch output
+            #. source clock of glitch module
+            #. glitch internal MMCM1 (offset) output
+            #. glitch internal MMCM2 (width) output
+            #. glitch trigger
+            #. capture trigger
+            #. glitch enable
+            #. glitch trigger in its source clock domain (e.g. signal 1 of this group)
+
         'CW 20-pin' (group 1):
-            0: IO1
-            1: IO2
-            2: IO3
-            3: IO4
-            4: HS1
-            5: HS2
-            6: AUX MCX
-            7: TRIG MCX
-            8: ADC sampling clock
+
+            #. IO1
+            #. IO2
+            #. IO3
+            #. IO4
+            #. HS1
+            #. HS2
+            #. AUX MCX
+            #. TRIG MCX
+            #. ADC sampling clock
+
         'USERIO 20-pin' (group 2):
-            0: D0
-            1: D1
-            2: D2
-            3: D3
-            4: D4
-            5: D5
-            6: D6
-            7: D7
-            8: CK
+
+            #. D0
+            #. D1
+            #. D2
+            #. D3
+            #. D4
+            #. D5
+            #. D6
+            #. D7
+            #. CK
+
         'trigger debug' (group 3)
         'internal trace' (group 4)
 
