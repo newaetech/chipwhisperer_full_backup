@@ -78,6 +78,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 #
 html_theme = 'alabaster'
 
+
 html_theme_options = {
     'description': 'Side-Channel analysis tool-chain.',
     'fixed_sidebar': 'true',
@@ -120,9 +121,11 @@ html_sidebars = {
     '**': ['about.html', 'localtoc.html', 'searchbox.html']
 }
 
-rst_epilog = """
-.. include:: <s5defs.txt>
-"""
+# html_extra_path = ["install.html"]
+
+# rst_epilog = """
+# .. include:: <s5defs.txt>
+# """
 
 
 def create_tutorial_files(app, config):
