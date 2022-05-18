@@ -371,7 +371,7 @@ testADCTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '5/9/2022, 17:35'
+    assert scope.fpga_buildtime == '5/17/2022, 13:30'
 
 
 def test_fw_version():
@@ -1039,9 +1039,7 @@ def test_sad_trigger (bits, threshold, offset, reps, desc):
     scope.SAD.threshold = threshold
     scope.trigger.module = 'SAD'
 
-    scope.adc.presamples = scope.SAD._sad_reference_length + 6
-    #print(scope.SAD.reference[:12])
-    #time.sleep(0.5)
+    scope.adc.presamples = scope.SAD._sad_reference_length + 8
     for r in range(reps):
         sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
         assert sadtrace is not None, 'SAD-triggered capture failed'
