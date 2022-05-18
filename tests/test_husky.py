@@ -596,6 +596,13 @@ def test_glitch_offset(clock, margin, offset, oversamp, desc):
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
 def test_glitch_width(width, oversamp, desc):
     reset_setup()
+
+    scope.clock.clkgen_freq = 10e6
+    scope.clock.adc_mul = 1
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    assert scope.clock.adc_freq == 10e6
+
     setup_glitch(0, width, oversamp)
     margin = 0.05
 
