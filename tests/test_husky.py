@@ -345,10 +345,14 @@ testTraceSegmentData = [
 ]
 
 testSADTriggerData = [
-    #bits   threshold   offset  reps    desc
-    (8,     25,         0,      50,     '8bits'),
-    (12,    25,         0,      50,     '12bits'),
-    (8,     25,         0,      10,     '8bits'),
+    #clock  adc_mul bits   threshold   offset  reps    desc
+    (10e6,  1,      8,     25,         0,      50,     '8bits'),
+    (10e6,  1,      12,    25,         0,      50,     '12bits'),
+    (10e6,  1,      8,     25,         0,      10,     '8bits'),
+    (10e6,  10,     8,     25,         0,      50,     'fast'),
+    (10e6,  18,     8,     25,         0,      50,     'faster'),
+    (10e6,  20,     8,     25,         0,      50,     'fastest'),
+    (10e6,  25,     8,     25,         0,      50,     'overclocked'),
 ]
 
 testUARTTriggerData = [
@@ -1016,10 +1020,17 @@ def test_segment_trace (interface, triggers, desc):
     assert trace.capture.matched_pattern_data[:6] == '030820'
     trace.enabled = False
 
-@pytest.mark.parametrize("bits, threshold, offset, reps, desc", testSADTriggerData)
+@pytest.mark.parametrize("clock, adc_mul, bits, threshold, offset, reps, desc", testSADTriggerData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_sad_trigger (bits, threshold, offset, reps, desc):
+def test_sad_trigger (clock, adc_mul, bits, threshold, offset, reps, desc):
     reset_setup()
+    scope.clock.clkgen_freq = clock
+    scope.clock.adc_mul = adc_mul
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    assert scope.clock.adc_freq == clock * adc_mul
+    target.baud = 38400 * clock / 1e6 / 7.37
+
     scope.errors.clear()
     scope.trace.enabled = False
     scope.trace.target = None
