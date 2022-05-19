@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'jupyter'
-      - 'software/*'
+      - 'software/**'
 
 
 jobs:
