@@ -1,6 +1,11 @@
 name: Update private repo
 
-on: push
+on: 
+  push:
+    paths:
+      - 'jupyter'
+      - 'software/*'
+
 
 jobs:
   trigger_action:
