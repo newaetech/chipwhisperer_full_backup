@@ -497,7 +497,7 @@ def camel_case_deprecated(func):
         return func(*args, *kwargs)
 
     wrapper.__name__ = underscore_to_camelcase(func.__name__)
-    wrapper.__doc__ = 'Deprecated: Use {} instead.'.format(func.__name__)
+    wrapper.__doc__ = ':deprecated: Use {} instead\n\n:meta private:\n\n'.format(func.__name__)
     return wrapper
 
 

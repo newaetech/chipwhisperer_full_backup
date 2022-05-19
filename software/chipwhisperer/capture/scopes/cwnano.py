@@ -527,16 +527,18 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
     For more help about scope settings, try help() on each of the ChipWhisperer
     scope submodules (scope.adc, scope.io, scope.glitch):
 
-      * :attr:`scope.adc <.CWNano.adc>`
-      * :attr:`scope.io <.CWNano.io>`
-      * :attr:`scope.glitch <.CWNano.glitch>`
+      * :attr:`scope.adc <chipwhisperer.capture.scopes.cwnano.ADCSettings>`
+      * :attr:`scope.io <chipwhisperer.capture.scopes.cwnano.GPIOSettings>`
+      * :attr:`scope.glitch <chipwhisperer.capture.scopes.cwnano.GlitchSettings>`
       * :meth:`scope.default_setup <.CWNano.default_setup>`
       * :meth:`scope.con <.CWNano.con>`
       * :meth:`scope.dis <.CWNano.dis>`
       * :meth:`scope.get_last_trace <.CWNano.get_last_trace>`
       * :meth:`scope.arm <.CWNano.arm>`
       * :meth:`scope.capture <.CWNano.capture>`
-      * :meth:`scope.get_serial_ports <.CWNano.get_serial_ports>`
+      * :meth:`scope.get_serial_ports <chipwhisperer.capture.api.cwcommon.ChipWhispererCommonInterface.get_serial_ports>`
+
+    Inherits from :class:`chipwhisperer.capture.api.cwcommon.ChipWhispererCommonInterface`
     """
 
     _name = "ChipWhisperer Nano"

@@ -90,7 +90,7 @@ class ChipWhispererDecodeTrigger(DisableNewAttr):
 
         Warns the user if they try to set an incorrect pattern.
 
-        Example to trigger off of 'r\\n'::
+        Example to trigger off of :code:`'r\n'`::
 
             scope.decode_IO.trigger_pattern = ['r', 0x10]
 

@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath('./../software'))
 # -- Project information -----------------------------------------------------
 
 project = 'ChipWhisperer'
-copyright = "2021, NewAE Technology Inc."
+copyright = "2022, NewAE Technology Inc."
 author = "NewAE Technology Inc."
 
 # The full version, including alpha/beta/rc tags
@@ -78,6 +78,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 #
 html_theme = 'alabaster'
 
+
 html_theme_options = {
     'description': 'Side-Channel analysis tool-chain.',
     'fixed_sidebar': 'true',
@@ -86,14 +87,15 @@ html_theme_options = {
     'github_user': 'newaetech',
     'github_repo': 'chipwhisperer',
     'github_banner': 'true',
-    'github_button': 'true',
+    'github_button': 'false',
     'github_type': 'watch',
     'extra_nav_links': {
         'Hardware Docs': 'https://rtfm.newae.com',
         'Our Source Code': 'https://github.com/newaetech/chipwhisperer',
     },
     'sidebar_width': '265px',
-    'page_width': '1000px',
+    'page_width': '80%',
+    'anchor': 'grey'
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -107,11 +109,23 @@ todo_include_todos = True
 # remove module names
 add_module_names = False
 
+html_css_files = ['_static/custom.css']
+
 # side bar customization
 html_sidebars = {
-    'index': ['about.html', 'navigation.html', 'searchbox.html'],
-    '**': ['about_short.html', 'localtoc.html', 'searchbox.html']
+    'index': ['about.html', 'testtoc.html', 'searchbox.html'],
+    'api': ['about.html', 'navigation.html', 'searchbox.html'],
+    'prerequisites': ['about.html', 'navigation.html', 'searchbox.html'],
+    'tutorials': ['about.html', 'navigation.html', 'searchbox.html'],
+    'install': ['about.html', 'navigation.html', 'searchbox.html'],
+    '**': ['about.html', 'localtoc.html', 'searchbox.html']
 }
+
+# html_extra_path = ["install.html"]
+
+# rst_epilog = """
+# .. include:: <s5defs.txt>
+# """
 
 
 def create_tutorial_files(app, config):
@@ -188,10 +202,10 @@ def generate_contributing(app, config):
     pypandoc.convert_file('../contributing.md', 'rst', outputfile='contributing.rst')
 
     print('Generating simpleserial.rst')
-    pypandoc.convert_file('../hardware/victims/firmware/simpleserial/README.md', 'rst', outputfile='simpleserial.rst')
+    pypandoc.convert_file('../hardware/victims/firmware/simpleserial/README.rst', 'rst', outputfile='simpleserial.rst')
             
 
 
 def setup(app):
-    app.connect('config-inited', create_tutorial_files)
+    # app.connect('config-inited', create_tutorial_files)
     app.connect('config-inited', generate_contributing)

@@ -6,10 +6,13 @@ name: Build Firmware
 on:
   # Triggers the workflow on push or pull request events but only for the develop branch
   push:
-  pull_request:
+    paths:
+      - 'hardware/victims/firmware/**'
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'hardware/victims/firmware/**'
+
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:

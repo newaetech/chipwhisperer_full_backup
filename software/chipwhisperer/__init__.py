@@ -365,7 +365,7 @@ def target(scope : Optional[scopes.ScopeTypes],
     rtn.con(scope, **kwargs)
 
     # need to check
-    if isinstance(rtn, (targets.SimpleSerial, targets.SimpleSerial2)) \
+    if type(rtn) in (targets.SimpleSerial, targets.SimpleSerial2) \
         and scope and scope._getNAEUSB().check_feature("SERIAL_200_BUFFER"):
         rtn.ser.cwlite_usart._max_read = 128
     return rtn

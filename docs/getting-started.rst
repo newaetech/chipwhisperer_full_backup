@@ -50,6 +50,9 @@ Hardware is for the most part open source and design files/schematics
 can be found either on the `ChipWhisperer Github repository`_,
 or on a `UFO target board repository`_.
 
+.. image:: _images/cwlite_basic.png
+  :width: 600
+
 .. _getting_started-firmware:
 
 =========
@@ -91,9 +94,11 @@ Tutorials
 Finally, ChipWhisperer also includes Jupyter Notebook tutorials and labs that both
 teach about side channel attacks that can be performed with ChipWhisperer,
 as well as showcase how to use the Python API. These tutorials/labs 
-are available in the `ChipWhisperer Jupyter Github repository`_. Some
-tutorials are also available as a completed static webpage over on the
-:ref:`tutorials <tutorials>` page.
+are available in the `ChipWhisperer Jupyter Github repository`_.
+
+
+  .. image:: _images/jupyter_example.png
+    :width: 800
 
 .. _getting_started-important-links:
 
@@ -147,53 +152,6 @@ Important Links
     frustration of setting up the hardware for side-channel attacks. These
     boards are available at the `NewAE Store`_. Boards are also available
     on `Mouser`_.
-
-.. _getting_started-major_changes:
-
-*************
-Major Changes
-*************
-
-There were some major changes related to where resources are located
-and in what format, after ChipWhisperer 5.1.0 was released. A more
-:ref:`detailed version <change_log>` of the version changes also exists.
-Here are some of the major changes we are most excited about:
-
-  * We changed our interface from the QT Graphical User Interface (GUI)
-    we had before to using `Jupyter Notebook`_. Keeping the GUI usable
-    required a lot of effort, and since we are a small team it often
-    meant bugs stayed around much too long. Also the change gave us a
-    chance to make our :ref:`Python API <api>` much more usable. Our
-    project is open-source, and you are free to modify the software
-    to meet your needs, however before the change this was sometimes
-    quite difficult. We have not completely fixed the internals of
-    the software but the new, documented API should make customization
-    to your needs a whole lot easier.
-
-  * We now have a :ref:`documented Python API <api>`. You can actually
-    read what functions and classes do, and this API should stay reliable
-    in between minor version changes. Anything not documented in the API
-    is not guaranteed to stay backwards compatible. This allows us the
-    freedom to make improvements to the internals while you have a usable
-    API.
-
-  * We switched to Python 3, finally. This completely breaks all backwards
-    compatibility with previous versions (less than 5.0.0), if we had
-    not already done that will all of our changes.
-
-  * We have this site now. The installation procedure, the software
-    documentation, and the tutorials are on this site. We've now
-    got a `separate site for hardware docs <https://rtfm.newae.com>`_ as well. This site will 
-    be version based on releases of the software. Thank you `readthedocs`_!
-
-  * :ref:`Tutorials <tutorials>` are now auto-generated with our tutorial
-    build system. The jupyter notebooks that are included in the
-    `ChipWhisperer GitHub repository`_  in the *jupyter* submodule
-    are built with multiple different types of hardware. The output is on
-    the :ref:`tutorials <tutorials>` page of this site. Just like when you
-    complete the tutorials some of the tutorials will contain output with
-    warnings during the capture of power traces. This will make it easier
-    to know what to expect when running the tutorials yourself.
 
 .. _Mouser: https://www.mouser.com/Search/Refine?Keyword=newae
 .. _UFO target board repository: https://github.com/newaetech/chipwhisperer-target-cw308t
