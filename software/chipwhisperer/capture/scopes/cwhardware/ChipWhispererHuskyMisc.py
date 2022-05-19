@@ -30,6 +30,7 @@ from .. import _OpenADCInterface as OAI
 
 from ....logging import *
 import numpy as np
+import time
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
@@ -592,6 +593,7 @@ class LASettings(util.DisableNewAttr):
         self.oa = oaiface
         self._mmcm = mmcm
         self._scope = scope
+        self._warning_frequency = 250e6
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -603,6 +605,7 @@ class LASettings(util.DisableNewAttr):
         rtn['clk_source'] = self.clk_source
         rtn['trigger_source'] = self.trigger_source
         rtn['oversampling_factor'] = self.oversampling_factor
+        rtn['sampling_clock_frequency'] = self.sampling_clock_frequency
         rtn['downsample'] = self.downsample
         rtn['capture_group'] = self.capture_group
         rtn['capture_depth'] = self.capture_depth
@@ -936,6 +939,11 @@ class LASettings(util.DisableNewAttr):
     def oversampling_factor(self, factor):
         self._setOversamplingFactor(factor)
 
+    @property
+    def sampling_clock_frequency(self):
+        """Report the actual sampling clock frequency.
+        """
+        return self._scope.trace.clock.swo_clock_freq
 
     @property
     def downsample(self):
@@ -1064,6 +1072,15 @@ class LASettings(util.DisableNewAttr):
         self._mmcm.set_mul(factor)
         self._mmcm.set_main_div(1)
         self._mmcm.set_sec_div(1)
+        time.sleep(0.1)
+        if self.sampling_clock_frequency > self._warning_frequency:
+            scope_logger.warning("""
+                Clock frequency exceeds specification (250 MHz). 
+                This may or may not work, depending on temperature, voltage, and luck.
+                It may not work reliably.
+                You can adjust scope.LA._warning_frequency if you don't want
+                to see this message anymore.
+                """)
 
     def _getOversamplingFactor(self):
         return self._mmcm.get_mul() // (self._mmcm.get_main_div() * self._mmcm.get_sec_div())

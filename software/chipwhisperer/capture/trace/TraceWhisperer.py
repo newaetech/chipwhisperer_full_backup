@@ -1049,6 +1049,7 @@ class clock(util.DisableNewAttr):
         else:
             self.drp = XilinxDRP(main, main.REG_TRIGGER_DRP_DATA, main.REG_TRIGGER_DRP_ADDR, main.REG_TRIGGER_DRP_RESET)
         self.mmcm = XilinxMMCMDRP(self.drp)
+        self._warning_frequency = 250e6
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -1137,6 +1138,15 @@ class clock(util.DisableNewAttr):
             self.mmcm.set_mul(best[0])
             self.mmcm.set_main_div(best[1])
             self.mmcm.set_sec_div(best[2])
+        time.sleep(0.1)
+        if freq > self._warning_frequency:
+            scope_logger.warning("""
+                Clock frequency exceeds specification (250 MHz). 
+                This may or may not work, depending on temperature, voltage, and luck.
+                It may not work reliably.
+                You can adjust trace.clock._warning_frequency if you don't want
+                to see this message anymore.
+                """)
 
 
     @property
