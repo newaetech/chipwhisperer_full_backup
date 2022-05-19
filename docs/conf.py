@@ -109,7 +109,7 @@ todo_include_todos = True
 # remove module names
 add_module_names = False
 
-html_css_files = ['_static/custom.css']
+html_css_files = ['custom.css']
 
 # side bar customization
 html_sidebars = {
