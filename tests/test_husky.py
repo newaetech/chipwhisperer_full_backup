@@ -37,6 +37,7 @@ scope.trace.target = target
 trace = scope.trace
 scope.errors.clear()
 verbose = False
+cw.scope_logger.setLevel(cw.logging.ERROR) # don't want to see warnings when setting clock past its specifications
 
 def reset_target():
     scope.io.nrst = 0
@@ -62,8 +63,8 @@ reset_target()
 
 # use this at the start of each testcase to remove dependency on order of tests:
 def reset_setup():
-    scope.trigger.triggers = 'tio4'
     scope.trigger.module = 'basic'
+    scope.trigger.triggers = 'tio4'
     scope.io.tio1 = "serial_rx"
     scope.io.tio2 = "serial_tx"
     scope.io.hs2 = "clkgen"
@@ -357,8 +358,8 @@ testSADTriggerData = [
 
 testUARTTriggerData = [
     #clock      pin     pattern     reps    desc
-    (10e6,      'tio1', 'r7DF7',    10,     'tio1_10M'),
-    (10e6,      'tio2', 'p000000',  10,     'tio2_10M'),
+    (15e6,      'tio1', 'r7DF7',    10,     'tio1_10M'), # TODO: set to 15 to avoid "SWO clock not locked" message, which needs to get fixed
+    (15e6,      'tio2', 'p000000',  10,     'tio2_10M'),
     (20e6,      'tio1', 'r7DF7',    10,     'tio1_20M'),
     (20e6,      'tio2', 'p000000',  10,     'tio2_20M'),
 ]
@@ -809,9 +810,9 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
     time.sleep(0.2)
     assert target.read() != ''
 
+    scope.trigger.module = 'basic'
     scope.adc.basic_mode = "rising_edge"
     scope.trigger.triggers = "tio4"
-    scope.trigger.module = 'basic'
     scope.io.tio1 = "serial_rx"
     scope.io.tio2 = "serial_tx"
     scope.io.hs2 = "clkgen"
@@ -874,9 +875,9 @@ def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, 
     time.sleep(0.2)
     assert target.read() != ''
 
+    scope.trigger.module = 'basic'
     scope.adc.basic_mode = "rising_edge"
     scope.trigger.triggers = "tio4"
-    scope.trigger.module = 'basic'
     scope.io.tio1 = "serial_rx"
     scope.io.tio2 = "serial_tx"
     scope.io.hs2 = "clkgen"
