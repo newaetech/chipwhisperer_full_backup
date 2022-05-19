@@ -898,8 +898,9 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         When using an external clock to drive ChipWhisperer (i.e.
         self.clkgen_src == 'extclk'), Husky must know the frequency of that
-        clock. This clock monitor is a convenience to flag when the frequency
-        changes without Husky being informed of that change.
+        clock (by setting scope.clock.clkgen_freq). This clock monitor is a
+        convenience to flag when the frequency changes without Husky being
+        informed of that change.
 
         :Getter: Whether the external clock monitor is enabled.
 
@@ -921,9 +922,12 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
     @property
     def extclk_error(self):
-        """TODO
+        """When the external clock is used, a change in clock frequency
+        exceeding extclk_error will flag an error. The purpose of this is to
+        remind you that you need to set scope.clock.clkgen_freq to the
+        frequency of your external clock.
 
-        :Getter: Whether the external clock monitor is enabled.
+        :Getter: Whether the external clock monitor has flagged an error.
 
         :Setter: Clear the error.
         """
