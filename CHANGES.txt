@@ -1,7 +1,7 @@
 V5.6.1
   New Features:
     * ChipWhisperer-Husky and CW310 Bergen Board support
-    * Add `scope.fw_version_str()`
+    * Add `scope.fw_version_str`
     * Switch from pyusb to libusb1 - deprecates libusb0.dll on Windows
     * Add `as_int` parameter to `scope.get_last_trace()` to return traces as integers
     * Add driver detection for Windows
@@ -25,24 +25,15 @@ V5.6.1
     * Fix timeout length on simpleserial reads
     * More versionadded/versionchanged for docs
     * Fix FPGA target.dis()
+    * Fix DCM lock on glitch - caused issues with enable_only glitching
 
   Firmware:
-    * CWLite: 0.52.0
-    * CWNano: 0.52.0
-    * CWPro : 1.52.0
+    * CWLite: 0.62.0
+    * CWNano: 0.62.0
+    * CWPro : 1.62.0
     * CW305 : 0.52.0
-    * CWHusky: 1.0.0
-    * CWBergen: 1.0.0
-    * New Features:
-      * Lite/Pro/Husky external FPGA programming
-      * Variable FPGA programming speed
-      * Firmware now uses generic naeusb firmware
-      * New firmware build date command `sam_build_date()` (scope/target)
-    * Fixes:
-      * CDC settings now works with older CW versions again (pipe error fixed)
-      * XMEGA/AVR programming works on Lite/Pro again (only issue with Black Hat 2021 firmware)
-
-
+    * CWHusky: 1.2.0
+    * CWBergen: 1.2.0
 
 V5.5
   New Features:

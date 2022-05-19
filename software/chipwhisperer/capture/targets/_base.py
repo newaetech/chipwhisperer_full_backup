@@ -77,7 +77,7 @@ class TargetTemplate:
     def output_len(self, length):
         return 16
 
-    def _con(self, scope=None):
+    def _con(self, scope=None, **kwargs):
         raise NotImplementedError
 
     def flush(self):

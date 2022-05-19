@@ -1,0 +1,20 @@
+name: Update private repo
+
+on: 
+  push:
+    paths:
+      - 'jupyter'
+      - 'software/**'
+
+
+jobs:
+  trigger_action:
+    name: Push dispatch
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: private_workflow
+          repo: newaetech/ChipWhisperer-Private-Tests
+          token: ${{ secrets.PRIVATE_TEST_PUSH }}
+          ref: refs/heads/main

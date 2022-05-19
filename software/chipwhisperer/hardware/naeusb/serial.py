@@ -28,6 +28,7 @@ import os
 from .naeusb import packuint32
 from ...common.utils.util import fw_ver_required
 from ...logging import *
+from .naeusb import NAEUSB
 class USART(object):
     """
     USART Class communicates with NewAE USB Interface to read/write data over control endpoint.
@@ -48,7 +49,7 @@ class USART(object):
         """
         self._max_read = 256
 
-        self._usb = usb
+        self._usb : NAEUSB = usb
         self.timeout = timeout
 
         self._baud = 38400

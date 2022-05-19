@@ -1,5 +1,7 @@
 # Simpleserial Documentation
 
+.. \_simpleserial_v1.1:
+
 ## Simpleserial v1.1
 
 All communication is initiated by the capture board. The capture board begins
@@ -47,6 +49,8 @@ The following commands are reserved by SimpleSerial v1:
 * `'v'`: Get Simpleserial version (len=0)
 * `'y'`: Get the number of Simpleserial commands on the target
 * `'w'`: Get Simpleserial commands
+
+.. \_simpleserial_v2.1:
 
 ## SimpleSerial v2.1
 

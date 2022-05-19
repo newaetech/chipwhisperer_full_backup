@@ -50,6 +50,7 @@ SAM_FW_FEATURES = [
     "FPGA_TARGET_BULK_WRITE", #12
     "MPSSE", #13
     "TARGET_SPI", #14
+    "MPSSE_ENABLED", #15
 ]
 
 class CWFirmwareError(Exception):
@@ -63,8 +64,9 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[4]: '0.30.0',
         SAM_FW_FEATURES[6]: '0.50.0',
         SAM_FW_FEATURES[7]: '0.50.0',
-        SAM_FW_FEATURES[8]: '0.30.0',
-        SAM_FW_FEATURES[13]: '0.60.0'
+        SAM_FW_FEATURES[8]: '0.23.0',
+        SAM_FW_FEATURES[13]: '0.60.0',
+        SAM_FW_FEATURES[15]: '0.62.0',
     },
 
     0xACE2: {
@@ -79,7 +81,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[8]: '0.30.0',
         SAM_FW_FEATURES[9]: '0.52.0',
         SAM_FW_FEATURES[13]: '0.60.0',
-        SAM_FW_FEATURES[14]: '0.60.0'
+        SAM_FW_FEATURES[14]: '0.60.0',
+        SAM_FW_FEATURES[15]: '0.62.0',
     },
 
     0xACE3: {
@@ -94,13 +97,14 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[8]: '1.30.0',
         SAM_FW_FEATURES[9]: '1.52.0',
         SAM_FW_FEATURES[13]: '1.60.0',
-        SAM_FW_FEATURES[14]: '1.60.0'
+        SAM_FW_FEATURES[14]: '1.60.0',
+        SAM_FW_FEATURES[15]: '1.62.0',
     },
 
     0xACE5: {
         SAM_FW_FEATURES[0]: '1.0.0',
         SAM_FW_FEATURES[1]: '1.0.0',
-        SAM_FW_FEATURES[2]: '1.0.0',
+        SAM_FW_FEATURES[2]: '1.1.0',
         SAM_FW_FEATURES[3]: '1.0.0',
         SAM_FW_FEATURES[4]: '1.0.0',
         SAM_FW_FEATURES[5]: '1.0.0',
@@ -109,7 +113,8 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[8]: '1.0.0',
         SAM_FW_FEATURES[9]: '1.0.0',
         SAM_FW_FEATURES[13]: '1.1.0',
-        SAM_FW_FEATURES[14]: '1.1.0'
+        SAM_FW_FEATURES[14]: '1.1.0',
+        SAM_FW_FEATURES[15]: '1.3.0',
     },
 
     0xC305: {
@@ -613,6 +618,13 @@ class NAEUSB:
         else:
             return [0, 0, 0, 0]
 
+    def is_MPSSE_enabled(self):
+        if self.check_feature("MPSSE_ENABLED"):
+            return self.readCtrl(0x22, 0x42, 1)[0] == 0x01
+
+    def hw_location(self):
+        return (self.usbtx.device.getBusNumber(), self.usbtx.device.getDeviceAddress())
+
     def enable_MPSSE(self):
         if self.check_feature("MPSSE", True):
             try:
@@ -684,9 +696,9 @@ class NAEUSB:
 
         latest = fwver[0] > fw_latest[0] or (fwver[0] == fw_latest[0] and fwver[1] >= fw_latest[1])
         if not latest:
-            naeusb_logger.warning('Your firmware is outdated - latest is %d.%d' % (fw_latest[0], fw_latest[1]) +
-                             '. Suggested to update firmware, as you may experience errors' +
-                             '\nSee https://chipwhisperer.readthedocs.io/en/latest/api.html#firmware-update')
+            naeusb_logger.warning('Your firmware (%d.%d) is outdated - latest is %d.%d' 
+                             % (fwver[0], fwver[1], fw_latest[0], fw_latest[1]) +
+                             'See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information')
 
         return self.usbtx.pid
 

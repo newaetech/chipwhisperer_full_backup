@@ -11,6 +11,11 @@
 #define SS_VER_2_0 2
 #define SS_VER_2_1 3
 
+#ifndef SS_VER
+	#define SS_VER SS_VER_1_1
+	#warning "SS_VER undefined! Setting SS_VER=SS_VER_1_1"
+#endif
+
 // Set up the SimpleSerial module
 // This prepares any internal commands
 void simpleserial_init(void);

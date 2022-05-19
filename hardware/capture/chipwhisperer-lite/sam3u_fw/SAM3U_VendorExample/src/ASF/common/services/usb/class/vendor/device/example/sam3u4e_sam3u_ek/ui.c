@@ -102,7 +102,7 @@ void ui_loop_back_state(bool b_started)
 		LED_Off(LED1_GPIO);
 	}
 }
-
+extern volatile uint32_t usb_checked;
 void ui_process(uint16_t framenumber)
 {
 	if ((framenumber % 1000) == 0) {
@@ -111,6 +111,7 @@ void ui_process(uint16_t framenumber)
 	if ((framenumber % 1000) == 500) {
 		LED_Off(LED0_GPIO);
 	}
+	usb_checked = 0x00;
 }
 
 /**

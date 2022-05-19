@@ -206,20 +206,26 @@ General Limitations
 ===================
 
 Communication Speed
-    The communication speed cannot be adjusted and is not fixed to any one value. In practice,
-    bytes are typically sent out at a rate ~500kbps, with larger gaps between bytes.
+-------------------
+
+The communication speed cannot be adjusted and is not fixed to any one value. In practice,
+bits are typically sent out at a rate ~500kbps, with larger gaps between bytes.
 
 Unsupported MPSSE commands
-    The following MPSSE commands are not supported:
+--------------------------
 
-    * MCU Host Emulation commands
-    * General clock commands
-    * Wait on I/O high/low
-    * Adaptive clock
-    * Read data bits
+The following MPSSE commands are not supported:
+
+* MCU Host Emulation commands
+* General clock commands
+* Wait on I/O high/low
+* Adaptive clock
+* Read data bits
 
 General MPSSE Compatability
-    This implementation uses much smaller buffers than is required
-    by MPSSE (64B vs. 64KiB). As such, it is unlikely that this
-    implementation can be made to work with any software other
-    than OpenOCD.
+---------------------------
+
+This implementation uses much smaller buffers than is required
+by MPSSE (64B vs. 64KiB). As such, it is unlikely that this
+implementation can be made to work with any software other
+than OpenOCD.

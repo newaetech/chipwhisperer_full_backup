@@ -1,4 +1,5 @@
 # from _typeshed import OpenBinaryMode
+from multiprocessing.sharedctypes import Value
 from ....common.utils.util import dict_to_str, DelayedKeyboardInterrupt
 from ....common.utils import util
 from ....logging import *
@@ -319,7 +320,7 @@ class CDCI6214:
 
         4. The PLL output clock is then divided by a prescale value (we assume 5),
         then by an output division between 1 and 2**14. The resulting output clock
-        must be between 10MHz and 200MHz for the ADC clock.
+        must be below 200MHz for the ADC clock.
 
         To get the best output settings, we'll be calculating the output frequency
         and calculating its percent error. The settings that result in the
@@ -774,13 +775,13 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         * The minimum output frequency is 500kHz and the maximum is 350MHz
         * The ADC clock output frequency (clkgen_freq * adc_mul) must be
-        between 10MHz and 200MHz. Therefore, if you want to use
-        a clkgen_freq above 200MHz, you must set adc_mul=0
+            below 200MHz. Therefore, if you want to use
+            a clkgen_freq above 200MHz, you must set adc_mul=0
         * The accuracy of the actual clkgen_freq will depend
-        on adc_mul, as the output divisor for the clkgen_freq must divide
-        cleanly by adc_mul. For example, if you try to use a clkgen_freq
-        of 7.37MHz and and adc_mul of 16, the closest valid clkgen_freq
-        will be 7.5MHz.
+            on adc_mul, as the output divisor for the clkgen_freq must divide
+            cleanly by adc_mul. For example, if you try to use a clkgen_freq
+            of 7.37MHz and and adc_mul of 16, the closest valid clkgen_freq
+            will be 7.5MHz.
 
         :Getter: Return the calculated target clock frequency in Hz
 
@@ -918,6 +919,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     @property
     def extclk_error(self):
         """TODO
+
         :Getter: Whether the external clock monitor is enabled.
 
         :Setter: Clear the error.
@@ -978,11 +980,6 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
     @property
     def adc_src(self):
-        return "For Husky, please use scope.clock.clkgen_src and scope.clock.adc_mul instead."
-
-
-    @adc_src.setter
-    def adc_src(self, src):
         """Convenience function for backwards compatibility with how ADC clocks
         are set on CW-lite and CW-pro.
 
@@ -1001,6 +998,11 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         Raises:
            ValueError: if string not in valid settings
         """
+        return "For Husky, please use scope.clock.clkgen_src and scope.clock.adc_mul instead."
+
+
+    @adc_src.setter
+    def adc_src(self, src):
         scope_logger.warning("scope.clock.adc_src is provided for backwards compability, but scope.clock.clkgen_src and scope.clock.adc_mul should be used for Husky.")
 
         if src == "clkgen_x4":
@@ -1033,3 +1035,43 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         are managed on CW-lite and CW-pro.
         """
         return self.pll.pll_locked
+
+    @property
+    def fpga_vco_freq(self):
+        """Set the FPGA clock glitch PLL's VCO frequency.
+
+        Affects :attr:`scope.glitch.phase_shift_steps <chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.phase_shift_steps>`
+
+        Allowed range: 600 - 1200 MHz.
+
+        :getter: Calculate vco from last set value [Hz]
+
+        :setter: Set the vco frequency [Hz]
+
+        Raises:
+            ValueError: set vco out of valid range
+        """
+        muldiv = self.pll._mmcm_muldiv
+        vco = self.pll.target_freq * muldiv
+        return vco
+
+    @fpga_vco_freq.setter
+    def fpga_vco_freq(self, vco):
+        """Set the FPGA clock glitch PLL's VCO frequency.
+
+        Affects scope.glitch.phase_shift_steps
+
+        Allowed range: 600 - 1200 MHz.
+
+        :getter: Calculate vco from last set value [Hz]
+
+        :setter: Set the vco frequency [Hz]
+
+        Raises:
+            ValueError: set vco out of valid range
+        """
+        vco = int(vco)
+        if (vco > 600e3) or (vco < 1200e3):
+            raise ValueError("Invalid VCO frequency {} (allowed range 600MHz-1200MHz".format(vco))
+
+        self.pll.update_fpga_vco(vco)

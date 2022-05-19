@@ -127,7 +127,7 @@ class SimpleSerialTemplate:
             num -= 1
 
         if num == 0:
-            return ret
+            return ret.decode('latin-1')
 
         # If we didn't get enough data, try to read more from the hardware
         data = bytearray(self.hardware_read(num, timeout=timeout)).decode('latin-1')
