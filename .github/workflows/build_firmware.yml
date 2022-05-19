@@ -7,11 +7,11 @@ on:
   # Triggers the workflow on push or pull request events but only for the develop branch
   push:
     paths:
-      - 'hardware/victims/firmware/*'
+      - 'hardware/victims/firmware/**'
 
   pull_request:
     paths:
-      - 'hardware/victims/firmware/*'
+      - 'hardware/victims/firmware/**'
 
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
