@@ -16,8 +16,3 @@ python:
     - requirements: software/requirements.txt
     - method: setuptools
       path: .
-
-submodules:
-  include:
-    - tutorials
-  recursive: true
