@@ -554,8 +554,11 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.LA = LASettings(oaiface=self.sc, mmcm=self.la_mmcm, scope=self)
             self.userio = USERIOSettings(self.sc)
             if TraceWhisperer:
-                self.trace = TraceWhisperer(husky=True, target=None, scope=self, trace_reg_select=3, main_reg_select=2)
-                self.UARTTrigger = UARTTrigger(scope=self, trace_reg_select=3, main_reg_select=2)
+                try:
+                    self.trace = TraceWhisperer(husky=True, target=None, scope=self, trace_reg_select=3, main_reg_select=2)
+                    self.UARTTrigger = UARTTrigger(scope=self, trace_reg_select=3, main_reg_select=2)
+                except Exception as e:
+                    scope_logger.info("TraceWhisperer unavailable " + str(e))
             self.SAD = ChipWhispererSAD.HuskySAD(self.sc)
             self.errors = HuskyErrors(self.sc, self.XADC, self.adc, self.clock, self.trace)
         else:

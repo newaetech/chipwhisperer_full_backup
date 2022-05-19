@@ -14,7 +14,7 @@ setup(
     url='https://www.chipwhisperer.com',
     packages=find_packages('software'),
     package_dir={'': 'software'},
-    package_data={'': ['py.typed']},
+    package_data={'': ['py.typed', 'capture/trace/defines/*.v']},
     install_requires=[
         'configobj',
         'pyserial',
