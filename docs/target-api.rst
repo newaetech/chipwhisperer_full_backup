@@ -34,7 +34,7 @@ Serial Targets
 Simple Serial Target
 --------------------
 
-38400bps ASCII encoded serial. See :ref:`simpleserial_v1.1` for protocol documentation.::
+38400bps ASCII encoded serial. See SimpleSerial for protocol documentation.::
 
     import chipwhisperer as cw
     scope = cw.scope()
@@ -53,7 +53,7 @@ Supported Targets:
 Simple Serial V2 Target
 -----------------------
 
-230400bps COBS serial. See :ref:`simpleserial_v2.1` for protocol documentation.::
+230400bps COBS serial. See SimpleSerial for protocol documentation.::
 
     import chipwhisperer as cw
     scope = cw.scope()
