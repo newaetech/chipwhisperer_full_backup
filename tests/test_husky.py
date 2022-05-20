@@ -358,8 +358,8 @@ testSADTriggerData = [
 
 testUARTTriggerData = [
     #clock      pin     pattern     reps    desc
-    (15e6,      'tio1', 'r7DF7',    10,     'tio1_10M'), # TODO: set to 15 to avoid "SWO clock not locked" message, which needs to get fixed
-    (15e6,      'tio2', 'p000000',  10,     'tio2_10M'),
+    (10e6,      'tio1', 'r7DF7',    10,     'tio1_10M'),
+    (10e6,      'tio2', 'p000000',  10,     'tio2_10M'),
     (20e6,      'tio1', 'r7DF7',    10,     'tio1_20M'),
     (20e6,      'tio2', 'p000000',  10,     'tio2_20M'),
 ]

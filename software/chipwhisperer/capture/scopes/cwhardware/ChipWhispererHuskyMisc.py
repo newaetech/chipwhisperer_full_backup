@@ -111,6 +111,7 @@ class XilinxDRP(util.DisableNewAttr):
         self.oa.sendMessage(CODE_WRITE, self.reset_address, [0])
 
 
+
 class XilinxMMCMDRP(util.DisableNewAttr):
     ''' Methods for dynamically programming Xilinx MMCM via its DRP.
         Husky only.
@@ -172,6 +173,32 @@ class XilinxMMCMDRP(util.DisableNewAttr):
             raw = lo + (hi<<6) + 0x1000
             self.drp.write(addr, raw)
         self.drp.reset()
+        if self.get_sec_div(clock=clock) != div:
+            scope_logger.error("""
+                Failed to update the MMCM secondary divider. A hard reboot of
+                Husky is likely necessary.  This likely occurred because you
+                either:
+                (1) programmed invalid MMCM parameters, or
+                (2) the MMCM had valid parameters for a particular input clock
+                frequency, but then you changed that clock frequency and this
+                made the MMCM parameters invalid (this is the likely scenario). 
+
+                To avoid this in the future, once the MMCM is operating (i.e.
+                scope.LA.clkgen_enabled = True), if you wish to change
+                the input clock frequency, first disable the MMCM, then update
+                the clock, then update the MMCM, and then re-enable the MMCM.
+
+                For example:
+                # set up initial valid settings:
+                scope.clock.clkgen_freq = 5e6
+                scope.LA.oversampling_factor = 40
+                scope.LA.clkgen_enabled = True
+                # update to new settings:
+                scope.LA.clkgen_enabled = False
+                scope.clock.clkgen_freq = 100e6
+                scope.LA.oversampling_factor = 3
+                scope.LA.clkgen_enabled = True
+                """)
 
 
     def get_mul(self):
@@ -593,7 +620,6 @@ class LASettings(util.DisableNewAttr):
         self.oa = oaiface
         self._mmcm = mmcm
         self._scope = scope
-        self._warning_frequency = 250e6
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -925,19 +951,31 @@ class LASettings(util.DisableNewAttr):
     @property
     def oversampling_factor(self):
         """Multiplier for the sampling clock.
-        Integer in range [2,64].
+        Can be fractional, but an integer is probably what you want.
+        Whether the desired oversampling factor can be achieved depends on the
+        source clock frequency; a warning is issued if it can't.
 
         :Getter:
-           Return the oversampling factor currently in use.
+           Return the actual oversampling factor.
 
         :Setter:
-           Change the oversampling factor.
+           Set the desired oversampling factor.
         """
         return self._getOversamplingFactor()
 
     @oversampling_factor.setter
     def oversampling_factor(self, factor):
         self._setOversamplingFactor(factor)
+
+    @property
+    def _warning_frequency(self):
+        """Convenience function to access scope.trace.clock._warning_frequency
+        """
+        return self._scope.trace.clock._warning_frequency
+
+    @_warning_frequency.setter
+    def _warning_frequency(self, freq):
+        self._scope.trace.clock._warning_frequency = freq
 
     @property
     def sampling_clock_frequency(self):
@@ -1067,20 +1105,7 @@ class LASettings(util.DisableNewAttr):
             raise ValueError("Unexpected: read %d" % raw)
 
     def _setOversamplingFactor(self, factor):
-        # NOTE: assuming we would only ever a multiplicative factor of the source clock;
-        # otherwise, dividers can come into play.
-        self._mmcm.set_mul(factor)
-        self._mmcm.set_main_div(1)
-        self._mmcm.set_sec_div(1)
-        time.sleep(0.1)
-        if self.sampling_clock_frequency > self._warning_frequency:
-            scope_logger.warning("""
-                Clock frequency exceeds specification (250 MHz). 
-                This may or may not work, depending on temperature, voltage, and luck.
-                It may not work reliably.
-                You can adjust scope.LA._warning_frequency if you don't want
-                to see this message anymore.
-                """)
+        self._scope.trace.clock.swo_clock_freq = self._scope.trace.clock.fe_freq * factor
 
     def _getOversamplingFactor(self):
         return self._mmcm.get_mul() // (self._mmcm.get_main_div() * self._mmcm.get_sec_div())
