@@ -46,6 +46,7 @@ class CDCI6214:
         self._glitch = None
         self._cached_adc_freq = None
         self._max_freq = 300e6
+        self._warning_freq = 201e6
 
     def write_reg(self, addr, data):
         """Write to a CDCI6214 Register over I2C
@@ -360,13 +361,15 @@ class CDCI6214:
             self._adc_mul = adc_mul
             scope_logger.warning("ADC frequency must be between 1MHz and {}MHz - ADC mul has been adjusted to {}".format(self._max_freq, adc_mul))
 
-        if adc_mul * target_freq > 200E6:
+        if adc_mul * target_freq > self._warning_freq:
             scope_logger.warning("""
                 ADC frequency exceeds specification (200 MHz). 
                 This may or may not work, depending on temperature, voltage, and luck.
                 It may not work reliably.
                 You can run scope.adc_test() to check whether ADC data is sampled properly by the FPGA,
                 but this doesn't fully verify that the ADC is working properly.
+                You can adjust scope.clock.pll._warning_freq if you don't want
+                to see this message anymore.
                 """)
 
         scope_logger.debug("adc_mul: {}".format(adc_mul))
@@ -895,8 +898,9 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         When using an external clock to drive ChipWhisperer (i.e.
         self.clkgen_src == 'extclk'), Husky must know the frequency of that
-        clock. This clock monitor is a convenience to flag when the frequency
-        changes without Husky being informed of that change.
+        clock (by setting scope.clock.clkgen_freq). This clock monitor is a
+        convenience to flag when the frequency changes without Husky being
+        informed of that change.
 
         :Getter: Whether the external clock monitor is enabled.
 
@@ -918,9 +922,12 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
     @property
     def extclk_error(self):
-        """TODO
+        """When the external clock is used, a change in clock frequency
+        exceeding extclk_error will flag an error. The purpose of this is to
+        remind you that you need to set scope.clock.clkgen_freq to the
+        frequency of your external clock.
 
-        :Getter: Whether the external clock monitor is enabled.
+        :Getter: Whether the external clock monitor has flagged an error.
 
         :Setter: Clear the error.
         """

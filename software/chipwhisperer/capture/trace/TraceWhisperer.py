@@ -1049,6 +1049,7 @@ class clock(util.DisableNewAttr):
         else:
             self.drp = XilinxDRP(main, main.REG_TRIGGER_DRP_DATA, main.REG_TRIGGER_DRP_ADDR, main.REG_TRIGGER_DRP_RESET)
         self.mmcm = XilinxMMCMDRP(self.drp)
+        self._warning_frequency = 250e6
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -1102,42 +1103,47 @@ class clock(util.DisableNewAttr):
         return freq
 
     @swo_clock_freq.setter
-    def swo_clock_freq(self, freq, vcomin=600e6, vcomax=1200e6):
+    def swo_clock_freq(self, freq, vcomin=600e6, vcomax=1200e6, threshold=0.01):
         """Calculate Multiply & Divide settings based on input frequency"""
         if not self.fe_clock_alive:
             tracewhisperer_logger.error("FE clock not present, cannot calculate proper M/D settings")
         if self.main.platform == 'Husky':
             assert self.main._scope.LA.clk_source == 'pll'
             input_freq = self.main._scope.clock.clkgen_freq
-            factor = int(freq / input_freq)
-            # TODO: dunno why but calling set_sec_div with anything other than 1 doesn't work, so for now let's
-            # just do it this way, but really we should be using 'best' as calculated below!
-            # Check that DRP object has the right addresses???
-            self.mmcm.set_mul(factor)
-            self.mmcm.set_main_div(1)
-            self.mmcm.set_sec_div(1)
         else:
             input_freq = self.fe_freq
-            lowerror = 1e99
-            best = (0,0,0)
-            for maindiv in range(1,6):
-                mmin = int(np.ceil(vcomin/input_freq*maindiv))
-                mmax = int(np.ceil(vcomax/input_freq*maindiv))
-                for mul in range(mmin,mmax+1):
-                    if mul/maindiv < vcomin/input_freq or mul/maindiv > vcomax/input_freq or mul >= 2**7:
-                        continue
-                    for secdiv in range(1,127):
-                        calcfreq = input_freq*mul/maindiv/secdiv
-                        err = abs(freq - calcfreq)
-                        if err < lowerror:
-                            lowerror = err
-                            best = (mul, maindiv, secdiv)
-            if best == (0,0,0):
-                tracewhisperer_logger.error("Couldn't find a legal div/mul combination")
+        lowerror = 1e99
+        best = (0,0,0)
+        for maindiv in range(1,6):
+            mmin = int(np.ceil(vcomin/input_freq*maindiv))
+            mmax = int(np.ceil(vcomax/input_freq*maindiv))
+            for mul in range(mmin,mmax+1):
+                if mul/maindiv < vcomin/input_freq or mul/maindiv > vcomax/input_freq or mul >= 2**7:
+                    continue
+                for secdiv in range(1,127):
+                    calcfreq = input_freq*mul/maindiv/secdiv
+                    err = abs(freq - calcfreq)
+                    if err < lowerror:
+                        lowerror = err
+                        best = (mul, maindiv, secdiv)
+        if best == (0,0,0):
+            tracewhisperer_logger.error("Couldn't find a legal div/mul combination")
+        else:
             self.mmcm.set_mul(best[0])
             self.mmcm.set_main_div(best[1])
             self.mmcm.set_sec_div(best[2])
-
+            actual = input_freq*best[0]/best[1]/best[2]
+            if abs(actual-freq)/freq*100 > threshold:
+                scope_logger.warning("Coudln't achieve exact desired frequency (%f); setting to %f instead." % (freq, input_freq*best[0]/best[1]/best[2]))
+            time.sleep(0.1)
+            if freq > self._warning_frequency:
+                scope_logger.warning("""
+                    Clock frequency exceeds specification (250 MHz). 
+                    This may or may not work, depending on temperature, voltage, and luck.
+                    It may not work reliably.
+                    You can adjust trace.clock._warning_frequency if you don't want
+                    to see this message anymore.
+                    """)
 
     @property
     def fe_clock_alive(self):
