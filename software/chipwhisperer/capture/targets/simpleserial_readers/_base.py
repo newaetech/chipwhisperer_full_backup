@@ -127,6 +127,8 @@ class SimpleSerialTemplate:
             num -= 1
 
         if num == 0:
+            if isinstance(ret, str):
+                return ret
             return ret.decode('latin-1')
 
         # If we didn't get enough data, try to read more from the hardware

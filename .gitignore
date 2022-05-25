@@ -67,3 +67,4 @@ docs/*.msi
 *.orig
 
 software/chipwhisperer/logs/*
+/tests/*.out
