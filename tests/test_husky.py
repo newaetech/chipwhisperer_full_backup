@@ -930,7 +930,7 @@ def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, 
 
     # check for errors two ways: point-by-point difference, and sum of SAD
     for i in range(1, segs):
-        if max(abs(rounds[0] - rounds[i])) > max(abs(wave))/5:
+        if max(abs(rounds[0] - rounds[i])) > max(abs(wave))/3.5:
             errors += 1
 
     # Strategy: SAD between two rounds should be a "small" number. Instead of
@@ -1044,6 +1044,7 @@ def test_sad_trigger (clock, adc_mul, bits, threshold, offset, reps, desc):
     assert scope.clock.adc_freq == clock * adc_mul
     target.baud = 38400 * clock / 1e6 / 7.37
 
+
     scope.errors.clear()
     scope.trace.enabled = False
     scope.trace.target = None
@@ -1051,8 +1052,8 @@ def test_sad_trigger (clock, adc_mul, bits, threshold, offset, reps, desc):
     reset_target()
     time.sleep(0.5)
     target.baud = 38400
+    scope.adc.lo_gain_errors_disabled = True
     scope.adc.clip_errors_disabled = False
-    scope.adc.lo_gain_errors_disabled = False
     scope.adc.segment_cycle_counter_en = False
     scope.adc.segments = 1
     scope.adc.samples = scope.SAD._sad_reference_length * 2
@@ -1063,7 +1064,7 @@ def test_sad_trigger (clock, adc_mul, bits, threshold, offset, reps, desc):
 
     scope.trigger.module = 'basic'
     # scope.gain.db = 23.7
-    scope.gain.db = 25
+    scope.gain.db = 20
     reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
     assert scope.adc.errors == False, (scope.adc.errors, scope.gain)
 
