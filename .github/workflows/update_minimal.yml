@@ -5,6 +5,7 @@ on:
     paths:
       - 'software/**'
       - 'gen_minimal.sh'
+      - '.github/workflows/update_minimal.yml'
 
 jobs:
   update_minimal:
@@ -22,9 +23,10 @@ jobs:
           git config user.email "none@newae.com"
           git checkout main
           cd ..
+          chmod +x gen_minimal.sh
           ./gen_minimal.sh
           cd chipwhisperer-minimal
           git add .
-          git diff-index --quiet HEAD || git commit -m "Update minimal"
+          git commit -m "Update minimal"
           git push
 
