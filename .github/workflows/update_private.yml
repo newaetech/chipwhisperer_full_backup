@@ -5,6 +5,7 @@ on:
     paths:
       - 'jupyter'
       - 'software/**'
+      - 'tests/test_husky.py'
 
 
 jobs:

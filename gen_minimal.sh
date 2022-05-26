@@ -49,14 +49,14 @@ echo "" >> setup.py
 echo "from setuptools import setup, find_packages" >> setup.py
 echo "" >> setup.py
 echo "setup(" >> setup.py
-echo "    name='chipwhispererminimal'," >> setup.py
+echo "    name='chipwhisperer'," >> setup.py
 echo "    version='5.6.1'," >> setup.py
 echo "    description='ChipWhisperer Side-Channel Analysis Tool'," >> setup.py
-echo "    long_description=open('../README.md').read()," >> setup.py
+echo "    long_description=open('README.md').read()," >> setup.py
 echo "    long_description_content_type='text/markdown'," >> setup.py
-echo "    author='Colin O\'Flynn'," >> setup.py
-echo "    author_email='coflynn@newae.com'," >> setup.py
-echo "    license='GPLv3'," >> setup.py
+echo "    author='NewAE Technology Inc'," >> setup.py
+echo "    author_email='sales@newae.com'," >> setup.py
+echo "    license='apache'," >> setup.py
 echo "    url='https://www.chipwhisperer.com'," >> setup.py
 echo "    packages=find_packages('.')," >> setup.py
 echo "    package_dir={'': '.'}," >> setup.py
@@ -67,10 +67,10 @@ echo "        'Cython'," >> setup.py
 echo "    ]," >> setup.py
 echo "    project_urls={" >> setup.py
 echo "        'Documentation': 'https://chipwhisperer.readthedocs.io'," >> setup.py
-echo "        'Source': 'https://github.com/newaetech/chipwhisperer'," >> setup.py
-echo "        'Issue Tracker': 'https://github.com/newaetech/chipwhisperer/issues'," >> setup.py
+echo "        'Source': 'https://github.com/newaetech/chipwhisperer-minimal'," >> setup.py
+echo "        'Issue Tracker': 'https://github.com/newaetech/chipwhisperer-minimal/issues'," >> setup.py
 echo "    }," >> setup.py
-echo "    python_requires='~=3.7'," >> setup.py
+echo "    python_requires='~=3.6'," >> setup.py
 echo ")" >> setup.py
 
 cd "$min_dir"

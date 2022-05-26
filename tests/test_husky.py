@@ -5,6 +5,7 @@ import pytest
 import time
 import numpy as np
 import random
+import os
 
 """ 
 Args:
@@ -31,10 +32,17 @@ print('* If this FW is recompiled, the trace.set_isync_matches() call will have 
 print('* modified with updated instruction addresses.                                       *')
 print('**************************************************************************************\n\n')
 
-scope = cw.scope(name='Husky')
+if "HUSKY_HW_LOC" in os.environ:
+    locboth = os.environ["HUSKY_HW_LOC"].split(',')
+    loca = int(locboth[0].replace('(', ''))
+    locb = int(locboth[1].replace(')', ''))
+    hw_loc = (loca, locb)
+    print("hw_loc added {}".format(hw_loc))
+else:
+    hw_loc = None
+
+scope = cw.scope(name='Husky', hw_location=hw_loc)
 target = cw.target(scope)
-scope.trace.target = target
-trace = scope.trace
 scope.errors.clear()
 verbose = False
 cw.scope_logger.setLevel(cw.logging.ERROR) # don't want to see warnings when setting clock past its specifications
@@ -58,8 +66,6 @@ assert scope.clock.pll.pll_locked == True
 assert scope.clock.adc_freq == 10e6
 target.baud = 38400 * 10 / 7.37
 
-time.sleep(0.2)
-reset_target()
 
 # use this at the start of each testcase to remove dependency on order of tests:
 def reset_setup():
@@ -76,9 +82,12 @@ def reset_setup():
     scope.LA.capture_depth = 512
     scope.LA.downsample = 1
     scope.trace.enabled = False
+    target.baud = 38400 * 10 / 7.37
 
 reset_setup()
 
+time.sleep(0.2)
+reset_target()
 # see if a target is attached:
 target.flush()
 target.write('x\n')
@@ -95,6 +104,8 @@ if target_attached:
     time.sleep(0.1)
     if target.read().split('\n')[0] == 'ChipWhisperer simpleserial-trace, compiled Mar 14 2022, 21:06:34':
         trace_fw = True
+        scope.trace.target = target
+        trace = scope.trace
     else:
         trace_fw = False
 else:
@@ -347,13 +358,13 @@ testTraceSegmentData = [
 
 testSADTriggerData = [
     #clock  adc_mul bits   threshold   offset  reps    desc
-    (10e6,  1,      8,     25,         0,      50,     '8bits'),
-    (10e6,  1,      12,    25,         0,      50,     '12bits'),
-    (10e6,  1,      8,     25,         0,      10,     '8bits'),
-    (10e6,  10,     8,     25,         0,      50,     'fast'),
-    (10e6,  18,     8,     25,         0,      50,     'faster'),
-    (10e6,  20,     8,     25,         0,      50,     'fastest'),
-    (10e6,  25,     8,     25,         0,      50,     'overclocked'),
+    (10e6,  1,      8,     50,         0,      50,     '8bits'),
+    (10e6,  1,      12,    50,         0,      50,     '12bits'),
+    (10e6,  1,      8,     50,         0,      10,     '8bits'),
+    (10e6,  10,     8,     50,         0,      50,     'fast'),
+    (10e6,  18,     8,     50,         0,      50,     'faster'),
+    (10e6,  20,     8,     50,         0,      50,     'fastest'),
+    (10e6,  25,     8,     50,         0,      50,     'overclocked'),
 ]
 
 testUARTTriggerData = [
@@ -381,8 +392,8 @@ def test_fpga_version():
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
-    assert scope.fw_version['minor'] == 0
-    assert scope.sam_build_date == '16:50:38 Oct 21 2021'
+    assert scope.fw_version['minor'] == 3
+    assert scope.sam_build_date == '21:12:14 May 22 2022'
 
 
 @pytest.mark.parametrize("address, nbytes, reps, desc", testRWData)
@@ -828,6 +839,7 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
     scope.adc.bits_per_sample = bits
     scope.adc.clip_errors_disabled = True
     scope.adc.lo_gain_errors_disabled = True
+    target.flush()
     ret = cw.capture_trace(scope, target, text, key)
     raw = scope.get_last_trace(True)
     if verbose: print('Words read before error: %d ' % int.from_bytes(scope.sc.sendMessage(0x80, 47, maxResp=4), byteorder='little'))
@@ -918,7 +930,7 @@ def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, 
 
     # check for errors two ways: point-by-point difference, and sum of SAD
     for i in range(1, segs):
-        if max(abs(rounds[0] - rounds[i])) > max(abs(wave))/5:
+        if max(abs(rounds[0] - rounds[i])) > max(abs(wave))/3.5:
             errors += 1
 
     # Strategy: SAD between two rounds should be a "small" number. Instead of
@@ -934,8 +946,8 @@ def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, 
             errors += 1
             bad_ratio = ratio
 
-    #assert errors == 0, "Ratios = %s; errors: %s" % (ratios, scope.adc.errors)
-    assert errors == 0
+    assert errors == 0, "Ratios = %s; errors: %s" % (ratios, scope.adc.errors)
+    # assert errors == 0
     scope.adc.clip_errors_disabled = True
 
 
@@ -1032,6 +1044,7 @@ def test_sad_trigger (clock, adc_mul, bits, threshold, offset, reps, desc):
     assert scope.clock.adc_freq == clock * adc_mul
     target.baud = 38400 * clock / 1e6 / 7.37
 
+
     scope.errors.clear()
     scope.trace.enabled = False
     scope.trace.target = None
@@ -1039,8 +1052,8 @@ def test_sad_trigger (clock, adc_mul, bits, threshold, offset, reps, desc):
     reset_target()
     time.sleep(0.5)
     target.baud = 38400
+    scope.adc.lo_gain_errors_disabled = True
     scope.adc.clip_errors_disabled = False
-    scope.adc.lo_gain_errors_disabled = False
     scope.adc.segment_cycle_counter_en = False
     scope.adc.segments = 1
     scope.adc.samples = scope.SAD._sad_reference_length * 2
@@ -1050,18 +1063,20 @@ def test_sad_trigger (clock, adc_mul, bits, threshold, offset, reps, desc):
     scope.SAD.multiple_triggers = False
 
     scope.trigger.module = 'basic'
-    scope.gain.db = 10
+    # scope.gain.db = 23.7
+    scope.gain.db = 20
     reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
-    assert scope.adc.errors == False, scope.adc.errors
+    assert scope.adc.errors == False, (scope.adc.errors, scope.gain)
 
     scope.SAD.reference = reftrace.wave
     scope.SAD.threshold = threshold
     scope.trigger.module = 'SAD'
+    scope.adc.offset = 0
 
     scope.adc.presamples = scope.SAD._sad_reference_length + 8
     for r in range(reps):
         sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
-        assert sadtrace is not None, 'SAD-triggered capture failed'
+        assert sadtrace is not None, 'SAD-triggered capture failed on rep {}'.format(r)
         assert scope.adc.errors == False
         sad = 0
         for i in range(scope.SAD._sad_reference_length):

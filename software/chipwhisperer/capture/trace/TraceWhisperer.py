@@ -1665,8 +1665,12 @@ class ARM_debug_registers(util.DisableNewAttr):
                 data = '%02x' % self.regs[reg] + '00000000'
                 self.main._ss.simpleserial_write('g', util.hexStrToByteArray(data))
                 time.sleep(0.1)
-                val = int(self.main._ss.read().split('\n')[0][1:], 16)
-                self.cached_values[self.regs[reg]] = val
+                try:
+                    val = int(self.main._ss.read().split('\n')[0][1:], 16)
+                    self.cached_values[self.regs[reg]] = val
+                except Exception as e:
+                    scope_logger.error("Can't read trace register. Perhaps target firmware doesn't support it? See simpleserial-trace for an example of what's required. " + str(e))
+                    val = 0
             return '%08x' % val
         else:
             tracewhisperer_logger.error('Register %s does not exist.', reg)
