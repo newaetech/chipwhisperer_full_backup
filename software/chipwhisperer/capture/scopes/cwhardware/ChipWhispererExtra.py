@@ -1002,7 +1002,7 @@ class CWExtraSettings:
             hasAux=True
         elif cwtype == "cwhusky":
             hasFPAFPB=False
-            hasGlitchOut=False # TODO-temporary
+            hasGlitchOut=True
             hasPLL=False
             hasAux=False
         else:

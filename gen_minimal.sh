@@ -41,6 +41,7 @@ cp "$cw_dir""/capture/api/""cwcommon.py" "$min_dir""/capture/api/""cwcommon.py"
 
 cp "$cw_dir""/logging.py" "$min_dir""/logging.py"
 
+
 # create setup.py
 cd "$start_dir"/chipwhisperer-minimal
 
