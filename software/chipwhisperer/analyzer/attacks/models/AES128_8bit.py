@@ -217,11 +217,6 @@ class SBoxOutputSuccessive(AESLeakageHelper):
             st2 = 0
         return st1 ^ st2
 
-class AfterKeyMixin(AESLeakageHelper):
-    name = 'HW: AES After Key/PT Addition'
-    def leakage(self, pt, ct, key, bnum):
-        return pt[bnum] ^ key[bnum]
-
 class Mixcolumns_output(AESLeakageHelper):
     name = 'HW: AES Mixcolumns Output'
     #This is mostly a nonsense leakage model for now, but added for completeness
