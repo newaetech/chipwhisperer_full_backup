@@ -27,6 +27,6 @@ jobs:
           ./gen_minimal.sh
           cd chipwhisperer-minimal
           git add .
-          git commit -m "Update minimal"
+          git diff-index --quiet HEAD || git commit -m "Update minimal"
           git push
 
