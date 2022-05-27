@@ -387,7 +387,7 @@ testADCTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '5/17/2022, 13:30'
+    assert scope.fpga_buildtime == '5/26/2022, 17:56'
 
 
 def test_fw_version():
@@ -403,7 +403,8 @@ def test_reg_rw(address, nbytes, reps, desc):
         data = int.to_bytes(random.randrange(2**(8*nbytes)), length=nbytes, byteorder='little')
         scope.sc.sendMessage(0xc0, address, bytearray(data), Validate=False)
         temp = scope.fpga_buildtime # just a dummy read
-        assert scope.sc.sendMessage(0x80, address, maxResp=nbytes) == data
+        read_data = scope.sc.sendMessage(0x80, address, maxResp=nbytes)
+        assert read_data == data, "rep %d: expected %0x, got %0x" % (i, int.from_bytes(data, byteorder='little'), int.from_bytes(read_data, byteorder='little'))
 
 
 @pytest.mark.parametrize("samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc", testData)
@@ -722,14 +723,15 @@ def test_glitch_output_sweep_offset(reps, clock, width, oversamp, steps_per_poin
             # measure observed offset
             glitchtrans = find0to1trans(glitch)
             sourcetrans = find0to1trans(source)
-            assert len(glitchtrans) == 1, "Offset=%d: Expected to find a single glitch but found %d" % (offset, len(glitchtrans))
-            g = glitchtrans[0]
-            measured_offset = None
-            for s in sourcetrans:
-                if s > g:
-                    measured_offset = s - g
-                    break
-            assert measured_offset, "Offset=%d: Could not measure offset between source clock and glitch clock" % offset
+            assert len(glitchtrans) <= 1, "Offset=%d: Expected to find a single glitch but found %d" % (offset, len(glitchtrans))
+            if len(glitchtrans) == 1:
+                g = glitchtrans[0]
+                measured_offset = None
+                for s in sourcetrans:
+                    if s > g:
+                        measured_offset = s - g
+                        break
+                assert measured_offset, "Offset=%d: Could not measure offset between source clock and glitch clock" % offset
 
             golen = len(np.where(go > 0)[0])
             assert abs(golen - oversamp) < oversamp *1.2, "Go width exceeds margin, could lead to extra glitches: %d at offset=%d" % (golen, offset)
