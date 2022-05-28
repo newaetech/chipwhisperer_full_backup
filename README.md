@@ -17,7 +17,7 @@ chipwhisperer.readthedocs.io
 ## Getting Started
 First time using ChipWhisperer? Check out these links:
 * [Getting started](https://chipwhisperer.readthedocs.io/en/latest/getting-started.html)
-* [Installing ChipWhisperer](https://chipwhisperer.readthedocs.io/en/latest/installing.html) if you're trying to set up this software package
+* [Installing ChipWhisperer](https://chipwhisperer.readthedocs.io/en/latest/index.html#install) if you're trying to set up this software package
 * [Hardware Docs](https://rtfm.newae.com) for hardware information. Also has helpful comparison between different NewAE products.
 
 ## ChipWhisperer 5.5: All-in-one installer, Serial Port, ECC, and Segmented Capture
@@ -25,7 +25,7 @@ First time using ChipWhisperer? Check out these links:
 ChipWhisperer 5.5 has brought some exciting new features that make it easier to use and allow you to do some cool new things:
 
 1. The ChipWhisperer Windows installer now includes everything you need to use ChipWhisperer, including
-Python/Juptyer, Git, Make, and compilers! For more information, check out our [Windows installer page](https://chipwhisperer.readthedocs.io/en/latest/installing.html#windows-installer) on ReadTheDocs.
+Python/Juptyer, Git, Make, and compilers! For more information, check out our [Windows installer page](https://chipwhisperer.readthedocs.io/en/latest/windows-install.html) on ReadTheDocs.
 1. ChipWhisperer capture devices (CWLite, Nano, Pro, etc.) have gotten a new firmware update that gives them a
 USB-CDC serial port for talking over USART. This means you can use your favourite serial program, such as PuTTy,
 to talk to and listen to the target's USART communication. For more info, see our [rtfm serial port page](https://rtfm.newae.com/Serial%20Ports/).
@@ -33,7 +33,7 @@ to talk to and listen to the target's USART communication. For more info, see ou
 and the other attacks a software ECC implementation running on a microcontroller. Both can be found in `jupyter/demos`.
 1. There's a new segmented capture mode that allows you to fill the ChipWhisperer capture buffer with multiple power traces
 before transferring data to the PC. This greatly reduces the overhead on trace transfer, allowing capture speeds
-of 1000+ captures/second for FPGA AES implementations. See our [API documentation](https://chipwhisperer.readthedocs.io/en/latest/api.html#chipwhisperer.capture.scopes._OpenADCInterface.OpenADC.TriggerSettings.fifo_fill_mode) to see how to use it.
+of 1000+ captures/second for FPGA AES implementations. See our [API documentation](https://chipwhisperer.readthedocs.io/en/latest/scope-api.html#chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.fifo_fill_mode) to see how to use it.
 
 Also, if you haven't checked it out yet, ChipWhisperer 5.4 included TraceWhisperer, which allows you to use Arm trace to
 timestamp microcontroller operations/functions in your powertrace. It requires a CW305 or PhyWhisperer. For more information, see
