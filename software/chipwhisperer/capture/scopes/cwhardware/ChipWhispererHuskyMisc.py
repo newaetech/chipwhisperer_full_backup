@@ -368,14 +368,20 @@ class USERIOSettings(util.DisableNewAttr):
         """Set mode for USERIO pins:
             "normal": as defined by scope.userio.direction.
             "trace": for target trace capture.
-            "debug": for FPGA debug (look to cwhusky_top.v for signal definitions).
+            "target_debug_jtag": for target debugging with ChipWhisperer using MPSSE in JTAG mode
+            "target_debug_swd": for target debugging with ChipWhisperer using MPSSE in SWD mode
+            "fpga_debug": for FPGA debug (look to cwhusky_top.v for signal definitions).
         """
         debug = self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_DRIVEN, maxResp=1)[0]
         trace = self.oa.sendMessage(CODE_READ, ADDR_TRACE_EN, maxResp=1)[0]
         if trace:
             return "trace"
-        elif debug:
-            return "debug"
+        elif debug == 1:
+            return "fpga_debug"
+        elif debug == 2:
+            return "target_debug_jtag"
+        elif debug == 6:
+            return "target_debug_swd"
         else:
             return "normal"
 
@@ -387,11 +393,17 @@ class USERIOSettings(util.DisableNewAttr):
         elif setting == 'trace':
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [0])
             self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [1])
-        elif setting == 'debug':
+        elif setting == 'fpga_debug':
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [1])
             self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
+        elif setting == 'target_debug_jtag':
+            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [2])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
+        elif setting == 'target_debug_swd':
+            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [6])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
         else:
-            raise ValueError("Invalid mode; use normal/trace/debug")
+            raise ValueError("Invalid mode; use normal/trace/fpga_debug/target_debug_jtag/target_debug_swd")
 
     @property
     def direction(self):
