@@ -115,9 +115,9 @@ html_css_files = ['backup.css']
 html_sidebars = {
     'index': ['about.html', 'testtoc.html', 'searchbox.html'],
     'api': ['about.html', 'navigation.html', 'searchbox.html'],
-    'prerequisites': ['about.html', 'navigation.html', 'searchbox.html'],
-    'tutorials': ['about.html', 'navigation.html', 'searchbox.html'],
-    'install': ['about.html', 'navigation.html', 'searchbox.html'],
+    'prerequisites': ['about.html', 'testtoc.html', 'searchbox.html'],
+    'tutorials': ['about.html', 'testtoc.html', 'searchbox.html'],
+    'installing': ['about.html', 'testtoc.html', 'searchbox.html'],
     '**': ['about.html', 'localtoc.html', 'searchbox.html']
 }
 
