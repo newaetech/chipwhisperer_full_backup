@@ -209,10 +209,7 @@ class Results(object):
                     mvalue = v
 
                     #Get maximum value for this hypothesis
-                    try:
-                        mindex = np.amin(np.where(v == mvalue))
-                    except ValueError:
-                        mindex = self.numPerms-1
+                    mindex = np.nanargmax(np.fabs(self.diffs[i][hyp]))
                     self.maxes[i][hyp]['hyp'] = hyp
                     self.maxes[i][hyp]['point'] = mindex
                     self.maxes[i][hyp]['value'] = mvalue
