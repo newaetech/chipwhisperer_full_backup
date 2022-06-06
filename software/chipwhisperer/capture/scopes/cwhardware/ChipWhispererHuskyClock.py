@@ -579,7 +579,7 @@ class CDCI6214:
     def adc_freq(self):
         """The actual calculated adc_clock freq. Read only
         """
-        if self._cached_adc_freq is None:
+        if True:
             indiv = self.get_input_div()
             outdiv = self.get_outdiv(3)
             if not indiv:

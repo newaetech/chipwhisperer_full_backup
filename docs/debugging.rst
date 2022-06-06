@@ -25,6 +25,13 @@ Both SWD and JTAG are supported.
     On Windows only a single process can control a USB device, so you need to disconnect from Python when using
     OpenOCD. See :ref:`debug_sec_limitations` for other limitations and details.
 
+**************
+MPSSE Tutorial
+**************
+
+We now have a tutorial that walks you through programming and debugging a CW308_STM32F3 via ChipWhipserer,
+OpenOCD, and gdb `here <https://github.com/newaetech/chipwhisperer-jupyter/blob/master/demos/Debugging%20the%20CW308_STM32F3%20Using%20ChipWhisperer.ipynb>`_
+
 **************************
 Checking for MPSSE Support
 **************************
