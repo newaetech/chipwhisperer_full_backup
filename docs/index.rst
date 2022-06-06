@@ -116,6 +116,6 @@ and will be removed in the future:
 .. toctree::
 
     api <api.rst>
-    install <install.rst>
+    install <installing.rst>
     prerequisites <prerequisites.rst>
     tutorials <tutorials.rst>

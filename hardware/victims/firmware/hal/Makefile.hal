@@ -105,7 +105,7 @@ define KNOWN_PLATFORMS
 | CW308_        | CW308T-MPC5676R (NXP MPC5676R)        |
 |   MPC5676R    |                                       |
 +---------------|---------------------------------------+
-| CW308_NEORV   | CW308/CW312-iCE40 with neorv32        |
+| CW308_NEORV32 | CW308/CW312-iCE40 with neorv32        |
 |               |   (RISC-V) soft-core processor.       |
 +---------------|---------------------------------------+
 

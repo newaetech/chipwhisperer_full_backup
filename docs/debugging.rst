@@ -147,7 +147,7 @@ a firmware file onto the target:
     targets
     halt
     flash write_image erase /path/to/fw.elf
-    verify image /path/to/fw.elf
+    flash verify_image /path/to/fw.elf
     reset run
     shutdown
 
@@ -211,6 +211,38 @@ ChipWhisperer via the Python interface and via OpenOCD at the same time.
 
 General Limitations
 ===================
+
+Feature Limitations
+-------------------
+
+Pin Based Limitations
+^^^^^^^^^^^^^^^^^^^^^
+
+MPSSE mode takes control of some ChipWhisperer pins, meaning the following features will not be available:
+
+  * Non MPSSE target programming (STM32, XMEGA, AVR)
+  * ChipWhisperer-Husky stream mode
+  * Control of PDIC, PDID, and the SPI pins
+
+You can give normal functionality back to these pins by running the following::
+
+    scope.io.cwe.setAVRISPMode(0)
+
+MPSSE can be reenabled by running the following command::
+
+    scope.io.cwe.setAVRISPMode(1)
+
+Other Limitations
+^^^^^^^^^^^^^^^^^^^^^
+
+The following features are not available when MPSSE mode is active:
+
+  * CDC serial (normal cw.target based serial still works)
+  * ChipWhisperer-Pro stream mode
+
+To regain usage of these features, you must leave MPSSE mode by running::
+
+    scope.enable_MPSSE(0)
 
 Communication Speed
 -------------------
