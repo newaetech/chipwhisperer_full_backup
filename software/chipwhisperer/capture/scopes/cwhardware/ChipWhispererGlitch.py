@@ -143,7 +143,7 @@ class GlitchSettings(util.DisableNewAttr):
         """The clock signal that the glitch DCM is using as input.
 
         This DCM can be clocked from three different sources:
-         * "target": The HS1 clock from the target device
+         * "target": The HS1 clock from the target device (can also be AUX clock for Husky)
          * "clkgen": The CLKGEN DCM output (N/A for Husky)
          * "pll": Husky's on-board PLL clock (Husky only)
 

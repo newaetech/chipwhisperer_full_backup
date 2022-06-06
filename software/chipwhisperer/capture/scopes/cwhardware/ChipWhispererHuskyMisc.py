@@ -64,6 +64,8 @@ ADDR_USERIO_CW_DRIVEN   = 86
 ADDR_USERIO_DEBUG_DRIVEN= 87
 ADDR_USERIO_DRIVE_DATA  = 88
 ADDR_USERIO_READ        = 97
+ADDR_USERIO_DEBUG_SELECT= 109
+
 ADDR_TRACE_EN           = 0xc0 + 0x2d
 
 
@@ -404,6 +406,21 @@ class USERIOSettings(util.DisableNewAttr):
             self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
         else:
             raise ValueError("Invalid mode; use normal/trace/fpga_debug/target_debug_jtag/target_debug_swd")
+
+    @property
+    def fpga_mode(self):
+        """When scope.userio.mode = 'fpga_debug', selects which FPGA signals
+        are routed to the USERIO pins. See cwhusky_top.v for definitions.
+        """
+        return self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_SELECT, maxResp=1)[0]
+
+    @fpga_mode.setter
+    def fpga_mode(self, setting):
+        if not setting in range(0, 3):
+            raise ValueError("Must be integer in [0, 2]")
+        else:
+            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_SELECT, [setting])
+
 
     @property
     def direction(self):
@@ -1099,6 +1116,10 @@ class LASettings(util.DisableNewAttr):
             val = [2]
         elif source == 'HS1':
             val = [3]
+        elif source == 'trigger signal 0':
+            val = [4]
+        elif source == 'trigger signal 1':
+            val = [5]
         else:
             raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', or 'HS1'")
         self.oa.sendMessage(CODE_WRITE, ADDR_LA_TRIGGER_SOURCE, val, Validate=False)
@@ -1113,6 +1134,10 @@ class LASettings(util.DisableNewAttr):
             return 'glitch_source'
         elif raw == 3:
             return 'HS1'
+        elif raw == 4:
+            return 'trigger signal 0'
+        elif raw == 5:
+            return 'trigger signal 1'
         else:
             raise ValueError("Unexpected: read %d" % raw)
 
