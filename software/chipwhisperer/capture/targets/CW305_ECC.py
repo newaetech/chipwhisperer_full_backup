@@ -10,18 +10,17 @@
 #
 #    This file is part of chipwhisperer.
 #
-#    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-#    chipwhisperer is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Lesser General Public License for more details.
+#       http://www.apache.org/licenses/LICENSE-2.0
 #
-#    You should have received a copy of the GNU General Public License
-#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 #=================================================
 import logging
 import time
@@ -30,7 +29,7 @@ import os.path
 import random
 from ...common.traces import Trace
 from .CW305 import CW305, CW305_USB
-from ecpy.curves import Curve, Point
+from ecpy.curves import Curve, Point # type: ignore
 
 from chipwhisperer.logging import *
 
@@ -43,7 +42,7 @@ class CW305_ECC(CW305):
 
         import chipwhisperer as cw
         scope = cw.scope()
-        target = cw.target(scope, cw.targets.CW305_ECC, 
+        target = cw.target(scope, cw.targets.CW305_ECC,
                            bsfile=<valid FPGA bitstream file>)
 
     Note that connecting to the CW305_ECC includes programming the CW305 FPGA.
@@ -58,6 +57,12 @@ class CW305_ECC(CW305):
 
     def __init__(self):
         import chipwhisperer as cw
+        self.REG_CRYPT_GX = 0
+        self.REG_CRYPT_GY = 0
+        self.REG_CRYPT_K = 0
+        self.REG_CRYPT_RX = 0
+        self.REG_CRYPT_RY = 0
+
         super().__init__()
         self._clksleeptime = 150 # need lots of idling time
         self.curve = Curve.get_curve('NIST-P256')
@@ -72,10 +77,10 @@ class CW305_ECC(CW305):
 
     def capture_trace(self, scope, k, operation="pmult", Px=None, Py=None, check=True):
         """Capture a trace, running the specified test vector or operation (pmult or siggen).
-    
+
         Does all individual steps needed to capture a trace (arming the scope,
         running the test vector or operation, getting the trace data back, etc.)
-    
+
         Args:
             scope (ScopeTemplate): Scope object to use for capture.
             k (int): multiplier for pmult
@@ -92,7 +97,7 @@ class CW305_ECC(CW305):
 
         Raises:
             Warning or OSError: Error during capture.
-    
+
         """
         scope.arm()
         if scope._is_husky:
@@ -166,6 +171,7 @@ class CW305_ECC(CW305):
         Rx = int.from_bytes(self.fpga_read(self.REG_CRYPT_RX, 32), byteorder='little')
         Ry = int.from_bytes(self.fpga_read(self.REG_CRYPT_RY, 32), byteorder='little')
 
+
         # optionally check result:
         if check:
             P = Point(Px, Py, self.curve)
@@ -185,15 +191,12 @@ class CW305_ECC(CW305):
 
 
     def new_point(self, tries=100, bits=256):
-         for i in range(tries):
-             x = random.getrandbits(bits)
-             y = self.curve.y_recover(x)
-             if x > 0 and y:
-                 P = Point(x, y, self.curve, check=True)
-                 # shouldn't be necessary but let's check anwyway:
-                 assert self.curve.is_on_curve(P)
-                 return P
-         raise ValueError("Failed to generate a random point after %d tries!" % self.tries)
-
-
-
+        for i in range(tries):
+            x = random.getrandbits(bits)
+            y = self.curve.y_recover(x)
+            if x > 0 and y:
+                P = Point(x, y, self.curve, check=True)
+                # shouldn't be necessary but let's check anwyway:
+                assert self.curve.is_on_curve(P)
+                return P
+        raise ValueError("Failed to generate a random point after %d tries!" % tries)

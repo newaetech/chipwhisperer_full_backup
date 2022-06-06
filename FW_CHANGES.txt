@@ -1,0 +1,113 @@
+ChipWhisperer Nano:
+  v0.11:
+    Initial release
+  v0.20:
+    Add Tx in waiting command for reading remaining space in TX serial buffer
+  v0.23:
+    Add WCID support (auto driver assignment for Windows)
+    Increase serial buffer size to 200 bytes
+  v0.24:
+    Fix serial transmission response buffer size (fixes device crash)
+  v0.30:
+    Add CDC mode (serial port COMX or /dev/tty*)
+    Add reset USB command
+  v0.50:
+    Add firmware build date USB command
+  v0.60:
+    Add MPSSE (use ChipWhisperer as a debugger with OpenOCD)
+  v0.61:
+    Fix CDC RX requiring CDC TX before working
+  v0.62:
+    Add MPSSE enabled usb command
+
+ChipWhisperer Lite:
+  v0.11:
+    Initial release
+  v0.20:
+    Add Tx in waiting command for reading remaining space in TX serial buffer
+  v0.23:
+    Add WCID support (auto driver assignment for Windows)
+    Increase serial buffer size to 200 bytes
+  v0.24:
+    Fix serial transmission response buffer size (fixes device crash)
+  v0.30:
+    Add CDC mode (serial port COMX or /dev/tty*)
+    Add reset USB command
+    Fix pipe error when ChipWhisperer disconnected during capture
+  v0.50:
+    Add firmware build date USB command
+  v0.52:
+    Add variable speed FPGA programming
+    Add FPGA programming for external device
+  v0.60:
+    Add MPSSE (use ChipWhisperer as a debugger with OpenOCD)
+    Add SPI command support
+  v0.61:
+    Fix CDC RX requiring CDC TX before working
+  v0.62:
+    Add MPSSE enabled usb command (fixes mpsse breaking upon reconnect)
+
+ChipWhisperer Pro:
+  v1.0:
+    Initial release
+  v1.23:
+    Add WCID support (auto driver assignment for Windows)
+    Increase serial buffer size to 200 bytes
+    Add Tx in waiting command for reading remaining space in TX serial buffer
+  v1.30:
+    Add CDC mode (serial port COMX or /dev/tty*)
+    Add reset USB command
+    Fix pipe error when ChipWhisperer disconnected during capture
+  v1.50:
+    Add firmware build date USB command
+  v1.52:
+    Add variable speed FPGA programming
+    Add FPGA programming for external device
+  v1.60:
+    Add MPSSE (use ChipWhisperer as a debugger with OpenOCD)
+    Add SPI command support
+    Fix stream mode requiring CDC TX before working
+  v1.61:
+    Fix CDC RX requiring CDC TX before working
+    Fix CWPro crash during some serial communication
+  v1.62:
+    Add MPSSE enabled usb command (fixes mpsse breaking upon reconnect)
+
+ChipWhisperer Husky:
+  v1.0:
+    Initial release
+  v1.1:
+    Add MPSSE
+    Add target SPI program
+    Add variable FPGA program speed
+  v1.3:
+    Add MPSSE enabled usb command (fixes mpsse breaking upon reconnect)
+    Fix CDC RX requiring CDC TX before working
+    Fix CWPro crash during some serial communication
+
+ChipWhisperer CW305:
+  v0.11:
+    Initial release
+  v0.20:
+    Add SPI program
+  v0.30:
+    Add FPGA SPI passthrough
+  v0.32:
+    Add WCID support (auto driver assignment for Windows)
+    Add reset USB command
+  v0.40:
+    Add SAM3U GPIO control
+  v0.50:
+    Add SAM Build date command
+  v0.52:
+    Add variable FPGA programming speed
+  v0.53:
+    Fix FPGA communication for >64 byte packets
+
+ChipWhisperer CW310:
+  v1.0.0:
+    Initial release
+  v1.1.0:
+    Fix FPGA communication for >64 byte packets
+  v1.2.0:
+    Add MPSSE

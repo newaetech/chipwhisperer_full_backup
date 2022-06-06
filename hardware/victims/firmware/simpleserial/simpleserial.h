@@ -9,6 +9,12 @@
 #define SS_VER_1_0 0
 #define SS_VER_1_1 1
 #define SS_VER_2_0 2
+#define SS_VER_2_1 3
+
+#ifndef SS_VER
+	#define SS_VER SS_VER_1_1
+	#warning "SS_VER undefined! Setting SS_VER=SS_VER_1_1"
+#endif
 
 // Set up the SimpleSerial module
 // This prepares any internal commands
@@ -30,7 +36,7 @@ void simpleserial_init(void);
 // - Returns 1 if either of these fail; otherwise 0
 // - The callback function returns a number in [0x00, 0xFF] as a status code;
 //   in protocol v1.1, this status code is returned through a "z" message
-#if SS_VER == SS_VER_2_0
+#if SS_VER == SS_VER_2_1
 int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t, uint8_t, uint8_t, uint8_t*));
 #else
 

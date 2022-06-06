@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2015-2020, NewAE Technology Inc
+# Copyright (c) 2015-2021, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -10,18 +10,17 @@
 #
 #    This file is part of chipwhisperer.
 #
-#    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-#    chipwhisperer is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Lesser General Public License for more details.
+#       http://www.apache.org/licenses/LICENSE-2.0
 #
-#    You should have received a copy of the GNU General Public License
-#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 #=================================================
 import logging
 import time
@@ -37,8 +36,9 @@ from ...hardware.naeusb.fpga import FPGA
 from ...common.utils import util
 from ...common.utils.util import camel_case_deprecated, fw_ver_required
 from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
+from ..api.cwcommon import ChipWhispererCommonInterface
 
-from chipwhisperer.logging import *
+from ...logging import *
 
 class CW305_USB(object):
     REQ_SYSCFG = 0x22
@@ -49,7 +49,7 @@ class CW305_USB(object):
     VCCINT_XORKEY = 0xAE
 
 
-class CW305(TargetTemplate):
+class CW305(TargetTemplate, ChipWhispererCommonInterface):
 
     """CW305 target object.
 
@@ -107,15 +107,23 @@ class CW305(TargetTemplate):
     BATCHRUN_RANDOM_KEY = 0x2
     BATCHRUN_RANDOM_PT = 0x4
 
-    def upgrade_firmware(self):
-        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
-        """
-        prog = SAMFWLoader(self)
-        prog.auto_program()
+
+    def _getFWPy(self):
+        from ...hardware.firmware.cw305 import fwver
+        return fwver
 
     def __init__(self):
         import chipwhisperer as cw
         TargetTemplate.__init__(self)
+
+        #NOTE: default values to make linter happy - these are never correct
+        self.REG_CRYPT_KEY = None
+        self.REG_CRYPT_TEXTIN = None
+        self.REG_CRYPT_GO = None
+        self.REG_USER_LED = None
+        self.REG_CRYPT_CIPHEROUT = None
+        self.REG_BUILDTIME = None
+
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6)
         self.fpga = FPGA(self._naeusb)
@@ -140,12 +148,16 @@ class CW305(TargetTemplate):
     def slurp_defines(self, defines_files=None):
         """ Parse Verilog defines file so we can access register and bit
         definitions by name and avoid 'magic numbers'.
+
         Args:
             defines_files (list): list of Verilog define files to parse
+
         """
         self.verilog_define_matches = 0
-        if type(defines_files) != list:
-            target_logger.error('defines_files must be provided as a list (even it it contains a single element)')
+
+        if (defines_files is None) or (type(defines_files) != list):
+            raise ValueError('defines_files must be provided as a list (even if it contains a single element)')
+
         for i,defines_file in enumerate(defines_files):
             if type(defines_file) == io.BytesIO:
                 defines = io.TextIOWrapper(defines_file)
@@ -153,7 +165,7 @@ class CW305(TargetTemplate):
                 if not os.path.isfile(defines_file):
                     target_logger.error('Cannot find %s. Please specify the location of %s on your filesystem.' % 
                                    (defines_files, self.default_verilog_defines))
-                defines = open(defines_file, 'r')
+                defines = open(defines_file, 'r', encoding='utf-8')
             define_regex_base  =   re.compile(r'`define')
             define_regex_reg   =   re.compile(r'`define\s+?REG_')
             define_regex_radix =   re.compile(r'`define\s+?(\w+).+?\'([bdh])([0-9a-fA-F]+)')
@@ -182,13 +194,15 @@ class CW305(TargetTemplate):
             defines.close()
         # make sure everything is cool:
         if self.verilog_define_matches != self.registers:
-            target_logger.warning("Trouble parsing Verilog defines files (%s): didn't find the right number of defines; expected %d, got %d.\n" % (defines_file, self.registers, self.verilog_define_matches) +
+            target_logger.warning("Trouble parsing Verilog defines files (%s): didn't find the right number of defines; expected %d, got %d.\n" % (defines_files, self.registers, self.verilog_define_matches) +
                             "Ensure that the Verilog defines files above are the same that were used to build the bitfile.")
 
 
     def get_fpga_buildtime(self):
         """Returns date and time when FPGA bitfile was generated.
         """
+        if self.REG_BUILDTIME is None:
+            target_logger.error("target.REG_BUILDTIME unset. Have you given target a verilog defines file?")
         raw = self.fpga_read(self.REG_BUILDTIME, 4)
         # definitions: Xilinx XAPP1232
         day = raw[3] >> 3
@@ -196,6 +210,7 @@ class CW305(TargetTemplate):
         year = ((raw[2] >> 1) & 0x3f) + 2000
         hour = ((raw[2] & 0x1) << 4) + (raw[1] >> 4)
         minute = ((raw[1] & 0xf) << 2) + (raw[0] >> 6)
+        return "{}/{}/{}, {:02d}:{:02d}".format(month, day, year, hour, minute)
         return "FPGA build time: {}/{}/{}, {}:{}".format(month, day, year, hour, minute)
 
 
@@ -266,7 +281,7 @@ class CW305(TargetTemplate):
         resp = self._naeusb.readCtrl(CW305_USB.REQ_VCCINT, dlen=3)
         return float(resp[1] | (resp[2] << 8)) / 1000.0
 
-    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True):
+    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=10E6, hw_location=None, sn=None):
         """Connect to CW305 board, and download bitstream.
 
         If the target has already been programmed it skips reprogramming
@@ -281,9 +296,7 @@ class CW305(TargetTemplate):
             defines_files (list, optional): path to cw305_defines.v
             slurp (bool, optional): Whether or not to slurp the Verilog defines.
         """
-
-        from datetime import datetime
-        self._naeusb.con(idProduct=[0xC305])
+        self._naeusb.con(idProduct=[0xC305], serial_number=sn, hw_location=hw_location)
         if not fpga_id is None:
             if fpga_id not in ('100t', '35t'):
                 raise ValueError(f"Invalid fpga {fpga_id}")
@@ -297,7 +310,7 @@ class CW305(TargetTemplate):
                     elif self.target_name == 'Cryptech ecdsa256-v1 pmul':
                         bsdata = getsome(f"ECDSA256v1_pmul_{fpga_id}.bit")
                     starttime = datetime.now()
-                    status = self.fpga.FPGAProgram(bsdata, exceptOnDoneFailure=False)
+                    status = self.fpga.FPGAProgram(bsdata, exceptOnDoneFailure=False, prog_speed=prog_speed)
                     stoptime = datetime.now()
                     if status:
                         target_logger.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
@@ -309,7 +322,7 @@ class CW305(TargetTemplate):
                 target_logger.warning(("FPGA Bitstream not configured or '%s' not a file." % str(bsfile)))
             else:
                 starttime = datetime.now()
-                status = self.fpga.FPGAProgram(open(bsfile, "rb"), exceptOnDoneFailure=False)
+                status = self.fpga.FPGAProgram(open(bsfile, "rb"), exceptOnDoneFailure=False, prog_speed=prog_speed)
                 stoptime = datetime.now()
                 if status:
                     target_logger.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
@@ -338,9 +351,9 @@ class CW305(TargetTemplate):
             self.slurp_defines(verilog_defines)
 
 
-    def _dis(self):
-        if self._naeusb:
-            self._naeusb.close()
+    def dis(self):
+        # if self._naeusb:
+        self._naeusb.close()
 
     def checkEncryptionKey(self, key):
         """Validate encryption key"""
@@ -348,18 +361,27 @@ class CW305(TargetTemplate):
 
     def loadEncryptionKey(self, key):
         """Write encryption key to FPGA"""
+        if self.REG_CRYPT_KEY is None:
+            target_logger.error("target.REG_CRYPT_KEY unset. Have you given target a verilog defines file?")
+            return
         self.key = key
         key = key[::-1]
         self.fpga_write(self.REG_CRYPT_KEY, key)
 
     def loadInput(self, inputtext):
         """Write input to FPGA"""
+        if self.REG_CRYPT_TEXTIN is None:
+            target_logger.error("target.REG_CRYPT_TEXTIN unset. Have you given target a verilog defines file?")
+            return
         self.input = inputtext
         text = inputtext[::-1]
         self.fpga_write(self.REG_CRYPT_TEXTIN, text)
 
     def is_done(self):
         """Check if FPGA is done"""
+        if (self.REG_CRYPT_GO is None) or (self.REG_USER_LED is None):
+            target_logger.error("target.REG_CRYPT_GO or target.REG_USER_LED unset. Have you given target a verilog defines file?")
+            return
         result = self.fpga_read(self.REG_CRYPT_GO, 1)[0]
         if result == 0x01:
             return False
@@ -371,6 +393,9 @@ class CW305(TargetTemplate):
 
     def readOutput(self):
         """"Read output from FPGA"""
+        if self.REG_CRYPT_CIPHEROUT is None:
+            target_logger.error("target.REG_CRYPT_CIPHEROUT unset. Have you given target a verilog defines file?")
+            return
         data = self.fpga_read(self.REG_CRYPT_CIPHEROUT, 16)
         data = data[::-1]
         #self.newInputData.emit(util.list2hexstr(data))
@@ -378,22 +403,6 @@ class CW305(TargetTemplate):
 
     def _getCWType(self):
         return 'cw305'
-
-    @property
-    def latest_fw(self):
-        cw_type = self._getCWType()
-        if cw_type == "cwlite":
-            from chipwhisperer.hardware.firmware.cwlite import fwver
-        elif cw_type == "cw1200":
-            from chipwhisperer.hardware.firmware.cw1200 import fwver
-        
-        ret = OrderedDict()
-        return {"major": fwver[0], "minor": fwver[1]}
-
-    @property
-    def fw_version(self):
-        a = self._naeusb.readFwVersion()
-        return {"major": a[0], "minor": a[1], "debug": a[2]}
 
     @property
     def clkusbautooff(self):
@@ -428,6 +437,9 @@ class CW305(TargetTemplate):
 
     def go(self):
         """Disable USB clock (if requested), perform encryption, re-enable clock"""
+        if (self.REG_USER_LED is None):
+            target_logger.error("target.REG_USER_LED unset. Have you given target a verilog defines file?")
+            return
         if self.clkusbautooff:
             self.usb_clk_setenabled(False)
 
@@ -537,12 +549,12 @@ class CW305(TargetTemplate):
         for b in range(batchsize):
             if random_key:
                 for j in range(16):
-                    key[b][15-j] = seed >> 24;
+                    key[b][15-j] = seed >> 24
                     seed += ((seed*seed)&0xffffffff) | 0x5
                     seed &= 0xffffffff
             if random_pt:
                 for j in range(16):
-                    pt[b][15-j] = seed >> 24;
+                    pt[b][15-j] = seed >> 24
                     seed += ((seed*seed)&0xffffffff) | 0x5
                     seed &= 0xffffffff
         return key,pt
@@ -562,10 +574,10 @@ class CW305(TargetTemplate):
         if len(data) > (256+addr):
             raise IOError("Write will overflow at location: 0x%04x"%(256))
 
-        return self._naeusb.cmdWriteSam3U(addr, data)
+        return self._naeusb.cmdWriteMem(addr, data)
 
-    @fw_ver_required(0, 30)
-    def spi_mode(self, enable=True, timeout=200, bsfile=None):
+    # @fw_ver_required(0, 30)
+    def spi_mode(self, enable=True, timeout=200, bsfile=None, prog_speed=10E6):
         """Enter programming mode for the onboard SPI chip
         
         Reprograms the FPGA with the appropriate bitstream and 
@@ -583,7 +595,9 @@ class CW305(TargetTemplate):
             A FPGASPI object which can be used to erase/program/verify/read the SPI
             chip on the CW305.
         """
-        from datetime import datetime
+        self._getNAEUSB().check_feature("FPGA_SPI_PASSTHROUGH", True)
+            # target_logger.error("SPI mode requires fw 0.30.0 or newer. You have {}".format(self.fw_version_str))
+            # return
         if self._fpga_id is None and bsfile is None:
             target_logger.warning("CW305 requires passthrough bitstream to program SPI chip, but file/chip not specified")
         else:
@@ -594,7 +608,7 @@ class CW305(TargetTemplate):
             else:
                 bsdata = open(bsfile, "rb")
             starttime = datetime.now()
-            status = self.fpga.FPGAProgram(bsdata, exceptOnDoneFailure=False)
+            status = self.fpga.FPGAProgram(bsdata, exceptOnDoneFailure=False, prog_speed=prog_speed)
             stoptime = datetime.now()
             if status:
                 target_logger.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
@@ -605,7 +619,6 @@ class CW305(TargetTemplate):
         spi.enable_interface(enable)
         return spi
 
-    @fw_ver_required(0, 40)
     def gpio_mode(self, timeout=200):
         """Allow arbitrary GPIO access on SAM3U
         
@@ -618,6 +631,8 @@ class CW305(TargetTemplate):
         Returns:
             A FPGAIO object which can be used to access IO on the CW305.
         """
+        self._getNAEUSB().check_feature("SAM3U_GPIO_MODE", True)
+            # target_logger.error("GPIO mode requires fw 0.40.0 or newer. You have {}".format(self.fw_version_str))
         io = FPGAIO(self._naeusb, timeout)
         return io
 
@@ -820,7 +835,7 @@ class FPGASPI:
             ValueError: length is bigger than a page
         """
         if length > self.PAGE_SIZE:
-            raise ValueError(f"Data too long {len(data)} vs {self.PAGE_SIZE}")
+            raise ValueError(f"Data too long {length} vs {self.PAGE_SIZE}")
             
         self.set_cs_pin(False)
         cmd = [self.READ, (addr >> 16)&0xFF, (addr >> 8)&0xFF, addr & 0xFF]
@@ -1199,7 +1214,7 @@ class FPGAIO:
             pinname (str): Name such as "PB22", "USB_A20", or "M2".
         """      
         if isinstance(pinname, int):
-            return datain
+            return pinname # TODO: is this right?
 
         pinname = pinname.upper()
 

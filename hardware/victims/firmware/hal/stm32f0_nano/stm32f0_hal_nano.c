@@ -73,7 +73,7 @@ void init_uart(void)
 	__HAL_RCC_USART1_CLK_ENABLE();
 	__HAL_RCC_USART1_CONFIG(RCC_USART1CLKSOURCE_SYSCLK);
 	UartHandle.Instance        = USART1;
-  #if SS_VER==SS_VER_2_0
+  #if SS_VER==SS_VER_2_1
   UartHandle.Init.BaudRate   = 230400;
   #else
   UartHandle.Init.BaudRate   = 38400;
@@ -96,8 +96,22 @@ void trigger_setup(void)
 	GpioInit.Pull      = GPIO_NOPULL;
 	GpioInit.Speed     = GPIO_SPEED_FREQ_HIGH;
 	HAL_GPIO_Init(GPIOA, &GpioInit);
+
+	GpioInit.Pin       = GPIO_PIN_4;
+	GpioInit.Mode      = GPIO_MODE_OUTPUT_PP;
+	GpioInit.Pull      = GPIO_NOPULL;
+	GpioInit.Speed     = GPIO_SPEED_FREQ_HIGH;
+	HAL_GPIO_Init(GPIOA, &GpioInit);
+
+	GpioInit.Pin       = GPIO_PIN_2;
+	GpioInit.Mode      = GPIO_MODE_OUTPUT_PP;
+	GpioInit.Pull      = GPIO_NOPULL;
+	GpioInit.Speed     = GPIO_SPEED_FREQ_HIGH;
+	HAL_GPIO_Init(GPIOA, &GpioInit);
 	
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, SET);
 }
 
 void trigger_high(void)

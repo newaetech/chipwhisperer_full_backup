@@ -45,59 +45,59 @@ def close_on_fail(func):
 #From ST AN2606, See Section 50 (Device-dependent bootloader parameters), Page 244/268 on Rev 30 of document
 #http://www.st.com/content/ccc/resource/technical/document/application_note/b9/9b/16/3a/12/1e/40/0c/CD00167594.pdf/files/CD00167594.pdf/jcr:content/translations/en.CD00167594.pdf
 
-class STM32FDummy(object):
+class STM32FDummy:
     signature = 0x000
     name = "Unknown STM32F"
 
-class STM32F03xx4(object):
+class STM32F03xx4:
     signature = 0x444
     name = "STM32F03xx4/03xx6"
 
-class STM32F04xxx(object):
+class STM32F04xxx:
     signature = 0x445
     name = "STM32F04xxx"
 
-class STM32F071(object):
+class STM32F071:
     signature = 0x448
     name = "STM32F071xx/STM32F072xx"
 
-class STM32F10xxx_LD(object):
+class STM32F10xxx_LD:
     signature = 0x412
     name = "STM32F10xxx Low-density"
 
-class STM32F10xxx_MD(object):
+class STM32F10xxx_MD:
     signature = 0x410
     name = "STM32F10xxx Medium-density"
 
-class STM32F10xxx_HD(object):
+class STM32F10xxx_HD:
     signature = 0x414
     name = "STM32F10xxx High-density"
 
-class STM32F10xxx_XL(object):
+class STM32F10xxx_XL:
     signature = 0x416
     name = "STM32F10xxx XL-density"
 
-class STM32F10xxx_MDV(object):
+class STM32F10xxx_MDV:
     signature = 0x420
     name = "STM32F10xxx Medium-density value line"
 
-class STM32F10xxx_HDV(object):
+class STM32F10xxx_HDV:
     signature = 0x428
     name = "STM32F10xxx High-density value line"
 
-class STM32F2(object):
+class STM32F2:
     signature = 0x411
     name = "STM32F2"
 
-class STM32F303cBC(object):
+class STM32F303cBC:
     signature = 0x422
     name = "STM32F302xB(C)/303xB(C)"
 
-class STM32F40xxx(object):
+class STM32F40xxx:
     signature = 0x413
     name = "STM32F40xxx/41xxx"
 
-class STM32L56xxx(object):
+class STM32L56xxx:
     signature = 0x472
     name = "STM32L56xxx"
 
@@ -110,7 +110,7 @@ def print_fun(s):
 class CmdException(Exception):
     pass
 
-class STM32FSerial(object):
+class STM32FSerial:
     """
     Class for programming an STM32F device using a serial port or ChipWhisperer-Serial
     """
@@ -200,6 +200,8 @@ class STM32FSerial(object):
         fsize = f.maxaddr() - f.minaddr()
         fdata = f.tobinarray(start=f.minaddr())
         startaddr = f.minaddr()
+        if isinstance(self._chip, STM32F03xx4) and (fsize > 16384):
+            target_logger.error("Your STM32F0 has a max of 0x4000 flash, but this firmware is 0x{:04X}. Firmware/programming may not work!".format(fsize))
 
         logfunc("Attempting to program %d bytes at 0x%x"% (fsize, startaddr))
 
@@ -278,12 +280,7 @@ class STM32FSerial(object):
 
     @close_on_fail
     def reset(self):
-        if self._cwapi:
-            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'Low'])
-            self.delay_func(10)
-            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', 'High'])
-            self.delay_func(25)
-        elif self.scope:
+        if self.scope:
             self.scope.io.nrst = 'low'
             time.sleep(0.010)
             self.scope.io.nrst = 'high'
@@ -294,16 +291,12 @@ class STM32FSerial(object):
     @close_on_fail
     def set_boot(self, enter_bootloader):
         if enter_bootloader:
-            if self._cwapi:
-                self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'High'])
-            elif self.scope:
+            if self.scope:
                 self.scope.io.pdic = 'high'
             else:
                 raise ValueError('requires either scope or api to be set')
         else:
-            if self._cwapi:
-                self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'Low'])
-            elif self.scope:
+            if self.scope:
                 self.scope.io.pdic = 'low'
             else:
                 raise ValueError('requires either scope or api to be set')
@@ -332,18 +325,20 @@ class STM32FSerial(object):
     @close_on_fail
     def initChip(self):
         self.set_boot(True)
-        self.reset()
+        # self.reset()
+        time.sleep(1)
         fails = 0
         while fails < 5:
             try:
                 #First 2-times, try resetting. After that don't in case reset is causing garbage on lines.
                 if fails < 2:
                     self.reset()
+                    time.sleep(1)
                 try:
                     self.sp.flush()
                     self.sp.write("\x7F")
-                except AttributeError:
-                    raise AttributeError('sp attribute requires call to open_port')
+                except AttributeError as e:
+                    raise AttributeError('sp attribute requires call to open_port') from e
                 return self._wait_for_ask("Syncro")
             except CmdException:
                 target_logger.info("Sync failed with error %s, retrying..." % traceback.format_exc())
@@ -365,11 +360,11 @@ class STM32FSerial(object):
     def cmdGet(self):
         if self.cmdGeneric(0x00):
             target_logger.info("*** Get command");
-            len = self.sp.read(1)[0]
+            length = self.sp.read(1)[0]
             version = self.sp.read(1)[0]
             target_logger.info("    Bootloader version: " + hex(version))
             #dat = map(lambda c: hex(self.sp.read(len))
-            dat = list(map(hex, self.sp.read(len)))
+            dat = list(map(hex, self.sp.read(length)))
             if '0x44' in dat:
                 self.extended_erase = 1
             else:
@@ -394,8 +389,8 @@ class STM32FSerial(object):
     def cmdGetID(self):
         if self.cmdGeneric(0x02):
             target_logger.debug("*** GetID command")
-            len = self.sp.read(1)[0]
-            id = self.sp.read(len + 1)
+            length = self.sp.read(1)[0]
+            id = self.sp.read(length + 1)
             self._wait_for_ask("0x02 end")
             return reduce(lambda x, y: x * 0x100 + y, id)
         else:

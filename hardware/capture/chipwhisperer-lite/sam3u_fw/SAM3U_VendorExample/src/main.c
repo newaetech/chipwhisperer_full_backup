@@ -29,12 +29,28 @@
 #include "naeusb_default.h"
 #include "naeusb_openadc.h"
 #include "naeusb_usart.h"
+#include "naeusb_mpsse.h"
 #include <string.h>
 
 //Serial Number - will be read by device ID
 char usb_serial_number[33] = "000000000000DEADBEEF";
-
+#ifndef RSTC_CR_KEY_PASSWD
+#define RSTC_CR_KEY_PASSWD RSTC_CR_KEY(0xA5)
+#endif
 static void configure_console(void);
+volatile uint32_t usb_checked = 0x00;
+int check_usb_connected(void)
+{
+	if (usb_checked > 100000) {
+        udc_detach();
+        while (RSTC->RSTC_SR & RSTC_SR_SRCMP);
+        RSTC->RSTC_CR |= RSTC_CR_KEY_PASSWD | RSTC_CR_PERRST | RSTC_CR_PROCRST;
+        while(1);
+	}
+	if (UDPHS->UDPHS_FNUM == 0x00) {
+		usb_checked++;
+	}
+}
 
 /*! \brief Main function. Execution starts here.
  */
@@ -142,13 +158,15 @@ int main(void)
 	naeusb_register_handlers();
 	naeusart_register_handlers();
 	openadc_register_handlers();
+	mpsse_register_handlers();
 	
 	// The main loop manages only the power mode
 	// because the USB management is done by interrupt
 	while (true) {
         // if we've received stuff on USART, send it back to the PC
+		check_usb_connected();
 		cdc_send_to_pc();
-		
+		MPSSE_main_sendrecv_byte();
 	}
 }
 

@@ -31,7 +31,7 @@ import pickle
 class PartialReconfigData(object):
     """ Handles a single partial reconfiguration file. """
     def load(self, fname):
-        self.configData = pickle.load(open(fname, 'r'))
+        self.configData = pickle.load(open(fname, 'rb'))
         klist = list(self.configData['values'].keys())
         self.limits = (min(klist), max(klist))
 
@@ -52,7 +52,7 @@ class PartialReconfigData(object):
         return data
 
 
-class PartialReconfigDataMulti(object):
+class PartialReconfigDataMulti:
     """
     Handles combining multiple partial reconfiguration files into a single file. Relies heavily on
     modifications not happeneing to the same location. 
@@ -158,8 +158,8 @@ class PartialReconfigConnection(object):
 
         for data in cfgdata:
             #data = int(t, 2)
-            msb = data >> 8;
-            lsb = data & 0xff;
+            msb = data >> 8
+            lsb = data & 0xff
             dataarray.append(msb)
             dataarray.append(lsb)
 

@@ -1,0 +1,17 @@
+PROMGEN: Xilinx Prom Generator P.49d
+Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved.
+
+promgen -w -p mcs -c FF -o C:\E\Documents\academic\sidechannel\chipwhisperer\openadc\hdl\example_targets\avnet_lx9board_ise//openadc_lx9.mcs -s 16384 -u 0 C:/E/Documents/academic/sidechannel/chipwhisperer/openadc/hdl/example_targets/avnet_lx9board_ise/interface.bit -spi 
+
+PROM C:\E\Documents\academic\sidechannel\chipwhisperer\openadc\hdl\example_targets\avnet_lx9board_ise\openadc_lx9.prm map: Sat Nov 16 12:49:18 2013
+
+Calculating PROM checksum with fill value ff
+
+Format        Mcs86 (32-bit)
+Size          16384K
+PROM start    0000:0000
+PROM end      00ff:ffff
+PROM checksum f9fc6361
+
+        Addr1        Addr2                     Date File(s)
+    0000:0000    0005:3393     Nov 16 12:39:54 2013 C:/E/Documents/academic/sidechannel/chipwhisperer/openadc/hdl/example_targets/avnet_lx9board_ise/interface.bit

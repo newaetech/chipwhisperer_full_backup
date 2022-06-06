@@ -109,7 +109,7 @@ int main(void)
 
         if (passbad){
             //Stop them fancy timing attacks
-             int wait = rand() % 100000; //% 100000 can be removed for xmega
+             int wait = 1;
             for(volatile int i = 0; i < wait; i++){
                 ;
             }

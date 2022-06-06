@@ -1,10 +1,10 @@
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt # type: ignore
 
 # GlitchController will be part of ChipWhisperer core - just run this block
 # for now.
 
 try:
-    import ipywidgets as widgets          
+    import ipywidgets as widgets # type: ignore
 except ModuleNotFoundError:
     widgets = None
 

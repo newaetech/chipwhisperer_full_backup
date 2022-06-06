@@ -1,3 +1,24 @@
+# Copyright (c) 2020-2021, NewAE Technology Inc
+# All rights reserved.
+#
+# Find this and more at newae.com - this file is part of the chipwhisperer
+# project, http://www.chipwhisperer.com . ChipWhisperer is a registered
+# trademark of NewAE Technology Inc in the US & Europe.
+#
+#    This file is part of chipwhisperer.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
 from .CW305 import CW305
 import time
 import os.path
@@ -5,6 +26,8 @@ from ...hardware.naeusb.naeusb import NAEUSB
 from ...hardware.naeusb.pll_cdce906 import PLLCDCE906
 from ...hardware.naeusb.fpga import FPGA
 from ...logging import *
+from collections import OrderedDict
+from ...common.utils import util
 
 class CW310(CW305):
     """CW310 Bergen Board target object.
@@ -66,26 +89,54 @@ class CW310(CW305):
         self.REG_XADC_DRP_DATA = 0x18
         self.REG_XADC_STAT     = 0x19
 
+    def _dict_repr(self):
+        rtn = OrderedDict()
+        rtn['fpga_buildtime'] = self.get_fpga_buildtime()
+        rtn['xadc_status'] = self.xadc_status
+        rtn['max temp'] = self.get_xadc_temp(maximum=True)
+        rtn['temp'] = self.get_xadc_temp()
+        rtn['max vccint'] = self.get_xadc_vcc('vccint', maximum=True)
+        rtn['max vccbram'] = self.get_xadc_vcc('vccbram', maximum=True)
+        rtn['max vccaux'] = self.get_xadc_vcc('vccaux', maximum=True)
+        rtn['current vccint'] = self.get_xadc_vcc('vccint')
+        rtn['current vccbram'] = self.get_xadc_vcc('vccbram')
+        rtn['current vccaux'] = self.get_xadc_vcc('vccaux')
+        rtn['vaux0'] = self.get_xadc_vaux(0)
+        rtn['vaux1'] = self.get_xadc_vaux(1)
+        rtn['vaux8'] = self.get_xadc_vaux(8)
+        return rtn
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
+    def _getFWPy(self):
+        from ...hardware.firmware.cwbergen import fwver
+        return fwver
         
 
-    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True):
+    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=10E6, sn=None, hw_location=None):
         # add more stuff later
-        self._naeusb.con(idProduct=[0xC310])
-        # self.pll.cdce906init()
+        self._naeusb.con(idProduct=[0xC310], serial_number=sn, hw_location=hw_location)
+        self.pll.cdce906init()
+        if fpga_id:
+            target_logger.warning("fpga_id is currently unused")
 
         if defines_files is None:
             if fpga_id is None:
                 verilog_defines = [self.default_verilog_defines_full_path]
             else:
-                from chipwhisperer.hardware.firmware.cw305 import getsome
+                from ...hardware.firmware.cw305 import getsome
                 verilog_defines = [getsome(self.default_verilog_defines)]
         else:
             verilog_defines = defines_files
         if slurp:
             self.slurp_defines(verilog_defines)
 
-        if bsfile:
-            status = self.fpga.FPGAProgram(open(bsfile, "rb"))
+        if bsfile and (force or not self.fpga.isFPGAProgrammed()):
+            status = self.fpga.FPGAProgram(open(bsfile, "rb"), prog_speed=prog_speed)
 
 
     def _xadc_drp_write(self, addr, data):
@@ -109,32 +160,72 @@ class CW310(CW305):
         raw = self.fpga_read(self.REG_XADC_DRP_DATA, 2)
         return raw[0] + (raw[1] << 8)
 
+    @property
+    def xadc_status(self):
+        """Read XADC alarm status bits
+        :Getter: Returns status string.
 
-    def get_xadc_temp(self):
+        :Setter: Clear the XADC status error bits (they are sticky).
+        """
+        raw = self.fpga_read(self.REG_XADC_STAT, 1)[0]
+        stat = ''
+        if raw & 1:  stat += 'Over temperature alarm, '
+        if raw & 2:  stat += 'User temperature alarm, '
+        if raw & 4:  stat += 'VCCint alarm, '
+        if raw & 8:  stat += 'VCCaux alarm, '
+        if raw & 16: stat += 'VCCbram alarm, '
+        if stat == '':
+            stat = 'good'
+        return stat
+
+    @xadc_status.setter
+    def xadc_status(self, clear):
+        self.fpga_write(self.REG_XADC_STAT, [0x0])
+
+
+    def get_xadc_temp(self, maximum=False):
         """Read XADC temperature.
-        Args: none
+        Args: 
+            maximum (bool): if True, return the maximum observed temperature (since last reset);
+                otherwise, return current measured temperature
         Returns:
             Temperature in celcius (float).
         """
-        raw = self._xadc_drp_read(0)
+        if maximum:
+            addr = 0x20
+        else:
+            addr = 0x0
+        raw = self._xadc_drp_read(addr)
         return (raw>>4) * 503.975/4096 - 273.15 # ref: UG480
 
 
-    def get_xadc_vcc(self, rail='vccint'):
+    def get_xadc_vcc(self, rail='vccint', maximum=False):
         """Read XADC vcc.
         Args:
             rail (string): 'vccint', 'vccaux', or 'vccbram'
+            maximum (bool): if True, return the maximum observed voltage (since last reset);
+                otherwise, return current measured voltage
         Returns:
             voltage (float).
         """
-        if rail == 'vccint':
-            addr = 1
-        elif rail == 'vccaux':
-            addr = 2
-        elif rail == 'vccbram':
-            addr = 6
-        else:
+        if rail not in ('vccint', 'vccaux', 'vccbram'):
             raise ValueError("Invalid rail")
+
+        if not maximum:
+            if rail == 'vccint':
+                addr = 0x01
+            elif rail == 'vccaux':
+                addr = 0x02
+            elif rail == 'vccbram':
+                addr = 0x06
+        else:
+            if rail == 'vccint':
+                addr = 0x21
+            elif rail == 'vccaux':
+                addr = 0x22
+            elif rail == 'vccbram':
+                addr = 0x23
+
         raw = self._xadc_drp_read(addr)
         return (raw>>4)/4096 * 3 # ref: UG480
 
@@ -149,7 +240,7 @@ class CW310(CW305):
         assert n in [0, 1, 8]
         addr = n + 0x10
         raw = self._xadc_drp_read(addr)
-        return raw/4096 # ref: UG480
+        return (raw>>4)/4096 # ref: UG480
 
     def _i2c_write(self, data):
         self._naeusb.sendCtrl(self.USB_I2C_DATA, 0, data)
@@ -257,14 +348,15 @@ class CW310(CW305):
         #send reset on pdo bus
         # self._naeusb.sendCtrl(0x43, 0, [0x28, 0x1A])
         # self._naeusb.sendCtrl(0x44, 0, [0x26])
-        self.usb_i2c.write(0x1A, 0x26)
+        self.usb_i2c_write(0x1A, 0x26)
 
     def _getCWType(self):
         return 'cwbergen'
 
-    def _dis(self):
+    def dis(self):
         if self._naeusb:
             self._naeusb.close()
+            self._naeusb = None
 
     def go_reg(self):
         """Disable USB clock (if requested), perform encryption, re-enable clock"""
@@ -384,7 +476,7 @@ class CW310(CW305):
         self._io.pin_set_state("PA1", 1)
         
         resp = input("Did both go or stay on? [y/n]")
-        if "y" == resp or "Y" == resp:
+        if resp == "y" or resp == "Y":
             print("Temp LEDs ok")
             
         print("Setting temp LEDs low")
@@ -393,7 +485,7 @@ class CW310(CW305):
         self._io.pin_set_state("PA1", 0)
         
         resp = input("Did both go or stay off? [y/n]")
-        if "y" == resp or "Y" == resp:
+        if resp == "y" or resp == "Y":
             print("Temp LEDs ok")
 
 
@@ -685,7 +777,7 @@ class FPGAIO:
             pinname (str): Name such as "PB22", "USB_A20", or "M2".
         """      
         if isinstance(pinname, int):
-            return datain
+            return pinname
 
         pinname = pinname.upper()
 

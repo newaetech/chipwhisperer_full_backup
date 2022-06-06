@@ -28,7 +28,7 @@
 from ._base import PreprocessingBase
 from chipwhisperer.common.utils.util import camel_case_deprecated
 try:
-    from fastdtw import fastdtw
+    from fastdtw import fastdtw # type: ignore
 except ModuleNotFoundError:
     from chipwhisperer.analyzer.utils.fasterdtw import fastdtw
 import numpy as np

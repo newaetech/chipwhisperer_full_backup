@@ -26,7 +26,7 @@
 //uint8_t glitch_loop(uint8_t* in);
 //uint8_t password(uint8_t* pw);
 
-#if SS_VER == SS_VER_2_0
+#if SS_VER == SS_VER_2_1
 uint8_t glitch_loop(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t* in)
 #else
 uint8_t glitch_loop(uint8_t* in, uint8_t len)
@@ -43,14 +43,14 @@ uint8_t glitch_loop(uint8_t* in, uint8_t len)
     }
     trigger_low();
     simpleserial_put('r', 4, (uint8_t*)&cnt);
-#if SS_VER == SS_VER_2_0
+#if SS_VER == SS_VER_2_1
     return (cnt != 2500) ? 0x10 : 0x00;
 #else
     return (cnt != 2500);
 #endif
 }
 
-#if SS_VER == SS_VER_2_0
+#if SS_VER == SS_VER_2_1
 uint8_t glitch_comparison(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t* in)
 #else
 uint8_t glitch_comparison(uint8_t* in, uint8_t len)
@@ -68,7 +68,7 @@ uint8_t glitch_comparison(uint8_t* in, uint8_t len)
     return 0x00;
 }
 
-#if SS_VER == SS_VER_2_0
+#if SS_VER == SS_VER_2_1
 uint8_t password(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t* pw)
 #else
 uint8_t password(uint8_t* pw, uint8_t len)
@@ -93,7 +93,7 @@ uint8_t password(uint8_t* pw, uint8_t len)
     return 0x00;
 }
 
-#if SS_VER == SS_VER_2_0
+#if SS_VER == SS_VER_2_1
 uint8_t infinite_loop(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t* in)
 #else
 uint8_t infinite_loop(uint8_t* in, uint8_t len)
@@ -168,7 +168,7 @@ int main(void)
     simpleserial_init();
     simpleserial_addcmd('g', 0, glitch_loop);
     simpleserial_addcmd('c', 1, glitch_comparison);
-    #if SS_VER == SS_VER_2_0
+    #if SS_VER == SS_VER_2_1
     simpleserial_addcmd(0x01, 5, password);
     #else
     simpleserial_addcmd('p', 5, password);

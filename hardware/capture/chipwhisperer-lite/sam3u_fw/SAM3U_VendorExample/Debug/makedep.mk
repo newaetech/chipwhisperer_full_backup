@@ -4,8 +4,6 @@
 
 src\ASF\common\services\usb\class\cdc\device\udi_cdc.c
 
-src\ASF\common\services\usb\class\composite\device\udi_composite_desc.c
-
 src\ASF\sam\drivers\chipid\chipid.c
 
 src\naeusb\circbuffer.c
@@ -20,9 +18,15 @@ src\naeusb\naeusb.c
 
 src\naeusb\naeusb_default.c
 
+src\naeusb\naeusb_mpsse.c
+
 src\naeusb\naeusb_openadc.c
 
 src\naeusb\naeusb_usart.c
+
+src\naeusb\udc.c
+
+src\naeusb\udi_composite_desc.c
 
 src\naeusb\usb_xmem.c
 
@@ -53,8 +57,6 @@ src\ASF\common\services\clock\sam3u\sysclk.c
 src\ASF\common\services\sleepmgr\sam\sleepmgr.c
 
 src\ASF\common\services\usb\class\vendor\device\udi_vendor.c
-
-src\ASF\common\services\usb\udc\udc.c
 
 src\ASF\common\utils\interrupt\interrupt_sam_nvic.c
 

@@ -34,40 +34,32 @@ You now have access to an object-oriented interface to configure the attached
 hardware. To see what is possible with this interface check out the
 :ref:`scope section <api-scope>` of the API documentation.
 
-To see longer, more in-depth examples of what the tool-chain can do, take a look
-at :ref:`tutorials-sca101` for completed versions of power analysis tutorials, as well as
-:ref:`tutorials-fault101` for completed versions of voltage and clock glitching tutorials.
-Check out all the other :ref:`tutorials <tutorials>` to see what is possible. The
-content is generated from Jupyter notebooks included with the project. It
-includes interactive plots.
-
 .. _hardware: https://rtfm.newae.com
 
+Overview
+========
+.. toctree::
+    :maxdepth: 1
 
-Documentation
-=============
+    Overview <getting-started.rst>
+    Running ChipWhisperer <starting.rst>
+
+
+.. _install:
+
+Installation
+============
 
 .. toctree::
     :maxdepth: 2
 
-    getting-started
-    prerequisites
-    installing
-    starting
+    windows-install
+    drivers
+    linux-install
+    mac-install
+    virtual-box-inst
 
-
-Jupyter Notebook Tutorials
-==========================
-
-Jupyter notebook tutorials with output included so you can follow along,
-or just check out what the ChipWhisperer tool-chain is capable of.
-
-
-.. toctree::
-    :maxdepth: 4
-
-    tutorials
-
+.. _api:
 
 API
 ===
@@ -75,22 +67,55 @@ API
 Documentation specific to api functions, classes, and modules live here.
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
 
-    api
+    scope-api
+    firmware
+    target-api
+    capture-api
+    analyzer-api
 
 
-Additional Information
-======================
+Additional Features and Info
+============================
 
-Here is more information about changes, and contribution.
+ChipWhisperer has some additional features that you may find useful, such as target debugging
+and control over logging in Python.
 
 .. toctree::
     :maxdepth: 2
-    :glob:
+
+    ChipWhisperer as a Debugger <debugging.rst>
+    SimpleSerial <simpleserial.rst>
+    Logging <logging.rst>
+
+Other
+============================
+
+Additional information such as the changelog and contributing
+
+.. toctree::
+    :maxdepth: 1
 
     contributing
-    Change Log <changes.rst>
-    SimpleSerial <simpleserial.rst>
-    Updating Firmware <firmware.rst>
-    Logging <logging.rst>
+    Changelog <changes.rst>
+
+Tutorials
+---------
+
+Completed tutorial files, which were previously available on this page, are now stored on our
+`test results Github page <https://github.com/newaetech/ChipWhisperer-Test-Results>`__ and
+are available in reStructured text (which renders on Github) and html.
+
+Deprecated Pages
+----------------
+
+This website has been restructed for CW 5.6.1. The following pages are deprecated
+and will be removed in the future:
+
+.. toctree::
+
+    api <api.rst>
+    install <installing.rst>
+    prerequisites <prerequisites.rst>
+    tutorials <tutorials.rst>

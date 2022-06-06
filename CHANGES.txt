@@ -1,3 +1,52 @@
+V5.6.1
+  New Features:
+    * ChipWhisperer-Husky and CW310 Bergen Board support
+    * Add `scope.fw_version_str`
+    * Switch from pyusb to libusb1 - deprecates libusb0.dll on Windows
+    * Add `as_int` parameter to `scope.get_last_trace()` to return traces as integers
+    * Add driver detection for Windows
+    * Add force and bitstream option to `cw.scope()`
+    * Improve 50-naeusb.rules
+    * Add SimpleSerial 2.1 and deprecate SimpleSerial 2.0 
+    * Add ChipWhisperer version check. 
+    * Add SAM3U firmware feature list and checks
+    * Add common interface for USB scopes/targets
+    * Add ability to connect to scope via hardware location
+    * Add debugger support (via OpenOCD) to Lite, Pro, Nano, and Husky
+    * Add GUI based Windows firmware installer
+    * Add linting, automatic hardware testing, and firmware building actions
+    * Add FW_CHANGES.txt
+
+  Fixes:
+    * Fix SS_VER_1_X and XMega simplserial-rsa
+    * Fix SSV2 unstuff data for >30 zeros
+    * Fix AVR lock bits read
+    * Fix Nano connect status
+    * Fix Nano scope.adc.clk_src not being changeable.
+    * Explicit memory ordering in bootloader-glitch
+    * Cast analyzer CPA calculations to long double to avoid precision issues in large projects
+    * Fix Pro screen getting stuck when capturing
+    * Checkout master branch for ChipWhisperer-Jupyter in installer
+    * Fix timeout length on simpleserial reads
+    * More versionadded/versionchanged for docs
+    * Fix FPGA target.dis()
+    * Fix DCM lock on glitch - caused issues with enable_only glitching (most noticable at high frequencies)
+    * Fix TraceWhisperer verilog files not being installed in user mode
+    * Fix issues with unintended double glitch on CWLite and Pro
+    * Fix simple_PGE when key is numpy array
+    * Don't try calculating pge if known_key not set
+    * No longer overwrite builtins.bytearray
+    * Fix memory numbers in STM32F3 linkerscript
+    * Revert to old NewAE rules
+
+  Firmware:
+    * CWLite: 0.62.0
+    * CWNano: 0.62.0
+    * CWPro : 1.62.0
+    * CW305 : 0.52.0
+    * CWHusky: 1.2.0
+    * CWBergen: 1.2.0
+
 V5.5
   New Features:
     * Re-add SAKURA-G support

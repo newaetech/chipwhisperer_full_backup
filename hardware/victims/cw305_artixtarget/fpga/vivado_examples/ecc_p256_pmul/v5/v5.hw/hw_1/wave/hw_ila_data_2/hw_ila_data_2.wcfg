@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<wave_config>
+	<wave_state>
+	</wave_state>
+	<db_ref_list>
+		<db_ref path="Y:/fpga/vivado_examples/ecc_p256_pmul/v5/v5.hw/hw_1/wave/hw_ila_data_2/hw_ila_data_2.wdb" id="1" type="auto">
+			<top_modules>
+				<top_module name="top">
+				</top_module>
+			</top_modules>
+		</db_ref>
+	</db_ref_list>
+	<WVObjectSize size="11">
+	</WVObjectSize>
+	<wvobject fp_name="U_reg_pmul/reg_address" type="array" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/reg_address[7:0]</obj_property>
+		<obj_property name="ObjectShortName">reg_address[7:0]</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/reg_bytecnt" type="array" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/reg_bytecnt[6:0]</obj_property>
+		<obj_property name="ObjectShortName">reg_bytecnt[6:0]</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/read_data" type="array" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/read_data[7:0]</obj_property>
+		<obj_property name="ObjectShortName">read_data[7:0]</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/write_data" type="array" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/write_data[7:0]</obj_property>
+		<obj_property name="ObjectShortName">write_data[7:0]</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/reg_read" type="logic" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/reg_read</obj_property>
+		<obj_property name="ObjectShortName">reg_read</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/reg_write" type="logic" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/reg_write</obj_property>
+		<obj_property name="ObjectShortName">reg_write</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/reg_addrvalid" type="logic" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/reg_addrvalid</obj_property>
+		<obj_property name="ObjectShortName">reg_addrvalid</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/reg_read_data" type="array" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/reg_read_data[7:0]</obj_property>
+		<obj_property name="ObjectShortName">reg_read_data[7:0]</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/exttrigger_in" type="logic" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/exttrigger_in</obj_property>
+		<obj_property name="ObjectShortName">exttrigger_in</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/&lt;const0&gt;" type="logic" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/&lt;const0&gt;</obj_property>
+		<obj_property name="ObjectShortName">&lt;const0&gt;</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+	<wvobject fp_name="U_reg_pmul/reg_crypt_go_pulse" type="logic" db_ref_id="1">
+		<obj_property name="ElementShortName">U_reg_pmul/reg_crypt_go_pulse</obj_property>
+		<obj_property name="ObjectShortName">reg_crypt_go_pulse</obj_property>
+		<obj_property name="DisplayName">FullPathName</obj_property>
+		<obj_property name="Radix">HEXRADIX</obj_property>
+	</wvobject>
+</wave_config>
+

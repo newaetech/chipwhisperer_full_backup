@@ -13,4 +13,4 @@ AR = avr-ar rcs
 NM = avr-nm
 
 #Fancy AVR Size formatting
-ELFSIZE = avr-size --mcu=$(MCU) --format=avr $(TARGET-PLAT).elf
+#ELFSIZE = avr-size $(TARGET-PLAT).elf

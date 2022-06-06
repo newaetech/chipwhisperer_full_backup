@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenRun Id="ila_1_synth_1" LaunchPart="xc7a35tftg256-2" LaunchTime="1616006503">
+  <File Type="PA-TCL" Name="ila_1.tcl"/>
+  <File Type="RDS-PROPCONSTRS" Name="ila_1_drc_synth.rpt"/>
+  <File Type="REPORTS-TCL" Name="ila_1_reports.tcl"/>
+  <File Type="RDS-RDS" Name="ila_1.vds"/>
+  <File Type="RDS-UTIL" Name="ila_1_utilization_synth.rpt"/>
+  <File Type="RDS-UTIL-PB" Name="ila_1_utilization_synth.pb"/>
+  <File Type="RDS-DCP" Name="ila_1.dcp"/>
+  <File Type="VDS-TIMINGSUMMARY" Name="ila_1_timing_summary_synth.rpt"/>
+  <File Type="VDS-TIMING-PB" Name="ila_1_timing_summary_synth.pb"/>
+  <FileSet Name="sources" Type="BlockSrcs" RelSrcDir="$PSRCDIR/ila_1">
+    <File Path="$PSRCDIR/ila_1/ip/ila_1/ila_1.xci">
+      <FileInfo>
+        <Attr Name="ImportPath" Val="X:/fpga/vivado_examples/aes128_verilog/aes128_verilog.srcs/sources_1/ip/ila_1/ila_1.xci"/>
+        <Attr Name="ImportTime" Val="1602018463"/>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <Config>
+      <Option Name="TopModule" Val="ila_1"/>
+      <Option Name="UseBlackboxStub" Val="1"/>
+    </Config>
+  </FileSet>
+  <FileSet Name="constrs_in" Type="BlockSrcs" RelSrcDir="$PSRCDIR/ila_1">
+    <File Path="$PSRCDIR/ila_1/ip/ila_1/ila_1.xci">
+      <FileInfo>
+        <Attr Name="ImportPath" Val="X:/fpga/vivado_examples/aes128_verilog/aes128_verilog.srcs/sources_1/ip/ila_1/ila_1.xci"/>
+        <Attr Name="ImportTime" Val="1602018463"/>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <Config>
+      <Option Name="TopModule" Val="ila_1"/>
+      <Option Name="UseBlackboxStub" Val="1"/>
+    </Config>
+  </FileSet>
+  <FileSet Name="utils" Type="Utils" RelSrcDir="$PSRCDIR/utils_1">
+    <Filter Type="Utils"/>
+    <Config>
+      <Option Name="TopAutoSet" Val="TRUE"/>
+    </Config>
+  </FileSet>
+  <Strategy Version="1" Minor="2">
+    <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2019"/>
+    <Step Id="synth_design"/>
+  </Strategy>
+</GenRun>

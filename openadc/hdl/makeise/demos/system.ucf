@@ -1,0 +1,4 @@
+NET reset_i      LOC = V4  |IOSTANDARD = LVCMOS33 |PULLDOWN;    # "USER_RESET"
+NET reset_i      TIG;
+NET clk_40mhz        LOC = V10 |IOSTANDARD = LVCMOS33;               # "USER_CLOCK"
+

@@ -50,9 +50,9 @@ void hex_print(const uint8_t * in, int len, char *out)
 #define DATA_BUFLEN 40
 #define ASCII_BUFLEN (2 * DATA_BUFLEN)
 
-//uint8_t buffer[ASCII_BUFLEN + DATA_BUFLEN];
-//uint8_t* ascii_buffer = buffer;
-//uint8_t* data_buffer = buffer + ASCII_BUFLEN;
+// uint8_t buffer[ASCII_BUFLEN + DATA_BUFLEN];
+// uint8_t *ascii_buffer = buffer;
+// uint8_t *data_buffer = buffer + ASCII_BUFLEN;
 uint8_t ascii_buffer[ASCII_BUFLEN];
 uint8_t data_buffer[DATA_BUFLEN];
 

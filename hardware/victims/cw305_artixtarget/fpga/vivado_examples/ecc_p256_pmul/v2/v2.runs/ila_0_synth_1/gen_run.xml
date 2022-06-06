@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenRun Id="ila_0_synth_1" LaunchPart="xc7a35tftg256-2" LaunchTime="1615130457">
+  <File Type="PA-TCL" Name="ila_0.tcl"/>
+  <File Type="REPORTS-TCL" Name="ila_0_reports.tcl"/>
+  <File Type="RDS-RDS" Name="ila_0.vds"/>
+  <File Type="RDS-DCP" Name="ila_0.dcp"/>
+  <FileSet Name="sources" Type="BlockSrcs" RelSrcDir="$PSRCDIR/ila_0">
+    <File Path="X:/fpga/vivado_examples/ecc_p256_pmul/ecc_p256_pmul.srcs/sources_1/ip/ila_0/ila_0.xci">
+      <FileInfo>
+        <Attr Name="ImportPath" Val="X:/fpga/vivado_examples/aes128_verilog/aes128_verilog.srcs/sources_1/ip/ila_0/ila_0.xci"/>
+        <Attr Name="ImportTime" Val="1602015689"/>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <Config>
+      <Option Name="TopModule" Val="ila_0"/>
+      <Option Name="UseBlackboxStub" Val="1"/>
+    </Config>
+  </FileSet>
+  <FileSet Name="constrs_in" Type="BlockSrcs" RelSrcDir="$PSRCDIR/ila_0">
+    <File Path="X:/fpga/vivado_examples/ecc_p256_pmul/ecc_p256_pmul.srcs/sources_1/ip/ila_0/ila_0.xci">
+      <FileInfo>
+        <Attr Name="ImportPath" Val="X:/fpga/vivado_examples/aes128_verilog/aes128_verilog.srcs/sources_1/ip/ila_0/ila_0.xci"/>
+        <Attr Name="ImportTime" Val="1602015689"/>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <Config>
+      <Option Name="TopModule" Val="ila_0"/>
+      <Option Name="UseBlackboxStub" Val="1"/>
+    </Config>
+  </FileSet>
+  <FileSet Name="utils" Type="Utils" RelSrcDir="$PSRCDIR/utils_1">
+    <Filter Type="Utils"/>
+    <Config>
+      <Option Name="TopAutoSet" Val="TRUE"/>
+    </Config>
+  </FileSet>
+  <Strategy Version="1" Minor="2">
+    <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2019"/>
+    <Step Id="synth_design"/>
+  </Strategy>
+</GenRun>

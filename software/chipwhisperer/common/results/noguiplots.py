@@ -24,7 +24,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils.util import DictType
 import numpy as np
 
 class NoGUIPlots(object):
@@ -85,7 +84,7 @@ class NoGUIPlots(object):
         """
         attack_results = self._results
         pge = attack_results.pge_total
-        allpge = DictType()
+        allpge = {}
 
         for i in pge:
             tnum = i['trace']
@@ -143,9 +142,9 @@ class NoGUIPlots(object):
         return [xrangelist, data[key], np.amax(wrong_results, 0), np.amin(wrong_results, 0)]
 
     def plot_output_vs_time(self, bnum_it=None):
-        import holoviews as hv
-        from holoviews.operation import decimate
-        import pandas as pd, numpy as np
+        import holoviews as hv # type: ignore
+        from holoviews.operation import decimate # type: ignore
+        import pandas as pd, numpy as np # type: ignore
         def byte_to_color(idx):
             return hv.Palette.colormaps['Category20'](idx/16.0)
 

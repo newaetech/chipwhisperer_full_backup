@@ -27,11 +27,11 @@
 import logging
 
 from ._base import PreprocessingBase
-import scipy
-import scipy.signal
-import scipy.fftpack
+import scipy # type: ignore
+import scipy.signal # type: ignore
+import scipy.fftpack # type: ignore
 import numpy as np
-from matplotlib.mlab import find
+from matplotlib.mlab import find # type: ignore
 
 
 def fft(signal, freq=None):

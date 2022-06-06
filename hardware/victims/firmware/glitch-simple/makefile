@@ -38,7 +38,7 @@ SRC += glitchsimple.c
 
 # -----------------------------------------------------------------------------
 
-FUNC_SEL = GLITCH1
+FUNC_SEL = GLITCH_INF
 
 CFLAGS += -D$(FUNC_SEL)
 

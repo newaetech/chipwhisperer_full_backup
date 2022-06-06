@@ -1,0 +1,5 @@
+Building the FPGA bitfile requires the Icestorm toolchain. Installation
+instructions are here: http://bygone.clairexen.net/icestorm/
+
+CW308 LED2 is a "clock alive" indicator.
+

@@ -1,0 +1,52 @@
+#
+# Example input file for OpenADC-MakeISE, also the documentation basically
+#
+# OpenADC-MakeISE is a method of making ISE Project files automatically, and will eventually
+# be extended to include command-line design flows. This saves the issue of dealing with changes
+# in project files being added to git, especially if using different versions of ISE.
+#
+# WARNING: Everything is CASE SENSITIVE
+#
+
+[ISE Configuration]
+#Generate project configuration
+#You can specify any parameter here which will override the input file 'defaults'
+InputFile = ise_verilog_template.xise.in
+Version = 14.4
+Device Family = Spartan6
+Package = ftg256
+Device = xc6slx25
+Speed Grade = -3
+Verilog Include Directories = ../../../hdl|../../../../../openadc/hdl/hdl
+
+[UCF Files]
+#Normally just one UCF file
+system.ucf
+
+[Verilog Files]
+#List of verilog source files... by default added for sim + implementation
+simpletop.v
+simplemodule.v
+setup.v = Setup File
+
+[CoreGen Files]
+#Add XCO files. You can just list the filename, OR have the CoreGen files be
+#auto-generated as well by specifying the section name
+fifoonly_adcfifo.xco = ADC FIFO CoreGen Setup
+
+[ADC FIFO CoreGen Setup]
+InputFile = fifoonly_adcfifo.xco.in
+input_depth = 8192
+output_depth = CALCULATE $input_depth$ / 4
+full_threshold_assert_value = CALCULATE $input_depth$ - 2
+full_threshold_negate_value = CALCULATE $input_depth$ - 1
+#These are set to 16-bits for all systems... overkills most of the time
+write_data_count_width = 16
+read_data_count_width = 16
+data_count_width = 16
+
+[Setup File]
+AVNET
+UART_CLK = 40000000
+UART_BAUD = 512000
+

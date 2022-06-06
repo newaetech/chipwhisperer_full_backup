@@ -33,7 +33,7 @@ from chipwhisperer.common.utils.util import camel_case_deprecated
 from chipwhisperer.common.api.ProjectFormat import Project
 from chipwhisperer.common.traces import Trace
 
-from tqdm import trange
+from tqdm import trange # type: ignore
 class PreprocessingBase(TraceSource, PassiveTraceObserver):
     """
     Base Class for all preprocessing modules

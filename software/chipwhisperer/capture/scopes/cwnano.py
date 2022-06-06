@@ -2,28 +2,12 @@
 # HIGHLEVEL_CLASSLOAD_FAIL_FUNC_WARN
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2018, NewAE Technology Inc
+# Copyright (c) 2013-2022, NewAE Technology Inc
 # All rights reserved.
-#
-# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.github.com/newaetech/chipwhisperer
 #
-#    This file is part of chipwhisperer.
-#
-#    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    chipwhisperer is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Lesser General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
 
@@ -42,6 +26,7 @@ from ...hardware.naeusb.programmer_avr import AVRISP
 from ...hardware.naeusb.programmer_xmega import XMEGAPDI
 from ...hardware.naeusb.programmer_stm32fserial import STM32FSerial
 from ...common.utils.util import camel_case_deprecated, DelayedKeyboardInterrupt
+from ..api.cwcommon import ChipWhispererCommonInterface
 import time
 import datetime
 
@@ -53,14 +38,15 @@ class ADCSettings(util.DisableNewAttr):
 
 
     def __init__(self, usb):
+        super().__init__()
         self.usb = usb
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['clk_src'] = self.clk_src
-        dict['clk_freq'] = self.clk_freq
-        dict['samples'] = self.samples
+        rtn = OrderedDict()
+        rtn['clk_src'] = self.clk_src
+        rtn['clk_freq'] = self.clk_freq
+        rtn['samples'] = self.samples
         return dict
 
     def __repr__(self):
@@ -117,7 +103,7 @@ class ADCSettings(util.DisableNewAttr):
         resp[3] = src
         resp[4] = 1
 
-        self.usb.sendCtrl(self.USB_ADCLK_SET, 0, 5)
+        self.usb.sendCtrl(self.USB_ADCLK_SET, 0, resp)
 
     @property
     def clk_freq(self):
@@ -176,9 +162,9 @@ class GlitchSettings(util.DisableNewAttr):
 
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['repeat'] = self.repeat
-        dict['ext_offset'] = self.ext_offset
+        rtn = OrderedDict()
+        rtn['repeat'] = self.repeat
+        rtn['ext_offset'] = self.ext_offset
         return dict
 
     def __repr__(self):
@@ -253,23 +239,23 @@ class GPIOSettings(util.DisableNewAttr):
 
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['tio1'] = self.tio1
-        dict['tio2'] = self.tio2
-        dict['tio3'] = self.tio3
-        dict['tio4'] = self.tio4
+        rtn = OrderedDict()
+        rtn['tio1'] = self.tio1
+        rtn['tio2'] = self.tio2
+        rtn['tio3'] = self.tio3
+        rtn['tio4'] = self.tio4
 
-        dict['pdid'] = self.pdid
-        dict['pdic'] = self.pdic
-        dict['nrst'] = self.nrst
+        rtn['pdid'] = self.pdid
+        rtn['pdic'] = self.pdic
+        rtn['nrst'] = self.nrst
 
-        #dict['glitch_lp'] = self.glitch_lp
+        #rtn['glitch_lp'] = self.glitch_lp
 
-        dict['clkout'] = self.clkout
+        rtn['clkout'] = self.clkout
 
-        dict['cdc_settings'] = self.cdc_settings
+        rtn['cdc_settings'] = self.cdc_settings
 
-        return dict
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -523,7 +509,7 @@ class GPIOSettings(util.DisableNewAttr):
             return None
         return self.usb.set_cdc_settings(port)
 
-class CWNano(util.DisableNewAttr):
+class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
     """CWNano scope object.
 
     This class contains the public API for the CWNano hardware. It includes
@@ -541,16 +527,18 @@ class CWNano(util.DisableNewAttr):
     For more help about scope settings, try help() on each of the ChipWhisperer
     scope submodules (scope.adc, scope.io, scope.glitch):
 
-      * :attr:`scope.adc <.CWNano.adc>`
-      * :attr:`scope.io <.CWNano.io>`
-      * :attr:`scope.glitch <.CWNano.glitch>`
+      * :attr:`scope.adc <chipwhisperer.capture.scopes.cwnano.ADCSettings>`
+      * :attr:`scope.io <chipwhisperer.capture.scopes.cwnano.GPIOSettings>`
+      * :attr:`scope.glitch <chipwhisperer.capture.scopes.cwnano.GlitchSettings>`
       * :meth:`scope.default_setup <.CWNano.default_setup>`
       * :meth:`scope.con <.CWNano.con>`
       * :meth:`scope.dis <.CWNano.dis>`
       * :meth:`scope.get_last_trace <.CWNano.get_last_trace>`
       * :meth:`scope.arm <.CWNano.arm>`
       * :meth:`scope.capture <.CWNano.capture>`
-      * :meth:`scope.get_serial_ports <.CWNano.get_serial_ports>`
+      * :meth:`scope.get_serial_ports <chipwhisperer.capture.api.cwcommon.ChipWhispererCommonInterface.get_serial_ports>`
+
+    Inherits from :class:`chipwhisperer.capture.api.cwcommon.ChipWhispererCommonInterface`
     """
 
     _name = "ChipWhisperer Nano"
@@ -580,7 +568,12 @@ class CWNano(util.DisableNewAttr):
         self._lasttrace = None
 
         self.connectStatus = False
+        self._lasttrace_int = None
         self.disable_newattr()
+
+    def _getFWPy(self):
+        from ...hardware.firmware.cwnano import fwver
+        return fwver
 
     def default_setup(self):
         """ Sets up sane capture defaults for this scope
@@ -611,48 +604,47 @@ class CWNano(util.DisableNewAttr):
     def _getCWType(self):
         return 'cwnano'
 
-    def get_serial_ports(self):
-        """ Get the CDC serial ports associated with this scope
+    def con(self, sn=None, **kwargs):
+        """Connects to attached chipwhisperer hardware (Nano)
+
+        Args:
+            sn (str): The serial number of the attached device. Does not need to
+                be specified unless there are multiple devices attached.
 
         Returns:
-            A list of a dict with elements {'port', 'interface'}
+            True if connection is successful, False otherwise.
         """
-        return self._getNAEUSB().get_serial_ports()
-
-    @property
-    def sn(self):
-        return self._cwusb.snum
-
-    @property
-    def latest_fw(self):
-        from chipwhisperer.hardware.firmware.cwnano import fwver
-        return {"major": fwver[0], "minor": fwver[1]}
-
-    @property
-    def fw_version(self):
-        a = self._cwusb.readFwVersion()
-        return {"major": a[0], "minor": a[1], "debug": a[2]}
-
-    def con(self, sn=None):
+        self._read_only_attrs = []
         try:
-            possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
-            serial_numbers = []
-            if len(possible_sn) > 1:
-                if sn is None:
-                    for d in possible_sn:
-                        serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
-                    raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
-            else:
-                sn = None
-            found_id = self._cwusb.con(idProduct=[0xACE0], serial_number=sn)
-        except (IOError, ValueError):
-            raise Warning("Could not connect to cwnano. It may have been disconnected, is in an error state, or is being used by another tool.")
+            # possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
+            # serial_numbers = []
+            # if len(possible_sn) > 1:
+            #     if sn is None:
+            #         for d in possible_sn:
+            #             serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
+            #         raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
+            # else:
+            #     sn = None
+            if "idProduct" in kwargs:
+                del kwargs['idProduct']
+            found_id = self._cwusb.con(idProduct=[0xACE0], serial_number=sn, **kwargs)
+        except (IOError, ValueError) as e:
+            raise Warning("Could not connect to cwnano. It may have been disconnected,\
+is in an error state, or is being used by another tool.") from e
+        module_list = [x for x in self.__dict__ if isinstance(self.__dict__[x], util.DisableNewAttr)]
+        self.add_read_only(module_list)
         self.disable_newattr()
         self._is_connected = True
         self.connectStatus=True
         return True
 
     def dis(self):
+        """Disconnects the current scope object.
+
+        Returns:
+            True if the disconnection was successful, False otherwise.
+        """
+        self._read_only_attrs = []
         self.usbdev().close()
         self._is_connected = False
         return True
@@ -661,12 +653,12 @@ class CWNano(util.DisableNewAttr):
         """Arm the ADC, the trigger will be GPIO4 rising edge (fixed trigger)."""
         with DelayedKeyboardInterrupt():
             if self.connectStatus is False:
-                raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
+                raise Warning("Scope \"" + 'CWNano' + "\" is not connected. Connect it first...")
 
             self._cwusb.sendCtrl(self.REQ_ARM, 1)
 
 
-    def capture(self):
+    def capture(self, poll_done=False):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
 
         with DelayedKeyboardInterrupt():
@@ -693,6 +685,7 @@ class CWNano(util.DisableNewAttr):
                 if i > 20:
                     scope_logger.warning("Couldn't read trace data back from Nano")
                     return True
+            self._lasttrace_int = np.array(self._lasttrace)
             self._lasttrace = np.array(self._lasttrace) / 256.0 - 0.5
 
             #self.newDataReceived(0, self._lasttrace, 0, self.adc.clk_freq)
@@ -700,21 +693,41 @@ class CWNano(util.DisableNewAttr):
             return False
 
 
-    def get_last_trace(self):
+    def get_last_trace(self, as_int=False):
         """Return the last trace captured with this scope.
+
+        Can return traces as floating point values (:code:`as_int=False`)
+        or as integers.
+
+        Floating point values are scaled and shifted to be between -0.5 and 0.5.
+
+        Integer values are raw readings from the ChipWhisperer ADC. The ChipWhisperer-Lite
+        has a 10-bit ADC, the Nano has an 8-bit ADC, and the Husky can read either
+        8-bits or 12-bits of ADC data.
+
+        Args:
+            as_int (bool): If False, return trace as a float. Otherwise, return as an int.
+
+        Returns:
+           Numpy array of the last capture trace.
+
+        .. versionchanged:: 5.6.1
+            Added as_int parameter
         """
+        if as_int:
+            return self._lasttrace_int
         return self._lasttrace
 
     getLastTrace = camel_case_deprecated(get_last_trace)
 
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['fw_version'] = self.fw_version
-        dict['io']    = self.io._dict_repr()
-        dict['adc']   = self.adc._dict_repr()
-        dict['glitch'] = self.glitch._dict_repr()
-        return dict
+        rtn = OrderedDict()
+        rtn['fw_version'] = self.fw_version
+        rtn['io']    = self.io._dict_repr()
+        rtn['adc']   = self.adc._dict_repr()
+        rtn['glitch'] = self.glitch._dict_repr()
+        return rtn
 
     def __repr__(self):
         # Add some extra information about ChipWhisperer type here
@@ -733,11 +746,3 @@ class CWNano(util.DisableNewAttr):
 
     def usbdev(self):
         return self._cwusb
-
-    def upgrade_firmware(self):
-        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
-
-        key should be 0xDEADBEEF and is there to prevent accidental upgrade attempts.
-        """
-        prog = SAMFWLoader(self)
-        prog.auto_program()

@@ -1,42 +1,45 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014-2018, NewAE Technology Inc
+# Copyright (c) 2014-2021, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
-# project, http://www.assembla.com/spaces/chipwhisperer
+# project, http://www.chipwhisperer.com . ChipWhisperer is a registered
+# trademark of NewAE Technology Inc in the US & Europe.
 #
 #    This file is part of chipwhisperer.
 #
-#    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-#    chipwhisperer is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Lesser General Public License for more details.
+#       http://www.apache.org/licenses/LICENSE-2.0
 #
-#    You should have received a copy of the GNU General Public License
-#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 #==========================================================================
 
 
 import time
 import logging
-from .naeusb import packuint32
+from .naeusb import packuint32, NAEUSB
+import usb1  # type: ignore
+from ...logging import *
 
 class FPGA(object):
 
     CMD_FPGA_STATUS = 0x15
     CMD_FPGA_PROGRAM = 0x16
 
-    def __init__(self, usb, timeout=200):
+    def __init__(self, usb: NAEUSB, timeout=200, prog_mask=0xA0):
         self.sendCtrl = usb.sendCtrl
         self.readCtrl = usb.readCtrl
         self._usb = usb
         self._timeout = timeout
+        self._prog_mask = prog_mask
 
     def isFPGAProgrammed(self):
         """
@@ -51,28 +54,39 @@ class FPGA(object):
             return False
 
     def eraseFPGA(self):
-        self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA0)
+        self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00)
         time.sleep(0.001)
-        self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA1)
+        self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x01)
         time.sleep(0.001)
 
-    def FPGAProgram(self, bitstream=None, exceptOnDoneFailure=True):
+    def FPGAProgram(self, bitstream=None, exceptOnDoneFailure=True, prog_speed=1E6, starting_offset=0x7C):
         """
         Program FPGA with a bitstream, or if not bitstream passed just erases FPGA
         """
 
         # Erase the FPGA by toggling PROGRAM pin, setup
         # NAEUSB chip for FPGA programming
-        self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA0)
+        prog_data = []
+        if self._usb.check_feature("VARIABLE_FPGA_PROG_SPEED"):
+            naeusb_logger.info("Using prog speed of {}".format(int(prog_speed)))
+            prog_data = packuint32(int(prog_speed))
+
+
+        try:
+            self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00, data=prog_data)
+        except usb1.USBError as e:
+            prog_data = []
+            naeusb_logger.warning("Got error when programming with var speed, retrying without var speed")
+            self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00, data=prog_data)
         time.sleep(0.001)
-        self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA1)
+        self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x01)
 
         time.sleep(0.001)
 
         # Download actual bitstream now if present
         if bitstream:
             # Run the download which should program FPGA
-            self._FPGADownloadBitstream(bitstream)
+            self._FPGADownloadBitstream(bitstream, starting_offset=starting_offset)
 
             wait = 5
             while wait > 0:
@@ -84,18 +98,19 @@ class FPGA(object):
                 wait -= 1
 
             # Exit FPGA programming mode
-            self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA2)
+            self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x02)
 
             if programStatus == False and exceptOnDoneFailure:
+                target_logger.error("FPGA programming failed. Typically either bad bitstream or prog speed too high (current {})".format(prog_speed))
                 raise IOError("FPGA Done pin failed to go high, bad bitstream?", bitstream)
 
             return programStatus
         else:
             # No bitstream, exit programming mode
-            self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA2)
+            self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x02)
             return False
 
-    def _FPGADownloadBitstream(self, fwFileLike):
+    def _FPGADownloadBitstream(self, fwFileLike, starting_offset=0x7C, ending_clock_bytes=32):
         """
         Performs actual bitstream download, do not call directly, call FPGAProgram
         """
@@ -114,9 +129,9 @@ class FPGA(object):
         # Might need a few extra CCLKs at end to finish off, and as written elsewhere this is done with DO=1
         # Perhaps micro should add these instead? For now this should be reliable enough (things worked even w/o this it seemed, so this is
         # a just in case item)
-        inputStream += bytes([0xff] * 32)
+        inputStream += bytes([0xff] * ending_clock_bytes)
 
-        inputStream = inputStream[0x7C:]
+        inputStream = inputStream[starting_offset:]
 
         j = transactionBytes
         for i in range(0, len(buffer_)):

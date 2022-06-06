@@ -27,13 +27,13 @@ from ....logging import *
 import time
 
 def get_at91_ports():
-    from serial.tools import list_ports
+    from serial.tools import list_ports # type: ignore
 
     at91_ports = [port.device for port in list_ports.comports() if (port.vid, port.pid) == (0x03EB, 0x6124)]
     return at91_ports
 
 
-class SAMFWLoader(object):
+class SAMFWLoader:
     """ Object for easy reprogramming of ChipWhisperers
 
     See https://chipwhisperer.readthedocs.io/en/latest/firmware.html
@@ -105,10 +105,10 @@ class SAMFWLoader(object):
 
          #. Using the firmware_path::
 
-                # the firmware file is included with chipwhisperer 
+                # the firmware file is included with chipwhisperer
                 # and is the .bin file from the FW build
-                # (ChipWhisperer Lite) chipwhisperer\hardware\capture\chipwhisperer-lite\sam3u_fw\SAM3U_VendorExample\Debug 
-                # directory. 
+                # (ChipWhisperer Lite) chipwhisperer\\hardware\\capture\\chipwhisperer-lite\\sam3u_fw\\SAM3U_VendorExample\\Debug
+                # directory.
                 programmer.program(<port>, <path to firmware file>)
 
          #. Using the hardware_type (recommended)::
@@ -173,7 +173,7 @@ class SAMFWLoader(object):
 
         Autodetects comport and hardware type.
         """
-        import time, serial.tools.list_ports
+        import serial.tools.list_ports # type: ignore
         if not self._hw_type:
             raise OSError("Unable to detect chipwhisperer hardware type")
         before = serial.tools.list_ports.comports()
@@ -213,7 +213,8 @@ class SAMFWLoader(object):
             'cwnano',
             'cw305',
             'cw1200',
-            'cwbergen'
+            'cwbergen',
+            'cwhusky'
         ]
 
 
@@ -234,20 +235,23 @@ class SAMFWLoader(object):
                 raise TypeError(message.format(hardware_type, ', '.join(type_whitelist)))
             else:
                 if hardware_type == 'cwlite':
-                    from chipwhisperer.hardware.firmware.cwlite import getsome as getsome
+                    from ....hardware.firmware.cwlite import getsome
                     name = 'SAM3U_CW1173.bin'
                 elif hardware_type == 'cwnano':
-                    from chipwhisperer.hardware.firmware.cwnano import getsome as getsome
+                    from ....hardware.firmware.cwnano import getsome
                     name = 'SAM3U_CWNANO.bin'
                 elif hardware_type == 'cw305':
-                    from chipwhisperer.hardware.firmware.cw305 import getsome as getsome
+                    from ....hardware.firmware.cw305 import getsome
                     name = 'SAM3U_CW305.bin'
                 elif hardware_type == 'cw1200':
-                    from chipwhisperer.hardware.firmware.cw1200 import getsome as getsome
+                    from ....hardware.firmware.cw1200 import getsome
                     name = 'CW1200_SAM3UFW.bin'
                 elif hardware_type == 'cwbergen':
-                    from chipwhisperer.hardware.firmware.cwbergen import getsome as getsome
+                    from ....hardware.firmware.cwbergen import getsome
                     name = 'CW310.bin'
+                elif hardware_type == 'cwhusky':
+                    from ....hardware.firmware.cwhusky import getsome
+                    name = 'Husky.bin'
                 self.logfunc('Loading {} firmware...'.format(hardware_type))
                 fw_data = getsome(name).read()
 
@@ -267,7 +271,7 @@ class SAMFWLoader(object):
         self.logfunc("Programmed!\nVerifying...")
         if sam.verify(fw_data):
             self.logfunc("Verify OK!")
-            sam.flash.setBootFlash(1)            
+            sam.flash.setBootFlash(1)
 
             i = 0
             while not sam.flash.getBootFlash():
@@ -288,5 +292,3 @@ class SAMFWLoader(object):
             self.logfunc("Verify FAILED!")
             sam.ser.close()
             return False
-
-

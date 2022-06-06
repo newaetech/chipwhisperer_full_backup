@@ -76,7 +76,7 @@ void init_uart(void)
   HAL_GPIO_Init(GPIOA, &GpioInit);
 
   UartHandle.Instance        = USART1;
-  #if SS_VER==SS_VER_2_0
+  #if SS_VER==SS_VER_2_1
   UartHandle.Init.BaudRate   = 230400;
   #else
   UartHandle.Init.BaudRate   = 38400;
@@ -129,7 +129,7 @@ void putch(char c)
   HAL_UART_Transmit(&UartHandle,  &d, 1, 5000);
 }
 #if (PLATFORM==CWLITEARM)
-void change_err_led(int x)
+void change_err_led(unsigned int x)
 {
     if (x)
          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, RESET);
@@ -137,7 +137,7 @@ void change_err_led(int x)
          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, SET);
 }
 
-void change_ok_led(int x)
+void change_ok_led(unsigned int x)
 {
      if (x)
           HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, RESET);
