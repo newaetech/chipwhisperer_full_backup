@@ -260,7 +260,7 @@ class GlitchSettings(util.DisableNewAttr):
         """
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
-        return self.cwg.getActualNumGlitches()
+        return self.cwg.getNumActualGlitches()
 
     @property
     def state(self):
