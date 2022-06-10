@@ -3,7 +3,7 @@
 # create directories
 start_dir=$(pwd)
 cw_dir="$start_dir""/software/chipwhisperer"
-min_dir="$start_dir""/chipwhisperer-minimal/chipwhispererminimal"
+min_dir="$start_dir""/chipwhisperer-minimal/chipwhisperer"
 mkdir -p "$min_dir"
 cd "$min_dir"
 
