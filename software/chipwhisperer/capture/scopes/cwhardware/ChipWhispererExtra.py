@@ -37,6 +37,7 @@ ADDR_ADC_TRIGGER_LEVEL = 21
 ADDR_DATA = 33
 ADDR_LEN = 34
 ADDR_BAUD = 35
+ADDR_AUX_IO = 37
 ADDR_EXTCLK = 38
 ADDR_TRIGSRC = 39
 ADDR_TRIGMOD = 40
@@ -90,6 +91,7 @@ class GPIOSettings(util.DisableNewAttr):
         ]
 
         self.HS2_VALID = {'disabled': 0, 'clkgen': 2, 'glitch': 3}
+        self._is_husky = False
 
         self.disable_newattr()
 
@@ -120,6 +122,10 @@ class GPIOSettings(util.DisableNewAttr):
         rtn['tio_states'] = self.tio_states
 
         rtn['cdc_settings'] = self.cdc_settings
+
+        if self._is_husky:
+            rtn['aux_io_mcx'] = self.aux_io_mcx
+            rtn['glitch_trig'] = self.glitch_trig_mcx
 
         return rtn
 
@@ -218,6 +224,62 @@ class GPIOSettings(util.DisableNewAttr):
         if ver < '0.30':
             return None
         return self.cwe.oa.serial.set_cdc_settings(port)
+
+    @property
+    def aux_io_mcx(self):
+        """Set the function of the AUX I/O MCX on Husky.
+        Options:
+        * "high_z": input: to use as a trigger (scope.trigger.triggers = 'mcx') or clock (scope.clock.clk_src = 'extclk_aux_io').
+        * "hs2": output: provide the same clock that's on HS2.
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        data = self.cwe.oa.sendMessage(CODE_READ, ADDR_AUX_IO, Validate=False, maxResp=1)[0]
+        if data & 0x01:
+            return "hs2"
+        else:
+            return "high_z"
+
+    @aux_io_mcx.setter
+    def aux_io_mcx(self, state):
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        data = self.cwe.oa.sendMessage(CODE_READ, ADDR_AUX_IO, Validate=False, maxResp=1)[0]
+        if state == 'high_z':
+            data &= 0xfe
+        elif state == 'hs2':
+            data |= 0x01
+        else:
+            raise ValueError("Options: high_z, hs2")
+        return self.cwe.oa.sendMessage(CODE_WRITE, ADDR_AUX_IO, [data])
+
+    @property
+    def glitch_trig_mcx(self):
+        """Set the function of the Trigger/Glitch Out MCX on Husky.
+        Options:
+        * "glitch": glitch output (clock or voltage glitch signal, as defined by scope.glitch settings)
+        * "trigger": internal trigger signal (as defined by scope.trigger)
+        """
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        data = self.cwe.oa.sendMessage(CODE_READ, ADDR_AUX_IO, Validate=False, maxResp=1)[0]
+        if data & 0x02:
+            return "glitch"
+        else:
+            return "trigger"
+
+    @glitch_trig_mcx.setter
+    def glitch_trig_mcx(self, state):
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        data = self.cwe.oa.sendMessage(CODE_READ, ADDR_AUX_IO, Validate=False, maxResp=1)[0]
+        if state == 'trigger':
+            data &= 0xfd
+        elif state == 'glitch':
+            data |= 0x02
+        else:
+            raise ValueError("Options: glitch, trig")
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_AUX_IO, [data])
 
     @property
     def tio1(self):
@@ -585,6 +647,7 @@ class TriggerSettings(util.DisableNewAttr):
         self.last_module = "basic"
         if self.cwe.hasAux:
             self.supported_tpins['sma'] = self.cwe.PIN_FPA
+            self.supported_tpins['aux'] = self.cwe.PIN_FPA # alias for Husky since it's labeled 'Aux' on the sticker
 
         self.disable_newattr()
 
@@ -1004,7 +1067,7 @@ class CWExtraSettings:
             hasFPAFPB=False
             hasGlitchOut=True
             hasPLL=False
-            hasAux=False
+            hasAux=True
         else:
             raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
 
@@ -1020,6 +1083,9 @@ class CWExtraSettings:
         self.triggermux = TriggerSettings(self)
         self.protrigger = ProTrigger(self)
         self.huskytrigger = HuskyTrigger(self)
+
+        if cwtype == "cwhusky":
+            self.gpiomux._is_husky = True
 
 
     def _setGPIOState(self, state, IONumber):
