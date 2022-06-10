@@ -306,6 +306,13 @@ testGlitchOutputWidthSweepData = [
     (200e6,     600,       2,          40,             ''),
 ]
 
+testMissingGlitchData = [
+    # clock     width   num_glitches    reps    oversamp    stepsize    desc
+    (10e6,      1000,   1,              5,      20,         1,          ''),
+    (10e6,      1000,   10,             5,      20,         1,          ''),
+    (20e6,      1000,   10,             5,      20,         1,          ''),
+]
+
 testGlitchOutputOffsetSweepData = [
     # TODO: these used to pass at oversamp=40, but that may be too aggressive?
     # clock     width     oversamp    steps_per_point desc
@@ -387,7 +394,7 @@ testADCTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '5/26/2022, 17:56'
+    assert scope.fpga_buildtime == '6/10/2022, 10:40'
 
 
 def test_fw_version():
@@ -689,6 +696,43 @@ def test_glitch_output_sweep_width(reps, clock, offset, oversamp, steps_per_poin
     scope.LA.enabled = False
 
 
+
+@pytest.mark.parametrize("clock, width, num_glitches, reps, oversamp, stepsize, desc", testMissingGlitchData)
+@pytest.mark.skipif(not target_attached, reason='No target detected')
+def test_missing_glitch_sweep_offset(clock, width, num_glitches, reps, oversamp, stepsize, desc):
+    # Checks for missing glitches (https://github.com/newaetech/chipwhisperer-husky-fpga/issues/4)
+    # Expected to fail (but not always!) until that issue is fixed.
+    # Similar to test_glitch_output_sweep_offset() but doesn't use LA and only sweeps around sensitive spots
+    # and uses more repetitions.
+    reset_setup()
+    scope.clock.clkgen_freq = clock
+    scope.clock.adc_mul = 1
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    assert scope.clock.adc_freq == clock
+    target.baud = 38400 * clock / 1e6 / 7.37
+
+    setup_glitch(0, width, oversamp)
+    scope.glitch.num_glitches = num_glitches
+    scope.glitch.trigger_src = 'ext_single'
+    scope.adc.samples = 16
+    errors = []
+    for offset in range(scope.glitch.phase_shift_steps//2-100, scope.glitch.phase_shift_steps//2+100, stepsize):
+        scope.glitch.offset = offset
+        for i in range(reps):
+            ext_offsets = []
+            for j in range(num_glitches):
+                ext_offsets.append(random.randrange(2,5))
+            scope.glitch.ext_offset = ext_offsets
+            scope.glitch.repeat = [1]*num_glitches
+            trace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+            if scope.glitch.state != 'idle':
+                errors.append(offset)
+                #print("Not in idle! offset = %d, rep = %d" % (offset, i))
+                scope.glitch.state = None
+    assert errors == []
+
+
 @pytest.mark.parametrize("clock, width, oversamp, steps_per_point, desc", testGlitchOutputOffsetSweepData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
 def test_glitch_output_sweep_offset(reps, clock, width, oversamp, steps_per_point, desc):
@@ -697,6 +741,7 @@ def test_glitch_output_sweep_offset(reps, clock, width, oversamp, steps_per_poin
     # 1. that the offset change as the offset setting is swept;
     # 2. that there are no "double glitches" - by looking at the glitches themselves, but also by looking
     #    at the width of the glitch "go" signal
+    # 3. that there are no missing glitches
     reset_setup()
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = 1
@@ -723,15 +768,14 @@ def test_glitch_output_sweep_offset(reps, clock, width, oversamp, steps_per_poin
             # measure observed offset
             glitchtrans = find0to1trans(glitch)
             sourcetrans = find0to1trans(source)
-            assert len(glitchtrans) <= 1, "Offset=%d: Expected to find a single glitch but found %d" % (offset, len(glitchtrans))
-            if len(glitchtrans) == 1:
-                g = glitchtrans[0]
-                measured_offset = None
-                for s in sourcetrans:
-                    if s > g:
-                        measured_offset = s - g
-                        break
-                assert measured_offset, "Offset=%d: Could not measure offset between source clock and glitch clock" % offset
+            assert len(glitchtrans) == 1, "Offset=%d: Expected to find a single glitch but found %d" % (offset, len(glitchtrans))
+            g = glitchtrans[0]
+            measured_offset = None
+            for s in sourcetrans:
+                if s > g:
+                    measured_offset = s - g
+                    break
+            assert measured_offset, "Offset=%d: Could not measure offset between source clock and glitch clock" % offset
 
             golen = len(np.where(go > 0)[0])
             assert abs(golen - oversamp) < oversamp *1.2, "Go width exceeds margin, could lead to extra glitches: %d at offset=%d" % (golen, offset)
