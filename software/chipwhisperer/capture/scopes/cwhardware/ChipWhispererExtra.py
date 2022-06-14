@@ -125,7 +125,7 @@ class GPIOSettings(util.DisableNewAttr):
 
         if self._is_husky:
             rtn['aux_io_mcx'] = self.aux_io_mcx
-            rtn['glitch_trig'] = self.glitch_trig_mcx
+            rtn['glitch_trig_mcx'] = self.glitch_trig_mcx
 
         return rtn
 
