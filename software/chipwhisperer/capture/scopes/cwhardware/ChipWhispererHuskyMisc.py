@@ -951,11 +951,16 @@ class LASettings(util.DisableNewAttr):
         """The trigger used by the logic analyzer to capture.
 
         There are several different sources:
-         * "glitch": The internal glitch trigger.
+         * "glitch": The internal glitch enable trigger, one cycle earlier than the
+                     glitch output seen when scope.glitch.output = 'enable_only'. This
+                     signal is in the MMCM1 clock glitch domain.
          * "capture": The internal ADC capture trigger.
-         * "glitch_source": The internal glitch trigger in the source clock
-                            domain. This comes before "glitch", since there is
-                            a clock domain crossing from "glitch_source" to "glitch"
+         * "glitch_source": The internal manual glitch trigger in the source or target clock
+                            domain (as per scope.glitch.clk_src), which accounts for 
+                            scope.glitch.ext_offset but not scope.glitch.offset. Should
+                            only be used with scope.glitch.trigger_src = 'manual'; may
+                            not fire reliably with other settings.
+         * "glitch_trigger": The internal glitch trigger in the MMCM1 clock domain.
          * "HS1": The HS1 input clock.
 
          In addition, capture can be triggered manually, irrespective of the trigger_source
@@ -968,7 +973,7 @@ class LASettings(util.DisableNewAttr):
            Change the trigger source
 
         Raises:
-           ValueError: New value not one of "glitch" or "capture"
+           ValueError: New value not one of the options listed above.
         """
 
         return self._getTriggerSource()
@@ -1037,10 +1042,11 @@ class LASettings(util.DisableNewAttr):
             #. source clock of glitch module
             #. glitch internal MMCM1 (offset) output
             #. glitch internal MMCM2 (width) output
-            #. glitch trigger
+            #. glitch go internal signal
             #. capture trigger
             #. glitch enable
-            #. glitch trigger in its source clock domain (e.g. signal 1 of this group)
+            #. manual glitch trigger in source clock domain (e.g. signal 1 of this group)
+            #. glitch trigger in MMCM1 clock domain
 
         'CW 20-pin' (group 1):
 
@@ -1116,10 +1122,12 @@ class LASettings(util.DisableNewAttr):
             val = [2]
         elif source == 'HS1':
             val = [3]
-        elif source == 'trigger signal 0':
+        elif source == 'glitch_trigger':
             val = [4]
-        elif source == 'trigger signal 1':
+        elif source == 'trigger signal 0':
             val = [5]
+        elif source == 'trigger signal 1':
+            val = [6]
         else:
             raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', or 'HS1'")
         self.oa.sendMessage(CODE_WRITE, ADDR_LA_TRIGGER_SOURCE, val, Validate=False)
@@ -1135,8 +1143,10 @@ class LASettings(util.DisableNewAttr):
         elif raw == 3:
             return 'HS1'
         elif raw == 4:
-            return 'trigger signal 0'
+            return 'glitch_trigger'
         elif raw == 5:
+            return 'trigger signal 0'
+        elif raw == 6:
             return 'trigger signal 1'
         else:
             raise ValueError("Unexpected: read %d" % raw)
