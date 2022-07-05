@@ -293,7 +293,7 @@ class TraceWhisperer(util.DisableNewAttr):
     @enabled.setter 
     def enabled(self, enable):
         # only one of Trace/LA can be enabled at once:
-        if enable:
+        if enable and self.platform == 'Husky':
             if self._scope.LA.enabled:
                 scope_logger.warning("Can't enable scope.LA and scope.trace simultaneously; turning off scope.LA.")
                 self._scope.LA.enabled = False

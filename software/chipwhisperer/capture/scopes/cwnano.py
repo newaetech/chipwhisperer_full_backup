@@ -746,3 +746,9 @@ is in an error state, or is being used by another tool.") from e
 
     def usbdev(self):
         return self._cwusb
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.dis()

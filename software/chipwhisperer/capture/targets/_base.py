@@ -163,3 +163,9 @@ class TargetTemplate:
 
     def __str__(self):
         return self.__repr__()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.dis()

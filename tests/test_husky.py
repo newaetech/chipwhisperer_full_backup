@@ -307,10 +307,14 @@ testGlitchOutputWidthSweepData = [
 ]
 
 testMissingGlitchData = [
-    # clock     width   num_glitches    reps    oversamp    stepsize    desc
-    (10e6,      1000,   1,              5,      20,         1,          ''),
-    (10e6,      1000,   10,             5,      20,         1,          ''),
-    (20e6,      1000,   10,             5,      20,         1,          ''),
+    # clock     vco     span    width   num_glitches    reps    oversamp    stepsize    desc
+    (10e6,      600e6,  100,    1000,   1,              5,      20,         1,          ''),
+    (10e6,      600e6,  100,    1000,   10,             5,      20,         1,          ''),
+    (15e6,      600e6,  100,    1000,   10,             5,      20,         1,          ''),
+    (25e6,      600e6,  100,    1000,   10,             5,      10,         1,          ''),
+    #(10e6,      600e6,  100,    1000,   10,             100,    20,         1,          ''), #slow! keep commented out
+    #(10e6,      1200e6, 200,    2000,   10,             100,    20,         1,          ''), #slow! keep commented out
+    #(10e6,      600e6,  3360,   1000,   10,             20,     20,         1,          ''), #slow! keep commented out
 ]
 
 testGlitchOutputOffsetSweepData = [
@@ -324,12 +328,12 @@ testGlitchOutputOffsetSweepData = [
     (10e6,      -3000,     35,         2,              ''),
     (10e6,      500,       30,         2,              ''),
     (10e6,      500,       20,         2,              ''),
-    (50e6,      100,       8,          10,             ''),
-    (50e6,      200,       8,          10,             ''),
-    (100e6,     100,       4,          20,             ''),
-    (100e6,     150,       4,          20,             ''),
-    (125e6,     50,        4,          30,             ''),
-    (125e6,     70,        4,          30,             ''),
+    (50e6,      100,       8,          10,             'may_fail'), # these may fail because we're pushing the clock
+    (50e6,      200,       8,          10,             'may_fail'),
+    (100e6,     100,       4,          20,             'may_fail'),
+    (100e6,     150,       4,          20,             'may_fail'),
+    (125e6,     50,        4,          30,             'may_fail'),
+    (125e6,     70,        4,          30,             'may_fail'),
     # note: finding glitches at 200 MHz doesn't work reliably because oversampling isn't high enough
 ]
 
@@ -394,7 +398,7 @@ testADCTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '6/10/2022, 10:40'
+    assert scope.fpga_buildtime == '6/16/2022, 09:02'
 
 
 def test_fw_version():
@@ -543,7 +547,7 @@ def setup_glitch(offset, width, oversamp):
     scope.LA.enabled = True
     scope.LA.oversampling_factor = oversamp
     scope.LA.capture_group = 'glitch'
-    scope.LA.trigger_source = "glitch_source"
+    scope.LA.trigger_source = "glitch_trigger"
     scope.LA.capture_depth = 512
     assert scope.LA.locked
 
@@ -697,11 +701,10 @@ def test_glitch_output_sweep_width(reps, clock, offset, oversamp, steps_per_poin
 
 
 
-@pytest.mark.parametrize("clock, width, num_glitches, reps, oversamp, stepsize, desc", testMissingGlitchData)
+@pytest.mark.parametrize("clock, vco, span, width, num_glitches, reps, oversamp, stepsize, desc", testMissingGlitchData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_missing_glitch_sweep_offset(clock, width, num_glitches, reps, oversamp, stepsize, desc):
+def test_missing_glitch_sweep_offset(clock, vco, span, width, num_glitches, reps, oversamp, stepsize, desc):
     # Checks for missing glitches (https://github.com/newaetech/chipwhisperer-husky-fpga/issues/4)
-    # Expected to fail (but not always!) until that issue is fixed.
     # Similar to test_glitch_output_sweep_offset() but doesn't use LA and only sweeps around sensitive spots
     # and uses more repetitions.
     reset_setup()
@@ -711,13 +714,15 @@ def test_missing_glitch_sweep_offset(clock, width, num_glitches, reps, oversamp,
     assert scope.clock.pll.pll_locked == True
     assert scope.clock.adc_freq == clock
     target.baud = 38400 * clock / 1e6 / 7.37
+    reset_target()
 
+    scope.clock.pll.update_fpga_vco(vco)
     setup_glitch(0, width, oversamp)
     scope.glitch.num_glitches = num_glitches
     scope.glitch.trigger_src = 'ext_single'
     scope.adc.samples = 16
     errors = []
-    for offset in range(scope.glitch.phase_shift_steps//2-100, scope.glitch.phase_shift_steps//2+100, stepsize):
+    for offset in range(scope.glitch.phase_shift_steps//2-span, scope.glitch.phase_shift_steps//2+span, stepsize):
         scope.glitch.offset = offset
         for i in range(reps):
             ext_offsets = []
@@ -726,6 +731,7 @@ def test_missing_glitch_sweep_offset(clock, width, num_glitches, reps, oversamp,
             scope.glitch.ext_offset = ext_offsets
             scope.glitch.repeat = [1]*num_glitches
             trace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+            assert trace is not None, 'capture failed (offset=%d, rep=%d)' % (offset, i)
             if scope.glitch.state != 'idle':
                 errors.append(offset)
                 #print("Not in idle! offset = %d, rep = %d" % (offset, i))
@@ -820,6 +826,7 @@ def test_glitch_output_doubles(reps, clock, vco, glitches, oversamp, stepsize, d
             scope.glitch.offset = offset
             scope.LA.arm()
             scope.glitch.manual_trigger()
+            assert scope.LA.fifo_empty() == False, "scope.LA didn't capture on iteration %d, offset=%d" % (i, offset)
             raw = scope.LA.read_capture_data()
             go = scope.LA.extract(raw, 4)
 
