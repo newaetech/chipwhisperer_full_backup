@@ -879,4 +879,8 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         """
         return self.sc.sendMessage(CODE_WRITE, addr, listofbytes)
 
+    def __enter__(self):
+        return self
 
+    def __exit__(self, type, value, traceback):
+        self.dis()
