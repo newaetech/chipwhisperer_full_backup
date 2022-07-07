@@ -421,9 +421,10 @@ class GlitchSettings(util.DisableNewAttr):
          * "continuous": Constantly trigger glitches. The following
             scope.glitch parameters have no bearing in this mode: ext_offset,
             repeat, num_glitches.
-         * "manual": Only trigger glitches by calling manual_trigger(). The
+         * "manual": Only trigger glitches by calling :code:`manual_trigger()`. The
             following scope.glitch parameters have no bearing in this mode:
-            ext_offset, num_glitches.
+            ext_offset, num_glitches. In this mode, calling :code:`scope.arm()` will
+            trigger a glitch as well.
          * "ext_single": Use the trigger module. Once the scope is armed, one
             set of glitch events is emitted when the trigger condition is
             satisfied. Subsequent trigger conditions are ignored unless the
