@@ -416,8 +416,8 @@ class USERIOSettings(util.DisableNewAttr):
 
     @fpga_mode.setter
     def fpga_mode(self, setting):
-        if not setting in range(0, 3):
-            raise ValueError("Must be integer in [0, 2]")
+        if not setting in range(0, 9):
+            raise ValueError("Must be integer in [0, 8]")
         else:
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_SELECT, [setting])
 
@@ -962,6 +962,8 @@ class LASettings(util.DisableNewAttr):
                             not fire reliably with other settings.
          * "glitch_trigger": The internal glitch trigger in the MMCM1 clock domain.
          * "HS1": The HS1 input clock.
+         * "rising_userio_d[0-7]": a rising edge (0->1) on a USERIO pin
+         * "falling_userio_d[0-7]": a falling edge (1->0) on a USERIO pin
 
          In addition, capture can be triggered manually, irrespective of the trigger_source
          setting, by calling scope.LA.trigger_now()
@@ -1073,7 +1075,8 @@ class LASettings(util.DisableNewAttr):
             #. CK
 
         'trigger debug' (group 3)
-        'internal trace' (group 4)
+        'internal trace 1' (group 4)
+        'internal trace 2' (group 5)
 
         :Getter:
            Return the capture group currently in use.
@@ -1128,8 +1131,12 @@ class LASettings(util.DisableNewAttr):
             val = [5]
         elif source == 'trigger signal 1':
             val = [6]
+        elif 'rising_userio_d' in source:
+            val = [0x08 + int(source[-1])]
+        elif 'falling_userio_d' in source:
+            val = [0x18 + int(source[-1])]
         else:
-            raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', or 'HS1'")
+            raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', 'HS1', or '[rising|falling]_userio_d[0-7]'")
         self.oa.sendMessage(CODE_WRITE, ADDR_LA_TRIGGER_SOURCE, val, Validate=False)
 
     def _getTriggerSource(self):
@@ -1148,6 +1155,10 @@ class LASettings(util.DisableNewAttr):
             return 'trigger signal 0'
         elif raw == 6:
             return 'trigger signal 1'
+        elif raw in range(0x8, 0x10):
+            return 'rising_userio_d' + str(raw & 0x07)
+        elif raw in range(0x10, 0x20):
+            return 'falling_userio_d' + str(raw & 0x07)
         else:
             raise ValueError("Unexpected: read %d" % raw)
 
@@ -1176,8 +1187,10 @@ class LASettings(util.DisableNewAttr):
             num = 2
         elif group == 'trigger debug':
             num = 3
-        elif group == 'internal trace':
+        elif group == 'internal trace 1':
             num = 4
+        elif group == 'internal trace 2':
+            num = 5
         else:
             raise ValueError("invalid group name")
         self.oa.sendMessage(CODE_WRITE, ADDR_LA_CAPTURE_GROUP, [num], Validate=False)
@@ -1193,7 +1206,9 @@ class LASettings(util.DisableNewAttr):
         elif num == 3:
             group = 'trigger debug'
         elif num == 4:
-            group = 'internal trace'
+            group = 'internal trace 1'
+        elif num == 5:
+            group = 'internal trace 2'
         else:
             raise ValueError("invalid group name")
         return group
