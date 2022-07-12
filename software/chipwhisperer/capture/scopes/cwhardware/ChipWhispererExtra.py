@@ -229,7 +229,7 @@ class GPIOSettings(util.DisableNewAttr):
     def aux_io_mcx(self):
         """Set the function of the AUX I/O MCX on Husky.
         Options:
-        * "high_z": input: to use as a trigger (scope.trigger.triggers = 'mcx') or clock (scope.clock.clk_src = 'extclk_aux_io').
+        * "high_z": input: to use as a trigger (scope.trigger.triggers = 'aux') or clock (scope.clock.clkgen_src = 'extclk_aux_io').
         * "hs2": output: provide the same clock that's on HS2.
         """
         if not self._is_husky:

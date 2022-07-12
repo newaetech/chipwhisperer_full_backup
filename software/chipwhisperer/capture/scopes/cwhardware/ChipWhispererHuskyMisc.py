@@ -811,7 +811,7 @@ class LASettings(util.DisableNewAttr):
 
         There are three different sources:
          * "target": The HS1 clock from the target device.
-         * "clkgen": The CLKGEN DCM output.
+         * "usb": The 96 MHz internal USB clock.
          * "pll": Husky's on-board PLL clock.
 
         :Getter:
@@ -821,7 +821,7 @@ class LASettings(util.DisableNewAttr):
            Change the clock source
 
         Raises:
-           ValueError: New value not one of "target", "clkgen" or "pll"
+           ValueError: New value not one of "target", "usb" or "pll"
         """
 
         return self._getClkSource()
@@ -1097,12 +1097,12 @@ class LASettings(util.DisableNewAttr):
     def _setClkSource(self, source):
         if source == 'target':
             val = [0]
-        elif source == 'clkgen':
+        elif source == 'usb':
             val = [1]
         elif source == 'pll':
             val = [2]
         else:
-            raise ValueError("Must be one of 'target', 'clkgen', or 'pll'")
+            raise ValueError("Must be one of 'target', 'usb', or 'pll'")
         self.oa.sendMessage(CODE_WRITE, ADDR_LA_CLOCK_SOURCE, val, Validate=False)
 
     def _getClkSource(self):
@@ -1110,7 +1110,7 @@ class LASettings(util.DisableNewAttr):
         if raw == 0:
             return 'target'
         elif raw == 1:
-            return 'clkgen'
+            return 'usb'
         elif raw == 2:
             return 'pll'
         else:

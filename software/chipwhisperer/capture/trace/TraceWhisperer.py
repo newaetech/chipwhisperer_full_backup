@@ -1924,7 +1924,7 @@ class UARTTrigger(TraceWhisperer):
         return self.clock.swo_clock_freq
 
     def uart_data(self, rawdata, prepend_matched_pattern=True, return_ascii=True):
-        """ Helper functionto parse the captured UART data.
+        """ Helper function to parse the captured UART data.
         Args:
             rawdata (list): raw capture data, list of lists, e.g. obtained from read_capture_data()
             prepend_matched_pattern (bool): 

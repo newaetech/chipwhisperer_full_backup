@@ -511,7 +511,9 @@ class GlitchSettings(util.DisableNewAttr):
 
         For CW-Husky when scope.glitch.num_glitches > 1, this parameter is a
         list with scope.glitch.num_glitches elements, each element
-        representing the ext_offset value for the corresponding glitch.
+        representing the ext_offset value for the corresponding glitch,
+        relative to the previous glitch. If ext_offset[i] = j, glitch i will
+        be issued 2+j cycles after the start of glitch i-1.
 
         For CW-Lite/Pro, scope.glitch.num_glitches is not supported so this is
         a simply an integer.
@@ -552,7 +554,10 @@ class GlitchSettings(util.DisableNewAttr):
 
         For CW-Husky when scope.glitch.num_glitches > 1, this parameter is a
         list with scope.glitch.num_glitches elements, each element
-        representing the repeat value for the corresponding glitch.
+        representing the repeat value for the corresponding glitch. The
+        maximum legal value for repeat[i] is ext_offset[i+1]+1. If an
+        illegal value is specified, the glitch output may be held high for
+        up to 8192 cycles.
 
         For CW-Lite/Pro, scope.glitch.num_glitches is not supported so this is
         a simply an integer.
