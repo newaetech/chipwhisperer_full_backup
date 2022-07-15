@@ -1117,11 +1117,10 @@ class clock(util.DisableNewAttr):
     @swo_clock_freq.setter
     def swo_clock_freq(self, freq, vcomin=600e6, vcomax=1200e6, threshold=0.01):
         """Calculate Multiply & Divide settings based on input frequency"""
-        if not self.fe_clock_alive:
+        if self.main.enabled and not self.fe_clock_alive:
             tracewhisperer_logger.error("FE clock not present, cannot calculate proper M/D settings")
         if self.main.platform == 'Husky':
-            assert self.main._scope.LA.clk_source == 'pll'
-            input_freq = self.main._scope.clock.clkgen_freq
+            input_freq = self.main._scope.LA.source_clock_frequency
         else:
             input_freq = self.fe_freq
         lowerror = 1e99
@@ -1181,6 +1180,8 @@ class clock(util.DisableNewAttr):
     def fe_clock_src(self):
         """Choose which clock is used as the front-end clock.
         On the CW305 platform, "target_clock" is the only option.
+        On Husky, "target_clock" refers to either the target-generated clock or
+        Husky-generated clock, as per scope.clock.clkgen_src.
         Args:
             src (str): "target_clock", "trace_clock" or "usb_clock"
         """

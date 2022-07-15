@@ -59,6 +59,7 @@ ADDR_LA_CAPTURE_DEPTH   = 77
 ADDR_LA_DOWNSAMPLE      = 78
 ADDR_LA_ARM             = 98
 ADDR_LA_ENABLED         = 99
+ADDR_LA_SOURCE_FREQ     = 112
 
 ADDR_USERIO_CW_DRIVEN   = 86
 ADDR_USERIO_DEBUG_DRIVEN= 87
@@ -1020,6 +1021,14 @@ class LASettings(util.DisableNewAttr):
         return self._scope.trace.clock.swo_clock_freq
 
     @property
+    def source_clock_frequency(self):
+        """Report the actual clock frequency of the input clock to the shared LA/trace MMCM.
+        """
+        raw = int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_LA_SOURCE_FREQ, Validate=False, maxResp=4), byteorder='little')
+        freq = raw * 96e6 / float(pow(2,23))
+        return freq
+
+    @property
     def downsample(self):
         """Downsample setting.
 
@@ -1163,7 +1172,7 @@ class LASettings(util.DisableNewAttr):
             raise ValueError("Unexpected: read %d" % raw)
 
     def _setOversamplingFactor(self, factor):
-        self._scope.trace.clock.swo_clock_freq = self._scope.trace.clock.fe_freq * factor
+        self._scope.trace.clock.swo_clock_freq = self.source_clock_frequency * factor
 
     def _getOversamplingFactor(self):
         return self._mmcm.get_mul() // (self._mmcm.get_main_div() * self._mmcm.get_sec_div())
