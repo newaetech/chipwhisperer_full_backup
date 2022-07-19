@@ -175,6 +175,50 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.default_setup()
         self.io.cwe.setAVRISPMode(1)
 
+    def vglitch_setup(self, call_default=False, out_t="lp"):
+        """Method to quickly setup voltage glitch and disable clock glitch
+
+        Sets glitch clock source, output to glitch_only, trigger_src to ext_single,
+        and output transistor to either low power (:code:`out_t='lp'`), 
+        high power (:code:`out_t='hp'`), or both (:code:`out_t='both'`)
+        """
+        if call_default:
+            self.default_setup()
+
+        self.glitch.clk_src = "clkgen"
+        self.glitch.output = "glitch_only"
+        self.glitch.trigger_src = "ext_single"
+
+        self.io.hs2 = "clkgen"
+
+        if out_t == "lp":
+            self.io.glitch_lp = True
+            self.io.glitch_hp = False
+        elif out_t == "hp":
+            self.io.glitch_hp = True
+            self.io.glitch_lp = False
+        else:
+            raise ValueError("Invalid output transistor {} (must be lp or hp)".format(out_t))
+        
+
+    def cglitch_setup(self, call_default=False):
+        """Method to quickly setup clock glitch and disable voltage glitch
+
+        Sets glitch clock source, output to clock_xor, and trigger_src to ext_single.
+        """
+        if call_default:
+            self.default_setup()
+
+        self.glitch.clk_src = "clkgen"
+        self.glitch.output = "clock_xor"
+        self.glitch.trigger_src = "ext_single"
+
+        self.io.glitch_lp = False
+        self.io.glitch_hp = False
+
+        self.io.hs2 = "glitch"
+
+
     def default_setup(self):
         """Sets up sane capture defaults for this scope
 
