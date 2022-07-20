@@ -45,6 +45,7 @@ ADDR_I2CSTATUS = 47
 ADDR_I2CDATA = 48
 ADDR_IOROUTE = 55
 ADDR_IOREAD = 59
+ADDR_EDGE_TRIGGER = 113
 
 # API aliases for the TIO settings
 _tio_alias = {
@@ -893,14 +894,19 @@ class HuskyTrigger(TriggerSettings):
     Communicates with all the trigger modules inside CW-Husky.
     Usage depends on the active trigger module.
     """
+    def __init__(self, cwextra):
+        self._edges = 1
+        super().__init__(cwextra)
 
     def _dict_repr(self):
         rtn = OrderedDict()
         rtn['module'] = self.module
         if self.module == 'ADC':
             rtn['level'] = self.level
-        elif self.module == 'basic' or self.module == 'UART':
+        if self.module in ['basic', 'UART', 'edge_counter']:
             rtn['triggers'] = self.triggers
+        if self.module == 'edge_counter':
+            rtn['edges'] = self.edges
         return rtn
 
     @property
@@ -912,11 +918,12 @@ class HuskyTrigger(TriggerSettings):
         data and SAD triggers are available too.
 
         Available trigger modules:
-         * 'basic': Trigger on a logic level or edge
-         * 'ADC':   Trigger on ADC sample exceeding a threshold
-         * 'SAD':   Trigger from SAD module
-         * 'UART':  Trigger from UART module
-         * 'trace': Trigger from TraceWhisperer
+         * 'basic':        Trigger on a logic level or edge
+         * 'ADC':          Trigger on ADC sample exceeding a threshold
+         * 'SAD':          Trigger from SAD module
+         * 'UART':         Trigger from UART module
+         * 'edge_counter': Trigger after a number of rising/falling edges
+         * 'trace':        Trigger from TraceWhisperer
 
         :Getter: Return the active trigger module
 
@@ -939,8 +946,10 @@ class HuskyTrigger(TriggerSettings):
             module = self.cwe.MODULE_TRACE
         elif mode == "ADC":
             module = self.cwe.MODULE_ADC
+        elif mode == "edge_counter":
+            module = self.cwe.MODULE_EDGE_COUNTER
         else:
-            raise ValueError("Invalid mode {}. Must be 'basic', 'SAD', 'UART', 'ADC', or 'trace'")
+            raise ValueError("Invalid mode {}. Must be 'basic', 'SAD', 'UART', 'ADC', 'trace', or 'edge_counter'")
 
         resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
                                        Validate=False, maxResp=1)
@@ -972,6 +981,38 @@ class HuskyTrigger(TriggerSettings):
         offset = self.cwe.oa.offset
         val = int((val + offset) * 2**12)
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_ADC_TRIGGER_LEVEL, list(int.to_bytes(val, length=2, byteorder='little')))
+
+    @property
+    def edges(self):
+        """For triggering on edge counts, when 
+        scope.trigger.module = 'edge_counter'.  
+        Sets the number of rising+falling edges on scope.trigger.triggers that
+        need to be seen for a trigger to be issued.
+
+        Edges are sampled by the ADC sampling clock (scope.clock.adc_freq), so
+        ensure that scope.trigger.triggers does not change faster than what can
+        be seen by that clock.
+
+        Args:
+            val (int): number of edges, non-zero 16-bit integer.
+        """
+        return self._edges
+
+    @edges.setter
+    def edges(self, val):
+        if val < 1 or val > 2**16:
+            raise ValueError("Out of range: [1, 2**16]")
+        self._edges = val
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_EDGE_TRIGGER, list(int.to_bytes(val-1, length=2, byteorder='little')))
+
+    @property
+    def edges_seen(self):
+        """Returns the number of edges seen. Under normal operation this should
+        be the same as scope.trigger.edges. When trigger generation failed, Can
+        be useful to understand why. Resets upon scope.arm().
+        """
+        return int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_EDGE_TRIGGER, Validate=False, maxResp=2), byteorder='little')
+
 
 
 class SADTrigger(util.DisableNewAttr):
@@ -1027,6 +1068,7 @@ class CWExtraSettings:
     MODULE_DECODEIO = 0x03
     MODULE_TRACE = 0x04
     MODULE_ADC = 0x05
+    MODULE_EDGE_COUNTER = 0x06
 
     CLOCK_FPA = 0x00
     CLOCK_FPB = 0x01

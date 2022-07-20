@@ -782,7 +782,7 @@ class LASettings(util.DisableNewAttr):
 
     @property
     def clkgen_enabled(self):
-        """Controls whether the Xilinx MMCM used to generate the samplign clock
+        """Controls whether the Xilinx MMCM used to generate the sampling clock
         is powered on or not.  7-series MMCMs are power hungry. In the Husky
         FPGA, MMCMs are estimated to consume close to half of the FPGA's power.
         If you run into temperature issues and don't require the logic analyzer
@@ -855,7 +855,6 @@ class LASettings(util.DisableNewAttr):
     @errors.setter
     def errors(self, val):
         self.oa.sendMessage(CODE_WRITE, self._scope.trace.REG_CLEAR_ERRORS, [1], Validate=False)
-
 
     def read_capture_data(self, check_empty=False):
         """Read captured data.
@@ -965,6 +964,8 @@ class LASettings(util.DisableNewAttr):
          * "HS1": The HS1 input clock.
          * "rising_userio_d[0-7]": a rising edge (0->1) on a USERIO pin
          * "falling_userio_d[0-7]": a falling edge (1->0) on a USERIO pin
+         * "rising_tio[0-3]": a rising edge (0->1) on a tio pin
+         * "failling_tio[0-3]": a falling edge (0->1) on a tio pin
 
          In addition, capture can be triggered manually, irrespective of the trigger_source
          setting, by calling scope.LA.trigger_now()
@@ -1144,8 +1145,12 @@ class LASettings(util.DisableNewAttr):
             val = [0x08 + int(source[-1])]
         elif 'falling_userio_d' in source:
             val = [0x18 + int(source[-1])]
+        elif 'rising_tio' in source:
+            val = [0x20 + int(source[-1]) - 1]
+        elif 'falling_tio' in source:
+            val = [0x28 + int(source[-1]) - 1]
         else:
-            raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', 'HS1', or '[rising|falling]_userio_d[0-7]'")
+            raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', 'HS1', '[rising|falling]_userio_d[0-7]', or [rising|falling]_tio[0-3]")
         self.oa.sendMessage(CODE_WRITE, ADDR_LA_TRIGGER_SOURCE, val, Validate=False)
 
     def _getTriggerSource(self):
@@ -1168,6 +1173,10 @@ class LASettings(util.DisableNewAttr):
             return 'rising_userio_d' + str(raw & 0x07)
         elif raw in range(0x10, 0x20):
             return 'falling_userio_d' + str(raw & 0x07)
+        elif raw in range(0x20, 0x24):
+            return 'rising_tio' + str((raw & 0x03) + 1)
+        elif raw in range(0x28, 0x2c):
+            return 'falling_tio' + str((raw & 0x03) + 1)
         else:
             raise ValueError("Unexpected: read %d" % raw)
 

@@ -201,6 +201,8 @@ def find0to1trans(data):
     pattern = [0,1]
     return [i for i in range(0,len(data)) if list(data[i:i+len(pattern)])==pattern]
 
+def find_edges(data):
+    return [i for i in range(0,len(data)) if list(data[i:i+2]) in [[0,1], [1,0]]]
 
 testData = [
     # samples   presamples  testmode    clock       fastreads   adcmul  bit stream  segs    segcycs reps    desc
@@ -396,9 +398,19 @@ testADCTriggerData = [
     (10,        0.5,        12,     3,     ''),
 ]
 
+testEdgeTriggerData = [
+    #pin        edges       oversamp,   check,  reps,   desc
+    ('tio1',    2,          4,          True,   3,      ''),
+    ('tio1',    4,          4,          True,   3,      ''),
+    ('tio1',    100,        4,          False,  50,     ''),
+    ('tio2',    3,          4,          True,   10,     ''),
+    ('tio2',    5,          4,          True,   10,     ''),
+    ('tio2',    50,         4,          False,  50,     ''),
+]
+
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '7/15/2022, 14:04'
+    assert scope.fpga_buildtime == '7/19/2022, 23:10'
 
 
 def test_fw_version():
@@ -1220,6 +1232,58 @@ def test_adc_trigger (gain, threshold, bits, reps, desc):
         #print(scope.trigger.level)
         powertrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
         assert powertrace is not None, 'ADC-triggered capture (min) failed'
+
+
+@pytest.mark.parametrize("pin, edges, oversamp, check, reps, desc", testEdgeTriggerData)
+@pytest.mark.skipif(not target_attached, reason='No target detected')
+def test_edge_trigger (pin, edges, oversamp, check, reps, desc):
+    reset_setup()
+    scope.default_setup()
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    reset_target()
+    time.sleep(0.1)
+    target.baud = 38400
+    scope.adc.clip_errors_disabled = True
+    scope.adc.lo_gain_errors_disabled = True
+    scope.trigger.module = 'edge_counter'
+    scope.trigger.triggers = pin
+    scope.trigger.edges = edges
+
+    for i in range(reps):
+        if check:
+            # Use scope.LA to check that the trigger occurs when it should.
+            # We can only do this when # edges is small (when it's too big,
+            # scope.LA's storage isn't deep enough to capture everything)
+            scope.LA.enabled = True
+            scope.LA.clk_source = 'pll'
+            scope.LA.oversampling_factor = oversamp
+            scope.LA.downsample = 1
+            scope.LA.capture_group = 'CW 20-pin'
+            scope.LA.trigger_source = 'falling_' + pin
+            scope.LA.capture_depth = 16000
+            scope.io.glitch_trig_mcx = 'trigger'
+            scope.LA.arm()
+            trace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+            assert not scope.LA.fifo_empty()
+            raw = scope.LA.read_capture_data()
+            tio1 = scope.LA.extract(raw, 0)
+            tio2 = scope.LA.extract(raw, 1)
+            trig = scope.LA.extract(raw, 7)
+            if pin == 'tio1':
+                input_edges = find_edges(tio1)
+            elif pin == 'tio2':
+                input_edges = find_edges(tio2)
+            else:
+                raise ValueError('unsupported pin')
+            trig_edges = find_edges(trig)
+            assert len(input_edges)+1 >= edges, "Couldn't observe enough edges!"
+            assert abs(trig_edges[0] - oversamp - input_edges[edges-2]) < oversamp, "Rep %d: Trigger not where expected! input_edges=%s, trig_edges=%s" % (i, input_edges, trig_edges)
+
+        else:
+            # otherwise, we just check for a successful capture
+            trace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+            assert trace is not None, 'Capture failed. Observed %d edges' % scope.trigger.edges_seen
 
 
 @pytest.mark.skipif(not target_attached, reason='No target detected')
