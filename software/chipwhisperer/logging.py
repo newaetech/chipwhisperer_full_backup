@@ -1,5 +1,9 @@
 import logging
 import os
+import tempfile
+
+
+log_dir = tempfile.gettempdir()
 
 logging.basicConfig(level=logging.WARNING)
 cw_formatter = logging.Formatter("(%(name)s %(levelname)s|File %(filename)s:%(lineno)d) %(message)s")
@@ -25,12 +29,13 @@ for logger in chipwhisperer_loggers:
     strmhndlr = logging.StreamHandler()
     strmhndlr.setLevel(logging.DEBUG)
     strmhndlr.setFormatter(cw_formatter)
-    print(os.getcwd())
+   
     try:
-        os.mkdir(os.path.join(__file__[:-10], "logs"))
+        os.makedirs(os.path.join(log_dir, "chipwhisperer/logs"), exist_ok=True)
     except FileExistsError:
         pass
-    filehndlr = logging.FileHandler(os.path.join(__file__[:-10], "logs", logger.name + ".log"), mode='w')
+    
+    filehndlr = logging.FileHandler(os.path.join(log_dir, "chipwhisperer/logs", logger.name + ".log"), mode='w')
     filehndlr.setFormatter(cw_formatter)
     logger.propagate = False
 
