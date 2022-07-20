@@ -25,6 +25,7 @@ for logger in chipwhisperer_loggers:
     strmhndlr = logging.StreamHandler()
     strmhndlr.setLevel(logging.DEBUG)
     strmhndlr.setFormatter(cw_formatter)
+    print(os.getcwd())
     try:
         os.mkdir(os.path.join(__file__[:-10], "logs"))
     except FileExistsError:
