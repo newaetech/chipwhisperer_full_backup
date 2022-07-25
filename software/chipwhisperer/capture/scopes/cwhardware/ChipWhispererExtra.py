@@ -638,7 +638,7 @@ class TriggerSettings(util.DisableNewAttr):
         self.cwe = cwextra
 
         self.supported_tpins = {
-            'tio1':self.cwe.PIN_RTIO1,
+            'tio1': self.cwe.PIN_RTIO1,
             'tio2': self.cwe.PIN_RTIO2,
             'tio3': self.cwe.PIN_RTIO3,
             'tio4': self.cwe.PIN_RTIO4,
@@ -649,6 +649,19 @@ class TriggerSettings(util.DisableNewAttr):
         if self.cwe.hasAux:
             self.supported_tpins['sma'] = self.cwe.PIN_FPA
             self.supported_tpins['aux'] = self.cwe.PIN_FPA # alias for Husky since it's labeled 'Aux' on the sticker
+
+        if self.cwe.hasUserio:
+            self.supported_tpins['userio_d0'] = self.cwe.PIN_USERIO0
+            self.supported_tpins['userio_d1'] = self.cwe.PIN_USERIO1
+            self.supported_tpins['userio_d2'] = self.cwe.PIN_USERIO2
+            self.supported_tpins['userio_d3'] = self.cwe.PIN_USERIO3
+            self.supported_tpins['userio_d4'] = self.cwe.PIN_USERIO4
+            self.supported_tpins['userio_d5'] = self.cwe.PIN_USERIO5
+            self.supported_tpins['userio_d6'] = self.cwe.PIN_USERIO6
+            self.supported_tpins['userio_d7'] = self.cwe.PIN_USERIO7
+
+
+        self._is_husky = False
 
         self.disable_newattr()
 
@@ -741,6 +754,38 @@ class TriggerSettings(util.DisableNewAttr):
 
             if pins & self.cwe.PIN_TNRST:
                 tstring.append("nrst")
+                tstring.append(modes)
+
+            if pins & self.cwe.PIN_USERIO0:
+                tstring.append("userio_d0")
+                tstring.append(modes)
+
+            if pins & self.cwe.PIN_USERIO1:
+                tstring.append("userio_d1")
+                tstring.append(modes)
+
+            if pins & self.cwe.PIN_USERIO2:
+                tstring.append("userio_d2")
+                tstring.append(modes)
+
+            if pins & self.cwe.PIN_USERIO3:
+                tstring.append("userio_d3")
+                tstring.append(modes)
+
+            if pins & self.cwe.PIN_USERIO4:
+                tstring.append("userio_d4")
+                tstring.append(modes)
+
+            if pins & self.cwe.PIN_USERIO5:
+                tstring.append("userio_d5")
+                tstring.append(modes)
+
+            if pins & self.cwe.PIN_USERIO6:
+                tstring.append("userio_d6")
+                tstring.append(modes)
+
+            if pins & self.cwe.PIN_USERIO7:
+                tstring.append("userio_d7")
                 tstring.append(modes)
 
             #Remove last useless combination mode
@@ -897,6 +942,7 @@ class HuskyTrigger(TriggerSettings):
     def __init__(self, cwextra):
         self._edges = 1
         super().__init__(cwextra)
+        self._is_husky = True
 
     def _dict_repr(self):
         rtn = OrderedDict()
@@ -1062,6 +1108,15 @@ class CWExtraSettings:
     MODE_AND = 0x01
     MODE_NAND = 0x02
 
+    PIN_USERIO0 = 0x0100
+    PIN_USERIO1 = 0x0200
+    PIN_USERIO2 = 0x0400
+    PIN_USERIO3 = 0x0800
+    PIN_USERIO4 = 0x1000
+    PIN_USERIO5 = 0x2000
+    PIN_USERIO6 = 0x4000
+    PIN_USERIO7 = 0x8000
+
     MODULE_BASIC = 0x00
     MODULE_ADVPATTERN = 0x01
     MODULE_SADPATTERN = 0x02
@@ -1095,21 +1150,25 @@ class CWExtraSettings:
             hasGlitchOut = False
             hasPLL = True
             hasAux=False
+            hasUserio=False
         elif cwtype == "cwlite":
             hasFPAFPB=False
             hasGlitchOut=True
             hasPLL=False
             hasAux=False
+            hasUserio=False
         elif cwtype == "cw1200":
             hasFPAFPB=False
             hasGlitchOut=True
             hasPLL=False
             hasAux=True
+            hasUserio=False
         elif cwtype == "cwhusky":
             hasFPAFPB=False
             hasGlitchOut=True
             hasPLL=False
             hasAux=True
+            hasUserio=True
         else:
             raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
 
@@ -1118,6 +1177,7 @@ class CWExtraSettings:
         self.hasGlitchOut = hasGlitchOut
         self.hasPLL = hasPLL
         self.hasAux = hasAux
+        self.hasUserio = hasUserio
 
 
         #Add special single-class items used as higher-level API
@@ -1128,6 +1188,10 @@ class CWExtraSettings:
 
         if cwtype == "cwhusky":
             self.gpiomux._is_husky = True
+            self.triggermux._is_husky = True
+            self._addr_trigsrc_size = 2
+        else:
+            self._addr_trigsrc_size = 1
 
 
     def _setGPIOState(self, state, IONumber):
@@ -1402,13 +1466,14 @@ class CWExtraSettings:
         return current[1]
 
     def setPins(self, pins, mode):
-        d = bytearray()
-        d.append((mode << 6) | pins)
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGSRC, d)
+        d = list(int.to_bytes((mode << 6) | pins, length=self._addr_trigsrc_size, byteorder='little'))
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGSRC, d, maxResp=self._addr_trigsrc_size)
 
     def getPins(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGSRC, Validate=False, maxResp=1)
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGSRC, Validate=False, maxResp=self._addr_trigsrc_size)
         pins = resp[0] & 0x3F
+        if self._addr_trigsrc_size == 2:
+            pins += (resp[1] << 8)
         mode = resp[0] >> 6
         return(pins, mode)
 

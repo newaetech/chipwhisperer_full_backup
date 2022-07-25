@@ -408,10 +408,14 @@ testEdgeTriggerData = [
     ('tio2',    50,         4,          False,  50,     ''),
 ]
 
+testUserioEdgeTriggerData = [
+    #pins           max_edges   reps    desc
+    ([3,4,5,6,7],   260,        3,      ''),    # exclude pins 0-2 since they are used for trace and could be target-driven
+]
+
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '7/19/2022, 23:10'
-
+    assert scope.fpga_buildtime == '7/23/2022, 14:33'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -1265,6 +1269,7 @@ def test_edge_trigger (pin, edges, oversamp, check, reps, desc):
             scope.io.glitch_trig_mcx = 'trigger'
             scope.LA.arm()
             trace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+            #print(scope)
             assert not scope.LA.fifo_empty()
             raw = scope.LA.read_capture_data()
             tio1 = scope.LA.extract(raw, 0)
@@ -1284,6 +1289,42 @@ def test_edge_trigger (pin, edges, oversamp, check, reps, desc):
             # otherwise, we just check for a successful capture
             trace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
             assert trace is not None, 'Capture failed. Observed %d edges' % scope.trigger.edges_seen
+
+def armed():
+    return scope.sc.getStatus() & 0x1
+
+@pytest.mark.parametrize("pins, max_edges, reps, desc", testUserioEdgeTriggerData)
+def test_userio_edge_triggers(pins, max_edges, reps, desc):
+    # This tests triggering from USERIO pins and also further tests edge triggering.
+    # Note that there would be nothing to gain from also testing with scope.trigger.mode = 'normal'
+    # since the logic controlling the input to the trigger module doesn't care about the mode.
+    reset_setup()
+    scope.default_setup()
+    time.sleep(0.1)
+    scope.trigger.module = 'edge_counter'
+    scope.userio.mode = 'normal'
+    scope.userio.direction = 0
+    # only drive the pins that we'll be using:
+    for pin in pins:
+        scope.userio.direction += 2**pin
+    for rep in range(reps):
+        for userio_pin in (pins):
+            scope.trigger.triggers = 'userio_d' + str(userio_pin)
+            edges = random.randrange(1, max_edges+1)
+            scope.trigger.edges = edges
+            scope.userio.drive_data = random.randrange(0, 0x100)
+            edges_applied = 0
+            scope.sc.arm(False)
+            assert not armed()
+            scope.arm()
+            while (edges_applied < edges):
+                new_value = random.randrange(0, 0x100)
+                if (new_value & 2**userio_pin) != (scope.userio.status & 2**userio_pin):
+                    edges_applied += 1
+                scope.userio.drive_data = new_value
+                if edges_applied < edges:
+                    assert armed(), "Pin %d, rep %d: scope disarmed after only %d edges! This should not have happened until %d edges." % (userio_pin, rep, edges_applied, edges)
+            assert not armed(), "Pin %d, rep %d: scope is still armed after all edges have been applied." % (userio_pin, rep)
 
 
 @pytest.mark.skipif(not target_attached, reason='No target detected')

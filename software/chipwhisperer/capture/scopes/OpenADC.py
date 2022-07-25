@@ -208,7 +208,6 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.clock.clkgen_src = 'system'
             self.clock.clkgen_freq = 7.37e6
             self.clock.adc_mul = 4
-            self.adc.clip_errors_disabled = 1
             while not self.clock.clkgen_locked:
                 count += 1
                 self.clock.reset_dcms()
@@ -220,7 +219,9 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.ADS4128.mode = 'normal'
             self.glitch.enabled = False
             self.LA.enabled = False
-
+            self.userio.mode = 'normal'
+            self.trace.capture.use_husky_arm = False
+            self.trace.capture.trigger_source = 'firmware trigger'
 
         else:
             self.clock.adc_src = "clkgen_x4"
