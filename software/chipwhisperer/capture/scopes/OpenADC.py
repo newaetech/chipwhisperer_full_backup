@@ -175,6 +175,75 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.default_setup()
         self.io.cwe.setAVRISPMode(1)
 
+    def glitch_disable(self):
+        """Disables glitch and glitch outputs
+        """
+        if self._is_husky:
+            self.glitch.enabled = False
+
+        self.io.glitch_lp = False
+        self.io.glitch_hp = False
+        self.io.hs2 = "clkgen"
+
+    def cglitch_setup(self, default_setup=True):
+        """Sets up sane defaults for clock glitching
+
+        * glitch clk_src = clkgen
+        * output = clock_xor
+        * trigger_src = ext_single
+        * hs2 = glitch
+        * LP and HP glitch disabled
+        """
+        if default_setup:
+            self.default_setup()
+
+        if self._is_husky:
+                self.glitch.enabled = True
+
+        self.io.glitch_lp = False
+        self.io.glitch_hp = False
+
+        self.glitch.clk_src = "clkgen"
+        self.glitch.output = "clock_xor"
+        self.glitch.trigger_src = "ext_single"
+
+        self.io.hs2 = "glitch"
+
+    def vglitch_setup(self, glitcht, default_setup=True):
+        """Sets up sane defaults for voltage glitch
+
+        * glitch clk_src = clkgen
+        * output = glitch_only
+        * trigger_src = ext_single
+        * hs2 = clkgen
+        * LP glitch if glitcht = 'lp' or 'both'
+        * HP glitch if glitcht = 'hp' or 'both'
+        """
+        if default_setup:
+            self.default_setup()
+
+        if self._is_husky:
+            self.glitch.enabled = True
+
+        self.io.hs2 = "clkgen"
+        if glitcht == "lp":
+            self.io.glitch_lp = True
+            self.io.glitch_hp = False
+        elif glitcht == "hp":
+            self.io.glitch_lp = False
+            self.io.glitch_hp = True
+        elif glitcht == "both":
+            self.io.glitch_lp = True
+            self.io.glitch_hp = True
+        else:
+            raise ValueError("Invalid glitch transistor {} must be 'hp' or 'lp'".format(glitcht))
+
+        self.glitch.clk_src = "clkgen"
+        self.glitch.output = "glitch_only"
+        self.glitch.trigger_src = "ext_single"
+
+        self.io.hs2 = "clkgen"
+
     def default_setup(self):
         """Sets up sane capture defaults for this scope
 
