@@ -1,0 +1,4 @@
+sphinx
+sphinx_autodoc_typehints
+sphinxcontrib-images
+pypandoc
