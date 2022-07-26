@@ -51,16 +51,17 @@ void ui_init(void)
 	LED_Off(LED0_GPIO);
 	LED_Off(LED1_GPIO);
 	LED_Off(LED2_GPIO);
+	board_power(0);
 }
 
 void ui_powerdown(void)
 {
 	LED_Off(LED0_GPIO);
 	LED_Off(LED1_GPIO);
-	LED_Off(LED2_GPIO);
+	LED_On(LED2_GPIO);
 	
 	// Power off FPGA
-	board_power(0);
+	// board_power(0);
 		
 }
 
