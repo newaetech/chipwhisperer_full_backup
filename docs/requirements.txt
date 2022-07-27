@@ -1,4 +1,4 @@
-sphinx
+sphinx==5.0.0
 sphinx_autodoc_typehints
 sphinxcontrib-images
 pypandoc
