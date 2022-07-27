@@ -299,6 +299,8 @@ class TraceWhisperer(util.DisableNewAttr):
                 scope_logger.warning("Can't enable scope.LA and scope.trace simultaneously; turning off scope.LA.")
                 self._scope.LA.enabled = False
             self._scope.LA.clkgen_enabled = True
+        if not enable:
+            self.capture.use_husky_arm = False
         self.fpga_write(self.REG_TRACE_EN, [enable])
 
 
@@ -1864,12 +1866,13 @@ class UARTTrigger(TraceWhisperer):
 
     @enabled.setter 
     def enabled(self, enable):
-        # set useful defaults:
-        self.trace_mode = 'swo'
-        self.capture.mode = 'off'
-        self.clock.fe_clock_src = 'target_clock'
-        self.capture.record_syncs = True
-        self.capture.use_husky_arm = True
+        if enable:
+            # set useful defaults:
+            self.trace_mode = 'swo'
+            self.capture.mode = 'off'
+            self.clock.fe_clock_src = 'target_clock'
+            self.capture.record_syncs = True
+            self.capture.use_husky_arm = True
         # accessing base class setter is awkward! all we want to do here is super().enabled = enable, but this is the way to do that:
         super(UARTTrigger, self.__class__).enabled.fset(self, enable)
 

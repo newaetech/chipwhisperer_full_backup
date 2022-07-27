@@ -175,49 +175,74 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.default_setup()
         self.io.cwe.setAVRISPMode(1)
 
-    def vglitch_setup(self, call_default=False, out_t="lp"):
-        """Method to quickly setup voltage glitch and disable clock glitch
-
-        Sets glitch clock source, output to glitch_only, trigger_src to ext_single,
-        and output transistor to either low power (:code:`out_t='lp'`), 
-        high power (:code:`out_t='hp'`), or both (:code:`out_t='both'`)
+    def glitch_disable(self):
+        """Disables glitch and glitch outputs
         """
-        if call_default:
+        if self._is_husky:
+            self.glitch.enabled = False
+
+        self.io.glitch_lp = False
+        self.io.glitch_hp = False
+        self.io.hs2 = "clkgen"
+
+    def cglitch_setup(self, default_setup=True):
+        """Sets up sane defaults for clock glitching
+
+        * glitch clk_src = clkgen
+        * output = clock_xor
+        * trigger_src = ext_single
+        * hs2 = glitch
+        * LP and HP glitch disabled
+        """
+        if default_setup:
             self.default_setup()
+
+        if self._is_husky:
+                self.glitch.enabled = True
+
+        self.io.glitch_lp = False
+        self.io.glitch_hp = False
+
+        self.glitch.clk_src = "clkgen"
+        self.glitch.output = "clock_xor"
+        self.glitch.trigger_src = "ext_single"
+
+        self.io.hs2 = "glitch"
+
+    def vglitch_setup(self, glitcht, default_setup=True):
+        """Sets up sane defaults for voltage glitch
+
+        * glitch clk_src = clkgen
+        * output = glitch_only
+        * trigger_src = ext_single
+        * hs2 = clkgen
+        * LP glitch if glitcht = 'lp' or 'both'
+        * HP glitch if glitcht = 'hp' or 'both'
+        """
+        if default_setup:
+            self.default_setup()
+
+        if self._is_husky:
+            self.glitch.enabled = True
+
+        self.io.hs2 = "clkgen"
+        if glitcht == "lp":
+            self.io.glitch_lp = True
+            self.io.glitch_hp = False
+        elif glitcht == "hp":
+            self.io.glitch_lp = False
+            self.io.glitch_hp = True
+        elif glitcht == "both":
+            self.io.glitch_lp = True
+            self.io.glitch_hp = True
+        else:
+            raise ValueError("Invalid glitch transistor {} must be 'hp' or 'lp'".format(glitcht))
 
         self.glitch.clk_src = "clkgen"
         self.glitch.output = "glitch_only"
         self.glitch.trigger_src = "ext_single"
 
         self.io.hs2 = "clkgen"
-
-        if out_t == "lp":
-            self.io.glitch_lp = True
-            self.io.glitch_hp = False
-        elif out_t == "hp":
-            self.io.glitch_hp = True
-            self.io.glitch_lp = False
-        else:
-            raise ValueError("Invalid output transistor {} (must be lp or hp)".format(out_t))
-        
-
-    def cglitch_setup(self, call_default=False):
-        """Method to quickly setup clock glitch and disable voltage glitch
-
-        Sets glitch clock source, output to clock_xor, and trigger_src to ext_single.
-        """
-        if call_default:
-            self.default_setup()
-
-        self.glitch.clk_src = "clkgen"
-        self.glitch.output = "clock_xor"
-        self.glitch.trigger_src = "ext_single"
-
-        self.io.glitch_lp = False
-        self.io.glitch_hp = False
-
-        self.io.hs2 = "glitch"
-
 
     def default_setup(self):
         """Sets up sane capture defaults for this scope
@@ -252,7 +277,6 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.clock.clkgen_src = 'system'
             self.clock.clkgen_freq = 7.37e6
             self.clock.adc_mul = 4
-            self.adc.clip_errors_disabled = 1
             while not self.clock.clkgen_locked:
                 count += 1
                 self.clock.reset_dcms()
@@ -264,7 +288,9 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.ADS4128.mode = 'normal'
             self.glitch.enabled = False
             self.LA.enabled = False
-
+            self.userio.mode = 'normal'
+            self.trace.capture.use_husky_arm = False
+            self.trace.capture.trigger_source = 'firmware trigger'
 
         else:
             self.clock.adc_src = "clkgen_x4"
