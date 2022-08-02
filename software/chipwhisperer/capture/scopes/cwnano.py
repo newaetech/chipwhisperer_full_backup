@@ -47,7 +47,7 @@ class ADCSettings(util.DisableNewAttr):
         rtn['clk_src'] = self.clk_src
         rtn['clk_freq'] = self.clk_freq
         rtn['samples'] = self.samples
-        return dict
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -165,7 +165,7 @@ class GlitchSettings(util.DisableNewAttr):
         rtn = OrderedDict()
         rtn['repeat'] = self.repeat
         rtn['ext_offset'] = self.ext_offset
-        return dict
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
