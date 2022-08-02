@@ -50,17 +50,19 @@ def check_for_updates() -> str:
         other_logger.warning("Old pip version: {}, unable to do CW version check".format(pip_version))
         return ""
 
-    latest_version = str(subprocess.run([sys.executable, '-m', 'pip', 'install', '{}==random'.format("chipwhisperer")],
+    latest_version = str(subprocess.run([sys.executable, '-m', 'pip',  '--timeout=3', 'install', '--retries=1', '{}==random'.format("chipwhisperer")],
                         capture_output=True, text=True, check=False))
-    if not latest_version:
+    if (not latest_version) or (latest_version == "none"):
         raise IOError("Could not check chipwhisperer version")
     latest_version = latest_version[latest_version.find('(from versions:')+15:]
     latest_version = latest_version[:latest_version.find(')')]
     latest_version = latest_version.replace(' ','').split(',')[-1]
+    if (not latest_version) or (latest_version == "none"):
+        raise IOError("Could not check chipwhisperer version")
 
     current_version = __version__
 
-    other_logger.info("CW version: {}. Latest: {}".format(current_version, latest_version))
+    other_logger.info("CW version: {}. Latest: {}".format(current_version, type(latest_version)))
 
     if latest_version <= current_version:
         other_logger.info("ChipWhisperer up to date")

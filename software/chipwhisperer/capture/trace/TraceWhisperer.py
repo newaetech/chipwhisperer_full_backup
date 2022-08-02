@@ -25,6 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import time
+import datetime
 import re
 import math
 import pkg_resources # type: ignore
@@ -99,7 +100,7 @@ class TraceWhisperer(util.DisableNewAttr):
         self._base_baud = 38400
         self._usb_clock = 96e6
         self._uart_clock = self._usb_clock * 2
-        self.expected_verilog_defines = 124
+        self.expected_verilog_defines = 129
         self.swo_mode = False
         self._scope = scope
 
@@ -298,6 +299,8 @@ class TraceWhisperer(util.DisableNewAttr):
                 scope_logger.warning("Can't enable scope.LA and scope.trace simultaneously; turning off scope.LA.")
                 self._scope.LA.enabled = False
             self._scope.LA.clkgen_enabled = True
+        if not enable:
+            self.capture.use_husky_arm = False
         self.fpga_write(self.REG_TRACE_EN, [enable])
 
 
@@ -1045,11 +1048,17 @@ class clock(util.DisableNewAttr):
         super().__init__()
         self.main = main
         if self.main.platform == 'Husky':
-            self.drp = XilinxDRP(main, ADDR_LA_DRP_DATA, ADDR_LA_DRP_ADDR, ADDR_LA_DRP_RESET)
+            self.swo_drp = XilinxDRP(main, ADDR_LA_DRP_DATA, ADDR_LA_DRP_ADDR, ADDR_LA_DRP_RESET)
         else:
-            self.drp = XilinxDRP(main, main.REG_TRIGGER_DRP_DATA, main.REG_TRIGGER_DRP_ADDR, main.REG_TRIGGER_DRP_RESET)
-        self.mmcm = XilinxMMCMDRP(self.drp)
+            self.swo_drp = XilinxDRP(main, main.REG_TRIGGER_DRP_DATA, main.REG_TRIGGER_DRP_ADDR, main.REG_TRIGGER_DRP_RESET)
+        self.traceclk_drp = XilinxDRP(main, main.REG_TRACECLK_DRP_DATA, main.REG_TRACECLK_DRP_ADDR, main.REG_TRACECLK_DRP_RESET)
+        self.swo_mmcm = XilinxMMCMDRP(self.swo_drp)
+        self.traceclk_mmcm = XilinxMMCMDRP(self.traceclk_drp)
         self._warning_frequency = 250e6
+        self._trace_clock_shift_steps = 0
+        self._trace_clock_vco = 0
+        self._trace_clock_muldiv = 0
+        self._timeout = 1
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -1062,6 +1071,11 @@ class clock(util.DisableNewAttr):
         rtn['fe_freq']          = self.fe_freq
         rtn['swo_clock_locked']   = self.swo_clock_locked
         rtn['swo_clock_freq']     = self.swo_clock_freq
+        if self.fe_clock_src == 'trace_clock':
+            rtn['trace_clock_shift_enable'] = self.trace_clock_shift_enable
+            rtn['trace_clock_shift_locked'] = self.trace_clock_shift_locked
+            rtn['trace_clock_shift_steps'] = self.trace_clock_shift_steps
+            rtn['trace_clock_shift_range'] = self.trace_clock_shift_range
         return rtn
 
     def __repr__(self):
@@ -1072,7 +1086,7 @@ class clock(util.DisableNewAttr):
 
     @property
     def clkgen_enabled(self):
-        """Controls whether the Xilinx MMCM used to generate the samplign clock
+        """Controls whether the Xilinx MMCM used to generate the sampling clock
         is powered on or not.  7-series MMCMs are power hungry. In the Husky
         FPGA, MMCMs are estimated to consume close to half of the FPGA's power.
         If you run into temperature issues and don't require the logic analyzer
@@ -1105,11 +1119,10 @@ class clock(util.DisableNewAttr):
     @swo_clock_freq.setter
     def swo_clock_freq(self, freq, vcomin=600e6, vcomax=1200e6, threshold=0.01):
         """Calculate Multiply & Divide settings based on input frequency"""
-        if not self.fe_clock_alive:
+        if self.main.enabled and not self.fe_clock_alive:
             tracewhisperer_logger.error("FE clock not present, cannot calculate proper M/D settings")
         if self.main.platform == 'Husky':
-            assert self.main._scope.LA.clk_source == 'pll'
-            input_freq = self.main._scope.clock.clkgen_freq
+            input_freq = self.main._scope.LA.source_clock_frequency
         else:
             input_freq = self.fe_freq
         lowerror = 1e99
@@ -1129,9 +1142,9 @@ class clock(util.DisableNewAttr):
         if best == (0,0,0):
             tracewhisperer_logger.error("Couldn't find a legal div/mul combination")
         else:
-            self.mmcm.set_mul(best[0])
-            self.mmcm.set_main_div(best[1])
-            self.mmcm.set_sec_div(best[2])
+            self.swo_mmcm.set_mul(best[0])
+            self.swo_mmcm.set_main_div(best[1])
+            self.swo_mmcm.set_sec_div(best[2])
             actual = input_freq*best[0]/best[1]/best[2]
             if abs(actual-freq)/freq*100 > threshold:
                 scope_logger.warning("Coudln't achieve exact desired frequency (%f); setting to %f instead." % (freq, input_freq*best[0]/best[1]/best[2]))
@@ -1168,6 +1181,9 @@ class clock(util.DisableNewAttr):
     @property
     def fe_clock_src(self):
         """Choose which clock is used as the front-end clock.
+        On the CW305 platform, "target_clock" is the only option.
+        On Husky, "target_clock" refers to either the target-generated clock or
+        Husky-generated clock, as per scope.clock.clkgen_src.
         Args:
             src (str): "target_clock", "trace_clock" or "usb_clock"
         """
@@ -1186,18 +1202,138 @@ class clock(util.DisableNewAttr):
 
     @fe_clock_src.setter
     def fe_clock_src(self, src):
+        if src != 'target_clock' and self.main.platform == 'CW305':
+            raise ValueError("Not supported on CW305. Use 'target_clock'")
         if src == 'target_clock':
             val = 0
         elif src == 'trace_clock':
             val = 1
-            if self.main.platform == 'Husky':
-                tracewhisperer_logger.warning("trace_clock may not sample trace data properly on Husky; recommend using target_clock instead.")
         elif src == 'usb_clock':
             val = 2
         else:
             raise ValueError('Invalid source (target_clock/trace_clock/usb_clock)')
         self.main.fpga_write(self.main.REG_FE_CLOCK_SEL, [val])
 
+    @property
+    def trace_clock_shift_enable(self):
+        """Turn on the MMCM for shifting the trace clock. When disabled, the
+        raw input trace clock is used; when enabled, the MMCM-shifted trace
+        clock is used.
+        Args:
+            enable (bool)
+        """
+        raw = self.main.fpga_read(self.main.REG_TRACECLK_SHIFT_EN, 1)[0]
+        if raw:
+            return True
+        else:
+            return False
+
+    @trace_clock_shift_enable.setter
+    def trace_clock_shift_enable(self, enable):
+        if enable:
+            val = 1
+        else:
+            val = 0
+        self.main.fpga_write(self.main.REG_TRACECLK_SHIFT_EN, [val])
+
+    @property
+    def trace_clock_shift_steps(self):
+        """The trace clock phase shift. There are
+        `trace.clock.trace_clock_shift_range` steps in a full period of the
+        trace clock (the trace clock frequency *must* be specified by calling
+        `trace.clock.trace_clock_set_freq()` in order for this to be accurate).
+
+        Negative values are allowed, but -x is equivalent to
+        `trace.clock.trace_clock_shift_range - x`. The setting rolls over (+x
+        is equivalent to `trace.clock.trace_clock_shift_range + x`). Run the
+        trace_clock_alignment.ipynb notebook in the DesignStartTrace repository
+        to visualize phase shift settings.
+
+        Args:
+            steps (signed 16-bit integer): number of phase shift steps.
+        """
+        return self._trace_clock_shift_steps
+
+    @trace_clock_shift_steps.setter
+    def trace_clock_shift_steps(self, steps):
+        if not (self.trace_clock_shift_enable and self.trace_clock_shift_locked):
+            raise ValueError("Can't change settings if not enabled and locked.")
+        assert type(steps) == int
+        LSB = steps & 0x00FF
+        MSB = (steps & 0xFF00) >> 8
+        self.main.fpga_write(self.main.REG_TRACECLK_PHASE, [LSB, MSB])
+        # Large adjustments can take a while so it's important to check if done.
+        starttime = datetime.datetime.now()
+        done = False
+        while not done:
+            diff = datetime.datetime.now() - starttime
+            if (diff.total_seconds() > self._timeout):
+                scope_logger.warning('Timeout in phase adjustment. Increase self._timeout. This should not be necessary unless you make *huge* step jumps.')
+                break
+            raw = self.main.fpga_read(self.main.REG_TRACECLK_PHASE, 1)[0]
+            done = raw & 0x01
+        self._trace_clock_shift_steps = steps
+
+    @property
+    def trace_clock_shift_locked(self):
+        """Indicates whether the MMCM (PLL) for the trace clock phase shift is
+        locked.  If this is False, make sure that the trace clock is present
+        (CK pin of the USERIO header), and that `trace_clock_set_freq()` has
+        been called to specify the trace clock frequency.
+        """
+        raw = self.main.fpga_read(self.main.REG_TRACECLK_PHASE, 1)[0]
+        if raw & 0x02:
+            return True
+        else:
+            return False
+
+    @property
+    def trace_clock_shift_range(self):
+        """Returns number of phase shift steps in one trace pll cycle.  This
+        is simply 56 times the MMCM's multiplier, indepedent of the trace
+        clock frequency.  (ref: Xilinx UG472 v1.14, "Dynamic Phase Shift
+        Interface in the MMCM")
+        The trace clock frequency must be provided via `trace_clock_set_freq()`
+        in order for this to be accurate.  The number of phase shift steps
+        depends on the clock frequency (fewer steps as the frequency increases)
+        and on the PLL VCO frequency which can also be specified via
+        `trace_clock_set_freq()` (more steps as the VCO increases).
+        """
+        return self._trace_clock_muldiv * 56
+
+    def trace_clock_set_freq(self, freq, vco=600e6):
+        """Use this to specify the trace clock frequency. This is important for
+        (a) operating the phase shift MMCM in its allowed operating range, and
+        (b) accurately determining the number of phase shift steps per clock
+        period. The MMCM's VCO frequency can optionally be specified. Note that
+        the trace clock frequency is usually half of the target's clock
+        frequency.
+        Args:
+            freq (int): trace clock frequency. Minimum: 5 MHz.
+            vco (int): VCO frequency. Allowed range [600e6, 1200e6]. Higher
+                    values allow finer phase adjustments but consume more
+                    power.  Default: 600 MHz.
+        """
+        if vco > 1200e6 or vco < 600e6:
+            raise ValueError("Requested VCO out of range")
+
+        # The following changes resets the phase shift setting, but just
+        # resetting the internal (Python) phase setting doesn't work as one
+        # would expect; resetting the actual FPGA MMCM phase is needed to get
+        # consistent results.
+        if self.trace_clock_shift_enable and self.trace_clock_shift_locked:
+            self.trace_clock_shift_steps = 0
+
+        muldiv = int(np.ceil(vco/freq))
+        if freq * muldiv > 1200e6:
+            muldiv -= 1
+        self._trace_clock_vco = freq * muldiv
+
+        tracewhisperer_logger.info("Setting vco {}, muldiv: {}".format(vco, muldiv))
+        self.traceclk_mmcm.set_mul(muldiv)
+        self.traceclk_mmcm.set_sec_div(muldiv)
+        self.traceclk_mmcm.set_main_div(1)
+        self._trace_clock_muldiv = muldiv
 
 
 class capture(util.DisableNewAttr):
@@ -1730,12 +1866,13 @@ class UARTTrigger(TraceWhisperer):
 
     @enabled.setter 
     def enabled(self, enable):
-        # set useful defaults:
-        self.trace_mode = 'swo'
-        self.capture.mode = 'off'
-        self.clock.fe_clock_src = 'target_clock'
-        self.capture.record_syncs = True
-        self.capture.use_husky_arm = True
+        if enable:
+            # set useful defaults:
+            self.trace_mode = 'swo'
+            self.capture.mode = 'off'
+            self.clock.fe_clock_src = 'target_clock'
+            self.capture.record_syncs = True
+            self.capture.use_husky_arm = True
         # accessing base class setter is awkward! all we want to do here is super().enabled = enable, but this is the way to do that:
         super(UARTTrigger, self.__class__).enabled.fset(self, enable)
 
@@ -1791,7 +1928,7 @@ class UARTTrigger(TraceWhisperer):
         return self.clock.swo_clock_freq
 
     def uart_data(self, rawdata, prepend_matched_pattern=True, return_ascii=True):
-        """ Helper functionto parse the captured UART data.
+        """ Helper function to parse the captured UART data.
         Args:
             rawdata (list): raw capture data, list of lists, e.g. obtained from read_capture_data()
             prepend_matched_pattern (bool): 
