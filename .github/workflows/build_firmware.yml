@@ -37,10 +37,9 @@ jobs:
           cd tests && bash test_fw_build.sh
       - name: Build capture firmware
         run: |
-          cd -
-          cd ../hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src
+          cd hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src
           make -j
           cd -
-          cd ../hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src
+          cd hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src
           make -j
 
