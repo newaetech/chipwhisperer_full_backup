@@ -38,8 +38,10 @@ jobs:
       - name: Build capture firmware
         run: |
           cd hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src
+          git submodule update --init naeusb
           make -j
           cd -
           cd hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src
+          git submodule update --init naeusb
           make -j
 
