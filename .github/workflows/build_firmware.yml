@@ -36,7 +36,7 @@ jobs:
         run: >-
           cd tests && bash test_fw_build.sh
       - name: Build capture firmware
-        run: >-
+        run: |
           cd -
           cd ../hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src
           make -j
