@@ -811,7 +811,7 @@ class LASettings(util.DisableNewAttr):
         """The clock signal that the logic analyzer is using to generate its sampling clock.
 
         There are three different sources:
-         * "target": The HS1 clock from the target device.
+         * "target": The clock from the target device (from HS1 or AUX, as per scope.clock.clkgen_src)
          * "usb": The 96 MHz internal USB clock.
          * "pll": Husky's on-board PLL clock.
 

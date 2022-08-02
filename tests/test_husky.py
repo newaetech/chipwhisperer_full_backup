@@ -415,7 +415,7 @@ testUserioEdgeTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '7/23/2022, 14:33'
+    assert scope.fpga_buildtime == '8/2/2022, 17:48'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
