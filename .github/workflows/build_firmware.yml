@@ -8,15 +8,18 @@ on:
   push:
     paths:
       - 'hardware/victims/firmware/**'
+      - 'hardware/capture'
+      - '.github/workflows/build_firmware.yml'
 
   pull_request:
     paths:
       - 'hardware/victims/firmware/**'
+      - 'hardware/capture'
+      - '.github/workflows/build_firmware.yml'
 
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   fwbuild:
     # The type of runner that the job will run on
     name: Build all firmware to make sure everything works
@@ -32,4 +35,12 @@ jobs:
       - name: Build firmware
         run: >-
           cd tests && bash test_fw_build.sh
+      - name: Build capture firmware
+        run: >-
+          cd -
+          cd ../hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src
+          make -j
+          cd -
+          cd ../hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src
+          make -j
 
