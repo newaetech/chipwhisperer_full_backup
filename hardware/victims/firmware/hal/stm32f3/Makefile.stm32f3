@@ -17,6 +17,10 @@ SIZE = arm-none-eabi-size
 AR = arm-none-eabi-ar rcs
 NM = arm-none-eabi-nm
 
+ifeq ($(MCU_CLK), INT)
+  CFLAGS += -DUSE_INTERNAL_CLK
+endif
+
 #Output Format = Binary for this target
 FORMAT = binary
 
