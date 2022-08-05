@@ -136,6 +136,11 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         Will cause a reconnect event, all settings become default again.
         If no bitstream specified default is used based on current
         configuration settings.
+
+        Args:
+            bitstream (str or None): Path to new bitstream file. Optional, defaults to None
+            reconnect (True): Whether or not to reconnect to the scope
+            prog_speed (int): Speed at which to program the FPGA
         """
         self.scopetype.reload_fpga(bitstream, prog_speed=1E6)
         self.dis()
@@ -144,12 +149,30 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
     def _getNAEUSB(self) -> NAEUSB:
         return self.scopetype.ser
 
-    def enable_MPSSE(self, enable=True):
+
+    def enable_MPSSE(self, enable=True, husky_userio=None):
+        """Enable/disable MPSSE mode. Results in a :code:`default_setup()` and scope disconnection
+
+        Args:
+            enable (bool): Enable or disable. Optional, defaults to True
+            husky_userio (str or None): Enables communication using the Husky's user IO pins.
+                If "jtag", route jtag over those pins. If "swd", route swd. If None, do not route.
+                Optional, defaults to None
+        """
         sn = self.sn
+        self.default_setup()
         if enable:
             self.io.cwe.setAVRISPMode(1)
         else:
             self.io.cwe.setAVRISPMode(0)
+
+        if self._is_husky and husky_userio:
+            if husky_userio == "jtag":
+                self.userio.mode = "target_debug_jtag"
+            elif husky_userio == "swd":
+                self.userio.mode = "target_debug_swd"
+            else:
+                raise ValueError("Invalid husky userio mode: {}".format(husky_userio))
         super().enable_MPSSE(enable)
 
         if enable and (not self._is_husky):
@@ -385,7 +408,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         1. The internal test does not involve the ADC; it only verifies
         whether the FPGA sampling circuitry is functioning correctly, by
         generating a ramp pattern inside the FPGA itself.
-
+# op
         2. The ADC ramp test uses an ADC-generated ramp pattern which is
         then sampled by the FPGA.
 
