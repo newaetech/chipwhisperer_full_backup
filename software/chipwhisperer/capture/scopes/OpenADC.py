@@ -408,7 +408,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         1. The internal test does not involve the ADC; it only verifies
         whether the FPGA sampling circuitry is functioning correctly, by
         generating a ramp pattern inside the FPGA itself.
-# op
+
         2. The ADC ramp test uses an ADC-generated ramp pattern which is
         then sampled by the FPGA.
 
