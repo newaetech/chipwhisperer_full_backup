@@ -195,6 +195,33 @@ connection, halt, and load commands can be replaced with:
 
     arm-none-eabi-gdb /path/to/fw.elf -ex "target extended-remote localhost:3333" -ex "monitor reset halt" -ex "load"
 
+Included OpenOCD Scripts
+========================
+
+To make interacting with OpenOCD easier, some scripts are included in ChipWhisperer's `openocd` folder.
+This includes both normal openocd scripts/config files, as well as `run_openocd.sh`, a shell script
+that puts ChipWhisperer into MPSSE mode and can either use openocd to program a target, or
+set openocd up for debugging. Usage can be printed by:
+
+.. code:: bash
+
+    ./run_openocd.sh -h
+
+You can debug by specifying the ChipWhisperer, jtag/swd mode, and the openocd target config file:
+
+.. code:: bash
+
+    ./run_openocd.sh lite swd -- -f target/stm32f3x.cfg
+
+Or program the target board by using the :code:`-p` flag, followed by the path to the firmware file:
+
+.. code:: bash
+
+    ./run_openocd.sh -p /path/to/fw.elf lite swd -- -f target/stm32f3x.cfg
+
+This script will also enable JTAG/SWD over the ChipWhisperer Husky's USERIO pins, unless
+:code:`--no-user-io` is specified.
+
 .. _debug_sec_limitations:
 
 ***********
