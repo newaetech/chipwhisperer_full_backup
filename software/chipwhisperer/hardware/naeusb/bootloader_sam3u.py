@@ -43,7 +43,7 @@ class Samba(object):
     def con(self, port, usbmode=True):
         ser = serial.Serial(
             port=port,
-            baudrate=921600,  # 115200
+            baudrate=115200, #921600
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS
