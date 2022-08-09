@@ -108,6 +108,9 @@ class Samba(object):
         elif chipid == 0x286e0a60 or chipid == 0x285e0a60  or chipid == 0x284e0a60 :
             flash = EefcFlash(self, "ATSAM3X8", 0x80000, 2048, 256, 2, 32, 0x20001000, 0x20010000, 0x400e0a00, False)
             self.rstc_addr = 0x400E1A00
+        elif chipid == 0x288b07e0 or chipid == 0x289b07e0 or chipid == 0x28ab07e0:
+            flash = EefcFlash(self, "ATSAM4S2", 0x400000, 256, 512, 1, 16, 0x20001000, 0x20010000, 0x400e0a00, False)
+            self.rstc_addr = 0x400E1400
         else:
             raise AttributeError("FWUP: Unsupported ChipID = %x" % chipid)
 
