@@ -9,7 +9,6 @@
 #
 #=================================================
 
-from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from ...hardware.naeusb.naeusb import NAEUSB
 from typing import Callable, Union, Dict, Tuple, cast, List, Optional
 
@@ -101,6 +100,7 @@ class ChipWhispererCommonInterface:
         .. versionadded:: 5.6.1
             Improved programming interface
         """
+        from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
         prog = SAMFWLoader(self)
         prog.auto_program()
 

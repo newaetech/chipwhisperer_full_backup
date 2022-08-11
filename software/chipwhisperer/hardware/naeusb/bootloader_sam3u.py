@@ -37,17 +37,42 @@ import logging
 
 import serial # type: ignore
 import time
+from .naeusb import NAEUSB
+from .serial import USART
+from ...capture.api.cwcommon import ChipWhispererCommonInterface
+from ...logging import *
+        
 
 class Samba(object):
 
     def con(self, port, usbmode=True):
-        ser = serial.Serial(
-            port=port,
-            baudrate=115200, #921600
-            parity=serial.PARITY_NONE,
-            stopbits=serial.STOPBITS_ONE,
-            bytesize=serial.EIGHTBITS
-        )
+        self.scope = None
+        if isinstance(port, ChipWhispererCommonInterface):
+            port.default_setup()
+            port.clock.clkgen_freq = 12E6
+            time.sleep(0.5)
+            ser = USART(port._getNAEUSB(), timeout=1000)
+            self.scope = port
+            ser.init()
+            usbmode = False
+
+            port.io.pdic = 1
+            time.sleep(0.1)
+            port.io.pdic = None
+            time.sleep(0.1)
+
+            port.io.nrst = 0
+            time.sleep(0.1)
+            port.io.nrst = None
+            time.sleep(0.1)
+        else:
+            ser = serial.Serial(
+                port=port,
+                baudrate=115200, #921600
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                bytesize=serial.EIGHTBITS
+            )
 
         self.usbmode = usbmode
 
@@ -70,17 +95,17 @@ class Samba(object):
 
         cid = self.chip_id()
 
-        logging.info('FWUP: CID = %04x' % cid)
+        target_logger.info('FWUP: CID = %04x' % cid)
 
         #Originally this was used to limit to SAM3U
         #eproc = (cid >> 5) & 0x7
         #arch = (cid >> 20) & 0xff
         #if eproc == 3 and ((0x80 <= arch <= 0x8a) or (0x93 <= arch <= 0x9a)):
-        #    logging.info('FWUP: Detected SAM3')
+        #    target_logger.info('FWUP: Detected SAM3')
 
         self.setup_device_specific(cid)
 
-        logging.info('FWUP: Detected ' + self.flash.name)
+        target_logger.info('FWUP: Detected ' + self.flash.name)
         return True
 
 
@@ -141,17 +166,20 @@ class Samba(object):
 
     def read_word(self, addr):
         """ Read a word from SAM3U """
-
+        target_logger.debug("Read word from {:02X}".format(addr))
         cmd = "w%08X,4#" % addr
         self.ser.write(cmd.encode("ascii"))
         resp = self.ser.read(4)
 
         value = (resp[3] << 24 | resp[2] << 16 | resp[1] << 8 | resp[0] << 0)
+        target_logger.debug("Read {:04X} from {:02X}".format(value, addr))
+
         return value
 
     def write_word(self, addr, value):
         """ Write a word to SAM3U """
 
+        target_logger.debug("Writing {:04X} to {:02X}".format(value, addr))
         cmd = "W%08X,%08X#" % (addr, value)
         self.ser.write(cmd.encode("ascii"))
 
@@ -183,12 +211,13 @@ class Samba(object):
     def _write_buf(self, addr, buf, size):
         """ Write a buffer """
 
-        if self.usbmode == False:
-            raise AttributeError("Only USB Mode Supported")
+        # if self.usbmode == False:
+        #     raise AttributeError("Only USB Mode Supported")
 
         if len(buf) != size:
             raise AttributeError("Buffer length not as reported, expected {} got {}", size, len(buf))
 
+        target_logger.debug("Writing {} to {:02X}".format(buf, addr))
         self.ser.write(("S%08X,%08X#" % (addr, size)).encode("ascii"))
         # Flush to ensure transactions arrive separately to bootloader
         # (Otherwise error)
@@ -204,6 +233,8 @@ class Samba(object):
         if self.usbmode == False:
             raise AttributeError("Only USB Mode Supported")
 
+        target_logger.debug("Reading {} bytes from {:02X}".format(size, addr))
+
         buf = []
 
         # Note from BOSSA:
@@ -218,6 +249,7 @@ class Samba(object):
         cmd = "R%08X,%08X#" % (addr, size)
         self.ser.write(cmd.encode("ascii"))
         buf.extend(self.ser.read(size))
+        target_logger.debug("Read {}".format(buf))
         return buf
 
 
@@ -253,8 +285,8 @@ class Samba(object):
                 # Read full page
                 buf = bindata[i:(i + page_size)]
 
-            if (page_num % 10) == 0 and doprint:
-                logging.debug('Flashing %d/%d' % (page_num, totalpages))
+            # if (page_num % 10) == 0:
+            target_logger.info('Flashing %d/%d' % (page_num, totalpages))
 
             self.flash.loadBuffer(buf)
             self.flash.writePage(page_num)
@@ -266,7 +298,7 @@ class Samba(object):
             i += page_size
             bytesleft -= page_size
 
-        logging.info('FWUP: Program Successful')
+        target_logger.info('FWUP: Program Successful')
 
     def verify(self, bindata, doprint=False):
         """ Verify a buffer that was written into chip """
@@ -292,14 +324,14 @@ class Samba(object):
                 # Read full page
                 buf = bindata[i:(i + page_size)]
 
-            if (page_num % 10) == 0 and doprint:
+            if (page_num % 10) == 0:
                 print('Verifying %d/%d' % (page_num, totalpages))
 
             bufferB = bytearray(self.flash.readPage(page_num))
 
             if bytearray(buf) != bytearray(bufferB):
-                # logging.warning('FWUP: Verify FAILED at %d"=' % i)
-                logging.warning("Verify failed at {} (got {} expected {})".format(i, buf, bufferB))
+                # target_logger.warning('FWUP: Verify FAILED at %d"=' % i)
+                target_logger.warning("Verify failed at {} (got {} expected {})".format(i, buf, bufferB))
                 return False
                 # print "fail at %d"%i
                 # print "".join(["%02x"%ord(a) for a in buf])
@@ -311,7 +343,7 @@ class Samba(object):
             i = i + page_size
             bytesleft = bytesleft - page_size
 
-        logging.info('FWUP: Verify successful')
+        target_logger.info('FWUP: Verify successful')
 
         return True
 
@@ -583,6 +615,7 @@ class EefcFlash(object):
         else:
             cmd = self.EEFC_FCMD_WP
 
+        target_logger.info("Writing FCR0")
         if (self.planes == 2 and page >= (self.pages / 2)):
             self.writeFCR1(cmd, page - self.pages / 2)
         else:
@@ -652,7 +685,7 @@ class EefcFlash(object):
 
 if __name__ == "__main__":
     # Example usage
-    logging.basicConfig(level=logging.INFO)
+    target_logger.basicConfig(level=logging.INFO)
     sam = Samba()
     sam.con('com131')
     sam.erase()

@@ -142,6 +142,10 @@ class USART(object):
             self._usb.sendCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), data[datasent:(datasent + datatosend)])
             datasent += datatosend
 
+        # print("sent: " + str(data))
+
+        return datasent
+
         # if self.fw_version_str >= '0.20':
         #     i = 1000
         #     while self.in_waiting_tx() > 0:
@@ -162,6 +166,11 @@ class USART(object):
         while(inwait):
             self.read(inwait)
             inwait = self.inWaiting()
+        outwait = self.in_waiting_tx()
+
+        while (outwait):
+            time.sleep(0.01)
+            outwait = self.in_waiting_tx()
 
     def inWaiting(self):
         """
@@ -208,6 +217,7 @@ class USART(object):
             if (timeout % 10) == 0:
                 time.sleep(0.01)
 
+        # print("read: " + str(resp))
         return resp
 
 

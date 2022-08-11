@@ -51,6 +51,7 @@ SAM_FW_FEATURES = [
     "MPSSE", #13
     "TARGET_SPI", #14
     "MPSSE_ENABLED", #15
+    "HUSKY_PIN_CONTROL", #16
 ]
 
 class CWFirmwareError(Exception):
