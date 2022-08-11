@@ -893,7 +893,7 @@ class EefcFlash(object):
 
 if __name__ == "__main__":
     # Example usage
-    target_logger.basicConfig(level=logging.INFO)
+    target_logger.setLevel(level=logging.INFO)
     sam = Samba()
     sam.con('com131')
     sam.erase()
