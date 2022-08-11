@@ -14,7 +14,8 @@ EXTRAINCDIRS += $(HALPATH)
 PLATFORM_LIST = CW308_CC2538 CW301_AVR CW303 CW304 CW308_MEGARF CW308_SAM4L \
 	CW308_STM32F0 CW308_STM32F1 CW308_STM32F2 CW308_STM32F3 CW308_STM32F4 CW308_K24F \
     CW308_NRF52 CW308_AURIX CW308_SAML11 CW308_EFM32TG11B CWLITEARM CWLITEXMEGA CWNANO CW308_K82F \
-    CW308_PSOC62 CW308_IMXRT1062 CW308_FE310 CW308_EFR32MG21A CW308_EFM32GG11 CW308_STM32L5 CW308_NEORV32
+    CW308_PSOC62 CW308_IMXRT1062 CW308_FE310 CW308_EFR32MG21A CW308_EFM32GG11 CW308_STM32L5 CW308_NEORV32\
+    CW308_SAM4S
 
 define KNOWN_PLATFORMS
 
@@ -93,6 +94,8 @@ define KNOWN_PLATFORMS
 | CW308_STM32L4 | CW308T-STM32L4 (ST Micro STM32L443)   |
 +-------------------------------------------------------+
 | CW308_STM32L5 | CW308T-STM32L5HWC (ST Micro STM32L562)|
++-------------------------------------------------------+
+| CW308_SAM4S   | CW308T-SAM4S (Microchip SAM4S)        |
 +-------------------------------------------------------+
 +=======================================================+
 + Other 32-bit Architecture                             |
@@ -237,6 +240,9 @@ else ifeq ($(PLATFORM),CW308_MPC5676R)
 else ifeq ($(PLATFORM),CW308_NEORV32)
  HAL = neorv32
  PLTNAME = iCE40 Target with neorv softcore
+else ifeq ($(PLATFORM), CW308_SAM4S)
+  HAL = sam4s
+  PLTNAME = Microchip SAM4S
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
 endif

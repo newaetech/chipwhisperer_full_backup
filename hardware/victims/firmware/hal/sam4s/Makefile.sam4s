@@ -1,0 +1,37 @@
+VPATH += :$(HALPATH)/sam4s
+SRC += startup_sam4s.c sam4s_hal.c uart.c pio.c  system_sam4s.c sysclk.c pmc.c
+EXTRAINCDIRS += $(HALPATH)/sam4s $(HALPATH)/sam4s/inc
+
+MCU_FLAGS += -mcpu=cortex-m4
+
+CC = arm-none-eabi-gcc
+OBJCOPY = arm-none-eabi-objcopy
+OBJDUMP = arm-none-eabi-objdump
+SIZE = arm-none-eabi-size
+AR = arm-none-eabi-ar rcs
+NM = arm-none-eabi-nm
+
+#Output Format = Binary for this target
+FORMAT = binary
+
+CFLAGS += -fdata-sections -ffunction-sections -mthumb -mlong-calls -mfloat-abi=soft
+CFLAGS += -fdata-sections -ffunction-sections -mlong-calls -g3 -Wall -pipe 
+CFLAGS += -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Wchar-subscripts 
+CFLAGS += -Wcomment -Wformat=2 --param max-inline-insns-single=500
+CFLAGS += -DDEBUG -DARM_MATH_CM3=true -Dprintf=iprintf -Dscanf=iscanf -DPLATFORMCW1190=1
+CFLAGS += -funsigned-char -funsigned-bitfields -fshort-enums
+CPPFLAGS += $(CFLAGS)
+ASFLAGS += -mthumb -mfloat-abi=soft
+
+CFLAGS += -D__SAM4S2B__ -DUDD_NO_SLEEP_MGR
+CPPDEFS += $(CDEFS)
+
+LDFLAGS += -specs=nano.specs -specs=nosys.specs -T $(HALPATH)/sam4s/flash_sam4s.ld -Wl,--gc-sections -lm
+LDFLAGS += -Wl,-Map=$(TARGET).map,--cref
+LDFLAGS += $(EXTMEMOPTS)
+LDFLAGS += $(patsubst %,-L%,$(EXTRALIBDIRS))
+LDFLAGS += $(MATH_LIB)
+LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB)
+LDFLAGS += -mthumb -Wl,--start-group -L naeusb -lm -Wl,--end-group   
+LDFLAGS += -Wl,--gc-sections 
+LDFLAGS += -Wl,--entry=Reset_Handler -Wl,--cref -mthumb
