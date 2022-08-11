@@ -13,6 +13,7 @@
 #=================================================
 from chipwhisperer.logging import *
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
+from ...hardware.naeusb.serial import USART
 from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, \
      ChipWhispererSAD, ChipWhispererHuskyClock
 from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP, LEDSettings, HuskyErrors, \
@@ -186,12 +187,15 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                     pass
             try:
                 self.default_setup()
-            except:
+            except Exception as exc:
                 raise IOError("Could not reconnect to ChipWhisperer. \
                     Try connecting manually and running \
-                        scope.default_setup(); scope.io.cwe.setAVRISPMode(1)")
+                        scope.default_setup(); scope.io.cwe.setAVRISPMode(1)") from exc
             self.io.cwe.setAVRISPMode(1)
             self.dis()
+
+    def _get_usart(self) -> USART:
+        return self.scopetype.usart
     
     def finish_mpsse_setup(self, set_defaults=True):
         if set_defaults:

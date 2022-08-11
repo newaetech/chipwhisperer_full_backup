@@ -18,6 +18,7 @@ from ...capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEU
 from ...common.utils import util
 from ...common.utils.util import dict_to_str
 from collections import OrderedDict
+from ...hardware.naeusb.serial import USART
 from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 
 from ...hardware.naeusb.serial import USART
@@ -597,6 +598,9 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
 
     def getCurrentScope(self):
         return self
+
+    def _get_usart(self) -> USART:
+        return self.usart
 
     def _getNAEUSB(self):
         return self._cwusb

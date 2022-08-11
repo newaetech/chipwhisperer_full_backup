@@ -208,25 +208,10 @@ class XModem(object):
 class Samba(object):
 
     def con(self, port, usbmode=True):
-        self.scope = None
         if isinstance(port, ChipWhispererCommonInterface):
-            port.default_setup()
-            # port.clock.clkgen_freq = 12E6
-            time.sleep(0.5)
-            ser = USART(port._getNAEUSB(), timeout=10000)
-            self.scope = port
+            ser = port._get_usart()
             ser.init()
             usbmode = False
-
-            port.io.pdic = 1
-            time.sleep(0.5)
-            port.io.pdic = None
-            time.sleep(0.5)
-
-            port.io.nrst = 0
-            time.sleep(0.5)
-            port.io.nrst = None
-            time.sleep(0.5)
         else:
             ser = serial.Serial(
                 port=port,

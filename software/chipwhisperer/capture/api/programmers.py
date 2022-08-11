@@ -11,16 +11,18 @@
 import logging
 from chipwhisperer.common.utils import util
 from ..scopes import ScopeTypes
+from .cwcommon import ChipWhispererCommonInterface
 from chipwhisperer.hardware.naeusb.programmer_avr import supported_avr
 from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import supported_stm32f
 from chipwhisperer.hardware.naeusb.programmer_neorv32 import Neorv32Programmer
+import time
 
 from functools import wraps
 
 from chipwhisperer.logging import *
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 
 
@@ -129,6 +131,95 @@ def save_and_restore_pins(func):
                 self.scope.io.nrst = pin_setup['nrst']
         return val # only returns value when decorating a function with return value
     return func_wrapper
+
+from ...hardware.naeusb.bootloader_sam3u import Samba
+class SAM4SProgrammer(Programmer):
+    def __init__(self):
+        super().__init__()
+        self.prog = None
+        self.scope : ScopeTypes = None
+
+    def get_prog(self):
+        if self.prog is None:
+            if self.scope is None:
+                raise OSError("Assign prog.scope before attempting programming")
+            self.prog = Samba()
+        return self.prog
+
+    @save_and_restore_pins
+    def find(self):
+        target_logger.info("Toggling erase/nrst pins")
+
+        self.scope.io.pdic = 1
+        time.sleep(0.5)
+        self.scope.io.pdic = None
+        time.sleep(0.5)
+
+        self.scope.io.nrst = 0
+        time.sleep(0.5)
+        self.scope.io.nrst = None
+        time.sleep(0.5)
+
+        self._old_baud = self.scope._get_usart()._baud
+        prog = self.get_prog()
+        target_logger.info("Connecting to SAMBA")
+        prog.con(self.scope)
+        target_logger.info("Done!")
+
+    @save_and_restore_pins
+    def erase(self):
+        target_logger.info("Erasing firmware")
+        prog = self.get_prog()
+        prog.erase()
+        target_logger.info("Done!")
+
+    @save_and_restore_pins
+    def program(self, filename : str, memtype="flash", verify=True):
+        prog = self.get_prog()
+        if filename.endswith(".hex"):
+            target_logger.warning(".bin file required for SAM4S bootloader. Attempting to access .bin file at .hex location")
+            filename = filename.replace(".hex", ".bin")
+
+        target_logger.info("Opening firmware...")
+        fw_data = open(filename, "rb").read()
+
+        
+        target_logger.info("Programming...")
+        prog.write(fw_data)
+        target_logger.info("Verifying...")
+        if prog.verify(fw_data):
+            target_logger.info("Verify OK, resetting target...")
+            prog.flash.setBootFlash(1)
+
+            i = 0
+                
+            while not prog.flash.getBootFlash():
+                if prog.flash.name == "ATSAM4S2":
+                    break #IIRC there's a bug on the SAM4S that prevents this from being read TODO: check errata
+                time.sleep(0.05)
+                i += 1
+                if i > 10:
+                    prog.ser.close()
+                    # self.logfunc("Upgrade succeded")
+                    # self.logfunc("Unable to set boot flash, please power cycle")
+                    return True
+
+            # self.logfunc("Resetting...")
+            prog.reset()
+            # self.logfunc("Upgrade successful")
+            prog.ser.close()
+            return True
+        else:
+            target_logger.error("Verify FAILED!")
+            prog.ser.close()
+            raise OSError("Verify FAILED")
+
+    def close(self):
+        self.scope._get_usart().init(self._old_baud)
+        pass
+        
+    
+        
 
 class NEORV32Programmer(Programmer):
 
