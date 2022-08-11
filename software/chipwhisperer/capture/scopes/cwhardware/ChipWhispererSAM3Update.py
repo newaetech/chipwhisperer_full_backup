@@ -274,7 +274,10 @@ class SAMFWLoader:
             sam.flash.setBootFlash(1)
 
             i = 0
+                
             while not sam.flash.getBootFlash():
+                if sam.flash.name == "ATSAM4S2":
+                    break #IIRC there's a bug on the SAM4S that prevents this from being read TODO: check errata
                 time.sleep(0.05)
                 i += 1
                 if i > 10:

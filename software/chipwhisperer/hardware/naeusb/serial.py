@@ -236,6 +236,9 @@ class USART(object):
         # windex selects interface, set to 0
         return self._usb.readCtrl(self.CMD_USART0_CONFIG, cmd | (self._usart_num << 8), dlen)
 
+    def close(self):
+        pass # does nothing, for normal serial compatability
+
     @property
     def fw_version(self):
         if not self.fw_read:

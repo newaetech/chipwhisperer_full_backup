@@ -142,7 +142,7 @@ class XModem(object):
 
         for retries in range(0, self.MAX_RETRIES+1):
 
-            if ser.read()[0] == self.XEOT:
+            if ser.read(1)[0] == self.XEOT:
                 ser.write([self.XACK])
                 break
             else:
@@ -211,22 +211,22 @@ class Samba(object):
         self.scope = None
         if isinstance(port, ChipWhispererCommonInterface):
             port.default_setup()
-            port.clock.clkgen_freq = 12E6
+            # port.clock.clkgen_freq = 12E6
             time.sleep(0.5)
-            ser = USART(port._getNAEUSB(), timeout=1000)
+            ser = USART(port._getNAEUSB(), timeout=10000)
             self.scope = port
             ser.init()
             usbmode = False
 
             port.io.pdic = 1
-            time.sleep(0.1)
+            time.sleep(0.5)
             port.io.pdic = None
-            time.sleep(0.1)
+            time.sleep(0.5)
 
             port.io.nrst = 0
-            time.sleep(0.1)
+            time.sleep(0.5)
             port.io.nrst = None
-            time.sleep(0.1)
+            time.sleep(0.5)
         else:
             ser = serial.Serial(
                 port=port,
