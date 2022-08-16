@@ -188,20 +188,25 @@ class SAM4SProgrammer(Programmer):
         prog.write(fw_data)
         target_logger.info("Verifying...")
         if prog.verify(fw_data):
+            prog.reset()
             target_logger.info("Verify OK, resetting target...")
             prog.flash.setBootFlash(1)
 
             i = 0
                 
             while not prog.flash.getBootFlash():
+                prog.flash.setBootFlash(1)
                 if prog.flash.name == "ATSAM4S2":
                     break #IIRC there's a bug on the SAM4S that prevents this from being read TODO: check errata
                 time.sleep(0.05)
                 i += 1
                 if i > 10:
                     prog.ser.close()
-                    # self.logfunc("Upgrade succeded")
-                    # self.logfunc("Unable to set boot flash, please power cycle")
+                    target_logger.debug("Upgrade succeded")
+                    self.scope.io.target_pwr = 0
+                    time.sleep(0.5)
+                    # target_logger.warning("Unable to set boot flash, please power cycle")
+                    self.scope.io.target_pwr = 1
                     return True
 
             # self.logfunc("Resetting...")

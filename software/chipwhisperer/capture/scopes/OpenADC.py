@@ -143,7 +143,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             reconnect (True): Whether or not to reconnect to the scope
             prog_speed (int): Speed at which to program the FPGA
         """
-        self.scopetype.reload_fpga(bitstream, prog_speed=1E6)
+        self.scopetype.reload_fpga(bitstream, prog_speed=prog_speed)
         self.dis()
         self.con(self._saved_sn)
 

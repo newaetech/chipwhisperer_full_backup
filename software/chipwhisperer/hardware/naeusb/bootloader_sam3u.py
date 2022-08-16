@@ -37,7 +37,6 @@ import logging
 
 import serial # type: ignore
 import time
-from .naeusb import NAEUSB
 from .serial import USART
 from ...capture.api.cwcommon import ChipWhispererCommonInterface
 from ...logging import *
@@ -490,7 +489,7 @@ class Samba(object):
                 buf = bindata[i:(i + page_size)]
 
             if (page_num % 10) == 0:
-                print('Verifying %d/%d' % (page_num, totalpages))
+                target_logger.info('Verifying %d/%d' % (page_num, totalpages))
 
             bufferB = bytearray(self.flash.readPage(page_num))
             #print(len(bufferB))

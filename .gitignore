@@ -35,6 +35,7 @@ docs/_build
 docs/make.bat
 *.vcd
 *.fst
+**/.vscode/*
 
 # Explicit listing of the build artifacts so that they are not included in
 # commits

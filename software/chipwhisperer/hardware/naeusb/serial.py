@@ -131,7 +131,7 @@ class USART(object):
 
         while datasent < len(data):
             datatosend = len(data) - datasent
-            datatosend = min(datatosend, 58)
+            datatosend = min(datatosend, 128)
 
             # need to make sure we don't write too fast
             # and overrun the internal buffer...

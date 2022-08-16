@@ -596,6 +596,22 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.io.tio2 = "serial_tx"
         self.glitch.repeat = 0
 
+    def glitch_disable(self):
+        self.glitch.repeat = 0
+        self.glitch.ext_offset = 0
+
+    def vglitch_setup(self, glitcht=None, default_setup=True):
+        """Sets up sane defaults for voltage glitch
+
+        repeat = 1
+        ext_offset = 0
+        """
+        if default_setup:
+            self.default_setup()
+
+        self.glitch.repeat = 1
+        self.glitch.ext_offset = 0
+
     def getCurrentScope(self):
         return self
 

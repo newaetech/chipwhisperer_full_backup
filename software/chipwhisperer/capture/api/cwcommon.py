@@ -111,3 +111,12 @@ class ChipWhispererCommonInterface:
             Add common cw interface
         """
         self._getNAEUSB().reset()
+
+    def dis(self):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, trackback):
+        return self.dis()
