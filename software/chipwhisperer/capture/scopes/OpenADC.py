@@ -225,12 +225,14 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.default_setup()
 
         if self._is_husky:
-                self.glitch.enabled = True
+            self.glitch.enabled = True
+            self.glitch.clk_src = "pll"
+        else:
+            self.glitch.clk_src = "clkgen"
 
         self.io.glitch_lp = False
         self.io.glitch_hp = False
 
-        self.glitch.clk_src = "clkgen"
         self.glitch.output = "clock_xor"
         self.glitch.trigger_src = "ext_single"
 
@@ -251,7 +253,10 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
         if self._is_husky:
             self.glitch.enabled = True
-
+            self.glitch.clk_src = "pll"
+        else:
+            self.glitch.clk_src = "clkgen"
+        
         self.io.hs2 = "clkgen"
         if glitcht == "lp":
             self.io.glitch_lp = True
@@ -265,7 +270,6 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         else:
             raise ValueError("Invalid glitch transistor {} must be 'hp' or 'lp'".format(glitcht))
 
-        self.glitch.clk_src = "clkgen"
         self.glitch.output = "glitch_only"
         self.glitch.trigger_src = "ext_single"
 
