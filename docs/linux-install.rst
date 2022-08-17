@@ -49,7 +49,7 @@ should get you up and running:
     sudo usermod -aG plugdev $USER
     git submodule update --init jupyter
 
-    python setup.py develop
+    python -m pip install -e .
     python -m pip install -r jupyter/requirements.txt
 
 You can check that the install succeeded by navigating to :code:`chipwhisperer`
@@ -170,7 +170,7 @@ With that done, all that's left is to install ChipWhisperer:
 
 .. code:: bash
 
-    python setup.py develop
+    python -m pip install -e .
     python -m pip install -r jupyter/requirements.txt
 
 You can check that the install succeeded by navigating to :code:`chipwhisperer`
