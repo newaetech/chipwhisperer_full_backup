@@ -24,6 +24,11 @@ These scope objects also inherit common methods from :ref:`api-scope-common`
 .. autodata:: chipwhisperer.scope
     :annotation: chipwhisperer.scope()
 
+As of ChipWhisperer 5.6.2, ChipWhisperer can find all connected devices:
+
+.. autodata:: chipwhisperer.list_devices
+    :annotation: chipwhisperer.list_devices()
+
 .. _api-scope-openadc:
 
 OpenADC Scope

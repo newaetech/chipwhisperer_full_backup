@@ -36,7 +36,25 @@ from typing import Optional, Type, Union, List
 # replace bytearray with inherited class with better repr and str.
 bytearray = util.bytearray # type: ignore
 
-def list_nae_devices(idProduct : Optional[List[int]]=None, get_sn=True, get_hw_loc=True) -> List[dict]:
+def list_devices(idProduct : Optional[List[int]]=None, get_sn=True, get_hw_loc=True) -> List[dict]:
+    """Get a list of devices by NewAE (VID 0x2b3e) currently connected
+
+    Args:
+        idProduct (Optional[List[int]], optional): List of PIDs to restrict devices to. If None, do 
+            not restrict. Defaults to None.
+        get_sn (bool, optional): Whether or not to try to access serial number. Can fail if another 
+            process is connected or if we don't have permission to access the device. Defaults to True.
+        get_hw_loc (bool, optional): Whether or not to access the hardware location of the device.
+            Can fail due to the same reasons as above. Defaults to True.
+
+    Returns:
+        List[dict]: A list of dicts with fields {'name': str, 'sn', str, 'hw_loc': (int, int)}
+
+    If an unknown NewAE device is connected, 'name' will be 'unknown'. If 'sn' or 'hw_loc'
+    are not desired, or cannot be accessed, they will be None.
+
+    .. versionadded:: 5.6.2
+    """
     from .hardware.naeusb.naeusb import NAEUSB_Backend, NEWAE_PIDS
     be = NAEUSB_Backend()
     dev_list = be.get_possible_devices(idProduct)
