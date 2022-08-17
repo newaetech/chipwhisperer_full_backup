@@ -283,7 +283,7 @@ def packuint16(data):
 
 #List of all NewAE PID's
 NEWAE_VID = 0x2B3E
-NEWAE_PIDS : Dict[int, Dict[str, Union[str, List[int]]]]= {
+NEWAE_PIDS : Dict[int, Dict[str, Union[str, Optional[List[int]]]]]= {
     0xACE2: {'name': "ChipWhisperer-Lite",     'fwver': fw_cwlite.fwver},
     0xACE3: {'name': "ChipWhisperer-CW1200",   'fwver': fw_cw1200.fwver},
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fw_cw305.fwver},
