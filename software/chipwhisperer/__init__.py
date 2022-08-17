@@ -30,10 +30,39 @@ import logging
 from .logging import *
 import sys, subprocess
 
-from typing import Optional, Type, Union
+
+from typing import Optional, Type, Union, List
 
 # replace bytearray with inherited class with better repr and str.
 bytearray = util.bytearray # type: ignore
+
+def list_nae_devices(idProduct : Optional[List[int]]=None, get_sn=True, get_hw_loc=True) -> List[dict]:
+    from .hardware.naeusb.naeusb import NAEUSB_Backend, NEWAE_PIDS
+    be = NAEUSB_Backend()
+    dev_list = be.get_possible_devices(idProduct)
+    rtn = []
+    for dev in dev_list:
+        try:
+            name = NEWAE_PIDS[dev.getProductID()]['name']
+        except Exception as e:
+            other_logger.info("Could not get name of device with pid {}".format(dev.getProductID()))
+            name = "Unknown"
+        sn = None
+        hw_loc = None
+        if get_sn:
+            try:
+                sn = dev.getSerialNumber()
+            except Exception as e:
+                other_logger.warning("Could not access {} serial number (error {})".format(name, str(e)))
+        if get_hw_loc:
+            try:
+                hw_loc = (dev.getBusNumber(), dev.getDeviceAddress())
+            except Exception as e:
+                other_logger.warning("Could not access {} hw_loc (error {})".format(name, str(e)))
+        rtn.append({'name': name, 'sn': sn, 'hw_loc': hw_loc})
+
+    be.usb_ctx.close()
+    return rtn
 
 def check_for_updates() -> str:
     """Check if current ChipWhisperer version is the latest.

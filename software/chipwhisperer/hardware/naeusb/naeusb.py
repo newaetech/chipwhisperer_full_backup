@@ -289,6 +289,8 @@ NEWAE_PIDS : Dict[int, Dict[str, Union[str, List[int]]]]= {
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fw_cw305.fwver},
     0xACE0: {'name': "ChipWhisperer-Nano", 'fwver': fw_nano.fwver},
     0xACE5: {'name': "ChipWhisperer-Husky",   'fwver': fw_cwhusky.fwver},
+    0xC521: {'name': "CW521 Ballistic-Gel",   'fwver': None},
+    0xC610: {'name': "PhyWhisperer-USB",   'fwver': None},
 }
 
 class NAEUSB_Backend:
