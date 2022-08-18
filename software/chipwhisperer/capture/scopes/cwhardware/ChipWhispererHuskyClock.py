@@ -360,7 +360,8 @@ class CDCI6214:
 
         if old_mul != adc_mul:
             self._adc_mul = adc_mul
-            scope_logger.warning("ADC frequency must be between 1MHz and {}MHz - ADC mul has been adjusted to {}".format(self._max_freq, adc_mul))
+            if not adc_off:
+                scope_logger.warning("ADC frequency must be between 1MHz and {}MHz - ADC mul has been adjusted to {}".format(self._max_freq, adc_mul))
 
         if adc_mul * target_freq > self._warning_freq:
             scope_logger.warning("""
