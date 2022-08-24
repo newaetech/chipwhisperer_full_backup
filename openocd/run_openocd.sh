@@ -71,7 +71,7 @@ if [[ $MODE != "jtag" ]] && [[ $MODE != "swd" ]]; then
     print_help
 fi
 
-printf "Setting up MPSSE mode..."
+echo -n "Setting up MPSSE mode..."
 case ${SCRIPT_ARGS[0]} in
     husky)
         PID=0xace5
@@ -100,7 +100,6 @@ case ${SCRIPT_ARGS[0]} in
         sleep 1
         ;;
 esac
-
 echo " Done"
 
 
@@ -109,5 +108,11 @@ cmd="$OPENOCD_PATH -s $SCRIPT_DIR -f cw_openocd.cfg -c 'ftdi vid_pid 0x2b3e $PID
 echo running $cmd
 
 bash -c "$cmd"
+
+if [[ $progfile != "" ]]; then
+    echo -n "Disabling MPSSE mode..."
+    python -c "import chipwhisperer as cw; scope = cw.scope(); scope.enable_MPSSE(0)"
+    echo " Done"
+fi
 
 # echo "SCRIPT_ARGS=${SCRIPT_ARGS[@]} OCD_ARGS=$OCD_ARGS PROG=$progfile"
