@@ -101,41 +101,46 @@ def save_and_restore_pins(func):
         if self.scope is None:
             return func(self, *args, **kwargs)
 
-        pin_setup : Dict[str, str]= {
-            'pdic': self.scope.io.pdic,
-            'pdid': self.scope.io.pdid,
-            'nrst': self.scope.io.nrst,
-        }
-        target_logger.debug('Saving pdic, pdid, and nrst pin configuration')
+        pin_setup = [
+            'pdic',
+            'pdid',
+            'nrst',
+            'tio3'
+        ]
+        target_logger.debug('Saving {} pin configuration'.format(pin_setup))
         # setup the pins so that so communication to the target is possible
         # Important: during the execution of func, the pin values may change if
         # the function is related to reprogramming or resetting the device. Example:
         # the stm32f uses the toggling of the nrst and pdic pins for resetting
         # and boot mode setting respectively
-        target_logger.debug('Changing pdic, pdid, and nrst pin configuration')
-        if pin_setup['pdic'] != 'high_z':
-            self.scope.io.pdic = 'high_z'
-        if pin_setup['pdid'] != 'high_z':
-            self.scope.io.pdid = 'high_z'
-        if pin_setup['nrst'] != 'high_z':
-            self.scope.io.nrst = 'high_z'
+        pin_states = []
+        for pin in pin_setup:
+            state = getattr(self.scope.io, pin)
+            target_logger.debug('{} was {}'.format(pin, state))
+            pin_states.append(state)
+            if state != 'high_z':
+                setattr(self.scope.io, pin, 'high_z')
+
+        target_logger.debug('Changing {} pin configuration'.format(pin_setup))
+
         try:
             val = func(self, *args, **kwargs)
         finally:
-            target_logger.debug('Restoring pdic, pdid, and nrst pin configuration')
-            if self.scope.io.pdic != pin_setup['pdic']:
-                self.scope.io.pdic = pin_setup['pdic']
-            if self.scope.io.pdid != pin_setup['pdid']:
-                self.scope.io.pdid = pin_setup['pdid']
-            if self.scope.io.nrst != pin_setup['nrst']:
-                self.scope.io.nrst = pin_setup['nrst']
+            target_logger.debug('Restoring {} pin configuration'.format(pin_setup))
+            for i, pin in enumerate(pin_setup):
+                target_logger.debug('{} setting to {}'.format(pin, pin_states[i]))
+                if getattr(self.scope.io, pin) != pin_states[i]:
+                    setattr(self.scope.io, pin, pin_states[i])
         return val # only returns value when decorating a function with return value
     return func_wrapper
 
 from ...hardware.naeusb.bootloader_sam3u import Samba
 class SAM4SProgrammer(Programmer):
-    def __init__(self):
+    def __init__(self, erase_pin='pdic'):
         super().__init__()
+        if not erase_pin in ['pdic', 'tio3']:
+            raise ValueError("Invalid erase pin {} must be pdic or tio3".format(erase_pin))
+        self.erase_pin = erase_pin
         self.prog = None
         self.scope : ScopeTypes = None
 
@@ -148,11 +153,11 @@ class SAM4SProgrammer(Programmer):
 
     @save_and_restore_pins
     def find(self):
-        target_logger.info("Toggling erase/nrst pins")
+        target_logger.info("Toggling erase({})/nrst pins".format(self.erase_pin))
 
-        self.scope.io.pdic = 1
+        setattr(self.scope.io, self.erase_pin, 1)
         time.sleep(0.5)
-        self.scope.io.pdic = None
+        setattr(self.scope.io, self.erase_pin, None)
         time.sleep(0.5)
 
         self.scope.io.nrst = 0
@@ -188,30 +193,11 @@ class SAM4SProgrammer(Programmer):
         prog.write(fw_data)
         target_logger.info("Verifying...")
         if prog.verify(fw_data):
-            prog.reset()
+            # prog.reset()
             target_logger.info("Verify OK, resetting target...")
             prog.flash.setBootFlash(1)
-
-            i = 0
-                
-            while not prog.flash.getBootFlash():
-                prog.flash.setBootFlash(1)
-                if prog.flash.name == "ATSAM4S2":
-                    break #IIRC there's a bug on the SAM4S that prevents this from being read TODO: check errata
-                time.sleep(0.05)
-                i += 1
-                if i > 10:
-                    prog.ser.close()
-                    target_logger.debug("Upgrade succeded")
-                    self.scope.io.target_pwr = 0
-                    time.sleep(0.5)
-                    # target_logger.warning("Unable to set boot flash, please power cycle")
-                    self.scope.io.target_pwr = 1
-                    return True
-
-            # self.logfunc("Resetting...")
+            time.sleep(0.1)
             prog.reset()
-            # self.logfunc("Upgrade successful")
             prog.ser.close()
             return True
         else:
