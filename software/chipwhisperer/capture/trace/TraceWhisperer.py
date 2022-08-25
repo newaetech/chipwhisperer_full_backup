@@ -60,19 +60,21 @@ class TraceWhisperer(util.DisableNewAttr):
 
         (a) CW-Husky case: available as scope.trace, no additional steps needed.
 
-        (b) CW305 (DesignStart) case:
-        import chipwhisperer as cw
-        from chipwhisperer.capture.trace.TraceWhisperer import TraceWhisperer
-        scope = cw.scope()
-        target = cw.target(scope, targets.CW305, bsfile=<valid FPGA bitstream file>)
-        trace = TraceWhisperer(target, scope)
+        (b) CW305 (DesignStart) case::
+        
+            import chipwhisperer as cw
+            from chipwhisperer.capture.trace.TraceWhisperer import TraceWhisperer
+            scope = cw.scope()
+            target = cw.target(scope, targets.CW305, bsfile=<valid FPGA bitstream file>)
+            trace = TraceWhisperer(target, scope)
 
-        (c) CW610 (PhyWhisperer) case:
-        import chipwhisperer as cw
-        from chipwhisperer.capture.trace.TraceWhisperer import TraceWhisperer
-        scope = cw.scope()
-        target = cw.target(scope)
-        trace = TraceWhisperer(target)
+        (c) CW610 (PhyWhisperer) case::
+        
+            import chipwhisperer as cw
+            from chipwhisperer.capture.trace.TraceWhisperer import TraceWhisperer
+            scope = cw.scope()
+            target = cw.target(scope)
+            trace = TraceWhisperer(target)
 
     """
 
@@ -610,7 +612,7 @@ class TraceWhisperer(util.DisableNewAttr):
         """Arms trace sniffer for capture; also checks sync status.
         When used as part of Husky, it's possible for forego this and have the
         trace module be armed by the regular Husky arm, by setting
-        scope.trace.capture.use_husky_arm to True.
+        :code:`scope.trace.capture.use_husky_arm` to True.
         Args:
             check_uart (bool): check that the hardware UART state machine is not stuck,
             and if it is, reset it. Should not be required unless trace is left enabled
@@ -1183,7 +1185,7 @@ class clock(util.DisableNewAttr):
         """Choose which clock is used as the front-end clock.
         On the CW305 platform, "target_clock" is the only option.
         On Husky, "target_clock" refers to either the target-generated clock or
-        Husky-generated clock, as per scope.clock.clkgen_src.
+        Husky-generated clock, as per :code:`scope.clock.clkgen_src`.
         Args:
             src (str): "target_clock", "trace_clock" or "usb_clock"
         """
@@ -1427,14 +1429,14 @@ class capture(util.DisableNewAttr):
     @property
     def max_triggers(self):
         """ Maximum number of triggers to generate. Intended for trace-based 
-            triggering (i.e. scope.trigger.module = 'trace'), where the trace
+            triggering (i.e. :code:`scope.trigger.module = 'trace'`), where the trace
             event(s) which can generate a trigger can occur multiple times
             (e.g. the start of an AES round). Setting this to 'x' does not mean
             that 'x' triggers will be generated, it means that *up to* 'x'
             triggers can be generated. This parameter is needed so that the
             trace module knows when it is 'done'; it's also useful to
             coordinate with e.g.  segmented capture parameters
-            (scope.adc.segments).
+            (:code:`scope.adc.segments`).
         Args:
             number (int): number from 1 to 2**16-1.
         """
@@ -1815,7 +1817,7 @@ class ARM_debug_registers(util.DisableNewAttr):
 
 class UARTTrigger(TraceWhisperer):
     ''' Husky UART trigger module settings.
-    Basic usage for triggering on 'r':
+    Basic usage for triggering on 'r'::
 
         #assuming setup scope:
         scope.trigger.triggers = 'tio1'
