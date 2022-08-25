@@ -748,7 +748,7 @@ class EefcFlash(object):
             cb = 3
         else:
             cb = 1
-        self.readFRR0()
+        return (self.readFRR0() & (1 << cb))
 
     def setBootFlash(self, enable):
         self.waitFSR()

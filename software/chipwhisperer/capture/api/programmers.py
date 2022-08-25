@@ -196,7 +196,8 @@ class SAM4SProgrammer(Programmer):
             # prog.reset()
             target_logger.info("Verify OK, resetting target...")
             prog.flash.setBootFlash(1)
-            time.sleep(0.1)
+            if not prog.flash.getBootFlash():
+                target_logger.warning("Boot flash not set, target may require power cycle")
             prog.reset()
             prog.ser.close()
             return True
