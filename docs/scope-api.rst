@@ -129,10 +129,16 @@ Basic trigger control module
     .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.TriggerSettings
         :members:
 
-scope.trigger (Pro/Husky Only)
+scope.trigger (Pro Only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.ProTrigger
+        :members:
+
+scope.trigger (Husky Only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.HuskyTrigger
         :members:
 
 scope.glitch

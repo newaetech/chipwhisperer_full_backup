@@ -236,6 +236,9 @@ Windows Specific Limitations
 On Windows, only a single process can connect to the ChipWhisperer at one time. This means you cannot connect to the
 ChipWhisperer via the Python interface and via OpenOCD at the same time.
 
+This appears to be a limitation of LibUSB on Windows and, as such, may be fixed in the future. `There is a LibUSB
+issue tracking this <https://github.com/libusb/libusb/issues/1177>`_.
+
 General Limitations
 ===================
 
@@ -247,9 +250,11 @@ Pin Based Limitations
 
 MPSSE mode takes control of some ChipWhisperer pins, meaning the following features will not be available:
 
-  * Non MPSSE target programming (STM32, XMEGA, AVR)
-  * ChipWhisperer-Husky stream mode
-  * Control of PDIC, PDID, and the SPI pins
+  * Non MPSSE target programming (STM32, XMEGA, AVR, SAMBA)
+  * ChipWhisperer-Husky stream mode (will be fixed with an FPGA update)
+  * Control of PDID, and the SPI pins
+  * Control of nRST (will be fixed on Husky with an FPGA update)
+  * Control of PDIC on Husky (will be fixed on Husky with an FPGA update)
 
 You can give normal functionality back to these pins by running the following::
 
@@ -258,6 +263,8 @@ You can give normal functionality back to these pins by running the following::
 MPSSE can be reenabled by running the following command::
 
     scope.io.cwe.setAVRISPMode(1)
+
+This nRST limitation means that nRST always behaves as a push-pull pin in MPSSE.
 
 Other Limitations
 ^^^^^^^^^^^^^^^^^^^^^
