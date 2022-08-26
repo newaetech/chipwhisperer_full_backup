@@ -421,7 +421,7 @@ def target(scope : Optional[scopes.ScopeTypes],
 
 def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plaintext : bytearray,
     key : Optional[bytearray]=None, ack : bool=True, poll_done : bool=False,
-    as_int : bool=False) -> Optional[Trace]:
+    as_int : bool=False, always_send_key=False) -> Optional[Trace]:
 
     """Capture a trace, sending plaintext and key
 
@@ -448,6 +448,8 @@ def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plain
             only.
         as_int (bool, optional): If False, return trace as a float. Otherwise,
             return as an int.
+        always_send_key (bool, optional): If True, always send key. Otherwise,
+            only send if the key is different from the last one sent.
 
     Returns:
         :class:`Trace <chipwhisperer.common.traces.Trace>` or None if capture
@@ -480,7 +482,7 @@ def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plain
     import signal
 
     if key:
-        target.set_key(key, ack=ack)
+        target.set_key(key, ack=ack, always_send=always_send_key)
 
     scope.arm()
 

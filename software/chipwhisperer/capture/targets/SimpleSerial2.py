@@ -641,7 +641,7 @@ class SimpleSerial2(TargetTemplate):
             raise AttributeError("Can't access baud rate")
 
 
-    def set_key(self, key, ack=True, timeout=250):
+    def set_key(self, key, ack=True, timeout=250, always_send=False):
         """Checks if key is different than the last one sent. If so, send it.
 
         Uses simpleserial_write('k')
@@ -656,7 +656,7 @@ class SimpleSerial2(TargetTemplate):
         Raises:
             Warning: Device did not ack or error during read.
         """
-        if self.last_key != key:
+        if (self.last_key != key) or always_send:
             self.reset_comms()
             self.last_key = key
             self.simpleserial_write('k', key)

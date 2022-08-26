@@ -502,7 +502,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         else:
             raise ValueError("Unknown command {}".format(cmd))
 
-    def set_key(self, key, ack=False, timeout=250):
+    def set_key(self, key, ack=False, timeout=250, always_send=False):
         """Checks if key is different from the last one sent. If so, send it.
 
         Args:
@@ -513,7 +513,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         .. versionadded:: 5.1
             Added set_key to CW305
         """
-        if self.last_key != key:
+        if (self.last_key != key) or always_send:
             self.last_key = key
             self.simpleserial_write('k', key)
 
