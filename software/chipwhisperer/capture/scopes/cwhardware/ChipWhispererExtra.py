@@ -1033,7 +1033,7 @@ class HuskyTrigger(TriggerSettings):
 
     @property
     def edges(self):
-        """For triggering on edge counts, when :code`scope.trigger.module = 'edge_counter'`.
+        """For triggering on edge counts, when :code:`scope.trigger.module = 'edge_counter'`.
 
         Sets the number of rising+falling edges on :code:`scope.trigger.triggers` that
         need to be seen for a trigger to be issued.
