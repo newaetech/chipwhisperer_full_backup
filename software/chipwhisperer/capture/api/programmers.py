@@ -17,6 +17,7 @@ from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
 from chipwhisperer.hardware.naeusb.programmer_stm32fserial import supported_stm32f
 from chipwhisperer.hardware.naeusb.programmer_neorv32 import Neorv32Programmer
 import time
+from ..utils.IntelHex import IntelHex
 
 from functools import wraps
 
@@ -181,13 +182,13 @@ class SAM4SProgrammer(Programmer):
     @save_and_restore_pins
     def program(self, filename : str, memtype="flash", verify=True):
         prog = self.get_prog()
-        if filename.endswith(".hex"):
-            target_logger.warning(".bin file required for SAM4S bootloader. Attempting to access .bin file at .hex location")
-            filename = filename.replace(".hex", ".bin")
-
         target_logger.info("Opening firmware...")
-        fw_data = open(filename, "rb").read()
 
+        if filename.endswith(".hex"):
+            f = IntelHex(filename)
+            fw_data = f.tobinarray(start=f.minaddr())
+        else:
+            fw_data = open(filename, "rb").read()
         
         target_logger.info("Programming...")
         prog.write(fw_data)
@@ -230,9 +231,6 @@ class NEORV32Programmer(Programmer):
 
     @save_and_restore_pins
     def program(self, filename: str, memtype="flash", verify=True):
-        if filename.endswith(".hex"):
-            scope_logger.error(".bin file required for NEORV32Programmer. Attempting to access .bin file at .hex location")
-            filename = filename.replace(".hex", ".bin")
         self.neorv.program(filename)
         pass
 
