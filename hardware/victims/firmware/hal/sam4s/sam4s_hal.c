@@ -21,7 +21,15 @@ void platform_init(void)
     system_init_flash(7.37E6);
 
     sysclk_enable_peripheral_clock(ID_PIOA);
-    gpio_configure_pin(PIO_PA16_IDX, PIO_OUTPUT_1 | PIO_DEFAULT);
+    gpio_configure_pin(PIO_PA15_IDX, PIO_OUTPUT_1 | PIO_DEFAULT);
+    // while (1) {
+    //     gpio_configure_pin(PIO_PA16_IDX, PIO_OUTPUT_0 | PIO_DEFAULT);
+    //     for (volatile uint32_t i = 0; i < 100000; i++) {
+    //     }
+    //     gpio_configure_pin(PIO_PA16_IDX, PIO_OUTPUT_1 | PIO_DEFAULT);
+    //     for (volatile uint32_t i = 0; i < 100000; i++) {
+    //     }
+    // }
     // gpio_configure_pin(PIO_PA10_IDX, PIO_PERIPH_A | PIO_DEFAULT);
 }
 
@@ -30,7 +38,7 @@ void init_uart(void)
     // todo: just set these registers manually, doing so is simple and avoids asf rounding errors
     sam_uart_opt_t uopts;
     #if SS_VER == SS_VER_2_1
-        uopts.ul_baudrate = 115200;
+        uopts.ul_baudrate = 230400;
     #else
         uopts.ul_baudrate = 38400;
     #endif

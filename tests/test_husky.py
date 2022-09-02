@@ -24,7 +24,7 @@ Args:
         jumper cables from USERIO D0/1/2 to to target's TMS/TCK/TDO. Disabled
         by default.
 
-Note: in addition to what's controlled by the --fultest option, some individual
+Note: in addition to what's controlled by the --fulltest option, some individual
 tests are skipped when their description string ("desc") contains SLOW.
 
 """
@@ -46,6 +46,8 @@ print('* If this FW is recompiled, the trace.set_isync_matches() call will have 
 print('* modified with updated instruction addresses.                                       *')
 print('**************************************************************************************\n\n')
 
+test_platform = "stm32f3"
+
 if "HUSKY_HW_LOC" in os.environ:
     locboth = os.environ["HUSKY_HW_LOC"].split(',')
     loca = int(locboth[0].replace('(', ''))
@@ -55,6 +57,10 @@ if "HUSKY_HW_LOC" in os.environ:
 else:
     hw_loc = None
 
+if "HUSKY_TARGET_PLATFORM" in os.environ:
+    test_platform = os.environ["HUSKY_TARGET_PLATFORM"]
+
+print("Husky target platform {}".format(test_platform))
 scope = cw.scope(name='Husky', hw_location=hw_loc)
 target = cw.target(scope)
 scope.errors.clear()
@@ -269,19 +275,34 @@ testTargetData = [
     (2000000,   0,          'internal', 10e6,       False,      1,      12, True ,  65536,      True,   1,      0,      'slowreads2_SLOW'),
 ]
 
-testSegmentData = [
-    # offset    presamples  samples clock       adcmul  seg_count   segs    segcycs desc
-    (0,         0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset'),
-    (0,         10,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset_presamp'),
-    (10,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset10_SLOW'),
-    (50,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_SLOW'),
-    (50,        20,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_presamp'),
-    (0,         0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset'),
-    (0,         30,         90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset_presamp_SLOW'),
-    (10,        0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset10_SLOW'),
-    (50,        0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50_SLOW'),
-    (50,        40,         90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50_presamp'),
-]
+if test_platform == "sam4s":
+    testSegmentData = [
+        # offset    presamples  samples clock       adcmul  seg_count   segs    segcycs desc
+        (0,         0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset'),
+        (0,         10,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset_presamp'),
+        (10,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset10_SLOW'),
+        (50,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_SLOW'),
+        (50,        20,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_presamp'),
+        (0,         0,          90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_no_offset'),
+        (0,         30,         90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_no_offset_presamp_SLOW'),
+        (10,        0,          90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_offset10_SLOW'),
+        (50,        0,          90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_offset50_SLOW'),
+        (50,        40,         90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_offset50_presamp'),
+    ]
+else:
+    testSegmentData = [
+        # offset    presamples  samples clock       adcmul  seg_count   segs    segcycs desc
+        (0,         0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset'),
+        (0,         10,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset_presamp'),
+        (10,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset10_SLOW'),
+        (50,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_SLOW'),
+        (50,        20,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_presamp'),
+        (0,         0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset'),
+        (0,         30,         90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset_presamp_SLOW'),
+        (10,        0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset10_SLOW'),
+        (50,        0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50_SLOW'),
+        (50,        40,         90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50_presamp'),
+    ]
 
 
 testGlitchOffsetData = [
@@ -428,8 +449,8 @@ def test_fpga_version():
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
-    assert scope.fw_version['minor'] == 3
-    assert scope.sam_build_date == '21:12:14 May 22 2022'
+    assert scope.fw_version['minor'] in [3, 4]
+    #assert scope.sam_build_date == '21:12:14 May 22 2022'
 
 
 @pytest.mark.parametrize("address, nbytes, reps, desc", testRWData)
@@ -968,6 +989,7 @@ def test_segments (fulltest, offset, presamples, samples, clock, adcmul, seg_cou
     # If the firmware changes, you'll need to run this capture in a notebook with segmenting disabled and manually
     # measure the distance between each AES iteration (which should be fairly easy to do visually, and which shouldn't
     # change much from what's here), then update the segcycs input that's provided here.
+    funcparams = str(locals())
     if not fulltest and 'SLOW' in desc:
         pytest.skip("use --fulltest to run")
         return None
@@ -1054,7 +1076,7 @@ def test_segments (fulltest, offset, presamples, samples, clock, adcmul, seg_cou
             errors += 1
             bad_ratio = ratio
 
-    assert errors == 0, "Ratios = %s; errors: %s" % (ratios, scope.adc.errors)
+    assert errors == 0, "Ratios = %s; errors: %s, params = %s" % (ratios, scope.adc.errors, funcparams)
     scope.adc.clip_errors_disabled = True
 
 

@@ -144,6 +144,8 @@ CFLAGS += -Wstrict-prototypes
 CFLAGS += -Wa,-adhlns=$(addprefix $(OBJDIR)/,$(notdir $(<:%.c=%.lst)))
 CFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 CFLAGS += $(CSTANDARD)
+CFLAGS += -Wno-discarded-qualifiers -Wno-unused-function -Wno-unused-variable -Wno-strict-prototypes -Wno-missing-prototypes
+CFLAGS += -Wno-pointer-sign -Wno-unused-value -Wno-implicit-function-declaration
 
 
 #---------------- Compiler Options C++ ----------------
@@ -192,6 +194,17 @@ ASFLAGS += $(ADEFS) -Wa,-gstabs,-adhlns=$(addprefix $(OBJDIR)/,$(notdir $(<:%.S=
 ASFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 
 
+VERBOSE ?= false
+
+ifeq ($(VERBOSE), false)
+	COMPMSG = "    $< ..."
+	LINKMSG = "    $@ ..."
+	DONEMSG = "Done!"
+else
+	COMPMSG = "    $(CC) -c $(ALL_CFLAGS) $< -o $@ ..."
+	LINKMSG = "    $@ w/ opts $(ALL_CFLAGS) $(LDFLAGS) ..."
+	DONEMSG = "Done!\n"
+endif
 
 
 #---------------- Library Options ----------------
@@ -320,8 +333,9 @@ ALL_ASFLAGS = $(MCU_FLAGS) -I. -x assembler-with-cpp $(ASFLAGS)
 
 # Default target.
 all: 
-	$(MAKE) clean_objs .dep 
-	$(MAKE) begin gccversion build sizeafter fastnote end
+	@$(MAKE) --no-print-directory -O clean_objs .dep 
+	@$(MAKE) --no-print-directory -O begin gccversion build 
+	@$(MAKE) --no-print-directory -O sizeafter fastnote end
 
 allquick: .dep begin gccversion build sizeafter end
 
@@ -466,15 +480,19 @@ endif
 .PRECIOUS : $(OBJ)
 %.elf: $(OBJ)
 	@$(ECHO_BLANK)
-	@echo $(MSG_LINKING) $@
-	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
+	@echo LINKING:
+	@echo -en $(LINKMSG)
+	@$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
+	@echo -e $(DONEMSG)
 
 
 # Compile: create object files from C source files.
 $(OBJDIR)/%.o : %.c
 	@$(ECHO_BLANK)
-	@echo $(MSG_COMPILING) $<
-	$(CC) -c $(ALL_CFLAGS) $< -o $@
+	@echo Compiling:
+	@echo -en $(COMPMSG)
+	@$(CC) -c $(ALL_CFLAGS) $< -o $@
+	@echo -e $(DONEMSG)
 
 
 # Compile: create object files from C++ source files.
@@ -507,18 +525,18 @@ $(OBJDIR)/%.o : %.S
 
 # Clean all object files specific to this platform
 clean_objs :
-	$(REMOVE) $(TARGET-PLAT).hex
-	$(REMOVE) $(TARGET-PLAT).eep
-	$(REMOVE) $(TARGET-PLAT).cof
-	$(REMOVE) $(TARGET-PLAT).elf
-	$(REMOVE) $(TARGET-PLAT).map
-	$(REMOVE) $(TARGET-PLAT).sym
-	$(REMOVE) $(TARGET-PLAT).lss
-	$(REMOVE) $(OBJDIR)/*.o
-	$(REMOVE) $(OBJDIR)/*.lst
-	$(REMOVE) $(SRC:.c=.s)
-	$(REMOVE) $(SRC:.c=.d)
-	$(REMOVE) $(SRC:.c=.i)
+	@$(REMOVE) $(TARGET-PLAT).hex
+	@$(REMOVE) $(TARGET-PLAT).eep
+	@$(REMOVE) $(TARGET-PLAT).cof
+	@$(REMOVE) $(TARGET-PLAT).elf
+	@$(REMOVE) $(TARGET-PLAT).map
+	@$(REMOVE) $(TARGET-PLAT).sym
+	@$(REMOVE) $(TARGET-PLAT).lss
+	@$(REMOVE) $(OBJDIR)/*.o
+	@$(REMOVE) $(OBJDIR)/*.lst
+	@$(REMOVE) $(SRC:.c=.s)
+	@$(REMOVE) $(SRC:.c=.d)
+	@$(REMOVE) $(SRC:.c=.i)
 
 # Target: clean project.
 clean: begin clean_print clean_all_objs clean_list end
@@ -529,20 +547,20 @@ clean_print :
 
 # Clean all object files related to any of the platforms
 clean_all_objs :
-	$(REMOVE) $(addsuffix .hex,$(TARGET-ALL))
-	$(REMOVE) $(addsuffix .eep,$(TARGET-ALL))
-	$(REMOVE) $(addsuffix .bin,$(TARGET-ALL))
-	$(REMOVE) $(addsuffix .cof,$(TARGET-ALL))
-	$(REMOVE) $(addsuffix .elf,$(TARGET-ALL))
-	$(REMOVE) $(addsuffix .map,$(TARGET-ALL))
-	$(REMOVE) $(addsuffix .sym,$(TARGET-ALL))
-	$(REMOVE) $(addsuffix .lss,$(TARGET-ALL))
-	$(REMOVE) $(OBJDIR)/*.o
-	$(REMOVE) $(OBJDIR)/*.lst
-	$(REMOVEDIR) $(OBJDIR)
-	$(REMOVE) $(SRC:.c=.s)
-	$(REMOVE) $(SRC:.c=.d)
-	$(REMOVE) $(SRC:.c=.i)
+	@$(REMOVE) $(addsuffix .hex,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .eep,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .bin,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .cof,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .elf,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .map,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .sym,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .lss,$(TARGET-ALL))
+	@$(REMOVE) $(OBJDIR)/*.o
+	@$(REMOVE) $(OBJDIR)/*.lst
+	@$(REMOVEDIR) $(OBJDIR)
+	@$(REMOVE) $(SRC:.c=.s)
+	@$(REMOVE) $(SRC:.c=.d)
+	@$(REMOVE) $(SRC:.c=.i)
 
 clean_list :
 	$(REMOVEDIR) .dep
