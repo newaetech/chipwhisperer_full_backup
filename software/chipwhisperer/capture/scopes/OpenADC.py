@@ -385,6 +385,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                 return "cwhusky"
             else:
                 return "cwrev2"
+        scope_logger.error("Unknown hwInfoVer: {}".format(hwInfoVer))
         return ""
 
     def get_name(self):
