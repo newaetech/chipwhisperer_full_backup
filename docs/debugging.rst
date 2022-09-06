@@ -195,6 +195,33 @@ connection, halt, and load commands can be replaced with:
 
     arm-none-eabi-gdb /path/to/fw.elf -ex "target extended-remote localhost:3333" -ex "monitor reset halt" -ex "load"
 
+Included OpenOCD Scripts
+========================
+
+To make interacting with OpenOCD easier, some scripts are included in ChipWhisperer's `openocd` folder.
+This includes both normal openocd scripts/config files, as well as `run_openocd.sh`, a shell script
+that puts ChipWhisperer into MPSSE mode and can either use openocd to program a target, or
+set openocd up for debugging. Usage can be printed by:
+
+.. code:: bash
+
+    ./run_openocd.sh -h
+
+You can debug by specifying the ChipWhisperer, jtag/swd mode, and the openocd target config file:
+
+.. code:: bash
+
+    ./run_openocd.sh lite swd -- -f target/stm32f3x.cfg
+
+Or program the target board by using the :code:`-p` flag, followed by the path to the firmware file:
+
+.. code:: bash
+
+    ./run_openocd.sh -p /path/to/fw.elf lite swd -- -f target/stm32f3x.cfg
+
+This script will also enable JTAG/SWD over the ChipWhisperer Husky's USERIO pins, unless
+:code:`--no-user-io` is specified.
+
 .. _debug_sec_limitations:
 
 ***********
@@ -209,6 +236,9 @@ Windows Specific Limitations
 On Windows, only a single process can connect to the ChipWhisperer at one time. This means you cannot connect to the
 ChipWhisperer via the Python interface and via OpenOCD at the same time.
 
+This appears to be a limitation of LibUSB on Windows and, as such, may be fixed in the future. `There is a LibUSB
+issue tracking this <https://github.com/libusb/libusb/issues/1177>`_.
+
 General Limitations
 ===================
 
@@ -220,9 +250,11 @@ Pin Based Limitations
 
 MPSSE mode takes control of some ChipWhisperer pins, meaning the following features will not be available:
 
-  * Non MPSSE target programming (STM32, XMEGA, AVR)
-  * ChipWhisperer-Husky stream mode
-  * Control of PDIC, PDID, and the SPI pins
+  * Non MPSSE target programming (STM32, XMEGA, AVR, SAMBA)
+  * ChipWhisperer-Husky stream mode (will be fixed with an FPGA update)
+  * Control of PDID, and the SPI pins
+  * Control of nRST (will be fixed on Husky with an FPGA update)
+  * Control of PDIC on Husky (will be fixed on Husky with an FPGA update)
 
 You can give normal functionality back to these pins by running the following::
 
@@ -231,6 +263,8 @@ You can give normal functionality back to these pins by running the following::
 MPSSE can be reenabled by running the following command::
 
     scope.io.cwe.setAVRISPMode(1)
+
+This nRST limitation means that nRST always behaves as a push-pull pin in MPSSE.
 
 Other Limitations
 ^^^^^^^^^^^^^^^^^^^^^

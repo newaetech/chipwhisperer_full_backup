@@ -28,6 +28,10 @@ NM = arm-none-eabi-nm
 #Output Format = Binary for this target
 FORMAT = binary
 
+ifeq ($(MCU_CLK), INT)
+  CFLAGS += -DUSE_INTERNAL_CLK
+endif
+
 CFLAGS += -mthumb -fmessage-length=0 -ffunction-sections 
 CPPFLAGS += -mthumb -fmessage-length=0 -ffunction-sections 
 ASFLAGS += -mthumb -fmessage-length=0 -ffunction-sections

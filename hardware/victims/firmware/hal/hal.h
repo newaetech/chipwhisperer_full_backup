@@ -153,6 +153,8 @@ void platform_init(void);
     #include "mpc5676r/MPC5676R_hal.h"
 #elif HAL_TYPE == HAL_neorv32
     #include "neorv32/neorv32_hal.h"
+#elif HAL_TYPE == HAL_sam4s
+    #include "sam4s/sam4s_hal.h"
 #else
     #error "Unsupported HAL Type"
 #endif

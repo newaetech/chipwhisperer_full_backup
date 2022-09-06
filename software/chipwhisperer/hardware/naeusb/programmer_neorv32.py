@@ -31,6 +31,7 @@ from chipwhisperer.hardware.naeusb.programmer_targetfpga import LatticeICE40
 from functools import reduce, wraps
 from chipwhisperer.logging import *
 import numpy as np
+from ...capture.utils.IntelHex import IntelHex
 
 import warnings
 def gen_app_binary(rom):
@@ -197,9 +198,13 @@ class Neorv32Programmer:
         """Programs memory type, dealing with opening filename as either .hex or .bin file"""
         self.lastFlashedFile = romfilename
 
-        f = open(romfilename, "rb")
-        romdata = f.read()
-        f.close()
+        if romfilename.endswith(".hex"):
+            f = IntelHex(romfilename)
+            romdata = f.tobinarray(start=f.minaddr())
+        else:
+            f = open(romfilename, "rb")
+            romdata = f.read()
+            f.close()
 
         if check_rom_size:
             if len(romdata) > 64000:

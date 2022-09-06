@@ -38,16 +38,16 @@ char usb_serial_number[33] = "000000000000DEADBEEF";
 void fpga_pins(bool enabled);
 static void configure_console(void);
 
-static inline void genclk_enable_config(unsigned int id, enum genclk_source src, unsigned int divider)
-{
-    struct genclk_config gcfg;
+// static inline void genclk_enable_config(unsigned int id, enum genclk_source src, unsigned int divider)
+// {
+//     struct genclk_config gcfg;
 
-    genclk_config_defaults(&gcfg, id);
-    genclk_enable_source(src);
-    genclk_config_set_source(&gcfg, src);
-    genclk_config_set_divider(&gcfg, divider);
-    genclk_enable(&gcfg, id);
-}
+//     genclk_config_defaults(&gcfg, id);
+//     genclk_enable_source(src);
+//     genclk_config_set_source(&gcfg, src);
+//     genclk_config_set_divider(&gcfg, divider);
+//     genclk_enable(&gcfg, id);
+// }
 
 void fpga_pins(bool enabled)
 {

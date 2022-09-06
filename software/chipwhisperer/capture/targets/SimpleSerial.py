@@ -510,7 +510,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         self._simpleserial_last_read = response
         return {'valid': valid, 'payload': payload, 'full_response': response, 'rv': rv}
 
-    def set_key(self, key, ack=True, timeout=250):
+    def set_key(self, key, ack=True, timeout=250, always_send=False):
         """Checks if key is different than the last one sent. If so, send it.
 
         Uses simpleserial_write('k')
@@ -528,7 +528,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         .. versionadded:: 5.1
             Added target.set_key()
         """
-        if self.last_key != key:
+        if (self.last_key != key) or always_send:
             self.last_key = key
             self.simpleserial_write('k', key)
             if ack:

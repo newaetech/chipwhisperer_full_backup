@@ -111,6 +111,9 @@ class GlitchSettings(util.DisableNewAttr):
 
         This trigger is most useful in Manual trigger mode, where this is the
         only way to cause a glitch.
+
+        Note that for ChipWhisperer-Husky, this method will only cause a glitch
+        in manual mode, while on the Lite/Pro, this method will always insert a glitch.
         """
         self.cwg.glitchManual()
         

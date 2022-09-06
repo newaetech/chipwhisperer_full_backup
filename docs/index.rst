@@ -103,6 +103,10 @@ Additional information such as the changelog and contributing
 Tutorials
 ---------
 
+Tutorials are available as Jupyter Notebooks on 
+our `chipwhisperer-jupyter <https://github.com/newaetech/chipwhisperer-jupyter>`__ Github
+repository. 
+
 Completed tutorial files, which were previously available on this page, are now stored on our
 `test results Github page <https://github.com/newaetech/ChipWhisperer-Test-Results>`__ and
 are available in reStructured text (which renders on Github) and html.

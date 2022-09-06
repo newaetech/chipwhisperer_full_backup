@@ -39,18 +39,6 @@ char usb_serial_number[33] = "000000000000DEADBEEF";
 #endif
 static void configure_console(void);
 volatile uint32_t usb_checked = 0x00;
-int check_usb_connected(void)
-{
-	if (usb_checked > 100000) {
-        udc_detach();
-        while (RSTC->RSTC_SR & RSTC_SR_SRCMP);
-        RSTC->RSTC_CR |= RSTC_CR_KEY_PASSWD | RSTC_CR_PERRST | RSTC_CR_PROCRST;
-        while(1);
-	}
-	if (UDPHS->UDPHS_FNUM == 0x00) {
-		usb_checked++;
-	}
-}
 
 /*! \brief Main function. Execution starts here.
  */
@@ -61,7 +49,7 @@ int main(void)
 	// Read Device-ID from SAM3U. Do this before enabling interrupts etc.
 	flash_read_unique_id(serial_number, sizeof(serial_number));
 		
-	configure_console();
+	// configure_console();
 
 	irq_initialize_vectors();
 	cpu_irq_enable();
@@ -101,6 +89,7 @@ int main(void)
 	gpio_configure_pin(PIN_EBI_NRD, PIN_EBI_NRD_FLAGS);
 	gpio_configure_pin(PIN_EBI_NWE, PIN_EBI_NWE_FLAGS);
 	gpio_configure_pin(PIN_EBI_NCS0, PIN_EBI_NCS0_FLAGS);
+
 		
 	/* We don't use address mapping so don't enable this */	
 	/*
@@ -147,6 +136,7 @@ int main(void)
 
 	// Start USB stack to authorize VBus monitoring
 	udc_start();
+	board_power(1);
 
 	/* Enable PCLK0 at 96 MHz */	
 	genclk_enable_config(GENCLK_PCK_0, GENCLK_PCK_SRC_MCK, GENCLK_PCK_PRES_1);
@@ -164,10 +154,10 @@ int main(void)
 	// because the USB management is done by interrupt
 	while (true) {
         // if we've received stuff on USART, send it back to the PC
-		check_usb_connected();
 		cdc_send_to_pc();
 		MPSSE_main_sendrecv_byte();
 	}
+	return 0;
 }
 
 /**

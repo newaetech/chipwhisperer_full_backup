@@ -1009,9 +1009,12 @@ class HuskyTrigger(TriggerSettings):
     def level(self):
         """For triggering on ADC sample exceeding a treshold,
         when scope.trigger.module = 'ADC'.
+
         Sets the trigger threshold, in the range [-0.5, 0.5].
+
         If positive, triggers when the ADC sample exceeds this setting;
         if negative, triggers when the ADC sample is below this setting.
+
         Only a single trigger is issued (i.e. multiple samples exceeding
         the threshold do not each generate a trigger; cannot be used in
         conjunction with segmented capture).
@@ -1030,12 +1033,12 @@ class HuskyTrigger(TriggerSettings):
 
     @property
     def edges(self):
-        """For triggering on edge counts, when 
-        scope.trigger.module = 'edge_counter'.  
-        Sets the number of rising+falling edges on scope.trigger.triggers that
+        """For triggering on edge counts, when :code:`scope.trigger.module = 'edge_counter'`.
+
+        Sets the number of rising+falling edges on :code:`scope.trigger.triggers` that
         need to be seen for a trigger to be issued.
 
-        Edges are sampled by the ADC sampling clock (scope.clock.adc_freq), so
+        Edges are sampled by the ADC sampling clock (:code:`scope.clock.adc_freq`), so
         ensure that scope.trigger.triggers does not change faster than what can
         be seen by that clock.
 
@@ -1053,9 +1056,11 @@ class HuskyTrigger(TriggerSettings):
 
     @property
     def edges_seen(self):
-        """Returns the number of edges seen. Under normal operation this should
-        be the same as scope.trigger.edges. When trigger generation failed, Can
-        be useful to understand why. Resets upon scope.arm().
+        """Returns the number of edges seen. 
+        
+        Under normal operation this should
+        be the same as :code:`scope.trigger.edges`. When trigger generation failed, Can
+        be useful to understand why. Resets upon :code:`scope.arm()`.
         """
         return int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_EDGE_TRIGGER, Validate=False, maxResp=2), byteorder='little')
 

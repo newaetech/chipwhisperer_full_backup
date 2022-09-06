@@ -140,7 +140,7 @@ You can clone and install ChipWhisperer by running the following commands in Git
     git clone https://github.com/newaetech/chipwhisperer
     cd chipwhisperer
     git submodule update --init jupyter
-    python setup.py develop
+    python -m pip install -e .
     python -m pip install -r jupyter/requirements.txt
 
 If everything there completes successfully, then congratulations, you've successfully installed ChipWhisperer!

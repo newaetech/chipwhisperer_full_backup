@@ -35,6 +35,16 @@ docs/_build
 docs/make.bat
 *.vcd
 *.fst
+**/.vscode/*
+**/*.bin
+**/*.eep
+**/*.elf
+**/*.hex
+**/*.lss
+**/*.map
+**/*.sym
+*.o.s
+**/1
 
 # Explicit listing of the build artifacts so that they are not included in
 # commits
@@ -68,3 +78,8 @@ docs/*.msi
 
 software/chipwhisperer/logs/*
 /tests/*.out
+
+!**/ChipWhisperer-Nano.bin
+!**/ChipWhisperer-Lite.bin
+!**/ChipWhisperer-CW305.bin
+!**/ChipWhisperer-Husky.bin

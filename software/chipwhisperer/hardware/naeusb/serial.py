@@ -131,7 +131,7 @@ class USART(object):
 
         while datasent < len(data):
             datatosend = len(data) - datasent
-            datatosend = min(datatosend, 58)
+            datatosend = min(datatosend, 58) # WARNING: this is 58 because >58 we autosend as a bulk transfer
 
             # need to make sure we don't write too fast
             # and overrun the internal buffer...
@@ -141,6 +141,10 @@ class USART(object):
                 datatosend = min(datatosend, 128-self.in_waiting_tx())
             self._usb.sendCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), data[datasent:(datasent + datatosend)])
             datasent += datatosend
+
+        # print("sent: " + str(data))
+
+        return datasent
 
         # if self.fw_version_str >= '0.20':
         #     i = 1000
@@ -162,6 +166,11 @@ class USART(object):
         while(inwait):
             self.read(inwait)
             inwait = self.inWaiting()
+        outwait = self.in_waiting_tx()
+
+        while (outwait):
+            time.sleep(0.01)
+            outwait = self.in_waiting_tx()
 
     def inWaiting(self):
         """
@@ -208,6 +217,7 @@ class USART(object):
             if (timeout % 10) == 0:
                 time.sleep(0.01)
 
+        # print("read: " + str(resp))
         return resp
 
 
@@ -225,6 +235,9 @@ class USART(object):
         """
         # windex selects interface, set to 0
         return self._usb.readCtrl(self.CMD_USART0_CONFIG, cmd | (self._usart_num << 8), dlen)
+
+    def close(self):
+        pass # does nothing, for normal serial compatability
 
     @property
     def fw_version(self):

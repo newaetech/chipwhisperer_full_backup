@@ -30,6 +30,11 @@
 #include "core_cm4.h"
 #endif
 
+#if HAL_TYPE == HAL_sam4s
+#include "asf.h"
+#include "core_cm4.h"
+#endif
+
 #include "arm_etm.h"
 #include <stdint.h>
 #include <stdlib.h>
@@ -102,7 +107,7 @@ uint8_t getreg(uint8_t* x, uint8_t len)
 void enable_trace(void)
 {
     // Enable SWO pin (not required on K82)
-    #if HAL_TYPE == HAL_stm32f3
+    #if (HAL_TYPE == HAL_stm32f3)
        DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN_Msk;
     #endif
 
@@ -110,7 +115,7 @@ void enable_trace(void)
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // Enable access to registers
     TPI->ACPR = 0; // SWO trace baud rate = cpu clock / (ACPR+1)
 
-    #if HAL_TYPE == HAL_stm32f3
+    #if (HAL_TYPE == HAL_stm32f3) || (HAL_TYPE == HAL_sam4s)
        TPI->SPPR = 2; // default to SWO with NRZ encoding
        //TPI->SPPR = 1; // SWO with Manchester encoding
     #else

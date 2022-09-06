@@ -274,13 +274,18 @@ class SAMFWLoader:
             sam.flash.setBootFlash(1)
 
             i = 0
+                
             while not sam.flash.getBootFlash():
+                sam.flash.setBootFlash(1)
+                if sam.flash.name == "ATSAM4S2":
+                    break #IIRC there's a bug on the SAM4S that prevents this from being read TODO: check errata
                 time.sleep(0.05)
                 i += 1
                 if i > 10:
+                    sam.reset()
                     sam.ser.close()
                     self.logfunc("Upgrade succeded")
-                    self.logfunc("Unable to set boot flash, please power cycle")
+                    self.logfunc("Unable to set boot flash, may need to power cycle")
                     return True
 
             self.logfunc("Resetting...")

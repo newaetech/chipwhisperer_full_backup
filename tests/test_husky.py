@@ -9,9 +9,23 @@ import os
 
 """ 
 Args:
-    reps: number of times to run certain test (default: 1)
-          Currently used for glitch sweep test, to catch events such as
-          extra glitches which only occur sporadically.
+    reps: number of times to run certain tests (default: 1)
+        Used by some tests only:
+        - test_glitch_output_sweep_width
+        - test_glitch_output_sweep_offset
+        - test_glitch_output_doubles
+        - test_glitch_modes
+    fulltest: run all tests. Use to validate a new bitfile. Very slow.
+        When not set, a subset of tests, and the reps for other tests are
+        reduced, to dramatically reduce the runtime; this is useful when
+        validating a new Husky device with a known working bitfile, and is the
+        default setting.
+    swo_trace: run TraceWhisperer tests. Requires a specific target firmware, and
+        jumper cables from USERIO D0/1/2 to to target's TMS/TCK/TDO. Disabled
+        by default.
+
+Note: in addition to what's controlled by the --fulltest option, some individual
+tests are skipped when their description string ("desc") contains SLOW.
 
 """
 
@@ -32,6 +46,8 @@ print('* If this FW is recompiled, the trace.set_isync_matches() call will have 
 print('* modified with updated instruction addresses.                                       *')
 print('**************************************************************************************\n\n')
 
+test_platform = "stm32f3"
+
 if "HUSKY_HW_LOC" in os.environ:
     locboth = os.environ["HUSKY_HW_LOC"].split(',')
     loca = int(locboth[0].replace('(', ''))
@@ -41,6 +57,10 @@ if "HUSKY_HW_LOC" in os.environ:
 else:
     hw_loc = None
 
+if "HUSKY_TARGET_PLATFORM" in os.environ:
+    test_platform = os.environ["HUSKY_TARGET_PLATFORM"]
+
+print("Husky target platform {}".format(test_platform))
 scope = cw.scope(name='Husky', hw_location=hw_loc)
 target = cw.target(scope)
 scope.errors.clear()
@@ -114,11 +134,6 @@ else:
 
 ktp = cw.ktp.Basic()
 key, text = ktp.next()
-
-@pytest.fixture()
-def reps(pytestconfig):
-    return int(pytestconfig.getoption("reps"))
-
 
 def check_ramp(raw, testmode, samples, segment_cycles, verbose=False):
     errors = 0
@@ -207,32 +222,32 @@ def find_edges(data):
 testData = [
     # samples   presamples  testmode    clock       fastreads   adcmul  bit stream  segs    segcycs reps    desc
     (10,        0,          'internal', 20e6,       True,       1,      8,  False,  1,      0,      1,      'quick'),
-    (131070,    0,          'internal', 20e6,       True,       1,      8,  False,  1,      0,      1,      'maxsamples8'),
+    (131070,    0,          'internal', 20e6,       True,       1,      8,  False,  1,      0,      1,      'maxsamples8_SLOW'),
     (131070,    0,          'internal', 20e6,       True,       1,      12, False,  1,      0,      1,      'maxsamples12'),
-    (300,       0,          'internal', 20e6,       True,       1,      8,  False,  10,     1000,   1,      'evensegments8'),
-    (50,        0,          'internal', 20e6,       True,       1,      8,  False,  100,    100,    1,      'oddsegments8'),
-    (300,       0,          'internal', 20e6,       True,       1,      12, False,  10,     1000,   1,      'evensegments12'),
+    (300,       0,          'internal', 20e6,       True,       1,      8,  False,  10,     1000,   1,      'evensegments8_SLOW'),
+    (50,        0,          'internal', 20e6,       True,       1,      8,  False,  100,    100,    1,      'oddsegments8_SLOW'),
+    (300,       0,          'internal', 20e6,       True,       1,      12, False,  10,     1000,   1,      'evensegments12_SLOW'),
     (50,        0,          'internal', 20e6,       True,       1,      12, False,  100,    100,    1,      'oddsegments12'),
     (300,       30,         'internal', 20e6,       True,       1,      12, False,  20,     500,    1,      'presamplesegments'),
-    (131070,    0,          'internal', 10e6,       True,       1,      12, False,  1,      0,      1,      'slow'),
-    (131070,    0,          'internal', 80e6,       True,       1,      12, False,  1,      0,      1,      'fast'),
+    (131070,    0,          'internal', 10e6,       True,       1,      12, False,  1,      0,      1,      'slow_SLOW'),
+    (131070,    0,          'internal', 80e6,       True,       1,      12, False,  1,      0,      1,      'fast_SLOW'),
     (131070,    0,          'internal', 200e6,      True,       1,      12, False,  1,      0,      10,     'fastest'),
     (131070,    0,          'internal', 250e6,      True,       1,      12, False,  1,      0,      1,      'overclocked'),
-    (131070,    0,          'internal', 5e6,        True,       4,      12, False,  1,      0,      1,      '4xslow'),
+    (131070,    0,          'internal', 5e6,        True,       4,      12, False,  1,      0,      1,      '4xslow_SLOW'),
     (131070,    0,          'internal', 50e6,       True,       4,      12, False,  1,      0,      1,      '4xfast'),
     (131070,    0,          'ADCramp',  20e6,       True,       1,      12, False,  1,      0,      1,      'ADCslow'),
-    (131070,    0,          'ADCramp',  200e6,      True,       1,      12, False,  1,      0,      10,     'ADCfast'),
+    (131070,    0,          'ADCramp',  200e6,      True,       1,      12, False,  1,      0,      10,     'ADCfast_SLOW'),
     (131070,    0,          'ADCramp',  50e6,       True,       4,      12, False,  1,      0,      1,      'ADC4xfast'),
     (131070,    0,          'ADCramp',  250e6,      True,       1,      12, False,  1,      0,      1,      'ADCoverclocked'),
-    (8192,      0,          'ADCramp',  10e6,       True,       1,      12, False,  12,     10000,  1,      'ADClongsegments'),
+    (8192,      0,          'ADCramp',  10e6,       True,       1,      12, False,  12,     10000,  1,      'ADClongsegments_SLOW'),
     (64,        0,          'ADCramp',  200e6,      True,       1,      12, False,  1536,   400,    10,     'ADCfastsegments'),
     (300,       30,         'ADCramp',  200e6,      True,       1,      12, False,  327,    400,    10,     'ADCfastsegmentspresamples'),
     (300,       30,         'ADCramp',  250e6,      True,       1,      12, False,  327,    400,    1,      'ADCoverclockedsegmentspresamples'),
-    (131070,    0,          'ADCalt',   20e6,       True,       1,      12, False,  1,      0,      10,     'ADCaltslow'),
+    (131070,    0,          'ADCalt',   20e6,       True,       1,      12, False,  1,      0,      10,     'ADCaltslow_SLOW'),
     (131070,    0,          'ADCalt',   200e6,      True,       1,      12, False,  1,      0,      10,     'ADCaltfast'),
-    (131070,    0,          'ADCalt',   250e6,      True,       1,      12, False,  1,      0,      1,      'ADCaltoverclocked'),
+    (131070,    0,          'ADCalt',   250e6,      True,       1,      12, False,  1,      0,      1,      'ADCaltoverclocked_SLOW'),
     (500,       0,          'internal', 20e6,       False,      1,      12, False,  1,      0,      1,      'slowreads'),
-    (131070,    0,          'internal', 20e6,       False,      1,      12, False,  1,      0,      1,      'maxslowreads'),
+    (131070,    0,          'internal', 20e6,       False,      1,      12, False,  1,      0,      1,      'maxslowreads_SLOW'),
 ]
 
 testADCsweep = [
@@ -250,41 +265,56 @@ testTargetData = [
     (200,       0,          'internal', 20e6,       True,       1,      8,  False,  65536,      True,   1,      0,      'quick'),
     (131070,    0,          'internal', 15e6,       True,       1,      12, False,  65536,      True,   1,      0,      'maxsamples12'),
     (200000,    0,          'internal', 20e6,       True,       1,      8,  True ,  65536,      True,   1,      0,      'quickstream8'),
-    (2000000,   0,          'internal', 16e6,       True,       1,      12, True ,  65536,      True,   1,      0,      'longstream12'),
-    (6000000,   0,          'internal', 16e6,       True,       1,      12, True ,  65536,      False,  1,      0,      'vlongstream12'),
-    (500000,    0,          'internal', 20e6,       True,       1,      12, True ,  16384,      True,   1,      0,      'over'),
-    (3000000,   0,          'internal', 24e6,       True,       1,      12, True ,  65536,      False,  1,      0,      'overflow'),
-    (200000,    0,          'internal', 15e6,       True,       1,      12, True ,  65536,      True,   1,      0,      'postfail'),
-    (2000,      0,          'internal', 10e6,       True,       1,      8,  False,  65536,      True,   1,      0,      'back2nostream'),
-    (500000,    0,          'internal', 12e6,       False,      1,      12, True ,  65536,      True,   1,      0,      'slowreads1'),
-    (2000000,   0,          'internal', 10e6,       False,      1,      12, True ,  65536,      True,   1,      0,      'slowreads2'),
+    (2000000,   0,          'internal', 16e6,       True,       1,      12, True ,  65536,      True,   1,      0,      'longstream12_SLOW'),
+    (6000000,   0,          'internal', 16e6,       True,       1,      12, True ,  65536,      False,  1,      0,      'vlongstream12_SLOW'),
+    (500000,    0,          'internal', 20e6,       True,       1,      12, True ,  16384,      True,   1,      0,      'over_SLOW'),
+    (3000000,   0,          'internal', 24e6,       True,       1,      12, True ,  65536,      False,  1,      0,      'overflow_SLOW'),
+    (200000,    0,          'internal', 15e6,       True,       1,      12, True ,  65536,      True,   1,      0,      'postfail_SLOW'),
+    (2000,      0,          'internal', 10e6,       True,       1,      8,  False,  65536,      True,   1,      0,      'back2nostream_SLOW'),
+    (500000,    0,          'internal', 12e6,       False,      1,      12, True ,  65536,      True,   1,      0,      'slowreads1_SLOW'),
+    (2000000,   0,          'internal', 10e6,       False,      1,      12, True ,  65536,      True,   1,      0,      'slowreads2_SLOW'),
 ]
 
-testSegmentData = [
-    # offset    presamples  samples clock       adcmul  seg_count   segs    segcycs desc
-    (0,         0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset'),
-    (0,         10,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset_presamp'),
-    (10,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset10'),
-    (50,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50'),
-    (50,        20,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_presamp'),
-    (0,         0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset'),
-    (0,         30,         90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset_presamp'),
-    (10,        0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset10'),
-    (50,        0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50'),
-    (50,        40,         90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50_presamp'),
-]
+if test_platform == "sam4s":
+    testSegmentData = [
+        # offset    presamples  samples clock       adcmul  seg_count   segs    segcycs desc
+        (0,         0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset'),
+        (0,         10,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset_presamp'),
+        (10,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset10_SLOW'),
+        (50,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_SLOW'),
+        (50,        20,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_presamp'),
+        (0,         0,          90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_no_offset'),
+        (0,         30,         90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_no_offset_presamp_SLOW'),
+        (10,        0,          90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_offset10_SLOW'),
+        (50,        0,          90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_offset50_SLOW'),
+        (50,        40,         90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_offset50_presamp'),
+    ]
+else:
+    testSegmentData = [
+        # offset    presamples  samples clock       adcmul  seg_count   segs    segcycs desc
+        (0,         0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset'),
+        (0,         10,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset_presamp'),
+        (10,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset10_SLOW'),
+        (50,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_SLOW'),
+        (50,        20,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_presamp'),
+        (0,         0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset'),
+        (0,         30,         90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset_presamp_SLOW'),
+        (10,        0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset10_SLOW'),
+        (50,        0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50_SLOW'),
+        (50,        40,         90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50_presamp'),
+    ]
 
 
 testGlitchOffsetData = [
     # clock     margin  offset    oversamp    desc
     (10e6,      0.1,    0,         40,         ''),
-    (10e6,      0.1,    400,       40,         ''),
-    (10e6,      0.1,    800,       40,         ''),
+    (10e6,      0.1,    400,       40,         'SLOW'),
+    (10e6,      0.1,    800,       40,         'SLOW'),
     (10e6,      0.1,    1600,      40,         ''),
     (20e6,      0.2,    200,       20,         ''),
-    (20e6,      0.2,    500,       20,         ''),
+    (20e6,      0.2,    500,       20,         'SLOW'),
     (100e6,     0.6,    0,         5,          ''),
-    (100e6,     0.6,    50,        5,          ''),
+    (100e6,     0.6,    50,        5,          'SLOW'),
     (100e6,     0.6,    100,       5,          ''),
 ]
 
@@ -299,13 +329,13 @@ testGlitchWidthData = [
 testGlitchOutputWidthSweepData = [
     # clock     offset    oversamp    steps_per_point desc
     (10e6,      0,         40,         2,              ''),
-    (10e6,      600,       40,         2,              ''),
+    (10e6,      600,       40,         2,              'SLOW'),
     (10e6,      1200,      40,         2,              ''),
     (10e6,      -1200,     40,         2,              ''),
-    (10e6,      0,         20,         4,              ''),
+    (10e6,      0,         20,         4,              'SLOW'),
     (50e6,      200,       8,          10,             ''),
     (100e6,     400,       4,          20,             ''),
-    (200e6,     600,       2,          40,             ''),
+    (200e6,     600,       2,          40,             'SLOW'),
 ]
 
 testMissingGlitchData = [
@@ -373,11 +403,11 @@ testSADTriggerData = [
     #clock  adc_mul bits   threshold   offset  reps    desc
     (10e6,  1,      8,     50,         0,      50,     '8bits'),
     (10e6,  1,      12,    50,         0,      50,     '12bits'),
-    (10e6,  1,      8,     50,         0,      10,     '8bits'),
-    (10e6,  10,     8,     50,         0,      50,     'fast'),
-    (10e6,  18,     8,     50,         0,      50,     'faster'),
+    (10e6,  1,      8,     50,         0,      10,     '8bits_SLOW'),
+    (10e6,  10,     8,     50,         0,      50,     'fast_SLOW'),
+    (10e6,  18,     8,     50,         0,      50,     'faster_SLOW'),
     (10e6,  20,     8,     50,         0,      50,     'fastest'),
-    (10e6,  25,     8,     50,         0,      50,     'overclocked'),
+    (10e6,  25,     8,     50,         0,      50,     'overclocked_SLOW'),
 ]
 
 testUARTTriggerData = [
@@ -392,20 +422,20 @@ testADCTriggerData = [
     #gain       threshold   bits    reps    desc
     (1,         0.9,        12,     3,     ''),
     (10,        0.9,        12,     3,     ''),
-    (5,         0.9,        8,      3,     ''),
+    (5,         0.9,        8,      3,     'SLOW'),
     (5,         0.5,        8,      3,     ''),
-    (1,         0.5,        12,     3,     ''),
-    (10,        0.5,        12,     3,     ''),
+    (1,         0.5,        12,     3,     'SLOW'),
+    (10,        0.5,        12,     3,     'SLOW'),
 ]
 
 testEdgeTriggerData = [
     #pin        edges       oversamp,   check,  reps,   desc
     ('tio1',    2,          4,          True,   3,      ''),
-    ('tio1',    4,          4,          True,   3,      ''),
+    ('tio1',    4,          4,          True,   3,      'SLOW'),
     ('tio1',    100,        4,          False,  50,     ''),
-    ('tio2',    3,          4,          True,   10,     ''),
+    ('tio2',    3,          4,          True,   10,     'SLOW'),
     ('tio2',    5,          4,          True,   10,     ''),
-    ('tio2',    50,         4,          False,  50,     ''),
+    ('tio2',    50,         4,          False,  50,     'SLOW'),
 ]
 
 testUserioEdgeTriggerData = [
@@ -415,12 +445,12 @@ testUserioEdgeTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '7/23/2022, 14:33'
+    assert scope.fpga_buildtime == '9/2/2022, 16:01'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
-    assert scope.fw_version['minor'] == 3
-    assert scope.sam_build_date == '21:12:14 May 22 2022'
+    assert scope.fw_version['minor'] in [3, 4]
+    #assert scope.sam_build_date == '21:12:14 May 22 2022'
 
 
 @pytest.mark.parametrize("address, nbytes, reps, desc", testRWData)
@@ -435,7 +465,12 @@ def test_reg_rw(address, nbytes, reps, desc):
 
 
 @pytest.mark.parametrize("samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc", testData)
-def test_internal_ramp(samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc):
+def test_internal_ramp(fulltest, samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc):
+    if not fulltest and 'SLOW' in desc:
+        pytest.skip("use --fulltest to run")
+        return None
+    if not fulltest:
+        reps = 1 # reduce number of reps to speed up
     reset_setup()
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = adcmul
@@ -488,7 +523,10 @@ def last_zero_run(a):
     return ranges[-1]
 
 @pytest.mark.parametrize("samples, presamples, freq_start, freq_stop, freq_step, testmode, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc", testADCsweep)
-def test_adc_freq_sweep(samples, presamples, freq_start, freq_stop, freq_step, testmode, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc):
+def test_adc_freq_sweep(fulltest, samples, presamples, freq_start, freq_stop, freq_step, testmode, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc):
+    if not fulltest:
+        pytest.skip("use --fulltest to run")
+        return None
     reset_setup()
     outfilename = 'test_adc_freq_sweep_%s.out' % desc
     outfile = open(outfilename, 'w')
@@ -609,7 +647,10 @@ def setup_trace(interface):
 
 @pytest.mark.parametrize("clock, margin, offset, oversamp, desc", testGlitchOffsetData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
-def test_glitch_offset(clock, margin, offset, oversamp, desc):
+def test_glitch_offset(fulltest, clock, margin, offset, oversamp, desc):
+    if not fulltest and 'SLOW' in desc:
+        pytest.skip("use --fulltest to run")
+        return None
     reset_setup()
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = 1
@@ -668,7 +709,10 @@ def test_glitch_width(width, oversamp, desc):
 
 @pytest.mark.parametrize("clock, offset, oversamp, steps_per_point, desc", testGlitchOutputWidthSweepData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
-def test_glitch_output_sweep_width(reps, clock, offset, oversamp, steps_per_point, desc):
+def test_glitch_output_sweep_width(fulltest, reps, clock, offset, oversamp, steps_per_point, desc):
+    if not fulltest and 'SLOW' in desc:
+        pytest.skip("use --fulltest to run")
+        return None
     reset_setup()
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = 1
@@ -719,10 +763,13 @@ def test_glitch_output_sweep_width(reps, clock, offset, oversamp, steps_per_poin
 
 @pytest.mark.parametrize("clock, vco, span, width, num_glitches, reps, oversamp, stepsize, desc", testMissingGlitchData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_missing_glitch_sweep_offset(clock, vco, span, width, num_glitches, reps, oversamp, stepsize, desc):
+def test_missing_glitch_sweep_offset(fulltest, clock, vco, span, width, num_glitches, reps, oversamp, stepsize, desc):
     # Checks for missing glitches (https://github.com/newaetech/chipwhisperer-husky-fpga/issues/4)
     # Similar to test_glitch_output_sweep_offset() but doesn't use LA and only sweeps around sensitive spots
     # and uses more repetitions.
+    if not fulltest:
+        pytest.skip("use --fulltest to run")
+        return None
     reset_setup()
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = 1
@@ -757,13 +804,16 @@ def test_missing_glitch_sweep_offset(clock, vco, span, width, num_glitches, reps
 
 @pytest.mark.parametrize("clock, width, oversamp, steps_per_point, desc", testGlitchOutputOffsetSweepData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
-def test_glitch_output_sweep_offset(reps, clock, width, oversamp, steps_per_point, desc):
+def test_glitch_output_sweep_offset(fulltest, reps, clock, width, oversamp, steps_per_point, desc):
     # This doesn't verify the offset itself -- that's covered by test_glitch_offset().
     # What it does verify is:
     # 1. that the offset change as the offset setting is swept;
     # 2. that there are no "double glitches" - by looking at the glitches themselves, but also by looking
     #    at the width of the glitch "go" signal
     # 3. that there are no missing glitches
+    if not fulltest:
+        pytest.skip("use --fulltest to run")
+        return None
     reset_setup()
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = 1
@@ -818,11 +868,14 @@ def test_glitch_output_sweep_offset(reps, clock, width, oversamp, steps_per_poin
 
 @pytest.mark.parametrize("clock, vco, glitches, oversamp, stepsize, desc", testGlitchOutputDoublesData)
 @pytest.mark.skipif(not scope.LA.present, reason='Cannot test glitch without internal logic analyzer. Rebuild FPGA to test.')
-def test_glitch_output_doubles(reps, clock, vco, glitches, oversamp, stepsize, desc):
+def test_glitch_output_doubles(fulltest, reps, clock, vco, glitches, oversamp, stepsize, desc):
     # Similar to test_glitch_output_sweep_offset() but only look at the width of glitch "go".
     # Intended to be a more exhaustive test for double glitches, by sweeping with a finer increment.
     # Since double glitches are an MMCM1/offset problem (width has no effect), we save having to check for different widths.
     # Use a higher VCO frequency for finer grain, and reduce LA oversampling since that doesn't matter as much here.
+    if not fulltest:
+        pytest.skip("use --fulltest to run")
+        return None
     reset_setup()
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = 1
@@ -862,7 +915,10 @@ def test_glitch_output_doubles(reps, clock, vco, glitches, oversamp, stepsize, d
 
 @pytest.mark.parametrize("samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc", testTargetData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc):
+def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc):
+    if not fulltest and 'SLOW' in desc:
+        pytest.skip("use --fulltest to run")
+        return None
     reset_setup()
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = adcmul
@@ -912,7 +968,7 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
     ret = cw.capture_trace(scope, target, text, key)
     raw = scope.get_last_trace(True)
     if verbose: print('Words read before error: %d ' % int.from_bytes(scope.sc.sendMessage(0x80, 47, maxResp=4), byteorder='little'))
-    if desc == 'overflow':
+    if 'overflow' in desc:
         assert 'fast FIFO' in scope.adc.errors
         scope.errors.clear()
         time.sleep(2)
@@ -926,13 +982,17 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
 
 @pytest.mark.parametrize("offset, presamples, samples, clock, adcmul, seg_count, segs, segcycs, desc", testSegmentData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, segcycs, desc):
+def test_segments (fulltest, offset, presamples, samples, clock, adcmul, seg_count, segs, segcycs, desc):
     # This requires a specific target firmware to work properly:
     # simpleserial-aes where the number of triggers can be set via 'n' commmand.
     # The segcycs value for seg_count=True requires a very specific firmware, otherwise the test is likely to fail.
     # If the firmware changes, you'll need to run this capture in a notebook with segmenting disabled and manually
     # measure the distance between each AES iteration (which should be fairly easy to do visually, and which shouldn't
     # change much from what's here), then update the segcycs input that's provided here.
+    funcparams = str(locals())
+    if not fulltest and 'SLOW' in desc:
+        pytest.skip("use --fulltest to run")
+        return None
     reset_setup()
     errors = 0
     scope.clock.clkgen_freq =clock
@@ -1016,15 +1076,18 @@ def test_segments (offset, presamples, samples, clock, adcmul, seg_count, segs, 
             errors += 1
             bad_ratio = ratio
 
-    assert errors == 0, "Ratios = %s; errors: %s" % (ratios, scope.adc.errors)
+    assert errors == 0, "Ratios = %s; errors: %s, params = %s" % (ratios, scope.adc.errors, funcparams)
     scope.adc.clip_errors_disabled = True
 
 
 @pytest.mark.parametrize("raw_capture, interface, trigger_source, desc", testTraceData)
 @pytest.mark.skipif(not trace_fw, reason='No target detected or incorrect FW.')
-def test_trace (raw_capture, interface, trigger_source, desc):
+def test_trace (swo_trace, raw_capture, interface, trigger_source, desc):
     # This requires a specific target firmware to work properly:
     # simpleserial-aes where the number of triggers can be set via 's' commmand.
+    if not swo_trace:
+        pytest.skip("use --swo_trace to run")
+        return None
     reset_setup()
     setup_trace(interface)
     assert trace.uart_state == 'ERX_IDLE', 'UART is still stuck!'
@@ -1077,7 +1140,10 @@ def test_trace (raw_capture, interface, trigger_source, desc):
 
 @pytest.mark.parametrize("interface, triggers, desc", testTraceSegmentData)
 @pytest.mark.skipif(not trace_fw, reason='No target detected or incorrect FW.')
-def test_segment_trace (interface, triggers, desc):
+def test_segment_trace (swo_trace, interface, triggers, desc):
+    if not swo_trace:
+        pytest.skip("use --swo_trace to run")
+        return None
     reset_setup()
     errors = 0
     scope.default_setup()
@@ -1104,7 +1170,12 @@ def test_segment_trace (interface, triggers, desc):
 
 @pytest.mark.parametrize("clock, adc_mul, bits, threshold, offset, reps, desc", testSADTriggerData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_sad_trigger (clock, adc_mul, bits, threshold, offset, reps, desc):
+def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, desc):
+    if not fulltest and 'SLOW' in desc:
+        pytest.skip("use --fulltest to run")
+        return None
+    if not fulltest:
+        reps = 3 # go faster
     reset_setup()
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = adc_mul
@@ -1156,7 +1227,9 @@ def test_sad_trigger (clock, adc_mul, bits, threshold, offset, reps, desc):
 
 @pytest.mark.parametrize("clock, pin, pattern, reps, desc", testUARTTriggerData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_uart_trigger (clock, pin, pattern, reps, desc):
+def test_uart_trigger (fulltest, clock, pin, pattern, reps, desc):
+    if not fulltest:
+        reps = 2 # reduce number of reps to speed up
     reset_setup()
     scope.default_setup()
     scope.clock.clkgen_freq = clock
@@ -1204,7 +1277,10 @@ def test_uart_trigger (clock, pin, pattern, reps, desc):
 
 @pytest.mark.parametrize("gain, threshold, bits, reps, desc", testADCTriggerData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_adc_trigger (gain, threshold, bits, reps, desc):
+def test_adc_trigger (fulltest, gain, threshold, bits, reps, desc):
+    if not fulltest and 'SLOW' in desc:
+        pytest.skip("use --fulltest to run")
+        return None
     reset_setup()
     scope.default_setup()
     time.sleep(0.1)
@@ -1240,7 +1316,10 @@ def test_adc_trigger (gain, threshold, bits, reps, desc):
 
 @pytest.mark.parametrize("pin, edges, oversamp, check, reps, desc", testEdgeTriggerData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_edge_trigger (pin, edges, oversamp, check, reps, desc):
+def test_edge_trigger (fulltest, pin, edges, oversamp, check, reps, desc):
+    if not fulltest and 'SLOW' in desc:
+        pytest.skip("use --fulltest to run")
+        return None
     reset_setup()
     scope.default_setup()
     time.sleep(0.1)
@@ -1294,10 +1373,13 @@ def armed():
     return scope.sc.getStatus() & 0x1
 
 @pytest.mark.parametrize("pins, max_edges, reps, desc", testUserioEdgeTriggerData)
-def test_userio_edge_triggers(pins, max_edges, reps, desc):
+def test_userio_edge_triggers(fulltest, pins, max_edges, reps, desc):
     # This tests triggering from USERIO pins and also further tests edge triggering.
     # Note that there would be nothing to gain from also testing with scope.trigger.mode = 'normal'
     # since the logic controlling the input to the trigger module doesn't care about the mode.
+    if not fulltest:
+        pytest.skip("use --fulltest to run")
+        return None
     reset_setup()
     scope.default_setup()
     time.sleep(0.1)
@@ -1328,7 +1410,10 @@ def test_userio_edge_triggers(pins, max_edges, reps, desc):
 
 
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_glitch_modes (reps=3):
+def test_glitch_modes (fulltest, reps):
+    if not fulltest:
+        pytest.skip("use --fulltest to run")
+        return None
     scope.reset_fpga()
     reset_setup()
     scope.default_setup()

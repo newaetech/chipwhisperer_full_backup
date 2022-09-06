@@ -127,10 +127,10 @@ void ui_loop_back_state(bool b_started)
 
 void ui_process(uint16_t framenumber)
 {
-	if ((framenumber % 1000) == 0) {
+	if ((framenumber % 1024) == 0) {
 		LED_On(LED0_GPIO);
 	}
-	if ((framenumber % 1000) == 500) {
+	if ((framenumber % 1024) == 512) {
 		LED_Off(LED0_GPIO);
 	}
 }

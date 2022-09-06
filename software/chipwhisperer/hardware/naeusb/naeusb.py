@@ -51,6 +51,7 @@ SAM_FW_FEATURES = [
     "MPSSE", #13
     "TARGET_SPI", #14
     "MPSSE_ENABLED", #15
+    "HUSKY_PIN_CONTROL", #16
 ]
 
 class CWFirmwareError(Exception):
@@ -282,12 +283,14 @@ def packuint16(data):
 
 #List of all NewAE PID's
 NEWAE_VID = 0x2B3E
-NEWAE_PIDS : Dict[int, Dict[str, Union[str, List[int]]]]= {
+NEWAE_PIDS : Dict[int, Dict[str, Union[str, Optional[List[int]]]]]= {
     0xACE2: {'name': "ChipWhisperer-Lite",     'fwver': fw_cwlite.fwver},
     0xACE3: {'name': "ChipWhisperer-CW1200",   'fwver': fw_cw1200.fwver},
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fw_cw305.fwver},
     0xACE0: {'name': "ChipWhisperer-Nano", 'fwver': fw_nano.fwver},
     0xACE5: {'name': "ChipWhisperer-Husky",   'fwver': fw_cwhusky.fwver},
+    0xC521: {'name': "CW521 Ballistic-Gel",   'fwver': None},
+    0xC610: {'name': "PhyWhisperer-USB",   'fwver': None},
 }
 
 class NAEUSB_Backend:

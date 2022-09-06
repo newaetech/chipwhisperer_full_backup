@@ -30,10 +30,57 @@ import logging
 from .logging import *
 import sys, subprocess
 
-from typing import Optional, Type, Union
+
+from typing import Optional, Type, Union, List
 
 # replace bytearray with inherited class with better repr and str.
 bytearray = util.bytearray # type: ignore
+
+def list_devices(idProduct : Optional[List[int]]=None, get_sn=True, get_hw_loc=True) -> List[dict]:
+    """Get a list of devices by NewAE (VID 0x2b3e) currently connected
+
+    Args:
+        idProduct (Optional[List[int]], optional): List of PIDs to restrict devices to. If None, do 
+            not restrict. Defaults to None.
+        get_sn (bool, optional): Whether or not to try to access serial number. Can fail if another 
+            process is connected or if we don't have permission to access the device. Defaults to True.
+        get_hw_loc (bool, optional): Whether or not to access the hardware location of the device.
+            Can fail due to the same reasons as above. Defaults to True.
+
+    Returns:
+        List[dict]: A list of dicts with fields {'name': str, 'sn', str, 'hw_loc': (int, int)}
+
+    If an unknown NewAE device is connected, 'name' will be 'unknown'. If 'sn' or 'hw_loc'
+    are not desired, or cannot be accessed, they will be None.
+
+    .. versionadded:: 5.6.2
+    """
+    from .hardware.naeusb.naeusb import NAEUSB_Backend, NEWAE_PIDS
+    be = NAEUSB_Backend()
+    dev_list = be.get_possible_devices(idProduct)
+    rtn = []
+    for dev in dev_list:
+        try:
+            name = NEWAE_PIDS[dev.getProductID()]['name']
+        except Exception as e:
+            other_logger.info("Could not get name of device with pid {}".format(dev.getProductID()))
+            name = "Unknown"
+        sn = None
+        hw_loc = None
+        if get_sn:
+            try:
+                sn = dev.getSerialNumber()
+            except Exception as e:
+                other_logger.warning("Could not access {} serial number (error {})".format(name, str(e)))
+        if get_hw_loc:
+            try:
+                hw_loc = (dev.getBusNumber(), dev.getDeviceAddress())
+            except Exception as e:
+                other_logger.warning("Could not access {} hw_loc (error {})".format(name, str(e)))
+        rtn.append({'name': name, 'sn': sn, 'hw_loc': hw_loc})
+
+    be.usb_ctx.close()
+    return rtn
 
 def check_for_updates() -> str:
     """Check if current ChipWhisperer version is the latest.
@@ -374,7 +421,7 @@ def target(scope : Optional[scopes.ScopeTypes],
 
 def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plaintext : bytearray,
     key : Optional[bytearray]=None, ack : bool=True, poll_done : bool=False,
-    as_int : bool=False) -> Optional[Trace]:
+    as_int : bool=False, always_send_key=False) -> Optional[Trace]:
 
     """Capture a trace, sending plaintext and key
 
@@ -401,6 +448,8 @@ def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plain
             only.
         as_int (bool, optional): If False, return trace as a float. Otherwise,
             return as an int.
+        always_send_key (bool, optional): If True, always send key. Otherwise,
+            only send if the key is different from the last one sent.
 
     Returns:
         :class:`Trace <chipwhisperer.common.traces.Trace>` or None if capture
@@ -433,7 +482,7 @@ def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plain
     import signal
 
     if key:
-        target.set_key(key, ack=ack)
+        target.set_key(key, ack=ack, always_send=always_send_key)
 
     scope.arm()
 

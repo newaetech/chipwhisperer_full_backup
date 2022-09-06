@@ -24,6 +24,11 @@ These scope objects also inherit common methods from :ref:`api-scope-common`
 .. autodata:: chipwhisperer.scope
     :annotation: chipwhisperer.scope()
 
+As of ChipWhisperer 5.6.2, ChipWhisperer can find all connected devices:
+
+.. autodata:: chipwhisperer.list_devices
+    :annotation: chipwhisperer.list_devices()
+
 .. _api-scope-openadc:
 
 OpenADC Scope
@@ -124,10 +129,16 @@ Basic trigger control module
     .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.TriggerSettings
         :members:
 
-scope.trigger (Pro/Husky Only)
+scope.trigger (Pro Only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.ProTrigger
+        :members:
+
+scope.trigger (Husky Only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra.HuskyTrigger
         :members:
 
 scope.glitch
@@ -139,7 +150,7 @@ Module to control glitching. A block diagram of the module is shown below:
 
     .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings
         :members:
-        :exclude-members: enabled, mmcm_locked, phase_shift_steps
+        :exclude-members: enabled, mmcm_locked, phase_shift_steps, actual_num_glitches, num_glitches
 
 scope.glitch (Husky Only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -163,6 +174,8 @@ The following attributes are only available on, or differ substantially on the C
     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.phase_shift_steps
 
     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.mmcm_locked
+
+    .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.num_glitches
         
 Pro/Husky Only Featuers
 -----------------------
@@ -173,7 +186,7 @@ SAD
 
     Example for triggering off of some previously collected scope data::
 
-        scope.SAD.reference = trace.wave[1000:1000+128]
+        scope.SAD.reference = trace.wave[1000:1000+128] # change 128 to 32 on Husky
         scope.SAD.threshold = 5000
         scope.SAD.start()
         scope.trigger.module = "SAD"
@@ -185,165 +198,18 @@ SAD
     .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.ChipWhispererSAD
         :members:
 
-DecodeIO 
-^^^^^^^^^^^^^^^^^^^
-
-    Communicates with and drives the Digital Pattern Match module on the ChipWhisperer Pro.
-
-    Basic usage for triggering on :code:`'r\n'`::
-
-        # assuming setup scope
-        scope.trigger.triggers = 'tio1'
-        scope.trigger.module = 'DECODEIO'
-        scope.decode_IO.rx_baud = 38400
-        scope.decode_IO.decode_type = 'USART'
-        scope.decode_IO.trigger_pattern = ['r', '\n']
-
-
-    .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger
-        :members:
-
 .. _api-scope-husky:
 
 Husky Only Features
 -------------------
 
-.. clock
-.. ^^^^^
+scope.UARTTrigger
+^^^^^^^^^^^^^^^^^
 
-.. Mostly the same as the CWPro, with some additional upgraded settings.
+UART Pattern Matching Trigger. Must set :code:`scope.trigger.module = 'UART'` to select this trigger.
 
-.. Like with the FPGA based clock, the target clock on the Husky 
-.. can be set directly
-
-..     scope.clock.clkgen_freq = 7.37E6
-
-.. The ADC clock is set as a positive integer multiple of the target clock
-
-..     scope.clock.adc_mul = 4
-
-.. In order to ensure a clean multiple for the ADC, the PLL
-.. settings for the whole chip are changed if :code:`adc_mul` or :code:`target_freq`
-.. are changed. This means the target clock will drop out for a short period if
-.. either are changed.
-
-.. The PLL can use either an onboard XTAL, or a clock output from the onboard FPGA.
-.. The FPGA setting can be set to use an external clock (HS1, usually). Otherwise,
-.. the XTAL setting is recommended as it results in much less jitter on the ADC
-
-..     scope.clock.clkgen_src = 'system' # XTAL (default)
-..     scope.clock.clkgen_src = 'extclk' # ext clock
-
-.. Like with the other FPGA ChipWhisperers, the phase between the target and ADC clocks can be changed.
-.. This is a 6 bit signed value mapped onto the same range as earlier ChipWhisperers ([-255, 255])
-
-..     # +50 phase to adc
-..     scope.clock.adc_phase = 50
-
-
-.. .. attribute: .OpenADC.HuskyClock
-
-..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.clkgen_src
-..         :annotation: scope.clock.clkgen_src
-    
-..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.clkgen_freq
-..         :annotation: scope.clock.clkgen_freq
-
-..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.adc_mul
-..         :annotation: scope.clock.adc_mul
-
-..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.adc_freq
-..         :annotation: scope.clock.adc_freq
-
-..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.adc_phase
-..         :annotation: scope.clock.adc_phase
-
-..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.extclk_monitor_enabled
-..         :annotation: scope.clock.extclk_monitor_enabled
-
-..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.extclk_error
-..         :annotation: scope.clock.extclk_error
-
-..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.extclk_tolerance
-..         :annotation: scope.clock.extclk_tolerance
-
-..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.fpga_vco_freq
-..         :annotation: scope.clock.fpga_vco_freq
-
-..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyClock.ChipWhispererHuskyClock.adc_src
-..         :annotation: scope.clock.adc_src
-
-
-.. glitch
-.. ^^^^^^
-
-.. Glitching differs more substantially. To start, before you can begin glitching, you must enable
-.. the glitch module
-
-..     scope.glitch.enabled = True # off by default to save power + keep FPGA cool
-
-.. The next difference is that the Husky has the option to use an external PLL (the same one used to generate the target/ADC clocks),
-.. providing a lower jitter clock source for glitching
-
-..     socpe.glitch.clk_src = "pll" # recommended over "clkgen"
-
-.. The final major difference is width and offset. The Husky has a single width and a single offset parameter
-.. which are represented as integers. This means that :code:`offset_fine` and :code:`width_fine` are gone,
-.. and the minimum step is now 1 instead of ~0.4 (1/256), though the full range of :code:`[-50, 50]%` of the target clock
-.. is maintained.
-
-.. The user also now has some control over what this minimum step corresponds to as a % of the target clock.
-.. For a full demo, it's recommended that you read our Jupyter Notebook about glitching on the Husky, but in
-.. short, :code:`width` and :code:`offset` has a range of :code:`[-scope.glitch.phase_shift_steps, scope.glitch.phase_shift_steps]`,
-.. which is adjustable by setting :code:`scope.clock.pll.update_fpga_vco(X)`, where :code:`X` is between :code:`600e6` and :code:`1200e6`
-
-    .. .. attribute:: .OpenADC.HuskyGlitch
-    
-    ..     :annotation: scope.glitch
-
-    ..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.mmcm_locked
-    ..         :annotation: scope.glitch.mmcm_locked
-    ..         :noindex:
-
-    ..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.phase_shift_steps
-    ..         :annotation: scope.glitch.phase_shift_steps
-    ..         :noindex:
-
-    ..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.clk_src
-    ..         :annotation: scope.glitch.clk_src
-    ..         :noindex:
-
-    ..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.width
-    ..         :annotation: scope.glitch.width
-    ..         :noindex:
-
-    ..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.offset
-    ..         :annotation: scope.glitch.offset
-    ..         :noindex:
-
-    ..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.trigger_src
-    ..         :annotation: scope.glitch.trigger_src
-    ..         :noindex:
-
-    ..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.manual_trigger
-    ..         :annotation: scope.glitch.manual_trigger
-    ..         :noindex:
-
-    ..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.arm_timing
-    ..         :annotation: scope.glitch.arm_timing
-    ..         :noindex:
-
-    ..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.ext_offset
-    ..         :annotation: scope.glitch.ext_offset
-    ..         :noindex:
-
-    ..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.repeat
-    ..         :annotation: scope.glitch.repeat
-    ..         :noindex:
-
-    ..     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.output
-    ..         :annotation: scope.glitch.output
-    ..         :noindex:
+.. autoclass:: chipwhisperer.capture.trace.TraceWhisperer.UARTTrigger
+    :members:
 
 scope.LA
 ^^^^^^^^

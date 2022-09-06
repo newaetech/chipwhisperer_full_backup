@@ -13,6 +13,7 @@
 #=================================================
 from chipwhisperer.logging import *
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
+from ...hardware.naeusb.serial import USART
 from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, \
      ChipWhispererSAD, ChipWhispererHuskyClock
 from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP, LEDSettings, HuskyErrors, \
@@ -136,20 +137,43 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         Will cause a reconnect event, all settings become default again.
         If no bitstream specified default is used based on current
         configuration settings.
+
+        Args:
+            bitstream (str or None): Path to new bitstream file. Optional, defaults to None
+            reconnect (True): Whether or not to reconnect to the scope
+            prog_speed (int): Speed at which to program the FPGA
         """
-        self.scopetype.reload_fpga(bitstream, prog_speed=1E6)
+        self.scopetype.reload_fpga(bitstream, prog_speed=prog_speed)
         self.dis()
         self.con(self._saved_sn)
 
     def _getNAEUSB(self) -> NAEUSB:
         return self.scopetype.ser
 
-    def enable_MPSSE(self, enable=True):
+
+    def enable_MPSSE(self, enable=True, husky_userio=None):
+        """Enable/disable MPSSE mode. Results in a :code:`default_setup()` and scope disconnection
+
+        Args:
+            enable (bool): Enable or disable. Optional, defaults to True
+            husky_userio (str or None): Enables communication using the Husky's user IO pins.
+                If "jtag", route jtag over those pins. If "swd", route swd. If None, do not route.
+                Optional, defaults to None
+        """
         sn = self.sn
+        self.default_setup()
         if enable:
             self.io.cwe.setAVRISPMode(1)
         else:
             self.io.cwe.setAVRISPMode(0)
+
+        if self._is_husky and husky_userio:
+            if husky_userio == "jtag":
+                self.userio.mode = "target_debug_jtag"
+            elif husky_userio == "swd":
+                self.userio.mode = "target_debug_swd"
+            else:
+                raise ValueError("Invalid husky userio mode: {}".format(husky_userio))
         super().enable_MPSSE(enable)
 
         if enable and (not self._is_husky):
@@ -163,12 +187,15 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                     pass
             try:
                 self.default_setup()
-            except:
+            except Exception as exc:
                 raise IOError("Could not reconnect to ChipWhisperer. \
                     Try connecting manually and running \
-                        scope.default_setup(); scope.io.cwe.setAVRISPMode(1)")
+                        scope.default_setup(); scope.io.cwe.setAVRISPMode(1)") from exc
             self.io.cwe.setAVRISPMode(1)
             self.dis()
+
+    def _get_usart(self) -> USART:
+        return self.scopetype.usart
     
     def finish_mpsse_setup(self, set_defaults=True):
         if set_defaults:
@@ -198,12 +225,14 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.default_setup()
 
         if self._is_husky:
-                self.glitch.enabled = True
+            self.glitch.enabled = True
+            self.glitch.clk_src = "pll"
+        else:
+            self.glitch.clk_src = "clkgen"
 
         self.io.glitch_lp = False
         self.io.glitch_hp = False
 
-        self.glitch.clk_src = "clkgen"
         self.glitch.output = "clock_xor"
         self.glitch.trigger_src = "ext_single"
 
@@ -224,7 +253,10 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
         if self._is_husky:
             self.glitch.enabled = True
-
+            self.glitch.clk_src = "pll"
+        else:
+            self.glitch.clk_src = "clkgen"
+        
         self.io.hs2 = "clkgen"
         if glitcht == "lp":
             self.io.glitch_lp = True
@@ -238,7 +270,6 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         else:
             raise ValueError("Invalid glitch transistor {} must be 'hp' or 'lp'".format(glitcht))
 
-        self.glitch.clk_src = "clkgen"
         self.glitch.output = "glitch_only"
         self.glitch.trigger_src = "ext_single"
 
@@ -354,6 +385,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                 return "cwhusky"
             else:
                 return "cwrev2"
+        scope_logger.error("Unknown hwInfoVer: {}".format(hwInfoVer))
         return ""
 
     def get_name(self):
