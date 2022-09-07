@@ -1,6 +1,6 @@
 #!/bin/bash
 
-USAGE="run_openocd.sh [-h|--help] [-p|--program path/to/fw.elf] [--no-user-io] husky|pro|lite|nano|bergen jtag|swd -- OPENOCD_ARGS"
+USAGE="run_openocd.sh [-l|--list-targets] [-h|--help] [-p|--program path/to/fw.elf] [--no-user-io] husky|pro|lite|nano|bergen jtag|swd -- OPENOCD_ARGS"
 EXAMPLE="example: ./run_openocd.sh husky jtag -- -f 'target/stm32f3x.cfg'"
 EXAMPLE2="./run_openocd.sh -p hardware/victims/firmware/simpleserial-aes/simpleserial-aes-CWLITEARM.elf husky jtag -- -f 'target/stm32f3x.cfg'"
 
@@ -13,6 +13,13 @@ print_help () {
     echo "Example:"
     echo '    ' $EXAMPLE2
     echo "Set OPENOCD_PATH for custom openocd binary"
+    exit
+}
+
+list_targets () {
+    echo "Some useful targets for ChipWhisperer:"
+    echo "    " "target/stm32f3x.cfg, target/stm32f4x.cfg, etc"
+    echo "    " "target/at91sam4sXX.cfg, ./fe310.cfg, target/kx.cfg (k82 target)"
     exit
 }
 
@@ -39,6 +46,9 @@ while [[ $1 != '--' ]]; do
     case $1 in
         -h|--help)
             print_help
+            ;;
+        -l|--list-targets)
+            list_targets
             ;;
         -p|--program)
             progfile=$2

@@ -167,13 +167,15 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         else:
             self.io.cwe.setAVRISPMode(0)
 
-        if self._is_husky and husky_userio:
-            if husky_userio == "jtag":
-                self.userio.mode = "target_debug_jtag"
-            elif husky_userio == "swd":
-                self.userio.mode = "target_debug_swd"
-            else:
-                raise ValueError("Invalid husky userio mode: {}".format(husky_userio))
+        if self._is_husky:
+            if husky_userio:
+                if husky_userio == "jtag":
+                    self.userio.mode = "target_debug_jtag"
+                elif husky_userio == "swd":
+                    self.userio.mode = "target_debug_swd"
+                else:
+                    raise ValueError("Invalid husky userio mode: {}".format(husky_userio))
+            self._getNAEUSB().set_husky_tms_wr(1)
         super().enable_MPSSE(enable)
 
         if enable and (not self._is_husky):

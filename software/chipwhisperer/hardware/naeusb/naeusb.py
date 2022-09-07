@@ -116,6 +116,7 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[13]: '1.1.0',
         SAM_FW_FEATURES[14]: '1.1.0',
         SAM_FW_FEATURES[15]: '1.3.0',
+        SAM_FW_FEATURES[16]: '1.4.0',
     },
 
     0xC305: {
@@ -660,6 +661,14 @@ class NAEUSB:
                 return "UNKNOWN"
         return "UNKNOWN"
 
+    def set_husky_tms_wr(self, num):
+        # TODO: add in check_feature
+        if self.check_feature("HUSKY_PIN_CONTROL"):
+            num &= 0xFF
+            self.usbtx.sendCtrl(0x22, 0x43 | (num << 8))
+        else:
+            naeusb_logger.error("Cannot set Husky TMS direction pin. SWD mode will not work! A firmware update to >=1.4 is highly recommended!")
+
     def get_serial_ports(self) -> Optional[List[Dict[str, int]]]:
         """May have multiple com ports associated with one device, so returns a list of port + interface
         """
@@ -701,7 +710,7 @@ class NAEUSB:
         if not latest:
             naeusb_logger.warning('Your firmware (%d.%d) is outdated - latest is %d.%d' 
                              % (fwver[0], fwver[1], fw_latest[0], fw_latest[1]) +
-                             'See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information')
+                             ' See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information')
 
         return self.usbtx.pid
 
