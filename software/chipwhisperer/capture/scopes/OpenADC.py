@@ -162,7 +162,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         """
         sn = self.sn
         self.default_setup()
-        if enable:
+        if enable and not husky_userio:
             self.io.cwe.setAVRISPMode(1)
         else:
             self.io.cwe.setAVRISPMode(0)
@@ -175,6 +175,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                     self.userio.mode = "target_debug_swd"
                 else:
                     raise ValueError("Invalid husky userio mode: {}".format(husky_userio))
+                self.io.cwe.setAVRISPMode(0)
             self._getNAEUSB().set_husky_tms_wr(1)
         super().enable_MPSSE(enable)
 
@@ -611,6 +612,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         """
         self._read_only_attrs = []
         self._saved_sn = sn
+
         self.scopetype = OpenADCInterface_NAEUSBChip()
 
         self.scopetype.con(sn, idProduct, bitstream, force, prog_speed, **kwargs)
@@ -705,9 +707,6 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.disable_newattr()
         self._is_connected = True
         self.connectStatus = True
-
-        if self._getNAEUSB().is_MPSSE_enabled():
-            self.io.cwe.setAVRISPMode(1)
 
         return True
 
