@@ -162,7 +162,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         """
         sn = self.sn
         self.default_setup()
-        if enable and not husky_userio:
+        if enable:
             self.io.cwe.setAVRISPMode(1)
         else:
             self.io.cwe.setAVRISPMode(0)
@@ -175,7 +175,6 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                     self.userio.mode = "target_debug_swd"
                 else:
                     raise ValueError("Invalid husky userio mode: {}".format(husky_userio))
-                self.io.cwe.setAVRISPMode(0)
             self._getNAEUSB().set_husky_tms_wr(1)
         super().enable_MPSSE(enable)
 
