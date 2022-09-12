@@ -25,7 +25,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import time
-from collections import OrderedDict
 from . import ChipWhispererGlitch
 from ....common.utils import util
 
@@ -102,7 +101,7 @@ class GPIOSettings(util.DisableNewAttr):
         return tuple(((bitmask >> i) & 0x01) for i in range(4))
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['tio1'] = self.tio1
         rtn['tio2'] = self.tio2
         rtn['tio3'] = self.tio3
@@ -666,7 +665,7 @@ class TriggerSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['triggers'] = self.triggers
         rtn['module'] = self.module
 
@@ -945,7 +944,7 @@ class HuskyTrigger(TriggerSettings):
         self._is_husky = True
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['module'] = self.module
         if self.module == 'ADC':
             rtn['level'] = self.level

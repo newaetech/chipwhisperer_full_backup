@@ -25,7 +25,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import numpy as np
-from collections import OrderedDict
 from ....common.utils import util
 
 from ....logging import *
@@ -77,7 +76,7 @@ class ChipWhispererSAD(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['threshold'] = self.threshold
         rtn['reference'] = self.reference
         return rtn
@@ -241,7 +240,7 @@ class HuskySAD(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['threshold'] = self.threshold
         rtn['reference'] = self.reference
         return rtn

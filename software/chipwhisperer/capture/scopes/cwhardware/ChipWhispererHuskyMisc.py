@@ -24,7 +24,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-from collections import OrderedDict
 from ....common.utils import util
 from .. import _OpenADCInterface as OAI
 
@@ -322,7 +321,7 @@ class HuskyErrors(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['XADC errors'] = self.XADC.errors()
         rtn['ADC errors'] = self.adc.errors
         rtn['extclk error'] = self.clock.extclk_error
@@ -353,7 +352,7 @@ class USERIOSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['mode'] = self.mode
         rtn['direction'] = self.direction
         rtn['drive_data'] = self.drive_data
@@ -476,7 +475,7 @@ class XADCSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['status'] = self.status
         rtn['current temperature [C]'] = '%.1f' % self.temp
         rtn['maximum temperature [C]'] = '%.1f' % self.max_temp
@@ -653,7 +652,7 @@ class LASettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['present'] = self.present
         rtn['enabled'] = self.enabled
         rtn['clkgen_enabled'] = self.clkgen_enabled
@@ -1246,7 +1245,7 @@ class ADS4128Settings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['mode'] = self.mode
         rtn['low_speed'] = self.low_speed
         rtn['hi_perf'] = self.hi_perf

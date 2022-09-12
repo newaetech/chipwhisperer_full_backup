@@ -423,27 +423,28 @@ class NoneTypeTarget(object):
     def __getattr__(self, item):
         raise AttributeError('Target has not been connected')
 
-def fw_ver_compare(a, b):
-    #checks that a is newer or as new as b
-    if a["major"] > b["major"]:
-        return True
-    elif (a["major"] == b["major"]) and (a["minor"] >= b["minor"]):
-        return True
-    return False
+# def fw_ver_compare(a, b):
+#     #checks that a is newer or as new as b
+#     if a["major"] > b["major"]:
+#         return True
+#     elif (a["major"] == b["major"]) and (a["minor"] >= b["minor"]):
+#         return True
+#     return False
 
 
-def fw_ver_required(major, minor):
-    def decorator(func):
-        @wraps(func)
-        def func_wrapper(self, *args, **kwargs):
-            fw_ver = self.fw_version
-            good = fw_ver_compare(fw_ver, {"major": major, "minor": minor})
-            if good:
-                return func(self, *args, **kwargs)
-            else:
-                raise IOError(f"This function requires newer firmware: ({major}.{minor}) vs ({fw_ver['major']}.{fw_ver['minor']})")
-        return func_wrapper
-    return decorator
+# def fw_ver_required(major, minor):
+#     def decorator(func):
+#         @wraps(func)
+#         def func_wrapper(self, *args, **kwargs):
+#             fw_ver = self.fw_version
+#             good = fw_ver_compare(fw_ver, {"major": major, "minor": minor})
+#             if good:
+#                 return func(self, *args, **kwargs)
+#             else:
+#                 raise IOError(f"This function requires newer firmware: ({major}.{minor}) vs ({fw_ver['major']}.{fw_ver['minor']})")
+#         return func_wrapper
+#     raise DeprecationWarning("DO NOT USE")
+#     return decorator
 
 def camel_case_deprecated(func):
     """Wrapper function to deprecate camel case functions.
@@ -498,6 +499,7 @@ def camel_case_deprecated(func):
 
     wrapper.__name__ = underscore_to_camelcase(func.__name__)
     wrapper.__doc__ = ':deprecated: Use {} instead\n\n:meta private:\n\n'.format(func.__name__)
+    # raise DeprecationWarning("Delete me")
     return wrapper
 
 

@@ -21,7 +21,6 @@ from zipfile import ZipFile
 from .capture import scopes, targets
 from .capture.api import programmers
 from .capture import acq_patterns as key_text_patterns
-from .common.utils.util import fw_ver_compare
 from .common.api import ProjectFormat as project
 from .common.traces import Trace
 from .common.utils import util

@@ -26,7 +26,6 @@
 import time
 import os
 from .naeusb import packuint32
-from ...common.utils.util import fw_ver_required
 from ...logging import *
 from .naeusb import NAEUSB
 class USART(object):

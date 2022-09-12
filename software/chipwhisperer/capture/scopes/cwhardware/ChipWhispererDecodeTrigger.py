@@ -28,7 +28,6 @@
 from chipwhisperer.logging import *
 from ....common.utils.util import dict_to_str, DisableNewAttr
 from .._OpenADCInterface import OpenADCInterface
-from collections import OrderedDict
 from copy import copy
 
 CODE_READ       = 0x80
@@ -71,7 +70,7 @@ class ChipWhispererDecodeTrigger(DisableNewAttr):
         return dict_to_str(self._dict_repr)
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['trigger_pattern'] = self.trigger_pattern
         rtn['rx_baud'] = self.rx_baud
         rtn['decode_type'] = self.decode_type
