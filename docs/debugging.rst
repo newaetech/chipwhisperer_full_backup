@@ -253,7 +253,7 @@ MPSSE mode takes control of some ChipWhisperer pins, meaning the following featu
   * Non MPSSE target programming (STM32, XMEGA, AVR, SAMBA)
   * ChipWhisperer-Husky stream mode (fixed on CW 5.6.2)
   * Control of PDID, nRST, and the SPI pins
-    * Currently nRST is push-pull during MPSSE mode, meaning the target cannot be reset via the FPGA/reset button
+    * nRST is open-drain during MPSSE mode
   * Control of PDIC on Husky (fixed on CW 5.6.2)
 
 You can give normal functionality back to nRST and the SPI pins by running the following::
