@@ -265,7 +265,7 @@ class LEDSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['setting'] = self.setting
         return rtn
 
