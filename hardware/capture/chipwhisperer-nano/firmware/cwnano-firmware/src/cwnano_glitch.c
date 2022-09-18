@@ -87,7 +87,6 @@ static uint32_t glitch_offset_cnt;
 void cwnano_setup_glitch(unsigned int offset, unsigned int length)
 {
 	glitch_width_cnt = length;
-	// glitch_width_case = length % 3;
 	
 	glitch_offset_cnt = offset;
 }
