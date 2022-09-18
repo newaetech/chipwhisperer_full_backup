@@ -86,16 +86,58 @@ static uint32_t glitch_offset_cnt;
 /* Configure the glitch code, must be called before calling insert */
 void cwnano_setup_glitch(unsigned int offset, unsigned int length)
 {
-	glitch_width_cnt = length / 3;
-	glitch_width_case = length % 3;
+	glitch_width_cnt = length;
+	// glitch_width_case = length % 3;
 	
-	glitch_offset_cnt = offset / 3;
-	glitch_offset_case = offset % 3;
+	glitch_offset_cnt = offset;
 }
 
 
+// 0, 0 not possible
+#define NANO_GLITCH_ASM
+#ifdef NANO_GLITCH_ASM
+void cwnano_glitch_insert(void)
+{
+	if (glitch_width_cnt) {
+		__disable_irq();
+
+		asm volatile(
+			// setup GPIO reg refs
+				"mov   r5,     #0x40000000\n\t"
+				"orr   r5, r5, #0x000e0000\n\t"
+				"orr   r5, r5, #0x00000e00\n\t"
+				"movs	r6,     #1\n\t"
+
+				"ldr r3, %[offset_cnt]\n\t"
+				"ldr r4, %[width_cnt]\n\t"
+
+				"isb\n\t"
+			"OFFLOOP:\n\t"
+				"subs r3, #1\n\t"
+				"bpl OFFLOOP\n\t" //branch on underflow
+				"isb\n\t"
+
+				"str r6, [r5, #48]\n\t" //gpio high now
+			"WID0LOOP:\n\t"
+				"subs r4, #0x01\n\t" //1 is the minimum for width_cnt
+				"bne WID0LOOP\n\t"
+				"str r6, [r5, #52]\n\t"
+				"isb\n\t"
+
+			: 
+			: [offset_cnt] "m" (glitch_offset_cnt), [width_cnt] "m" (glitch_width_cnt)
+			: "r3", "r4", "r5", "r6", "memory"
+		);
+
+
+		__enable_irq();
+	}
+}
+#else
+
 #pragma GCC push_options
 #pragma GCC optimize ("O1")
+
 
 /* Insert the glitch by driving pin */
 void cwnano_glitch_insert(void)
@@ -187,3 +229,4 @@ void cwnano_glitch_insert(void)
 }
 
 #pragma GCC pop_options
+#endif
