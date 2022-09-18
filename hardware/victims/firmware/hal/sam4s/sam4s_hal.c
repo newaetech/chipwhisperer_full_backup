@@ -14,6 +14,7 @@ void platform_init(void)
     sysclk_enable_peripheral_clock(ID_PMC);
     pmc_set_writeprotect(0);
     system_init_flash(CHIP_FREQ_CPU_MAX);
+    pmc_switch_mck_to_sclk(SYSCLK_PRES_1);
     osc_enable(OSC_MAINCK_BYPASS);
     osc_wait_ready(OSC_MAINCK_BYPASS);
     pmc_switch_mck_to_mainck(SYSCLK_PRES_1);
