@@ -73,7 +73,6 @@ def reset_target():
     scope.io.nrst = 'high_z'
     time.sleep(0.2)
 
-
 # TODO: program FW?
 scope.sc.reset_fpga()
 scope.adc.clip_errors_disabled = True
