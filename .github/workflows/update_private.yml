@@ -2,11 +2,10 @@ name: Update private repo
 
 on: 
   push:
-    paths-ignore:
+    paths:
       - 'jupyter'
       - 'software/**'
       - 'tests/test_husky.py'
-
 
 jobs:
   trigger_action:
@@ -20,6 +19,7 @@ jobs:
             files: |
               test/test_husky.py
               software/chipwhisperer/hardware/firmware/cwhusky.py
+
       - uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: private_workflow
