@@ -25,9 +25,19 @@ jobs:
             software/chipwhisperer/hardware/firmware/cwhusky.py
 
       - uses: benc-uk/workflow-dispatch@v1
+        if: steps.changed-husky.outputs.any_changed == 'true'
         with:
           workflow: private_workflow
           repo: newaetech/ChipWhisperer-Private-Tests
           token: ${{ secrets.PRIVATE_TEST_PUSH }}
           ref: refs/heads/main
-          inputs: '{ "full_husky_test": ${{ steps.changed-husky.outputs.anychanged }} }'
+          inputs: '{ "full_husky_test": "true" }'
+
+      - uses: benc-uk/workflow-dispatch@v1
+        if: steps.changed-husky.outputs.any_changed != 'true'
+        with:
+          workflow: private_workflow
+          repo: newaetech/ChipWhisperer-Private-Tests
+          token: ${{ secrets.PRIVATE_TEST_PUSH }}
+          ref: refs/heads/main
+          inputs: '{ "full_husky_test": "false" }'
