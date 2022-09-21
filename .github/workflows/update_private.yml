@@ -6,6 +6,7 @@ on:
       - 'jupyter'
       - 'software/**'
       - 'tests/test_husky.py'
+      - '.github/workflows/update_private.yml'
 
 jobs:
   trigger_action:
