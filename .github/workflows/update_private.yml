@@ -13,11 +13,13 @@ jobs:
     name: Push dispatch
     runs-on: ubuntu-22.04
     steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # OR "2" -> To retrieve the preceding commit.
       - name: Check_husky_bs_changed
         id: changed-husky
         uses: tj-actions/changed-files@v29.0.1
         with:
-          fetch-depth: 0
           files: |
             test/test_husky.py
             software/chipwhisperer/hardware/firmware/cwhusky.py
