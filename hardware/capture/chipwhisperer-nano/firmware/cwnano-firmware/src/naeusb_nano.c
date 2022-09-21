@@ -6,9 +6,11 @@
  */ 
 #include <asf.h>
 #include "naeusb.h"
+#include "naeusb_default.h"
 #include "naeusb_nano.h"
 #include "main.h"
 #include "genclk.h"
+#include <sysclk.h>
 uint32_t max_buffer_size = SIZE_BUFF_RECEPT;
 
 #define GPIO1 (1<<0)
@@ -140,9 +142,34 @@ static void ctrl_clk_out_cb(void)
 		genclk_config_set_divider(&gencfg, pclk_out_div);
 		genclk_enable(&gencfg, GENCLK_PCK_2);
 		gpio_configure_pin(PIN_TARGET_CLKOUT, PIN_TARGET_CLKOUT_FLAGS);
-		} else {
+	} else {
 		gpio_configure_pin(PIN_TARGET_CLKOUT, (PIO_INPUT | PIO_DEFAULT));
 	}
+}
+
+static void reset_main_clock(void)
+{
+	struct pll_config pllcfg;
+	struct genclk_config gencfg;
+	gpio_configure_pin(PIN_TARGET_CLKOUT, (PIO_INPUT | PIO_DEFAULT));
+	gpio_configure_pin(PIN_PCK1, (PIO_OUTPUT_0 | PIO_DEFAULT));
+
+	genclk_disable(GENCLK_PCK_1);
+	genclk_disable(GENCLK_PCK_2);
+	for (volatile uint16_t i = 0; i < 5000; i++);
+
+	genclk_config_defaults(&gencfg, GENCLK_PCK_1);
+	genclk_config_set_source(&gencfg, GENCLK_PCK_SRC_PLLBCK);
+	genclk_config_set_divider(&gencfg, PMC_PCK_PRES_CLK_1);
+	genclk_enable(&gencfg, GENCLK_PCK_1);
+	gpio_configure_pin(PIN_PCK1, PIN_PCK1_FLAGS);
+
+	genclk_config_defaults(&gencfg, GENCLK_PCK_2);
+	genclk_config_set_source(&gencfg, GENCLK_PCK_SRC_PLLBCK);
+	genclk_config_set_divider(&gencfg, PMC_PCK_PRES_CLK_1);
+	genclk_enable(&gencfg, GENCLK_PCK_2);
+	gpio_configure_pin(PIN_TARGET_CLKOUT, PIN_TARGET_CLKOUT_FLAGS);
+
 }
 
 static void ctrl_arm_cb(void)
@@ -197,7 +224,7 @@ static void ctrl_adcclk_out_cb(void)
 		genclk_config_set_divider(&gencfg, pclk_out_div);
 		genclk_enable(&gencfg, GENCLK_PCK_1);
 		gpio_configure_pin(PIN_PCK1, PIN_PCK1_FLAGS);
-		} else {
+	} else {
 		gpio_configure_pin(PIN_PCK1, (PIO_OUTPUT_0 | PIO_DEFAULT));
 	}
 	
@@ -287,6 +314,13 @@ void nano_readmem_ctrl(void){
 bool nano_setup_out_received(void)
 {
 	switch (udd_g_ctrlreq.req.bRequest) {
+		case REQ_SAM_CFG:
+			if ((udd_g_ctrlreq.req.wValue & 0xFF)  == 0xF0) {
+				udd_g_ctrlreq.callback = reset_main_clock;
+				return true;
+			}
+			return false;
+
 			case REQ_MEMREAD_BULK:
 				udd_g_ctrlreq.callback = nano_readmem_bulk;
 				return true;

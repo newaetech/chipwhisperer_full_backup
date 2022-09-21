@@ -52,6 +52,7 @@ SAM_FW_FEATURES = [
     "TARGET_SPI", #14
     "MPSSE_ENABLED", #15
     "HUSKY_PIN_CONTROL", #16
+    "NANO_CLOCK_RESET", #17
 ]
 
 class CWFirmwareError(Exception):
@@ -68,6 +69,7 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[8]: '0.23.0',
         SAM_FW_FEATURES[13]: '0.60.0',
         SAM_FW_FEATURES[15]: '0.62.0',
+        SAM_FW_FEATURES[17]: '0.64.0',
     },
 
     0xACE2: {
