@@ -2,7 +2,7 @@ name: Update private repo
 
 on: 
   push:
-    paths:
+    paths-ignore:
       - 'jupyter'
       - 'software/**'
       - 'tests/test_husky.py'
@@ -13,9 +13,17 @@ jobs:
     name: Push dispatch
     runs-on: ubuntu-18.04
     steps:
+      - name: Check_husky_bs_changed
+        id: changed-husky
+        uses: tj-actions/changed-files@v29.0.1
+          with:
+            files: |
+              test/test_husky.py
+              software/chipwhisperer/hardware/firmware/cwhusky.py
       - uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: private_workflow
           repo: newaetech/ChipWhisperer-Private-Tests
           token: ${{ secrets.PRIVATE_TEST_PUSH }}
           ref: refs/heads/main
+          inputs: { "full_husky_test": steps.changed-husky.outputs.anychanged }
