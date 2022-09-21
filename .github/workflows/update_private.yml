@@ -15,10 +15,10 @@ jobs:
       - name: Check_husky_bs_changed
         id: changed-husky
         uses: tj-actions/changed-files@v29.0.1
-          with:
-            files: |
-              test/test_husky.py
-              software/chipwhisperer/hardware/firmware/cwhusky.py
+        with:
+          files: |
+            test/test_husky.py
+            software/chipwhisperer/hardware/firmware/cwhusky.py
 
       - uses: benc-uk/workflow-dispatch@v1
         with:
