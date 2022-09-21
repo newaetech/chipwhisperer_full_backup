@@ -11,7 +11,7 @@ on:
 jobs:
   trigger_action:
     name: Push dispatch
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check_husky_bs_changed
         id: changed-husky
