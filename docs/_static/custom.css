@@ -26,4 +26,5 @@ dt.sig.sig-object.py {
 div.sphinxsidebar {
     max-height: 100%;
     overflow-y: auto;
+    overflow-x: auto;
 }
