@@ -21,6 +21,12 @@ div.data_html {
         color: #20435c;
     }
 
+    div.sphinxsidebar {
+        max-height: 100%;
+        overflow-y: auto;
+        overflow-x: auto;
+    }
+
     dt.sig.sig-object.py {
         background-color: #d7eeff;
         margin-top: 1%;
@@ -40,9 +46,3 @@ div.data_html {
         /* margin-left: 15px; */
         font-size: 15px;
     }
-
-div.sphinxsidebar {
-    max-height: 100%;
-    overflow-y: auto;
-    overflow-x: auto;
-}
