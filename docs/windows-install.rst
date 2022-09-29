@@ -99,8 +99,8 @@ as it allows the Python interpreter to function correctly on the command line.
 Python
 ======
 
-We recommend grabbing Python via `WinPython`_. Any Python version above or equal to 3.7 should work here; however, we've only
-verified installation on Python 3.7, 3.8, and 3.9. The default installation instructions will suffice here. Once
+We recommend grabbing Python via `WinPython`_. **Make sure you grab the Cython version, not the PyPy version. Typically, the version with the most downloads/week is the best to grab.**. 
+Any Python version above or equal to 3.7 should work here; however, we've only verified installation on Python 3.7, 3.8, 3.9, and 3.10. The default installation instructions will suffice here. Once
 WinPython is installed, you'll need to add it to your system path. Don't add it to your user path, as
 Git Bash won't be able to pick it up from there.
 
@@ -163,4 +163,4 @@ to verify that everything installed correctly. If you run into any issues, pleas
 .. _arm-none-eabi-gcc: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
 .. _avr-gcc: https://blog.zakkemble.net/avr-gcc-builds/
 .. _git-bash: https://git-scm.com/downloads
-.. _WinPython: https://winpython.github.io/
+.. _WinPython: https://sourceforge.net/projects/winpython/files/
