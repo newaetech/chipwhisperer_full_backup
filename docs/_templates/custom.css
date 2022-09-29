@@ -40,3 +40,9 @@ div.data_html {
         /* margin-left: 15px; */
         font-size: 15px;
     }
+
+div.sphinxsidebar {
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: auto;
+}
