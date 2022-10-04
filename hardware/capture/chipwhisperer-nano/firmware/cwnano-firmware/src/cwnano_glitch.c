@@ -39,27 +39,22 @@
 
 #include <asf.h>
 #include "main.h"
+#include <string.h>
 
 void delay_setup(void);
 void pin_trigglitch_handler(const uint32_t id, const uint32_t mask);
 
+#define GLITCH_WIDTH_MAX 128
+
 static volatile unsigned int glitch_enabled = 0;
 
-/* Handler for all PIOA events */
-void pin_trigglitch_handler(const uint32_t id, const uint32_t mask)
-{
-	if ((id == ID_PIOA) && (mask == PIN_TARGET_GPIO4_MSK)){
-		
-		/* Disable interrupt now */
-		pio_disable_interrupt(PIOA, PIN_TARGET_GPIO4_MSK);
-		
-		if(glitch_width && glitch_enabled){
-			cwnano_glitch_insert();
-			glitch_enabled = 0;
-		}		
-	}
-}
+static uint32_t glitch_width_cnt = 0;
+static uint32_t glitch_offset_cnt = 0;
+static uint32_t glitch_wait_cnt = 0;
 
+uint8_t pwm_glitch = 0;
+
+static uint8_t *glitch_payload = glitch_memory;
 
 void cwnano_glitch_enable(void)
 {
@@ -69,163 +64,230 @@ void cwnano_glitch_enable(void)
 	pio_handler_set(PIOA, ID_PIOA, PIN_TARGET_GPIO4_MSK, PIO_IT_RISE_EDGE, pin_trigglitch_handler);
 	pio_enable_interrupt(PIOA, PIN_TARGET_GPIO4_MSK);
 	glitch_enabled = 1;
+
+	if (pwm_glitch) {
+		PWM->PWM_DIS = PWM_DIS_CHID0;                                                // channel 0 must be disabled before cwnano_glitch_insert is invoked
+	}
 }
+
+#define PWM_GPIO0 IOPORT_CREATE_PIN(PIOA, 0)
 
 /* Init the glitch pin (drive low) */
 void cwnano_glitch_init(void)
 {
-	gpio_configure_pin(PIN_GLITCH_IDX, PIO_OUTPUT_0 | PIO_DEFAULT);
+	if (pwm_glitch) {
+		PMC->PMC_PCER0               = (1<<ID_PWM);                                  // clock on the PWM module
+		PIOA->PIO_PDR                = PIO_PDR_P0;                                   // PA0 pin is not PIO anymore
+		PIOA->PIO_ABCDSR[1]         &= ~PIO_ABCDSR_P0;                               // PA0 pin should use peripheral A mode
+	} else {
+		gpio_configure_pin(PIN_GLITCH_IDX, PIO_OUTPUT_0 | PIO_DEFAULT);
+	}
+
 }
-
-static uint32_t glitch_width_case;
-static uint32_t glitch_width_cnt;
-
-static uint32_t glitch_offset_case;
-static uint32_t glitch_offset_cnt;
 
 /* Configure the glitch code, must be called before calling insert */
 void cwnano_setup_glitch(unsigned int offset, unsigned int length)
 {
-	glitch_width_cnt = length;
-	
-	glitch_offset_cnt = offset;
-}
+	uint32_t glitch_prd;
+	uint32_t glitch_duty;
 
+	if (pwm_glitch) {
+		if ((length > 0 && length != glitch_width_cnt) || (offset > 0 && offset != glitch_offset_cnt)) {
+			glitch_width_cnt             = length;
+			glitch_offset_cnt            = offset;
+			glitch_duty                  = 16;                                   // we want to have the time to enable channel 0, start our wait loop, etc.
+																				//  and switch off output after the glitch
+			glitch_prd                   = glitch_duty + length;
+			glitch_wait_cnt              = (glitch_prd + (glitch_prd>>1)) / 5;   // 1 full period +50% margin at 5 cycles per loop
 
-// 0, 0 not possible
-#define NANO_GLITCH_ASM
-#ifdef NANO_GLITCH_ASM
-void cwnano_glitch_insert(void)
-{
-	if (glitch_width_cnt) {
-		__disable_irq();
-
-		asm volatile(
-			// setup GPIO reg refs
-				"mov   r5,     #0x40000000\n\t"
-				"orr   r5, r5, #0x000e0000\n\t"
-				"orr   r5, r5, #0x00000e00\n\t"
-				"movs	r6,     #1\n\t"
-
-				"ldr r3, %[offset_cnt]\n\t"
-				"ldr r4, %[width_cnt]\n\t"
-
-				"isb\n\t"
-			"OFFLOOP:\n\t"
-				"subs r3, #1\n\t"
-				"bpl OFFLOOP\n\t" //branch on underflow
-				"isb\n\t"
-
-				"str r6, [r5, #48]\n\t" //gpio high now
-			"WID0LOOP:\n\t"
-				"subs r4, #0x01\n\t" //1 is the minimum for width_cnt
-				"bne WID0LOOP\n\t"
-				"str r6, [r5, #52]\n\t"
-				"isb\n\t"
-
-			: 
-			: [offset_cnt] "m" (glitch_offset_cnt), [width_cnt] "m" (glitch_width_cnt)
-			: "r3", "r4", "r5", "r6", "memory"
-		);
-
-
-		__enable_irq();
-	}
-}
-#else
-
-#pragma GCC push_options
-#pragma GCC optimize ("O1")
-
-
-/* Insert the glitch by driving pin */
-void cwnano_glitch_insert(void)
-{
-	if (glitch_width_case | glitch_width_cnt){
-		__disable_irq();
-		asm("push {r5-r6}");
-		asm volatile(
-		 "mov   r5,     #0x40000000\n\t"
-		 "orr   r5, r5, #0x000e0000\n\t"
-		 "orr   r5, r5, #0x00000e00\n\t"
-		 "movs	r6,     #1\n\t"
-		 );
-		 
-		 
-		/* The following is very hacky, but works for now (TM). Basically:
-		
-		  1) You need the 'isb' to clear pipeline before each delay call. If you don't do that you'll see different delays
-		     depending on state of pipeline. This makes the case 0/1/2 not work for example since the base delay amount
-			 isn't what you expect.
-			 
-		  2) Due to pipeline etc you can't easily cycle count. The instruction choices have been tested on HW. Should have some
-		     way of verifying this automatically still.
-			 
-		  3) Other attemps such as SRAM functions didn't work well.
-		  
-		  4) The choice of r5/r6 is just verified in debugger for now. Should actually do entire thing as assembly function
-		     at some point.	 
-		*/
-		 
-		switch(glitch_offset_case){
-			case 0:
-				asm volatile("isb");
-				asm volatile("str	r6, [r5, #52]");
-				for(unsigned int i = glitch_offset_cnt; i != 0; i--);
-				asm volatile("str	r6, [r5, #52]");
-				asm volatile("isb");
-				break;
-			
-			case 1:
-				asm volatile("isb");
-				asm volatile("str	r6, [r5, #52]");
-				for(unsigned int i = glitch_offset_cnt; i != 0; i--);
-				asm volatile("dsb");
-				asm volatile("str	r6, [r5, #52]");
-				asm volatile("isb");
-				break;
-
-			case 2:
-				asm volatile("isb");
-				asm volatile("str	r6, [r5, #52]");
-				for(unsigned int i = glitch_offset_cnt; i != 0; i--);
-				asm volatile("str	r6, [r5, #52]");
-				asm volatile("str	r6, [r5, #52]");
-				asm volatile("isb");
-				break;
+			PWM->PWM_CH_NUM[0].PWM_CMR   = PWM_CMR_CPRE_MCK;                     // use MCK, polarity=LOW
+			PWM->PWM_CH_NUM[0].PWM_CPRD  = glitch_prd;                           // period cycles
+			PWM->PWM_CH_NUM[0].PWM_CDTY  = glitch_duty;                          // duty cycles
+			PWM->PWM_OOV                 = ~PWM_OOV_OOVH0;                       // value to output (0) when override is selected
+			PWM->PWM_OS                  = PWM_OS_OSH0;                          // override: output 0, not taking care of the pwm output
 		}
-		 
-		 switch(glitch_width_case){
-			 case 0:	
-				 asm volatile("isb");
-				 asm volatile("str	r6, [r5, #48]");
-				 for(unsigned int i = glitch_width_cnt; i != 0; i--);
-				 asm volatile("str	r6, [r5, #52]");
-				 asm volatile("isb");
-				 break;
-				 
-			case 1:
-				asm volatile("isb");
-				asm volatile("str	r6, [r5, #48]");
-				for(unsigned int i = glitch_width_cnt; i != 0; i--);
-				asm volatile("dsb");
-				asm volatile("str	r6, [r5, #52]");
-				asm volatile("isb");
-				break;
+	} else {
+		glitch_offset_cnt = offset;
+		glitch_width_cnt = length;
+	}
 
-			case 2:
-				asm volatile("isb");
-				asm volatile("str	r6, [r5, #48]");
-				for(unsigned int i = glitch_width_cnt; i != 0; i--);
-				asm volatile("str	r6, [r5, #48]");
-				asm volatile("str	r6, [r5, #52]");
-				asm volatile("isb");
-				break;
-		 }		 
-		asm("pop {r5-r6}");
-		__enable_irq();
+}
+
+/* Handler for all PIOA events */
+void pin_trigglitch_handler(const uint32_t id, const uint32_t mask)
+{
+	if ((id == ID_PIOA) && (mask == PIN_TARGET_GPIO4_MSK)){
+
+		/* Disable interrupt now */
+		pio_disable_interrupt(PIOA, PIN_TARGET_GPIO4_MSK);
+
+		if(glitch_width && glitch_enabled){
+			cwnano_glitch_insert();
+			glitch_enabled = 0;
+		}
 	}
 }
 
-#pragma GCC pop_options
-#endif
+void cwnano_glitch_insert(void)
+{
+	__disable_irq();
+
+	if (pwm_glitch) {
+		PWM->PWM_OS                  = 0;                // clear override
+		PWM->PWM_ENA                 = PWM_ENA_CHID0;    // enable channel 0 => resets pwm counter
+
+		#if 0
+		// debug: output a blip after the glitch to fine tune the wait time with a scope
+		PWM->PWM_OOV                 = PWM_OOV_OOVH0;    // override: value 1
+		PWM->PWM_OS                  = PWM_OS_OSH0;      // override: output 1, not taking care of the pwm output
+		PWM->PWM_OOV                 = ~PWM_OOV_OOVH0;   // override: value 0
+		#else
+		PWM->PWM_OS                  = PWM_OS_OSH0;      // override: output 0, not taking care of the pwm output
+		#endif
+	} else {
+		// if ((uint32_t)(glitch_payload) & 1) {
+			asm volatile(
+					"mov   r5,     #0x40000000\n\t"
+					"orr   r5, r5, #0x000e0000\n\t"
+					"orr   r5, r5, #0x00000e00\n\t"
+					"mov	r6, #1\n\t"
+
+					"ldr	r3, %[offset_cnt]\n\t"
+					"ldr	r4, %[width]\n\t"
+
+					"subs r4, #1\n\t"
+					"itt eq\n\t"
+					"ldreq r2, =WID1\n\t"
+					"beq WIDEND\n\t"
+
+					"subs r4, #1\n\t"
+					"itt eq\n\t"
+					"ldreq r2, =WID2\n\t"
+					"beq WIDEND\n\t"
+
+					"subs r4, #1\n\t"
+					"itt eq\n\t"
+					"ldreq r2, =WID3\n\t"
+					"beq WIDEND\n\t"
+
+					"subs r4, #1\n\t"
+					"itt eq\n\t"
+					"ldreq r2, =WID4\n\t"
+					"beq WIDEND\n\t"
+
+					"ldr r2, =WIDLOOP\n\t"
+				"WIDEND:\n\t"
+					"adds r2, #1\n\t" //thumb?
+
+					"isb\n\t"
+				"OFFLOOP:\n\t"
+					"subs 	r3, #1\n\t"
+					"bpl 	OFFLOOP\n\t" //branch on underflow
+					"blx 	r2\n\t" //jump to glitch payload
+					"b END\n\t"
+				"WID1:\n\t"
+					"isb\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x30]\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x34]\n\t"
+					"isb\n\t"
+					"bx lr\n\t"
+				"WID2:\n\t"
+					"isb\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x30]\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x34]\n\t"
+					"isb\n\t"
+					"bx lr\n\t"
+				"WID3:\n\t"
+					"isb\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x30]\n\t"
+					"dsb\n\t"
+					"str	r6, [r5, #0x34]\n\t"
+					"isb\n\t"
+					"bx lr\n\t"
+				"WID4:\n\t"
+					"isb\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x30]\n\t"
+					"dsb\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x34]\n\t"
+					"isb\n\t"
+					"bx lr\n\t"
+				"WID5:\n\t"
+					"isb\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x30]\n\t"
+					"dsb\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x34]\n\t"
+					"isb\n\t"
+					"bx lr\n\t"
+				"WID6:\n\t"
+					"isb\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x30]\n\t"
+					"dsb\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x34]\n\t"
+					"isb\n\t"
+					"bx lr\n\t"
+				"WID7:\n\t"
+					"isb\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x30]\n\t"
+					"dsb\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x34]\n\t"
+					"isb\n\t"
+					"bx lr\n\t"
+				"WIDLOOP:\n\t"
+					"isb\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"str	r6, [r5, #0x30]\n\t"
+					"dsb\n\t"
+				"WIDLOOP1:\n\t"
+					"subs r4, #0x01\n\t"
+					"bne WIDLOOP1\n\t"
+					"str r6, [r5, #0x34]\n\t"
+					"isb\n\t"
+					"bx lr\n\t"
+				"END:\n\t"
+
+				:
+				: [offset_cnt] "m" (glitch_offset_cnt), [width] "m" (glitch_width_cnt)
+				: "r2", "r3", "r4", "r5", "r6", "lr", "memory"
+			);
+		// }
+	}
+
+	__enable_irq();
+
+}
