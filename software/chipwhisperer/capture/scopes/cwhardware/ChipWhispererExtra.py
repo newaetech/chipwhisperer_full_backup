@@ -917,7 +917,7 @@ class ProTrigger(TriggerSettings):
 
         CWPro only
 
-        :Getter: Returns TDB
+        :Getter: Returns True for 'trigger', 'glitch' for 'glitch', 'clock' for 'clock' or False for no output.
 
         :Setter: Set False or 0 to disable, True or :code:`'trigger'` for trig_out,
                 :code:`'glitch'` for glitch out, or :code:`'clock'` for clock_out
@@ -928,7 +928,7 @@ class ProTrigger(TriggerSettings):
 
 
         if (resp[0] & 0x08):
-            return "trigger"
+            return True
         elif resp2[0] & 0x10:
             return "glitch"
         elif resp2[0] & 0x08:
@@ -940,6 +940,7 @@ class ProTrigger(TriggerSettings):
     def aux_out(self, enabled):
         if enabled is True:
             enabled = "trigger"
+        
         resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         resp2 = self.cwe.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         resp2[0] &= 0xE7
