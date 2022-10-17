@@ -21,7 +21,6 @@ from zipfile import ZipFile
 from .capture import scopes, targets
 from .capture.api import programmers
 from .capture import acq_patterns as key_text_patterns
-from .common.utils.util import fw_ver_compare
 from .common.api import ProjectFormat as project
 from .common.traces import Trace
 from .common.utils import util
@@ -118,10 +117,10 @@ def check_for_updates() -> str:
         other_logger.warning("ChipWhisperer update available! See https://chipwhisperer.readthedocs.io/en/latest/installing.html for updating instructions")
         return latest_version
 
-try:
-    check_for_updates()
-except Exception as e:
-    other_logger.warning("Could not check ChipWhisperer version, error {}".format(e))
+# try:
+#     check_for_updates()
+# except Exception as e:
+#     other_logger.warning("Could not check ChipWhisperer version, error {}".format(e))
 # from chipwhisperer.capture.scopes.cwhardware import ChipWhispererSAM3Update as CWFirmwareUpdate
 
 ktp = key_text_patterns #alias

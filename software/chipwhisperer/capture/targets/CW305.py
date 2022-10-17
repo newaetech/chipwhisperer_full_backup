@@ -34,7 +34,7 @@ from ...hardware.naeusb.naeusb import NAEUSB,packuint32
 from ...hardware.naeusb.pll_cdce906 import PLLCDCE906
 from ...hardware.naeusb.fpga import FPGA
 from ...common.utils import util
-from ...common.utils.util import camel_case_deprecated, fw_ver_required
+from ...common.utils.util import camel_case_deprecated
 from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from ..api.cwcommon import ChipWhispererCommonInterface
 
@@ -281,7 +281,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         resp = self._naeusb.readCtrl(CW305_USB.REQ_VCCINT, dlen=3)
         return float(resp[1] | (resp[2] << 8)) / 1000.0
 
-    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=10E6, hw_location=None, sn=None):
+    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=20E6, hw_location=None, sn=None):
         """Connect to CW305 board, and download bitstream.
 
         If the target has already been programmed it skips reprogramming

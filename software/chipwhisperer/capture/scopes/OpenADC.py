@@ -14,11 +14,12 @@
 from chipwhisperer.logging import *
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from ...hardware.naeusb.serial import USART
-from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererDigitalPattern, ChipWhispererExtra, \
+from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererExtra, \
      ChipWhispererSAD, ChipWhispererHuskyClock
 from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP, LEDSettings, HuskyErrors, \
         USERIOSettings, XADCSettings, LASettings, ADS4128Settings
 from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings
+
 try:
     from ..trace import TraceWhisperer
     from ..trace.TraceWhisperer import UARTTrigger
@@ -30,7 +31,6 @@ from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from .openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from ...common.utils import util
 from ...common.utils.util import dict_to_str, DelayedKeyboardInterrupt
-from collections import OrderedDict
 import time
 import numpy as np
 from ..api.cwcommon import ChipWhispererCommonInterface
@@ -167,13 +167,15 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         else:
             self.io.cwe.setAVRISPMode(0)
 
-        if self._is_husky and husky_userio:
-            if husky_userio == "jtag":
-                self.userio.mode = "target_debug_jtag"
-            elif husky_userio == "swd":
-                self.userio.mode = "target_debug_swd"
-            else:
-                raise ValueError("Invalid husky userio mode: {}".format(husky_userio))
+        if self._is_husky:
+            if husky_userio:
+                if husky_userio == "jtag":
+                    self.userio.mode = "target_debug_jtag"
+                elif husky_userio == "swd":
+                    self.userio.mode = "target_debug_swd"
+                else:
+                    raise ValueError("Invalid husky userio mode: {}".format(husky_userio))
+            self._getNAEUSB().set_husky_tms_wr(1)
         super().enable_MPSSE(enable)
 
         if enable and (not self._is_husky):
@@ -226,6 +228,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
         if self._is_husky:
             self.glitch.enabled = True
+            time.sleep(0.1)
             self.glitch.clk_src = "pll"
         else:
             self.glitch.clk_src = "clkgen"
@@ -253,6 +256,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
         if self._is_husky:
             self.glitch.enabled = True
+            time.sleep(0.1)
             self.glitch.clk_src = "pll"
         else:
             self.glitch.clk_src = "clkgen"
@@ -609,6 +613,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         """
         self._read_only_attrs = []
         self._saved_sn = sn
+
         self.scopetype = OpenADCInterface_NAEUSBChip()
 
         self.scopetype.con(sn, idProduct, bitstream, force, prog_speed, **kwargs)
@@ -703,9 +708,6 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.disable_newattr()
         self._is_connected = True
         self.connectStatus = True
-
-        if self._getNAEUSB().is_MPSSE_enabled():
-            self.io.cwe.setAVRISPMode(1)
 
         return True
 

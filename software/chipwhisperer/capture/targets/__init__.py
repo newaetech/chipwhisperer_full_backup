@@ -39,10 +39,10 @@ from .CW305_ECC import CW305_ECC
 from .CW310 import CW310
 from typing import Union
 
-try:
-    from .sakura_g import SakuraG #needs ftdi module
-except ImportError:
-    pass
+# try:
+#     from .sakura_g import SakuraG #needs ftdi module
+# except ImportError:
+#     pass
 
 # from .SmartCard import SmartCard #Tied to GUI
 SimpleSerialTypes = Union[SimpleSerial, SimpleSerial2, SimpleSerial2_CDC]

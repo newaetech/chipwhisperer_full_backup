@@ -25,7 +25,7 @@ cwcr2_v = [0, 11]
 cwcr2_files = [("cwrev2_firmware.zip",  os.path.join(hwdir, r"capture/chipwhisperer-rev2/cwrev2_firmware.zip")),
                ("OpenADC.ihx", os.path.join(hwdir, r"capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"))]
 
-cwlite_v = [0, 62]
+cwlite_v = [0, 64]
 cwlite_files = [("cwlite_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-lite/cwlite_firmware.zip")),
                 ("SAM3U_CW1173.bin", os.path.join(hwdir, r"capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src/ChipWhisperer-Lite.bin"))]
 
@@ -40,7 +40,7 @@ cwhusky_files = [("husky_firmware.zip", os.path.join(hwdir, r"capture/chipwhispe
 cwbergen_v = [1, 2]
 cwbergen_files = [("CW310.bin", os.path.join(hwdir, r"victims/cw310_bergenboard/CW310.bin"))]
 
-cwnano_v = [0, 62]
+cwnano_v = [0, 64]
 #hardware\capture\chipwhisperer-nano\firmware\cwnano-firmware\Debug\cwnano-firmware.bin
 cwnano_files = [("SAM3U_CWNANO.bin", os.path.join(hwdir, r"capture/chipwhisperer-nano/firmware/cwnano-firmware/src/chipWhisperer-Nano.bin"))]
 

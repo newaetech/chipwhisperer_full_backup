@@ -624,6 +624,18 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
     def _getCWType(self):
         return 'cwnano'
 
+    def reset_clock_phase(self):
+        """Resets the target and adc clocks, resetting their phase
+
+        .. warning:: causes an interruption in the target clock. You may need to reset the target.
+        """
+        if self.check_feature("NANO_CLOCK_RESET"):
+            tfreq = self.io.clkout
+            afreq = self.adc.clk_freq
+            self._getNAEUSB().sendCtrl(0x22, 0xF0)
+            self.io.clkout = tfreq
+            self.adc.clk_freq = afreq
+
     def con(self, sn=None, **kwargs):
         """Connects to attached chipwhisperer hardware (Nano)
 

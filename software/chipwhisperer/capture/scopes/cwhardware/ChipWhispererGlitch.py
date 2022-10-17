@@ -28,7 +28,6 @@ from ....logging import *
 import zipfile
 import datetime
 import math
-from collections import OrderedDict
 from ....capture.scopes.cwhardware import PartialReconfiguration as pr
 from ....common.utils import util
 
@@ -77,7 +76,7 @@ class GlitchSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
 
         if self._is_husky:
             rtn['enabled'] = self.enabled

@@ -73,7 +73,6 @@ def reset_target():
     scope.io.nrst = 'high_z'
     time.sleep(0.2)
 
-
 # TODO: program FW?
 scope.sc.reset_fpga()
 scope.adc.clip_errors_disabled = True
@@ -445,12 +444,12 @@ testUserioEdgeTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '9/2/2022, 16:01'
+    assert scope.fpga_buildtime == '9/9/2022, 10:28'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
-    assert scope.fw_version['minor'] in [3, 4]
-    #assert scope.sam_build_date == '21:12:14 May 22 2022'
+    assert scope.fw_version['minor'] == 4
+    assert scope.sam_build_date == '16:25:54 Aug 24 2022'
 
 
 @pytest.mark.parametrize("address, nbytes, reps, desc", testRWData)

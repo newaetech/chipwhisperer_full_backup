@@ -209,3 +209,4 @@ def generate_contributing(app, config):
 def setup(app):
     # app.connect('config-inited', create_tutorial_files)
     app.connect('config-inited', generate_contributing)
+    app.add_css_file("custom.css")

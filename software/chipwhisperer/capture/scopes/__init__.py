@@ -15,9 +15,9 @@ Scopes:
 from .OpenADC import OpenADC
 from .cwnano import CWNano
 from typing import Union
-try:
-    from .sakura_g import SakuraG
-except:
-    pass
+# try:
+#     from .sakura_g import SakuraG
+# except:
+#     pass
 
 ScopeTypes = Union[OpenADC, CWNano]

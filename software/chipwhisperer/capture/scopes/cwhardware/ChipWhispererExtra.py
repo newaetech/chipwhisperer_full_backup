@@ -25,7 +25,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import time
-from collections import OrderedDict
 from . import ChipWhispererGlitch
 from ....common.utils import util
 
@@ -102,7 +101,7 @@ class GPIOSettings(util.DisableNewAttr):
         return tuple(((bitmask >> i) & 0x01) for i in range(4))
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['tio1'] = self.tio1
         rtn['tio2'] = self.tio2
         rtn['tio3'] = self.tio3
@@ -666,7 +665,7 @@ class TriggerSettings(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['triggers'] = self.triggers
         rtn['module'] = self.module
 
@@ -918,20 +917,42 @@ class ProTrigger(TriggerSettings):
 
         CWPro only
 
-        :Getter: Returns True if yes, False if no
+        :Getter: Returns True for 'trigger', 'glitch' for 'glitch', 'clock' for 'clock' or False for no output.
 
-        :Setter: Set True to enable aux_out, False to disable
+        :Setter: Set False or 0 to disable, True or :code:`'trigger'` for trig_out,
+                :code:`'glitch'` for glitch out, or :code:`'clock'` for clock_out
         """
+        # resp1 = self.cwe.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        return bool(resp[0] & 0x08)
+        resp2 = self.cwe.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+
+
+        if (resp[0] & 0x08):
+            return True
+        elif resp2[0] & 0x10:
+            return "glitch"
+        elif resp2[0] & 0x08:
+            return "clock"
+        else:
+            return False
 
     @aux_out.setter
     def aux_out(self, enabled):
+        if enabled is True:
+            enabled = "trigger"
+        
         resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        resp2 = self.cwe.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        resp2[0] &= 0xE7
         resp[0] &= 0xE7
-        if enabled:
+        if enabled == "trigger":
             resp[0] |= 0x08
+        elif enabled == "glitch":
+            resp2[0] |= 0x10
+        elif enabled == "clock":
+            resp2[0] |= 0x08
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, resp2)
 
 
 class HuskyTrigger(TriggerSettings):
@@ -945,7 +966,7 @@ class HuskyTrigger(TriggerSettings):
         self._is_husky = True
 
     def _dict_repr(self):
-        rtn = OrderedDict()
+        rtn = {}
         rtn['module'] = self.module
         if self.module == 'ADC':
             rtn['level'] = self.level
