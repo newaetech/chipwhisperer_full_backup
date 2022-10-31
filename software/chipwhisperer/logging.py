@@ -3,7 +3,7 @@ import os
 import tempfile
 
 
-log_dir = tempfile.gettempdir()
+log_dir =  tempfile.mkdtemp(prefix='chipwhisperer')
 
 logging.basicConfig(level=logging.WARNING)
 cw_formatter = logging.Formatter("(%(name)s %(levelname)s|File %(filename)s:%(lineno)d) %(message)s")
