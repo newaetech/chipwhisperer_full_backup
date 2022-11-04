@@ -212,22 +212,6 @@ void pin_trigglitch_handler(const uint32_t id, const uint32_t mask)
 void cwnano_glitch_insert(void)
 {
 	__disable_irq();
-
-	// if (pwm_glitch) {
-	// 	PWM->PWM_OS                  = 0;                // clear override
-	// 	PWM->PWM_ENA                 = PWM_ENA_CHID0;    // enable channel 0 => resets pwm counter
-
-	// 	#if 0
-	// 	// debug: output a blip after the glitch to fine tune the wait time with a scope
-	// 	PWM->PWM_OOV                 = PWM_OOV_OOVH0;    // override: value 1
-	// 	PWM->PWM_OS                  = PWM_OS_OSH0;      // override: output 1, not taking care of the pwm output
-	// 	PWM->PWM_OOV                 = ~PWM_OOV_OOVH0;   // override: value 0
-	// 	#else
-	// 	PWM->PWM_OS                  = PWM_OS_OSH0;      // override: output 0, not taking care of the pwm output
-	// 	#endif
-	// } else {
-		// if ((uint32_t)(glitch_payload) & 1) {
-
 			asm volatile(
 				"movs r0, #1\n\t"
 				"ldr r1, %[offset_cnt]\n\t"
@@ -285,10 +269,6 @@ void cwnano_glitch_insert(void)
 					"isb\n\t"
 					"bx lr\n\t"
 				"WID3:\n\t"
-					// "isb\n\t"
-					// "nop\n\t"
-					// "nop\n\t"
-					// "nop\n\t"
 				 	"str.w r0, [%[ioreg], #48]\n\t"
 					"nop\n\t"
 				 	"str r0, [%[ioreg], #48]\n\t"
@@ -365,30 +345,6 @@ void cwnano_glitch_insert(void)
 				 	"str r0, [%[ioreg], #52]\n\t"
 					"isb\n\t"
 					"bx lr\n\t"
-				// "END:\n\t"
-				// "WIDTH_CASE_0:\n\t"
-				// 	"str r0, [%[ioreg], #48]\n\t"
-				// "WIDTH_LOOP_0:\n\t"
-				// 	"subs r2, #1\n\t"
-				// 	"bne WIDTH_LOOP_0\n\t"
-				// 	"str r0, [%[ioreg], #52]\n\t"
-				// 	"b GLITCH_END\n\t"
-				// "WIDTH_CASE_1:\n\t"
-				// 	"str r0, [%[ioreg], #48]\n\t"
-				// "WIDTH_LOOP_1:\n\t"
-				// 	"subs r2, #1\n\t"
-				// 	"bne WIDTH_LOOP_1\n\t"
-				// 	"nop\n\t"
-				// 	"str r0, [%[ioreg], #52]\n\t"
-				// 	"b GLITCH_END\n\t"
-				// "WIDTH_CASE_2:\n\t"
-				// 	"str r0, [%[ioreg], #48]\n\t"
-				// "WIDTH_LOOP_2:\n\t"
-				// 	"subs r2, #1\n\t"
-				// 	"bne WIDTH_LOOP_2\n\t"
-				// 	"nop\n\t"
-				// 	"nop\n\t"
-				// 	"str r0, [%[ioreg], #52]\n\t"
 					"GLITCH_END:\n\t"
 					"nop\n\t"
 				:
