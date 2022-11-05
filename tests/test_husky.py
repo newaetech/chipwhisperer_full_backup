@@ -442,9 +442,17 @@ testUserioEdgeTriggerData = [
     ([3,4,5,6,7],   260,        3,      ''),    # exclude pins 0-2 since they are used for trace and could be target-driven
 ]
 
+testGlitchTriggerData = [
+    #module             pattern         reps,   desc
+    ('basic',           [0,1],          100,    'basic_glitch_arm_active'),
+    ('basic',           [0,1,0],        100,    'basic_glitch_arm_inactive'),
+    ('edge_counter',    [1,0,1,0],      100,    'edge_glitch_arm_inactive'),
+    ('edge_counter',    [0,1,0,1,0,1],  100,    'edge_glitch_arm_active'),
+]
+
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '9/9/2022, 10:28'
+    assert scope.fpga_buildtime == '11/3/2022, 22:46'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -1543,6 +1551,62 @@ def glitch_continuous():
         errors += 1
         print("WARNING: crowbar still active, make sure target is ok")
     assert errors == 0
+
+@pytest.mark.parametrize("module, pattern, reps, desc", testGlitchTriggerData)
+#@pytest.mark.skipif(not target_attached, reason='No target detected')
+def test_glitch_trigger(fulltest, module, pattern, reps, desc):
+    if not fulltest:
+        pytest.skip("use --fulltest to run")
+        return None
+    scope.reset_fpga()
+    reset_setup()
+    scope.default_setup()
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    scope.glitch.enabled = True
+    scope.glitch.clk_src = 'pll'
+    scope.glitch.output = "enable_only"
+    scope.glitch.trigger_src = 'ext_single'
+    scope.glitch.repeat = 10
+    scope.glitch.ext_offset = 0
+
+    scope.io.glitch_lp = False
+    scope.io.glitch_hp = False
+    scope.io.hs2 = 'glitch'
+
+    scope.LA.enabled = True
+    scope.LA.oversampling_factor = 20
+    scope.LA.downsample = 1
+    scope.LA.capture_group = 'glitch debug'
+    scope.LA.trigger_source = "trigger_glitch"
+    scope.LA.capture_depth = 500
+
+    scope.trigger.module = module
+    scope.trigger.triggers = 'nrst'
+    scope.trigger.edges = 4
+    scope.adc.basic_mode = 'rising_edge'
+    scope.adc.clip_errors_disabled = True
+    scope.adc.lo_gain_errors_disabled = True
+
+    scope.io.nrst = False
+    slack = scope.LA.oversampling_factor
+    expected_edges = [104, 304]
+
+    for i in range(reps):
+        scope.LA.arm()
+        scope.arm()
+        for j in pattern:
+            scope.io.nrst = j
+        scope.capture()
+
+        assert not scope.LA.fifo_empty(), "LA capture failed"
+        raw = scope.LA.read_capture_data()
+        hs2 = scope.LA.extract(raw, 8)
+        edges = find_edges(hs2)
+        assert len(edges) == 2, 'Expected 2 glitch edges, got %d' % len(edges)
+        assert not (1 in hs2[:edges[0]+1]), 'unexpected early glitch edge'
+        for i in range(2):
+            assert abs(edges[i] - expected_edges[i]) < slack, 'edge #%d expected near %d, found at %d' % (i+1, expected_edges[i], edges[i])
 
 
 def test_xadc():
