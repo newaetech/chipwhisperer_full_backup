@@ -209,6 +209,8 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         """
         if self._is_husky:
             self.glitch.enabled = False
+            self.adc.lo_gain_errors_disabled = False
+            self.adc.clip_errors_disabled = False
 
         self.io.glitch_lp = False
         self.io.glitch_hp = False
@@ -227,6 +229,8 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.default_setup()
 
         if self._is_husky:
+            self.adc.lo_gain_errors_disabled = True
+            self.adc.clip_errors_disabled = True
             self.glitch.enabled = True
             time.sleep(0.1)
             self.glitch.clk_src = "pll"
@@ -255,6 +259,8 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.default_setup()
 
         if self._is_husky:
+            self.adc.lo_gain_errors_disabled = True
+            self.adc.clip_errors_disabled = True
             self.glitch.enabled = True
             time.sleep(0.1)
             self.glitch.clk_src = "pll"
