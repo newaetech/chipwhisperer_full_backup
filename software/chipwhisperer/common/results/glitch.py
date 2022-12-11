@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt # type: ignore
+#import matplotlib.pyplot as plt # type: ignore
 
 # GlitchController will be part of ChipWhisperer core - just run this block
 # for now.
@@ -18,10 +18,14 @@ class GlitchController:
         
         self.parameter_min = [0.0] * len(parameters)
         self.parameter_max = [10.0] * len(parameters)
-        self.steps = [1]
+        self.steps = [[1]] * len(parameters) # add a separate step setting for each parameter
         
         self.widget_list_parameter = None
         self.widget_list_groups = None
+
+        self._dmaps = None
+        self._buffers = None
+        self._glitch_plotdots = None
         
         self.clear()
         
@@ -52,23 +56,115 @@ class GlitchController:
                 self.widget_list_parameter[i].max = high
     
     def set_step(self, parameter, step):
-        '''Set size, can be either a single value or a list of step-sizes to iterate through'''
-        raise NotImplementedError("TODO")
+        '''Set a step for a single parameter
+
+        Can be a single value, or a list of step-sizes.
+
+        Single values will be extended to match the length of the rest of 
+        parameters' step-sizes.
+
+        Lists must match the length of other step sizes.
+
+        Example::
+
+            gc.set_global_step([1, 2, 3])
+            gc.set_step("width", 10) # eqv to [10, 10, 10]
+            gc.set_step("offset", [5, 10, 15])
+            gc.set_step("ext_offset", [1, 2]) # error, list too short
+            gc.set_step(2, [1, 2, 5, 10]) # error, list too long
+        '''
+        if type(parameter) is str:
+            parameter = self.parameters.index(parameter)
+        if hasattr(step, "__iter__"):
+            if len(step) != self._num_steps:
+                raise ValueError("Invalid number of steps {}")
+            self.steps[parameter] = step
+        else:
+            self.steps[parameter] = [step] * self._num_steps
+
+
+
         
     def set_global_step(self, steps):
-        '''Set step for all parameters (Eventually support per-parameter)'''
-        if hasattr(steps, "__iter__"):
-            self.steps = steps
-        else:
-            self.steps = [steps]
+        '''Set step for all parameters. 
+        
+        Can be a single value, or a list of step-sizes to iterate through.
+
+        Single values will be converted to a list of length 1.
+        
+        Overwrites individually set steps.
+        '''
+        for i in range(len(self.steps)):
+            if hasattr(steps, "__iter__"):
+                self.steps[i] = steps
+            else:
+                self.steps[i] = [steps]
+        self._num_steps = len(self.steps[0])
+
     
-    def add(self, group, parameters, strdesc=None, metadata=None):
+    def add(self, group, parameters=None, strdesc=None, metadata=None, plot=True):
+        if parameters is None:
+            parameters = self.parameter_values
         self.results.add(group, parameters, strdesc, metadata)    
         
         i = self.groups.index(group)        
         #Basic count
         self.group_counts[i] += 1
         self.widget_list_groups[i].value =  self.group_counts[i]
+
+        if plot and self._buffers:
+            self.update_plot(parameters[self._x_index], parameters[self._y_index], group)
+
+    def glitch_plot(self, plotdots, x_index=0, y_index=1, x_bound=None, y_bound=None, bufferlen=10000):
+        import holoviews as hv
+        from holoviews.streams import Buffer
+        from pandas import DataFrame
+        hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
+        if type(x_index) is str:
+            x_index = self.parameters.index(x_index)
+        if type(y_index) is str:
+            y_index = self.parameters.index(y_index)
+
+        self._glitch_plotdots = plotdots
+        self._buffers = {}
+        self._dmaps = {}
+        self._x_index = x_index
+        self._y_index = y_index
+
+        x_label = self.parameters[x_index]
+        y_label = self.parameters[y_index]
+
+        for k in plotdots.keys():
+            if plotdots[k] is None:
+                continue
+            self._buffers[k] = Buffer(DataFrame({'x': [], 'y': []}, columns=['x', 'y']), length=bufferlen, index=False)
+            self._dmaps[k] = hv.DynamicMap(hv.Points, streams=[self._buffers[k]]).opts(height=600, width=800, 
+                framewise=True, size=10, marker=plotdots[k][0], color=plotdots[k][1], tools=['hover'])
+
+
+        plot_iter = iter(self._dmaps)
+        plot = self._dmaps[next(plot_iter)]
+
+        for tmp in plot_iter:
+            plot *= self._dmaps[tmp]
+
+        if not x_bound:
+            x_bound = {}
+        else:
+            x_bound = {"range": x_bound}
+
+        if not y_bound:
+            y_bound = {}
+        else:
+            y_bound = {"range": y_bound}
+        return plot.redim(x=hv.Dimension(x_label, **x_bound), y=hv.Dimension(y_label, **y_bound))
+        
+    def update_plot(self, x, y, label):
+        from pandas import DataFrame
+        if label not in self._buffers:
+            #raise ValueError("Invalid label {}. Valid labels are {}".format(label, self._buffers.keys()))
+            return #probably a label not used
+        self._buffers[label].send(DataFrame([(x, y)], columns=['x', 'y']))
     
     def display_stats(self):
         if widgets is None:
@@ -90,6 +186,17 @@ class GlitchController:
                                           for i,p in enumerate(self.parameters)]
             
         display(*(self.widget_list_groups + self.widget_list_parameter))
+
+    def plot_2d(self, plotdots=None, x_index=0, y_index=1, x_units=None, y_units=None, mask=True):
+        if type(x_index) is str:
+            x_index = self.parameters.index(x_index)
+        if type(y_index) is str:
+            y_index = self.parameters.index(y_index)
+        if plotdots is None:
+            plotdots = self._glitch_plotdots
+
+        return self.results.plot_2d(plotdots, x_index, y_index, x_units, y_units, mask)
+
        
         
     def glitch_values(self, clear=True):
@@ -100,7 +207,10 @@ class GlitchController:
         if clear:
             self.clear()
         
-        for stepsize in self.steps:
+        #transpose steps so that all parameters' steps get passed to loop_rec instead of just one
+        steps = list(map(list, zip(*self.steps)))
+
+        for stepsize in steps:
             for val in self._loop_rec(0, len(self.parameter_values)-1, stepsize):
                 if self.widget_list_parameter:
                     for i,v in enumerate(val):
@@ -112,14 +222,14 @@ class GlitchController:
         if parameter_index == final_index:            
             while self.parameter_values[parameter_index] <= self.parameter_max[parameter_index]:                                
                 yield self.parameter_values
-                self.parameter_values[parameter_index] += step
+                self.parameter_values[parameter_index] += step[parameter_index]
         else:
             while self.parameter_values[parameter_index] <= self.parameter_max[parameter_index]: 
                 yield from self._loop_rec(parameter_index+1, final_index, step)
-                self.parameter_values[parameter_index] += step
+                self.parameter_values[parameter_index] += step[parameter_index]
                 
 
-class GlitchResults(object):
+class GlitchResults:
     """GlitchResults tracks and plots fault injection attempts.
     
     When creating a new object, you must specify the groups of potential glitch
@@ -165,6 +275,18 @@ class GlitchResults(object):
         
         for k in self.groups:
             self.result_dict[k] = []
+
+    def results(self, ignore_params=[]):
+        """Returns results as
+        results = [
+            {'param1': p_11, 'param2': p_21, ..., 'groupA': n_A1, 'groupB': n_B1, "groupC": n_C1, ...},
+            {'param1': p_12, 'param2': p_22, ..., 'groupA': n_A2, 'groupB': n_B2, "groupC": n_C2, ...},
+        ]
+
+        Where p_1x, p_2x, ... is a unique grouping of parameters (i.e. width = 10, offset = 20, ...)
+        and n_A1
+        """
+        return None
         
     def add(self, group, parameters, strdesc=None, metadata=None):
         '''
@@ -215,6 +337,7 @@ class GlitchResults(object):
 
         return counts
 
+
     def plot_2d(self, plotdots, x_index=0, y_index=1, x_units=None, y_units=None, mask=True):
         '''
         Generate a 2D plot of glitch success rate using matplotlib.
@@ -223,6 +346,9 @@ class GlitchResults(object):
         plt.show() after calling this function if you want more control (or the figure does
         not show by default).
         '''
+        import holoviews as hv
+        hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
+        plot = hv.Points([])
         data = self.calc()
 
         #We only want legend to show for first element... bit of a hack here
@@ -235,18 +361,23 @@ class GlitchResults(object):
                 if plotdots[g]:
                     if p[g] > 0:
                         if g in legs:
-                            leg = g.title()
+                            leg = {'label': g.title()}
                             #No need to show this one anymore
+
                             legs.remove(g)
                         else:
-                            leg = None
+                            leg = {}
 
                         sr = float(p[g]) / float(p['_total']) + 0.5
                         
                         if sr > 1.0:
                             sr = 1.0
                         
-                        plt.plot(p['_parameter'][x_index], p['_parameter'][y_index], plotdots[g], alpha=sr, label=leg)
+                        if len(plotdots[g]) < 2:
+                            raise ValueError("Invalid plotdot {}, must be 2 chars long".format(plotdots[g]))
+                        plot *= hv.Points((p['_parameter'][x_index], p['_parameter'][y_index]), **leg).opts(\
+                            color=plotdots[g][1], marker=plotdots[g][0], size=10, height=600, width=800)
+                        # plt.plot(p['_parameter'][x_index], p['_parameter'][y_index], plotdots[g], alpha=sr, label=leg)
 
                         if mask:
                             break
@@ -254,56 +385,13 @@ class GlitchResults(object):
         xlabel = self.parameters[x_index].title()
         if x_units:
             xlabel += " (" + x_units + ")"
-        plt.xlabel(xlabel)
+        # plt.xlabel(xlabel)
 
         ylabel = self.parameters[y_index].title()
         if y_units:
             ylabel += " (" + y_units + ")"
-        plt.ylabel(ylabel)
+        # plt.ylabel(ylabel)
 
-        plt.legend()
+        plot.redim(y=hv.Dimension(ylabel), x=hv.Dimension(xlabel))
 
-    def _old_plot_2d(self, plotdots, x_index=0, y_index=1, x_units=None, y_units=None, mask=True):
-        '''
-        Generate a 2D plot of glitch success rate using matplotlib.
-        
-        Plotting is done in the default figure - you may need to call plt.figure() before and
-        plt.show() after calling this function if you want more control (or the figure does
-        not show by default).
-        '''
-        
-        data = self.calc()
-        
-        #We only want legend to show for first element... bit of a hack here
-        legs = self.groups[:]
-        
-        #Generate success rates
-        for p in data:
-            #Plot based on non-zero priority if possible
-            for g in self.groups:
-                if plotdots[g]:
-                    if p[g] > 0:
-                        if g in legs:
-                            leg = g.title()
-                            #No need to show this one anymore
-                            legs.remove(g)
-                        else:
-                            leg = None
-
-                        sr = float(p[g]) / float(p['_total'])
-                        plt.plot(p['_parameter'][x_index], p['_parameter'][y_index], plotdots[g], alpha=sr, label=leg)
-
-                        if mask:
-                            break
-                        
-        xlabel = self.parameters[x_index].title()
-        if x_units:
-            xlabel += " (" + x_units + ")"
-        plt.xlabel(xlabel)
-        
-        ylabel = self.parameters[y_index].title()
-        if y_units:
-            ylabel += " (" + y_units + ")"
-        plt.ylabel(ylabel)
-        
-        plt.legend()
+        return plot
