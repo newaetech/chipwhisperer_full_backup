@@ -45,6 +45,10 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     The target is automatically connected to if the default configuration
     adequate.
 
+    A `noflush=True` kwarg may be used to suppress an initial protocol-specific
+    flush of the UART. The caller is then responsible for invoking flush() manually
+    to flush underlying buffers.
+
     For more help use the help() function with one of the submodules
     (target.baud, target.write, target.read, ...).
 
@@ -182,9 +186,15 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
         self.ser.con(scope)
-        # 'x' flushes everything & sets system back to idle
-        self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxx")
-        self.ser.flush()
+
+        # Check to see if the caller wants to be responsible for flushing the
+        # UART on connect. For real world targets, we may just want to quietly
+        # open serial port without sending "xxx..." at a potentially incorrect
+        # baud rate.
+        if kwargs.get('noflush', False) == False:
+            # 'x' flushes everything & sets system back to idle
+            self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxx")
+            self.ser.flush()
 
     def dis(self):
         self.close()
