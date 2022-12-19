@@ -291,7 +291,7 @@ def import_project(filename : str, file_type : str='zip', overwrite : bool=False
     return proj
 
 
-def scope(scope_type : Type[scopes.ScopeTypes]=None, name : Optional[str]=None, 
+def scope(scope_type : Optional[Type[scopes.ScopeTypes]]=None, name : Optional[str]=None, 
     sn : Optional[str]=None, idProduct : Optional[int]=None,
     bitstream : Optional[str]=None, force : bool=False,
     prog_speed : int=int(10E6),
