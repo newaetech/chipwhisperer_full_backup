@@ -187,7 +187,7 @@ class GlitchController:
             
         display(*(self.widget_list_groups + self.widget_list_parameter))
 
-    def plot_2d(self, plotdots=None, x_index=0, y_index=1, x_units=None, y_units=None, mask=True):
+    def plot_2d(self, plotdots=None, x_index=0, y_index=1, *args, **kwargs):
         if type(x_index) is str:
             x_index = self.parameters.index(x_index)
         if type(y_index) is str:
@@ -195,7 +195,7 @@ class GlitchController:
         if plotdots is None:
             plotdots = self._glitch_plotdots
 
-        return self.results.plot_2d(plotdots, x_index, y_index, x_units, y_units, mask)
+        return self.results.plot_2d(plotdots, x_index, y_index, *args, **kwargs)
 
        
         
@@ -265,21 +265,20 @@ class GlitchResults:
     def __init__(self, groups, parameters):
         self.groups = groups
         self.parameters = parameters
+        self._result_dict = {}
         
     def clear(self):
         '''
         Clears stored statistics in preperation for a new run.
         '''
-        
-        self.result_dict = {}
-        
-        for k in self.groups:
-            self.result_dict[k] = []
+        self._result_dict = {}
 
     def results(self, ignore_params=[]):
-        """Returns results as
-        results = [
-            {'param1': p_11, 'param2': p_21, ..., 'groupA': n_A1, 'groupB': n_B1, "groupC": n_C1, ...},
+        """Returns results as a dictionary of 
+        results = {
+            (param1, param2, ...): (num_total, num_group1, num_group2, ...)
+        }
+            {'params': (params), 'groups': n_A1, 'groupB': n_B1, "groupC": n_C1, ...},
             {'param1': p_12, 'param2': p_22, ..., 'groupA': n_A2, 'groupB': n_B2, "groupC": n_C2, ...},
         ]
 
@@ -292,22 +291,83 @@ class GlitchResults:
         '''
         Add a result to ChipWhisperer glitch map generator.
         '''
-        
         if group not in self.groups:
-            raise ValueError("Invalid group {:s} - know groups: ({:s})".format(group, str(self.groups)))
-            
+            raise ValueError("Invalid group {} (groups are {})".format(group, self.groups))
         if len(parameters) != len(self.parameters):
             raise ValueError("Invalid number of parameters passed: {:d} passed, {:d} expected".format(len(parameters), len(self.parameters)))
+
+        parameters = tuple(parameters) # make sure parameters is a tuple so it can be hashed
+
+        # if the parameters aren't already in the dict, add an entry for them
+        if not parameters in self._result_dict: 
+            self._result_dict[parameters] = {'total': 0}
+            for k in self.groups:
+                self._result_dict[parameters][k] = 0
+                self._result_dict[parameters][k+'_rate'] = 0 # entry for success/reset/etc rate, makes plotting easier
+
+        # add to the group totals
+        self._result_dict[parameters][group] += 1
+        self._result_dict[parameters]['total'] += 1
+
+    def res_dict_of_lists(self, results):
+        rtn = {}
+
+        # create a list of values for each parameter
+        orig_key = next(iter(results))
+        for i in range(len(orig_key)):
+            rtn[self.parameters[i]] = [p[i] for p in results]
+
+        # do the same for each group/group success rate
+
+        orig_val = next(iter(results.values())) # grab group dict for first parameter
+
+        for k in orig_val:
+            rtn[k] = [results[p][k] for p in results] # add a list for each group success rate
+
+        return rtn
+
+
         
-        r = {'parameters':parameters, 'strdesc':strdesc, 'metadata':metadata}
-        
-        self.result_dict[group].append(r)
-        
-    def calc(self):
+    def calc(self, ignore_params=[]):
         '''
         Calculate how many glitches had various effects. Return updated stats.
+
+        Can ignore parameters, combining their results. For example, with 3 parameters,
+        ignoring parmameter 2 will combine the results where parameter 0 and 1 are the same,
+        but 2 is different.
         '''
+
+        # make sure ignore_params is a list
+        if type(ignore_params) is int:
+            ignore_params = [ignore_params]
+
+        ignore_params = list(ignore_params)
+        ignore_params.reverse()
+
+        rtn = {}
+        for param in self._result_dict:
+
+            # param tuple needs to be list so we can delete entries
+            new_param = list(param)
+            for p in ignore_params:
+                del(new_param[p])
+
+            # now needs to be tuple so can use as index for dict
+            new_param = tuple(new_param)
+            if new_param in rtn:
+                for group in rtn[new_param]:
+                    rtn[new_param][group] += self._result_dict[param][group]
+                rtn[new_param]['total'] += self._result_dict[param]['total']
+            else:
+                rtn[new_param] = dict(self._result_dict[param])
         
+        # calculate rate of occurrence for each group
+        for param in rtn:
+            for group in self.groups:
+                rtn[param][group+'_rate'] = rtn[param][group] / rtn[param]['total']
+        
+        return rtn
+
         results = set()
         
         #Figure out *all* test values
@@ -338,7 +398,7 @@ class GlitchResults:
         return counts
 
 
-    def plot_2d(self, plotdots, x_index=0, y_index=1, x_units=None, y_units=None, mask=True):
+    def plot_2d(self, plotdots, x_index=0, y_index=1, x_units=None, y_units=None, alpha=True):
         '''
         Generate a 2D plot of glitch success rate using matplotlib.
 
@@ -347,40 +407,62 @@ class GlitchResults:
         not show by default).
         '''
         import holoviews as hv
+        from holoviews import opts
         hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
         plot = hv.Points([])
-        data = self.calc()
+        if type(x_index) is str:
+            x_index = self.parameters.index(x_index)
+        if type(y_index) is str:
+            y_index = self.parameters.index(y_index)
+
+        # remove parameters from data that we won't be plotting
+        remove_params = list(range(len(self.parameters)))
+        if x_index > y_index:
+            del(remove_params[x_index])
+            del(remove_params[y_index])
+        else:
+            del(remove_params[y_index])
+            del(remove_params[x_index])
+
+        data = self.calc(remove_params)
+
+        # get data as {'param0': [list], 'param1': [list], 'group0_rate': n, ...} for easy plotting
+        fmt_data = self.res_dict_of_lists(data)
+
 
         #We only want legend to show for first element... bit of a hack here
         legs = self.groups[:]
+        # remove datapoints with zero % group rate
+        def remove_zeros(result, group):
+            rtn = {}
+            for key in result:
+                rtn[key] = [result[key][i] for i, j in enumerate(result[key]) if result[group][i] > 0]
+            return rtn
+        
 
-        #Generate success rates
-        for p in data:
-            #Plot based on non-zero priority if possible
-            for g in self.groups:
-                if plotdots[g]:
-                    if p[g] > 0:
-                        if g in legs:
-                            leg = {'label': g.title()}
-                            #No need to show this one anymore
+        # Plot once for each group
+        for g in self.groups:
+            if plotdots[g]:
+                # plot everything, but if group rate is 0, it'll be fully transparent
+                # if g in legs:
+                group_data = remove_zeros(fmt_data, g)
 
-                            legs.remove(g)
-                        else:
-                            leg = {}
+                leg = {'label': g.title()}
+                    #No need to show this one anymore
 
-                        sr = float(p[g]) / float(p['_total']) + 0.5
-                        
-                        if sr > 1.0:
-                            sr = 1.0
-                        
-                        if len(plotdots[g]) < 2:
-                            raise ValueError("Invalid plotdot {}, must be 2 chars long".format(plotdots[g]))
-                        plot *= hv.Points((p['_parameter'][x_index], p['_parameter'][y_index]), **leg).opts(\
-                            color=plotdots[g][1], marker=plotdots[g][0], size=10, height=600, width=800)
-                        # plt.plot(p['_parameter'][x_index], p['_parameter'][y_index], plotdots[g], alpha=sr, label=leg)
+                #     legs.remove(g)
+                # else:
+                #     leg = {}
 
-                        if mask:
-                            break
+                if len(plotdots[g]) < 2:
+                    raise ValueError("Invalid plotdot {}, must be 2 chars long".format(plotdots[g]))
+                if alpha:
+                    plot *= hv.Points(group_data, **leg, kdims=[self.parameters[x_index], self.parameters[y_index]],
+                        vdims=[g+'_rate']).opts(\
+                        color=plotdots[g][1], marker=plotdots[g][0], size=10, height=600, width=800, alpha=g+'_rate', tools=['hover'])
+                else:
+                    plot *= hv.Points(group_data, **leg, kdims=[self.parameters[x_index], self.parameters[y_index]], vdims=[g+'_rate']).opts(\
+                            color=plotdots[g][1], marker=plotdots[g][0], size=10, height=600, width=800, tools=['hover'])
 
         xlabel = self.parameters[x_index].title()
         if x_units:
