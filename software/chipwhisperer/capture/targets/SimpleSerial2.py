@@ -588,6 +588,8 @@ class SimpleSerial2(TargetTemplate):
             scmd (int): The subcommand to use
             data (bytearray): The data to send
         """
+        if type(data) is list:
+            data = bytearray(data)
         if isinstance(cmd, str):
             cmd = ord(cmd[0])
         buf = [0x00, cmd, scmd, len(data)]
@@ -614,6 +616,8 @@ class SimpleSerial2(TargetTemplate):
             time.sleep(0.05)
 
     def write(self, data):
+        if type(data) is list:
+            data = bytearray(data)
         self.ser.write(data)
 
     @property
