@@ -243,6 +243,9 @@ else ifeq ($(PLATFORM),CW308_NEORV32)
 else ifeq ($(PLATFORM), CW308_SAM4S)
   HAL = sam4s
   PLTNAME = Microchip SAM4S
+else ifeq ($(PLATFORM), CWHUSKY)
+  HAL = sam4s
+  PLTNAME = CW-Husky Microchip SAM4S
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
 endif
