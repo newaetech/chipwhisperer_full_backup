@@ -116,9 +116,9 @@ class GlitchController:
             self.update_plot(parameters[self._x_index], parameters[self._y_index], group)
 
     def glitch_plot(self, plotdots, x_index=0, y_index=1, x_bound=None, y_bound=None, bufferlen=10000):
-        import holoviews as hv
-        from holoviews.streams import Buffer
-        from pandas import DataFrame
+        import holoviews as hv # type: ignore
+        from holoviews.streams import Buffer # type: ignore
+        from pandas import DataFrame # type: ignore
         hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
         if type(x_index) is str:
             x_index = self.parameters.index(x_index)
@@ -160,7 +160,7 @@ class GlitchController:
         return plot.redim(x=hv.Dimension(x_label, **x_bound), y=hv.Dimension(y_label, **y_bound))
         
     def update_plot(self, x, y, label):
-        from pandas import DataFrame
+        from pandas import DataFrame # type: ignore
         if label not in self._buffers:
             #raise ValueError("Invalid label {}. Valid labels are {}".format(label, self._buffers.keys()))
             return #probably a label not used
@@ -406,8 +406,8 @@ class GlitchResults:
         plt.show() after calling this function if you want more control (or the figure does
         not show by default).
         '''
-        import holoviews as hv
-        from holoviews import opts
+        import holoviews as hv # type: ignore
+        from holoviews import opts # type: ignore
         hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
         plot = hv.Points([])
         if type(x_index) is str:

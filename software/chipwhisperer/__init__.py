@@ -544,7 +544,7 @@ def plot(*args, **kwargs):
 class StreamPlot:
     def __init__(self):
         import holoviews as hv # type: ignore
-        from holoviews.streams import Pipe
+        from holoviews.streams import Pipe # type: ignore
         hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
         self._default_opts = {'height': 600, 'width': 800, 'framewise': True, 'tools': ['hover']}
         self._pipe = Pipe(data=[])
