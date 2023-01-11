@@ -54,7 +54,7 @@ static uint32_t glitch_wait_cnt = 0;
 
 uint8_t pwm_glitch = 0;
 
-static uint8_t *glitch_payload = glitch_memory;
+// static uint8_t *glitch_payload = glitch_memory;
 
 void cwnano_glitch_enable(void)
 {

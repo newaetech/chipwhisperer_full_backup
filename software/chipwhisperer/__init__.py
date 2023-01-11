@@ -27,6 +27,8 @@ from .common.utils import util
 from .capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader, get_at91_ports
 import logging
 from .logging import *
+
+from .common.results.glitch import GlitchController
 import sys, subprocess
 
 
@@ -533,6 +535,23 @@ def plot(*args, **kwargs):
 
     .. versionadded:: 5.4
     """
+    if (len(args) == 0) and (len(kwargs) == 0):
+        args = [[]]
     import holoviews as hv # type: ignore
     hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
     return hv.Curve(*args, **kwargs).opts(width=800, height=600)
+
+class StreamPlot:
+    def __init__(self):
+        import holoviews as hv # type: ignore
+        from holoviews.streams import Pipe # type: ignore
+        hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
+        self._default_opts = {'height': 600, 'width': 800, 'framewise': True, 'tools': ['hover']}
+        self._pipe = Pipe(data=[])
+        self._dmap = hv.DynamicMap(hv.Curve, streams=[self._pipe]).opts(**self._default_opts)
+
+    def plot(self):
+        return self._dmap.opts(**self._default_opts)
+
+    def update(self, data):
+        self._pipe.send(data)

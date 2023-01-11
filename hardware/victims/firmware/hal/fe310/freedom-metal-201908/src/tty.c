@@ -32,7 +32,7 @@ int metal_tty_getc(int *c)
 }
 
 #ifndef __METAL_DT_STDOUT_UART_BAUD
-#define __METAL_DT_STDOUT_UART_BAUD 115200
+#define __METAL_DT_STDOUT_UART_BAUD 38400
 #endif
 
 static void metal_tty_init(void) __attribute__((constructor));

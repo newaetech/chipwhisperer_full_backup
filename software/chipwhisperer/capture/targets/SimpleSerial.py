@@ -250,6 +250,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         .. versionadded:: 5.1
             Added target.write()
         """
+        if type(data) is list:
+            data = bytearray(data)
         if not self.connectStatus:
             raise Warning("Target not connected")
 
@@ -349,6 +351,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         .. versionadded:: 5.1
             Added target.simpleserial_write()
         """
+        if type(num) is list:
+            num = bytearray(num)
         self.ser.flush()
         if cmd:
             cmd += binascii.hexlify(num).decode()

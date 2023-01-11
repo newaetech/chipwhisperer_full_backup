@@ -33,6 +33,7 @@ ifeq ($(PLATFORM),)
   endif
 endif
 
+include $(FIRMWAREPATH)/simpleserial/Makefile.simpleserial
 include $(FIRMWAREPATH)/hal/Makefile.hal
 
 include $(FIRMWAREPATH)/crypto/Makefile.crypto
