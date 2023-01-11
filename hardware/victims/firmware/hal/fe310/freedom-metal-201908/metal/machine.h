@@ -822,7 +822,7 @@ static inline long __metal_driver_sifive_fe310_g000_pll_config_offset( )
 
 static inline long __metal_driver_sifive_fe310_g000_pll_init_rate( )
 {
-		return 16000000;
+		return 7370000;
 }
 
 
@@ -860,7 +860,7 @@ struct metal_memory *__metal_memory_table[] = {
 
 #define __METAL_DT_SERIAL_10013000_HANDLE (&__metal_dt_serial_10013000.uart)
 
-#define __METAL_DT_STDOUT_UART_BAUD 115200
+#define __METAL_DT_STDOUT_UART_BAUD 38400
 
 /* From clint@2000000 */
 #define __METAL_DT_RISCV_CLINT0_HANDLE (&__metal_dt_clint_2000000.controller)
