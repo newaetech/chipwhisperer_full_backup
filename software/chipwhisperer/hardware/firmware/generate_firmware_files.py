@@ -40,7 +40,7 @@ cwhusky_files = [("husky_firmware.zip", os.path.join(hwdir, r"capture/chipwhispe
 cwbergen_v = [1, 2]
 cwbergen_files = [("CW310.bin", os.path.join(hwdir, r"victims/cw310_bergenboard/CW310.bin"))]
 
-cwnano_v = [0, 64]
+cwnano_v = [0, 65]
 #hardware\capture\chipwhisperer-nano\firmware\cwnano-firmware\Debug\cwnano-firmware.bin
 cwnano_files = [("SAM3U_CWNANO.bin", os.path.join(hwdir, r"capture/chipwhisperer-nano/firmware/cwnano-firmware/src/chipWhisperer-Nano.bin"))]
 
