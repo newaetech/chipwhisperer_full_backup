@@ -82,14 +82,7 @@ void cwnano_glitch_enable(void)
 /* Init the glitch pin (drive low) */
 void cwnano_glitch_init(void)
 {
-	if (pwm_glitch) {
-		PMC->PMC_PCER0               = (1<<ID_PWM);                                  // clock on the PWM module
-		PIOA->PIO_PDR                = PIO_PDR_P0;                                   // PA0 pin is not PIO anymore
-		PIOA->PIO_ABCDSR[1]         &= ~PIO_ABCDSR_P0;                               // PA0 pin should use peripheral A mode
-	} else {
-		gpio_configure_pin(PIN_GLITCH_IDX, PIO_OUTPUT_0 | PIO_DEFAULT);
-	}
-
+	gpio_configure_pin(PIN_GLITCH_IDX, PIO_OUTPUT_0 | PIO_DEFAULT);
 }
 
 /* Configure the glitch code, must be called before calling insert */
@@ -98,22 +91,6 @@ void cwnano_setup_glitch(unsigned int offset, unsigned int length)
 	uint32_t glitch_prd;
 	uint32_t glitch_duty;
 
-	// if (pwm_glitch) {
-	// 	if ((length > 0 && length != glitch_width_cnt) || (offset > 0 && offset != glitch_offset_cnt)) {
-	// 		glitch_width_cnt             = length;
-	// 		glitch_offset_cnt            = offset;
-	// 		glitch_duty                  = 16;                                   // we want to have the time to enable channel 0, start our wait loop, etc.
-	// 																			//  and switch off output after the glitch
-	// 		glitch_prd                   = glitch_duty + length;
-	// 		glitch_wait_cnt              = (glitch_prd + (glitch_prd>>1)) / 5;   // 1 full period +50% margin at 5 cycles per loop
-
-	// 		PWM->PWM_CH_NUM[0].PWM_CMR   = PWM_CMR_CPRE_MCK;                     // use MCK, polarity=LOW
-	// 		PWM->PWM_CH_NUM[0].PWM_CPRD  = glitch_prd;                           // period cycles
-	// 		PWM->PWM_CH_NUM[0].PWM_CDTY  = glitch_duty;                          // duty cycles
-	// 		PWM->PWM_OOV                 = ~PWM_OOV_OOVH0;                       // value to output (0) when override is selected
-	// 		PWM->PWM_OS                  = PWM_OS_OSH0;                          // override: output 0, not taking care of the pwm output
-	// 	}
-	// } else {
 		if (length == 0) {
 			glitch_width_cnt = 0;
 			return;
@@ -187,10 +164,7 @@ void cwnano_setup_glitch(unsigned int offset, unsigned int length)
 
 		}
 
-		width_addr = (uint32_t)width_addr + 1;
-
-		// asm volatile("str =WID1, %[width_addr]\n\t" : [width_addr] "=m" (width_addr));
-	// }
+		width_addr = (void *)((uint32_t)width_addr + 1);
 
 }
 
@@ -261,17 +235,24 @@ void cwnano_glitch_insert(void)
 					"isb\n\t"
 					"bx lr\n\t"
 				"WID2:\n\t"
-				 	"str r0, [%[ioreg], #48]\n\t"
+					"isb\n\t"
+					"nop\n\t"
+					"nop\n\t"
 					"nop\n\t"
 				 	"str r0, [%[ioreg], #48]\n\t"
+					"nop\n\t"
 					"nop\n\t"
 				 	"str r0, [%[ioreg], #52]\n\t"
 					"isb\n\t"
 					"bx lr\n\t"
 				"WID3:\n\t"
+					"isb\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
 				 	"str.w r0, [%[ioreg], #48]\n\t"
 					"nop\n\t"
-				 	"str r0, [%[ioreg], #48]\n\t"
+					"nop\n\t"
 					"nop\n\t"
 				 	"str r0, [%[ioreg], #52]\n\t"
 					"isb\n\t"
@@ -282,9 +263,9 @@ void cwnano_glitch_insert(void)
 					"nop\n\t"
 					"nop\n\t"
 				 	"str r0, [%[ioreg], #48]\n\t"
-				 	"str r0, [%[ioreg], #48]\n\t"
-				 	"str r0, [%[ioreg], #48]\n\t"
-				 	"str r0, [%[ioreg], #48]\n\t"
+					"nop\n\t"
+					"nop\n\t"
+					"nop\n\t"
 					"nop\n\t"
 				 	"str r0, [%[ioreg], #52]\n\t"
 					"isb\n\t"
@@ -352,148 +333,6 @@ void cwnano_glitch_insert(void)
 					[offset_addr] "l" (offset_addr), [width_addr] "l" (width_addr), [ioreg] "l" (GLITCHIOREG)
 				: "r0", "r1", "r2", "lr", "memory"
 			);
-			// asm volatile(
-			// 		"mov   r5,     #0x40000000\n\t"
-			// 		"orr   r5, r5, #0x000e0000\n\t"
-			// 		"orr   r5, r5, #0x00000e00\n\t"
-			// 		"mov	r6, #1\n\t"
-
-			// 		"ldr	r3, %[offset_cnt]\n\t"
-			// 		"ldr	r4, %[width]\n\t"
-
-			// 		"subs r4, #1\n\t"
-			// 		"itt eq\n\t"
-			// 		"ldreq r2, =WID1\n\t"
-			// 		"beq WIDEND\n\t"
-
-			// 		"subs r4, #1\n\t"
-			// 		"itt eq\n\t"
-			// 		"ldreq r2, =WID2\n\t"
-			// 		"beq WIDEND\n\t"
-
-			// 		"subs r4, #1\n\t"
-			// 		"itt eq\n\t"
-			// 		"ldreq r2, =WID3\n\t"
-			// 		"beq WIDEND\n\t"
-
-			// 		"subs r4, #1\n\t"
-			// 		"itt eq\n\t"
-			// 		"ldreq r2, =WID4\n\t"
-			// 		"beq WIDEND\n\t"
-
-			// 		"ldr r2, =WIDLOOP\n\t"
-			// 	"WIDEND:\n\t"
-			// 		"adds r2, #1\n\t" //thumb?
-
-			// 		"isb\n\t"
-			// 	"OFFLOOP:\n\t"
-			// 		"subs 	r3, #1\n\t"
-			// 		"bpl 	OFFLOOP\n\t" //branch on underflow
-			// 		"blx 	r2\n\t" //jump to glitch payload
-			// 		"b END\n\t"
-			// 	"WID1:\n\t"
-			// 		"isb\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x30]\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x34]\n\t"
-			// 		"isb\n\t"
-			// 		"bx lr\n\t"
-			// 	"WID2:\n\t"
-			// 		"isb\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x30]\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x34]\n\t"
-			// 		"isb\n\t"
-			// 		"bx lr\n\t"
-			// 	"WID3:\n\t"
-			// 		"isb\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x30]\n\t"
-			// 		"dsb\n\t"
-			// 		"str	r6, [r5, #0x34]\n\t"
-			// 		"isb\n\t"
-			// 		"bx lr\n\t"
-			// 	"WID4:\n\t"
-			// 		"isb\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x30]\n\t"
-			// 		"dsb\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x34]\n\t"
-			// 		"isb\n\t"
-			// 		"bx lr\n\t"
-			// 	"WID5:\n\t"
-			// 		"isb\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x30]\n\t"
-			// 		"dsb\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x34]\n\t"
-			// 		"isb\n\t"
-			// 		"bx lr\n\t"
-			// 	"WID6:\n\t"
-			// 		"isb\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x30]\n\t"
-			// 		"dsb\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x34]\n\t"
-			// 		"isb\n\t"
-			// 		"bx lr\n\t"
-			// 	"WID7:\n\t"
-			// 		"isb\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x30]\n\t"
-			// 		"dsb\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x34]\n\t"
-			// 		"isb\n\t"
-			// 		"bx lr\n\t"
-			// 	"WIDLOOP:\n\t"
-			// 		"isb\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"nop\n\t"
-			// 		"str	r6, [r5, #0x30]\n\t"
-			// 		"dsb\n\t"
-			// 	"WIDLOOP1:\n\t"
-			// 		"subs r4, #0x01\n\t"
-			// 		"bne WIDLOOP1\n\t"
-			// 		"str r6, [r5, #0x34]\n\t"
-			// 		"isb\n\t"
-			// 		"bx lr\n\t"
-			// 	"END:\n\t"
-
-			// 	:
-			// 	: [offset_cnt] "m" (glitch_offset_cnt), [width] "m" (glitch_width_cnt)
-			// 	: "r2", "r3", "r4", "r5", "r6", "lr", "memory"
-			// );
-		// }
-	// }
-
 	__enable_irq();
 
 }
