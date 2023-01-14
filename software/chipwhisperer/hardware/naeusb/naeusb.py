@@ -434,7 +434,7 @@ class NAEUSB_Backend:
             List of USBDevice that match Vendor/Product IDs
             """
         
-        dev_list = [dev for dev in self.usb_ctx.getDeviceIterator() if dev.getVendorID() == 0x2b3e]
+        dev_list = [dev for dev in self.usb_ctx.getDeviceIterator(skip_on_error=True) if dev.getVendorID() == 0x2b3e]
         naeusb_logger.info("Found NAEUSB devices {}".format(dev_list))
         
         if os.name == "nt":
