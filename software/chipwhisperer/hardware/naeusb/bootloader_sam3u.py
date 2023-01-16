@@ -37,9 +37,16 @@ import logging
 
 import serial # type: ignore
 import time
-from .serial import USART
-from ...capture.api.cwcommon import ChipWhispererCommonInterface
-from ...logging import *
+# from .serial import USART
+try:
+    from ...capture.api.cwcommon import ChipWhispererCommonInterface
+except:
+    ChipWhispererCommonInterface = None # type: ignore
+
+try:
+    from ...logging import *
+except:
+    target_logger = logging # type: ignore
 
 class XModem(object):
 
@@ -207,7 +214,7 @@ class XModem(object):
 class Samba(object):
 
     def con(self, port, usbmode=True):
-        if isinstance(port, ChipWhispererCommonInterface):
+        if ChipWhispererCommonInterface and isinstance(port, ChipWhispererCommonInterface): # type: ignore
             ser = port._get_usart()
             ser.init()
             usbmode = False
@@ -877,7 +884,7 @@ class EefcFlash(object):
 
 if __name__ == "__main__":
     # Example usage
-    target_logger.setLevel(level=logging.INFO)
+    # target_logger.setLevel(level=logging.INFO)
     sam = Samba()
     sam.con('com131')
     sam.erase()
