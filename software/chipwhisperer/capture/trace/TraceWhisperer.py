@@ -102,7 +102,7 @@ class TraceWhisperer(util.DisableNewAttr):
         self._base_baud = 38400
         self._usb_clock = 96e6
         self._uart_clock = self._usb_clock * 2
-        self.expected_verilog_defines = 129
+        self.expected_verilog_defines = 131
         self.swo_mode = False
         self._scope = scope
 
@@ -150,7 +150,7 @@ class TraceWhisperer(util.DisableNewAttr):
             self.tms_bit = 0
             self.tck_bit = 1
 
-        self.pattern_size = self.fpga_read(self.REG_BUFFER_SIZE, 1)[0]
+        self.pattern_size = self.fpga_read(self.REG_BUFFER_SIZE, 1)[0] # match pattern size, in bytes
         self.disable_newattr()
         self._set_defaults()
 
@@ -262,7 +262,8 @@ class TraceWhisperer(util.DisableNewAttr):
                             tracewhisperer_logger.warning("Couldn't parse line: %s", define)
             defines.close()
         # make sure everything is cool:
-        assert self.verilog_define_matches == self.expected_verilog_defines, "Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected %d, got %d" % (defines_file, self.expected_verilog_defines, self.verilog_define_matches)
+        if self.verilog_define_matches != self.expected_verilog_defines:
+            tracewhisperer_logger.warning("Trouble parsing Verilog defines file (%s): didn't find the right number of defines; expected %d, got %d" % (defines_file, self.expected_verilog_defines, self.verilog_define_matches))
 
 
     @property
@@ -570,35 +571,67 @@ class TraceWhisperer(util.DisableNewAttr):
                 time.sleep(wait)
                 print(self._ss.read().split('\n')[0])
 
+    def _words2bytes(self, words):
+        """Converts a list of self.data_bits-sized words into a list of bytes, for programming
+        the REG_TRACE_PATTERNx and REG_TRACE_MASKx registers.
+        """
+        word_size = self.data_bits
+        total_bits = self.pattern_size * 8
+        bigword = 0
+        for i,w in enumerate(words):
+            bigword >>= word_size
+            bigword += (w << (total_bits - word_size))
+            #print('Added %s: %s' % (hex(w), hex(bigword)))
+        result = []
+        #while bigword:
+        for _ in range(self.pattern_size):
+            result.append(bigword & 0xff)
+            bigword >>= 8
+        return result
 
     def set_pattern_match(self, index, pattern, mask=None, enable_rule=True):
-        """Sets pattern match and mask parameters
+        """Sets pattern match and mask parameters.
 
         Args:
             index: match index [0-7]
             pattern: list of 8-bit integers, pattern match value. Maximum size given by self.pattern_size.
+                If fewer than self.pattern_size bytes are given, the list is expanded to self.pattern_size
+                by *prepending* the required number of zeros (see usage notes below for implications of
+                this for short patterns).
             mask (list, optional): list of bytes, must have same size as 'pattern' if
-                set. Defaults to [0xff]*len(pattern) if not set.
-
+                set. Defaults to [0]*(self.pattern_size*8-len(pattern) + [0xff]*len(pattern) if not set.
+                See usage notes below for implications of this for short patterns.
+        Usage notes:
+            The pattern matching logic looks at the full match pattern and mask, including mask bytes which
+            are set to 0. For example, pattern = [1,2,3,4,0,0,0,0], mask = [255,255,255,255,0,0,0,0] will
+            trigger a match when 8 bytes ([1,2,3,4] followed by 4 don't care bytes) have been received 
+            (this example assumes self.pattern_size = 8).  If only [1,2,3,4] is received (no other data 
+            follows), no match will be triggered.
+            If the message you which to trigger on is shorter than self.pattern_size, you must set the don't
+            care bytes at the *start* of the pattern and mask; for example: pattern = [0,0,0,0,1,2,3,4],
+            mask = [0,0,0,0,255,255,255,255] will trigger a match immediately after [1,2,3,4] is received
+            (even if no valid data is received prior to this).
         """
-        if mask is None:
-            mask = [0xFF] * len(pattern)
-        if len(pattern) != len(mask):
-            raise ValueError('pattern and mask must be of same size.')
-        elif len(pattern) > self.pattern_size:
+        # Since this also gets used by generic UART, we can't assume that word size is 8 bits.
+        # Translate pattern (and mask, if provided) to bytes:
+        if len(pattern) > self.pattern_size:
             raise ValueError('pattern and mask cannot be more than 64 bytes.')
-        elif len(pattern) < self.pattern_size:
-            for i in range(self.pattern_size - len(pattern)):
-                pattern.append(0)
-                mask.append(0)
+        pattern_converted = self._words2bytes(pattern)
+        if mask:
+            if len(pattern) != len(mask):
+                raise ValueError('pattern and mask must be of same size.')
+        else:
+            mask = [2**self.data_bits-1]*len(pattern)
 
-        self.fpga_write(self.REG_TRACE_PATTERN0+index, pattern)
-        self.fpga_write(self.REG_TRACE_MASK0+index, mask)
+        mask_converted = self._words2bytes(mask)
+
+        self.fpga_write(self.REG_TRACE_PATTERN0+index, pattern_converted)
+        self.fpga_write(self.REG_TRACE_MASK0+index, mask_converted)
         # count trailing zeros in the mask, as these determine how much time elapses from
         # the start of receiving a trace packet, until the match is determined -- so that the
         # recorded timestamp can be rolled back to when the trace packet began
         trailing_zeros = 0
-        for m in mask[::-1]:
+        for m in mask_converted[::-1]:
             if not m:
                 trailing_zeros += 1
         self.rule_length[index] = 8-trailing_zeros
@@ -652,13 +685,30 @@ class TraceWhisperer(util.DisableNewAttr):
 
     @property
     def trace_synced(self):
-        """Check whether the chosen front-end clock is alive, and, for 
-           parallel trace mode, whether we are seeing valid sync frames.
+        """Check whether:
+        1. the chosen front-end clock is alive;
+        2. for parallel trace mode, whether we are seeing valid sync frames;
+        3. for SWO mode, whether UART settings are what they should be (Husky platform only)
         """
-        if self.clock.fe_clock_alive and self.fpga_read(self.REG_SYNCHRONIZED, 1)[0] == 1:
+        if not self.clock.fe_clock_alive:
+            tracewhisperer_logger.error('Front-end clock is not alive! Check scope.trace.clock settings.')
+        if self.swo_mode and (self.platform == 'Husky') and (self.parity != 'none' or self.stop_bits != 1 or self.data_bits != 8):
+            tracewhisperer_logger.warning('UART Rx is not set to 8-N-1; this will prevent correct trace operation. Run restore_uart() to resolve this.')
+        if self.fpga_read(self.REG_SYNCHRONIZED, 1)[0] == 1:
             return True
         else:
             return False
+
+    def restore_uart(self):
+        """Convenience method to set the UART receiver settings to 8-N-1,
+        as required by trace in SWO mode (8 bits data, no parity, 1 stop bit).
+        """
+        if self.platform == 'Husky':
+            self.parity = 'none'
+            self.stop_bits = 1 
+            self.data_bits = 8
+        else:
+            tracewhisperer_logger.warning("Not supported on this platform.")
 
 
     def resync(self):
@@ -1038,6 +1088,137 @@ class TraceWhisperer(util.DisableNewAttr):
         for frame in raw:
             binout.write(bytes(frame[1]))
         binout.close()
+
+    @property 
+    def parity(self):
+        """Parity setting for the UART receiver. Only available on the Husky
+        platform.  For trace operation this should always be set to 'none'. The
+        option to turn on parity is provided because on the Husky platform, the
+        same UART receiver that is used for trace is also used as a receiver
+        for triggering on generic UART traffic.
+        Args:
+            value: 'none' / 'even' / 'odd'
+        """
+        if self.platform == 'Husky':
+            raw = self.fpga_read(self.REG_UART_PARITY_SETTING, 1)[0] & 0x03
+            if raw == 0:
+                return 'none'
+            elif raw == 3:
+                return 'odd'
+            elif raw == 2:
+                return 'even'
+            else:
+                raise ValueError('Unexpected register value %d' % raw)
+        else:
+            return 'none'
+
+    @parity.setter 
+    def parity(self, value):
+        if self.platform == 'Husky':
+            if value == 'none':
+                raw = 0
+            elif value == 'odd':
+                raw = 3
+            elif value == 'even':
+                raw = 2
+            else:
+                raise ValueError('illegal setting: use "none"/"odd"/"even"')
+            setting = self.fpga_read(self.REG_UART_PARITY_SETTING, 1)[0]
+            # don't touch bit 2:
+            setting &= 0x04
+            setting |= raw
+            self.fpga_write(self.REG_UART_PARITY_SETTING, [setting])
+        else:
+            tracewhisperer_logger.warning("Not supported on this platform.")
+
+    @property 
+    def accept_parity_errors(self):
+        """Only available on the Husky platform. Has no effect on trace
+        operation.  For UART-based triggering, control whether UART words with
+        parity errors are accepted into the pattern match. If set, the pattern
+        match logic treats UART words with parity errors as though they were
+        never received.  Consider this example where uppercase letters
+        represent the UART words received, ^ indicates a parity error, and the
+        programmed pattern is [A,B,C,D}:
+        1. [A,B,C^,D]: if accept_parity_errors is set, the pattern match will
+        trigger; otherwise it will not.
+        2. [A,B,C^,C,D]: if accept_parity_errors is set, the pattern match will
+        *not* trigger; otherwise it *will* trigger.
+        Args:
+            value (bool)
+        """
+        if self.platform == 'Husky':
+            raw = self.fpga_read(self.REG_UART_PARITY_SETTING, 1)[0] & 0x04
+            if raw:
+                return True
+            else:
+                return False
+        else:
+            return None
+
+    @accept_parity_errors.setter 
+    def accept_parity_errors(self, value):
+        if self.platform == 'Husky':
+            if value:
+                raw = 4
+            else:
+                raw = 0
+            setting = self.fpga_read(self.REG_UART_PARITY_SETTING, 1)[0]
+            setting = setting & (raw + 3) # don't clear bits 1:0
+            # don't touch bits 1:0:
+            setting &= 0x03
+            setting |= raw
+            self.fpga_write(self.REG_UART_PARITY_SETTING, [setting])
+        else:
+            tracewhisperer_logger.warning("Not supported on this platform.")
+
+    @property 
+    def stop_bits(self):
+        """Number of stop bits for the UART receiver. Only available on the
+        Husky platform.  For trace operation this should always be set to 1.
+        The option to set this to 2 is provided because on the Husky platform,
+        the same UART receiver that is used for trace is also used as a
+        receiver for triggering on generic UART traffic.
+        Args:
+            value (int): 1 or 2
+        """
+        if self.platform == 'Husky':
+            return self.fpga_read(self.REG_UART_STOP_BITS, 1)[0]
+        else:
+            return 1
+
+    @stop_bits.setter 
+    def stop_bits(self, value):
+        if self.platform == 'Husky':
+            if value not in [1,2]:
+                raise ValueError("Illegal setting: only 1 or 2 allowed")
+            self.fpga_write(self.REG_UART_STOP_BITS, [value])
+        else:
+            tracewhisperer_logger.warning("Not supported on this platform.")
+
+    @property 
+    def data_bits(self):
+        """Number of data bits per word for the UART receiver. Only available
+        on the Husky platform.  For trace operation this should always be set
+        to 8.  The option to set this to [5,9] is provided because on the Husky
+        platform, the same UART receiver that is used for trace is also used as
+        a receiver for triggering on generic UART traffic.
+        Args:
+            value (int): minimum 5, maximum 9
+        """
+        if self.platform == 'Husky':
+            return self.fpga_read(self.REG_UART_DATA_BITS, 1)[0]
+        else:
+            return 8
+
+    @data_bits.setter 
+    def data_bits(self, value):
+        if self.platform == 'Husky':
+            if value not in range(5,10):
+                raise ValueError("Illegal setting: must be in range(5,10)")
+            self.fpga_write(self.REG_UART_DATA_BITS, [value])
+        else:
+            tracewhisperer_logger.warning("Not supported on this platform.")
 
 
 
@@ -1843,11 +2024,15 @@ class UARTTrigger(TraceWhisperer):
         rtn = OrderedDict()
         rtn['enabled'] = self.enabled
         rtn['baud'] = self.baud
+        rtn['data_bits'] = self.data_bits
+        rtn['stop_bits'] = self.stop_bits
+        rtn['parity'] = self.parity
+        rtn['accept_parity_errors'] = self.accept_parity_errors
         rtn['sampling_clock'] = self.sampling_clock
         rtn['trigger_source'] = self.trigger_source
         rtn['rules_enabled'] = self.rules_enabled
         rtn['rules'] = self.rules
-        rtn['matched_pattern_data'] = self.matched_pattern_data
+        #rtn['matched_pattern_data'] = self.matched_pattern_data
         rtn['matched_pattern_counts'] = self.matched_pattern_counts
         return rtn
 
@@ -1880,6 +2065,8 @@ class UARTTrigger(TraceWhisperer):
 
     @property 
     def rules_enabled(self):
+        """Shortcut to self.capture.rules_enabled
+        """
         return self.capture.rules_enabled
 
     @rules_enabled.setter 
@@ -1888,6 +2075,8 @@ class UARTTrigger(TraceWhisperer):
 
     @property 
     def rules(self):
+        """Shortcut to self.capture.rules
+        """
         return self.capture.rules
 
     @property
@@ -1954,15 +2143,29 @@ class UARTTrigger(TraceWhisperer):
         return datalist
 
 
-    @property
-    def matched_pattern_data(self):
+    def matched_pattern_data(self, as_string=True):
         """ Return the actual trace data seen for the last matched pattern.
+        Args:
+            as_string (bool): convert each byte to its boolean string; otherwise,
+            results are returned as a list of self.data_bits-sized words.
         """
-        string = ''
         raw = self.fpga_read(self.REG_MATCHED_DATA, 8)
-        for b in raw:
-            string += chr(b)
-        return string
+        if as_string:
+            string = ''
+            for b in raw:
+                string += chr(b)
+            return string
+        else:
+            word_size = self.data_bits
+            bigword = 0
+            for i,w in enumerate(raw):
+                bigword += (w << (8*i))
+            pattern = []
+            while bigword:
+                pattern.append((bigword & ((2**word_size-1) << 64-word_size)) >> (64-word_size))
+                bigword <<= word_size
+                bigword &= 2**64-1
+            return pattern[::-1]
 
     @property
     def matched_pattern_counts(self):
@@ -1997,16 +2200,18 @@ class UARTTrigger(TraceWhisperer):
             raise ValueError
 
     def set_pattern_match(self, index, pattern, mask=None, enable_rule=True):
-        """Sets pattern match and mask parameters.
-        Allows the pattern to be specified as a string, however it may also be
-        specified as a list of ints, as is done for trace.
+        """Sets pattern match and mask parameters.  The pattern may be
+        specified as a string (if the UART word size is 8 bits), or as a list
+        of self.data_bits-sized integers (as is done for trace).  
+        Refer to set_pattern_match() documentation in parent TraceWhisperer
+        class for more details.
 
         Args:
             index: match index [0-7]
-            pattern: string or list of 8-bit integers, pattern match value.
+            pattern: string or list of self.data_bits-sized integers.
                 Maximum size given by self.pattern_size.
-            mask (list, optional): list of bytes, must have same size as 'pattern' if
-                set. Defaults to [0xff]*len(pattern) if not set.
+            mask (list, optional): list of self.data_bits-sized integers, 
+                must have same size as 'pattern' if set.
 
         """
         if type(pattern) is str:

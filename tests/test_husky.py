@@ -410,11 +410,13 @@ testSADTriggerData = [
 ]
 
 testUARTTriggerData = [
-    #clock      pin     pattern     reps    desc
-    (10e6,      'tio1', 'r7DF7',    10,     'tio1_10M'),
-    (10e6,      'tio2', 'p000000',  10,     'tio2_10M'),
-    (20e6,      'tio1', 'r7DF7',    10,     'tio1_20M'),
-    (20e6,      'tio2', 'p000000',  10,     'tio2_20M'),
+    #clock      pin     pattern     mask                            bytes_compared  reps    desc
+    (10e6,      'tio1', 'r7DF7',    None,                           8,              10,     'tio1_10M'),
+    (10e6,      'tio1', 'r7DF7xxx', [255,255,255,255,0,0,0,0],      5,              10,     'tio1_10M'),
+    (10e6,      'tio1', 'r7Dxxxxx', [255,255,0,0,0,0,0,0],          3,              10,     'tio1_10M'),
+    (10e6,      'tio2', 'p000000',  None,                           8,              10,     'tio2_10M'),
+    (20e6,      'tio1', 'r7DF7',    None,                           8,              10,     'tio1_20M'),
+    (20e6,      'tio2', 'p000000',  None,                           8,              10,     'tio2_20M'),
 ]
 
 testADCTriggerData = [
@@ -452,7 +454,7 @@ testGlitchTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '11/3/2022, 22:46'
+    assert scope.fpga_buildtime == '1/30/2023, 11:35'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -1118,7 +1120,7 @@ def test_trace (swo_trace, raw_capture, interface, trigger_source, desc):
         trace.capture.rules_enabled = []
     else:
         trace.capture.raw = False
-        trace.set_pattern_match(0, [3, 8, 32])
+        trace.set_pattern_match(0, [3, 8, 32, 0, 0, 0, 0, 0], [255, 255, 255, 0, 0, 0, 0, 0])
     trace.arm_trace()
     powertrace = cw.capture_trace(scope, target, text, key)
     raw = trace.read_capture_data()
@@ -1163,7 +1165,7 @@ def test_segment_trace (swo_trace, interface, triggers, desc):
     trace.capture.trigger_source = 0
     trace.capture.raw = False
     trace.capture.max_triggers = triggers
-    trace.set_pattern_match(0, [3, 8, 32])
+    trace.set_pattern_match(0, [3, 8, 32, 0, 0, 0, 0, 0], [255, 255, 255, 0, 0, 0, 0, 0])
     scope.adc.presamples = 0
     scope.adc.samples = 30
     scope.adc.segments = triggers
@@ -1211,7 +1213,7 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
 
     scope.trigger.module = 'basic'
     # scope.gain.db = 23.7
-    scope.gain.db = 20
+    scope.gain.db = 12
     reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
     assert scope.adc.errors == False, (scope.adc.errors, scope.gain)
 
@@ -1232,9 +1234,9 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
         assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d)' %(sad, threshold, r)
 
 
-@pytest.mark.parametrize("clock, pin, pattern, reps, desc", testUARTTriggerData)
+@pytest.mark.parametrize("clock, pin, pattern, mask, bytes_compared, reps, desc", testUARTTriggerData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_uart_trigger (fulltest, clock, pin, pattern, reps, desc):
+def test_uart_trigger (fulltest, clock, pin, pattern, mask, bytes_compared, reps, desc):
     if not fulltest:
         reps = 2 # reduce number of reps to speed up
     reset_setup()
@@ -1262,7 +1264,7 @@ def test_uart_trigger (fulltest, clock, pin, pattern, reps, desc):
     assert scope.UARTTrigger.uart_state == 'ERX_IDLE', 'UART is still stuck!'
     scope.UARTTrigger.enabled = True
     scope.UARTTrigger.baud = target.baud
-    scope.UARTTrigger.set_pattern_match(0, pattern)
+    scope.UARTTrigger.set_pattern_match(0, pattern, mask)
     scope.UARTTrigger.trigger_source = 0
 
     for i in range(reps):
@@ -1277,8 +1279,11 @@ def test_uart_trigger (fulltest, clock, pin, pattern, reps, desc):
             raise ValueError('Not supported: please trigger from tio1 or tio2')
         # we don't check the power trace itself (e.g. measure SAD against a tio4-triggered capture with the correct offset), but we check
         # several other things which indirectly tell us that the UART-triggered capture worked:
-        assert ss_comm[:len(pattern)] == pattern, "Target last read (%s) doesn't match pattern (%s)" % (ss_comm, pattern)
-        assert scope.UARTTrigger.matched_pattern_data[:len(pattern)] == pattern, "matched_pattern_data (%s) doesn't match pattern (%s)" % (scope.UARTTrigger.matched_pattern_data, pattern)
+        assert pattern[:bytes_compared] in ss_comm, "Target last read (%s) doesn't contain pattern (%s)" % (ss_comm, pattern)
+        pattern_start = scope.UARTTrigger.pattern_size - len(pattern)
+        #pattern_stop = max(pattern_start + bytes_compared, 8)
+        pattern_stop = min(pattern_start + bytes_compared, 8)
+        assert scope.UARTTrigger.matched_pattern_data()[pattern_start:pattern_stop] == pattern[:bytes_compared], "matched_pattern_data (%s) doesn't match pattern (%s)" % (scope.UARTTrigger.matched_pattern_data(), pattern)
         assert scope.UARTTrigger.matched_pattern_counts[0] == (start_count + 1) % 256, "Match count didn't increase by 1"
 
 
