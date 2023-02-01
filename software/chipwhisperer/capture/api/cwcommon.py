@@ -10,9 +10,77 @@
 #=================================================
 
 from ...hardware.naeusb.naeusb import NAEUSB
+from ...common.utils import util
 from typing import Callable, Union, Dict, Tuple, cast, List, Optional
 
 import io
+
+class ChipWhispererSAMErrors(util.DisableNewAttr):
+    LED_settings_str = ("Default", "Debug", "On Error")
+    def __init__(self, naeusb):
+        super().__init__()
+        self.naeusb = naeusb
+        self.disable_newattr()
+        pass
+
+    def _error_to_str(self, err):
+        rtn = ""
+        while err:
+            if rtn != "":
+                rtn += ", "
+            if err & 0x01:
+                rtn += "serial rx overflow"
+                err &= 0xFE
+            elif err & 0x02:
+                rtn += "serial tx overflow"
+                err &= 0xFD
+
+        if rtn == "":
+            rtn = False
+        return rtn
+
+    @property
+    def sam_led_setting(self):
+        if self.naeusb.check_feature("SAM_ERR_LED"):
+            setting = self.naeusb.get_led_settings()
+            if setting >= len(self.LED_settings_str):
+                return "Unknown"
+            return self.LED_settings_str[setting]
+        return None
+
+    @sam_led_setting.setter
+    def sam_led_setting(self, setting):
+        if self.naeusb.check_feature("SAM_ERR_LED"):
+            if setting not in self.LED_settings_str:
+                raise ValueError("Invalid LED setting {}, valid are {}".format(setting, self.LED_settings_str))
+            self.naeusb.set_led_settings(self.LED_settings_str.index(setting))
+
+
+    @property
+    def sam_errors(self):
+        if self.naeusb.check_feature("SAM_ERR_LED"):
+            err = self.naeusb.check_sam_errors()
+            return self._error_to_str(err)
+        return None # not supported
+            
+    def clear(self):
+        if self.naeusb.check_feature("SAM_ERR_LED"):
+            self.naeusb.clear_sam_errors()
+
+    def _dict_repr(self):
+        rtn = {'sam_errors': None, 'sam_led_setting': None}
+        if self.naeusb.check_feature("SAM_ERR_LED"):
+            rtn['sam_errors'] = self.sam_errors
+            rtn['sam_led_setting'] = self.sam_led_setting
+
+        return rtn
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
 
 class ChipWhispererCommonInterface:
     def __init__(self):

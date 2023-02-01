@@ -25,6 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 from ....common.utils import util
+from ...api.cwcommon import ChipWhispererSAMErrors
 from .. import _OpenADCInterface as OAI
 
 from ....logging import *
@@ -305,14 +306,15 @@ class LEDSettings(util.DisableNewAttr):
         self.oa.sendMessage(CODE_WRITE, ADDR_LED_SELECT, [val])
 
 
-class HuskyErrors(util.DisableNewAttr):
+class HuskyErrors(ChipWhispererSAMErrors):
     ''' Gather all the Husky error sources in one place.
         Use scope.errors.clear() to clear them.
     '''
     _name = 'Husky Errors'
 
     def __init__(self, oaiface : OAI.OpenADCInterface, XADC, adc, clock, trace):
-        super().__init__()
+        super().__init__(oaiface.serial) # naeusb comms
+        self.enable_newattr()
         self.oa = oaiface
         self.XADC = XADC
         self.adc = adc
@@ -321,7 +323,7 @@ class HuskyErrors(util.DisableNewAttr):
         self.disable_newattr()
 
     def _dict_repr(self):
-        rtn = {}
+        rtn = super()._dict_repr()
         rtn['XADC errors'] = self.XADC.errors()
         rtn['ADC errors'] = self.adc.errors
         rtn['extclk error'] = self.clock.extclk_error
@@ -335,6 +337,7 @@ class HuskyErrors(util.DisableNewAttr):
         return self.__repr__()
 
     def clear(self):
+        super().clear()
         self.XADC.status = 0
         self.adc.errors = 0
         self.clock.extclk_error = 0
