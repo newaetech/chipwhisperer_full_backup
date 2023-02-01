@@ -53,6 +53,7 @@ SAM_FW_FEATURES = [
     "MPSSE_ENABLED", #15
     "HUSKY_PIN_CONTROL", #16
     "NANO_CLOCK_RESET", #17
+    "SAM_ERR_LED" #18
 ]
 
 class CWFirmwareError(Exception):
@@ -119,6 +120,7 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[14]: '1.1.0',
         SAM_FW_FEATURES[15]: '1.3.0',
         SAM_FW_FEATURES[16]: '1.4.0',
+        SAM_FW_FEATURES[18]: '1.5.0',
     },
 
     0xC305: {
@@ -718,6 +720,26 @@ class NAEUSB:
 
     def usbdev(self):
         raise AttributeError("Do Not Call Me")
+
+    def set_led_settings(self, setting=0):
+        if self.check_feature("SAM_ERR_LED"):
+            setting &= 0xFF
+            self.sendCtrl(0x22, 0x12 | (setting << 8))
+
+    def clear_sam_errors(self):
+        if self.check_feature("SAM_ERR_LED"):
+            self.sendCtrl(0x22, 0x13)
+
+    def check_sam_errors(self):
+        if self.check_feature("SAM_ERR_LED"):
+            data = self.readCtrl(0x22, dlen=3)
+            return (data[0] & 0xFF) | (data[1] << 8)
+    
+    def get_led_settings(self):
+        if self.check_feature("SAM_ERR_LED"):
+            data = self.readCtrl(0x22, dlen=3)
+            return data[2]
+        
 
     def close(self):
         """Close USB connection."""
