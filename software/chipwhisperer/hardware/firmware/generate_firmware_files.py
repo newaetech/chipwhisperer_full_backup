@@ -33,7 +33,7 @@ cw1200_v = [1, 62]
 cw1200_files = [("cw1200_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/cw1200_firmware.zip")),
                 ("CW1200_SAM3UFW.bin", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/ChipWhisperer-Pro.bin"))]
 
-cwhusky_v = [1, 4]
+cwhusky_v = [1, 5]
 cwhusky_files = [("husky_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-husky/husky_firmware.zip")),
                 ("Husky.bin", os.path.join(hwdir, r"capture/chipwhisperer-husky/ChipWhisperer-Husky.bin"))]
 
