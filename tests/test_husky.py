@@ -458,8 +458,8 @@ def test_fpga_version():
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
-    assert scope.fw_version['minor'] == 4
-    assert scope.sam_build_date == '16:25:54 Aug 24 2022'
+    assert scope.fw_version['minor'] == 5
+    assert scope.sam_build_date == '21:32:05 Jan 31 2023'
 
 
 @pytest.mark.parametrize("address, nbytes, reps, desc", testRWData)
