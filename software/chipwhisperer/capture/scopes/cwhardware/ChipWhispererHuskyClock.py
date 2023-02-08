@@ -871,6 +871,27 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         return self.fpga_clk_settings.freq_ctr
 
     @property
+    def freq_ctr_src(self):
+        """The current input to the frequency counter.
+
+        There are two possible inputs to the frequency counter:
+        - "clkgen": The CLKGEN DCM output
+        - "extclk": The external input clock signal
+
+        :Getter: Return the frequency counter input (one of the above strings)
+
+        :Setter: Set the frequency counter source
+
+        Raises:
+           ValueError: if source is not "pll" or "extclk"
+        """
+        return self.fpga_clk_settings.freq_ctr_src
+
+    @freq_ctr_src.setter
+    def freq_ctr_src(self, src):
+        self.fpga_clk_settings.freq_ctr_src = src
+
+    @property
     def clkgen_locked(self):
         """Checks if the Husky PLL is locked"""
         return self.pll.pll_locked
@@ -993,6 +1014,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         my_dict['adc_mul'] = self.adc_mul
         my_dict['adc_freq'] = self.adc_freq
         my_dict['freq_ctr'] = self.freq_ctr
+        my_dict['freq_ctr_src'] = self.freq_ctr_src
         my_dict['clkgen_locked'] = self.clkgen_locked
         my_dict['adc_phase'] = self.adc_phase
         my_dict['extclk_monitor_enabled'] = self.extclk_monitor_enabled

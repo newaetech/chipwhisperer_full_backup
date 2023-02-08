@@ -454,7 +454,7 @@ testGlitchTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '1/30/2023, 11:35'
+    assert scope.fpga_buildtime == '2/7/2023, 15:57'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
