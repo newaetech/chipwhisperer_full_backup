@@ -26,6 +26,7 @@
 import time
 import logging
 from .naeusb import packuint32, NAEUSB
+import numpy as np
 import usb1  # type: ignore
 from ...logging import *
 
@@ -33,6 +34,14 @@ class FPGA(object):
 
     CMD_FPGA_STATUS = 0x15
     CMD_FPGA_PROGRAM = 0x16
+
+    BITORDER_DEFAULT = 0x00
+    BITORDER_REVERSE = 0x01
+    BITORDER_REVERSE16 = 0x02
+
+    PROG_MODE_SERIAL = 0x00
+    PROG_MODE_PARALLEL = 0x01
+    PROG_MODE_PARALLEL16 = 0x02
 
     def __init__(self, usb: NAEUSB, timeout=200, prog_mask=0xA0):
         self.sendCtrl = usb.sendCtrl
@@ -59,7 +68,7 @@ class FPGA(object):
         self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x01)
         time.sleep(0.001)
 
-    def FPGAProgram(self, bitstream=None, exceptOnDoneFailure=True, prog_speed=1E6, starting_offset=0x7C):
+    def FPGAProgram(self, bitstream=None, exceptOnDoneFailure=True, prog_speed=1E6, starting_offset=0x7C, prog_mode=0x00):
         """
         Program FPGA with a bitstream, or if not bitstream passed just erases FPGA
         """
@@ -73,11 +82,11 @@ class FPGA(object):
 
 
         try:
-            self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00, data=prog_data)
+            self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00 | (prog_mode << 8), data=prog_data)
         except usb1.USBError as e:
             prog_data = []
             naeusb_logger.warning("Got error when programming with var speed, retrying without var speed")
-            self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00, data=prog_data)
+            self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00 | (prog_mode << 8), data=prog_data)
         time.sleep(0.001)
         self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x01)
 
@@ -86,7 +95,7 @@ class FPGA(object):
         # Download actual bitstream now if present
         if bitstream:
             # Run the download which should program FPGA
-            self._FPGADownloadBitstream(bitstream, starting_offset=starting_offset)
+            self._FPGADownloadBitstream(bitstream, starting_offset=starting_offset, bitorder=prog_mode)
 
             wait = 5
             while wait > 0:
@@ -110,10 +119,30 @@ class FPGA(object):
             self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x02)
             return False
 
-    def _FPGADownloadBitstream(self, fwFileLike, starting_offset=0x7C, ending_clock_bytes=32):
+    def _FPGADownloadBitstream(self, fwFileLike, starting_offset=0x7C, ending_clock_bytes=32, bitorder=0x00):
         """
         Performs actual bitstream download, do not call directly, call FPGAProgram
         """
+        def reverse_bits(x):
+
+            x = np.array(x)
+            a = np.unpackbits(x)
+            return np.packbits(a, bitorder='little')
+            # n_bits = x.dtype.itemsize * 8
+
+            # x_reversed = np.zeros_like(x)
+            # for i in range(n_bits):
+            #     x_reversed = (x_reversed << 1) | x & 1
+            #     x >>= 1
+            # return x_reversed
+
+        def swap_16_bit(x):
+            a = x[::2]
+            b = x[1::2]
+            c = np.empty(a.size + b.size, dtype=a.dtype)
+            c[0::2] = b
+            c[1::2] = a
+            return c
 
         transactionBytes = 2048
         t0 = 0
@@ -131,12 +160,33 @@ class FPGA(object):
         # a just in case item)
         inputStream += bytes([0xff] * ending_clock_bytes)
 
-        inputStream = inputStream[starting_offset:]
+        inputStream = bytearray(inputStream[starting_offset:])
+
+        if (bitorder != self.BITORDER_DEFAULT):
+            naeusb_logger.info("Using parallel mode")
+            # quick endianness reversal
+            inputStream = np.unpackbits(np.array(inputStream, dtype='uint8'))
+            inputStream = np.packbits(inputStream, bitorder='little')
+            if bitorder == self.BITORDER_REVERSE16:
+                inputStream = swap_16_bit(inputStream)
+                naeusb_logger.info("Using 16 bit parallel mode")
+        else:
+            naeusb_logger.info("Using serial mode")
+            # inputStream = np.unpackbits(np.array(inputStream, dtype='uint8'))
+            # inputStream = np.packbits(inputStream, bitorder='little')
+
+        # self._usb.usbserializer.
+
+        # NOTE: by default, usb timeout is 20 seconds
+        # This isn't enough time for large transfers, so we leave something crazy like 5 minutes
+        # self._usb.writeBulkEP(inputStream, timeout=6000000) # note: all the code below basically does nothing
+        # return 0
 
         j = transactionBytes
         for i in range(0, len(buffer_)):
             if j != transactionBytes: break
             buffer_[i] = bytearray(inputStream[streamCnt:(streamCnt + transactionBytes)])
+
             streamCnt += transactionBytes
 
             j = len(buffer_[i])
@@ -172,11 +222,12 @@ class FPGA(object):
                     if j > transactionBytes:
                         j = transactionBytes
 
+                    # reversed_buffer = reverse_bits(np.array(buffer_[i], dtype='uint8'))
                     self._usb.writeBulkEP(buffer_[i])
 
-                    bs += j
-                    for k in range(0, len(buffer_[i])):
-                        cs = (cs + (buffer_[i][k] & 0xff)) & 0xff
+                    # bs += j
+                    # for k in range(0, len(buffer_[i])):
+                    #     cs = (cs + (buffer_[i][k] & 0xff)) & 0xff
 
                 # self.getFpgaState()
                 # if not self.fpgaConfigured:
@@ -195,7 +246,7 @@ class FPGA(object):
                 else:
                     raise
             tries -= 1
-        # time.sleep(0.1)
+        time.sleep(0.1)
         return t0
 
         # def detectBitstreamBitOrder(self, buf):

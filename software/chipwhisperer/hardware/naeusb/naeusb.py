@@ -148,6 +148,20 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[11]: '1.0.0',
         SAM_FW_FEATURES[12]: '1.1.0',
         SAM_FW_FEATURES[13]: '1.2.0'
+    },
+    
+    0xC340: {
+        SAM_FW_FEATURES[0]: '0.1.0',
+        SAM_FW_FEATURES[1]: '0.1.0',
+        SAM_FW_FEATURES[2]: '0.1.0',
+        SAM_FW_FEATURES[3]: '0.1.0',
+        SAM_FW_FEATURES[4]: '0.1.0',
+        SAM_FW_FEATURES[5]: '0.1.0',
+        SAM_FW_FEATURES[6]: '0.1.0',
+        SAM_FW_FEATURES[7]: '0.1.0',
+        SAM_FW_FEATURES[8]: '0.1.0',
+        SAM_FW_FEATURES[10]: '0.1.0',
+        SAM_FW_FEATURES[12]: '0.1.0',
     }
 }
 
@@ -561,14 +575,16 @@ class NAEUSB_Backend:
 
         return None
 
-    def cmdWriteBulk(self, data : bytearray):
+    def cmdWriteBulk(self, data : bytearray, timeout = None):
         """
         Write data directly to the bulk endpoint.
         :param data: Data to be written
         :return:
         """
         naeusb_logger.debug("BULK WRITE: data = {}".format(data))
-        self.handle.bulkWrite(self.wep, data, timeout=self._timeout)
+        if timeout is None:
+            timeout = self._timeout
+        self.handle.bulkWrite(self.wep, data, timeout=timeout)
 
     writeBulk = cmdWriteBulk
 
@@ -786,14 +802,13 @@ class NAEUSB:
 
         return self.usbserializer.cmdWriteMem(addr, data)
 
-    def writeBulkEP(self, data : bytearray):
+    def writeBulkEP(self, data : bytearray, timeout = None):
         """
         Write directoly to the bulk endpoint.
         :param data: Data to be written.
         :return:
         """
-
-        return self.usbserializer.writeBulk(data)
+        return self.usbserializer.writeBulk(data, timeout=timeout)
 
     def flushInput(self):
         """Dump all the crap left over"""
