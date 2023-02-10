@@ -165,6 +165,12 @@ SAM_FW_FEATURE_BY_DEVICE = {
     }
 }
 
+def quick_firmware_erase(product_id, serial_number=None):
+    naeusb = NAEUSB()
+    naeusb.con(serial_number=serial_number, idProduct=[product_id])
+    naeusb.enterBootloader(True)
+
+
 def _check_sam_feature(feature, fw_version, prod_id):
     if prod_id not in SAM_FW_FEATURE_BY_DEVICE:
         naeusb_logger.info("Features for ProdID {:04X} not stored, skipping...".format(prod_id))
