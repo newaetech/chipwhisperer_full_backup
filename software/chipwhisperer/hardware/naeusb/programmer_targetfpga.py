@@ -38,6 +38,128 @@ class FPGASlaveSPI(object):
         self.scope = scope
         self.csline = cs_line
 
+class XilinxGeneric(FPGASlaveSPI):
+
+    def __init__(self, scope):
+        super().__init__(scope, cs_line=None)
+
+    def done_setup(self):
+        raise NotImplementedError
+    
+    def done_state(self):
+        raise NotImplementedError
+
+    def initb_setup(self):
+        raise NotImplementedError
+
+    def initb_state(self):
+        #Return "True" if not implemented to bypass logic
+        raise NotImplementedError
+
+    def erase_and_init(self):
+
+        #Done pin High-Z
+        self.done_setup()
+
+        #init-b High-Z
+        self.initb_setup()
+
+        #Pulse PGM low then high
+        setattr(self.scope.io, self.pgm, False)
+        time.sleep(0.01)
+        setattr(self.scope.io, self.pgm, True)
+
+        #Check done pin status now
+        time.sleep(0.05)
+        done = self.done_state()
+
+        #check initb is high if using
+        initb = self.initb_state()
+
+        if done == True:
+            raise IOError("Erase Error: DONE pin should be low, reads high, abort")
+
+        if initb == False:
+            raise IOError("Erase Error: INITB should be HIGH, reads LOW, abort!")
+        
+    def program(self, bs_path_or_data, sck_speed=1E6, use_fast_usb=True):
+        """Program bitstream file. By default uses a faster mode, you can set
+           `sck_speed` up to around 20E6 successfully."""
+
+
+        # No-body has 5K path lengths right !?
+        if len(bs_path_or_data) < 5E3:
+            bs_path = bs_path_or_data
+            bs_data = None
+        else:
+            bs_path = None
+            bs_data = bs_path_or_data
+
+            if use_fast_usb:
+                logging.info("Falling back to 'slow' USB when data is passed")
+        
+        if bs_path:
+            filestats = os.stat(bs_path)
+            modtime = time.ctime(filestats.st_mtime)
+
+            target_logger.info("Bitstream modified time : ", modtime )
+
+        #Need to take control of ISP lines for erase to work
+        util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(False)
+
+        self.erase_and_init()
+
+        if use_fast_usb and bs_path:
+            bsfile = open(bs_path, "rb")
+            try:
+                fastfpga = FPGA(self.scope._getNAEUSB(), prog_mask=0xB0)
+                util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(True)
+
+                fastfpga.FPGAProgram(bsfile, prog_speed=sck_speed, starting_offset=0)
+            
+            finally:
+                util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(False)
+                bsfile.close()
+        else:
+            if bs_path:
+                bsfile = open(bs_path, "rb")
+                data = bsfile.read()
+                bsfile.close()
+            else:
+                data = bs_data
+           
+            try:
+                spi = SPI(self.scope._getNAEUSB())
+                spi.enable(sck_speed)
+                spi.transfer(data, writeonly=True)
+                spi.transfer([0xff]*256, writeonly=True)
+            finally:
+                spi.disable()
+
+        done = self.done_state()
+
+        if done != True:
+            raise IOError("FPGA error: DONE pin did not go high.")
+
+class CW312T_XC7A35T(XilinxGeneric):
+
+    def __init__(self, scope):
+        super().__init__(scope)
+        self.pgm = "pdic"
+
+    def done_setup(self):
+        self.scope.io.tio4 = None
+    
+    def done_state(self):
+        return self.scope.io.tio_states[3]
+
+    def initb_setup(self):
+        self.scope.io.tio3 = None
+
+    def initb_state(self):
+        return self.scope.io.tio_states[2]
+
+
 class LatticeICE40(FPGASlaveSPI):
     """Lattice ICE40 SPI programming algorithm for directly programming CRAM.
     
