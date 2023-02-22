@@ -52,7 +52,7 @@ extern int errno;
 extern int _end;
 extern int __ram_end__;
 
-extern caddr_t _sbrk(int incr);
+extern char * _sbrk(int incr);
 extern int link(char *old, char *new);
 extern int _close(int file);
 extern int _fstat(int file, struct stat *st);
@@ -62,7 +62,7 @@ extern void _exit(int status);
 extern void _kill(int pid, int sig);
 extern int _getpid(void);
 
-extern caddr_t _sbrk(int incr)
+extern char * _sbrk(int incr)
 {
 	static unsigned char *heap = NULL;
 	unsigned char *prev_heap;
@@ -74,12 +74,12 @@ extern caddr_t _sbrk(int incr)
 	prev_heap = heap;
 
 	if (((int)prev_heap + incr) > ramend) {
-		return (caddr_t) -1;	
+		return (char *) -1;	
 	}
 
 	heap += incr;
 
-	return (caddr_t) prev_heap;
+	return (char *) prev_heap;
 }
 
 extern int link(char *old, char *new)

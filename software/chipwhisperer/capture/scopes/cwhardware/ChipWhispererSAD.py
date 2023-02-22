@@ -25,6 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import numpy as np
+import math
 from ....common.utils import util
 
 from ....logging import *
@@ -39,7 +40,9 @@ ADDR_SAD_THRESHOLD = 101
 ADDR_SAD_STATUS = 102
 ADDR_SAD_BITS_PER_SAMPLE = 103
 ADDR_SAD_REF_SAMPLES = 104
+ADDR_SAD_COUNTER_WIDTH = 105
 ADDR_SAD_MULTIPLE_TRIGGERS = 106
+ADDR_SAD_SHORT = 107
 
 CODE_READ   = 0x80
 CODE_WRITE  = 0xC0
@@ -219,17 +222,20 @@ class HuskySAD(util.DisableNewAttr):
 
     This submodule is only available on ChipWhisperer Husky.
     If you wish for the SAD capture to include the SAD pattern, set
-    scope.adc.presamples to scope.SAD._sad_reference_length + 8
+    scope.adc.presamples to scope.SAD.sad_reference_length + scope.SAD.latency
+    (sad_reference_length because the trigger is issued *after* the reference
+    samples have passed; latency because the SAD trigger logic has additional
+    latency due to pipelined logic)
 
     Example::
 
         trace = cw.capture_trace(scope, data, text, key)
         scope.SAD.reference = trace[400:]
-        scope.SAD.threshold = 20
+        scope.SAD.threshold = 100
         scope.trigger.module = 'SAD'
 
         #SAD trigger active
-        scope.adc.presamples = scope.SAD._sad_reference_length + 8
+        scope.adc.presamples = scope.SAD.sad_reference_length + scope.SAD.latency
         trace = cw.capture_trace(scope, data, text, key)
     """
     _name = 'Husky SAD Trigger Module'
@@ -237,12 +243,17 @@ class HuskySAD(util.DisableNewAttr):
     def __init__(self, oa):
         super().__init__()
         self.oa = oa
+        self.latency = 9 # property of the hardware, due to pipeline delays
         self.disable_newattr()
 
     def _dict_repr(self):
         rtn = {}
         rtn['threshold'] = self.threshold
         rtn['reference'] = self.reference
+        rtn['sad_reference_length'] = self.sad_reference_length
+        rtn['half_pattern'] = self.half_pattern
+        rtn['multiple_triggers'] = self.multiple_triggers
+        rtn['num_triggers_seen'] = self.num_triggers_seen
         return rtn
 
     def __repr__(self):
@@ -255,19 +266,26 @@ class HuskySAD(util.DisableNewAttr):
     def threshold(self):
         """Threshold for SAD triggering.
         If the sum of absolute differences for the past
-        scope.trigger._sad_reference_length ADC samples (measured in 8-bit
+        scope.trigger.sad_reference_length ADC samples (measured in 8-bit
         resolution) is less than <threshold>, a trigger will be generated.
-        Husky uses 32 samples at 8 bits resolution for SAD (independent of
+        Husky uses 128 or 64 samples at 8 bits resolution for SAD (independent of
         scope.adc.bits_per_sample), while CW-Pro uses 128 samples at 10 bits
         resolution, so if you're used to setting SAD thresholds on CW-Pro,
-        reduce threshold by a factor of about 16 for Husky.
+        simply scale accordingly.
+        The maximum threshold is a build-time parameter.
+        Raises:
+            ValueError: if setting a threshold higher than what the hardware
+            supports.  If you would like a higher threshold than what's
+            possible, consider enabling half_pattern instead (which effectively
+            doubles the threshold).
         """
         return  int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_SAD_THRESHOLD, Validate=False, maxResp=4), byteorder='little')
 
     @threshold.setter
     def threshold(self, val):
-        if not (0 < val < 2**32):
-            raise ValueError("Out of range")
+        max_threshold = 2**(self._sad_counter_width-1)
+        if not (0 < val <= max_threshold):
+            raise ValueError("Out of range; maximum supported by hardware: %d" % max_threshold)
         self.oa.sendMessage(CODE_WRITE, ADDR_SAD_THRESHOLD, list(int.to_bytes(val, length=4, byteorder='little')))
 
     @property
@@ -276,20 +294,20 @@ class HuskySAD(util.DisableNewAttr):
         integers or floats, but returned as integers. Can be provided in 8-bit
         or 12-bit sample resolution, but returned as
         scope.trigger._sad_bits_per_sample resolution. Can be of any length
-        (minimum scope.trigger._sad_reference_length, and only the first
-        scope.trigger._sad_reference_length samples are used).
+        (minimum scope.SAD.sad_reference_length) but only the first
+        scope.SAD.sad_reference_length samples are used).
         Args:
             wave: (list of ints or floats): reference waveform
             bits_per_sample: (int, optional): number of bits per sample in
                 wave. If not provided, we use scope.adc.bits_per_sample.
         """
-        return list(self.oa.sendMessage(CODE_READ, ADDR_SAD_REF, Validate=False, maxResp=self._sad_reference_length))
+        return list(self.oa.sendMessage(CODE_READ, ADDR_SAD_REF, Validate=False, maxResp=self.sad_reference_length))
 
     @reference.setter
     def reference(self, wave, bits_per_sample=None):
         if bits_per_sample is None:
             wave_bits_per_sample = self.oa._bits_per_sample
-        reflen = self._sad_reference_length
+        reflen = self.sad_reference_length
         if len(wave) < reflen:
             scope_logger.error('Reference provided is too short, it needs to be at least %d samples long' % reflen)
         # first, trim and translate reference waveform to ints:
@@ -316,17 +334,49 @@ class HuskySAD(util.DisableNewAttr):
         return self.oa.sendMessage(CODE_READ, ADDR_SAD_BITS_PER_SAMPLE, Validate=False, maxResp=1)[0]
 
     @property
-    def _sad_reference_length(self):
-        """Read-only. Returns the number of samples that are used by the SAD module. Build-time parameter.
+    def _sad_counter_width(self):
+        """Read-only. Returns the number of bits per sample used by the SAD module (which is independent
+        of scope.adc.bits_per_sample), which in turn determines the maximum threshold. Build-time parameter.
         """
-        return  self.oa.sendMessage(CODE_READ, ADDR_SAD_REF_SAMPLES, Validate=False, maxResp=1)[0]
+        return self.oa.sendMessage(CODE_READ, ADDR_SAD_COUNTER_WIDTH, Validate=False, maxResp=1)[0]
+
+    @property
+    def sad_reference_length(self):
+        """Read-only. Returns the number of samples that are used by the SAD module. Hardware property,
+        but can be halved by the half_pattern setting.
+        """
+        raw = self.oa.sendMessage(CODE_READ, ADDR_SAD_REF_SAMPLES, Validate=False, maxResp=1)[0]
+        if self.half_pattern:
+            div = 2
+        else:
+            div = 1
+        return raw//div
+
+    @property
+    def half_pattern(self):
+        """If set, reduces by half the number of samples used by the SAD module.
+        Can be useful when a higher effective threshold is needed.
+        """
+        half = self.oa.sendMessage(CODE_READ, ADDR_SAD_SHORT, Validate=False, maxResp=1)[0]
+        if half:
+            return True
+        else: 
+            return False
+
+    @half_pattern.setter
+    def half_pattern(self, val):
+        if val:
+            raw = [1]
+        else:
+            raw = [0]
+        self.oa.sendMessage(CODE_WRITE, ADDR_SAD_SHORT, raw)
 
     @property
     def multiple_triggers(self):
         """Set whether the SAD trigger module can issue multiple triggers once armed.
         If False, only one trigger is issued per arming, even if multiple matching patterns are observed.
         If True, beware that this can result in triggers being too close together which can result in
-        segmenting errors.
+        segmenting errors (if this happens, reduce scope.adc.samples).
         """
         if self.oa.sendMessage(CODE_READ, ADDR_SAD_MULTIPLE_TRIGGERS, Validate=False, maxResp=1)[0]:
             return True
@@ -341,26 +391,34 @@ class HuskySAD(util.DisableNewAttr):
             self.oa.sendMessage(CODE_WRITE, ADDR_SAD_MULTIPLE_TRIGGERS, [0])
 
     @property
-    def status(self):
-        """SAD module status and errors.
-        Intended for debugging.
-        The "triggered" flag indicates that a SAD trigger has occurred, but
-        does not get cleared upon re-arming.
-        Write any value to clear.
+    def triggered(self):
+        """SAD module status. Intended for debugging.
+        Indicates that a SAD trigger has occurred; it gets cleared by setting
+        this (or num_triggers_seen) to any value or by re-arming.
         """
         raw = self.oa.sendMessage(CODE_READ, ADDR_SAD_STATUS, Validate=False, maxResp=1)[0]
         stat = ''
-        if raw & 1:   stat += 'triggered, '
-        if raw & 2:   stat += 'SAD FIFO underflow, '
-        if raw & 4:   stat += 'SAD FIFO overflow, '
-        if raw & 8:   stat += 'SAD FIFO not empty, '
-        if stat == '':
-            stat = 'not triggered'
-        return stat
+        if raw & 1:
+            return True
+        else: 
+            return False
 
-    @status.setter
-    def status(self, val):
+    @triggered.setter
+    def triggered(self, val):
         # value written doesn't matter: the write action clears the status flags
         self.oa.sendMessage(CODE_WRITE, ADDR_SAD_STATUS, [1])
 
+    @property
+    def num_triggers_seen(self):
+        """SAD module status.  Intended for debugging.
+        Indicates how many triggers were generated by the SAD module;
+        gets cleared by setting this (or triggered) to any value or by
+        re-arming.
+        """
+        raw = self.oa.sendMessage(CODE_READ, ADDR_SAD_STATUS, Validate=False, maxResp=3)
+        return  int.from_bytes(raw[1:], byteorder='little')
+
+    @num_triggers_seen.setter
+    def num_triggers_seen(self, val):
+        self.triggered = val
 

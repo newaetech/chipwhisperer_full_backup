@@ -400,13 +400,20 @@ testTraceSegmentData = [
 
 testSADTriggerData = [
     #clock  adc_mul bits   threshold   offset  reps    desc
-    (10e6,  1,      8,     50,         0,      50,     '8bits'),
-    (10e6,  1,      12,    50,         0,      50,     '12bits'),
-    (10e6,  1,      8,     50,         0,      10,     '8bits_SLOW'),
-    (10e6,  10,     8,     50,         0,      50,     'fast_SLOW'),
-    (10e6,  18,     8,     50,         0,      50,     'faster_SLOW'),
-    (10e6,  20,     8,     50,         0,      50,     'fastest'),
-    (10e6,  25,     8,     50,         0,      50,     'overclocked_SLOW'),
+    (10e6,  1,      8,     200,        0,      50,     '8bits'),
+    (10e6,  1,      12,    200,        0,      50,     '12bits'),
+    (10e6,  1,      8,     200,        0,      10,     '8bits_SLOW'),
+    (10e6,  10,     8,     200,        0,      50,     'fast_SLOW'),
+    (10e6,  18,     8,     200,        0,      50,     'faster_SLOW'),
+    (10e6,  20,     8,     200,        0,      50,     'fastest'),
+    (10e6,  25,     8,     200,        0,      50,     'overclocked_SLOW'),
+]
+
+testMultipleSADTriggerData = [
+    #clock  adc_mul bits   half threshold   offset  reps    desc
+    (10e6,  1,      8,     0,   200,        3525,   20,     'regular'),
+    (10e6,  1,      8,     1,   100,        3525,   20,     'half'),
+    (10e6,  20,     8,     0,   200,        3525,   20,     'fast'),
 ]
 
 testUARTTriggerData = [
@@ -454,7 +461,7 @@ testGlitchTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '2/7/2023, 15:57'
+    assert scope.fpga_buildtime == '2/16/2023, 11:06'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -1193,7 +1200,6 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
     assert scope.clock.adc_freq == clock * adc_mul
     target.baud = 38400 * clock / 1e6 / 7.37
 
-
     scope.errors.clear()
     scope.trace.enabled = False
     scope.trace.target = None
@@ -1205,7 +1211,7 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
     scope.adc.clip_errors_disabled = False
     scope.adc.segment_cycle_counter_en = False
     scope.adc.segments = 1
-    scope.adc.samples = scope.SAD._sad_reference_length * 2
+    scope.adc.samples = scope.SAD.sad_reference_length * 2
     scope.adc.presamples = 0
     scope.adc.bits_per_sample = bits
     scope.adc.offset = offset
@@ -1222,16 +1228,83 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
     scope.trigger.module = 'SAD'
     scope.adc.offset = 0
 
-    scope.adc.presamples = scope.SAD._sad_reference_length + 8
+    # set presamples so that the waveforms line up;
+    # + sad_reference_length because trigger happens at the end of the SAD pattern;
+    # + latency for the latency of the SAD triggering logic.
+    scope.adc.presamples = scope.SAD.sad_reference_length + scope.SAD.latency
     for r in range(reps):
         sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
         assert sadtrace is not None, 'SAD-triggered capture failed on rep {}'.format(r)
         assert scope.adc.errors == False
         sad = 0
-        for i in range(scope.SAD._sad_reference_length):
+        for i in range(scope.SAD.sad_reference_length):
             sad += abs(reftrace.wave[i] - sadtrace.wave[i])
         sad = int(sad*2**scope.SAD._sad_bits_per_sample)
         assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d)' %(sad, threshold, r)
+
+
+@pytest.mark.parametrize("clock, adc_mul, bits, half, threshold, offset, reps, desc", testMultipleSADTriggerData)
+@pytest.mark.skipif(not target_attached, reason='No target detected')
+def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, half, threshold, offset, reps, desc):
+    if not fulltest and 'SLOW' in desc:
+        pytest.skip("use --fulltest to run")
+        return None
+    if not fulltest:
+        reps = 3 # go faster
+    reset_setup()
+    scope.clock.clkgen_freq = clock
+    scope.clock.adc_mul = adc_mul
+    time.sleep(0.1)
+    assert scope.clock.pll.pll_locked == True
+    assert scope.clock.adc_freq == clock * adc_mul
+    target.baud = 38400 * clock / 1e6 / 7.37
+
+    scope.errors.clear()
+    scope.trace.enabled = False
+    scope.trace.target = None
+    scope.default_setup()
+    reset_target()
+    time.sleep(0.5)
+    target.baud = 38400
+    scope.SAD.multiple_triggers = True
+    scope.SAD.half_pattern = half
+    scope.adc.lo_gain_errors_disabled = True
+    scope.adc.clip_errors_disabled = False
+    scope.adc.segment_cycle_counter_en = False
+    scope.adc.segments = 1
+    scope.adc.samples = scope.SAD.sad_reference_length * 2
+    scope.adc.presamples = 0
+    scope.adc.bits_per_sample = bits
+    scope.adc.offset = offset
+
+    scope.trigger.module = 'basic'
+    # scope.gain.db = 23.7
+    scope.gain.db = 12
+    reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+    assert scope.adc.errors == False, (scope.adc.errors, scope.gain)
+
+    scope.SAD.reference = reftrace.wave
+    scope.SAD.threshold = threshold
+    scope.trigger.module = 'SAD'
+    scope.adc.offset = 0
+
+    # set presamples so that the waveforms line up;
+    # + sad_reference_length because trigger happens at the end of the SAD pattern;
+    # + latency for the latency of the SAD triggering logic.
+    scope.adc.presamples = scope.SAD.sad_reference_length + scope.SAD.latency
+    scope.adc.segments = 11
+    scope.adc.samples -= scope.adc.samples %3
+    for r in range(reps):
+        sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+        assert sadtrace is not None, 'SAD-triggered capture failed on rep {}'.format(r)
+        assert scope.adc.errors == False
+        assert scope.SAD.num_triggers_seen == scope.adc.segments
+        for s in range(scope.adc.segments):
+            sad = 0
+            for i in range(scope.SAD.sad_reference_length):
+                sad += abs(reftrace.wave[i] - sadtrace.wave[i+s*scope.adc.samples])
+            sad = int(sad*2**scope.SAD._sad_bits_per_sample)
+            assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d, segment %d)' %(sad, threshold, r, s)
 
 
 @pytest.mark.parametrize("clock, pin, pattern, mask, bytes_compared, reps, desc", testUARTTriggerData)
