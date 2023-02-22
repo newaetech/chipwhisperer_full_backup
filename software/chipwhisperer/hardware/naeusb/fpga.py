@@ -26,9 +26,14 @@
 import time
 import logging
 from .naeusb import packuint32, NAEUSB
-import numpy as np
 import usb1  # type: ignore
 from ...logging import *
+
+try:
+    import numpy as np
+except:
+    naeusb_logger.error("numpy is required for parallel CW340 programming")
+    np = None
 
 class FPGA(object):
 
@@ -123,8 +128,11 @@ class FPGA(object):
         """
         Performs actual bitstream download, do not call directly, call FPGAProgram
         """
-        def reverse_bits(x):
 
+        if np is None and bitorder != 0x00:
+            raise ValueError("numpy not installed and parallel programming selected. Install numpy or use serial programming")
+        def reverse_bits(x):
+            
             x = np.array(x)
             a = np.unpackbits(x)
             return np.packbits(a, bitorder='little')
