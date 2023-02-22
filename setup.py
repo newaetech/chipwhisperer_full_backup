@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
-version = '5.7.0'
-with open('chipwhisperer/version.py') as f:
+__version__ = '5.7.0'
+with open('software/chipwhisperer/version.py') as f:
     exec(f.read())
 
 setup(
