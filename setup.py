@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
+version = '5.7.0'
+with open('chipwhisperer/version.py') as f:
+    exec(f.read())
 
 setup(
     name='chipwhisperer',
-    version='5.7.0',
+    version=__version__,
     description="ChipWhisperer Side-Channel Analysis Tool",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
