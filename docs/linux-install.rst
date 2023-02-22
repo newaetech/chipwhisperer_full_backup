@@ -45,7 +45,8 @@ should get you up and running:
     cd chipwhisperer
     sudo cp hardware/50-newae.rules /etc/udev/rules.d/50-newae.rules
     sudo udevadm control --reload-rules
-    sudo usermod -aG dialout $USER
+    sudo groupadd -f chipwhisperer
+    sudo usermod -aG chipwhisperer $USER
     sudo usermod -aG plugdev $USER
     git submodule update --init jupyter
 
@@ -155,16 +156,19 @@ set of rules that give you access to NewAE USB devices:
     sudo cp hardware/50-newae.rules /etc/udev/rules.d/50-newae.rules
     sudo udevadm control --reload-rules
 
-Those rules actually give permission to the plugdev group, so
-you'll need to add your user to that group:
+Those rules actually give permission to the chipwhisperer group, so
+you'll need to create that group and add your user to that group:
 
 .. code:: bash
 
-    sudo usermod -aG dialout $USER
+    sudo groupadd -f chipwhisperer
+    sudo usermod -aG chipwhisperer $USER
     sudo usermod -aG plugdev $USER
 
-Not all Linux distros have these groups, so the above gives you errors,
-try creating the groups and rerunning that step.
+.. note:: Older install instructions used the plugdev group, which is created by default on some distros
+        and not on others. These install instructions instead use a dedicated chipwhisperer group,
+        so if you've installed chipwhisperer before and want to update to a new rules file, make sure
+        you create the chipwhisperer group.
 
 With that done, all that's left is to install ChipWhisperer:
 

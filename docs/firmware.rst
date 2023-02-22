@@ -171,7 +171,22 @@ then logging out and back in again.
 Accidentally flashed incorrect firmware
 =======================================
 
-Short the erase pins on your ChipWhisperer to
+If the firmware you've flashed is for another NewAE device,
+then, as of ChipWhisperer 5.7.1 or commit 068ec19, you can use
+:code:`quick_firmware_erase()` as follows to erase the firmware on your
+device:
+
+.. code:: python
+
+    from chipwhisperer.hardware.naeusb.naeusb import quick_firmware_erase
+    quick_firmware_erase(<product_id>)
+
+replacing :code:`<product_id>` with the product ID of the firmware that you've
+uploaded. For example, if you've uploaded ChipWhisperer-Lite (0xACE2) firmware to
+your ChipWhisperer-Nano (0xACE0), you should use 0xACE2 as your product ID. You
+may find it helpful to use :code:`cw.list_devices()` to list connected NewAE devices.
+
+Otherwise, short the erase pins on your ChipWhisperer to
 enter bootloader mode, then flash the correct firmware onto your device.
 
 Instructions for shorting the erase pins can be found
