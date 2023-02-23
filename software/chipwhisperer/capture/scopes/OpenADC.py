@@ -119,7 +119,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.connectStatus = True
         # self.disable_newattr()
 
-    def _getFWPy(self) -> List[int]:
+    def _getFWPy(self):
         cw_type = self._getCWType()
         if cw_type == "cwlite":
             from ...hardware.firmware.cwlite import fwver

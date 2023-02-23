@@ -308,7 +308,7 @@ def packuint16(data):
 
 #List of all NewAE PID's
 NEWAE_VID = 0x2B3E
-NEWAE_PIDS : Dict[int, Dict[str, Union[str, Optional[List[int]]]]]= {
+NEWAE_PIDS = {
     0xACE2: {'name': "ChipWhisperer-Lite",     'fwver': fw_cwlite.fwver},
     0xACE3: {'name': "ChipWhisperer-CW1200",   'fwver': fw_cw1200.fwver},
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fw_cw305.fwver},
@@ -727,8 +727,8 @@ class NAEUSB:
         fw_latest : List[int] = [0, 0]
 
         if self.usbtx.pid in NEWAE_PIDS:
-            name = NEWAE_PIDS[self.usbtx.pid]['name']
-            fw_latest = cast(List[int], NEWAE_PIDS[self.usbtx.pid]['fwver'])
+            name = NEWAE_PIDS[self.usbtx.pid]['name'] # type: ignore
+            fw_latest = cast(List[int], NEWAE_PIDS[self.usbtx.pid]['fwver']) # type: ignore
         else:
             name = "Unknown (PID = %04x)"%self.usbtx.pid
 
