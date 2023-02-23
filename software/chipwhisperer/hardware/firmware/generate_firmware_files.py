@@ -107,7 +107,7 @@ for fdata in file_list:
     for embdata in fdata[2]:
         if embdata[0] == "version":
             continue
-        with open(embdata[1], "rb") as e_file:
+        with open(embdata[1], "rb") as e_file: # type: ignore
             # json_str = base64.b64encode(e_file.read())# json.dumps(e_file.read(), ensure_ascii=False)
             json_str = binascii.b2a_base64(e_file.read())
 
