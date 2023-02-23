@@ -109,7 +109,7 @@ for fdata in file_list:
             continue
         with open(embdata[1], "rb") as e_file: # type: ignore
             # json_str = base64.b64encode(e_file.read())# json.dumps(e_file.read(), ensure_ascii=False)
-            json_str = binascii.b2a_base64(e_file.read())
+            json_str = binascii.b2a_base64(e_file.read()) # type: ignore
 
             f.write("\n#Contents from %s\n"%embdata[1])
             f.write("'%s':'"%embdata[0])
