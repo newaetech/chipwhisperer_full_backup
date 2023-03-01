@@ -16,17 +16,20 @@ from glob import glob
 import shutil
 import re
 from pathlib import Path
+import datetime
+from chipwhisperer import __version__
+
 sys.path.insert(0, os.path.abspath('./../software'))
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'ChipWhisperer'
-copyright = "2022, NewAE Technology Inc."
+copyright = "{}, NewAE Technology Inc.".format(datetime.datetime.now().year)
 author = "NewAE Technology Inc."
 
 # The full version, including alpha/beta/rc tags
-release = '5.7.0'
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
