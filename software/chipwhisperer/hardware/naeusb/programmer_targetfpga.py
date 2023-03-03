@@ -139,7 +139,9 @@ class XilinxGeneric(FPGASlaveSPI):
         done = self.done_state()
 
         if done != True:
-            raise IOError("FPGA error: DONE pin did not go high.")
+            #raise IOError("FPGA error: DONE pin did not go high.")
+            # TEMPORARY: DONE pin may not be seen high because it's shared with IO4. Target still appears to work so let's just warn for now.
+            target_logger.warning("FPGA warning: DONE pin did not go high.")
 
 class CW312T_XC7A35T(XilinxGeneric):
 

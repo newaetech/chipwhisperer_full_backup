@@ -24,11 +24,9 @@ Author: Jean-Pierre Thibault <jpthibault@newae.com>
 
 module ss2_cocowrapper(
     input  wire                         clk, 
-    input  wire                         reset,
+    input  wire                         resetn,
     input  wire                         rxd,
     input  wire                         txd,
-    output wire                         debug_rx_valid_byte,
-    output wire [7:0]                   debug_rx_data,
     // testbench stuff:
     input  wire [31:0]                  errors
 );
@@ -42,13 +40,13 @@ module ss2_cocowrapper(
       end
    end
 
-   ss2 U_dut (
-      .clk                      (clk       ),
-      .reset                    (reset     ),
-      .debug_rx_valid_byte      (debug_rx_valid_byte),
-      .debug_rx_data            (debug_rx_data),
-      .rxd                      (rxd       ),
-      .txd                      (txd       )
+   ss2 #(
+       .pBIT_RATE               (6)     // few clocks per bit for faster simulation
+   ) U_dut (
+       .clk                     (clk       ),
+       .resetn                  (resetn    ),
+       .rxd                     (rxd       ),
+       .txd                     (txd       )
    );
 
 endmodule

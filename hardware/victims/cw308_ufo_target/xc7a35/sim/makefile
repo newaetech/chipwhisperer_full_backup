@@ -35,14 +35,16 @@ compile_ss2:
 	-Wportbind \
 	-Wselect-range \
 	-DCOCOTB_SIM=1 \
+	-DSS2_EXAMPLE=1 \
 	-P ss2_cocowrapper.pDUMP=$(DUMP) \
 	-o $(EXEFILE) \
 	../hdl/ss2.v \
 	../hdl/crc.v \
-	../hdl/uart_core.v \
 	../hdl/cw305_top.v \
 	../hdl/cw305_usb_reg_fe.v \
 	../hdl/cw305_reg_test_ss2.v \
+	../fpga-common/hdl/fifo_sync.v \
+	../fpga-common/hdl/uart_core.v \
 	$(VIVADO_PATH)/$(VIVADO_VERSION)/ids_lite/ISE/verilog/src/glbl.v \
 	ss2_cocowrapper.v \
 
@@ -73,13 +75,14 @@ lint_ss2:
 	-Wno-LATCH \
 	-I../hdl/ \
 	-D__ICARUS__ \
-	-DAES_INSTANCES=2 \
+	-DSS2_EXAMPLE=1 \
 	../hdl/ss2.v \
 	../hdl/crc.v \
-	../hdl/uart_core.v \
 	../hdl/cw305_top.v \
 	../hdl/cw305_usb_reg_fe.v \
 	../hdl/cw305_reg_test_ss2.v \
+	../fpga-common/hdl/fifo_sync.v \
+	../fpga-common/hdl/uart_core.v \
 	--top-module ss2 \
 	2>&1 | tee lint.out \
 

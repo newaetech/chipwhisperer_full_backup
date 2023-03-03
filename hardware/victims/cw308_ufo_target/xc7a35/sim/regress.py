@@ -29,8 +29,7 @@ tests.append(dict(name  = 'basic',
              testcase = 'ss2_test',
              frequency = 1,
              PERIOD = 1000,
-             MAX_LEN = 16,
-             REPS = 3,
+             REPS = 20,
              description = ''))
 
 

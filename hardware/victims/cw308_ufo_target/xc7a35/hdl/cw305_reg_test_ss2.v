@@ -48,15 +48,23 @@ module cw305_reg_test_ss2 #(
    input  wire                                  reg_addrvalid,   // Address valid flag
 
 // register outputs:
-   output reg                                   O_user_led
+   input  wire                                  ss2_error,
+   output reg                                   O_user_led,
+   output wire                                  io3,
+   output wire                                  io4
 );
 
    reg  [7:0]   reg_read_data;
-   reg  [7:0]   reg_test1;
-   reg  [31:0]  reg_test2;
-   reg  [127:0] reg_test3;
-   reg  [255:0] reg_test4;
+   reg  [7:0]   reg_test1 = 8'ha0;
+   reg  [31:0]  reg_test2 = 32'h1234_5678;
+   reg  [127:0] reg_test3 = 128'h9876_5432_1234_5678_0987_6543_2123_4567;
+   reg  [127:0] reg_test4 = 128'habcd_efed_cba0_9876_5432_1012_3456_789a;
+   reg  [1:0]   reg_io34;
+   //reg  [1:0]   reg_io34 = 2'b11;
    wire [31:0]  buildtime;
+
+   assign io3 = reg_io34[1];
+   assign io4 = reg_io34[0];
 
    //////////////////////////////////
    // read logic:
@@ -66,10 +74,12 @@ module cw305_reg_test_ss2 #(
          case (reg_address)
             24'h000000:                 reg_read_data = {7'b0, O_user_led};
             24'h000001:                 reg_read_data = reg_test1;
+            24'h000002:                 reg_read_data = {7'b0, ss2_error};
             24'h000010:                 reg_read_data = reg_test2[reg_bytecnt*8 +: 8];
             24'h112233:                 reg_read_data = reg_test3[reg_bytecnt*8 +: 8];
             24'h45678a:                 reg_read_data = reg_test4[reg_bytecnt*8 +: 8];
             24'haabbcc:                 reg_read_data = buildtime[reg_bytecnt*8 +: 8];
+            24'h000034:                 reg_read_data = {6'b0, reg_io34};
             default:                    reg_read_data = 0;
          endcase
       end
@@ -97,6 +107,7 @@ module cw305_reg_test_ss2 #(
                24'h000010:              reg_test2[reg_bytecnt*8 +: 8] <= write_data;
                24'h112233:              reg_test3[reg_bytecnt*8 +: 8] <= write_data;
                24'h45678a:              reg_test4[reg_bytecnt*8 +: 8] <= write_data;
+               24'h000034:              reg_io34 <= write_data[1:0];
             endcase
          end
       end

@@ -35,11 +35,13 @@ module cw305_top #(
 )(
     // USB Interface
     input wire                          usb_clk,        // Clock
+    output wire                         usb_clk_buf,    // for use by ss2.v
     inout wire [7:0]                    usb_data,       // Data for write/read
     input wire [pADDR_WIDTH-1:0]        usb_addr,       // Address
     input wire                          usb_rdn,        // !RD, low when addr valid for read
     input wire                          usb_wrn,        // !WR, low when data+addr valid for write
     input wire                          usb_cen,        // !CE, active low chip enable
+    input wire                          usb_trigger,    // unused here (pin doesn't exist)
 
     // Buttons/LEDs on Board
     input wire                          j16_sel,        // DIP switch J16
@@ -50,6 +52,8 @@ module cw305_top #(
     output wire                         led1,           // red LED
     output wire                         led2,           // green LED
     output wire                         led3,           // blue LED
+    output wire                         io3,
+    input  wire                         ss2_error,
 
     // PLL
     input wire                          pll_clk1,       //PLL Clock Channel #1
@@ -73,10 +77,29 @@ module cw305_top #(
     wire resetn = pushbutton;
     wire reset = !resetn;
 
+    assign tio_clkout = 1'b0;
+
+`ifdef __ICARUS__
+    assign usb_clk_buf = usb_clk;
+
+`else
+    wire usb_clk_bufg;
+    IBUFG clkibuf (
+        .I(usb_clk),
+        .O(usb_clk_bufg)
+    );
+    BUFG clkbuf(
+        .I(usb_clk_bufg),
+        .O(usb_clk_buf)
+    );
+
+`endif
+
+
     // USB CLK Heartbeat
     reg [24:0] usb_timer_heartbeat;
-    always @(posedge usb_clk) usb_timer_heartbeat <= usb_timer_heartbeat +  25'd1;
-    assign led1 = usb_timer_heartbeat[24];
+    always @(posedge usb_clk_buf) usb_timer_heartbeat <= usb_timer_heartbeat +  25'd1;
+    assign led1 = usb_timer_heartbeat[21];
 
     // PLL CLK Heartbeat
     reg [22:0] pll_clk_heartbeat;
@@ -88,7 +111,7 @@ module cw305_top #(
        .pADDR_WIDTH             (pADDR_WIDTH)
     ) U_usb_reg_fe (
        .rst                     (reset),
-       .usb_clk                 (usb_clk), 
+       .usb_clk                 (usb_clk_buf), 
        .usb_din                 (usb_data), 
        .usb_dout                (usb_dout), 
        .usb_rdn                 (usb_rdn), 
@@ -111,7 +134,7 @@ module cw305_top #(
        .pADDR_WIDTH             (pADDR_WIDTH)
     ) U_reg_test_ss2 (
        .reset_i                 (reset),
-       .usb_clk                 (usb_clk), 
+       .usb_clk                 (usb_clk_buf), 
        .reg_address             (reg_address[pADDR_WIDTH-pBYTECNT_SIZE-1:0]), 
        .reg_bytecnt             (reg_bytecnt), 
        .read_data               (read_data), 
@@ -119,7 +142,10 @@ module cw305_top #(
        .reg_read                (reg_read), 
        .reg_write               (reg_write), 
        .reg_addrvalid           (reg_addrvalid),
-       .O_user_led              (led3)
+       .ss2_error               (ss2_error),
+       .O_user_led              (led3),
+       .io3                     (io3),
+       .io4                     (tio_trigger)
     );
 
     assign usb_data = isout? usb_dout : 8'bZ;
