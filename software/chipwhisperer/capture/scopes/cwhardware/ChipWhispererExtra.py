@@ -149,6 +149,48 @@ class GPIOSettings(util.DisableNewAttr):
         """
         return self.read_tio_states()
 
+    @property
+    def pdid_state(self):
+        """ Reads the logic level of the PDID pin. Supported by Husky only.
+        """
+        return self._get_extra_pin(7)
+
+    @property
+    def pdic_state(self):
+        """ Reads the logic level of the PDIC pin. Supported by Husky only.
+        """
+        return self._get_extra_pin(6)
+
+    @property
+    def miso_state(self):
+        """ Reads the logic level of the MISO pin. Supported by Husky only.
+        """
+        return self._get_extra_pin(5)
+
+    @property
+    def mosi_state(self):
+        """ Reads the logic level of the MOSI pin. Supported by Husky only.
+        """
+        return self._get_extra_pin(4)
+
+    @property
+    def nrst_state(self):
+        """ Reads the logic level of the nRST pin. Supported by Husky only.
+        """
+        return self._get_extra_pin(8)
+
+    @property
+    def sck_state(self):
+        """ Reads the logic level of the SCK pin. Supported by Husky only.
+        """
+        return self._get_extra_pin(9)
+
+    def _get_extra_pin(self, bit):
+        if not self._is_husky:
+            raise ValueError("For CW-Husky only.")
+        raw = int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_IOREAD, Validate=False, maxResp=2), byteorder='little')
+        return ((raw >> bit) & 0x01)
+
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
 
