@@ -38,6 +38,7 @@ module cw305_ecc_p256_pmul_top #(
 )(
     // USB Interface
     input wire                          usb_clk,        // Clock
+    output wire                         usb_clk_buf,    // Clock
     inout wire [7:0]                    usb_data,       // Data for write/read
     input wire [pADDR_WIDTH-1:0]        usb_addr,       // Address
     input wire                          usb_rdn,        // !RD, low when addr valid for read
@@ -86,7 +87,6 @@ module cw305_ecc_p256_pmul_top #(
     wire crypt_done;
     wire crypt_busy;
 
-    wire usb_clk_buf;
     wire [7:0] usb_dout;
     wire isout;
     wire [pADDR_WIDTH-pBYTECNT_SIZE-1:0] reg_address;

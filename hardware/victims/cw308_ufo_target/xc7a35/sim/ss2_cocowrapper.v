@@ -40,7 +40,7 @@ module ss2_cocowrapper(
       end
    end
 
-   ss2 #(
+   ss2_wrapper #(
        .pBIT_RATE               (6)     // few clocks per bit for faster simulation
    ) U_dut (
        .clk                     (clk       ),

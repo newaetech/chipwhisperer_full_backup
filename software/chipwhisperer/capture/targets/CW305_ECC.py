@@ -72,6 +72,7 @@ class CW305_ECC(CW305):
         self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/../../hardware/victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/hdl/' + self.default_verilog_defines
         self.registers = 12 # number of registers we expect to find
         self.bytecount_size = 8 # pBYTECNT_SIZE in Verilog
+        self.check_done = True
         self.target_name = 'Cryptech ecdsa256-v1 pmul'
 
 
@@ -158,7 +159,8 @@ class CW305_ECC(CW305):
         self.go()
 
         if not self.is_done():
-            target_logger.warning ("Target not done yet, increase clksleeptime!")
+            if self.platform == 'cw305' and self.clkusbautooff:
+                    target_logger.warning ("Target not done yet, increase clksleeptime!")
             #let's wait a bit more, see what happens:
             i = 0
             while not self.is_done():

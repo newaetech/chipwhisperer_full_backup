@@ -38,9 +38,10 @@ compile_ss2:
 	-DSS2_EXAMPLE=1 \
 	-P ss2_cocowrapper.pDUMP=$(DUMP) \
 	-o $(EXEFILE) \
+	../hdl/ss2_wrapper.v \
 	../hdl/ss2.v \
 	../hdl/crc.v \
-	../hdl/cw305_top.v \
+	../hdl/cw305_ss2_example_top.v \
 	../hdl/cw305_usb_reg_fe.v \
 	../hdl/cw305_reg_test_ss2.v \
 	../fpga-common/hdl/fifo_sync.v \
@@ -76,14 +77,15 @@ lint_ss2:
 	-I../hdl/ \
 	-D__ICARUS__ \
 	-DSS2_EXAMPLE=1 \
+	../hdl/ss2_wrapper.v \
 	../hdl/ss2.v \
 	../hdl/crc.v \
-	../hdl/cw305_top.v \
+	../hdl/cw305_ss2_example_top.v \
 	../hdl/cw305_usb_reg_fe.v \
 	../hdl/cw305_reg_test_ss2.v \
 	../fpga-common/hdl/fifo_sync.v \
 	../fpga-common/hdl/uart_core.v \
-	--top-module ss2 \
+	--top-module ss2_wrapper \
 	2>&1 | tee lint.out \
 
 # note that -M and -m arguments must immediately follow vvp, otherwise Python doesn't start!

@@ -9,8 +9,8 @@ from tqdm import tqdm
 scope = cw.scope()
 scope.default_setup()
 
-bs = '../vivado/ss2.runs/impl_1/ss2.bit'
-target = cw.target(scope, cw.targets.SS2_CW305_WRAP, bsfile=bs)
+bs = '../vivado/ss2.runs/impl_1/ss2_wrapper.bit'
+target = cw.target(scope, cw.targets.CW305, bsfile=bs, platform='ss2')
 target.baud = 230400
 
 target.REG_BUILDTIME = 0xaabbcc
@@ -34,7 +34,7 @@ for i in tqdm(range(200), desc='testing IO3/IO4 toggling'):
 
 
 for i in tqdm(range(200), desc='testing echo packets'):
-    target._test_echo()
+    target._ss2_test_echo()
 
 
 registers = [{'name': 'reg1', 'len': 1,  'address': 0x01},

@@ -146,7 +146,7 @@ class SS2Test(object):
         # wait for all responses to be processed:
         while not self.command_queue.empty():
             await ClockCycles(self.dut.clk, 10)
-        if self.dut.U_dut.error.value:
+        if self.dut.U_dut.ss2_error.value:
             self.harness.inc_error()
             self.dut._log.error("DUT reported internal error")
         # check all queues are empty:
@@ -318,8 +318,8 @@ class SS2Test(object):
         while self.uart_rx_queue.empty():
             await ClockCycles(self.dut.clk, 1)
         while True:
-            await self.wait_signal(self.dut.U_dut.rx_data_ready, 1, self.dut.clk)
-            rdata = self.dut.U_dut.rx_data_byte.value
+            await self.wait_signal(self.dut.U_dut.U_ss2.rx_data_ready, 1, self.dut.clk)
+            rdata = self.dut.U_dut.U_ss2.rx_data_byte.value
             self.dut._log.debug("UART Rx msg %d:  got raw %02x" % (i, rdata))
             edata = self.uart_rx_queue.get_nowait()
             if rdata != edata:
@@ -327,7 +327,7 @@ class SS2Test(object):
                 self.dut._log.error("UART Rx msg %d: Expected %4x, got %4x" % (i, edata, rdata))
             else:
                 self.dut._log.debug("UART Rx msg %d: Expected %4x, got %4x" % (i, edata, rdata))
-            await self.wait_signal(self.dut.U_dut.rx_data_ready, 0, self.dut.clk)
+            await self.wait_signal(self.dut.U_dut.U_ss2.rx_data_ready, 0, self.dut.clk)
             i += 1
 
 
@@ -339,8 +339,8 @@ class SS2Test(object):
         while self.uncobbed_rx_queue.empty():
             await ClockCycles(self.dut.clk, 1)
         while True:
-            await self.wait_signal(self.dut.U_dut.rx_valid_byte, 1, self.dut.clk)
-            rdata = self.dut.U_dut.rx_data.value
+            await self.wait_signal(self.dut.U_dut.U_ss2.rx_valid_byte, 1, self.dut.clk)
+            rdata = self.dut.U_dut.U_ss2.rx_data.value
             self.dut._log.debug("Uncobbed Rx msg %d:  got raw %02x" % (i, rdata))
 
             edata = self.uncobbed_rx_queue.get_nowait()
@@ -349,10 +349,10 @@ class SS2Test(object):
                 self.dut._log.error("Uncobbed Rx msg %d: Expected %4x, got %4x" % (i, edata, rdata))
             else:
                 self.dut._log.debug("Uncobbed Rx msg %d: Expected %4x, got %4x" % (i, edata, rdata))
-            await self.wait_signal(self.dut.U_dut.rx_data_ready, 0, self.dut.clk)
+            await self.wait_signal(self.dut.U_dut.U_ss2.rx_data_ready, 0, self.dut.clk)
             i += 1
 
-            await self.wait_signal(self.dut.U_dut.rx_valid_byte, 0, self.dut.clk)
+            await self.wait_signal(self.dut.U_dut.U_ss2.rx_valid_byte, 0, self.dut.clk)
 
     #@staticmethod - hmm, looks like staticmethod + async don't play well together?
     async def wait_signal(self, signal, value, clock):
@@ -366,7 +366,7 @@ async def ss2_test(dut):
     reps  = int(os.getenv('REPS', '2'))
     period = int(os.getenv('PERIOD', '100'))
 
-    bit_rate = dut.U_dut.pBIT_RATE.value + 1 # pBIT_RATE is fixed in this design
+    bit_rate = dut.U_dut.U_ss2.pBIT_RATE.value + 1 # pBIT_RATE is fixed in this design
     baud = int(1/(period * 1e-9 * bit_rate))
     harness = Harness(dut, reps, period, bit_rate)
     await harness.reset()

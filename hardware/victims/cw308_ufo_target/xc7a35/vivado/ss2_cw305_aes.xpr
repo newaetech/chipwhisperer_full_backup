@@ -3,10 +3,10 @@
 <!--                                                         -->
 <!-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.   -->
 
-<Project Version="7" Minor="60" Path="/home/jpnewae/git/cw_develop/hardware/victims/cw308_ufo_target/xc7a35/vivado/ss2.xpr">
+<Project Version="7" Minor="60" Path="/home/jpnewae/git/cw_develop/hardware/victims/cw308_ufo_target/xc7a35/vivado/ss2_cw305_aes.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
-    <Option Name="Id" Val="aa7e6de7d2014d26a9722fc24226ec96"/>
+    <Option Name="Id" Val="947e506fd3494bf3b269679308a2bb3c"/>
     <Option Name="Part" Val="xc7a35tcsg324-1"/>
     <Option Name="CompiledLibDir" Val="$PCACHEDIR/compile_simlib"/>
     <Option Name="CompiledLibDirXSim" Val=""/>
@@ -87,6 +87,41 @@
   <FileSets Version="1" Minor="31">
     <FileSet Name="sources_1" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1" RelGenDir="$PGENDIR/sources_1">
       <Filter Type="Srcs"/>
+      <File Path="$PPRDIR/../../../cw305_artixtarget/fpga/cryptosrc/aes_googlevault/aes_core.v">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../../../cw305_artixtarget/fpga/cryptosrc/aes_googlevault/aes_ks.v">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../../../cw305_artixtarget/fpga/cryptosrc/aes_googlevault/aes_sbox.v">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../../../cw305_artixtarget/fpga/common/cdc_pulse.v">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../../../cw305_artixtarget/fpga/common/clocks.v">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
       <File Path="$PPRDIR/../hdl/crc.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -94,21 +129,28 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../hdl/cw305_reg_test_ss2.v">
+      <File Path="$PPRDIR/../../../cw305_artixtarget/fpga/common/cw305_defines.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../hdl/cw305_ss2_example_top.v">
+      <File Path="$PPRDIR/../../../cw305_artixtarget/fpga/common/cw305_reg_aes.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../hdl/cw305_usb_reg_fe.v">
+      <File Path="$PPRDIR/../../../cw305_artixtarget/fpga/common/cw305_top.v">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../../../cw305_artixtarget/fpga/common/cw305_usb_reg_fe.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -136,7 +178,7 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../hdl/ss2_wrapper.v">
+      <File Path="$PPRDIR/../hdl/ss2_aes_wrapper.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -145,9 +187,9 @@
       </File>
       <Config>
         <Option Name="DesignMode" Val="RTL"/>
-        <Option Name="TopModule" Val="ss2_wrapper"/>
-        <Option Name="TopAutoSet" Val="TRUE"/>
-        <Define Name="SS2_EXAMPLE"/>
+        <Option Name="TopModule" Val="ss2_aes_wrapper"/>
+        <Option Name="VerilogDir" Val="$PPRDIR/../../../cw305_artixtarget/fpga/common"/>
+        <Define Name="GOOGLE_VAULT_AES"/>
       </Config>
     </FileSet>
     <FileSet Name="constrs_1" Type="Constrs" RelSrcDir="$PSRCDIR/constrs_1" RelGenDir="$PGENDIR/constrs_1">
@@ -159,7 +201,6 @@
         </FileInfo>
       </File>
       <Config>
-        <Option Name="TargetConstrsFile" Val="$PPRDIR/cw312_ss2.xdc"/>
         <Option Name="ConstrsType" Val="XDC"/>
       </Config>
     </FileSet>
@@ -167,7 +208,7 @@
       <Filter Type="Srcs"/>
       <Config>
         <Option Name="DesignMode" Val="RTL"/>
-        <Option Name="TopModule" Val="ss2_wrapper"/>
+        <Option Name="TopModule" Val="aes_core"/>
         <Option Name="TopLib" Val="xil_defaultlib"/>
         <Option Name="TopAutoSet" Val="TRUE"/>
         <Option Name="TransportPathDelay" Val="0"/>

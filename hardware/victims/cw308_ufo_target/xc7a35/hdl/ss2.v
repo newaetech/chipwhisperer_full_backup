@@ -30,20 +30,18 @@ module ss2 #(
     parameter pPARITY_ENABLED = 0
 )(
     input  wire         clk,
-    output wire         clkout,
     input  wire         resetn,
     input  wire         rxd,
     output wire         txd,
 
-    output wire         led1,
-    output wire         led2,
-    output wire         led3,
-    output wire         io3,
-    output wire         io4
+    inout  wire [7:0]   dut_data,
+    output reg  [31:0]  dut_address,
+    output reg          dut_rdn,
+    output reg          dut_wrn,
+    output wire         dut_cen,
+    output reg          error
 );
-    //wire io3, io4;
 
-    wire clk_buf;
     wire rx_data_ready;
     wire [8:0] rx_data_word;
     reg  rx_ack;
@@ -84,20 +82,16 @@ module ss2 #(
     wire fifo_underflow;
 
 
-    reg [31:0] dut_address;
     reg rx_dut_cen;
     reg dut_cen_r;
-    reg dut_wrn;
-    reg dut_rdn;
     reg [7:0] dut_wdata;
-    wire [7:0] dut_data = dut_wrn? 8'bz : dut_wdata;
+    assign dut_data = dut_wrn? 8'bz : dut_wdata;
 
     reg [2:0] tx_state;
     reg tx_crc_init = 1'b0;
     reg tx_dut_cen;
 
-    reg  error = 1'b0;
-    always @ (posedge clk_buf) begin
+    always @ (posedge clk) begin
         if (~resetn)
             error <= 1'b0;
         else if ( rx_invalid_command || 
@@ -111,8 +105,6 @@ module ss2 #(
                 )
             error <= 1'b1;
     end
-
-    assign led2 = error;
 
     wire [7:0] rx_data_byte = rx_data_word[8:1];
     wire [7:0] rx_data = (rx_insert_zero)? 8'b0 : rx_data_byte;
@@ -134,7 +126,7 @@ module ss2 #(
 
     reg [7:0] dut_read_len;
 
-    always @ (posedge clk_buf) begin
+    always @ (posedge clk) begin
         dut_cen_r <= dut_cen;
         if (dut_cen && ~dut_cen_r)
             // note this handles incremeting the address for both the write (Rx) logic and read (Tx response) logic:
@@ -200,7 +192,7 @@ module ss2 #(
     end
 
     // Rx FSM: strategy is that FSM deals with COBS, not content
-    always @ (posedge clk_buf) begin
+    always @ (posedge clk) begin
         if (~resetn)
             rx_state <= pS_RX_IDLE;
         else begin
@@ -290,7 +282,7 @@ module ss2 #(
     reg dut_register_read_pre;
     reg dut_register_read;
 
-    always @ (posedge clk_buf) begin
+    always @ (posedge clk) begin
         tx_next_byte_r <= tx_next_byte;
         if (dut_register_read) dut_data_r <= dut_data;
         dut_register_read_pre <= ~dut_rdn && ~tx_dut_cen;
@@ -357,7 +349,7 @@ module ss2 #(
     reg clear_rx_errors = 1'b0;
 
     // Tx FSM: strategy is that FSM deals with COBS, not content
-    always @ (posedge clk_buf) begin
+    always @ (posedge clk) begin
         if (~resetn)
             tx_state <= pS_TX_IDLE;
         else begin
@@ -468,7 +460,7 @@ module ss2 #(
     wire crc_en = (rx_active)? rx_valid_byte : tx_next_byte_r;
     wire crc_init = (rx_active)? rx_crc_init : tx_crc_init;
     crc U_crc (
-        .clk            (clk_buf),
+        .clk            (clk),
         .init           (crc_init),
         .data           (crc_data),
         .data_en        (crc_en),
@@ -476,7 +468,7 @@ module ss2 #(
     );
 
     uart_core U_uart (
-       .clk                      (clk_buf),
+       .clk                      (clk),
        .reset_n                  (resetn),
        // Configuration inputs
        .bit_rate                 (pBIT_RATE),
@@ -498,7 +490,7 @@ module ss2 #(
        .txd_data                 (tx_data_byte),
        .txd_busy                 (tx_busy)
     );
-    always @(posedge clk_buf) rx_ack <= rx_syn;
+    always @(posedge clk) rx_ack <= rx_syn;
     assign rx_data_ready = rx_syn && rx_ack;
 
     fifo_sync #(
@@ -509,7 +501,7 @@ module ss2 #(
         .pBRAM                  (0),    // NOTE: consider switching to BRAM for implementation?
         .pDISTRIBUTED           (0)
     ) U_tx_fifo (
-        .clk                    (clk_buf              ),
+        .clk                    (clk                  ),
         .rst_n                  (resetn               ),
         .full_threshold_value   (                     ),
         .empty_threshold_value  (                     ),
@@ -527,46 +519,7 @@ module ss2 #(
         .underflow              (fifo_underflow       )
     );
 
-
-    wire dut_cen = (reading)? tx_dut_cen : rx_dut_cen;
-    cw305_top #(
-        .pBYTECNT_SIZE                  (8),
-        .pADDR_WIDTH                    (32)
-    ) U_cw305_dut (
-        .usb_clk                        (clk),
-        .usb_clk_buf                    (clk_buf),
-        .usb_data                       (dut_data),
-        .usb_addr                       (dut_address),
-        .usb_rdn                        (dut_rdn ),
-        .usb_wrn                        (dut_wrn ),
-        .usb_cen                        (dut_cen ),
-        .usb_trigger                    (1'b0),
-
-        .j16_sel                        (1'b0),
-        .k16_sel                        (1'b0),
-        .k15_sel                        (1'b0),
-        .l14_sel                        (1'b0),
-        .pushbutton                     (resetn),
-
-        .led1                           (led1),
-        .led2                           (),
-        .led3                           (led3),
-
-    `ifdef SS2_EXAMPLE
-        .io3                            (io3),
-        .ss2_error                      (error),
-    `endif
-
-        .pll_clk1                       (clk_buf),
-        .tio_trigger                    (io4),
-        .tio_clkout                     (clkout),
-        .tio_clkin                      (clk_buf)
-    );
-
-    `ifndef SS2_EXAMPLE
-        assign io3 = 1'bz;
-    `endif
-
+    assign dut_cen = (reading)? tx_dut_cen : rx_dut_cen;
 
 endmodule
 `default_nettype wire

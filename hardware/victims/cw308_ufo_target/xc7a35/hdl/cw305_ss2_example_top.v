@@ -29,7 +29,7 @@ either expressed or implied, of NewAE Technology Inc.
 `timescale 1ns / 1ps
 `default_nettype none 
 
-module cw305_top #(
+module cw305_ss2_example_top #(
     parameter pBYTECNT_SIZE = 8,
     parameter pADDR_WIDTH = 32
 )(
