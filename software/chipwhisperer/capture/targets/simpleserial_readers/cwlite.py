@@ -24,9 +24,9 @@
 import logging
 
 from ._base import SimpleSerialTemplate
-from ....capture.scopes.OpenADC import OpenADC
-from ....capture.scopes.cwnano import CWNano
-from typing import Union
+# from ....capture.scopes.OpenADC import OpenADC
+# from ....capture.scopes.cwnano import CWNano
+# from typing import Union
 
 class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
     _name = 'NewAE USB (CWLite/CW1200)'
@@ -50,7 +50,7 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
     def baud(self):
         return self._baud
 
-    def con(self, scope : Union[OpenADC, CWNano, None] = None):
+    def con(self, scope): # remove typing here to avoid pulling in OpenADC/CWNano
         if not scope is None:
             self.cwlite_usart = scope._get_usart()
             self.cwlite_usart.init(baud=self._baud)

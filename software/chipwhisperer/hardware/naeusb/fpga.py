@@ -32,7 +32,7 @@ from ...logging import *
 try:
     import numpy as np
 except:
-    naeusb_logger.error("numpy is required for parallel CW340 programming")
+    naeusb_logger.info("numpy is required for parallel CW340 programming")
     np = None # type: ignore
 
 class FPGA(object):
