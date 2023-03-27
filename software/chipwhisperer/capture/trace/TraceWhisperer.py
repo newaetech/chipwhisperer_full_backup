@@ -664,6 +664,17 @@ class TraceWhisperer(util.DisableNewAttr):
     def errors(self):
         """Indicate whether internal FPGA errors have occurred.
            Write to clear.
+
+        Error types and their causes:
+            * 'presample error': capture trigger occurs before the requested
+            * 'SWO internal CDC error': data is coming in faster than it can be
+                    collected; this may be caused by incorrect scope.trace.clock
+                    settings.
+            * 'FIFO underflow': host tried to read more samples than are
+                    available.
+            * 'FIFO overflow': exceeded sample storage capacity; shorten the
+                    capture.
+ 
         """
         stat = ""
         if self.fpga_read(self.REG_STAT, 1)[0]:
@@ -1340,6 +1351,8 @@ class clock(util.DisableNewAttr):
                     You can adjust trace.clock._warning_frequency if you don't want
                     to see this message anymore.
                     """)
+            # changing the frequency may result in SWO internal CDC error; clear it:
+            self.main.errors = 0
 
     @property
     def fe_clock_alive(self):
@@ -2062,6 +2075,9 @@ class UARTTrigger(TraceWhisperer):
             self.capture.use_husky_arm = True
         # accessing base class setter is awkward! all we want to do here is super().enabled = enable, but this is the way to do that:
         super(UARTTrigger, self.__class__).enabled.fset(self, enable)
+        # enabling the UART trigger module may result in SWO internal CDC error; clear it:
+        time.sleep(0.1)
+        self.errors = 0
 
     @property 
     def rules_enabled(self):
