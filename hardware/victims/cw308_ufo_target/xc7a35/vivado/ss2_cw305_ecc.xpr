@@ -434,6 +434,7 @@
         <Option Name="VerilogDir" Val="$PPRDIR/../../../cw305_artixtarget/fpga/cryptosrc/cryptech/ecdsa256-v1/rtl/curve"/>
         <Option Name="VerilogDir" Val="$PPRDIR/../../../cw305_artixtarget/fpga/cryptosrc/cryptech/ecdsa256-v1/rtl/lowlevel"/>
         <Option Name="VerilogDir" Val="$PPRDIR/../../../cw305_artixtarget/fpga/cryptosrc/cryptech/ecdsa256-v1/rtl/modular/modular_invertor"/>
+        <Define Name="SS2_WRAPPER"/>
       </Config>
     </FileSet>
     <FileSet Name="constrs_1" Type="Constrs" RelSrcDir="$PSRCDIR/constrs_1" RelGenDir="$PGENDIR/constrs_1">

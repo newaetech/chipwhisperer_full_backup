@@ -150,10 +150,10 @@ class CW312T_XC7A35T(XilinxGeneric):
         self.pgm = "pdic"
 
     def done_setup(self):
-        self.scope.io.tio4 = None
+        self.scope.io.pdid = None
     
     def done_state(self):
-        return self.scope.io.tio_states[3]
+        return self.scope.io.pdid_state
 
     def initb_setup(self):
         self.scope.io.tio3 = None
