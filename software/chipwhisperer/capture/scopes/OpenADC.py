@@ -19,6 +19,7 @@ from .cwhardware import ChipWhispererDecodeTrigger, ChipWhispererExtra, \
 from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP, LEDSettings, HuskyErrors, \
         USERIOSettings, XADCSettings, LASettings, ADS4128Settings
 from ._OpenADCInterface import OpenADCInterface, HWInformation, GainSettings, TriggerSettings, ClockSettings
+from ..api.cwcommon import ChipWhispererSAMErrors
 
 try:
     from ..trace import TraceWhisperer
@@ -676,6 +677,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.errors = HuskyErrors(self.sc, self.XADC, self.adc, self.clock, self.trace)
         else:
             self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
+            self.errors = ChipWhispererSAMErrors(self._getNAEUSB())
 
 
         if cwtype == "cw1200":
