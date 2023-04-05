@@ -132,7 +132,7 @@ class FPGA(object):
         if np is None and bitorder != 0x00:
             raise ValueError("numpy not installed and parallel programming selected. Install numpy or use serial programming")
         def reverse_bits(x):
-            
+
             x = np.array(x)
             a = np.unpackbits(x)
             return np.packbits(a, bitorder='little')
@@ -155,7 +155,11 @@ class FPGA(object):
         transactionBytes = 2048
         t0 = 0
 
-        buffer_ = [None] * int(16 * 1024 * 1024 / transactionBytes)
+        # LEGACY CODE WARNING
+        # This buffer_ thing is unclear where this length came from. It used to be 16*1024*1024 but that was too small for
+        # larger UltraScale bitstreams. Changing to 64*1024*1024 made it work. Is it future-proof? No idea. But if you get
+        # that error below, adjust '64' to be something higher (96?).
+        buffer_ = [None] * int(64 * 1024 * 1024 / transactionBytes)
         size = 0
 
         # Read entire thing in
@@ -211,8 +215,13 @@ class FPGA(object):
             # print " ",
             # print len(buffer_)
 
-        if size < 64 or size % 64 == 0:
+        if size < 64:
             raise ValueError("Invalid file size: " + str(size))
+
+        # This previously was a generic 'invalid file size' error, but it seems to be that the internal buffer
+        # was too small & the file got trunacated. Fix seems to be to adjust the size where `buffer_` is defined
+        if size % 64 == 0:
+            raise ValueError("Probably the 'buffer_' was too small, check source")
 
         tries = 1
 
