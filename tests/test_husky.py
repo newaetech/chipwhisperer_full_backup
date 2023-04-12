@@ -276,31 +276,33 @@ testTargetData = [
 
 if test_platform == "sam4s":
     testSegmentData = [
-        # offset    presamples  samples clock       adcmul  seg_count   segs    segcycs desc
-        (0,         0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset'),
-        (0,         10,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset_presamp'),
-        (10,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset10_SLOW'),
-        (50,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_SLOW'),
-        (50,        20,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_presamp'),
-        (0,         0,          90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_no_offset'),
-        (0,         30,         90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_no_offset_presamp_SLOW'),
-        (10,        0,          90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_offset10_SLOW'),
-        (50,        0,          90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_offset50_SLOW'),
-        (50,        40,         90,    7.37e6,     4,      True,       20,     32500,  'segments_counter_offset50_presamp'),
+        # offset    presamples  samples stream  clock       adcmul  seg_count   segs    segcycs desc
+        (0,         0,          90,     False,  7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset'),
+        (0,         10,         90,     False,  7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset_presamp'),
+        (10,        0,          90,     False,  7.37e6,     4,      False,      20,     0,      'segments_trigger_offset10_SLOW'),
+        (50,        0,          90,     False,  7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_SLOW'),
+        (50,        20,         90,     False,  7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_presamp'),
+        (0,         0,          100,    True,   7.37e6,     4,      False,      2000,   0,      'segments_trigger_stream_SLOW'),
+        (0,         0,          90,     False,  7.37e6,     4,      True,       20,     32500,  'segments_counter_no_offset'),
+        (0,         30,         90,     False,  7.37e6,     4,      True,       20,     32500,  'segments_counter_no_offset_presamp_SLOW'),
+        (10,        0,          90,     False,  7.37e6,     4,      True,       20,     32500,  'segments_counter_offset10_SLOW'),
+        (50,        0,          90,     False,  7.37e6,     4,      True,       20,     32500,  'segments_counter_offset50_SLOW'),
+        (50,        40,         90,     False,  7.37e6,     4,      True,       20,     32500,  'segments_counter_offset50_presamp'),
     ]
 else:
     testSegmentData = [
-        # offset    presamples  samples clock       adcmul  seg_count   segs    segcycs desc
-        (0,         0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset'),
-        (0,         10,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset_presamp'),
-        (10,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset10_SLOW'),
-        (50,        0,          90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_SLOW'),
-        (50,        20,         90,    7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_presamp'),
-        (0,         0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset'),
-        (0,         30,         90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset_presamp_SLOW'),
-        (10,        0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset10_SLOW'),
-        (50,        0,          90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50_SLOW'),
-        (50,        40,         90,    7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50_presamp'),
+        # offset    presamples  samples stream  clock       adcmul  seg_count   segs    segcycs desc
+        (0,         0,          90,     False,  7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset'),
+        (0,         10,         90,     False,  7.37e6,     4,      False,      20,     0,      'segments_trigger_no_offset_presamp'),
+        (10,        0,          90,     False,  7.37e6,     4,      False,      20,     0,      'segments_trigger_offset10_SLOW'),
+        (50,        0,          90,     False,  7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_SLOW'),
+        (50,        20,         90,     False,  7.37e6,     4,      False,      20,     0,      'segments_trigger_offset50_presamp'),
+        (0,         0,          100,    True,   7.37e6,     4,      False,      2000,   0,      'segments_trigger_stream_SLOW'),
+        (0,         0,          90,     False,  7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset'),
+        (0,         30,         90,     False,  7.37e6,     4,      True,       20,     29472,  'segments_counter_no_offset_presamp_SLOW'),
+        (10,        0,          90,     False,  7.37e6,     4,      True,       20,     29472,  'segments_counter_offset10_SLOW'),
+        (50,        0,          90,     False,  7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50_SLOW'),
+        (50,        40,         90,     False,  7.37e6,     4,      True,       20,     29472,  'segments_counter_offset50_presamp'),
     ]
 
 
@@ -461,7 +463,7 @@ testGlitchTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '3/2/2023, 21:35'
+    assert scope.fpga_buildtime == '4/5/2023, 21:22'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -996,9 +998,9 @@ def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, f
     scope.sc._fast_fifo_read_enable = True # return to default
 
 
-@pytest.mark.parametrize("offset, presamples, samples, clock, adcmul, seg_count, segs, segcycs, desc", testSegmentData)
+@pytest.mark.parametrize("offset, presamples, samples, stream, clock, adcmul, seg_count, segs, segcycs, desc", testSegmentData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_segments (fulltest, offset, presamples, samples, clock, adcmul, seg_count, segs, segcycs, desc):
+def test_segments (fulltest, offset, presamples, samples, stream, clock, adcmul, seg_count, segs, segcycs, desc):
     # This requires a specific target firmware to work properly:
     # simpleserial-aes where the number of triggers can be set via 'n' commmand.
     # The segcycs value for seg_count=True requires a very specific firmware, otherwise the test is likely to fail.
@@ -1045,7 +1047,7 @@ def test_segments (fulltest, offset, presamples, samples, clock, adcmul, seg_cou
     scope.adc.segment_cycles = segcycs
     scope.adc.segment_cycle_counter_en = seg_count
     scope.adc.offset = offset
-    scope.adc.stream_mode = False
+    scope.adc.stream_mode = stream
     scope.adc.bits_per_sample = 12
     scope.adc.clip_errors_disabled = False
     scope.adc.lo_gain_errors_disabled = True
@@ -1053,7 +1055,7 @@ def test_segments (fulltest, offset, presamples, samples, clock, adcmul, seg_cou
     scope.gain.db = 10
 
     target.set_key(bytearray(16))
-    target.simpleserial_write('n', bytearray([0, segs]))
+    target.simpleserial_write('n', list(int.to_bytes(segs, length=2, byteorder='big')))
     scope.arm()
     target.simpleserial_write('f', bytearray(16))
     ret = scope.capture()
