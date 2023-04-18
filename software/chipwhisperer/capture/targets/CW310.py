@@ -117,8 +117,9 @@ class CW310(CW305):
         return fwver
         
 
-    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=20E6, sn=None, hw_location=None):
+    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=20E6, sn=None, hw_location=None, platform='cw310'):
         # add more stuff later
+        self.platform = platform
         self._naeusb.con(idProduct=[0xC310], serial_number=sn, hw_location=hw_location)
         self.pll.cdce906init()
         if fpga_id:
@@ -370,7 +371,14 @@ class CW310(CW305):
         self._naeusb.sendCtrl(0x42, addr & 0xFF, [data_byte & 0xFF])
 
     def temp_sensor_read(self, addr):
-        return self._naeusb.readCtrl(0x42, addr & 0xFF, 2)[1]
+        resp = self._naeusb.readCtrl(0x42, addr & 0xFF, 2)
+
+        if len(resp) == 1:
+            #Flag for I2C locked
+            raise IOError("I2C locked on CW310. Try again.")
+        else:
+            print(resp)
+            return resp[1]
 
     @property
     def fpga_temp(self):

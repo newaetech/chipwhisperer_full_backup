@@ -227,6 +227,25 @@ class GlitchController:
             while self.parameter_values[parameter_index] <= self.parameter_max[parameter_index]: 
                 yield from self._loop_rec(parameter_index+1, final_index, step)
                 self.parameter_values[parameter_index] += step[parameter_index]
+
+    def calc(self, ignore_params=[], sort=None):
+        if (type(ignore_params) is int) or (type(ignore_params) is str):
+            ignore_params = [ignore_params]
+
+        new_param_list = []
+        for param in ignore_params:
+            if type(param) is str:
+                new_param_list.append(self.parameters.index(param))
+            else:
+                new_param_list.append(param)
+
+        rtn = self.results.calc(ignore_params=new_param_list)
+        if sort:
+            rtn = sorted(rtn.items(), key=lambda x: x[1][sort])
+            rtn.reverse()
+        else:
+            rtn =list(rtn.items())
+        return rtn
                 
 
 class GlitchResults:
@@ -342,22 +361,31 @@ class GlitchResults:
             ignore_params = [ignore_params]
 
         ignore_params = list(ignore_params)
+        ignore_params.sort()
         ignore_params.reverse()
 
         rtn = {}
+
+        # combine results, ignoring ignore_param
         for param in self._result_dict:
 
             # param tuple needs to be list so we can delete entries
             new_param = list(param)
+
+            # delete params that we're ignoring
             for p in ignore_params:
                 del(new_param[p])
 
             # now needs to be tuple so can use as index for dict
             new_param = tuple(new_param)
+
+            # combine groups
             if new_param in rtn:
+                # already have these settings, so add in new totals
                 for group in rtn[new_param]:
+                    # print("adding group " + str(group))
                     rtn[new_param][group] += self._result_dict[param][group]
-                rtn[new_param]['total'] += self._result_dict[param]['total']
+                # rtn[new_param]['total'] += self._result_dict[param]['total']
             else:
                 rtn[new_param] = dict(self._result_dict[param])
         
@@ -367,36 +395,6 @@ class GlitchResults:
                 rtn[param][group+'_rate'] = rtn[param][group] / rtn[param]['total']
         
         return rtn
-
-        results = set()
-        
-        #Figure out *all* test values
-        for g in self.groups:
-            for r in self.result_dict[g]:
-                results.add(r['parameters'])
-                
-        #Convert to list
-        results = list(results)
-        
-        #Build count dict
-        r = {'_total':0}
-        for k in self.groups:
-            r[k] = 0
-        counts = [dict(r) for _ in range(0, len(results))]
-        
-        for i, r in enumerate(results):
-            counts[i]['_parameter'] = r
-        
-        #Count list elements
-        for g in self.groups:
-            for r in self.result_dict[g]:
-                for i,t in enumerate(results):
-                    if t == r['parameters']:
-                        counts[i]['_total'] += 1
-                        counts[i][g] += 1
-
-        return counts
-
 
     def plot_2d(self, plotdots, x_index=0, y_index=1, x_units=None, y_units=None, alpha=True):
         '''

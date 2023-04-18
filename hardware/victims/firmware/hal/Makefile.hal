@@ -15,7 +15,7 @@ PLATFORM_LIST = CW308_CC2538 CW301_AVR CW303 CW304 CW308_MEGARF CW308_SAM4L \
 	CW308_STM32F0 CW308_STM32F1 CW308_STM32F2 CW308_STM32F3 CW308_STM32F4 CW308_K24F \
     CW308_NRF52 CW308_AURIX CW308_SAML11 CW308_EFM32TG11B CWLITEARM CWLITEXMEGA CWNANO CW308_K82F \
     CW308_PSOC62 CW308_IMXRT1062 CW308_FE310 CW308_EFR32MG21A CW308_EFM32GG11 CW308_STM32L5 CW308_NEORV32\
-    CW308_SAM4S
+    CW308_SAM4S CW305_IBEX
 
 define KNOWN_PLATFORMS
 
@@ -111,6 +111,10 @@ define KNOWN_PLATFORMS
 | CW308_NEORV32 | CW308/CW312-iCE40 with neorv32        |
 |               |   (RISC-V) soft-core processor.       |
 +---------------|---------------------------------------+
+| CW305_IBEX    | CW305 or CW312-A35 with Ibex          |
+|               |   (RISC-V) soft-core processor.       |
++---------------|---------------------------------------+
+
 
 Options to define platform:
 (1) Run make with PLATFORM specified as follows:
@@ -246,6 +250,9 @@ else ifeq ($(PLATFORM), CW308_SAM4S)
 else ifeq ($(PLATFORM), CWHUSKY)
   HAL = sam4s
   PLTNAME = CW-Husky Microchip SAM4S
+else ifeq ($(PLATFORM), CW305_IBEX)
+  HAL = ibex
+  PLTNAME = CW305 or CW312-A35 with Ibex softcore
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
 endif

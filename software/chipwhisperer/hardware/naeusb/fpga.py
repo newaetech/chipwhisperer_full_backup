@@ -32,7 +32,7 @@ from ...logging import *
 try:
     import numpy as np
 except:
-    naeusb_logger.error("numpy is required for parallel CW340 programming")
+    naeusb_logger.info("numpy is required for parallel CW340 programming")
     np = None # type: ignore
 
 class FPGA(object):
@@ -131,19 +131,14 @@ class FPGA(object):
 
         if np is None and bitorder != 0x00:
             raise ValueError("numpy not installed and parallel programming selected. Install numpy or use serial programming")
+
+        # reverse bitwise endianness
         def reverse_bits(x):
-            
             x = np.array(x)
             a = np.unpackbits(x)
             return np.packbits(a, bitorder='little')
-            # n_bits = x.dtype.itemsize * 8
 
-            # x_reversed = np.zeros_like(x)
-            # for i in range(n_bits):
-            #     x_reversed = (x_reversed << 1) | x & 1
-            #     x >>= 1
-            # return x_reversed
-
+        # swap every two bytes
         def swap_16_bit(x):
             a = x[::2]
             b = x[1::2]
@@ -152,16 +147,9 @@ class FPGA(object):
             c[1::2] = a
             return c
 
-        transactionBytes = 2048
-        t0 = 0
-
-        buffer_ = [None] * int(16 * 1024 * 1024 / transactionBytes)
-        size = 0
-
         # Read entire thing in
         with fwFileLike as f:
             inputStream = f.read()
-        streamCnt = 0
 
         # Might need a few extra CCLKs at end to finish off, and as written elsewhere this is done with DO=1
         # Perhaps micro should add these instead? For now this should be reliable enough (things worked even w/o this it seemed, so this is
@@ -170,6 +158,7 @@ class FPGA(object):
 
         inputStream = bytearray(inputStream[starting_offset:])
 
+        # swap bit order if needed for 8x and 16x parallel modes
         if (bitorder != self.BITORDER_DEFAULT):
             naeusb_logger.info("Using parallel mode")
             # quick endianness reversal
@@ -180,82 +169,18 @@ class FPGA(object):
                 naeusb_logger.info("Using 16 bit parallel mode")
         else:
             naeusb_logger.info("Using serial mode")
-            # inputStream = np.unpackbits(np.array(inputStream, dtype='uint8'))
-            # inputStream = np.packbits(inputStream, bitorder='little')
 
-        # self._usb.usbserializer.
+        # do write, 16KiB at a time to avoid USB timeout on longer bitstreams
+        packet_size = int(2**16)
+        cur_byte = 0
+        while cur_byte < len(inputStream):
+            end_byte = min(cur_byte+packet_size, len(inputStream))
+            self._usb.writeBulkEP(inputStream[cur_byte:end_byte])
+            cur_byte = end_byte
 
-        # NOTE: by default, usb timeout is 20 seconds
-        # This isn't enough time for large transfers, so we leave something crazy like 5 minutes
-        # self._usb.writeBulkEP(inputStream, timeout=6000000) # note: all the code below basically does nothing
-        # return 0
-
-        j = transactionBytes
-        for i in range(0, len(buffer_)):
-            if j != transactionBytes: break
-            buffer_[i] = bytearray(inputStream[streamCnt:(streamCnt + transactionBytes)])
-
-            streamCnt += transactionBytes
-
-            j = len(buffer_[i])
-
-            if j < transactionBytes and j % 64 == 0:
-                j += 1
-            size += j
-
-            # if j < transactionBytes and j % 64 == 0:
-            #    j += 1
-            # size += j
-
-            # print i,
-            # print " ",
-            # print len(buffer_)
-
-        if size < 64 or size % 64 == 0:
-            raise ValueError("Invalid file size: " + str(size))
-
-        tries = 1
-
-        while tries > 0:
-            # self.resetFpga()
-            try:
-                # t0 = -Date().getTime()
-                bs = 0
-                cs = 0
-
-                for i in range(0, len(buffer_)):
-                    if i * transactionBytes >= size:
-                        break
-                    j = size - i * transactionBytes
-                    if j > transactionBytes:
-                        j = transactionBytes
-
-                    # reversed_buffer = reverse_bits(np.array(buffer_[i], dtype='uint8'))
-                    self._usb.writeBulkEP(buffer_[i])
-
-                    # bs += j
-                    # for k in range(0, len(buffer_[i])):
-                    #     cs = (cs + (buffer_[i][k] & 0xff)) & 0xff
-
-                # self.getFpgaState()
-                # if not self.fpgaConfigured:
-                #    raise IOError("FPGA configuration failed: DONE pin does not go high (size=" + self.fpgaBytes + " ,  " + (bs - self.fpgaBytes) + " bytes got lost;  checksum=" + self.fpgaChecksum + " , should be " + cs + ";  INIT_B_HIST=" + self.fpgaInitB + ")")
-
-                # if self.enableExtraFpgaConfigurationChecks:
-                #    if self.fpgaBytes != 0 and self.fpgaBytes != bs:
-                #        System.err.println("Warning: Possible FPGA configuration data loss: " + (bs - self.fpgaBytes) + " bytes got lost")
-                #    if self.fpgaInitB != 222:
-                #        System.err.println("Warning: Possible Bitstream CRC error: INIT_B_HIST=" + self.fpgaInitB)
-                tries = 0
-                # t0 += Date().getTime()
-            except IOError as e:
-                if tries > 1:
-                    print(("Warning: " + str(e) + ": Retrying it ..."))
-                else:
-                    raise
-            tries -= 1
-        time.sleep(0.1)
-        return t0
+        # legacy code was deleted on April 6, 2023
+        # check git history if you want to see it
+        return 0
 
         # def detectBitstreamBitOrder(self, buf):
         #    """ Determine what bit-order bitstream is in by looking for magic bytes """
