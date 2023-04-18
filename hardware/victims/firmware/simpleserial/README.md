@@ -106,8 +106,10 @@ The default baud rate is 230400bps.
 
 The following commands are reserved by SimpleSerial v2:
 
-* `'v'`: Get simpleserial version (len=0)
+* `'v'`: Get simpleserial version (len=0, scmd=0)
+  * Full cmd: [0x02, 0x76, 0x01, 0x02, 0x79, 0x00]
 * `'w'`: Get simpleserial commands
+  * Full cmd: [0x02, 0x77, 0x01, 0x02, 0x7F, 0x00]
 
 ### SimpleSerial V2.0
 
