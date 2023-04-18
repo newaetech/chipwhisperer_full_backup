@@ -27,7 +27,7 @@ from ...hardware.naeusb.programmer_avr import AVRISP
 from ...hardware.naeusb.programmer_xmega import XMEGAPDI
 from ...hardware.naeusb.programmer_stm32fserial import STM32FSerial
 from ...common.utils.util import camel_case_deprecated, DelayedKeyboardInterrupt
-from ..api.cwcommon import ChipWhispererCommonInterface
+from ..api.cwcommon import ChipWhispererCommonInterface, ChipWhispererSAMErrors
 import time
 import datetime
 
@@ -564,6 +564,7 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.io = GPIOSettings(self._cwusb)
         self.adc = ADCSettings(self._cwusb)
         self.glitch = GlitchSettings(self._cwusb)
+        self.errors = ChipWhispererSAMErrors(self._getNAEUSB())
         self._timeout = 2
 
         self._lasttrace = None
@@ -759,6 +760,7 @@ is in an error state, or is being used by another tool.") from e
         rtn['io']    = self.io._dict_repr()
         rtn['adc']   = self.adc._dict_repr()
         rtn['glitch'] = self.glitch._dict_repr()
+        rtn['errors'] = self.errors._dict_repr()
         return rtn
 
     def __repr__(self):
