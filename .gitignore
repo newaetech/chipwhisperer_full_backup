@@ -45,6 +45,7 @@ docs/make.bat
 **/*.sym
 *.o.s
 **/1
+**/version.txt
 
 # Explicit listing of the build artifacts so that they are not included in
 # commits
