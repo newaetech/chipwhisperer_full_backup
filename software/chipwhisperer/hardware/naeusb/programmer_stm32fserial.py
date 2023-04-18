@@ -353,15 +353,16 @@ class STM32FSerial:
         self.reset()
 
     def cmdGeneric(self, cmd):
-        self.sp.write(chr(cmd))
-        self.sp.write(chr(cmd ^ 0xFF))  # Control byte
+        self.sp.write([cmd, cmd^0xFF])
+        # self.sp.write(chr(cmd))
+        # self.sp.write(chr(cmd ^ 0xFF))  # Control byte
         return self._wait_for_ask(hex(cmd))
 
     def cmdGet(self):
         if self.cmdGeneric(0x00):
             target_logger.info("*** Get command");
-            length = self.sp.read(1)[0]
-            version = self.sp.read(1)[0]
+            length, version = self.sp.read(2)
+            # version = self.sp.read(1)[0]
             target_logger.info("    Bootloader version: " + hex(version))
             #dat = map(lambda c: hex(self.sp.read(len))
             dat = list(map(hex, self.sp.read(length)))
@@ -438,11 +439,14 @@ class STM32FSerial:
             target_logger.debug("    %s bytes to write" % [lng + 1])
             self.sp.write(chr(lng))  # len really
             crc = lng
+            chr_data = [chr(b) for b in data]
             for c in data:
                 crc ^= c
-                self.sp.write(chr(c))
                 if self.slow_speed:
+                    self.sp.write(chr(c))
                     self.delay_func(5)
+            if not self.slow_speed:
+                self.sp.write(data)
             self.sp.write(chr(crc))
             self._wait_for_ask("0x31 programming failed")
             target_logger.debug("    Write memory done")
@@ -476,10 +480,11 @@ class STM32FSerial:
         if self.cmdGeneric(0x44):
             target_logger.debug("*** Extended Erase memory command")
             # Global mass erase
-            self.sp.write(chr(0xFF))
-            self.sp.write(chr(0xFF))
-            # Checksum
-            self.sp.write(chr(0x00))
+            self.sp.write([0xFF, 0xFF, 0x00])
+            # self.sp.write(chr(0xFF))
+            # self.sp.write(chr(0xFF))
+            # # Checksum
+            # self.sp.write(chr(0x00))
             tmp = self.sp.timeout
             if (self._chip.name == STM32F40xxx().name) or (self._chip.name == STM32F2().name):
                 self.sp.timeout = 1000000 #TODO HACK - serial timeout is screwed up for some reason
