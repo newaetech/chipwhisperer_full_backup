@@ -641,6 +641,20 @@ class GPIOSettings(util.DisableNewAttr):
     def glitch_hp(self, active):
         self.cwe.setTargetGlitchOut('A', active)
 
+    def vglitch_reset(self, delay=0.005):
+        """
+        """
+        hp = self.glitch_hp
+        lp = self.glitch_lp
+
+        self.glitch_hp = False
+        self.glitch_lp = False
+
+        time.sleep(delay)
+
+        self.glitch_hp = hp
+        self.glitch_lp = lp
+
     @property
     def glitch_lp(self):
         """Whether the low-power crowbar MOSFET is enabled.

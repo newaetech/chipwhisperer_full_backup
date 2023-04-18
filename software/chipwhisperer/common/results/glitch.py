@@ -361,6 +361,7 @@ class GlitchResults:
             ignore_params = [ignore_params]
 
         ignore_params = list(ignore_params)
+        ignore_params.sort()
         ignore_params.reverse()
 
         rtn = {}
