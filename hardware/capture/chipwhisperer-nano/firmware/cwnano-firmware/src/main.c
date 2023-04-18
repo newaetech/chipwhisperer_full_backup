@@ -132,6 +132,29 @@ void ui_process(uint16_t framenumber)
 	}
 	if ((framenumber % 1024) == 512) {
 		LED_Off(LED0_GPIO);
+		LED_Off(LED1_GPIO);
+	}
+
+	if (LED_SETTING == CW_LED_DEBUG_SETTING) {
+		if ((framenumber % 1024) == 0) {
+			LED_On(LED1_GPIO);
+		}
+		if ((framenumber % 1024) == 512) {
+			LED_Off(LED1_GPIO);
+		}
+	}
+
+	if (LED_SETTING == CW_LED_ERR_SETTING) {
+		if (CURRENT_ERRORS == 0) {
+			LED_Off(LED1_GPIO);
+		} else {
+			LED_On(LED1_GPIO);
+		}
+	}
+	
+	if ((framenumber % 512) == 0) {
+		// LED_Off(LED1_GPIO);
+		//LED_Off(LED2_GPIO);
 	}
 }
 
