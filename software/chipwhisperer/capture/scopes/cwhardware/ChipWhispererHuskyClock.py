@@ -285,10 +285,8 @@ class CDCI6214:
         if pll_out == 3:
             self.update_reg(0x31, div, 0xFFFF) # set div
             self.update_reg(0x32, (1) | (1 << 2), 0xFF) # LVDS CH3
-            self.reset()
         elif pll_out == 1:
             self.update_reg(0x25, div, 0xFFFF) # set div, prescaler A
-            self.reset()
         else:
             raise ValueError("pll_out must be 1 or 3, not {}".format(pll_out))
 
@@ -335,7 +333,6 @@ class CDCI6214:
             self.set_outdiv(3, 0)
             self.set_outdiv(1, 0)
             return
-
 
         # ADC mul must be either 0, or a positive integer
         adc_off = (adc_mul == 0)
@@ -440,7 +437,8 @@ class CDCI6214:
             self.set_outdiv(3, 0)
 
         # reset PLL (needed?)
-        self.reset()
+        # self.reset()
+        self.sync_clocks()
 
     def set_bypass_adc(self, enable_bypass):
         """Routes FPGA clock input directly to ADC, bypasses PLL.
