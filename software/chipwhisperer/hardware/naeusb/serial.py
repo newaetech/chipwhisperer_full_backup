@@ -130,14 +130,14 @@ class USART(object):
 
         while datasent < len(data):
             datatosend = len(data) - datasent
-            datatosend = min(datatosend, 58) # WARNING: this is 58 because >58 we autosend as a bulk transfer
+            # datatosend = min(datatosend, 58)
 
             # need to make sure we don't write too fast
             # and overrun the internal buffer...
             # Can probably elimiate some USB communication
             # to make this faster, but okay for now...
             if self.tx_buf_in_wait:
-                datatosend = min(datatosend, 128-self.in_waiting_tx())
+                datatosend = min(datatosend, self._max_read-self.in_waiting_tx())
             self._usb.sendCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), data[datasent:(datasent + datatosend)])
             datasent += datatosend
 
