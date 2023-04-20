@@ -223,10 +223,15 @@ class CDCI6214:
         """
         self.update_reg(0x00, 1 << 5, 0x00)
 
+    def relock_pll(self):
+        """Reset the PLL lock detect circuit - need to test this relocks pll
+        """
+        self.update_reg(0x00, 1 << 6, 0x00)
+
     def recal(self):
         """Perform a calibration. Typically unneeded.
         """
-        self.update_reg(0x0, 1 << 5, 1 << 5)
+        self.update_reg(0x0, 1 << 4, 0x00)
 
     def set_pll_input(self, xtal=True):
         """Set input to PLL and set input to 4MHz
@@ -439,6 +444,7 @@ class CDCI6214:
         # reset PLL (needed?)
         # self.reset()
         self.sync_clocks()
+        self.relock_pll()
 
     def set_bypass_adc(self, enable_bypass):
         """Routes FPGA clock input directly to ADC, bypasses PLL.
