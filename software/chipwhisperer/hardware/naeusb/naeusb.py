@@ -175,7 +175,7 @@ def quick_firmware_erase(product_id, serial_number=None):
 
 def _check_sam_feature(feature, fw_version, prod_id):
     if prod_id not in SAM_FW_FEATURE_BY_DEVICE:
-        naeusb_logger.info("Features for ProdID {:04X} not stored, skipping...".format(prod_id))
+        naeusb_logger.debug("Features for ProdID {:04X} not stored, skipping...".format(prod_id))
         return
     if feature not in SAM_FW_FEATURES:
         raise ValueError("Unknown feature {}".format(feature))
@@ -849,32 +849,40 @@ class NAEUSB:
             self.stop = False
 
         def run(self):
-            naeusb_logger.debug("Streaming: starting USB read")
-            start = time.time()
+            # basically just setup a bunch of async transfers, then handle them via callback
+            naeusb_logger.info("Streaming: starting USB read")
             transfer_list = []
+            unsubmitted_transfers = []
             self.drx = 0
             try:
-                # self.drx = self.serial.usbtx.read(self.dbuf_temp, timeout=self.timeout_ms)
                 num_transfers = int(self.dlen // self.segment_size)
                 if (self.dlen % self.segment_size) != 0:
                     num_transfers += 1
-                naeusb_logger.info("Doing {} transfers".format(num_transfers))
-                naeusb_logger.info("Cal'd from dlen = {} and segment_len = {}".format(self.dlen, self.segment_size))
+                naeusb_logger.debug("Doing {} transfers".format(num_transfers))
+                naeusb_logger.debug("Calc'd from dlen = {} and segment_len = {}".format(self.dlen, self.segment_size))
                 for i in range(num_transfers):
                     transfer = self.serial.usbtx.handle.getTransfer()
                     transfer.setBulk(usb1.ENDPOINT_IN | 0x05, \
                         self.segment_size, \
                         callback=self.callback)
-                    transfer.submit()
-                    transfer_list.append(transfer)
+                    try:
+                        transfer.submit()
+                        transfer_list.append(transfer)
+                    except usb1.USBError as e:
+                        # On Linux, trying to allocate for > ~10M samples seems to not work (ENOMEM)
+                        # Putting them in a list and attempting a resubmit later seems to fix things
+                        unsubmitted_transfers.append(transfer)
+                        naeusb_logger.info("Unsubmitted transfer, will try again later. Err = {}".format(str(e)))
             except IOError as e:
                 raise
 
-            diff = time.time() - start
+            # basically poll all the transfers we've setup
+            start = time.time()
             while any(x.isSubmitted() for x in transfer_list):
                 # handleEvents does the callbacks
                 try:
                     self.serial.usbtx.usb_ctx.handleEvents()
+
                     if self.stop:
                         self.stop = False
                         for transfer in transfer_list:
@@ -882,6 +890,27 @@ class NAEUSB:
                                 transfer.cancel()
                 except usb1.USBErrorInterrupted:
                     pass
+                    
+                # try resubmitting transfers that failed earlier (likely due to enomem)
+                for transfer in unsubmitted_transfers:
+                    try:
+                        naeusb_logger.info("Attempting transfer resubmit")
+                        transfer.submit()
+                        unsubmitted_transfers.remove(transfer)
+                        transfer_list.append(transfer)
+                    except usb1.USBError as e:
+                        naeusb_logger.info("Still can't handle this: {}".format(str(e))) # this will probably still happen a lot before it works
+                        diff = (time.time() - start) * 1000
+                        if diff > self.timeout_ms: # if the capture has timed out
+                            naeusb_logger.error("Libusb async transfer request failed with: {}".format(str(e)))
+                            naeusb_logger.error("NOTE: If you're doing a long transfer, try increasing scope.adc.timeout")
+
+                            # cancel all submitted transfers to prevent pipe errors
+                            for transfer in transfer_list:
+                                if transfer.isSubmitted():
+                                    transfer.cancel()
+                            raise e
+                
             naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
 
         def callback(self, transfer : usb1.USBTransfer):
@@ -934,8 +963,8 @@ class NAEUSB:
             except Exception as e:
                 naeusb_logger.warning('Streaming: USB stream read timed out')
             diff = time.time() - start
-            naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
-            naeusb_logger.info("Expected {}".format(len(self.dbuf_temp)))
+            naeusb_logger.debug("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
+            naeusb_logger.debug("Expected {}".format(len(self.dbuf_temp)))
 
     def cmdReadStream_getStatus(self) -> Tuple[int, int, int]:
         """
