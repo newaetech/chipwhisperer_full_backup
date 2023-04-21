@@ -384,6 +384,10 @@ class CDCI6214:
             new_div = int((old_div * self.adc_mul) / adc_mul + 0.5)
             scope_logger.debug(f"Newdiv {new_div}, OldDiv {old_div}, old adcmul {self.adc_mul}, new adcmul {adc_mul}")
             try:
+                if not self.pll_locked:
+                    scope_logger.warning("PLL unlocked after updating frequencies")
+                    scope_logger.warning("Target clock has dropped for a moment. You may need to reset your target")
+                self.reset()
                 self.set_outdiv(3, new_div)
                 return
             except:
@@ -462,7 +466,7 @@ class CDCI6214:
             self.set_outdiv(3, 0)
 
         # reset PLL (needed?)
-        if relock:
+        if (not self.pll_locked) or relock:
             self.reset()
         self.sync_clocks()
 
@@ -554,7 +558,7 @@ class CDCI6214:
         else:
             raise ValueError("Pll src must be either 'xtal' or 'fpga'")
         ## update clocks
-        self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
+        self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul, True)
 
     @property
     def adc_mul(self):

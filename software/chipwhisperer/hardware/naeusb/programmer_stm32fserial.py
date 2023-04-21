@@ -191,7 +191,7 @@ class STM32FSerial:
         return chip_id, None
 
     @close_on_fail
-    def program(self, filename, memtype="flash", verify=True, logfunc=print_fun, waitfunc=None):
+    def program(self, filename, memtype="flash", verify=True, logfunc=print_fun, waitfunc=None, send_chunk=None):
         """Programs memory type, dealing with opening filename as either .hex or .bin file"""
         self.lastFlashedFile = filename
 
@@ -207,7 +207,12 @@ class STM32FSerial:
 
         logfunc("STM32F Programming %s..." % memtype)
         if waitfunc: waitfunc()
-        self.writeMemory(startaddr, fdata)  # , erasePage=True
+        try:
+            self.writeMemory(startaddr, fdata, send_chunk)  # , erasePage=True
+        except CmdException:
+            logfunc("Error during program. Retrying with 1 byte chunks...")
+            self.cmdEraseMemory()
+            self.writeMemory(startaddr, fdata, 1)  # , erasePage=True
         #self.write_verify(startaddr, fdata)
 
         logfunc("STM32F Reading %s..." % memtype)
@@ -217,6 +222,7 @@ class STM32FSerial:
             self.verifyMemory(startaddr, fdata, self.small_blocks)
         except CmdException:
             logfunc("Error during verify. Retrying with small blocks...")
+            # self.cmdEraseMemory()
             self.verifyMemory(startaddr, fdata, True)
 
         logfunc("Verified %s OK, %d bytes" % (memtype, fsize))
@@ -425,28 +431,35 @@ class STM32FSerial:
         else:
             raise CmdException("Go (0x21) failed")
 
-    def cmdWriteMemory(self, addr, data):
+    def cmdWriteMemory(self, addr, data, block_size=None):
         padding = len(data) & 3
         if padding:
             data += [0xff, 0xff, 0xff, 0xff][padding:]
-        assert (0 < len(data) <= 256)
+
+        assert (0 < len(data) <= 256) # can only write 256 bytes at a time due to len being 1 byte
+
         if self.cmdGeneric(0x31):
             target_logger.debug("*** Write memory command")
             self.sp.write(self._encode_addr(addr))
             self._wait_for_ask("0x31 address failed")
-            # map(lambda c: hex(ord(c)), data)
+
             lng = (len(data) - 1) & 0xFF
             target_logger.debug("    %s bytes to write" % [lng + 1])
+
             self.sp.write(chr(lng))  # len really
             crc = lng
-            chr_data = [chr(b) for b in data]
+
             for c in data:
                 crc ^= c
-                if self.slow_speed:
-                    self.sp.write(chr(c))
-                    self.delay_func(5)
-            if not self.slow_speed:
+
+            if block_size is None:
                 self.sp.write(data)
+            else:
+                # break it into chunks
+                blocks = [data[i:i + block_size] for i in range(len(0, len(data), block_size))]
+                for block in blocks:
+                    self.sp.write(block)
+
             self.sp.write(chr(crc))
             self._wait_for_ask("0x31 programming failed")
             target_logger.debug("    Write memory done")
