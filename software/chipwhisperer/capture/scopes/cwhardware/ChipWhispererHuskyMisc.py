@@ -621,7 +621,6 @@ class XADCSettings(util.DisableNewAttr):
         """
         return self.get_vcc('vccbram')
 
-
     def get_vcc(self, rail='vccint'):
         """Read XADC vcc.
         Args:
@@ -639,6 +638,58 @@ class XADCSettings(util.DisableNewAttr):
             raise ValueError("Invalid rail")
         raw = self.drp.read(addr)
         return (raw>>4)/4096 * 3 # ref: UG480
+
+    def _get_vcc_limit(self, rail='vccint', limit='upper'):
+        """Get XADC vcc limit.
+        Args:
+            rail (string): 'vccint', 'vccaux', or 'vccbram'
+            limit (string): 'upper', 'lower'
+        Returns:
+            voltage (float).
+        """
+        if rail == 'vccint':
+            addr = 0x51
+        elif rail == 'vccaux':
+            addr = 0x52
+        elif rail == 'vccbram':
+            addr = 0x58
+        else:
+            raise ValueError("Invalid rail")
+        if limit == 'lower':
+            addr += 4
+        elif limit == 'upper':
+            pass
+        else:
+            raise ValueError("Invalid limit")
+        raw = self.drp.read(addr)
+        return (raw>>4)/4096 * 3 # ref: UG480
+
+    def _set_vcc_limit(self, value, rail='vccint', limit='upper'):
+        """Set XADC vcc limit.
+        Args:
+            value (float): voltage limit
+            rail (string): 'vccint', 'vccaux', or 'vccbram'
+            limit (string): 'upper', 'lower'
+        """
+        if rail == 'vccint':
+            addr = 0x51
+        elif rail == 'vccaux':
+            addr = 0x52
+        elif rail == 'vccbram':
+            addr = 0x58
+        else:
+            raise ValueError("Invalid rail")
+        if limit == 'lower':
+            addr += 4
+        elif limit == 'upper':
+            pass
+        else:
+            raise ValueError("Invalid limit")
+        raw = int(value /3*4096) << 4 # ref: UG480
+        if raw > 2**16:
+            raise ValueError("Out of range")
+        self.drp.write(addr, raw)
+
 
 
 class LASettings(util.DisableNewAttr):
