@@ -715,6 +715,8 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.glitch.enabled = False
             self.LA.enabled = False
 
+        self._get_usart().init() # init serial port on connection
+
         module_list = [x for x in self.__dict__ if isinstance(self.__dict__[x], util.DisableNewAttr)]
         self.add_read_only(module_list)
         self.disable_newattr()

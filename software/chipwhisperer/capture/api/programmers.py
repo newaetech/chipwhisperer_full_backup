@@ -153,7 +153,13 @@ class SAM4SProgrammer(Programmer):
         return self.prog
 
     @save_and_restore_pins
-    def find(self):
+    def find(self, power_cycle=True):
+        if power_cycle:
+            target_logger.info("Power cycling SAM4S")
+            self.scope.io.target_pwr = 0
+            time.sleep(0.2)
+            self.scope.io.target_pwr = 1
+            time.sleep(0.2)
         target_logger.info("Toggling erase({})/nrst pins".format(self.erase_pin))
 
         setattr(self.scope.io, self.erase_pin, 1)
