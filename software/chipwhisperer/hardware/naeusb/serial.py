@@ -46,7 +46,7 @@ class USART(object):
         """
         Set the USB communications instance.
         """
-        self._max_read = 256
+        self._max_read = 128
 
         self._usb : NAEUSB = usb
         self.timeout = timeout
@@ -130,7 +130,9 @@ class USART(object):
 
         while datasent < len(data):
             datatosend = len(data) - datasent
-            # datatosend = min(datatosend, 58)
+
+            # NOTE: Have to limit to 128 bytes as send/receive buffer for naeusb is 128 bytes currently
+            datatosend = min(datatosend, 128) 
 
             # need to make sure we don't write too fast
             # and overrun the internal buffer...

@@ -500,6 +500,8 @@ class NAEUSB_Backend:
         naeusb_logger.debug("WRITE_CTRL: bmRequestType: {:02X}, \
                     bRequest: {:02X}, wValue: {:04X}, wIndex: {:04X}, data: {}".format(0x41, cmd, \
                         value, 0, data))
+        if len(data) > 128:
+            naeusb_logger.error("The naeusb fw ctrl buffer is 128 bytes, but len(data) > 128. If you get a pipe error, this is why.")
         self.handle.controlWrite(0x41, cmd, value, 0, data, timeout=self._timeout)
         #return self.usbdev().ctrl_transfer(0x41, cmd, value, 0, data, timeout=self._timeout)
 
@@ -508,6 +510,8 @@ class NAEUSB_Backend:
         Read data from control endpoint
         """
         # Vendor-specific, IN, interface control transfer
+        if dlen > 128:
+            naeusb_logger.error("The naeusb fw ctrl buffer is 128 bytes, but len(data) > 128. If you get a pipe error, this is why.")
         response = self.handle.controlRead(0xC1, cmd, value, 0, dlen, timeout=self._timeout)
         naeusb_logger.debug("READ_CTRL: bmRequestType: {:02X}, \
                     bRequest: {:02X}, wValue: {:04X}, wIndex: {:04X}, data_len: {:04X}, response: {}".format(0xC1, cmd, \
@@ -854,6 +858,7 @@ class NAEUSB:
             transfer_list = []
             unsubmitted_transfers = []
             self.drx = 0
+            stream_start =  time.time()
             try:
                 num_transfers = int(self.dlen // self.segment_size)
                 if (self.dlen % self.segment_size) != 0:
@@ -911,7 +916,7 @@ class NAEUSB:
                                     transfer.cancel()
                             raise e
                 
-            naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
+            naeusb_logger.info("Streaming: Received %d bytes in time %.20f)" % (self.drx, time.time() - stream_start))
 
         def callback(self, transfer : usb1.USBTransfer):
             """ Handle finished asynchronous bulk transfer"""
