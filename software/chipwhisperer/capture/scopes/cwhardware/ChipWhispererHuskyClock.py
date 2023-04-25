@@ -378,21 +378,33 @@ class CDCI6214:
                 to see this message anymore.
                 """)
 
+        # If we're just changing ADC mul, try to avoid touching PLL settings
+        # Depending on what frequencies we're dealing with, this may fail, meaning we have to touch the PLL settings
+        # Then we need to reset the PLL to lock it, which drops the target clock for a bit
+        # This often crashes the target, so the user may need to reset their target
         if (force_recalc is False) and ((input_freq == self._old_in_freq) and (target_freq == self._old_target_freq)):
             scope_logger.info("Input and target frequency unchanged, avoiding PLL changes so as not to drop out target clock")
             old_div = self.get_outdiv(3)
-            new_div = int((old_div * self.adc_mul) / adc_mul + 0.5)
-            scope_logger.debug(f"Newdiv {new_div}, OldDiv {old_div}, old adcmul {self.adc_mul}, new adcmul {adc_mul}")
-            try:
-                if not self.pll_locked:
-                    scope_logger.warning("PLL unlocked after updating frequencies")
-                    scope_logger.warning("Target clock has dropped for a moment. You may need to reset your target")
-                self.reset()
-                self.set_outdiv(3, new_div)
-                return
-            except:
-                scope_logger.warning("Could not change adc_mul with current settings, redoing PLL calculations")
+            
+            # check if this results in a remainder
+            # if it does, we need to recalc clocks
+            if (old_div * self.adc_mul) % adc_mul:
+                scope_logger.warning(f"Could not adjust adc_mul via output divider alone. Recalcing clocks...")
                 scope_logger.warning("Target clock has dropped for a moment. You may need to reset your target")
+            else:
+                new_div = (old_div * self.adc_mul) // adc_mul
+                scope_logger.debug(f"Newdiv {new_div}, OldDiv {old_div}, old adcmul {self.adc_mul}, new adcmul {adc_mul}")
+                try:
+                    if not self.pll_locked:
+                        scope_logger.warning("PLL unlocked after updating frequencies")
+                        scope_logger.warning("Target clock has dropped for a moment. You may need to reset your target")
+                        self.reset()
+                    self.set_outdiv(3, new_div)
+                    self._adc_mul = adc_mul
+                    return
+                except:
+                    scope_logger.warning("Could not change adc_mul with current settings, redoing PLL calculations")
+                    scope_logger.warning("Target clock has dropped for a moment. You may need to reset your target")
 
         scope_logger.debug("adc_mul: {}".format(adc_mul))
 
@@ -875,7 +887,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         :Setter: Set the adc multiplier
         """
-        self._cached_adc_freq = None
+        # self._cached_adc_freq = None
         return self.pll.adc_mul
 
     @adc_mul.setter
@@ -948,6 +960,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
     @adc_phase.setter
     def adc_phase(self, phase):
+        self._cached_adc_freq = None
         if abs(phase) > 255:
             raise ValueError("Max phase +/- 255")
         adj_phase = int((abs(phase) * 31 / 255) + 0.5)
@@ -1086,6 +1099,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     @adc_src.setter
     def adc_src(self, src):
         scope_logger.warning("scope.clock.adc_src is provided for backwards compability, but scope.clock.clkgen_src and scope.clock.adc_mul should be used for Husky.")
+        self._cached_adc_freq = None
 
         if src == "clkgen_x4":
             self.adc_mul = 4
@@ -1109,6 +1123,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         """Convenience function for backwards compatibility with how ADC clocks
         are managed on CW-lite and CW-pro.
         """
+        self._cached_adc_freq = None
         self.pll.reset()
 
     @property
