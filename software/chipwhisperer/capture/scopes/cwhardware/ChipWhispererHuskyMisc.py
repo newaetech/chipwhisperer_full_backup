@@ -621,10 +621,11 @@ class XADCSettings(util.DisableNewAttr):
         """
         return self.get_vcc('vccbram')
 
-    def get_vcc(self, rail='vccint'):
+    def get_vcc(self, rail='vccint', value='current'):
         """Read XADC vcc.
         Args:
             rail (string): 'vccint', 'vccaux', or 'vccbram'
+            value (string): 'current', 'min', or 'max'
         Returns:
             voltage (float).
         """
@@ -633,9 +634,21 @@ class XADCSettings(util.DisableNewAttr):
         elif rail == 'vccaux':
             addr = 2
         elif rail == 'vccbram':
-            addr = 6
+            if value == 'current':
+                addr = 6
+            else:
+                addr = 3
         else:
             raise ValueError("Invalid rail")
+        if value == 'current':
+            pass
+        elif value == 'min':
+            addr += 0x24
+        elif value == 'max':
+            addr += 0x20
+        else:
+            raise ValueError("Invalid measurement request")
+
         raw = self.drp.read(addr)
         return (raw>>4)/4096 * 3 # ref: UG480
 

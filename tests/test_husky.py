@@ -47,6 +47,7 @@ print('* modified with updated instruction addresses.                           
 print('**************************************************************************************\n\n')
 
 test_platform = "stm32f3"
+logfilename = "test_husky_xadc.log"
 
 if "HUSKY_HW_LOC" in os.environ:
     locboth = os.environ["HUSKY_HW_LOC"].split(',')
@@ -470,6 +471,33 @@ def test_fw_version():
     assert scope.fw_version['minor'] == 5
     assert scope.sam_build_date == '21:32:05 Jan 31 2023'
 
+@pytest.fixture(autouse=True)
+def xadc_check(xadc, log):
+    # runs before test:
+    #...
+    yield
+    # runs after test:
+    if xadc:
+        #print(' temp=%4.1f, XADC=%s' % (scope.XADC.temp, scope.XADC.status), end='')
+        print(' temp=%4.1f ' % scope.XADC.temp, end='')
+        if scope.XADC.status != 'good':
+            print(scope.XADC.status, end='')
+            if 'VCCint' in scope.XADC.status: 
+                print(' vccint=%1.3f/%1.3f/%1.3f' % (scope.XADC.vccint, scope.XADC.get_vcc('vccint', 'min'),  scope.XADC.get_vcc('vccint', 'max')), end='')
+            if 'VCCbram' in scope.XADC.status: 
+                print(' vccbram=%1.3f/%1.3f/%1.3f' % (scope.XADC.vccbram, scope.XADC.get_vcc('vccbram', 'min'),  scope.XADC.get_vcc('vccbram', 'max')), end='')
+            if 'VCCaux' in scope.XADC.status: 
+                print(' vccaux=%1.3f/%1.3f/%1.3f' % (scope.XADC.vccaux, scope.XADC.get_vcc('vccaux', 'min'),  scope.XADC.get_vcc('vccaux', 'max')), end='')
+    if log:
+        logfile = open(logfilename, 'a')
+        logfile.write('%4.1f %1.3f %1.3f %1.3f %1.3f %1.3f %1.3f %1.3f %1.3f %1.3f\n' % 
+                (scope.XADC.temp,
+                 scope.XADC.vccint, scope.XADC.get_vcc('vccint', 'min'),  scope.XADC.get_vcc('vccint', 'max'),
+                 scope.XADC.vccbram, scope.XADC.get_vcc('vccbram', 'min'),  scope.XADC.get_vcc('vccbram', 'max'),
+                 scope.XADC.vccaux, scope.XADC.get_vcc('vccaux', 'min'),  scope.XADC.get_vcc('vccaux', 'max')
+                ))
+        logfile.close()
+    scope.XADC.status = 0 # clear any errors after each test
 
 @pytest.mark.parametrize("address, nbytes, reps, desc", testRWData)
 def test_reg_rw(address, nbytes, reps, desc):
@@ -526,7 +554,7 @@ def test_internal_ramp(fulltest, samples, presamples, testmode, clock, fastreads
         assert scope.capture() == False
         raw = scope.get_last_trace(True)
         errors, first_error = check_ramp(raw, testmode, samples, segment_cycles)
-        assert errors == 0, "%d errors; First error: %d" % (errors, first_error)
+        assert errors == 0, "%d errors; First error: %d; scope.adc.errors: %s" % (errors, first_error, scope.adc.errors)
         assert scope.adc.errors == False
     scope.sc._fast_fifo_read_enable = True # return to default
 
@@ -593,7 +621,7 @@ def test_adc_freq_sweep(fulltest, samples, presamples, freq_start, freq_stop, fr
                 #zero_start, zero_stop = last_zero_run(raw)
                 #zero_length = zero_stop - zero_start
                 #outfile.write('{} MHz: FAIL on iteration {}! {} ramp errors; scope.adc.errors:{}; first error:{}; state:{}, last zero run: {} zeros starting at sample {}; first error: {}\n'.format(scope.clock.adc_freq/1e6, i, errors, scope.adc.errors, scope.adc.first_error, scope.adc.first_error_state, zero_length, zero_start, first_error))
-                outfile.write('{} MHz: FAIL on iteration {}! {} ramp errors; scope.adc.errors:{}; first error:{}; state:{}, first error: {}\n'.format(scope.clock.adc_freq/1e6, i, errors, scope.adc.errors, scope.adc.first_error, scope.adc.first_error_state, first_error))
+                outfile.write('{} MHz: FAIL on iteration {}! {} ramp errors; scope.adc.errors:{}; first error:{}; state:{}, first error: {}, rep: {}\n'.format(scope.clock.adc_freq/1e6, i, errors, scope.adc.errors, scope.adc.first_error, scope.adc.first_error_state, first_error, i))
                 break # no point running more reps once it fails
             else:
                 outfile.write('{} MHz: pass\n'.format(scope.clock.adc_freq/1e6))
@@ -987,7 +1015,7 @@ def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, f
     raw = scope.get_last_trace(True)
     if verbose: print('Words read before error: %d ' % int.from_bytes(scope.sc.sendMessage(0x80, 47, maxResp=4), byteorder='little'))
     if 'overflow' in desc:
-        assert 'fast FIFO' in scope.adc.errors
+        assert 'overflow' in scope.adc.errors
         scope.errors.clear()
         time.sleep(2)
     else:
@@ -1202,6 +1230,7 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
     assert scope.clock.adc_freq == clock * adc_mul
     target.baud = 38400 * clock / 1e6 / 7.37
 
+    scope.adc.stream_mode = False
     scope.errors.clear()
     scope.trace.enabled = False
     scope.trace.target = None
@@ -1299,8 +1328,8 @@ def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, half, threshold, 
     for r in range(reps):
         sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
         assert sadtrace is not None, 'SAD-triggered capture failed on rep {}'.format(r)
-        assert scope.adc.errors == False
         assert scope.SAD.num_triggers_seen == scope.adc.segments
+        assert scope.adc.errors == False
         for s in range(scope.adc.segments):
             sad = 0
             for i in range(scope.SAD.sad_reference_length):
