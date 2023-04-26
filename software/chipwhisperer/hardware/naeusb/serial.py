@@ -132,7 +132,7 @@ class USART(object):
             datatosend = len(data) - datasent
 
             # NOTE: Have to limit to 128 bytes as send/receive buffer for naeusb is 128 bytes currently
-            datatosend = min(datatosend, 127) 
+            datatosend = min(datatosend, 58)  # try back to 58 bytes
 
             # need to make sure we don't write too fast
             # and overrun the internal buffer...
