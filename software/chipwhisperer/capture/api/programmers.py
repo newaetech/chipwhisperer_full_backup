@@ -168,9 +168,9 @@ class SAM4SProgrammer(Programmer):
         time.sleep(0.5)
 
         self.scope.io.nrst = 0
-        time.sleep(0.5)
+        time.sleep(0.2)
         self.scope.io.nrst = None
-        time.sleep(0.5)
+        time.sleep(0.2)
 
         self._old_baud = self.scope._get_usart()._baud
         prog = self.get_prog()
@@ -213,8 +213,12 @@ class SAM4SProgrammer(Programmer):
             prog.ser.close()
             raise OSError("Verify FAILED")
 
-    def close(self):
+    def close(self, reset=True):
         self.scope._get_usart().init(self._old_baud)
+        self.scope.io.nrst = 0
+        time.sleep(0.2)
+        self.scope.io.nrst = None
+        time.sleep(0.2)
         pass
         
     
