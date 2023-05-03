@@ -375,12 +375,20 @@ class HuskySAD(util.DisableNewAttr):
         """Read-only. Returns the number of samples that are used by the SAD module. Hardware property,
         but can be halved by the half_pattern setting.
         """
-        raw = int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_SAD_REF_SAMPLES, Validate=False, maxResp=1), byteorder='little')
+        #value = int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_SAD_REF_SAMPLES, Validate=False, maxResp=2), byteorder='little')
+        # TODO: ugly hack to support both the released Husky FPGA bitfile, which has a 1-byte register, and development versions, 
+        # which have a 2-byte register; when this is resolved, return to the simple read above
+        raw = self.oa.sendMessage(CODE_READ, ADDR_SAD_REF_SAMPLES, Validate=False, maxResp=2)
+        if raw[0] == raw[1]:
+            # must be the single-byte version:
+            value = raw[0]
+        else:
+            value = int.from_bytes(raw, byteorder='little')
         if self.half_pattern:
             div = 2
         else:
             div = 1
-        return raw//div
+        return value//div
 
     @property
     def latency(self):
