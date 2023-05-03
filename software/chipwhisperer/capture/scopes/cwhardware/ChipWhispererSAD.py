@@ -375,7 +375,7 @@ class HuskySAD(util.DisableNewAttr):
         """Read-only. Returns the number of samples that are used by the SAD module. Hardware property,
         but can be halved by the half_pattern setting.
         """
-        raw = int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_SAD_REF_SAMPLES, Validate=False, maxResp=2), byteorder='little')
+        raw = int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_SAD_REF_SAMPLES, Validate=False, maxResp=1), byteorder='little')
         if self.half_pattern:
             div = 2
         else:
