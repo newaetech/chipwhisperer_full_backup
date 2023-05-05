@@ -11,6 +11,7 @@ ASRC += stm32f3_startup.S
 MCU_FLAGS = -mcpu=cortex-m4
 
 CC = arm-none-eabi-gcc
+CXX = arm-none-eabi-g++
 OBJCOPY = arm-none-eabi-objcopy
 OBJDUMP = arm-none-eabi-objdump
 SIZE = arm-none-eabi-size

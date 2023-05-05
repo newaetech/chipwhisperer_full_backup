@@ -34,6 +34,7 @@ TARGET = simpleserial-aes
 
 # List C source files here.
 # Header files (.h) are automatically pulled in.
+#CPPSRC += simpleserial-aes.cpp
 SRC += simpleserial-aes.c
 
 # -----------------------------------------------------------------------------

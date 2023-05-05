@@ -68,7 +68,11 @@ CPPSRC +=
 #     care about how the name is spelled on its command-line.
 ASRC +=
 
-
+ifeq ($(CPPSRC),)
+  LINK_COMPILER=$(CC)
+else
+  LINK_COMPILER=$(CXX)
+endif
 
 ##########################################################################
 ##########################################################################
@@ -142,7 +146,6 @@ CFLAGS += -Wstrict-prototypes
 #CFLAGS += -Wundef
 #CFLAGS += -Wunreachable-code
 #CFLAGS += -Wsign-compare
-CFLAGS += -Wa,-adhlns=$(addprefix $(OBJDIR)/,$(notdir $(<:%.c=%.lst)))
 CFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 CFLAGS += $(CSTANDARD)
 CFLAGS += -Wno-discarded-qualifiers -Wno-unused-function -Wno-unused-variable -Wno-strict-prototypes -Wno-missing-prototypes
@@ -156,27 +159,31 @@ CFLAGS += -Wno-pointer-sign -Wno-unused-value -Wno-implicit-function-declaration
 #  -Wall...:     warning level
 #  -Wa,...:      tell GCC to pass this to the assembler.
 #    -adhlns...: create assembler listing
-CPPFLAGS += -g$(DEBUG)
-CPPFLAGS += $(CPPDEFS)
-CPPFLAGS += -O$(OPT)
-CPPFLAGS += -funsigned-char
-CPPFLAGS += -funsigned-bitfields
-CPPFLAGS += -fpack-struct
-CPPFLAGS += -fshort-enums
-CPPFLAGS += -fno-exceptions
-CPPFLAGS += -Wall
-CPPFLAGS += -Wundef
+# CPPFLAGS += -g$(DEBUG)
+# CPPFLAGS += $(CPPDEFS)
+# CPPFLAGS += -O$(OPT)
+# CPPFLAGS += -funsigned-char
+# CPPFLAGS += -funsigned-bitfields
+# CPPFLAGS += -fpack-struct
+# CPPFLAGS += -fshort-enums
+# CPPFLAGS += -fno-exceptions
+# CPPFLAGS += -Wall
+# CPPFLAGS += -Wundef
 #CPPFLAGS += -mshort-calls
 #CPPFLAGS += -fno-unit-at-a-time
 #CPPFLAGS += -Wstrict-prototypes
 #CPPFLAGS += -Wunreachable-code
 #CPPFLAGS += -Wsign-compare
-CPPFLAGS += -Wa,-adhlns=$(addprefix $(OBJDIR)/,$(notdir $(<:%.cpp=%.lst)))
-CPPFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
+# CPPFLAGS += -Wa,-adhlns=$(addprefix $(OBJDIR)/,$(notdir $(<:%.cpp=%.lst)))
+# CPPFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 #CPPFLAGS += $(CSTANDARD)
 
 #Flags that must come at end of list can be specified with CFLAGS_LAST
 CFLAGS += $(CFLAGS_LAST)
+CPPFLAGS = CFLAGS
+
+# has to come after we hijack for CPP flags
+CFLAGS += -Wa,-adhlns=$(addprefix $(OBJDIR)/,$(notdir $(<:%.c=%.lst)))
 
 #---------------- Assembler Options ----------------
 #  -Wa,...:   tell GCC to pass this to the assembler.
@@ -199,11 +206,13 @@ VERBOSE ?= false
 
 ifeq ($(VERBOSE), false)
 	COMPMSG = "    $< ..."
+	COMPCPPMSG = "    $< ..."
 	LINKMSG = "    $@ ..."
 	DONEMSG = "Done!"
 else
-	COMPMSG = "    $(CC) -c $(ALL_CFLAGS) $< -o $@ ..."
-	LINKMSG = "    $@ w/ opts $(ALL_CFLAGS) $(LDFLAGS) ..."
+	COMPMSG   = "    $(CC) -c $(ALL_CFLAGS) $< -o $@ ..."
+	COMPCPPMSG   = "    $(CXX) -c $(ALL_CFLAGS) $< -o $@ ..."
+	LINKMSG = "    $(LINK_COMPILER) $@ w/ opts $(ALL_CFLAGS) $(LDFLAGS) ... $^"
 	DONEMSG = "Done!\n"
 endif
 
@@ -483,7 +492,7 @@ endif
 	@$(ECHO_BLANK)
 	@echo LINKING:
 	@echo -en $(LINKMSG)
-	@$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
+	@$(LINK_COMPILER) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
 	@echo -e $(DONEMSG)
 
 
@@ -499,8 +508,10 @@ $(OBJDIR)/%.o : %.c
 # Compile: create object files from C++ source files.
 $(OBJDIR)/%.o : %.cpp
 	@$(ECHO_BLANK)
-	@echo $(MSG_COMPILING_CPP) $<
-	$(CC) -c $(ALL_CPPFLAGS) $< -o $@
+	@echo Compiling C++:
+	@echo -en $(COMPCPPMSG)
+	@$(CXX) -c $(ALL_CFLAGS) $< -o $@
+	@echo -e $(DONEMSG)
 
 
 # Compile: create assembler files from C source files.
