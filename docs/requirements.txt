@@ -14,3 +14,5 @@ sphinxcontrib-images==0.9.4
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
+sphinx_rtd_theme>=0.3.1
+sphinx_autodoc_typehints==1.12.0
