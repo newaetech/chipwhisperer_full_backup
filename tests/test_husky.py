@@ -417,7 +417,7 @@ if test_platform == "sam4s":
         #clock  adc_mul bits   half threshold   segments    offset  reps    desc
         (10e6,  4,      8,     0,   100,        10,         2700,   20,     'regular'),
         (10e6,  4,      8,     1,   100,        10,         2700,   20,     'half'),
-        (10e6,  20,     8,     0,   150,        10,         13500,  20,     'fast'),
+        (10e6,  20,     8,     0,   100,        10,         13500,  20,     'fast'),
     ]
 else:
     testMultipleSADTriggerData = [
