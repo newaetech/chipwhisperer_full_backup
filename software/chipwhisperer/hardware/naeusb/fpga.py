@@ -67,6 +67,14 @@ class FPGA(object):
         else:
             return False
 
+    def INITBState(self):
+        status = self.readCtrl(self.CMD_FPGA_STATUS, dlen=4)
+
+        if status[1] & 0x01:
+            return True
+        else:
+            return False
+
     def eraseFPGA(self):
         self.sendCtrl(self.CMD_FPGA_PROGRAM, self._prog_mask | 0x00)
         time.sleep(0.001)

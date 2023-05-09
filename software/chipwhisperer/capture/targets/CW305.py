@@ -357,6 +357,32 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         if resp[0] != 2:
             raise IOError("VCC-INT Write Error, response = %d" % resp[0])
 
+    def is_programmed(self):
+        """Is FPGA programmed
+
+        Returns:
+            True if the FPGA is programmed, otherwise False
+            
+        .. warning:: This function may erroneously return True if the FPGA is not powered
+        """
+        try:
+            return (self.fpga.isFPGAProgrammed() == True)
+        except:
+            return False
+
+    def INITB_state(self):
+        """Returns the state of the FPGA's INITB pin
+
+        The INITB is high when the FPGA is programmed, and low when it is not
+
+        Returns:
+            True if the INITB is high, False if INITB is low, None if the result is invalid
+        """
+        try:
+            return self.fpga.INITBState() 
+        except:
+            return None
+
     @check_cw305
     def vccint_get(self):
         """ Get the last set value for VCC-INT """
