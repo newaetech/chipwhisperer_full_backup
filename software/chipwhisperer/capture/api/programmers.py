@@ -162,6 +162,11 @@ class SAM4SProgrammer(Programmer):
             time.sleep(0.2)
         target_logger.info("Toggling erase({})/nrst pins".format(self.erase_pin))
 
+        if (self.scope.io.tio1, self.scope.io.tio2) != ("serial_rx", "serial_tx"):
+            target_logger.warning("Serial pins incorrect for NewAE SAM4S target") 
+            target_logger.warning("(tio1, tio2) != ('serial_rx', 'serial_tx')")
+            target_logger.warning("Did you forget to call scope.default_setup()?")
+
         setattr(self.scope.io, self.erase_pin, 1)
         time.sleep(0.5)
         setattr(self.scope.io, self.erase_pin, None)
@@ -404,6 +409,10 @@ class STM32FProgrammer(Programmer):
     def find(self):
         stm32f = self.stm32prog()
         stm32f.scope = self.scope
+        if (self.scope.io.tio1, self.scope.io.tio2) != ("serial_rx", "serial_tx"):
+            target_logger.warning("Serial pins incorrect for NewAE STM32 target") 
+            target_logger.warning("(tio1, tio2) != ('serial_rx', 'serial_tx')")
+            target_logger.warning("Did you forget to call scope.default_setup()?")
         sig, chip = stm32f.find()
 
         # logging is done at the lower level
