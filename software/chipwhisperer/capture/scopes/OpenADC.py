@@ -115,6 +115,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self._is_connected = False
         self.data_points = []
         self._is_husky = False
+        self._is_husky_plus = False
 
         # self.scopetype = OpenADCInterface_NAEUSBChip(self.qtadc)
         self.connectStatus = True
@@ -126,7 +127,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             from ...hardware.firmware.cwlite import fwver
         elif cw_type == "cw1200":
             from ...hardware.firmware.cw1200 import fwver # type: ignore
-        elif cw_type == "cwhusky":
+        elif cw_type in ["cwhusky", "cwhusky-plus"]:
             from ...hardware.firmware.cwhusky import fwver # type: ignore
         else:
             raise ValueError('Unknown cw_type: %s' % cw_type)
@@ -396,6 +397,8 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                 return "cwlite"
             elif "CW1200" in hwInfoVer:
                 return "cw1200"
+            elif "Husky-Plus" in hwInfoVer:
+                return "cwhusky-plus"
             elif "Husky" in hwInfoVer:
                 return "cwhusky"
             else:
@@ -631,7 +634,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.sc = OpenADCInterface(self.scopetype.ser) # important to instantiate this before other FPGA components, since this does an FPGA reset
         self.hwinfo = HWInformation(self.sc)
         cwtype = self._getCWType()
-        if cwtype == "cwhusky":
+        if cwtype in ["cwhusky", "cwhusky-plus"]:
             self.sc._is_husky = True
         self.sc._setReset(True)
         self.sc._setReset(False)
@@ -655,7 +658,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.SAD = ChipWhispererSAD.ChipWhispererSAD(self.sc)
             self.decode_IO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.sc)
 
-        if cwtype == "cwhusky":
+        if cwtype in ["cwhusky", "cwhusky-plus"]:
             # self.pll = ChipWhispererHuskyClock.CDCI6214(self.sc)
             self._fpga_clk = ClockSettings(self.sc, hwinfo=self.hwinfo)
             self.glitch_drp1 = XilinxDRP(self.sc, ADDR_GLITCH1_DRP_DATA, ADDR_GLITCH1_DRP_ADDR, ADDR_GLITCH1_DRP_RESET)
@@ -679,27 +682,27 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                     scope_logger.info("TraceWhisperer unavailable " + str(e))
             self.SAD = ChipWhispererSAD.HuskySAD(self.sc)
             self.errors = HuskyErrors(self.sc, self.XADC, self.adc, self.clock, self.trace)
-        else:
-            self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
-            self.errors = ChipWhispererSAMErrors(self._getNAEUSB())
-
-
-        if cwtype == "cw1200":
-            self.adc._is_pro = True
-        if cwtype == "cwlite":
-            self.adc._is_lite = True
-        elif cwtype == "cwhusky":
             self._is_husky = True
             self.adc._is_husky = True
             self.gain._is_husky = True
             self._fpga_clk._is_husky = True
             self.sc._is_husky = True
             self.adc.bits_per_sample = 12
+            if cwtype == "cwhusky-plus":
+                self._is_husky_plus = True
+        else:
+            self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
+            self.errors = ChipWhispererSAMErrors(self._getNAEUSB())
+
+        if cwtype == "cw1200":
+            self.adc._is_pro = True
+        if cwtype == "cwlite":
+            self.adc._is_lite = True
         if self.advancedSettings:
             self.io = self.advancedSettings.cwEXTRA.gpiomux
             self.trigger = self.advancedSettings.cwEXTRA.triggermux
             self.glitch = self.advancedSettings.glitch.glitchSettings
-            if cwtype == 'cwhusky':
+            if cwtype in ['cwhusky', 'cwhusky-plus']:
                 # TODO: cleaner way to do this?
                 self.glitch.pll = self.clock.pll
                 self.clock.pll._glitch = self.glitch
@@ -708,7 +711,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             if cwtype == "cw1200":
                 self.trigger = self.advancedSettings.cwEXTRA.protrigger
 
-        if cwtype == "cwhusky":
+        if cwtype in ["cwhusky", "cwhusky-plus"]:
             # these are the power-up defaults, but just in case e.g. test script left these on:
             self.adc.test_mode = False
             self.ADS4128.mode = 'normal'

@@ -1248,7 +1248,7 @@ class CWExtraSettings:
             hasPLL=False
             hasAux=True
             hasUserio=False
-        elif cwtype == "cwhusky":
+        elif cwtype in ["cwhusky", "cwhusky-plus"]:
             hasFPAFPB=False
             hasGlitchOut=True
             hasPLL=False
@@ -1271,7 +1271,7 @@ class CWExtraSettings:
         self.protrigger = ProTrigger(self)
         self.huskytrigger = HuskyTrigger(self)
 
-        if cwtype == "cwhusky":
+        if cwtype in ["cwhusky", "cwhusky-plus"]:
             self.gpiomux._is_husky = True
             self.triggermux._is_husky = True
             self._addr_trigsrc_size = 2
