@@ -168,9 +168,9 @@ class SAM4SProgrammer(Programmer):
         time.sleep(0.5)
 
         self.scope.io.nrst = 0
-        time.sleep(0.2)
+        time.sleep(0.5)
         self.scope.io.nrst = None
-        time.sleep(0.2)
+        time.sleep(0.5)
 
         self._old_baud = self.scope._get_usart()._baud
         prog = self.get_prog()
