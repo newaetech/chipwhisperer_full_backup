@@ -414,17 +414,17 @@ testSADTriggerData = [
 
 if test_platform == "sam4s":
     testMultipleSADTriggerData = [
-        #clock  adc_mul bits   half threshold   segments    offset  reps    desc
-        (10e6,  4,      8,     0,   100,        10,         2700,   20,     'regular'),
-        (10e6,  4,      8,     1,   100,        10,         2700,   20,     'half'),
-        (10e6,  20,     8,     0,   100,        10,         13500,  20,     'fast'),
+        #clock  adc_mul bits   half threshold   plus_thresh segments    offset  reps    desc
+        (10e6,  4,      8,     0,   100,        2000,       10,         2700,   20,     'regular'),
+        (10e6,  4,      8,     1,   100,        500,        10,         2700,   20,     'half'),
+        (10e6,  20,     8,     0,   100,        800,        10,         13500,  20,     'fast'),
     ]
 else:
     testMultipleSADTriggerData = [
-        #clock  adc_mul bits   half threshold   segments    offset  reps    desc
-        (10e6,  4,      8,     0,   200,        11,         3525,   20,     'regular'),
-        (10e6,  4,      8,     1,   100,        11,         3525,   20,     'half'),
-        (10e6,  20,     8,     0,   300,        11,         17625,  20,     'fast'),
+        #clock  adc_mul bits   half threshold   plus_thresh segments    offset  reps    desc
+        (10e6,  4,      8,     0,   200,        400,        11,         3525,   20,     'regular'),
+        (10e6,  4,      8,     1,   100,        300,        11,         3525,   20,     'half'),
+        (10e6,  20,     8,     0,   300,        600,        11,         17625,  20,     'fast'),
     ]
 
 
@@ -1262,6 +1262,8 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
     assert scope.adc.errors == False, (scope.adc.errors, scope.gain)
 
     scope.SAD.reference = reftrace.wave
+    if scope._is_husky_plus:
+        threshold *= 3
     scope.SAD.threshold = threshold
     scope.trigger.module = 'SAD'
     scope.adc.offset = 0
@@ -1281,9 +1283,9 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
         assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d)' %(sad, threshold, r)
 
 
-@pytest.mark.parametrize("clock, adc_mul, bits, half, threshold, segments, offset, reps, desc", testMultipleSADTriggerData)
+@pytest.mark.parametrize("clock, adc_mul, bits, half, threshold, plus_thresh, segments, offset, reps, desc", testMultipleSADTriggerData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, half, threshold, segments, offset, reps, desc):
+def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, half, threshold, plus_thresh, segments, offset, reps, desc):
     if not fulltest and 'SLOW' in desc:
         pytest.skip("use --fulltest to run")
         return None
@@ -1320,6 +1322,9 @@ def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, half, threshold, 
     assert scope.adc.errors == False, (scope.adc.errors, scope.gain)
 
     scope.SAD.reference = reftrace.wave
+    if scope._is_husky_plus:
+        threshold = plus_thresh
+
     scope.SAD.threshold = threshold
     scope.trigger.module = 'SAD'
     scope.adc.offset = 0
