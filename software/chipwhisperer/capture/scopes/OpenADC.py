@@ -291,7 +291,25 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
         self.io.hs2 = "clkgen"
 
-    def default_setup(self):
+
+    def _recurse_scope_diff(self, string0, item0, string1, item1):
+        if isinstance(item0, dict):
+            for i,j in zip(item0.items(), item1.items()):
+                self._recurse_scope_diff(string0 + '.' + i[0], i[1], string1 + '.' + j[0], j[1])
+        else:
+            if item0 != item1 and (('scope.XADC' not in string0) or (string0 == 'scope.XADC.status')):
+                print('%-40s changed from %-25s to %-25s' % (string0, item0, item1))
+
+    def scope_diff(self, scope_dict1, scope_dict2):
+        """ Reports differences between two sets of scope settings.
+        Args:
+            scope_dict1, scope_dict2: dictionaries of scope settings (obtained
+                with scope._dict_repr())
+        """
+        for a,b in zip(scope_dict1.items(), scope_dict2.items()):
+            self._recurse_scope_diff('scope.' + a[0], a[1], 'scope.' + b[0], b[1])
+
+    def default_setup(self, verbose=True):
         """Sets up sane capture defaults for this scope
 
          *  25dB gain
@@ -304,9 +322,14 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
          *  tio2 = serial tx
          *  CDC settings change off
 
+        Args:
+            verbose (bool): shows which scope settings have changed. Ignores scope.XADC changes,
+                except for scope.XADC.status.
+
         .. versionadded:: 5.1
             Added default setup for OpenADC
         """
+        scope_dict_pre = self._dict_repr()
         self.gain.db = 25
         self.adc.samples = 5000
         self.adc.offset = 0
@@ -366,6 +389,10 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
                 if count > 10:
                     raise OSError("Could not lock DCM. Try rerunning this function or calling scope.clock.reset_dcms(): {}".format(self))
+        if verbose:
+            scope_dict_post = self._dict_repr()
+            self.scope_diff(scope_dict_pre, scope_dict_post)
+
 
     def dcmTimeout(self):
         if self._is_connected:
@@ -937,8 +964,8 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             rtn['SAD'] = self.SAD._dict_repr()
             rtn['decode_IO'] = self.decode_IO._dict_repr()
         if self._is_husky:
+            rtn['SAD'] = self.SAD._dict_repr()
             rtn['ADS4128'] = self.ADS4128._dict_repr()
-            # rtn['pll'] = self.pll._dict_repr()
             if self.LA.present:
                 rtn['LA'] = self.LA._dict_repr()
             if self.trace and self.trace.present:
