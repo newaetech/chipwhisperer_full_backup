@@ -302,9 +302,11 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
 
     def scope_diff(self, scope_dict1, scope_dict2):
         """ Reports differences between two sets of scope settings.
+
         Args:
             scope_dict1, scope_dict2: dictionaries of scope settings (obtained
                 with scope._dict_repr())
+
         """
         for a,b in zip(scope_dict1.items(), scope_dict2.items()):
             self._recurse_scope_diff('scope.' + a[0], a[1], 'scope.' + b[0], b[1])
