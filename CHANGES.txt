@@ -1,3 +1,50 @@
+V5.7.1
+  New Features:
+    * Improve Husky UART triggering
+    * Make use of CW Error LED for serial overruns
+    * Add firmware erase that doesn't require programming FPGA (`quick_firmware_erase()`)
+    * Add CW312 FPGA Target support
+    * Improve `GlitchController.calc()` to exclude params and sort by result
+    * Add `scope.vglitch_reset()`
+    * Add ability to get/set XADC VCC alarm limits
+    * Add firmware erase ability to firmware installer
+
+  Fixes:
+    * Minimize Husky target clock drop when changing ADC clock
+    * Improve STM32F programming speed
+    * Increase reset time for SAM4S, making programming more reliable
+    * Fix issue with long Husky stream captures on Linux
+    * Fix issues with CW305 bitstream build
+    * Remove `caddr_t` from SAM4S/STM32 build (fixes compile on some GCC versions)
+    * Bump OpenOCD version in installer
+
+V5.7.0
+  New Features:
+    * Automatically setup husky_userio pins for MPSSE when `enable_MPSSE()` called
+    * Add SAM4S bootloader support - allows programming SAM4S target boards
+    * Add SAM4S target HAL
+    * Add `openocd/run_openocd.sh` for easier JTAG/SWD programming and debugging
+    * Add `openocd/fe310.cfg` to allow fe310 programming via MPSSE
+    * Common build system for capture boards/cw305/cw310
+    * Add context manager support to ChipWhisperer (thanks @wallento !)
+    * Add `cglitch_setup()`, `vglitch_setup()`, and `glitch_disable()` to scopes for easy glitch setup/disable.
+    * Add `cw.list_devices()` to list attached NewAE devices
+    * Add `scope.reset_clock_phase()` for CWNano
+    * New and improved `GlitchController` with glitch map support
+    * Full Husky support for SCA101 and Fault101
+    * Improve glitch performance on replacement CWNano glitch transistor
+
+  Fixes:
+    * Fix MPSSE timeout on CWPro
+    * Change logger to use temp files (Thanks @S-Vaes !)
+    * Fix `dict_repr` for nano ADC
+    * Fix f3 linkerscript stack location
+    * Correctly set openocd srst signal pin
+    * Identify srst signal as push pull
+    * Add glitch/clock AUX out for Pro
+    * Fix baud rate for simpleserial version not being applied to non simpleserial firmware
+    * Fix FE310 baud rate not being set to 38400bps @ 7.37MHz
+
 V5.6.1
   New Features:
     * ChipWhisperer-Husky and CW310 Bergen Board support
