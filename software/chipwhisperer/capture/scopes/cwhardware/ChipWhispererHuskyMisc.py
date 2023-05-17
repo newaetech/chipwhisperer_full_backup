@@ -703,6 +703,26 @@ class XADCSettings(util.DisableNewAttr):
             raise ValueError("Out of range")
         self.drp.write(addr, raw)
 
+    def _enable_vcc_alarms(self, enable):
+        """Enable or disable XADC vcc alarms.
+        """
+        addr = 0x41
+        val = self.drp.read(addr)
+        # VCC alarms are disabled when bits 2, 3 and 8 are set, enabled when they are clear (ref: UG480 Table 3.5)
+        mask_enable = 2**16-1 - 2**2 - 2**3 - 2**8
+        mask_disable = 2**2 + 2**3 + 2**8
+        if enable:
+            val &= mask_enable
+        else:
+            val |= mask_disable
+        self.drp.write(addr, val)
+
+    def _user_reset(self):
+        """Do a user reset of the XADC.
+        This will not clear scope.XADC.errors (use scope.XADC.status = 0 for this), but it will
+        clear stored min/max temperature and voltage measurements.
+        """
+        self.drp.write(0x03, 0xeeee) # (ref: UG480, "XADC JTAG Reset")
 
 
 class LASettings(util.DisableNewAttr):
