@@ -45,6 +45,7 @@ ADDR_I2CDATA = 48
 ADDR_IOROUTE = 55
 ADDR_IOREAD = 59
 ADDR_EDGE_TRIGGER = 113
+ADDR_SOFTPOWER_CONTROL = 115
 
 # API aliases for the TIO settings
 _tio_alias = {
@@ -1275,8 +1276,10 @@ class CWExtraSettings:
             self.gpiomux._is_husky = True
             self.triggermux._is_husky = True
             self._addr_trigsrc_size = 2
+            self._is_husky = True
         else:
             self._addr_trigsrc_size = 1
+            self._is_husky = False
 
 
     def _setGPIOState(self, state, IONumber):
@@ -1517,6 +1520,36 @@ class CWExtraSettings:
             data[5] &= ~(0x04)
 
         self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def setHuskySoftPowerOnParameters(self, pwm_cycles1, pwm_cycles2, pwm_period, pwm_off_time1, pwm_off_time2):
+        """Sets the soft power-on PWM parameters.
+
+        Args:
+            pwm_cycles1 (8-bit int): this plus pwm_cycles2 is the number of PWM on/off cycles before power is fully on
+            pwm_cycles2 (8-bit int): this plus pwm_cycles1 is the number of PWM on/off cycles before power is fully on
+            pwm_period (16-bit int): number of cycles in PWM period
+            pwm_off_time1 (16-bit int): number of cycles in PWM period where power is off, for the first pwm_cycles1
+        """
+        if not self._is_husky:
+            raise ValueError("For Husky only")
+        raw = [pwm_cycles1, pwm_cycles2]
+        raw.extend(list(int.to_bytes(pwm_period, length=2, byteorder='little')))
+        raw.extend(list(int.to_bytes(pwm_off_time1, length=2, byteorder='little')))
+        raw.extend(list(int.to_bytes(pwm_off_time2, length=2, byteorder='little')))
+        self.oa.sendMessage(CODE_WRITE, ADDR_SOFTPOWER_CONTROL, raw)
+
+    def getHuskySoftPowerOnParameters(self):
+        """Get the soft power-on PWM parameters as (pwm_cycles1, pwm_cycles2, pwm_period, pwm_off_time1, pwm_off_time2)
+        """
+        if not self._is_husky:
+            raise ValueError("For Husky only")
+        raw = self.oa.sendMessage(CODE_READ, ADDR_SOFTPOWER_CONTROL, Validate=False, maxResp=8)
+        pwm_cycles1 = raw[0]
+        pwm_cycles2 = raw[1]
+        pwm_period = int.from_bytes(raw[2:4], byteorder='little')
+        pwm_off_time1 = int.from_bytes(raw[4:6], byteorder='little')
+        pwm_off_time2 = int.from_bytes(raw[6:8], byteorder='little')
+        return (pwm_cycles1, pwm_cycles2, pwm_period, pwm_off_time1, pwm_off_time2)
 
     def getTargetPowerState(self):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)

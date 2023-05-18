@@ -468,6 +468,9 @@ class USERIOSettings(util.DisableNewAttr):
 
 class XADCSettings(util.DisableNewAttr):
     ''' Husky FPGA XADC temperature and voltage monitoring.
+    XADC alarms are sticky and shut down generated clocks and SAD logic; the
+    error condition must be manually cleared (scope.XADC.status = 0) to re-enable
+    shutdown logic.
     '''
     _name = 'Husky XADC Setting'
 

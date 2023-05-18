@@ -419,28 +419,28 @@ testTraceSegmentData = [
 
 testSADTriggerData = [
     #clock  adc_mul bits   threshold   offset  reps    desc
-    (10e6,  1,      8,     200,        0,      50,     '8bits'),
-    (10e6,  1,      12,    200,        0,      50,     '12bits'),
-    (10e6,  1,      8,     200,        0,      10,     '8bits_SLOW'),
-    (10e6,  10,     8,     200,        0,      50,     'fast_SLOW'),
-    (10e6,  18,     8,     200,        0,      50,     'faster_SLOW'),
-    (10e6,  'max',  8,     200,        0,      50,     'fastest'),
-    (10e6,  'over', 8,     200,        0,      50,     'overclocked_SLOW'),
+    (10e6,  1,      8,     250,        0,      50,     '8bits'),
+    (10e6,  1,      12,    250,        0,      50,     '12bits'),
+    (10e6,  1,      8,     250,        0,      10,     '8bits_SLOW'),
+    (10e6,  10,     8,     250,        0,      50,     'fast_SLOW'),
+    (10e6,  18,     8,     250,        0,      50,     'faster_SLOW'),
+    (10e6,  'max',  8,     250,        0,      50,     'fastest'),
+    (10e6,  'over', 8,     250,        0,      50,     'overclocked_SLOW'),
 ]
 
 if test_platform == "sam4s":
     testMultipleSADTriggerData = [
         #clock  adc_mul bits   half threshold   plus_thresh segments    offset  reps    desc
-        (10e6,  4,      8,     0,   100,        2000,       10,         2700,   20,     'regular'),
+        (10e6,  4,      8,     0,   150,        2000,       10,         2700,   20,     'regular'),
         (10e6,  4,      8,     1,   100,        500,        10,         2700,   20,     'half'),
-        (10e6,  20,     8,     0,   100,        800,        10,         13500,  20,     'fast'), # TODO: SAM4S + Plus not faring well at 250 MHz here
+        (10e6,  20,     8,     0,   300,        800,        10,         13500,  20,     'fast'), # TODO: SAM4S + Plus not faring well at 250 MHz here
     ]
 else:
     testMultipleSADTriggerData = [
         #clock  adc_mul bits   half threshold   plus_thresh segments    offset  reps    desc
         (10e6,  4,      8,     0,   200,        400,        11,         3525,   20,     'regular'),
         (10e6,  4,      8,     1,   100,        300,        11,         3525,   20,     'half'),
-        (10e6,  'max',  8,     0,   300,        600,        11,         17625,  20,     'fast'),
+        (10e6,  'max',  8,     0,   350,        600,        11,         17625,  20,     'fast'),
     ]
 
 
@@ -489,7 +489,7 @@ testGlitchTriggerData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '4/5/2023, 21:22'
+    assert scope.fpga_buildtime == '5/17/2023, 17:36'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -534,6 +534,15 @@ def test_reg_rw(address, nbytes, reps, desc):
         read_data = scope.sc.sendMessage(0x80, address, maxResp=nbytes)
         assert read_data == data, "rep %d: expected %0x, got %0x" % (i, int.from_bytes(data, byteorder='little'), int.from_bytes(read_data, byteorder='little'))
 
+@pytest.mark.skipif(not target_attached, reason='No target detected')
+def test_target_power():
+    #scope.io.cwe.setTargetPowerSlew(fastmode=True) # will fail if this is commented out
+    for i in range(4):
+        scope.io.target_pwr = 0
+        time.sleep(0.2)
+        scope.io.target_pwr = 1
+        time.sleep(0.2)
+    assert scope.XADC.status == 'good'
 
 @pytest.mark.parametrize("samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc", testData)
 def test_internal_ramp(fulltest, samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc):
@@ -590,7 +599,6 @@ def test_internal_ramp(fulltest, samples, presamples, testmode, clock, fastreads
     scope.sc._fast_fifo_read_enable = True # return to default
 
 
-
 def last_zero_run(a):
     # Create an array that is 1 where a is 0, and pad each end with an extra 0.
     iszero = np.concatenate(([0], np.equal(a, 0).view(np.int8), [0]))
@@ -598,6 +606,7 @@ def last_zero_run(a):
     # Runs start and end where absdiff is 1.
     ranges = np.where(absdiff == 1)[0].reshape(-1, 2)
     return ranges[-1]
+
 
 @pytest.mark.parametrize("samples, presamples, freq_start, freq_stop, freq_step, testmode, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc", testADCsweep)
 def test_adc_freq_sweep(fulltest, samples, presamples, freq_start, freq_stop, freq_step, testmode, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc):
@@ -1231,7 +1240,7 @@ def test_segment_trace (swo_trace, interface, triggers, desc):
         return None
     reset_setup()
     errors = 0
-    scope.default_setup()
+    scope.default_setup(verbose=False)
     setup_trace(interface)
     scope.adc.clip_errors_disabled = True
     scope.adc.lo_gain_errors_disabled = True
@@ -1393,7 +1402,7 @@ def test_uart_trigger (fulltest, clock, pin, pattern, mask, bytes_compared, reps
     if not fulltest:
         reps = 2 # reduce number of reps to speed up
     reset_setup()
-    scope.default_setup()
+    scope.default_setup(verbose=False)
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = 1
     time.sleep(0.1)
@@ -1447,7 +1456,7 @@ def test_adc_trigger (fulltest, gain, threshold, bits, reps, desc):
         pytest.skip("use --fulltest to run")
         return None
     reset_setup()
-    scope.default_setup()
+    scope.default_setup(verbose=False)
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
     reset_target()
@@ -1486,7 +1495,7 @@ def test_edge_trigger (fulltest, pin, edges, oversamp, check, reps, desc):
         pytest.skip("use --fulltest to run")
         return None
     reset_setup()
-    scope.default_setup()
+    scope.default_setup(verbose=False)
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
     reset_target()
@@ -1546,7 +1555,7 @@ def test_userio_edge_triggers(fulltest, pins, max_edges, reps, desc):
         pytest.skip("use --fulltest to run")
         return None
     reset_setup()
-    scope.default_setup()
+    scope.default_setup(verbose=False)
     time.sleep(0.1)
     scope.trigger.module = 'edge_counter'
     scope.userio.mode = 'normal'
@@ -1581,7 +1590,7 @@ def test_glitch_modes (fulltest, reps):
         return None
     scope.reset_fpga()
     reset_setup()
-    scope.default_setup()
+    scope.default_setup(verbose=False)
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
     reset_target()
@@ -1718,7 +1727,7 @@ def test_glitch_trigger(fulltest, module, pattern, reps, desc):
         return None
     scope.reset_fpga()
     reset_setup()
-    scope.default_setup()
+    scope.default_setup(verbose=False)
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
     scope.glitch.enabled = True
@@ -1777,7 +1786,7 @@ def test_xadc():
 
 def test_finish():
     # just restore some defaults:
-    scope.default_setup()
+    scope.default_setup(verbose=False)
 
 
 

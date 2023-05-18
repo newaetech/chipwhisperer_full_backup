@@ -222,6 +222,9 @@ class ChipWhispererSAD(util.DisableNewAttr):
 class HuskySAD(util.DisableNewAttr):
     """Communicates with the SAD module inside CW-Husky.
 
+    Because SAD is by far the largest FPGA module, XADC alarms
+    (temperature/voltage) shut down the SAD.
+
     This submodule is only available on ChipWhisperer Husky.
     If you wish for the SAD capture to include the SAD pattern, set
     scope.adc.presamples to scope.SAD.sad_reference_length + scope.SAD.latency
@@ -375,15 +378,7 @@ class HuskySAD(util.DisableNewAttr):
         """Read-only. Returns the number of samples that are used by the SAD module. Hardware property,
         but can be halved by the half_pattern setting.
         """
-        #value = int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_SAD_REF_SAMPLES, Validate=False, maxResp=2), byteorder='little')
-        # TODO: ugly hack to support both the released Husky FPGA bitfile, which has a 1-byte register, and development versions, 
-        # which have a 2-byte register; when this is resolved, return to the simple read above
-        raw = self.oa.sendMessage(CODE_READ, ADDR_SAD_REF_SAMPLES, Validate=False, maxResp=2)
-        if raw[0] == raw[1]:
-            # must be the single-byte version:
-            value = raw[0]
-        else:
-            value = int.from_bytes(raw, byteorder='little')
+        value = int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_SAD_REF_SAMPLES, Validate=False, maxResp=2), byteorder='little')
         if self.half_pattern:
             div = 2
         else:
