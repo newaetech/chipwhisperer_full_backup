@@ -2,6 +2,7 @@ from chipwhisperer.analyzer.attacks.models import AES128_8bit as aes128_leakage
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_ttable
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_ttable_dec
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_prev
 import textwrap
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AESLeakageHelper
 
@@ -104,6 +105,16 @@ class EightBitAES128LeakageModels:
         return AES128_8bit(aes128_leakage.LastroundStateDiff)
 
     @property
+    def pipeline_diff(self):
+        """Hamming distance between previous round 9 and current round 9 (for successive encryptions)"""
+        return AES128_prev(aes128_leakage.PipelineDiff)
+
+    @property
+    def half_pipeline_diff(self):
+        """Hamming distance between previous round 10 and current round 9 (for successive encryptions)"""
+        return AES128_prev(aes128_leakage.HalfPipelineDiff)
+
+    @property
     def last_round_state_diff_alternate(self):
         """Hamming distance between rounds 9 and 10 (alternate calculation)"""
         return AES128_8bit(aes128_leakage.LastroundStateDiffAlternate)
@@ -153,6 +164,8 @@ class EightBitAES128LeakageModels:
             'mix_columns_output',
             'shift_rows_output',
             'last_round_state_diff',
+            'pipeline_diff',
+            'half_pipeline_diff',
             'last_round_state_diff_alternate',
             'sbox_in_out_diff',
             'sbox_input_successive',

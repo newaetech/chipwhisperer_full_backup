@@ -77,6 +77,8 @@ class CPAProgressiveOneSubkey(object):
             # This has been modified to reduce computational requirements such that adding a new waveform
             # doesn't require you to recalculate everything
 
+            prev_cts = np.insert(ciphertexts[:-1], 0, 0, axis=0)
+            prev_pts = np.insert(plaintexts[:-1], 0, 0, axis=0)
             #Generate hypotheticals
             for tnum in range(numtraces):
 
@@ -86,6 +88,13 @@ class CPAProgressiveOneSubkey(object):
                 if len(ciphertexts) > 0:
                     ct = ciphertexts[tnum]
 
+                if len(prev_cts) > 0:
+                    prev_ct = prev_cts[tnum]
+
+                if len(prev_pts) > 0:
+                    prev_pt = prev_pts[tnum]
+
+
                 if knownkeys and len(knownkeys) > 0:
                     nk = knownkeys[tnum]
                 else:
@@ -93,7 +102,10 @@ class CPAProgressiveOneSubkey(object):
 
                 state['knownkey'] = nk
 
-                hypint = self.model.leakage(pt, ct, key, bnum, state)
+                if self.model._has_prev:
+                    hypint = self.model.leakage(pt, ct, prev_pt, prev_ct, key, bnum, state)
+                else:
+                    hypint = self.model.leakage(pt, ct, key, bnum, state)
 
                 hyp[tnum] = hypint
 
