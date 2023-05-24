@@ -31,7 +31,8 @@ from ...common.traces import Trace
 from ...common.utils import util
 from .CW305 import CW305, CW305_USB
 from chipwhisperer.logging import *
-from Crypto.Cipher import AES
+from chipwhisperer.analyzer.utils.aes_funcs import key_schedule_rounds
+from chipwhisperer.common.utils.aes_cipher import AESCipher
 from collections import OrderedDict
 
 class CW305_AES_PIPELINED(CW305):
@@ -115,7 +116,11 @@ class CW305_AES_PIPELINED(CW305):
 
         # if check, retrieve results: otherwise, assume they're correct and build ciphertexts[] from what they should be:
         ciphertexts = []
-        cipher = AES.new(bytes(key), AES.MODE_ECB)
+        exp_key = list(key)
+        for i in range(1,11):
+            exp_key.extend(key_schedule_rounds(list(key), 0, i))
+        cipher = AESCipher(exp_key)
+
         if check:
             for i in range(len(plaintexts)):
                 self.fpga_write(self.REG_CRYPT_CIPHEROUT, [1])
@@ -124,7 +129,7 @@ class CW305_AES_PIPELINED(CW305):
             #self.fifo_flush() # this is slow because it's one read and one write per entry
             for pt in plaintexts:
                 self.fpga_write(self.REG_CRYPT_CIPHEROUT, [1])
-                ciphertexts.append(util.bytearray(cipher.encrypt(bytes(pt))))
+                ciphertexts.append(util.bytearray(cipher.cipher_block(list(pt))))
 
 
         fifo_errors = self.fifo_errors()
@@ -139,7 +144,7 @@ class CW305_AES_PIPELINED(CW305):
 
         if check:
             for pt,ct in zip(plaintexts, ciphertexts):
-                expected = util.bytearray(cipher.encrypt(bytes(pt)))
+                expected = util.bytearray(cipher.cipher_block(list(pt)))
                 if expected != ct:
                     target_logger.error("Bad encryption result: expected %s, got %s" % (expected, ct))
 
