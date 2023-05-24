@@ -1,3 +1,4 @@
+`default_nettype none
 `timescale 1ns / 1ps
 /*
    Copyright 2015, Google Inc.
@@ -13,6 +14,9 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+   NewAE modifications: adapted from aes_core.v, removing control and key expansion logic,
+   keeping per-round logic to aes_round.v; add LUT sbox option.
 */
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
@@ -33,60 +37,29 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-module aes_core (
+module aes_round (
 	input wire clk,
+        input wire [3:0] round,
+        input wire [3:0] round_max,
 	input wire load_i,
-	input wire [255:0] key_i,
+	input wire [127:0] key_i,
 	input wire [127:0] data_i,
-	input wire [1:0] size_i,
-	input wire dec_i,
-	output reg [127:0] data_o,
-	output reg busy_o
+	output reg [127:0] data_o
 );
 
-localparam AES_128 = 0;
-localparam AES_192 = 1;
-localparam AES_256 = 2;
+wire dec_r = 1'b0;
 
-localparam AES_KEYSCHED = 0;
-localparam AES_DECRYPT = 1;
-
-//(* max_fanout = "1024" *)
-reg dec_r;
-reg [1:0] fsm, fsm_new;
-
-reg [3:0] round, round_new, round_max;
-wire [3:0] round_inc = round + 1;
-wire [3:0] round_dec = round - 1;
-reg [127:0] state, state_new;
+wire [127:0] state;
+reg [127:0] state_new;
 reg [127:0] sbb_i;
 wire [127:0] sbb_o;
 
 reg [127:0] ks_mem[14:0];
 reg [127:0] ks;
 wire [127:0] ks_val;
-wire ks_en = (fsm == AES_KEYSCHED);
 
-aes_ks ks_inst (
-	.clk(clk),
-	.load_i(load_i),
-	.en_i(ks_en),
-	.size_i(size_i),
-	.key_i(key_i),
-	.ks_o(ks_val)
-);
-
-always @(posedge clk)
-begin
-	if(load_i)
-	begin
-		case(size_i)
-		AES_128: round_max <= 10;
-		AES_192: round_max <= 12;
-		default: round_max <= 14;
-		endcase
-	end
-end
+always @(posedge clk) if (load_i) data_o <= state_new;
+assign state = data_i;
 
 // NEWAE mod: GF or LUT sboxes
 `ifdef SBOX_GF
@@ -274,58 +247,8 @@ begin : subbytes_pst
 	end
 end
 
-always @(posedge clk)
-begin
-	busy_o <= 0;
-	if(load_i)
-	begin
-		fsm <= AES_KEYSCHED;		
-		round <= 0;
-		busy_o <= 1;
-		data_o <= 0;
-		dec_r <= dec_i;
-		state <= data_i;
-	end
-	else if(busy_o)
-	begin
-		busy_o <= 1;
-		case(fsm)
-		AES_KEYSCHED:
-		begin
-			round <= round_inc;
-			if(dec_r)
-			begin
-				ks_mem[round] <= ks_val;
-				ks <= ks_val;
-				if(round == round_max)
-				begin
-					fsm <= AES_DECRYPT;
-					round <= round_max;
-				end
-			end
-			else
-			begin
-				state <= state_new;
-				if(round == round_max)
-				begin
-					data_o <= state_new;
-					busy_o <= 0;
-				end
-			end
-		end
-		AES_DECRYPT:
-		begin
-			ks <= ks_mem[round_dec];
-			round <= round_dec;
-			state <= state_new;
-			if(round == 0)
-			begin
-				data_o <= state_new;
-				busy_o <= 0;
-			end
-		end
-		endcase
-	end
-end
+assign ks_val = key_i;
+
 
 endmodule
+`default_nettype wire

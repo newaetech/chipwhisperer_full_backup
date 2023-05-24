@@ -12,13 +12,14 @@ v1.0](https://chipwhisperer.readthedocs.io/en/latest/simpleserial.html#simpleser
 commands and can be interacted with like our microprocessor-based targets.
 
 
-## 2. CW305-style Targets: SimpleSerial v2.1 Wrapper
+## 2. Advanced CW305-style Targets: SimpleSerial v2.1 Wrapper
 [ss2.v](hdl/ss2.v) implements the [SimpleSerial
 v2.1](https://chipwhisperer.readthedocs.io/en/latest/simpleserial.html#simpleserial-v2-1)
 protocol (SS2) and maps SS2 commands to CW305 register read/writes. This allows
 existing CW305 design which use the SAM3U USB parallel interface to be
 very easily ported to the CW312T-A35 target board. Examples are provided
-here for our existing [CW305 AES](vivado/ss2_cw305_aes.xpr) and [CW305
+here for our existing [CW305 AES](vivado/ss2_cw305_aes.xpr), [CW305 AES
+pipeline](vivado/ss2_cw305_aes_pipelined.xpr) and [CW305
 ECC](vivado/ss2_cw305_ecc.xpr) projects.
 
 
@@ -28,7 +29,12 @@ target designs on both the FPGA development side and the host Python side
 (for CW305 designs that follow our example AES/ECC designs). 
 
 On the Verilog side, refer to the AES and ECC examples linked above to see
-what's needed.
+what's needed. As per these examples, the wrapped CW305 top level module's
+`pBYTECNT_SIZE` parameter should be set to 8, and its `pADDR_WIDTH`
+parameter should be set to 32. The latter is required by `ss2.v`; the former
+could in theory be changed, but
+[CW305.py](../../../../software/chipwhisperer/capture/targets/CW305.py)
+expects it to be 8. Stray from these recommended values at your own risk.
 
 On the Python side, connect to an SS2 target design by adding the `platform`
 argument:

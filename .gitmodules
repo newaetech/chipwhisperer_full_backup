@@ -31,3 +31,6 @@
 [submodule "hardware/victims/cw308_ufo_target/xc7a35/fpga-common"]
 	path = hardware/victims/cw308_ufo_target/xc7a35/fpga-common
 	url = https://github.com/newaetech/fpga-common
+[submodule "hardware/victims/cw305_artixtarget/fpga/fpga-common"]
+	path = hardware/victims/cw305_artixtarget/fpga/fpga-common
+	url = git@github.com:newaetech/fpga-common.git
