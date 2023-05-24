@@ -50,15 +50,6 @@ def check_cw305(fn):
             return fn(self, *args, **kwargs)
     return inner
 
-def check_ss2(fn):
-    def inner(self=None, *args, **kwargs):
-        if self.platform != 'cw305':
-            target_logger.warning("%s is a CW305 method for hardware which does not exist on this target." % fn.__name__)
-        else:
-            return fn(self, *args, **kwargs)
-    return inner
-
-
 
 class CW305_USB(object):
     REQ_SYSCFG = 0x22
@@ -237,6 +228,10 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         return "{}/{}/{}, {:02d}:{:02d}".format(month, day, year, hour, minute)
         return "FPGA build time: {}/{}/{}, {}:{}".format(month, day, year, hour, minute)
 
+    @property
+    def fpga_buildtime(self):
+        return self.get_fpga_buildtime()
+
 
     def fpga_write(self, addr, data):
         """Write to an address on the FPGA
@@ -390,7 +385,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         resp = self._naeusb.readCtrl(CW305_USB.REQ_VCCINT, dlen=3)
         return float(resp[1] | (resp[2] << 8)) / 1000.0
 
-    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=20E6, hw_location=None, sn=None, platform='cw305'):
+    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=20E6, hw_location=None, sn=None, platform='cw305', version=None):
         """Connect to CW305 board, and download bitstream.
 
         If the target has already been programmed it skips reprogramming
@@ -407,6 +402,8 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             platform (string, optional): 'cw305', or 'ss2' for non-CW305 target FPGA platforms.
                 The latter is intended for target designs using the ss2.v
                 simpleserial-to-parallel wrapper.
+            version (optional): when required to differentiate from multiple possible bitfiles
+                for a particular target (to be used with fpga_id)
         """
         self.platform = platform
         if platform == 'cw305':
@@ -426,6 +423,12 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
                             bsdata = getsome(f"AES_{fpga_id}.bit")
                         elif self.target_name == 'Cryptech ecdsa256-v1 pmul':
                             bsdata = getsome(f"ECDSA256v1_pmul_{fpga_id}.bit")
+                        elif self.target_name == 'Pipelined AES':
+                            if version is None:
+                                version = 0
+                            bsdata = getsome(f"Pipelined_AES_{fpga_id}_half{version}.bit")
+                        else:
+                            raise ValueError('Unknown target!')
                         starttime = datetime.now()
                         status = self.fpga.FPGAProgram(bsdata, exceptOnDoneFailure=False, prog_speed=prog_speed)
                         stoptime = datetime.now()
@@ -452,13 +455,30 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             self.check_done = True
 
         elif platform == 'ss2':
-            if force or fpga_id or sn or hw_location:
-                target_logger.warning("force, fpga_id, sn and hw_location parameters have no effect on this platform")
+            if force or sn or hw_location:
+                target_logger.warning("force, sn and hw_location parameters have no effect on this platform")
             if not scope:
                 raise ValueError("scope must be specified")
             self.fpga = CW312T_XC7A35T(scope)
-            if bsfile:
-                self.fpga.program(bsfile, sck_speed=prog_speed)
+            if not fpga_id is None:
+                if fpga_id != 'cw312t_a35':
+                    raise ValueError(f"Invalid fpga {fpga_id}")
+            self._fpga_id = fpga_id
+
+            if bsfile is None:
+                from chipwhisperer.hardware.firmware.xc7a35 import getsome
+                if self.target_name == 'AES':
+                    bsfile = getsome(f"AES_{fpga_id}.bit")
+                elif self.target_name == 'Cryptech ecdsa256-v1 pmul':
+                    bsfile = getsome(f"ECDSA256v1_pmul_{fpga_id}.bit")
+                elif self.target_name == 'Pipelined AES':
+                    if version is None:
+                        version = 0
+                    bsfile = getsome(f"Pipelined_AES_{fpga_id}_half{version}.bit")
+                else:
+                    raise ValueError('Unknown target!')
+
+            self.fpga.program(bsfile, sck_speed=prog_speed)
 
             ss2 = SimpleSerial2()
             ss2.con(scope)

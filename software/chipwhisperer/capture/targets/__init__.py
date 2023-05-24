@@ -36,6 +36,7 @@ from .SimpleSerial import SimpleSerial
 from .CW305 import CW305
 from .SimpleSerial2 import SimpleSerial2, SimpleSerial2_CDC
 from .CW305_ECC import CW305_ECC
+from .CW305_AES_PIPELINED import CW305_AES_PIPELINED
 from .CW310 import CW310
 from .CW340 import CW340
 from typing import Union
