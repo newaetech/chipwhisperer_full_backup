@@ -739,6 +739,7 @@ class LASettings(util.DisableNewAttr):
         self.oa = oaiface
         self._mmcm = mmcm
         self._scope = scope
+        self._is_husky_plus = False
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -825,19 +826,28 @@ class LASettings(util.DisableNewAttr):
             return False
 
     @property
+    def max_capture_depth(self):
+        """Maximum capture depth.
+        """
+        if self._is_husky_plus:
+            return 65535
+        else:
+            return 16376
+
+    @property
     def capture_depth(self):
         """Number of bits captured for each signal.
 
         Args:
-            depth (int): capture <depth> samples of each signal. 16-bit value, in range [1, 16376].
+            depth (int): capture <depth> samples of each signal. 16-bit value, in range [1, scope.LA.max_capture_depth]
         """
         raw = self.oa.sendMessage(CODE_READ, ADDR_LA_CAPTURE_DEPTH, Validate=False, maxResp=2)
         return int.from_bytes(raw, byteorder='little')
 
     @capture_depth.setter
     def capture_depth(self, depth):
-        if depth > 16376:
-            raise ValueError("Maximum capture depth is 16376")
+        if depth > self.max_capture_depth:
+            raise ValueError("Maximum capture depth is %s" % self.max_capture_depth)
         if depth % 2:
             depth -= 1
         self.oa.sendMessage(CODE_WRITE, ADDR_LA_CAPTURE_DEPTH, int.to_bytes(depth, length=2, byteorder='little'), Validate=False)

@@ -1609,8 +1609,8 @@ def test_glitch_modes (fulltest, reps):
     scope.LA.capture_group = 'glitch'
     scope.LA.trigger_source = "glitch"
     for i in range(reps):
-        capture_depth = 20000
-        while capture_depth > 16376:
+        capture_depth = 1000000
+        while capture_depth > scope.LA.max_capture_depth:
             randomize_glitches()
             capture_depth = scope.glitch.num_glitches * scope.LA.oversampling_factor * max(scope.glitch.ext_offset) * 2
         scope.LA.capture_depth = capture_depth
