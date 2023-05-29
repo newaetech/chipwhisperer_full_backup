@@ -146,6 +146,43 @@ def bytearray2binarylist(bytes, nrBits=8):
         init = np.concatenate((init, np.unpackbits(np.uint8(byte))[8 - nrBits:]), axis=0)
     return init
 
+def pack_u16_into(buf, i : int, value : int):
+    """Packs a little endian 16 bit integer into a buffer."""
+    buf[i] = value & 0xff
+    buf[i + 1] = (value >> 8) & 0xff
+
+def pack_u32_into(buf, i : int, value : int):
+    """Packs a little endian 32 bit integer into a buffer."""
+    buf[i] = value & 0xff
+    buf[i + 1] = (value >> 8) & 0xff
+    buf[i + 2] = (value >> 16) & 0xff
+    buf[i + 3] = (value >> 24) & 0xff
+
+def pack_u32_bytes(data):
+    """Creates a bytearray of a little endian packed 32 bit integer."""
+    buf = bytearray(4)
+    pack_u32_into(buf, 0, data)
+    return buf
+
+def get_bytes_memview(data):
+    """Ensures input data is a memoryview of bytes.
+
+    Return:
+        A memoryview of bytes.
+    """
+    if isinstance(data, memoryview):
+        return data
+
+    if not isinstance(data, (bytes, bytearray)):
+        try:
+            data = bytearray(data)
+        except TypeError:
+            try:
+                data = bytearray(data, 'latin-1')
+            except TypeError:
+                # Usually happens if list has elements that are outside of an U8 integer
+                pass
+    return memoryview(data)
 
 def _make_id(target):
     if hasattr(target, '__func__'):
@@ -392,8 +429,7 @@ def dict_to_str(input_dict, indent=""):
 
     return ret
 
-
-class bytearray(bytearray): # type: ignore
+class CWByteArray(bytearray):
     """bytearray with better repr and str methods.
 
     Overwrites the __repr__ and __str__ methods of the builtin bytearray class

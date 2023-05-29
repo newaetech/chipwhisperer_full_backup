@@ -27,7 +27,7 @@ import random
 from ...common.utils import util
 from ._base import AcqKeyTextPattern_Base
 from ...common.utils.util import camel_case_deprecated
-bytearray = util.bytearray # type: ignore
+bytearray = util.CWByteArray # type: ignore
 
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     """Class for getting basic keys and plaintexts.
@@ -187,7 +187,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._textin[i] = random.randint(0, 255)
 
         self.validateText()
-        return util.bytearray(self._textin)
+        return bytearray(self._textin)
 
     def next_key(self):
         """ Returns the next key
@@ -206,4 +206,4 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
             for i in range(0, self.keyLen()):
                 self._key[i] = random.randint(0, 255)
         self.validateKey()
-        return util.bytearray(self._key)
+        return bytearray(self._key)

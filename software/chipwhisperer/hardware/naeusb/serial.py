@@ -25,9 +25,9 @@
 
 import time
 import os
-from .naeusb import packuint32
 from ...logging import *
-from .naeusb import NAEUSB
+from ...common.utils import util
+from .naeusb import NAEUSB, NAEUSB_CTRL_IO_MAX
 class USART(object):
     """
     USART Class communicates with NewAE USB Interface to read/write data over control endpoint.
@@ -46,7 +46,7 @@ class USART(object):
         """
         Set the USB communications instance.
         """
-        self._max_read = 128
+        self._max_read = NAEUSB_CTRL_IO_MAX
 
         self._usb : NAEUSB = usb
         self.timeout = timeout
@@ -93,10 +93,11 @@ class USART(object):
         else:
             raise ValueError("Invalid parity spec: %s" % str(parity))
 
-        cmdbuf = packuint32(baud)
-        cmdbuf.append(stopbits)
-        cmdbuf.append(parity)
-        cmdbuf.append(8)  # Data bits
+        cmdbuf = bytearray(7)
+        util.pack_u32_into(cmdbuf, 0, baud)
+        cmdbuf[4] = stopbits
+        cmdbuf[5] = parity
+        cmdbuf[6] = 8 # Data bits
 
         self._usartTxCmd(self.USART_CMD_INIT, cmdbuf)
         self._usartTxCmd(self.USART_CMD_ENABLE)
@@ -117,35 +118,31 @@ class USART(object):
         """
         # print "%d: %s" % (len(data), str(data))
 
-        try:
-            data = bytearray(data)
-        except TypeError:
-            try:
-                data = bytearray(data, 'latin-1')
-            except TypeError:
-                #Second type-error happens if input was already list?
-                pass
+        data = util.get_bytes_memview(data)
 
-        datasent = 0
-
-        while datasent < len(data):
-            datatosend = len(data) - datasent
-
-            # NOTE: Have to limit to 128 bytes as send/receive buffer for naeusb is 128 bytes currently
-            datatosend = min(datatosend, 58)  # try back to 58 bytes
-
+        pos = 0
+        end = 0
+        dlen = len(data)
+        while dlen > 0:
             # need to make sure we don't write too fast
             # and overrun the internal buffer...
             # Can probably elimiate some USB communication
             # to make this faster, but okay for now...
+            wlen = NAEUSB_CTRL_IO_MAX
             if self.tx_buf_in_wait:
-                datatosend = min(datatosend, self._max_read-self.in_waiting_tx())
-            self._usb.sendCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), data[datasent:(datasent + datatosend)])
-            datasent += datatosend
+                wlen -= self.in_waiting_tx()
+                if wlen < 1:
+                    continue
+            if dlen < wlen:
+                wlen = dlen
+            end += wlen
+            dlen -= wlen
+            self._usb.sendCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), data[pos:end])
+            pos = end
 
         # print("sent: " + str(data))
 
-        return datasent
+        return pos
 
         # if self.fw_version_str >= '0.20':
         #     i = 1000
@@ -196,27 +193,39 @@ class USART(object):
         Read data from input buffer, if 'dlen' is 0 everything present is read. If timeout is non-zero
         system will block for a while until data is present in buffer.
         """
-        resp = []
-
         if timeout == 0:
             timeout = self.timeout
 
         waiting = self.inWaiting()
 
-        if dlen == 0:
+        if dlen < 1:
             dlen = waiting
 
-        # * 10 does nothing
-        while dlen and (timeout) > 0:
+        resp = bytearray(dlen)
+        pos = 0
+        end = 0
+        while dlen > 0:
             if waiting > 0:
-                newdata = self._usb.readCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), min(min(waiting, dlen), self._max_read))
-                resp.extend(newdata)
-                dlen -= len(newdata)
-            waiting = self.inWaiting()
+                rlen = self._max_read
+                if waiting < rlen:
+                    rlen = waiting
+                if dlen < rlen:
+                    rlen = dlen
+                newdata = self._usb.readCtrl(self.CMD_USART0_DATA, (self._usart_num << 8), rlen)
+                rlen = len(newdata)
+                end += rlen
+                dlen -= rlen
+                resp[pos:end] = newdata
+                pos = end
+
+            if timeout <= 0:
+                break
             timeout -= 1
             # time.sleep(0.001)
             if (timeout % 10) == 0:
                 time.sleep(0.01)
+
+            waiting = self.inWaiting()
 
         # print("read: " + str(resp))
         return resp

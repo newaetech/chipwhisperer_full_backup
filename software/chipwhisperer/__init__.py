@@ -34,7 +34,7 @@ import sys, subprocess
 from typing import Optional, Type, Union, List
 
 # replace bytearray with inherited class with better repr and str.
-bytearray = util.bytearray # type: ignore
+bytearray = util.CWByteArray # type: ignore
 
 def list_devices(idProduct : Optional[List[int]]=None, get_sn=True, get_hw_loc=True) -> List[dict]:
     """Get a list of devices by NewAE (VID 0x2b3e) currently connected

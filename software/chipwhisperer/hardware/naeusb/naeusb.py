@@ -24,7 +24,8 @@ import usb1  # type: ignore
 import os
 import array
 from typing import Optional, Union, List, Tuple, Dict, cast
-from ...common.utils.util import bytearray # type: ignore
+from ...common.utils import util
+from ...common.utils.util import CWByteArray # type: ignore
 
 from ..firmware import cwlite as fw_cwlite
 from ..firmware import cw1200 as fw_cw1200
@@ -284,7 +285,6 @@ def _WINDOWS_USB_CHECK_DRIVER(device) -> Optional[str]:
         naeusb_logger.warning("Could not check driver ({}), assuming WINUSB is used".format(str(e)))
         return None
 
-
 def packuint32(data):
     """Converts a 32-bit integer into format expected by USB firmware"""
 
@@ -307,6 +307,27 @@ def packuint16(data):
 
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
 
+LEN_ADDR_HDR_SIZE = 8
+    
+def set_len_addr(buf, dlen, addr):
+    """Populates a buffer with the command header.
+    """
+    # Little endian
+    util.pack_u32_into(buf, 0, dlen)
+    util.pack_u32_into(buf, 4, addr)
+
+def make_len_addr(dlen, addr):
+    """Creates a command header buffer.
+
+    Return:
+        A bytearray with the populated command parameters.
+    """
+    buf = bytearray(LEN_ADDR_HDR_SIZE)
+    set_len_addr(buf, dlen, addr)
+    return buf
+
+NAEUSB_CTRL_IO_MAX = 128
+NAEUSB_CTRL_IO_THRESHOLD = 48
 
 #List of all NewAE PID's
 NEWAE_VID = 0x2B3E
@@ -500,7 +521,7 @@ class NAEUSB_Backend:
         naeusb_logger.debug("WRITE_CTRL: bmRequestType: {:02X}, \
                     bRequest: {:02X}, wValue: {:04X}, wIndex: {:04X}, data: {}".format(0x41, cmd, \
                         value, 0, data))
-        if len(data) > 128:
+        if len(data) > NAEUSB_CTRL_IO_MAX:
             naeusb_logger.error("The naeusb fw ctrl buffer is 128 bytes, but len(data) > 128. If you get a pipe error, this is why.")
         self.handle.controlWrite(0x41, cmd, value, 0, data, timeout=self._timeout)
         #return self.usbdev().ctrl_transfer(0x41, cmd, value, 0, data, timeout=self._timeout)
@@ -510,7 +531,7 @@ class NAEUSB_Backend:
         Read data from control endpoint
         """
         # Vendor-specific, IN, interface control transfer
-        if dlen > 128:
+        if dlen > NAEUSB_CTRL_IO_MAX:
             naeusb_logger.error("The naeusb fw ctrl buffer is 128 bytes, but len(data) > 128. If you get a pipe error, this is why.")
         response = self.handle.controlRead(0xC1, cmd, value, 0, dlen, timeout=self._timeout)
         naeusb_logger.debug("READ_CTRL: bmRequestType: {:02X}, \
@@ -518,72 +539,111 @@ class NAEUSB_Backend:
                         value, 0, dlen, response))
         return response
 
+    def _get_timeout(self, timeout):
+        """Gets the default timeout if the operation caller did not specify one.
 
-    def cmdReadMem(self, addr : int, dlen : int) -> bytearray:
+        Returns:
+            A valid timeout value.
         """
-        Send command to read over external memory interface from FPGA. Automatically
-        decides to use control-transfer or bulk-endpoint transfer based on data length.
+        if timeout is None:
+            timeout = self._timeout
+        return timeout
+
+    def _bulk_read(self, data, timeout):
+        """Reads data over the bulk-transfer endpoint.
+
+        Returns:
+            The received data.
         """
+        timeout = self._get_timeout(timeout)
+        return self.handle.bulkRead(self.rep, data, timeout)
 
-        dlen = int(dlen)
+    def _bulk_write(self, data, timeout):
+        """Writes data over the bulk-transfer endpoint.
+        """
+        timeout = self._get_timeout(timeout)
+        self.handle.bulkWrite(self.wep, data, timeout)
 
-        if dlen < 48:
-            cmd = self.CMD_READMEM_CTRL
-        else:
-            cmd = self.CMD_READMEM_BULK
-
-        # ADDR/LEN written LSB first
-        pload = packuint32(dlen)
-        pload.extend(packuint32(addr))
+    def _cmd_ctrl_send_data(self, pload, cmd : int):
+        """Sends data over the control-transfer channel and attempts a pipe error fix if an initial
+        error occured.
+        """
         try:
             self.sendCtrl(cmd, data=pload)
         except usb1.USBErrorPipe:
             naeusb_logger.info("Attempting pipe error fix - typically safe to ignore")
             self.sendCtrl(0x22, 0x11)
             self.sendCtrl(cmd, data=pload)
-        # Get data
-        if cmd == self.CMD_READMEM_BULK:
-            data = self.handle.bulkRead(self.rep, dlen, timeout=self._timeout)
+
+    def _cmd_ctrl_send_header(self, addr : int, dlen : int, cmd : int):
+        """Sends the standard length/addr header over the control-transfer endpoint.
+        """
+        # TODO: Alloc header class member? Won't hafta alloc mem every read and writectrl call...
+        pload = make_len_addr(dlen, addr)
+        self._cmd_ctrl_send_data(pload, cmd)
+
+    def _cmd_readmem_ctrl(self, addr : int, dlen : int):
+        """Reads data from the external memory interface over the control-transfer endpoint.
+
+        Returns:
+            The received data.
+        """
+        self._cmd_ctrl_send_header(addr, dlen, self.CMD_READMEM_CTRL);
+        return self.readCtrl(self.CMD_READMEM_CTRL, dlen=dlen)
+
+    def _cmd_readmem_bulk(self, addr : int, dlen : int):
+        """Reads data from the external memory interface over the bulk-transfer endpoint.
+
+        Returns:
+            The received data.
+        """
+        self._cmd_ctrl_send_header(addr, dlen, self.CMD_READMEM_BULK);
+        return self._bulk_read(dlen, None)
+
+    def cmdReadMem(self, addr : int, dlen : int) -> bytearray:
+        """
+        Send command to read over external memory interface from FPGA. Automatically
+        decides to use control-transfer or bulk-endpoint transfer based on data length.
+        """
+        dlen = int(dlen)
+        if dlen < NAEUSB_CTRL_IO_THRESHOLD:
+            data = self._cmd_readmem_ctrl(addr, dlen)
         else:
-            data = self.readCtrl(cmd, dlen=dlen)
+            data = self._cmd_readmem_bulk(addr, dlen)
 
         naeusb_logger.debug("FPGA_READ: bulk: {}, addr: {:08X}, dlen: {:08X}, response: {}"\
-            .format("yes" if dlen >= 48 else "no", addr, dlen, data))
+            .format("yes" if dlen >= NAEUSB_CTRL_IO_THRESHOLD else "no", addr, dlen, data))
         return data
 
-    def cmdWriteMem(self, addr : int, data : bytearray):
+    def _cmd_writemem_ctrl(self, addr : int, data):
+        """Writes data to the external memory interface via the control-transfer endpoint.
+        """
+        # TODO: Investigate if we don't hafta combine header with the data and can send separately.
+        # Is this is a FW implementation or a limitation from middleware interfaces?
+        pload = bytearray(LEN_ADDR_HDR_SIZE + len(data))
+        set_len_addr(pload, len(data), addr)
+        pload[LEN_ADDR_HDR_SIZE:] = data
+        self._cmd_ctrl_send_data(pload, self.CMD_WRITEMEM_CTRL)
+
+    def _cmd_writemem_bulk(self, addr : int, data):
+        """Writes data to the external memory interface via the bulk-transfer endpoint.
+        """
+        self._cmd_ctrl_send_header(addr, len(data), self.CMD_WRITEMEM_BULK)
+        self._bulk_write(data, None)
+
+    def cmdWriteMem(self, addr : int, data):
         """
         Send command to write memory over external memory interface to FPGA. Automatically
         decides to use control-transfer or bulk-endpoint transfer based on data length.
         """
-
-        dlen = len(data)
-
-        if dlen < 48:
-            cmd = self.CMD_WRITEMEM_CTRL
+        pload = util.get_bytes_memview(data)
+        if len(pload) < NAEUSB_CTRL_IO_THRESHOLD:
+            self._cmd_writemem_ctrl(addr, pload)
         else:
-            cmd = self.CMD_WRITEMEM_BULK
-
-        # ADDR/LEN written LSB first
-        pload = packuint32(dlen)
-        pload.extend(packuint32(addr))
-
-        if cmd == self.CMD_WRITEMEM_CTRL:
-            pload.extend(data)
-
-        self.sendCtrl(cmd, data=pload)
-
-
-        # Get data
-        if cmd == self.CMD_WRITEMEM_BULK:
-            self.handle.bulkWrite(self.wep, data, timeout=self._timeout)
-        else:
-            #logging.warning("Write ignored")
-
-            pass
+            self._cmd_writemem_bulk(addr, pload)
 
         naeusb_logger.debug("FPGA_WRITE: bulk: {}, addr: {:08X}, dlen: {:08X}, response: {}"\
-            .format("yes" if dlen >= 48 else "no", addr, dlen, data))
+            .format("yes" if len(pload) >= NAEUSB_CTRL_IO_THRESHOLD else "no", addr, len(pload), data))
 
         return None
 
@@ -594,9 +654,7 @@ class NAEUSB_Backend:
         :return:
         """
         naeusb_logger.debug("BULK WRITE: data = {}".format(data))
-        if timeout is None:
-            timeout = self._timeout
-        self.handle.bulkWrite(self.wep, data, timeout=timeout)
+        self._bulk_write(data, timeout)
 
     writeBulk = cmdWriteBulk
 
@@ -604,13 +662,12 @@ class NAEUSB_Backend:
         """Dump all the crap left over"""
         try:
             # TODO: This probably isn't needed, and causes slow-downs on Mac OS X.
-            self.handle.bulkRead(self.rep, 1000, timeout=0.010)
+            self._bulk_read(1000, 0.010)
         except:
             pass
 
     def read(self, dbuf : bytearray, timeout : int) -> bytearray:
-        resp = self.handle.bulkRead(self.rep, dbuf, timeout)
-
+        resp = self._bulk_read(dbuf, timeout)
         naeusb_logger.debug("BULK READ: data = {}".format(dbuf))
         return resp
 
