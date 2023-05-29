@@ -87,7 +87,7 @@ int main(void)
 		else if (state == INPUT) {
 			if ((c == '\n') || (c == '\r')) {
 				// We received the final character - decode our string
-				hex_decode((char*)ascii_buffer, ascii_idx, data_buffer);
+				hex_decode(ascii_idx, (char*)ascii_buffer, data_buffer);
 
 				// Decrypt data in-place
 				decrypt_data(data_buffer, DATA_BUFLEN);
