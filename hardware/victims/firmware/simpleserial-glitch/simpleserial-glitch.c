@@ -26,6 +26,10 @@
 //uint8_t glitch_loop(uint8_t* in);
 //uint8_t password(uint8_t* pw);
 
+// Make sure no optimization happens for demo glitch logic.
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 #if SS_VER == SS_VER_2_1
 uint8_t glitch_loop(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t* in)
 #else
@@ -146,6 +150,8 @@ uint8_t infinite_loop(uint8_t* in, uint8_t len)
 
     return 0;
 }
+
+#pragma GCC pop_options
 
 int main(void)
 {
