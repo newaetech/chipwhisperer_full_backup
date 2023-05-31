@@ -53,6 +53,9 @@ should get you up and running:
     python -m pip install -e .
     python -m pip install -r jupyter/requirements.txt
 
+After running these install instructions, make sure to restart your computer. This is required for the
+new udev rules to be applied.
+
 You can check that the install succeeded by navigating to :code:`chipwhisperer`
 and running:
 
@@ -164,6 +167,8 @@ you'll need to create that group and add your user to that group:
     sudo groupadd -f chipwhisperer
     sudo usermod -aG chipwhisperer $USER
     sudo usermod -aG plugdev $USER
+
+Make sure you restart your computer after this step.
 
 .. note:: Older install instructions used the plugdev group, which is created by default on some distros
         and not on others. These install instructions instead use a dedicated chipwhisperer group,
