@@ -94,7 +94,7 @@ class USART(object):
             raise ValueError("Invalid parity spec: %s" % str(parity))
 
         cmdbuf = bytearray(7)
-        util.pack_u32_into(cmdbuf, 0, baud)
+        util.pack_u32_into(cmdbuf, 0, int(baud))
         cmdbuf[4] = stopbits
         cmdbuf[5] = parity
         cmdbuf[6] = 8 # Data bits
@@ -128,7 +128,7 @@ class USART(object):
             # and overrun the internal buffer...
             # Can probably elimiate some USB communication
             # to make this faster, but okay for now...
-            wlen = NAEUSB_CTRL_IO_MAX
+            wlen = 58#NAEUSB_CTRL_IO_MAX
             if self.tx_buf_in_wait:
                 wlen -= self.in_waiting_tx()
                 if wlen < 1:
