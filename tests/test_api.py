@@ -308,10 +308,10 @@ class TestPreprocessing(unittest.TestCase):
 class TestUtils(unittest.TestCase):
 
     def test_bytearray(self):
-        arr = bytearray([1, 2, 3])
+        arr = cw.bytearray([1, 2, 3])
         self.assertEqual(str(arr), "CWbytearray(b'01 02 03')")
 
-        arr = bytearray([14, 10, 2])
+        arr = cw.bytearray([14, 10, 2])
         self.assertEqual(str(arr), "CWbytearray(b'0e 0a 02')")
 
 class TestSegment(unittest.TestCase):
