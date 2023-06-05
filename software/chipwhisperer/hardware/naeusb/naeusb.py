@@ -622,7 +622,7 @@ class NAEUSB_Backend:
         # Is this is a FW implementation or a limitation from middleware interfaces?
         pload = bytearray(LEN_ADDR_HDR_SIZE + len(data))
         set_len_addr(pload, len(data), addr)
-        pload[LEN_ADDR_HDR_SIZE:] = data
+        util.bytes_fast_copy(pload, LEN_ADDR_HDR_SIZE, data)
         self._cmd_ctrl_send_data(pload, self.CMD_WRITEMEM_CTRL)
 
     def _cmd_writemem_bulk(self, addr : int, data):

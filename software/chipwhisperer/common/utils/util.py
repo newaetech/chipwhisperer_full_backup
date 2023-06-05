@@ -28,11 +28,13 @@ import collections
 import os.path
 import shutil
 import weakref
+import time
 from functools import wraps
 import warnings
 from ...logging import *
 from typing import List
 
+BYTE_ARRAY_TYPES = (bytes, bytearray, memoryview)
 
 def getRootDir():
     path = os.path.join(os.path.dirname(__file__), "../../../")
@@ -164,16 +166,13 @@ def pack_u32_bytes(data):
     pack_u32_into(buf, 0, data)
     return buf
 
-def get_bytes_memview(data):
-    """Ensures input data is a memoryview of bytes.
+def get_bytes(data):
+    """Ensures that input data is an array of bytes.
 
     Return:
-        A memoryview of bytes.
+        An object that can either be a bytearray, bytes, or memoryview.
     """
-    if isinstance(data, memoryview):
-        return data
-
-    if not isinstance(data, (bytes, bytearray)):
+    if not isinstance(data, BYTE_ARRAY_TYPES):
         try:
             data = bytearray(data)
         except TypeError:
@@ -182,7 +181,25 @@ def get_bytes_memview(data):
             except TypeError:
                 # Usually happens if list has elements that are outside of an U8 integer
                 pass
+    return data
+
+def get_bytes_memview(data):
+    """Ensures input data is a memoryview of bytes.
+
+    Return:
+        A memoryview of bytes.
+    """
+    if isinstance(data, memoryview):
+        return data
+    data = get_bytes(data)
     return memoryview(data)
+
+def bytes_fast_copy(dst_buf, i : int, src_data):
+    """Generic byte buffer copy that tries to avoid type conversions or object copies when possible.
+    """
+    if not isinstance(src_data, list):
+        src_data = get_bytes(src_data)
+    dst_buf[i:i+len(src_data)] = src_data
 
 def _make_id(target):
     if hasattr(target, '__func__'):
@@ -565,8 +582,300 @@ def get_cw_type(sn=None, idProduct=None, hw_location=None, **kwargs) -> type:
         return scopes.CWNano
     else:
         raise OSError("Got chipwhisperer with unknown name {} (ID = {})".format(name, possible_ids))
-import time
+
 def better_delay(ms):
     t = time.perf_counter() + ms / 1000
     while time.perf_counter() < t:
         pass
+
+# API translation
+
+def dict_ref_upd(dict_ref, dict_upd):
+    """Conditionally updates a dictionary with another if it exists.
+    """
+    if dict_upd:
+        dict_ref.update(dict_upd)
+    return dict_ref
+
+def dict_invert(d, dict_upd=None):
+    """Creates an inverted dictionary in which every dict[key] = value becomes dict[value] = key.
+    """
+    d = { d[k]: k for k in d }
+    return dict_ref_upd(d, dict_upd)
+
+def list_to_inv_dict(coll, dict_upd=None):
+    """Creates an inverted dictionary in which every index of a list becomes the entry value.
+    dict[value] = index.
+    """
+    coll = { coll[i]: i for i in range(len(coll)) }
+    return dict_ref_upd(coll, dict_upd)
+
+def is_valid_basic_enum(max, value):
+    """Ensures a value within the range of a basic enum where every value is defined.
+    0 <= value < enum_max
+    """
+    return (value >= 0) and (value < max)
+
+class BitField(object):
+    """Class that helps modify bit fields contained in an integer.
+    """
+    def __init__(self, width, pos):
+        self._width = width
+        self._pos = pos
+
+    @property
+    def width(self):
+        return self._width
+
+    @property
+    def pos(self):
+        return self._pos
+
+    @property
+    def value_mask(self):
+        return (1 << self.width) - 1
+
+    @property
+    def extr_mask(self):
+        return self.value_mask << self.pos
+
+    @property
+    def clr_mask(self):
+        return ~self.extr_mask
+
+    def clr_field(self, istruct):
+        """Clears this bit field in a structure (integer).
+        """
+        return istruct & self.clr_mask
+
+    def extr_field(self, istruct):
+        """Masks this bit field from a structure (integer).
+        """
+        return istruct & self.extr_mask
+
+    def make_field(self, value):
+        """Creates this bit field from a value.
+        """
+        return (value & self.value_mask) << self.pos
+
+    def extr_value(self, istruct):
+        """Extracts the value for this bit field from a structure (integer).
+        """
+        return self.extr_field(istruct) >> self.pos
+
+    def ins_field(self, istruct, field):
+        """Inserts this bit field into a structure (integer).
+        """
+        return self.clr_field(istruct) | self.extr_field(field)
+
+    def ins_value(self, istruct, value):
+        """Inserts the value for this bit field into a structure (integer).
+        """
+        return self.clr_field(istruct) | self.make_field(value)
+
+# Translate argument from user to interface API
+
+class VarToAPITranslation(object):
+    """Interface to convert a top level public API value to an internal API value.
+    """
+    def __init__(self, var_map):
+        self._var_map = var_map
+
+    def try_var_to_api(self, value, default=None):
+        """Tries to get the internal API value from the public API value.
+
+        Return:
+            The internal API value if the input public API value is valid, else the default value.
+        """
+        return self._var_map.get(value, default)
+
+class VarToEnumTranslation(VarToAPITranslation):
+    """Interface to convert a top level public API value to an internal API enum.
+    """
+    def try_var_to_api(self, value, default=-1):
+        """Tries to get the internal API enum from the public API value.  If the input value is
+        already an integer, it will just return the input value.
+
+        Return:
+            The internal API value if the input public API value is valid, else the default value.
+        """
+        if isinstance(value, int):
+            return value
+        return VarToAPITranslation.try_var_to_api(self, value, default)
+
+# Translate interface API to string
+
+class ObjToStrTranslation(object):
+    """Interface to convert an internal API value to a public API string.
+    """
+    def __init__(self, str_dict):
+        self._str_dict = str_dict
+
+    def is_valid_api(self, value):
+        return value in self._str_dict
+
+    def api_to_str(self, value):
+        return self._str_dict[value]
+
+class EnumToStrTranslation(object):
+    """Interface to convert an internal API enum to a public API string.
+    """
+    def __init__(self, str_list):
+        self._str_list = str_list
+
+    @property
+    def enum_max(self):
+        return len(self._str_list)
+
+    def api_values(self):
+        return range(self.enum_max)
+
+    def is_valid_api(self, value):
+        return is_valid_basic_enum(self.enum_max, value)
+
+    def api_to_str(self, value):
+        return self._str_list[value]
+
+# Translate HW API to interface API
+
+class HWToObjTranslation(object):
+    def __init__(self, hw_map):
+        self._hw_map = hw_map
+
+    def hw_values(self):
+        return self._hw_map.keys()
+
+    def try_hw_to_api(self, value, default=None):
+        return self._hw_map.get(value, default)
+
+    def try_hw_to_str(self, value, default=None):
+        value = self.try_hw_to_api(value, default)
+        if value == default:
+            return None
+        return self.api_to_str(value)
+
+class HWToEnumTranslation(HWToObjTranslation):
+    def try_hw_to_api(self, value, default=-1):
+        return super().try_hw_to_api(value, default)
+
+    def try_hw_to_str(self, value, default=-1):
+        return super().try_hw_to_str(value, default)
+
+# Interface and HW API use the same values
+
+class ObjTranslationDirect(VarToAPITranslation, ObjToStrTranslation):
+    """Class that allows conversion between top level public API values and internal API values.
+    """
+    def __init__(self, str_dict, var_map):
+        VarToAPITranslation.__init__(self, var_map)
+        ObjToStrTranslation.__init__(self, str_dict)
+
+    @staticmethod
+    def alloc_instance(str_dict, extra_vars=None):
+        return ObjTranslationDirect(
+            str_dict,
+            dict_invert(str_dict, extra_vars)
+        )
+
+class EnumTranslationDirect(VarToEnumTranslation, EnumToStrTranslation):
+    """Class that allows conversion between top level public API values and internal API enums.
+    """
+    def __init__(self, str_list, var_map):
+        VarToEnumTranslation.__init__(self, var_map)
+        EnumToStrTranslation.__init__(self, str_list)
+
+    @staticmethod
+    def alloc_instance(str_list, extra_vars=None):
+        return EnumTranslationDirect(
+            str_list,
+            list_to_inv_dict(str_list, extra_vars)
+        )
+
+    def try_var_to_api(self, value, default=-1):
+        """Tries to get the internal API enum from the public API value.  If the input value is
+        already an integer, it will just return the input value.
+
+        Return:
+            The internal API value if the input public API value is valid, else the default value.
+        """
+        if not isinstance(value, int):
+            return VarToAPITranslation.try_var_to_api(self, value, default)
+        if self.is_valid_api(value):
+            return value
+        return default
+
+# Full translation of user arguments to matching interface and HW API values
+
+class ObjTranslationToHW(ObjTranslationDirect):
+    def __init__(self, hw_dict, str_dict, var_map):
+        super().__init__(str_dict, var_map)
+        self._hw_dict = hw_dict
+
+    @staticmethod
+    def alloc_instance(hw_dict, str_dict, extra_vars=None):
+        return ObjTranslationToHW(
+            hw_dict,
+            str_dict,
+            dict_invert(str_dict, extra_vars)
+        )
+
+    def hw_values(self):
+        return self._hw_dict.values()
+
+    def api_to_hw(self, value):
+        return self._hw_dict[value]
+
+class EnumTranslationToHW(EnumTranslationDirect):
+    """Converts an internal enum to a hardware API value.
+    """
+    def __init__(self, hw_list, str_list, var_map):
+        EnumTranslationDirect.__init__(self, str_list, var_map)
+        self._hw_list = hw_list
+
+    @staticmethod
+    def alloc_instance(hw_list, str_list, extra_vars=None):
+        return EnumTranslationToHW(
+            hw_list,
+            str_list,
+            list_to_inv_dict(str_list, extra_vars)
+        )
+
+    def hw_values(self):
+        return iter(self._hw_list)
+
+    def api_to_hw(self, value):
+        return self._hw_list[value]
+
+# Full translation of user arguments, interface API, and HW API values
+
+class ObjTranslationAPI(ObjTranslationToHW, HWToObjTranslation):
+    def __init__(self, hw_dict, hw_map, str_dict, var_map):
+        ObjTranslationToHW.__init__(self, hw_dict, str_dict, var_map)
+        HWToObjTranslation.__init__(self, hw_map)
+
+    @staticmethod
+    def alloc_instance(hw_dict, str_dict, extra_vars=None):
+        return ObjTranslationAPI(
+            hw_dict,
+            dict_invert(hw_dict),
+            str_dict,
+            dict_invert(str_dict, extra_vars)
+        )
+
+class EnumTranslationAPI(EnumTranslationToHW, HWToEnumTranslation):
+    """Converts between internal enum values and hardware API values.
+    """
+    def __init__(self, hw_list, hw_map, str_list, var_map):
+        EnumTranslationToHW.__init__(self, hw_list, str_list, var_map)
+        HWToEnumTranslation.__init__(self, hw_map)
+
+    @staticmethod
+    def alloc_instance(hw_list, str_list, extra_vars=None):
+        return EnumTranslationAPI(
+            hw_list,
+            list_to_inv_dict(hw_list),
+            str_list,
+            list_to_inv_dict(str_list, extra_vars)
+        )
+
+    hw_values = EnumTranslationToHW.hw_values
