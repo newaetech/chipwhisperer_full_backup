@@ -1168,7 +1168,4 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             ValueError: set vco out of valid range
         """
         vco = int(vco)
-        if (vco > 600e3) or (vco < 1200e3):
-            raise ValueError("Invalid VCO frequency {} (allowed range 600MHz-1200MHz".format(vco))
-
         self.pll.update_fpga_vco(vco)
