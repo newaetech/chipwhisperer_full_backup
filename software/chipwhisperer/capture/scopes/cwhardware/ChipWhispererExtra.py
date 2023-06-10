@@ -52,28 +52,6 @@ ADDR_SEQ_TRIG_CONFIG = 119
 ADDR_SEQ_TRIG_MINMAX = 120
 ADDR_SEQ_TRIG_UART_EDGE_CHOOSER = 121
 
-# API aliases for the TIO settings
-_tio_alias = {
-    'serial_tx': 'Serial TXD',
-    'serial_rx': 'Serial RXD',
-    'serial_tx_rx': 'Serial-TX/RX',
-    'gpio_low': 'GPIO',
-    'gpio_high': 'GPIO',
-    'gpio_disabled': 'GPIO',
-    'high_z': 'High-Z'
-}
-
-# More aliases for GPIO
-_gpio_alias = {
-    'gpio_low': 'low',
-    'gpio_high': 'high',
-    'gpio_disabled': 'disabled',
-}
-
-# Reverse alias lookup
-_tio_api_alias = {_tio_alias[n]: n for n in _tio_alias}
-_gpio_api_alias = {_gpio_alias[n]: n for n in _gpio_alias}
-
 class CWExtraSettings:
     PIN_FPA = 0x01
     PIN_TNRST = 0x02
@@ -100,21 +78,85 @@ class CWExtraSettings:
     CLOCK_RTIOIN = 0x03
     CLOCK_RTIOOUT = 0x04
 
-    IOROUTE_HIGHZ = 0
-    IOROUTE_STX = 0b00000001
-    IOROUTE_SRX = 0b00000010
-    IOROUTE_USIO = 0b00000100
-    IOROUTE_USII = 0b00001000
-    IOROUTE_USINOUT = 0b00011000
-    IOROUTE_STXRX = 0b00100010
-    IOROUTE_GPIO = 0b01000000
-    IOROUTE_GPIOE = 0b10000000
-
     GLITCH_OUT_DISABLE = 0
     GLITCH_OUT_HP = 1 << 0
     GLITCH_OUT_LP = 1 << 1
     GLITCH_OUT_BOTH = GLITCH_OUT_HP | GLITCH_OUT_LP
     GLITCH_OUT_CLR = ~GLITCH_OUT_BOTH
+
+    GPIO_PIN_TIO1 = 0
+    GPIO_PIN_TIO2 = 1
+    GPIO_PIN_TIO3 = 2
+    GPIO_PIN_TIO4 = 3
+    GPIO_PIN_NRST = 4
+    GPIO_PIN_PDID = 5
+    GPIO_PIN_PDIC = 6
+
+    # NOTE: PIN_READ_TIO* and GPIO_PIN_TIO* are 1:1
+    PIN_READ_TIO1 = 0
+    PIN_READ_TIO2 = 1
+    PIN_READ_TIO3 = 2
+    PIN_READ_TIO4 = 3
+    PIN_READ_MOSI = 4
+    PIN_READ_MISO = 5
+    PIN_READ_PDIC = 6
+    PIN_READ_PDID = 7
+    PIN_READ_NRST = 8
+    PIN_READ_SCK = 9
+
+    TIO_MODE_HIGHZ = 0
+    TIO_MODE_STX = 0b00000001
+    TIO_MODE_SRX = 0b00000010
+    TIO_MODE_USIO = 0b00000100
+    TIO_MODE_USII = 0b00001000
+    TIO_MODE_USINOUT = 0b00011000
+    TIO_MODE_STXRX = 0b00100010
+    _TIO_MODE_GPIO_MODE = 0b10000000
+    _TIO_MODE_GPIO_STATE = 0b01000000
+    TIO_MODE_GPIO_LOW = _TIO_MODE_GPIO_MODE
+    TIO_MODE_GPIO_HIGH = _TIO_MODE_GPIO_MODE | _TIO_MODE_GPIO_STATE
+
+    TIO_MODE_VALID = (
+        ( # GPIO_PIN_TIO1
+            TIO_MODE_HIGHZ,
+            TIO_MODE_STX,
+            TIO_MODE_SRX,
+            TIO_MODE_USIO,
+            TIO_MODE_USII,
+            TIO_MODE_GPIO_LOW,
+            TIO_MODE_GPIO_HIGH,
+        ), ( # GPIO_PIN_TIO2
+            TIO_MODE_HIGHZ,
+            TIO_MODE_STX,
+            TIO_MODE_SRX,
+            TIO_MODE_USIO,
+            TIO_MODE_USII,
+            TIO_MODE_GPIO_LOW,
+            TIO_MODE_GPIO_HIGH,
+        ), ( # GPIO_PIN_TIO3
+            TIO_MODE_HIGHZ,
+            TIO_MODE_STX,
+            TIO_MODE_SRX,
+            TIO_MODE_STXRX,
+            TIO_MODE_USIO,
+            TIO_MODE_USII,
+            TIO_MODE_USINOUT,
+            TIO_MODE_GPIO_LOW,
+            TIO_MODE_GPIO_HIGH,
+        ), ( # GPIO_PIN_TIO4
+            TIO_MODE_HIGHZ,
+            TIO_MODE_STX,
+            TIO_MODE_GPIO_LOW,
+            TIO_MODE_GPIO_HIGH,
+        )
+    )
+
+    XIO_MODE_HIGHZ = 0
+    _XIO_MODE_ENABLE = 1 << 0
+    _XIO_MODE_STATE = 1 << 1
+    XIO_MODE_LOW = _XIO_MODE_ENABLE
+    XIO_MODE_HIGH = _XIO_MODE_ENABLE | _XIO_MODE_STATE
+    _XIO_MODE_MASK = XIO_MODE_HIGH
 
     _name = "CW Extra Settings"
 
@@ -246,113 +288,86 @@ class CWExtraSettings:
 
 ### GPIO Settings
 
-    def _setGPIOState(self, state, IONumber):
-        # Special GPIO nRST, PDID, PDIC
-        if IONumber >= 100:
-            if IONumber == 100:  # nRST IO Number
-                bitnum = 0
-            elif IONumber == 101:  # PDID IO Number
-                bitnum = 2
-            elif IONumber == 102:  # PDIC IO Number
-                bitnum = 4
-            else:
-                raise ValueError("Invalid special IO Number: %d" % IONumber)
+    def assert_tio_num(self, io_num):
+        """Raises an exception if the TIO pin is invalid.
+        """
+        if (io_num < self.GPIO_PIN_TIO1) or (io_num > self.GPIO_PIN_TIO4):
+            raise ValueError('Invalid Target IO ID: %d' % io_num)
 
-            data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+    def assert_xio_num(self, io_num):
+        """Raises an exception if the CTL pin is invalid.
+        """
+        if (io_num < self.GPIO_PIN_NRST) or (io_num > self.GPIO_PIN_PDIC):
+            raise ValueError('Invalid Extra IO assignment ID: %d' % io_num)
 
-            if state is None:
-                # Disable GPIO mode
-                data[6] &= ~(1 << bitnum)
-            else:
-                # Enable GPIO mode
-                data[6] |= (1 << bitnum)
+    def get_tio_pin_mode(self, io_num):
+        """Gets the TIO mode of the specified pin.
 
-                # Set pin high/low
-                if state:
-                    data[6] |= (1 << (bitnum + 1))
-                else:
-                    data[6] &= ~(1 << (bitnum + 1))
+        Return:
+            A value representing the TIO_MODE_* masks.
+        """
+        self.assert_tio_num(io_num)
+        return self.get_ioroute_value(io_num)
 
-            self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+    def set_tio_pin_mode(self, io_num, mode):
+        """Sets the mode for the specified TIO pin.
 
-        # Regular GPIO1-4
-        elif state is not None:
-            data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        Return:
+            The updated IOROUTE state.
+        """
+        #Sends actual IO mode to FPGA
+        self.assert_tio_num(io_num)
+        if not mode in self.TIO_MODE_VALID[io_num]:
+            raise ValueError('Invalid mode (0x%x) for TargetIO[%d]' % (mode, io_num))
+        return self.set_ioroute_value(io_num, mode)
 
-            if data[IONumber] & self.IOROUTE_GPIOE == 0:
-                raise IOError("TargetIO %d is not in GPIO mode" % IONumber)
+    def get_xio_index(self, io_num):
+        """Gets a bitmask for a valid Extra IO pin for the IROUTE state.
 
-            if state:
-                data[IONumber] |= self.IOROUTE_GPIO
-            else:
-                data[IONumber] &= ~(self.IOROUTE_GPIO)
+        Return:
+            A bitmask representing the CTL IO pin.
+        """
+        self.assert_xio_num(io_num)
+        return (io_num - self.GPIO_PIN_NRST) << 1
 
-            self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+    def get_xio_gpio_mode(self, io_num):
+        """Gets the current state of a Extra IO pin.
 
-    def setGPIOState1(self, state):
-        self._setGPIOState(state, 0)
+        Return:
+            None if not driven, True if driven high, else False if driven low.
+        """
+        io_num = self.get_xio_index(io_num)
+        d6 = self.get_ioroute_value(6) >> io_num
+        if not (d6 & self._XIO_MODE_ENABLE):
+            return self.XIO_MODE_HIGHZ
+        return d6 & self._XIO_MODE_MASK
 
-    def setGPIOState2(self, state):
-        self._setGPIOState(state, 1)
+    def set_xio_gpio_mode(self, io_num, state):
+        """Sets the mode for the specified Extra IO pin.
 
-    def setGPIOState3(self, state):
-        self._setGPIOState(state, 2)
+        Return:
+            The updated IOROUTE state.
+        """
+        io_num = self.get_xio_index(io_num)
+        if not (state & self._XIO_MODE_ENABLE):
+            """NOTE: To set HIGHZ mode, must only clear ENABLE.  Clearing both (unconditionally
+            setting mode to 0) seems to cause issues in some situations."""
+            return self.clr_ioroute_mask(6, self._XIO_MODE_ENABLE << io_num)
+        state <<= io_num
+        io_num = self._XIO_MODE_MASK << io_num
+        return self.ins_ioroute_mask(6, io_num, state)
 
-    def setGPIOState4(self, state):
-        self._setGPIOState(state, 3)
-
-    def setGPIOStatenrst(self, state):
-        self._setGPIOState(state, 100)
-
-    def setGPIOStatepdid(self, state):
-        self._setGPIOState(state, 101)
-
-    def setGPIOStatepdic(self, state):
-        self._setGPIOState(state, 102)
-
-    def setGPIOState(self, state, IONumber):
-        if IONumber == 0:
-            self.setGPIOState1(state)
-        elif IONumber == 1:
-            self.setGPIOState2(state)
-        elif IONumber == 2:
-            self.setGPIOState3(state)
-        elif IONumber == 3:
-            self.setGPIOState4(state)
-        elif IONumber == 100:
-            self.setGPIOStatenrst(state)
-        elif IONumber == 101:
-            self.setGPIOStatepdid(state)
-        elif IONumber == 102:
-            self.setGPIOStatepdic(state)
+### IO Pin Reader API
+    def read_ioread(self, for_extra):
+        if for_extra:
+            if not self._is_husky:
+                raise RuntimeError('Extra pins only supported with Husky!')
+            for_extra = 2
         else:
-            raise ValueError("Invalid GPIO State")
+            for_extra = 1
+        return self.oa.msg_read(ADDR_IOREAD, max_resp=for_extra)
 
-    def getGPIOState(self, IONumber):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-
-        #Catch special modes
-        if IONumber >= 100:
-            if IONumber == 100: # nRST IO Number
-                bitnum = 0
-            elif IONumber == 101: # PDID IO Number
-                bitnum = 2
-            elif IONumber == 102: # PDIC IO Number
-                bitnum = 4
-            else:
-                raise ValueError("Invalid special IO Number: %d"%IONumber)
-
-            if (data[6] & (1<<bitnum)) == 0:
-                return None
-            else:
-                return (data[6] & (1<<(bitnum+1))) != 0
-
-        if data[IONumber] & self.IOROUTE_GPIOE == 0:
-            return None
-
-        return data[IONumber] & self.IOROUTE_GPIO
-
-    def readTIOPins(self):
+    def read_tio_pins(self):
         """Read signal level of all 4 Target IOn pins synchronously.
 
         In most cases this is useful for low-speed digital input, hence the
@@ -363,55 +378,45 @@ class CWExtraSettings:
         pins is read as high. Counting starts at bit 0, for example, bit0
         refers to tio1.
         """
+        return self.read_ioread(False)[0]
 
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOREAD, Validate=False, maxResp=1)
-        return data[0]
+    def read_tio_states(self):
+        """Gets all the current Target IOn state values.
 
-    def readTIOPin(self, tio):
+        Returns:
+            A tuple of the pin states in integer form.
+        """
+        bitmask = self.read_tio_pins()
+        return (
+            bitmask & 1,
+            (bitmask >> 1) & 1,
+            (bitmask >> 2) & 1,
+            (bitmask >> 3) & 1
+        )
+
+    def read_tio_pin(self, io_num):
         """Read signal level of a Target IOn pin.
 
         Returns True if the signal level of the Target IOn pin is high,
         otherwise False is returned.
         """
-        if tio < 1 or tio > 4:
-            raise ValueError("Invalid Target IO. Currently only tio1 to tio4 are supported.")
-        tios = self.readTIOPins()
-        return (tios & (1<<(tio-1))) > 0
+        self.assert_tio_num(io_num)
+        pins = self.read_tio_pins()
+        return (pins >> io_num) & 1
+    
+    def read_xio_pins(self):
+        data = self.read_ioread(True)
+        if len(data) < 2:
+            return data[0]
+        return util.unpack_u16(data, 0)
 
-    def setTargetIOMode1(self, setting):
-        self._setTargetIOMode(setting, 0)
+    def read_xio_pin(self, io_num):
+        if (io_num < self.PIN_READ_MOSI) or (io_num > self.PIN_READ_SCK):
+            raise ValueError('Invalid Extra IO pin read ID: %d' % io_num)
+        pins = self.read_xio_pins()
+        return (pins >> io_num) & 1
 
-    def setTargetIOMode2(self, setting):
-        self._setTargetIOMode(setting, 1)
-
-    def setTargetIOMode3(self, setting):
-        self._setTargetIOMode(setting, 2)
-
-    def setTargetIOMode4(self, setting):
-        self._setTargetIOMode(setting, 3)
-
-    def _setTargetIOMode(self, setting, IONumber):
-        #Sends actual IO mode to FPGA
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-        data[IONumber] = setting
-        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
-
-    def setTargetIOMode(self, setting, IONumber):
-        #To keep parameters syncronized, we need ot call individual set functions
-        if IONumber == 0:
-            self.setTargetIOMode1(setting)
-        elif IONumber == 1:
-            self.setTargetIOMode2(setting)
-        elif IONumber == 2:
-            self.setTargetIOMode3(setting)
-        elif IONumber == 3:
-            self.setTargetIOMode4(setting)
-        else:
-            raise ValueError("Invalid IO Number, valid range is 0,1,2,3", IONumber)
-
-    def getTargetIOMode(self, IONumber):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-        return data[IONumber]
+### Clock API
 
     def setClockSource(self, source):
         data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
@@ -656,35 +661,81 @@ class GPIOSettings(util.DisableNewAttr):
         }
     )
 
+    GPIO_PIN_TIO1 = CWExtraSettings.GPIO_PIN_TIO1
+    GPIO_PIN_TIO2 = CWExtraSettings.GPIO_PIN_TIO2
+    GPIO_PIN_TIO3 = CWExtraSettings.GPIO_PIN_TIO3
+    GPIO_PIN_TIO4 = CWExtraSettings.GPIO_PIN_TIO4
+    GPIO_PIN_NRST = CWExtraSettings.GPIO_PIN_NRST
+    GPIO_PIN_PDID = CWExtraSettings.GPIO_PIN_PDID
+    GPIO_PIN_PDIC = CWExtraSettings.GPIO_PIN_PDIC
+
+    # NOTE: GPIO LOW/HIGH *MUST* be 0/1 respectively since bool is subclass of int
+    GPIO_MODE_LOW = 0
+    GPIO_MODE_HIGH = 1
+    GPIO_MODE_HIGHZ = 2
+    GPIO_MODE_SERIAL_TX = 3
+    GPIO_MODE_SERIAL_RX = 4
+    GPIO_MODE_SERIAL_IO = 5
+
+    """NOTE: There doesn't seem to be a "true" disabled setting.  That was just used in previous
+    logic to ignore writing GPIO state.  Does it make sense to set disabled to HIGHZ instead of
+    GPIO LOW?
+    """
+    TIO_MODE_TRANSLATE = util.EnumTranslationAPI.alloc_instance(
+        (
+            CWExtraSettings.TIO_MODE_GPIO_LOW,
+            CWExtraSettings.TIO_MODE_GPIO_HIGH,
+            CWExtraSettings.TIO_MODE_HIGHZ,
+            CWExtraSettings.TIO_MODE_STX,
+            CWExtraSettings.TIO_MODE_SRX,
+            CWExtraSettings.TIO_MODE_STXRX,
+        ), (
+            'gpio_low',
+            'gpio_high',
+            'high_z',
+            'serial_tx',
+            'serial_rx',
+            'serial_tx_rx',
+        ), {
+            'gpio_disabled': GPIO_MODE_LOW,
+            None: GPIO_MODE_HIGHZ,
+            False: GPIO_MODE_LOW,
+            True: GPIO_MODE_HIGH,
+        }
+    )
+
+    XIO_MODE_TRANSLATE = util.EnumTranslationAPI.alloc_instance(
+        (
+            CWExtraSettings.XIO_MODE_LOW,
+            CWExtraSettings.XIO_MODE_HIGH,
+            CWExtraSettings.XIO_MODE_HIGHZ,
+        ), (
+            'low',
+            'high',
+            'high_z',
+        ), {
+            'disabled': GPIO_MODE_HIGHZ,
+            'default': GPIO_MODE_HIGHZ,
+            None: GPIO_MODE_HIGHZ,
+            False: GPIO_MODE_LOW,
+            True: GPIO_MODE_HIGH,
+        }
+    )
+
     def __init__(self, cwextra):
         super().__init__()
         self.cwe = cwextra
-
-        # This stuff actually matters, used with _tio_alias above
-        self.TIO_VALID = [
-            {'Serial TXD': self.cwe.IOROUTE_STX, 'Serial RXD': self.cwe.IOROUTE_SRX, 'USI-Out': self.cwe.IOROUTE_USIO,
-             'USI-In': self.cwe.IOROUTE_USII, 'GPIO': self.cwe.IOROUTE_GPIOE, 'High-Z': self.cwe.IOROUTE_HIGHZ},
-
-            {'Serial TXD': self.cwe.IOROUTE_STX, 'Serial RXD': self.cwe.IOROUTE_SRX, 'USI-Out': self.cwe.IOROUTE_USIO,
-             'USI-In': self.cwe.IOROUTE_USII, 'GPIO': self.cwe.IOROUTE_GPIOE, 'High-Z': self.cwe.IOROUTE_HIGHZ},
-
-            {'Serial TXD': self.cwe.IOROUTE_STX, 'Serial RXD': self.cwe.IOROUTE_SRX,
-             'Serial-TX/RX': self.cwe.IOROUTE_STXRX,
-             'USI-Out': self.cwe.IOROUTE_USIO, 'USI-In': self.cwe.IOROUTE_USII, 'USI-IN/OUT': self.cwe.IOROUTE_USINOUT,
-             'GPIO': self.cwe.IOROUTE_GPIOE, 'High-Z': self.cwe.IOROUTE_HIGHZ},
-
-            {'Serial TXD': self.cwe.IOROUTE_STX, 'GPIO': self.cwe.IOROUTE_GPIOE, 'High-Z': self.cwe.IOROUTE_HIGHZ}
-        ]
 
         self.HS2_VALID = {'disabled': 0, 'clkgen': 2, 'glitch': 3}
         self._is_husky = False
 
         self.disable_newattr()
 
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
 
-    def read_tio_states(self):
-        bitmask = self.cwe.readTIOPins()
-        return tuple(((bitmask >> i) & 0x01) for i in range(4))
+    def __str__(self):
+        return self.__repr__()
 
     def _dict_repr(self):
         rtn = {}
@@ -716,6 +767,10 @@ class GPIOSettings(util.DisableNewAttr):
         return rtn
 
     @property
+    def tio_state_mask(self):
+        return self.cwe.read_tio_pins()
+
+    @property
     def tio_states(self):
         """
         Reads the logic level of the TIO pins (1-4) and
@@ -735,97 +790,324 @@ class GPIOSettings(util.DisableNewAttr):
         """
         return self.read_tio_states()
 
+    def read_tio_states(self):
+        return self.cwe.read_tio_states()
+
     @property
-    def pdid_state(self):
-        """ Reads the logic level of the PDID pin. Supported by Husky only.
+    def tio1_mode(self):
+        return self._get_tio_mode(self.GPIO_PIN_TIO1)
+
+    @property
+    def tio1(self):
+        """The function of the Target IO1 pin.
+
+        TIO1 can be used for the following functions:
+         * "serial_rx": UART input
+         * "serial_tx": UART output
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
+
+        Default value is "serial_rx".
+
+        :Getter:  Return one of the above strings. This shows how ChipWhisperer is 
+                driving this pin; it does not show its actual logic level. Use
+                scope.io.tio_states to see the actual logic level.
+
+        :Setter: Set the Target IO1 mode.
+
+        Raises:
+           ValueError: if new value is not one of the above modes
+
         """
-        return self._get_extra_pin(7)
+        return self._get_tio_str(self.GPIO_PIN_TIO1)
+
+    @tio1.setter
+    def tio1(self, mode):
+        self._set_tio_mode(self.GPIO_PIN_TIO1, mode)
+
+    @property
+    def tio1_state(self):
+        return self._read_tio_pin(self.cwe.PIN_READ_TIO1)
+
+    @property
+    def tio2_mode(self):
+        return self._get_tio_mode(self.GPIO_PIN_TIO2)
+
+    @property
+    def tio2(self):
+        """The function of the Target IO2 pin.
+
+        TIO2 can be used for the following functions:
+         * "serial_rx": UART input
+         * "serial_tx": UART output
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
+
+        Default value is "serial_tx".
+
+        :Getter:  Return one of the above strings. This shows how ChipWhisperer is 
+                driving this pin; it does not show its actual logic level. Use
+                scope.io.tio_states to see the actual logic level.
+
+        :Setter: Set the Target IO2 mode.
+
+        Raises:
+           ValueError: if new value is not one of the above modes
+        """
+        return self._get_tio_str(self.GPIO_PIN_TIO2)
+
+    @tio2.setter
+    def tio2(self, mode):
+        self._set_tio_mode(self.GPIO_PIN_TIO2, mode)
+
+    @property
+    def tio2_state(self):
+        return self._read_tio_pin(self.cwe.PIN_READ_TIO2)
+
+    @property
+    def tio3_mode(self):
+        return self._get_tio_mode(self.GPIO_PIN_TIO3)
+
+    @property
+    def tio3(self):
+        """The function of the Target IO3 pin.
+
+        TIO3 can be used for the following functions:
+         * "serial_rx": UART input
+         * "serial_tx": UART output
+         * "serial_tx_rx": UART 1-wire I/O (for smartcards)
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
+
+        Default value is "high_z".
+
+        :Getter:  Return one of the above strings. This shows how ChipWhisperer is 
+                driving this pin; it does not show its actual logic level. Use
+                scope.io.tio_states to see the actual logic level.
+
+        :Setter: Set the Target IO3 mode.
+
+        Raises:
+           ValueError: if new value is not one of the above modes
+        """
+        return self._get_tio_str(self.GPIO_PIN_TIO3)
+
+    @tio3.setter
+    def tio3(self, mode):
+        self._set_tio_mode(self.GPIO_PIN_TIO3, mode)
+
+    @property
+    def tio3_state(self):
+        return self._read_tio_pin(self.cwe.PIN_READ_TIO3)
+
+    @property
+    def tio4_mode(self):
+        return self._get_tio_mode(self.GPIO_PIN_TIO4)
+
+    @property
+    def tio4(self):
+        """The function of the Target IO4 pin.
+
+        TIO4 can be used for the following functions:
+         * "serial_tx": UART output
+         * "high_z" / None: High impedance input
+         * "gpio_low" / False: Driven output: logic 0
+         * "gpio_high" / True: Driven output: logic 1
+         * "gpio_disabled": Driven output: no effect
+
+        Default value is "high_z". Typically, this pin is used as a trigger
+        input.
+
+        :Getter:  Return one of the above strings. This shows how ChipWhisperer is 
+                driving this pin; it does not show its actual logic level. Use
+                scope.io.tio_states to see the actual logic level.
+
+        :Setter: Set the Target IO4 mode
+
+        Raises:
+           ValueError: if new value is not one of the above modes
+        """
+        return self._get_tio_str(self.GPIO_PIN_TIO4)
+
+    @tio4.setter
+    def tio4(self, mode):
+        self._set_tio_mode(self.GPIO_PIN_TIO4, mode)
+
+    @property
+    def tio4_state(self):
+        return self._read_tio_pin(self.cwe.PIN_READ_TIO4)
+
+    def _is_valid_tio_mode(self, mode):
+        return self.TIO_MODE_TRANSLATE.is_valid_api(mode)
+
+    def _get_tio_mode(self, tio_num):
+        mode = self.cwe.get_tio_pin_mode(tio_num)
+        value = self.TIO_MODE_TRANSLATE.try_hw_to_api(mode)
+        if not self._is_valid_tio_mode(value):
+            raise IOError('Invalid TIO mode returned by FPGA: 0x%x', mode)
+        return value
+
+    def _get_tio_str(self, tio_num):
+        """Internal function to read the current mode of a TIO pin.
+
+        Return:
+            The API string that represents the TIO GPIO mode.
+        """
+        mode = self._get_tio_mode(tio_num)
+        return self.TIO_MODE_TRANSLATE.api_to_str(mode)
+
+    def _set_tio_mode(self, tio_num, mode):
+        """Internal function to set the current mode of a TIO pin.
+
+        Return:
+            The updated IOROUTE state.
+        """
+        value = self.TIO_MODE_TRANSLATE.try_var_to_api(mode)
+        if not self._is_valid_tio_mode(value):
+            raise ValueError('%s is not a valid TIO mode!' % mode)
+        value = self.TIO_MODE_TRANSLATE.api_to_hw(value)
+        return self.cwe.set_tio_pin_mode(tio_num, value)
+
+    def _read_tio_pin(self, tio_num):
+        """Reads the current value of a specified TIO* pin.
+
+        Return:
+            True if the pin is high, else False if the pin is low.
+        """
+        return self.cwe.read_tio_pin(tio_num)
+
+    @property
+    def pdic_mode(self):
+        return self._get_xio_mode(self.GPIO_PIN_PDIC)
+
+    @property
+    def pdic(self):
+        """The function of the PDIC pin output pin.
+
+        This is a GPIO pin. The following values are allowed:
+         * "high" / True: logic 1
+         * "low" / False: logic 0
+         * "disabled" / "default" / "high_z" / None: undriven
+
+        :Getter:  Return one of "high", "low", or "high_z". This shows how ChipWhisperer
+                is driving this pin; it does not show its actual logic level.
+
+        :Setter: Set the pin's state
+
+        Raises:
+        ValueError: if new state not listed above
+        """
+        return self._get_xio_str(self.GPIO_PIN_PDIC)
+
+    @pdic.setter
+    def pdic(self, mode):
+        self._set_xio_mode(self.GPIO_PIN_PDIC, mode)
 
     @property
     def pdic_state(self):
         """ Reads the logic level of the PDIC pin. Supported by Husky only.
         """
-        return self._get_extra_pin(6)
+        return self._read_xio_pin(self.cwe.PIN_READ_PDIC)
 
     @property
-    def miso_state(self):
-        """ Reads the logic level of the MISO pin. Supported by Husky only.
-        """
-        return self._get_extra_pin(5)
+    def pdid_mode(self):
+        return self._get_xio_mode(self.GPIO_PIN_PDID)
 
     @property
-    def mosi_state(self):
-        """ Reads the logic level of the MOSI pin. Supported by Husky only.
+    def pdid(self):
+        """The state of the PDID pin.
+
+        See pdic for more information."""
+        return self._get_xio_str(self.GPIO_PIN_PDID)
+
+    @pdid.setter
+    def pdid(self, mode):
+        self._set_xio_mode(self.GPIO_PIN_PDID, mode)
+
+    @property
+    def pdid_state(self):
+        """ Reads the logic level of the PDID pin. Supported by Husky only.
         """
-        return self._get_extra_pin(4)
+        return self._read_xio_pin(self.cwe.PIN_READ_PDID)
+
+    @property
+    def nrst_mode(self):
+        return self._get_xio_mode(self.GPIO_PIN_NRST)
+
+    @property
+    def nrst(self):
+        """The state of the NRST pin.
+
+        See pdic for more information."""
+        return self._get_xio_str(self.GPIO_PIN_NRST)
+
+    @nrst.setter
+    def nrst(self, mode):
+        self._set_xio_mode(self.GPIO_PIN_NRST, mode)
 
     @property
     def nrst_state(self):
         """ Reads the logic level of the nRST pin. Supported by Husky only.
         """
-        return self._get_extra_pin(8)
+        return self._read_xio_pin(self.cwe.PIN_READ_NRST)
+
+    @property
+    def miso_state(self):
+        """ Reads the logic level of the MISO pin. Supported by Husky only.
+        """
+        return self._read_xio_pin(self.cwe.PIN_READ_MISO)
+
+    @property
+    def mosi_state(self):
+        """ Reads the logic level of the MOSI pin. Supported by Husky only.
+        """
+        return self._read_xio_pin(self.cwe.PIN_READ_MOSI)
 
     @property
     def sck_state(self):
         """ Reads the logic level of the SCK pin. Supported by Husky only.
         """
-        return self._get_extra_pin(9)
+        return self._read_xio_pin(self.cwe.PIN_READ_SCK)
 
-    def _get_extra_pin(self, bit):
-        if not self._is_husky:
-            raise ValueError("For CW-Husky only.")
-        raw = int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_IOREAD, Validate=False, maxResp=2), byteorder='little')
-        return ((raw >> bit) & 0x01)
+    def _is_valid_xio_mode(self, mode):
+        return self.XIO_MODE_TRANSLATE.is_valid_api(mode)
 
-    def __repr__(self):
-        return util.dict_to_str(self._dict_repr())
+    def _get_xio_mode(self, xio_pin):
+        mode = self.cwe.get_xio_gpio_mode(xio_pin)
+        value = self.XIO_MODE_TRANSLATE.try_hw_to_api(mode)
+        if not self._is_valid_xio_mode(value):
+            raise ValueError('HW API returned invalid state: %s' % mode)
+        return value
 
-    def __str__(self):
-        return self.__repr__()
+    def _get_xio_str(self, xio_pin):
+        """Gets the current IO mode for extra pins.
 
-    def _tioApiToInternal(self, tio_setting):
-        """Convert an API TIO string to a (TIO, GPIO) parameter tuple
-
-        Ex:
-         * "serial_tx" -> ("Serial TXD", None)
-         * "gpio_high" -> ("GPIO", "High")
+        Return:
+            'high_z' if not driven, 'high' if driven high, else 'low' if driven low.
         """
+        mode = self._get_xio_mode(xio_pin)
+        return self.XIO_MODE_TRANSLATE.api_to_str(mode)
 
-        # Accept None in place of "high-z"
-        if tio_setting is None:
-            return ("High-Z", None)
-        # Accept True/False in place of "gpio_low"/"gpio_high"
-        if isinstance(tio_setting, int):
-            if tio_setting:
-                gpio_mode = "high"
-            else:
-                gpio_mode = "low"
-            return ("GPIO", gpio_mode)
+    def _set_xio_mode(self, xio_pin, mode):
+        """Sets the current IO mode for extra pins.
 
-        if tio_setting not in _tio_alias:
-            raise ValueError("Can't find TIO setting %s; valid values: %s" % (tio_setting, _tio_alias), tio_setting)
-        tio_param = _tio_alias[tio_setting]
-
-        if tio_param == "GPIO":
-            gpio_param = _gpio_alias[tio_setting]
-            return (tio_param, gpio_param)
-        else:
-            return (tio_param, None)
-
-    def _tioInternalToApi(self, tio_setting, gpio_setting):
-        """Convert TIO and GPIO parameter settings to an API string.
-
-        Ex:
-         * ("Serial TXD", None) -> "serial_tx"
-         * ("GPIO", "High") -> "gpio_high"
+        Return:
+            The updated IOROUTE state.
         """
-        try:
-            if tio_setting == "GPIO":
-                return _gpio_api_alias[gpio_setting]
-            else:
-                return _tio_api_alias[tio_setting]
-        except KeyError:
-            return "?"
+        value = self.XIO_MODE_TRANSLATE.try_var_to_api(mode)
+        if not self._is_valid_xio_mode(value):
+            raise ValueError('%s is not a valid mode' % mode)
+        mode = self.XIO_MODE_TRANSLATE.api_to_hw(value)
+        return self.cwe.set_xio_gpio_mode(xio_pin, mode)
+
+    def _read_xio_pin(self, read_pin):
+        return self.cwe.read_xio_pin(read_pin);
 
     @property
     def cdc_settings(self):
@@ -921,234 +1203,6 @@ class GPIOSettings(util.DisableNewAttr):
         else:
             data &= 0xfb
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_AUX_IO, [data])
-
-    @property
-    def tio1(self):
-        """The function of the Target IO1 pin.
-
-        TIO1 can be used for the following functions:
-         * "serial_rx": UART input
-         * "serial_tx": UART output
-         * "high_z" / None: High impedance input
-         * "gpio_low" / False: Driven output: logic 0
-         * "gpio_high" / True: Driven output: logic 1
-         * "gpio_disabled": Driven output: no effect
-
-        Default value is "serial_rx".
-
-        :Getter:  Return one of the above strings. This shows how ChipWhisperer is 
-                driving this pin; it does not show its actual logic level. Use
-                scope.io.tio_states to see the actual logic level.
-
-        :Setter: Set the Target IO1 mode.
-
-        Raises:
-           ValueError: if new value is not one of the above modes
-
-        """
-        return self._tioInternalToApi(self._getTio(0), self._getGpio(0))
-
-    @tio1.setter
-    def tio1(self, state):
-        (tio, gpio) = self._tioApiToInternal(state)
-        self._setTio(0, tio)
-        self._setGpio(0, gpio)
-
-    @property
-    def tio2(self):
-        """The function of the Target IO2 pin.
-
-        TIO2 can be used for the following functions:
-         * "serial_rx": UART input
-         * "serial_tx": UART output
-         * "high_z" / None: High impedance input
-         * "gpio_low" / False: Driven output: logic 0
-         * "gpio_high" / True: Driven output: logic 1
-         * "gpio_disabled": Driven output: no effect
-
-        Default value is "serial_tx".
-
-        :Getter:  Return one of the above strings. This shows how ChipWhisperer is 
-                driving this pin; it does not show its actual logic level. Use
-                scope.io.tio_states to see the actual logic level.
-
-        :Setter: Set the Target IO2 mode.
-
-        Raises:
-           ValueError: if new value is not one of the above modes
-        """
-        return self._tioInternalToApi(self._getTio(1), self._getGpio(1))
-
-    @tio2.setter
-    def tio2(self, state):
-        (tio, gpio) = self._tioApiToInternal(state)
-        self._setTio(1, tio)
-        self._setGpio(1, gpio)
-
-    @property
-    def tio3(self):
-        """The function of the Target IO3 pin.
-
-        TIO3 can be used for the following functions:
-         * "serial_rx": UART input
-         * "serial_tx": UART output
-         * "serial_tx_rx": UART 1-wire I/O (for smartcards)
-         * "high_z" / None: High impedance input
-         * "gpio_low" / False: Driven output: logic 0
-         * "gpio_high" / True: Driven output: logic 1
-         * "gpio_disabled": Driven output: no effect
-
-        Default value is "high_z".
-
-        :Getter:  Return one of the above strings. This shows how ChipWhisperer is 
-                driving this pin; it does not show its actual logic level. Use
-                scope.io.tio_states to see the actual logic level.
-
-        :Setter: Set the Target IO3 mode.
-
-        Raises:
-           ValueError: if new value is not one of the above modes
-        """
-        return self._tioInternalToApi(self._getTio(2), self._getGpio(2))
-
-    @tio3.setter
-    def tio3(self, state):
-        (tio, gpio) = self._tioApiToInternal(state)
-        self._setTio(2, tio)
-        self._setGpio(2, gpio)
-
-    @property
-    def tio4(self):
-        """The function of the Target IO4 pin.
-
-        TIO4 can be used for the following functions:
-         * "serial_tx": UART output
-         * "high_z" / None: High impedance input
-         * "gpio_low" / False: Driven output: logic 0
-         * "gpio_high" / True: Driven output: logic 1
-         * "gpio_disabled": Driven output: no effect
-
-        Default value is "high_z". Typically, this pin is used as a trigger
-        input.
-
-        :Getter:  Return one of the above strings. This shows how ChipWhisperer is 
-                driving this pin; it does not show its actual logic level. Use
-                scope.io.tio_states to see the actual logic level.
-
-        :Setter: Set the Target IO4 mode
-
-        Raises:
-           ValueError: if new value is not one of the above modes
-        """
-        return self._tioInternalToApi(self._getTio(3), self._getGpio(3))
-
-    @tio4.setter
-    def tio4(self, state):
-        (tio, gpio) = self._tioApiToInternal(state)
-        self._setTio(3, tio)
-        self._setGpio(3, gpio)
-
-    def _getTio(self, pinnum):
-        if pinnum < 0 or pinnum >= 4:
-            raise ValueError("Invalid PIN: %d. Valid range = 0-3." % pinnum, pinnum)
-
-        mode = self.cwe.getTargetIOMode(pinnum)
-        # Don't include GPIO state in mode check
-        mode &= ~self.cwe.IOROUTE_GPIO
-
-        # Find string
-        for s, bmask in self.TIO_VALID[pinnum].items():
-            if mode == bmask:
-                return s
-
-        raise IOError("Invalid IO Mode returned by FPGA", mode)
-
-    def _setTio(self, pinnum, mode):
-        if mode is None:
-            mode = "High-Z"
-
-        if pinnum < 0 or pinnum >= 4:
-            raise ValueError("Invalid PIN: %d. Valid range = 0-3." % pinnum, pinnum)
-
-        valid_modes = list(self.TIO_VALID[pinnum].keys())
-
-        try:
-            iomode = self.TIO_VALID[pinnum][mode]
-        except KeyError as e:
-            raise ValueError("Invalid IO-Mode for GPIO%d: %s. Valid modes: %s" % (pinnum+1, mode, valid_modes)) from e
-
-        self.cwe.setTargetIOMode(iomode, pinnum)
-
-    @property
-    def pdic(self):
-        """The function of the PDIC pin output pin.
-
-        PDIC is often used to selecting between normal boot and its bootloader. See the
-        rtfm.newae.com page for your target for more information.
-
-        This is a GPIO pin. The following values are allowed:
-         * "high" / True: logic 1
-         * "low" / False: logic 0
-         * "disabled" / "default" / "high_z" / None: undriven
-
-        :Getter:  Return one of "high", "low", or "high_z". This shows how ChipWhisperer
-                is driving this pin; it does not show its actual logic level.
-
-        :Setter: Set the pin's state
-
-        Raises:
-        ValueError: if new state not listed above
-        """
-        return self._getGpio(102)
-
-    @pdic.setter
-    def pdic(self, state):
-        self._setGpio(102, state)
-
-    @property
-    def pdid(self):
-        """The state of the PDID pin.
-
-        See pdic for more information."""
-        return self._getGpio(101)
-
-    @pdid.setter
-    def pdid(self, state):
-        self._setGpio(101, state)
-
-    @property
-    def nrst(self):
-        """The state of the NRST pin.
-
-        See pdic for more information."""
-        return self._getGpio(100)
-
-    @nrst.setter
-    def nrst(self, state):
-        self._setGpio(100, state)
-
-    def _getGpio(self, pinnum):
-        """GPIO state getter for GPIO settings on 1-4 and for special pins"""
-        state = self.cwe.getGPIOState(pinnum)
-        if state is None:
-            return "high_z"
-        elif state:
-            return "high"
-        else:
-            return "low"
-
-    def _setGpio(self, pinnum, level):
-        """GPIO state setter for all GPIO pins"""
-        if level == "high" or level == True:
-            new_state = True
-        elif level == "low" or level == False:
-            new_state = False
-        elif level in ("disabled", "default", "high_z", None):
-            new_state = None
-        else:
-            raise ValueError("Can't set GPIO %d to level %s (expected 'high'/True, 'low'/False, or 'disabled'/'default'/'high_z'/None)" % (pinnum, level), level)
-
-        self.cwe.setGPIOState(new_state, pinnum)
 
     @property
     def extclk_src(self):

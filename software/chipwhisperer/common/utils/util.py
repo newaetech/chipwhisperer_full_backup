@@ -148,6 +148,9 @@ def bytearray2binarylist(bytes, nrBits=8):
         init = np.concatenate((init, np.unpackbits(np.uint8(byte))[8 - nrBits:]), axis=0)
     return init
 
+def unpack_u16(buf, i : int):
+    return (buf[i + 1] << 8) | buf[i]
+
 def pack_u16_into(buf, i : int, value : int):
     """Packs a little endian 16 bit integer into a buffer."""
     buf[i] = value & 0xff
