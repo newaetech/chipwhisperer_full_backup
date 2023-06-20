@@ -51,6 +51,7 @@ class CDCI6214:
 
         self._old_in_freq = 0
         self._old_target_freq = 0
+        self._allow0p5 = False
 
     def write_reg(self, addr, data):
         """Write to a CDCI6214 Register over I2C
@@ -410,8 +411,11 @@ class CDCI6214:
 
         # find input divs that will give a clock
         # input to the PLL between 1MHz and 100MHz
-        okay_in_divs = [0.5]
-        okay_in_divs.extend(range(1, 256))
+        okay_in_divs = list(range(1,256))
+        if self._allow0p5:
+            # setting the reference divider to 0.5 seems to result in inconsistant phase relationship between the target clock and the
+            # ADC sampling clock (the CDCI6214 datasheet hints at this in section 8.3.6); it's prevented by default:
+            okay_in_divs.append(0.5)
         okay_in_divs = np.array(okay_in_divs)
         okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) >= 1E6]
         okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) <= 100E6]
@@ -653,6 +657,9 @@ class CDCI6214:
             raise ValueError("Invalid input div {}".format(div))
 
         if div == 0.5:
+            scope_logger.warning("""Setting reference divider to 0.5;
+            this may result in inconsistent phase relationship between the target clock and the ADC sampling clock.
+            This can be prevented by setting scope.clock.pll._allow0p5 to False.""")
             div = 0
 
         div = int(div)
