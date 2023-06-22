@@ -63,7 +63,10 @@ if "HUSKY_TARGET_PLATFORM" in os.environ:
 
 print("Husky target platform {}".format(test_platform))
 scope = cw.scope(name='Husky', hw_location=hw_loc)
-target = cw.target(scope)
+if test_platform == 'cw305':
+    target = cw.target(scope, cw.targets.CW305, force=False)
+else:
+    target = cw.target(scope)
 scope.errors.clear()
 verbose = False
 cw.scope_logger.setLevel(cw.logging.ERROR) # don't want to see warnings when setting clock past its specifications
@@ -119,16 +122,19 @@ def reset_setup():
 reset_setup()
 
 time.sleep(0.2)
-reset_target()
+if test_platform != 'cw305':
+    reset_target()
 # see if a target is attached:
-target.flush()
-target.write('x\n')
-time.sleep(0.2)
-resp = target.read()
-if resp == '':
-    target_attached = False
+    target.flush()
+    target.write('x\n')
+    time.sleep(0.2)
+    resp = target.read()
+    if resp == '':
+        target_attached = False
+    else:
+        target_attached = True
 else:
-    target_attached = True
+    target_attached = False
 
 # next, check for a particular FW:
 if target_attached:
@@ -487,9 +493,32 @@ testGlitchTriggerData = [
     ('edge_counter',    [0,1,0,1,0,1],  100,    'edge_glitch_arm_active'),
 ]
 
+testPLLData = [
+    #freq   adc_mul xtal    oversample  tolerance   reps    desc
+    (5e6 ,  1,      False,  40,         1,          20,     'CW305_ref'),
+    (10e6,  1,      False,  20,         1,          20,     'CW305_ref_SLOW'),
+    (15e6,  1,      False,  16,         1,          20,     'CW305_ref'),
+    (50e6,  1,      False,  6,          0,          20,     'CW305_ref_SLOW'),
+    (75e6,  1,      False,  4,          0,          20,     'CW305_ref_SLOW'),
+    (5e6 ,  4,      False,  20,         1,          20,     'CW305_ref_mul4'),
+    (15e6,  3,      False,  16,         1,          20,     'CW305_ref_mul3'),
+    (20e6,  2,      False,  15,         1,          20,     'CW305_ref_mul2_SLOW'),
+    (25e6,  2,      False,  12,         0,          20,     'CW305_ref_mul2_SLOW'),
+
+    (5e6 ,  1,      True,   20,         1,          20,     'xtal_ref'),
+    (10e6,  1,      True,   20,         1,          20,     'xtal_ref_SLOW'),
+    (15e6,  1,      True,   16,         1,          20,     'xtal_ref'),
+    (50e6,  1,      True,   6,          0,          20,     'xtal_ref_SLOW'),
+    (75e6,  1,      True,   4,          0,          20,     'xtal_ref_SLOW'),
+    (5e6 ,  4,      True,   40,         1,          20,     'xtal_ref_mul4'),
+    (15e6,  3,      True,   16,         1,          20,     'xtal_ref_mul3'),
+    (20e6,  2,      True,   15,         1,          20,     'xtal_ref_mul2_SLOW'),
+    (25e6,  2,      True,   12,         0,          20,     'xtal_ref_mul2_SLOW'),
+]
+
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '5/17/2023, 17:36'
+    assert scope.fpga_buildtime == '6/20/2023, 11:14'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -1774,6 +1803,109 @@ def test_glitch_trigger(fulltest, module, pattern, reps, desc):
         assert not (1 in hs2[:edges[0]+1]), 'unexpected early glitch edge'
         for i in range(2):
             assert abs(edges[i] - expected_edges[i]) < slack, 'edge #%d expected near %d, found at %d' % (i+1, expected_edges[i], edges[i])
+
+
+@pytest.mark.parametrize("freq, adc_mul, xtal, oversample, tolerance, reps, desc", testPLLData)
+def test_pll(fulltest, freq, adc_mul, xtal, oversample, tolerance, reps, desc):
+    # This test is meant to check that the relative phase between the target clock and the
+    # ADC sampling clock is deterministic, i.e. for the same clock settings, the relative
+    # phase will always come up the same. This test was added when it was discovered that
+    # when the CDCI6214 reference divider is set to 0.5, the phase is *not* deterministic!
+    # There are a bunch of asserts that can lead to the test failing (nostly around LA capture)
+    # but all we're really concered about here is that for a given set of test parameters,
+    # the relative phase between the ADC and target clocks is constant.
+    if not fulltest and 'SLOW' in desc:
+        pytest.skip("use --fulltest to run")
+        return None
+    if not fulltest:
+        reps = 10 # reduce number of reps to speed up
+    if not xtal and test_platform != 'cw305':
+        pytest.skip("requires cw305 test platform")
+        return None
+    scope.reset_fpga()
+    reset_setup()
+    scope.default_setup(verbose=False)
+    if xtal:
+        scope.io.hs2 = 'clkgen'
+    else:
+        scope.io.hs2 = 'disabled'
+    # initial clock setup so that LA can lock:
+    if xtal:
+        scope.clock.clkgen_src = 'system'
+        scope.clock.clkgen_freq = freq
+        scope.clock.adc_mul = adc_mul
+    else:
+        target.pll.pll_enable_set(True)
+        target.pll.pll_outenable_set(False, 0)
+        target.pll.pll_outenable_set(True, 1)
+        target.pll.pll_outenable_set(False, 2)
+        target.pll.pll_outfreq_set(freq, 1)
+        scope.clock.clkgen_freq = freq
+        scope.clock.clkgen_src = 'extclk'
+        scope.clock.adc_mul = adc_mul
+    # LA setup:
+    scope.LA.enabled = True
+    if xtal:
+        scope.LA.clk_source = 'pll'
+    else:
+        scope.LA.clk_source = 'target'
+    scope.LA.oversampling_factor = oversample
+    scope.LA.capture_group = 'CW 20-pin'
+    scope.LA.capture_depth = 100
+    assert scope.LA.locked
+    # measure phase; due to propagation delays it tends to depend with the test parameters,
+    # so we measure it once and take that as the golden measurement against which we'll test:
+    scope.clock.reset_adc()
+    assert scope.clock.pll.pll_locked
+    if xtal:
+        refclk = 'hs2'
+    else:
+        refclk = 'target'
+    exp_phase = get_adc_clock_phase(refclk)
+    for i in range(reps):
+        for op in ['recal', 'reset']:
+            if op == 'recal':
+                scope.clock.recal_pll()
+            else:
+                scope.clock.reset_adc()
+            assert scope.clock.pll.pll_locked
+            assert scope.LA.locked
+            delta = get_adc_clock_phase(refclk)
+            if abs(delta - exp_phase) >= oversample//adc_mul//2 + tolerance:
+                # this is the real error that we're testing for:
+                assert False, 'Uh-oh, looks like a 180 degree phase shift! exp_phase=%d, delta=%d, op=%s, iteration=%d' % (exp_phase, delta, op, i)
+            assert abs(delta - exp_phase) <= tolerance, 'Got unexpected delta %d with %s on iteration %d' % (delta, op, i)
+
+
+def get_adc_clock_phase(refclk='target'):
+    done = False
+    count = 0
+    while not done and count < 30:
+        scope.LA.arm()
+        scope.LA.trigger_now()
+        raw = scope.LA.read_capture_data()
+        adcclock = scope.LA.extract(raw, 8)
+        if refclk == 'target':
+            refclock = scope.LA.extract(raw, 4)
+        elif refclk == 'hs2':
+            refclock = scope.LA.extract(raw, 5)
+        ref_edge = find0to1trans(refclock)[0]
+        assert ref_edge < scope.LA.capture_depth - 30, 'got late ref_edge: %d' % ref_edge
+        try:
+            adc_ref_delta = find0to1trans(adcclock[ref_edge:])[0]
+            done = True
+        except:
+            # not sure why but sometimes the ADC clock comes back all zeros; could be an issue with the PLL or with the LA?
+            # what's very strange is that this doesn't happen often, but when it does, adcclock is always all zeros, and 
+            # the capture is re-attempted exactly 19 times before it's successful!
+            if all(c == 0 for c in adcclock):
+                adcclock = 'all zeros'
+            print('could not find delta; ref_edge=%3d, lock status=%s; adcclock=%s; trying again' % (ref_edge, scope.clock.pll.pll_locked, adcclock))
+            assert scope.LA.locked
+            assert scope.clock.pll.pll_locked
+            time.sleep(0.5)
+            count += 1
+    return adc_ref_delta
 
 
 def test_xadc():

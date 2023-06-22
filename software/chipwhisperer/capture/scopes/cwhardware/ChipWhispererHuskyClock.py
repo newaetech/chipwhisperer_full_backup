@@ -5,6 +5,7 @@ from ....common.utils import util
 from ....logging import *
 import numpy as np
 from .._OpenADCInterface import OpenADCInterface, ClockSettings
+import time
 
 ADDR_EXTCLK                     = 38
 ADDR_EXTCLK_CHANGE_LIMIT        = 82
@@ -52,6 +53,7 @@ class CDCI6214:
         self._old_in_freq = 0
         self._old_target_freq = 0
         self._allow0p5 = False
+        self._reset_time = 0.10 # empirically seems to work well; this is a conservative number
 
     def write_reg(self, addr, data):
         """Write to a CDCI6214 Register over I2C
@@ -175,6 +177,9 @@ class CDCI6214:
         # use ref_mux_src bit to select input
         self.update_reg(0x01, 1 << 9, 0b11 << 8)
 
+        # set GPIO1 output to PLL_LOCK
+        self.update_reg(0x02, 0, 0b1111)
+
     def get_pll_input(self):
         """True if XTAL or False if FPGA
         """
@@ -219,6 +224,8 @@ class CDCI6214:
         Maybe need to do to lock PLL?
         """
         self.update_reg(0x0, 1 << 2, 0x00)
+        # wait enough time for PLL to re-lock (obtained empirically)
+        time.sleep(self._reset_time)
 
     def sync_clocks(self):
         """Send a resync pulse to the internal synchronization blocks.
@@ -572,7 +579,7 @@ class CDCI6214:
         elif src == "fpga":
             self.set_pll_input(False)
         else:
-            raise ValueError("Pll src must be either 'xtal' or 'fpga'")
+            raise ValueError("PLL src must be either 'xtal' or 'fpga'")
         ## update clocks
         self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul, True)
 
@@ -752,6 +759,20 @@ class CDCI6214:
 
 class ChipWhispererHuskyClock(util.DisableNewAttr):
 
+    def clear_adc_unlock(fn):
+        """Use this to decorate methods that can cause the PLL to momentarily unlock. Clears
+        the unlock status and then re-enables it. If PLL lock is regained, then the user will
+        see the ADC LED turn on for a short time. If the PLL remains unlocked, then the ADC
+        LED will turn on, flicker off, then turn back on and stay on.
+        We do this because the ADC LED is sticky (i.e. stays on after an unlock event, even
+        when the PLL re-locks, until manually cleared).
+        """
+        def inner(self, *args, **kwargs) :
+            fn(self, *args, **kwargs)
+            self._adc_error_enabled(False)
+            self._adc_error_enabled(True)
+        return inner
+
     def __init__(self, oaiface : OpenADCInterface, fpga_clk_settings : ClockSettings, mmcm1, mmcm2):
         super().__init__()
 
@@ -811,6 +832,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         raise ValueError("Invalid FPGA/PLL settings!") #TODO: print values
 
     @clkgen_src.setter
+    @clear_adc_unlock
     def clkgen_src(self, clk_src):
         self._cached_adc_freq = None
         if clk_src in ["internal", "system"]:
@@ -860,8 +882,10 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         :Getter: Return the calculated target clock frequency in Hz
 
-        :Setter: Attempt to set a new target clock frequency in Hz
-
+        :Setter: Attempt to set a new target clock frequency in Hz.
+            This also blindly clears extclk_error if there is one, but it only
+            assumes, and does not verify, that the frequency has been updated
+            to the correct value.
 
         """
         # update pll clk src
@@ -871,13 +895,17 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
 
     @clkgen_freq.setter
+    @clear_adc_unlock
     def clkgen_freq(self, freq):
         # update pll clk src
         self._cached_adc_freq = None
         if not (self.clkgen_src in ["internal", "system"]):
             self.pll._fpga_clk_freq = self.fpga_clk_settings.freq_ctr
+        if self.clkgen_src == "test":
+            self.pll._fpga_clk_freq = freq
 
         self.pll.target_freq = freq
+        self.extclk_error = None
 
     @property
     def adc_mul(self):
@@ -898,6 +926,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         return self.pll.adc_mul
 
     @adc_mul.setter
+    @clear_adc_unlock
     def adc_mul(self, mul):
         self._cached_adc_freq = None
         self.pll.adc_mul = mul
@@ -979,6 +1008,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.pll.target_delay = abs(adj_phase)
             self.pll.adc_delay = 0
 
+    @clear_adc_unlock
     def reset_dcms(self):
         """Reset the lock on the Husky's PLL.
         """
@@ -1000,7 +1030,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         :Setter: Enable/disable the external clock monitor.
         """
-        raw = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK_MONITOR_DISABLED, maxResp=1)[0]
+        raw = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK_MONITOR_DISABLED, maxResp=1)[0] & 0x01
         if raw:
             return False
         else:
@@ -1008,11 +1038,27 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
     @extclk_monitor_enabled.setter
     def extclk_monitor_enabled(self, en):
+        raw = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK_MONITOR_DISABLED, maxResp=1)[0]
+        # set bit 0 to disable, clear to enable
         if en:
-            self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK_MONITOR_DISABLED, [0])
+            raw &= 0xfe # clear bit 0
         else:
-            self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK_MONITOR_DISABLED, [1])
+            raw |= 0x01 # set bit 0
+        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK_MONITOR_DISABLED, [raw])
 
+    def _adc_error_enabled(self, en):
+        """Enable or disable the front panel red LED labeled "ADC", which (when
+        enabled) lights up when the PLL (CDCI6214) is not locked.
+        This is not something users are intended to play with; it's used internally
+        to mask PLL unlock events when making clock changes.
+        """
+        raw = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK_MONITOR_DISABLED, maxResp=1)[0]
+        # set bit 1 to disable, clear to enable
+        if en:
+            raw &= 0xfd # clear bit 1
+        else:
+            raw |= 0x02 # set bit 1
+        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK_MONITOR_DISABLED, [raw])
 
     @property
     def extclk_error(self):
@@ -1126,12 +1172,20 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             raise ValueError("Invalid ADC source (possible values: 'clkgen_x4', 'clkgen_x1', 'extclk_x4', 'extclk_x1', 'extclk_dir'")
 
 
+    @clear_adc_unlock
     def reset_adc(self):
         """Convenience function for backwards compatibility with how ADC clocks
         are managed on CW-lite and CW-pro.
         """
         self._cached_adc_freq = None
         self.pll.reset()
+
+    @clear_adc_unlock
+    def recal_pll(self):
+        """Convenience function.
+        """
+        self.pll.recal()
+
 
     @property
     def adc_locked(self):

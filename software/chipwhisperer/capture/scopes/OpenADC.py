@@ -331,7 +331,8 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         .. versionadded:: 5.1
             Added default setup for OpenADC
         """
-        scope_dict_pre = self._dict_repr()
+        if verbose:
+            scope_dict_pre = self._dict_repr()
         self.gain.db = 25
         self.adc.samples = 5000
         self.adc.offset = 0
