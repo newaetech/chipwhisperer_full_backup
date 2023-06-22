@@ -831,7 +831,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         raise ValueError("Invalid FPGA/PLL settings!") #TODO: print values
 
-    @clkgen_src.setter
+    @clkgen_src.setter # type: ignore
     @clear_adc_unlock
     def clkgen_src(self, clk_src):
         self._cached_adc_freq = None
@@ -894,7 +894,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         return self.pll.target_freq
 
 
-    @clkgen_freq.setter
+    @clkgen_freq.setter # type: ignore
     @clear_adc_unlock
     def clkgen_freq(self, freq):
         # update pll clk src
@@ -925,7 +925,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         # self._cached_adc_freq = None
         return self.pll.adc_mul
 
-    @adc_mul.setter
+    @adc_mul.setter # type: ignore
     @clear_adc_unlock
     def adc_mul(self, mul):
         self._cached_adc_freq = None
@@ -1008,7 +1008,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.pll.target_delay = abs(adj_phase)
             self.pll.adc_delay = 0
 
-    @clear_adc_unlock
+    @clear_adc_unlock # type: ignore
     def reset_dcms(self):
         """Reset the lock on the Husky's PLL.
         """
@@ -1172,7 +1172,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             raise ValueError("Invalid ADC source (possible values: 'clkgen_x4', 'clkgen_x1', 'extclk_x4', 'extclk_x1', 'extclk_dir'")
 
 
-    @clear_adc_unlock
+    @clear_adc_unlock # type: ignore
     def reset_adc(self):
         """Convenience function for backwards compatibility with how ADC clocks
         are managed on CW-lite and CW-pro.
@@ -1180,7 +1180,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         self._cached_adc_freq = None
         self.pll.reset()
 
-    @clear_adc_unlock
+    @clear_adc_unlock # type: ignore
     def recal_pll(self):
         """Convenience function.
         """

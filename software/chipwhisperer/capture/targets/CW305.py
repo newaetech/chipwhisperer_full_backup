@@ -571,7 +571,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
     def _getCWType(self):
         return 'cw305'
 
-    @property
+    @property # type: ignore
     @check_cw305
     def clkusbautooff(self):
         """ If set, the USB clock is automatically disabled on capture.
@@ -588,12 +588,12 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         """
         return self._clkusbautooff
 
-    @clkusbautooff.setter
+    @clkusbautooff.setter # type: ignore
     @check_cw305
     def clkusbautooff(self, state):
         self._clkusbautooff = state
 
-    @property
+    @property # type: ignore
     @check_cw305
     def clksleeptime(self):
         """ Time (in milliseconds) that the USB clock is disabled for upon
@@ -601,7 +601,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         """
         return self._clksleeptime
 
-    @clksleeptime.setter
+    @clksleeptime.setter # type: ignore
     @check_cw305
     def clksleeptime(self, value):
         self._clksleeptime = value
