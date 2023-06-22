@@ -524,7 +524,8 @@ class CDCI6214:
 
     @property
     def target_delay(self):
-        """Delays/phase shifts the target clock to the right (positive phase)
+        """Delays/phase shifts the target clock to the right (positive phase).
+        Can only be used when pll_src is xtal.
 
         :getter: A 5 bit integer representing the delay
 
@@ -535,10 +536,13 @@ class CDCI6214:
 
     @target_delay.setter
     def target_delay(self, delay):
+        if self.pll_src == 'fpga':
+            raise ValueError("Cannot set target_delay when scope.clock.clkgen_src is 'extclk'.")
         if (delay > 0b11111) or (delay < 0):
             raise ValueError("Invalid Delay {}, must be between 0 and 31".format(delay))
 
         self.update_reg(0x26, (delay << 11) | (1 << 10), 0b11111 << 11)
+        self.reset() # the change doesn't take until a reset (or recal)
 
     @property
     def adc_delay(self):
@@ -557,6 +561,7 @@ class CDCI6214:
             raise ValueError("Invalid Delay {}, must be between 0 and 31".format(delay))
 
         self.update_reg(0x32, (delay << 11) | (1 << 10), 0b11111 << 11)
+        self.reset() # the change doesn't take until a reset (or recal)
 
     @property
     def pll_src(self):
@@ -983,6 +988,9 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         Positive values delay the ADC clock compared to the target clock
         and vice versa.
 
+        Negative values are not possible when scope.clock.clkgen_src is
+        'extclk'.
+
         Note: The actual phase is only a 6 bit signed value compared to
         a 9 bit signed value on the Lite/Pro. This is mapped onto
         the same [-255, 255] range, meaning not all phases
@@ -1001,9 +1009,11 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             raise ValueError("Max phase +/- 255")
         adj_phase = int((abs(phase) * 31 / 255) + 0.5)
 
-        if phase > 0:
+        if phase >= 0:
             self.pll.adc_delay = adj_phase
-            self.pll.target_delay = 0
+            if self.clkgen_src == 'system':
+                # can't set this otherwise:
+                self.pll.target_delay = 0
         else:
             self.pll.target_delay = abs(adj_phase)
             self.pll.adc_delay = 0
