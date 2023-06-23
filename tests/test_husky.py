@@ -518,7 +518,7 @@ testPLLData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '6/20/2023, 11:14'
+    assert scope.fpga_buildtime == '6/22/2023, 15:40'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1

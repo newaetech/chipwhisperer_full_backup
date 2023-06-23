@@ -305,26 +305,36 @@ class GPIOSettings(util.DisableNewAttr):
 
         * "glitch": glitch output (clock or voltage glitch signal, as defined by scope.glitch settings)
         * "trigger": internal trigger signal (as defined by scope.trigger)
+        * "inverted [glitch | trigger]": inverted glitch or trigger signal
         """
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
         data = self.cwe.oa.sendMessage(CODE_READ, ADDR_AUX_IO, Validate=False, maxResp=1)[0]
-        if data & 0x02:
-            return "glitch"
+        if data & 0x04:
+            setting = 'inverted '
         else:
-            return "trigger"
+            setting = ''
+        if data & 0x02:
+            setting += "glitch"
+        else:
+            setting += "trigger"
+        return setting
 
     @glitch_trig_mcx.setter
     def glitch_trig_mcx(self, state):
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
         data = self.cwe.oa.sendMessage(CODE_READ, ADDR_AUX_IO, Validate=False, maxResp=1)[0]
-        if state == 'trigger':
+        if 'trigger' in state:
             data &= 0xfd
-        elif state == 'glitch':
+        elif 'glitch' in state:
             data |= 0x02
         else:
             raise ValueError("Options: glitch, trig")
+        if 'inverted' in state:
+            data |= 0x04
+        else:
+            data &= 0xfb
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_AUX_IO, [data])
 
     @property
