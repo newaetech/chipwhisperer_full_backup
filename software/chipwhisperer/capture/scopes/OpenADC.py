@@ -900,7 +900,11 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             Added as_int parameter
         """
         if as_int:
-            return self.sc._int_data
+            if self._is_husky:
+                # for Husky this is always appropriately sized (also there would be # of segments to consider)
+                return self.sc._int_data
+            else:
+                return self.sc._int_data[:self.adc.samples]
         return self.data_points
 
     getLastTrace = util.camel_case_deprecated(get_last_trace)
