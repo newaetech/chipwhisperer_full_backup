@@ -76,7 +76,7 @@ class CW305_ECC(CW305):
         self.target_name = 'Cryptech ecdsa256-v1 pmul'
 
 
-    def capture_trace(self, scope, k, operation="pmult", Px=None, Py=None, check=True):
+    def capture_trace(self, scope, k, operation="pmult", Px=None, Py=None, check=True, as_int=False):
         """Capture a trace, running the specified test vector or operation (pmult or siggen).
 
         Does all individual steps needed to capture a trace (arming the scope,
@@ -124,7 +124,7 @@ class CW305_ECC(CW305):
                   'k': k
                   }
         textout['cycles'] = cycles
-        wave = scope.get_last_trace()
+        wave = scope.get_last_trace(as_int=as_int)
 
         if check and cycles != self.pmul_cycles:
             target_logger.warning ("Operation took %d cycles (%d more than we expect it to)" % (cycles, cycles-self.pmul_cycles))
