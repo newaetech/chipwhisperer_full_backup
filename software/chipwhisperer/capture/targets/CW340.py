@@ -4,6 +4,13 @@ class CW340(CW310):
     PROG_MODES = ["serial", "parallel", "parallel16"]
     DEFAULT_PROG_SPEED = [int(20E6), 4, 5]
     REASONABLE_SPEEDS = [[int(1E3), int(20E6)+1], [1, 128+32], [1, 128+32]]
+    platform="cw340"
+    bytecount_size=0
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bytecount_size = 0
+
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=None, sn=None, hw_location=None, prog_mode="serial"):
         self._naeusb.con(idProduct=[0xC340], serial_number=sn, hw_location=hw_location)
         if prog_mode not in self.PROG_MODES:
@@ -32,3 +39,5 @@ class CW340(CW310):
 
         if bsfile and (force or not self.fpga.isFPGAProgrammed()):
             status = self.fpga.FPGAProgram(open(bsfile, "rb"), prog_speed=prog_speed, prog_mode=self.PROG_MODES.index(prog_mode))
+
+        self.bytecount_size

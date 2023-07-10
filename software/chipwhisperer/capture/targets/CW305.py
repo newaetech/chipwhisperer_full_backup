@@ -244,7 +244,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         if len(data) <= 0:
             raise ValueError("Invalid data {}".format(data))
         addr = addr << self.bytecount_size
-        if self.platform in ['cw305', 'cw310']:
+        if self.platform in ['cw305', 'cw310', 'cw340']:
             return self._naeusb.cmdWriteMem(addr, data)
         elif self.platform == 'ss2':
             payload = list(int.to_bytes(addr, length=4, byteorder='little'))
@@ -266,7 +266,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         if readlen <= 0:
             raise ValueError("Invalid read len {}".format(readlen))
         addr = addr << self.bytecount_size
-        if self.platform in ['cw305', 'cw310']:
+        if self.platform in ['cw305', 'cw310', 'cw340']:
             data = self._naeusb.cmdReadMem(addr, readlen)
             return data
 
