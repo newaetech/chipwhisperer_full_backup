@@ -154,7 +154,21 @@ class XilinxGeneric(FPGASlaveSPI):
             target_logger.warning("FPGA warning: DONE pin did not go high.")
 
 class CW312T_XC7A35T(XilinxGeneric):
+    """Xilinx XC7A35T Programmer for CW312T Target.
 
+    Programmer for CW312T-XC7A35T target:
+     * Assumes done is 'PDID' (default, but R22/R29 can change that to TIO pin instead)
+     * Assumes program is 'PDIC'
+
+    Note - suggested to set HS2 to 'none' during programming, as seems to cause programming to be less reliable.
+
+    Example::
+        from chipwhisperer.hardware.naeusb.programmer_targetfpga import CW312T_XC7A35T
+        fpga = CW312T_XC7A35T(scope)
+        scope.io.hs2 = None
+        fpga.program(r'C:\ChipWhisperer570_64\cw\home\portable\chipwhisperer\jupyter\user\ibex-test\top_cw312a35.bit', sck_speed=10e6)
+        scope.io.hs2 = "clkgen"
+    """
     def __init__(self, scope):
         super().__init__(scope)
         self.pgm = "pdic"
