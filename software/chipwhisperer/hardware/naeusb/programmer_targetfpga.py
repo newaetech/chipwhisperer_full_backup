@@ -166,7 +166,7 @@ class CW312T_XC7A35T(XilinxGeneric):
         from chipwhisperer.hardware.naeusb.programmer_targetfpga import CW312T_XC7A35T
         fpga = CW312T_XC7A35T(scope)
         scope.io.hs2 = None
-        fpga.program(r'C:\ChipWhisperer570_64\cw\home\portable\chipwhisperer\jupyter\user\ibex-test\top_cw312a35.bit', sck_speed=10e6)
+        fpga.program('top_cw312a35.bit', sck_speed=10e6)
         scope.io.hs2 = "clkgen"
     """
     def __init__(self, scope):
