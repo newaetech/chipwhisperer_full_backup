@@ -7,11 +7,15 @@ class CW340(CW310):
     DEFAULT_PROG_SPEED = [int(20E6), 4, 5]
     REASONABLE_SPEEDS = [[int(1E3), int(20E6)+1], [1, 128+32], [1, 128+32]]
     platform="cw340"
-    bytecount_size=0
+    _name = "ChipWhisperer CW340 (Ultrascale)"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bytecount_size = 0
+        # TODO- temporary until these are added to the parsed defines file
+        self.REG_XADC_DRP_ADDR = 0xc0
+        self.REG_XADC_DRP_DATA = 0xc1
+        self.REG_XADC_STAT     = 0xc2
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, board="CW340")
 
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=None, sn=None, hw_location=None, prog_mode="serial"):
@@ -42,4 +46,8 @@ class CW340(CW310):
 
         if bsfile and (force or not self.fpga.isFPGAProgrammed()):
             status = self.fpga.FPGAProgram(open(bsfile, "rb"), prog_speed=prog_speed, prog_mode=self.PROG_MODES.index(prog_mode))
+
+    @property
+    def vaux12(self):
+        return self.get_xadc_vaux(12)
 

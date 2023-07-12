@@ -61,6 +61,8 @@ class CW310(CW305):
     """
     USB_I2C_SETUP = 0x43
     USB_I2C_DATA = 0x44
+    _name = "ChipWhisperer CW310 (Artix-7)"
+
     def __init__(self, *args, **kwargs):
         # maybe later can hijack cw305 stuff, but for now don't
         pass
@@ -93,17 +95,19 @@ class CW310(CW305):
         rtn = OrderedDict()
         rtn['fpga_buildtime'] = self.get_fpga_buildtime()
         rtn['xadc_status'] = self.xadc_status
-        rtn['max temp'] = self.get_xadc_temp(maximum=True)
-        rtn['temp'] = self.get_xadc_temp()
-        rtn['max vccint'] = self.get_xadc_vcc('vccint', maximum=True)
-        rtn['max vccbram'] = self.get_xadc_vcc('vccbram', maximum=True)
-        rtn['max vccaux'] = self.get_xadc_vcc('vccaux', maximum=True)
-        rtn['current vccint'] = self.get_xadc_vcc('vccint')
-        rtn['current vccbram'] = self.get_xadc_vcc('vccbram')
-        rtn['current vccaux'] = self.get_xadc_vcc('vccaux')
-        rtn['vaux0'] = self.get_xadc_vaux(0)
-        rtn['vaux1'] = self.get_xadc_vaux(1)
-        rtn['vaux8'] = self.get_xadc_vaux(8)
+        rtn['max_temp'] = self.max_temp
+        rtn['temp'] = self.temp
+        rtn['max_vccint'] = self.max_vccint
+        rtn['max_vccbram'] = self.max_vccbram
+        rtn['max_vccaux'] = self.max_vccaux
+        rtn['current_vccint'] = self.current_vccint
+        rtn['current_vccbram'] = self.current_vccbram
+        rtn['current_vccaux'] = self.current_vccaux
+        rtn['vaux0'] = self.vaux0
+        rtn['vaux1'] = self.vaux1
+        rtn['vaux8'] = self.vaux8
+        if 'CW340' in self._name:
+            rtn['vaux12'] = self.get_xadc_vaux(12)
         return rtn
 
     def __repr__(self):
@@ -238,10 +242,50 @@ class CW310(CW305):
         Returns:
             voltage (float).
         """
-        assert n in [0, 1, 8]
+        allowed_pins = [0, 1, 8]
+        if 'CW340' in self._name:
+            allowed_pins.append(12)
+        assert n in allowed_pins
         addr = n + 0x10
         raw = self._xadc_drp_read(addr)
         return (raw>>4)/4096 # ref: UG480
+
+
+    # for convenience:
+    @property
+    def max_temp(self):
+        return self.get_xadc_temp(maximum=True)
+    @property
+    def temp(self):
+        return self.get_xadc_temp()
+    @property
+    def max_vccint(self):
+        return self.get_xadc_vcc('vccint', maximum=True)
+    @property
+    def max_vccbram(self):
+        return self.get_xadc_vcc('vccbram', maximum=True)
+    @property
+    def max_vccaux(self):
+        return self.get_xadc_vcc('vccaux', maximum=True)
+    @property
+    def current_vccint(self):
+        self.get_xadc_vcc('vccint')
+    @property
+    def current_vccbram(self):
+        return self.get_xadc_vcc('vccbram')
+    @property
+    def current_vccaux(self):
+        return self.get_xadc_vcc('vccaux')
+    @property
+    def vaux0(self):
+        return self.get_xadc_vaux(0)
+    @property
+    def vaux1(self):
+        return self.get_xadc_vaux(1)
+    @property
+    def vaux8(self):
+        return self.get_xadc_vaux(8)
+
 
     def _i2c_write(self, data):
         self._naeusb.sendCtrl(self.USB_I2C_DATA, 0, data)
