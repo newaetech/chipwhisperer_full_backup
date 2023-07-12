@@ -12,7 +12,7 @@ class CW340(CW310):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bytecount_size = 0
-        self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, board="CW310")
+        self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, board="CW340")
 
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=None, sn=None, hw_location=None, prog_mode="serial"):
         self._naeusb.con(idProduct=[0xC340], serial_number=sn, hw_location=hw_location)
@@ -43,4 +43,3 @@ class CW340(CW310):
         if bsfile and (force or not self.fpga.isFPGAProgrammed()):
             status = self.fpga.FPGAProgram(open(bsfile, "rb"), prog_speed=prog_speed, prog_mode=self.PROG_MODES.index(prog_mode))
 
-        self.bytecount_size
