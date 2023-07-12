@@ -27,13 +27,14 @@ import time
 
 class PLLCDCE906(object):
 
-    def __init__(self, usb, ref_freq):
+    def __init__(self, usb, ref_freq, board="CW305"):
         self._usb = usb
         self.reffreq = ref_freq
         self._pll0source = 'PLL0'
         self._pll0slew = '+0nS'
         self._pll1slew = '+0nS'
         self._pll2slew = '+0nS'
+        self._board = board
 
     def pll_outfreq_set(self, freq, outnum):
         """Set the output frequency of a PLL
@@ -55,14 +56,27 @@ class PLLCDCE906(object):
 
     def outnumToPin(self, outnum):
         """Convert from PLL Number to actual output pin"""
-        if outnum == 0:
-            return 0
-        elif outnum == 1:
-            return 1
-        elif outnum == 2:
-            return 4
-        else:
-            raise ValueError("Invalid output number = %d" % outnum)
+
+        # NOTE: PLL2 and PLL1 are swapped on CW340
+        if self._board in ["CW305", "CW310"]:
+            if outnum == 0:
+                return 0
+            elif outnum == 1:
+                return 1
+            elif outnum == 2:
+                return 4
+            else:
+                raise ValueError("Invalid output number = %d" % outnum)
+        elif self._board == "CW340":
+            if outnum == 0:
+                return 0
+            elif outnum == 2:
+                return 1
+            elif outnum == 1:
+                return 4
+            else:
+                raise ValueError("Invalid output number = %d" % outnum)
+
 
     def outputUpdateOutputs(self, outnum, pllsrc_new=None, pllenabled_new=None, pllslewrate_new=None):
         """Update the output pins with enabled/disabled, slew rate, etc"""

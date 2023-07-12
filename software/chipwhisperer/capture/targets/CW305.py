@@ -408,7 +408,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         self.platform = platform
         if platform == 'cw305':
             self._naeusb = NAEUSB()
-            self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6)
+            self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, board="CW305")
             self.fpga = FPGA(self._naeusb)
             self._naeusb.con(idProduct=[0xC305], serial_number=sn, hw_location=hw_location)
             if not fpga_id is None:

@@ -1,4 +1,6 @@
 from .CW310 import CW310
+from ...hardware.naeusb.pll_cdce906 import PLLCDCE906
+from ...logging import *
 
 class CW340(CW310):
     PROG_MODES = ["serial", "parallel", "parallel16"]
@@ -10,6 +12,7 @@ class CW340(CW310):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bytecount_size = 0
+        self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, board="CW310")
 
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=None, sn=None, hw_location=None, prog_mode="serial"):
         self._naeusb.con(idProduct=[0xC340], serial_number=sn, hw_location=hw_location)

@@ -66,7 +66,7 @@ class CW310(CW305):
         pass
         import chipwhisperer as cw
         self._naeusb = NAEUSB()
-        self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6)
+        self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, board="CW310")
         self.fpga = FPGA(self._naeusb)
 
         self.hw = None
