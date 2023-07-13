@@ -40,7 +40,7 @@ class CW310(CW305):
 
         # scope can also be None here, unlike with the default SimpleSerial
         target = cw.target(scope,
-                targets.CW310, bsfile=<valid FPGA bitstream file>)
+                cw.targets.CW310, bsfile=<valid FPGA bitstream file>)
 
 
     Inherits the CW305 object, so you can use the same methods as the CW305, provided the register interface
@@ -55,7 +55,7 @@ class CW310(CW305):
         # renegotiate PDO (applies above settings)
         target.usb_negotiate_pdo()
 
-    For more help about CW305 settings, try help() on this CW310 submodule:
+    For more help about CW310 settings, try help() on this CW310 submodule:
 
        * target.pll
     """

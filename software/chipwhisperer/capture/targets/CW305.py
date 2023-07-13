@@ -72,7 +72,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
 
         # scope can also be None here, unlike with the default SimpleSerial
         target = cw.target(scope,
-                targets.CW305, bsfile=<valid FPGA bitstream file>)
+                cw.targets.CW305, bsfile=<valid FPGA bitstream file>)
 
     As of CW5.3, you can also specify the following::
 
