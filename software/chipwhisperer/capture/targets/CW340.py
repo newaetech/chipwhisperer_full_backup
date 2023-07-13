@@ -105,11 +105,11 @@ class CW340(CW310):
             return fn(self, *args, **kwargs)
         return inner
 
-    @jumper_warning_check
+    @jumper_warning_check # type: ignore
     def fpga_write(self, *args, **kwargs):
         return super().fpga_write(*args, **kwargs)
 
-    @jumper_warning_check
+    @jumper_warning_check # type: ignore
     def fpga_read(self, *args, **kwargs):
         return super().fpga_read(*args, **kwargs)
 
