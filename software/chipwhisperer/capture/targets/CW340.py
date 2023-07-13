@@ -3,6 +3,43 @@ from ...hardware.naeusb.pll_cdce906 import PLLCDCE906
 from ...logging import *
 
 class CW340(CW310):
+    """CW340 Luna Board target object.
+
+    This class contains the public API for the CW340 hardware.
+    To connect to the CW340, the easiest method is::
+
+        import chipwhisperer as cw
+        scope = cw.scope()
+
+        # scope can also be None here, unlike with the default SimpleSerial
+        target = cw.target(scope,
+                targets.CW340, bsfile=<valid FPGA bitstream file>)
+
+    Inherits the CW305 and CW310 objects, so you can use the same methods as
+    the CW305/CW310, provided the register interface in your FPGA build is the
+    same.
+
+    To use the methods provided by this class to communicate with the FPGA, a
+    jumper cable must be connected from:
+        * the lower left pin of the blue J24 header (pin 13, USBSPARE3 on the schematic) 
+    to:
+        * pin 1 of the J2 header (part of the long 47x2 header next to the FPGA connector, 
+        OT_IOA0 on the schematic).
+
+    You can also set the voltage and current settings for the USB-C Power port on the CW340
+
+        # set USB PDO 3 to 20V 5A
+        target.usb_set_voltage(3, 20)
+        target.usb.set_current(3, 5)
+
+        # renegotiate PDO (applies above settings)
+        target.usb_negotiate_pdo()
+
+    For more help about CW340 settings, try help() on this CW340 submodule:
+
+       * target.pll
+    """
+
     PROG_MODES = ["serial", "parallel", "parallel16"]
     DEFAULT_PROG_SPEED = [int(20E6), 4, 5]
     REASONABLE_SPEEDS = [[int(1E3), int(20E6)+1], [1, 128+32], [1, 128+32]]
@@ -17,6 +54,7 @@ class CW340(CW310):
         self.REG_XADC_DRP_DATA = 0xc1
         self.REG_XADC_STAT     = 0xc2
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, board="CW340")
+        self.jumper_warned = False
 
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=None, sn=None, hw_location=None, prog_mode="serial"):
         self._naeusb.con(idProduct=[0xC340], serial_number=sn, hw_location=hw_location)
@@ -50,4 +88,29 @@ class CW340(CW310):
     @property
     def vaux12(self):
         return self.get_xadc_vaux(12)
+
+    def jumper_warning_check(fn):
+        def inner(self=None, *args, **kwargs):
+            if not self.jumper_warned:
+                target_logger.warning("""
+                    Reading/writing the FPGA with this class requires a jumper cable from:
+                    - the lower left pin of the blue J24 header (pin 13, USBSPARE3 on the schematic) 
+                    to:
+                    - pin 1 of the J2 header (part of the long 47x2 header next to the FPGA connector, 
+                      OT_IOA0 on the schematic).
+                    This warning is printed once as a reminder; set target.jumper_warned to True to
+                    avoid seeing it.
+                    """)
+                self.jumper_warned = True
+            return fn(self, *args, **kwargs)
+        return inner
+
+    @jumper_warning_check
+    def fpga_write(self, *args, **kwargs):
+        return super().fpga_write(*args, **kwargs)
+
+    @jumper_warning_check
+    def fpga_read(self, *args, **kwargs):
+        return super().fpga_read(*args, **kwargs)
+
 
