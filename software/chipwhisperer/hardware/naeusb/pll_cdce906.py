@@ -56,30 +56,19 @@ class PLLCDCE906(object):
 
     def outnumToPin(self, outnum):
         """Convert from PLL Number to actual output pin"""
-
-        # NOTE: PLL2 and PLL1 are swapped on CW340
-        if self._board in ["CW305", "CW310"]:
-            if outnum == 0:
-                return 0
-            elif outnum == 1:
-                return 1
-            elif outnum == 2:
-                return 4
-            else:
-                raise ValueError("Invalid output number = %d" % outnum)
-        elif self._board == "CW340":
-            if outnum == 0:
-                return 0
-            elif outnum == 2:
-                return 1
-            elif outnum == 1:
-                return 4
-            else:
-                raise ValueError("Invalid output number = %d" % outnum)
-
+        outnum = self.swap_340_pllnum(outnum)
+        if outnum == 0:
+            return 0
+        elif outnum == 1:
+            return 1
+        elif outnum == 2:
+            return 4
+        else:
+            raise ValueError("Invalid output number = %d" % outnum)
 
     def outputUpdateOutputs(self, outnum, pllsrc_new=None, pllenabled_new=None, pllslewrate_new=None):
         """Update the output pins with enabled/disabled, slew rate, etc"""
+        outnum = self.swap_340_pllnum(outnum)
         # Map to output pins on CDCE906 Chip
         if outnum == 0:
             outpin = 0
@@ -346,8 +335,19 @@ class PLLCDCE906(object):
                             return best
         return best
 
+    def swap_340_pllnum(self, pllnum):
+        # handles the fact that PLL2 and PLL1 are swapped on CW340
+        if self._board == 'CW340':
+            if pllnum == 2:
+                pllnum = 1
+            elif pllnum == 1:
+                pllnum = 2
+        return pllnum
+
+
     def pllwrite(self, pllnum, N, M, outdiv):
         """Write N/M/output divisors to PLL chip"""
+        pllnum = self.swap_340_pllnum(pllnum)
         offset = 3 * pllnum
 
         self.cdce906write(1 + offset, M & 0xFF)
@@ -380,6 +380,7 @@ class PLLCDCE906(object):
 
     def pllread(self, pllnum):
         """Read N/M/output divisors from PLL chip"""
+        pllnum = self.swap_340_pllnum(pllnum)
         offset = 3 * pllnum
 
         # Read M & N

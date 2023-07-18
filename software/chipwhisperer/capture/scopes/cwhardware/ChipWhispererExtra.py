@@ -654,6 +654,9 @@ class GPIOSettings(util.DisableNewAttr):
 
     def vglitch_reset(self, delay=0.005):
         """
+        Sets scope.io.glitch_hp and scope.io.glitch_lp to False, waits 'delay' 
+        seconds, then returns scope.io.glitch_hp and scope.io.glitch_lp to 
+        their original settings.
         """
         hp = self.glitch_hp
         lp = self.glitch_lp
