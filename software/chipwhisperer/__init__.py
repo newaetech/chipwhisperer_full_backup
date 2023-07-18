@@ -404,8 +404,8 @@ def target(scope : Optional[scopes.ScopeTypes],
        target_type (TargetTemplate, optional): Target type to connect to.
            Defaults to targets.SimpleSerial. Types can be found in
            chipwhisperer.targets.
-       **kwargs: Additional keyword arguments to pass to target setup. Rarely
-           needed.
+       **kwargs: Additional keyword arguments to pass to target setup. See target.con
+            or target._con for your target_type for more information
 
     Returns:
         Connected target object specified by target_type.

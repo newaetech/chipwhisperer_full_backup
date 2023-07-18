@@ -82,9 +82,6 @@ class GlitchController:
         else:
             self.steps[parameter] = [step] * self._num_steps
 
-
-
-        
     def set_global_step(self, steps):
         '''Set step for all parameters. 
         
@@ -115,7 +112,21 @@ class GlitchController:
         if plot and self._buffers:
             self.update_plot(parameters[self._x_index], parameters[self._y_index], group)
 
-    def glitch_plot(self, plotdots, x_index=0, y_index=1, x_bound=None, y_bound=None, bufferlen=10000):
+    def glitch_plot(self, plotdots, x_index=0, y_index=1, x_bound=None, y_bound=None, bufferlen=100000):
+        """Create a plot that can be updated in real-time with gc.add()
+
+        Args:
+            plotdots (dict): Dictionary mapping groups to shapes and colours
+            x_index (int or str): Which parameter to use for the x-axis.
+            y_index (int or str): Which parameter to use for the y-axis.
+            x_bound (list or None): Boundarys for x-axis in plot
+            y_bound (list or None): Boundarys for y-axis in plot
+            buffer_len (int): Size to make the buffer that holds the points.
+
+        x_index and y_index can be either the index for the desired parameter in the original
+
+        buffer_len controls how many points can be plotted before earlier ones start being overwritten.
+        """
         import holoviews as hv # type: ignore
         from holoviews.streams import Buffer # type: ignore
         from pandas import DataFrame # type: ignore
