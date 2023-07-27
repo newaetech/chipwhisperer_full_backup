@@ -205,6 +205,239 @@ cleanup:
     return( 0 );
 }
 
+void mbedtls_platform_zeroize(void *buf, size_t len)
+{
+    memset(buf, 0x00, len);
+}
+
+static inline unsigned char mbedtls_md_get_size_from_type(mbedtls_md_type_t md_type)
+{
+    return mbedtls_md_get_size(mbedtls_md_info_from_type(md_type));
+}
+
+static int rsa_rsassa_pkcs1_v15_encode(mbedtls_md_type_t md_alg,
+                                       unsigned int hashlen,
+                                       const unsigned char *hash,
+                                       size_t dst_len,
+                                       unsigned char *dst)
+{
+    size_t oid_size  = 0;
+    size_t nb_pad    = dst_len;
+    unsigned char *p = dst;
+    const char *oid  = NULL;
+
+    /* Are we signing hashed or raw data? */
+    if (md_alg != MBEDTLS_MD_NONE) {
+        unsigned char md_size = mbedtls_md_get_size_from_type(md_alg);
+        if (md_size == 0) {
+            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        }
+
+        if (mbedtls_oid_get_oid_by_md(md_alg, &oid, &oid_size) != 0) {
+            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        }
+
+        if (hashlen != md_size) {
+            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        }
+
+        /* Double-check that 8 + hashlen + oid_size can be used as a
+         * 1-byte ASN.1 length encoding and that there's no overflow. */
+        if (8 + hashlen + oid_size  >= 0x80         ||
+            10 + hashlen            <  hashlen      ||
+            10 + hashlen + oid_size <  10 + hashlen) {
+            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        }
+
+        /*
+         * Static bounds check:
+         * - Need 10 bytes for five tag-length pairs.
+         *   (Insist on 1-byte length encodings to protect against variants of
+         *    Bleichenbacher's forgery attack against lax PKCS#1v1.5 verification)
+         * - Need hashlen bytes for hash
+         * - Need oid_size bytes for hash alg OID.
+         */
+        if (nb_pad < 10 + hashlen + oid_size) {
+            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        }
+        nb_pad -= 10 + hashlen + oid_size;
+    } else {
+        if (nb_pad < hashlen) {
+            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        }
+
+        nb_pad -= hashlen;
+    }
+
+    /* Need space for signature header and padding delimiter (3 bytes),
+     * and 8 bytes for the minimal padding */
+    if (nb_pad < 3 + 8) {
+        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    }
+    nb_pad -= 3;
+
+    /* Now nb_pad is the amount of memory to be filled
+     * with padding, and at least 8 bytes long. */
+
+    /* Write signature header and padding */
+    *p++ = 0;
+    *p++ = MBEDTLS_RSA_SIGN;
+    memset(p, 0xFF, nb_pad);
+    p += nb_pad;
+    *p++ = 0;
+
+    /* Are we signing raw data? */
+    if (md_alg == MBEDTLS_MD_NONE) {
+        memcpy(p, hash, hashlen);
+        return 0;
+    }
+
+    /* Signing hashed data, add corresponding ASN.1 structure
+     *
+     * DigestInfo ::= SEQUENCE {
+     *   digestAlgorithm DigestAlgorithmIdentifier,
+     *   digest Digest }
+     * DigestAlgorithmIdentifier ::= AlgorithmIdentifier
+     * Digest ::= OCTET STRING
+     *
+     * Schematic:
+     * TAG-SEQ + LEN [ TAG-SEQ + LEN [ TAG-OID  + LEN [ OID  ]
+     *                                 TAG-NULL + LEN [ NULL ] ]
+     *                 TAG-OCTET + LEN [ HASH ] ]
+     */
+    *p++ = MBEDTLS_ASN1_SEQUENCE | MBEDTLS_ASN1_CONSTRUCTED;
+    *p++ = (unsigned char) (0x08 + oid_size + hashlen);
+    *p++ = MBEDTLS_ASN1_SEQUENCE | MBEDTLS_ASN1_CONSTRUCTED;
+    *p++ = (unsigned char) (0x04 + oid_size);
+    *p++ = MBEDTLS_ASN1_OID;
+    *p++ = (unsigned char) oid_size;
+    memcpy(p, oid, oid_size);
+    p += oid_size;
+    *p++ = MBEDTLS_ASN1_NULL;
+    *p++ = 0x00;
+    *p++ = MBEDTLS_ASN1_OCTET_STRING;
+    *p++ = (unsigned char) hashlen;
+    memcpy(p, hash, hashlen);
+    p += hashlen;
+
+    /* Just a sanity-check, should be automatic
+     * after the initial bounds check. */
+    if (p != dst + dst_len) {
+        mbedtls_platform_zeroize(dst, dst_len);
+        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    }
+
+    return 0;
+}
+
+// note: no inline is an addition, but I'm guessing gcc would be less likely to inline if it's buried in some other file
+int __attribute__ ((noinline)) mbedtls_ct_memcmp(const void *a,
+                      const void *b,
+                      size_t n)
+{
+    size_t i = 0;
+    /*
+     * `A` and `B` are cast to volatile to ensure that the compiler
+     * generates code that always fully reads both buffers.
+     * Otherwise it could generate a test to exit early if `diff` has all
+     * bits set early in the loop.
+     */
+    volatile const unsigned char *A = (volatile const unsigned char *) a;
+    volatile const unsigned char *B = (volatile const unsigned char *) b;
+    uint32_t diff = 0;
+
+#if defined(MBEDTLS_EFFICIENT_UNALIGNED_VOLATILE_ACCESS)
+    for (; (i + 4) <= n; i += 4) {
+        uint32_t x = mbedtls_get_unaligned_volatile_uint32(A + i);
+        uint32_t y = mbedtls_get_unaligned_volatile_uint32(B + i);
+        diff |= x ^ y;
+    }
+#endif
+
+    for (; i < n; i++) {
+        /* Read volatile data in order before computing diff.
+         * This avoids IAR compiler warning:
+         * 'the order of volatile accesses is undefined ..' */
+        unsigned char x = A[i], y = B[i];
+        diff |= x ^ y;
+    }
+
+    return (int) diff;
+}
+
+/*
+ * Do an RSA operation to sign the message digest
+ */
+int simpleserial_mbedtls_rsa_rsassa_pkcs1_v15_sign(mbedtls_rsa_context *ctx,
+                                      int (*f_rng)(void *, unsigned char *, size_t),
+                                      void *p_rng,
+                                      int mode, // note this isn't in the real function
+                                      mbedtls_md_type_t md_alg,
+                                      unsigned int hashlen,
+                                      const unsigned char *hash,
+                                      unsigned char *sig)
+{
+    int ret = 0x6E;//MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    unsigned char *sig_try = NULL, *verif = NULL;
+
+    if ((md_alg != MBEDTLS_MD_NONE || hashlen != 0) && hash == NULL) {
+        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    }
+
+    if (ctx->padding != MBEDTLS_RSA_PKCS_V15) {
+        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    }
+
+    /*
+     * Prepare PKCS1-v1.5 encoding (padding and hash identifier)
+     */
+
+    if ((ret = rsa_rsassa_pkcs1_v15_encode(md_alg, hashlen, hash,
+                                           ctx->len, sig)) != 0) {
+        return ret;
+    }
+
+    /* Private key operation
+     *
+     * In order to prevent Lenstra's attack, make the signature in a
+     * temporary buffer and check it before returning it.
+     */
+
+    sig_try = mbedtls_calloc(1, ctx->len);
+    if (sig_try == NULL) {
+        return MBEDTLS_ERR_MPI_ALLOC_FAILED;
+    }
+
+    verif = mbedtls_calloc(1, ctx->len);
+    if (verif == NULL) {
+        mbedtls_free(sig_try);
+        return MBEDTLS_ERR_MPI_ALLOC_FAILED;
+    }
+
+    MBEDTLS_MPI_CHK(mbedtls_rsa_private(ctx, f_rng, p_rng, sig, sig_try));
+    MBEDTLS_MPI_CHK(mbedtls_rsa_public(ctx, sig_try, verif));
+
+    trigger_low();
+    if (mbedtls_ct_memcmp(verif, sig, ctx->len) != 0) {
+        ret = MBEDTLS_ERR_RSA_PRIVATE_FAILED;
+        goto cleanup;
+    }
+
+    memcpy(sig, sig_try, ctx->len);
+
+cleanup:
+    mbedtls_platform_zeroize(sig_try, ctx->len);
+    mbedtls_platform_zeroize(verif, ctx->len);
+    mbedtls_free(sig_try);
+    mbedtls_free(verif);
+
+    if (ret != 0) {
+        memset(sig, '!', ctx->len);
+    }
+    return ret;
+}
+
+#if 0
 static int simpleserial_mbedtls_rsa_rsassa_pkcs1_v15_sign( mbedtls_rsa_context *ctx,
                                int (*f_rng)(void *, unsigned char *, size_t),
                                void *p_rng,
@@ -306,16 +539,17 @@ static int simpleserial_mbedtls_rsa_rsassa_pkcs1_v15_sign( mbedtls_rsa_context *
     //make things easier
     MBEDTLS_MPI_CHK( mbedtls_rsa_public( ctx, sig_try, verif ) );
 
-    /* Compare in constant time just in case */
-    /* for( diff = 0, i = 0; i < ctx->len; i++ ) */
-    /*     diff |= verif[i] ^ sig[i]; */
-    /* diff_no_optimize = diff; */
+    // Compare in constant time just in case 
+    trigger_low();
+    for( diff = 0, i = 0; i < ctx->len; i++ ) 
+        diff |= verif[i] ^ sig[i]; 
+    diff_no_optimize = diff; 
 
-    /* if( diff_no_optimize != 0 ) */
-    /* { */
-    /*     ret = MBEDTLS_ERR_RSA_PRIVATE_FAILED; */
-    /*     goto cleanup; */
-    /* } */
+    if( diff_no_optimize != 0 )
+    {
+        ret = MBEDTLS_ERR_RSA_PRIVATE_FAILED;
+        goto cleanup;
+    }
 
     memcpy( sig, sig_try, ctx->len );
 
@@ -325,6 +559,8 @@ cleanup:
 
     return( ret );
 }
+
+#endif
 
 
 void rsa_init(void)
@@ -376,6 +612,7 @@ uint8_t real_dec(uint8_t *pt, uint8_t len)
 #endif
 {
     int ret = 0;
+    int ss_ret = 0;
 
     //first need to hash our message
     memset(buf, 0, 128);
@@ -383,7 +620,17 @@ uint8_t real_dec(uint8_t *pt, uint8_t len)
 
     trigger_high();
     ret = simpleserial_mbedtls_rsa_rsassa_pkcs1_v15_sign(&rsa_ctx, NULL, NULL, MBEDTLS_RSA_PRIVATE, MBEDTLS_MD_SHA256, 32, hash, buf);
-    trigger_low();
+    // trigger_low();
+
+    if (ret != 0) {
+        memset(buf, 0, 128); //RSA failed, so zero out the buffer before sending it out
+        if (ret == MBEDTLS_ERR_RSA_PRIVATE_FAILED) {
+            ss_ret = 0x11;
+        } else {
+            ss_ret = 0x12;
+        }
+    }
+    
 
     //send back first 48 bytes
 #if SS_VER == SS_VER_2_1
@@ -391,7 +638,7 @@ uint8_t real_dec(uint8_t *pt, uint8_t len)
 #else
     simpleserial_put('r', 48, buf);
 #endif
-    return ret;
+    return ss_ret;
 }
 
 uint8_t sig_chunk_1(uint8_t *pt, uint8_t len)
