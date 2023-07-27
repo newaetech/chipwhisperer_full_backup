@@ -5,6 +5,8 @@ from ....common.utils import util
 from ....logging import *
 import numpy as np
 from .._OpenADCInterface import OpenADCInterface, ClockSettings
+from ..cwhardware.ChipWhispererHuskyMisc import ADS4128Settings
+
 import time
 
 ADDR_EXTCLK                     = 38
@@ -778,7 +780,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self._adc_error_enabled(True)
         return inner
 
-    def __init__(self, oaiface : OpenADCInterface, fpga_clk_settings : ClockSettings, mmcm1, mmcm2):
+    def __init__(self, oaiface : OpenADCInterface, fpga_clk_settings : ClockSettings, mmcm1, mmcm2, adc: ADS4128Settings):
         super().__init__()
 
         # cache ADC freq to improve capture speed
@@ -787,6 +789,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         self.oa = oaiface
         self.naeusb = oaiface.serial
         self.pll = CDCI6214(self.naeusb, mmcm1, mmcm2)
+        self.adc = adc
         self.fpga_clk_settings = fpga_clk_settings
         self.fpga_clk_settings.freq_ctr_src = "extclk"
         self.adc_phase = 0
@@ -865,6 +868,16 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         else:
             raise ValueError("Invalid src settings! Must be 'internal', 'system', 'extclk' or 'extclk_aux_io', not {}".format(clk_src))
 
+    def _update_adc_speed_mode(self, mul, freq):
+        """Husky's ADC has a high speed / low speed mode bit.
+        When the ADC clock is changed, this automatically sets the appropriate
+        speed mode.
+        """
+        if mul * freq < 80e6:
+            self.adc.low_speed = True
+        else:
+            self.adc.low_speed = False
+
     @property
     def clkgen_freq(self):
         """The target clock frequency in Hz.
@@ -908,9 +921,9 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.pll._fpga_clk_freq = self.fpga_clk_settings.freq_ctr
         if self.clkgen_src == "test":
             self.pll._fpga_clk_freq = freq
-
         self.pll.target_freq = freq
         self.extclk_error = None
+        self._update_adc_speed_mode(self.adc_mul, freq)
 
     @property
     def adc_mul(self):
@@ -935,6 +948,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     def adc_mul(self, mul):
         self._cached_adc_freq = None
         self.pll.adc_mul = mul
+        self._update_adc_speed_mode(mul, self.clkgen_freq)
 
     @property
     def adc_freq(self):
