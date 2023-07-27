@@ -92,7 +92,7 @@ target.baud = 38400 * 10 / 7.37
 if scope._is_husky_plus:
     MAXCLOCK = 250e6
     OVERCLOCK1 = 255e6
-    OVERCLOCK2 = 255e6
+    OVERCLOCK2 = 300e6
     MAXSAMPLES = 327828
     MAXSEGMENTSAMPLES = 295056
 else:
