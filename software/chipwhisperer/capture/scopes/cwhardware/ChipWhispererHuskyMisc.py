@@ -419,8 +419,8 @@ class USERIOSettings(util.DisableNewAttr):
 
     @fpga_mode.setter
     def fpga_mode(self, setting):
-        if not setting in range(0, 11):
-            raise ValueError("Must be integer in [0, 10]")
+        if not setting in range(0, 12):
+            raise ValueError("Must be integer in [0, 11]")
         else:
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_SELECT, [setting])
 

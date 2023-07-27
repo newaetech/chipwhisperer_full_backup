@@ -46,6 +46,8 @@ ADDR_IOROUTE = 55
 ADDR_IOREAD = 59
 ADDR_EDGE_TRIGGER = 113
 ADDR_SOFTPOWER_CONTROL = 115
+ADDR_NUM_TRIGGERS_STAT = 117
+ADDR_NUM_TRIGGERS_DATA = 118
 
 # API aliases for the TIO settings
 _tio_alias = {
@@ -1157,6 +1159,55 @@ class HuskyTrigger(TriggerSettings):
         be useful to understand why. Resets upon :code:`scope.arm()`.
         """
         return int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_EDGE_TRIGGER, Validate=False, maxResp=2), byteorder='little')
+
+    def get_trigger_times(self):
+        """Retrieve the timestamped trigger times.
+
+        When multiple triggers occur, the number of ADC clock cycles between
+        successive triggers is recorded. Up to 1024 triggers can be
+        timestamped. The counter for each timestamp is 32-bits wide; overflows
+        are noted. Recorded triggers are automatically reset when the scope is
+        armed.
+        
+        """
+        if self._trigger_times_empty():
+            return None
+        else:
+            if self._trigger_times_overflow():
+                scope_logger.warning('Trigger times FIFO overflowed (too many triggers occured).')
+                self.cwe.oa.sendMessage(CODE_WRITE, ADDR_NUM_TRIGGERS_STAT, [1]) # clears the overflow flag
+            times = []
+            while not self._trigger_times_empty():
+                self.cwe.oa.sendMessage(CODE_WRITE, ADDR_NUM_TRIGGERS_DATA, [1])
+                raw = int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_NUM_TRIGGERS_DATA, Validate=False, maxResp=4), byteorder='little')
+                if raw == 2**32-1 and len(times): # don't care about overflow on first entry
+                    scope_logger.error('Trigger times counter overflowed (more than 2**32 cycles between successive triggers).')
+                else:
+                    times.append(raw)
+            if self._trigger_times_underflow():
+                scope_logger.error('Internal error: trigger times FIFO underflowed.')
+            return times[1:]
+
+
+    def _trigger_times_empty(self):
+        if self.cwe.oa.sendMessage(CODE_READ, ADDR_NUM_TRIGGERS_STAT, Validate=False, maxResp=1)[0] & 1:
+            return True
+        else:
+            return False
+
+    def _trigger_times_overflow(self):
+        if self.cwe.oa.sendMessage(CODE_READ, ADDR_NUM_TRIGGERS_STAT, Validate=False, maxResp=1)[0] & 2:
+            return True
+        else:
+            return False
+
+    def _trigger_times_underflow(self):
+        if self.cwe.oa.sendMessage(CODE_READ, ADDR_NUM_TRIGGERS_STAT, Validate=False, maxResp=1)[0] & 4:
+            return True
+        else:
+            return False
+
+
 
 
 
