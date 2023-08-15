@@ -537,15 +537,16 @@ def plot(*args, **kwargs):
     if (len(args) == 0) and (len(kwargs) == 0):
         args = [[]]
     import holoviews as hv # type: ignore
+    _default_opts = {'height': 600, 'width': 800, 'framewise': True, 'tools': ['hover'], 'active_tools': ['box_zoom']}
     hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
-    return hv.Curve(*args, **kwargs).opts(width=800, height=600)
+    return hv.Curve(*args, **kwargs).opts(**_default_opts)
 
 class StreamPlot:
     def __init__(self):
         import holoviews as hv # type: ignore
         from holoviews.streams import Pipe # type: ignore
         hv.extension('bokeh', logo=False) #don't display logo, otherwise it pops up everytime this func is called.
-        self._default_opts = {'height': 600, 'width': 800, 'framewise': True, 'tools': ['hover']}
+        self._default_opts = {'height': 600, 'width': 800, 'framewise': True, 'tools': ['hover'], 'active_tools': ['box_zoom']}
         self._pipe = Pipe(data=[])
         self._dmap = hv.DynamicMap(hv.Curve, streams=[self._pipe]).opts(**self._default_opts)
 

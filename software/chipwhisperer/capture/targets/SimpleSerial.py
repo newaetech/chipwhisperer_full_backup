@@ -27,6 +27,7 @@ from .simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
 from ...common.utils import util
 from collections import OrderedDict
 from ...common.utils.util import camel_case_deprecated, dict_to_str
+import time
 
 from chipwhisperer.logging import *
 
@@ -238,11 +239,13 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
 
 
-    def write(self, data):
+    def write(self, data, timeout=0):
         """ Writes data to the target over serial.
 
         Args:
             data (str): Data to write over serial.
+            timeout (float or None): Wait <timeout> seconds for write buffer to clear.
+                If None, block for a long time. If 0, return immediately. Defaults to 0.
 
         Raises:
             Warning: Target not connected
@@ -256,7 +259,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             raise Warning("Target not connected")
 
         try:
-            self.ser.write(data)
+            self.ser.write(data, timeout)
+                    
         except Exception as e:
             self.dis()
             raise e
