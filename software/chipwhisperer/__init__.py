@@ -165,6 +165,7 @@ def program_target(scope : scopes.ScopeTypes, prog_type, fw_path : str, **kwargs
         Simplified programming target
     """
     if prog_type is None: #[makes] automating notebooks much easier
+        scope_logger.warning("prog_type is None, target will not be programmed")
         return
     prog = prog_type(**kwargs)
 
