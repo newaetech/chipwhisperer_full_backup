@@ -34,7 +34,7 @@ from .SimpleSerial2 import SimpleSerial2
 from ...hardware.naeusb.naeusb import NAEUSB,packuint32
 from ...hardware.naeusb.pll_cdce906 import PLLCDCE906
 from ...hardware.naeusb.fpga import FPGA
-from ...hardware.naeusb.programmer_targetfpga import CW312T_XC7A35T
+from ...hardware.naeusb.programmer_targetfpga import CW312T_XC7A35T, LatticeICE40
 from ...common.utils import util
 from ...common.utils.util import camel_case_deprecated
 from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
@@ -246,7 +246,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         addr = addr << self.bytecount_size
         if self.platform in ['cw305', 'cw310', 'cw340']:
             return self._naeusb.cmdWriteMem(addr, data)
-        elif self.platform == 'ss2':
+        elif 'ss2' in self.platform:
             payload = list(int.to_bytes(addr, length=4, byteorder='little'))
             payload.extend(data)
             self.ss2.send_cmd(cmd=0x23, scmd=0x57, data=payload)
@@ -270,7 +270,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             data = self._naeusb.cmdReadMem(addr, readlen)
             return data
 
-        elif self.platform == 'ss2':
+        elif 'ss2' in self.platform:
             if readlen not in range(1, 250):
                 raise ValueError("readlen cannot be greater than 249")
             payload = list(int.to_bytes(addr, length=4, byteorder='little'))
@@ -454,31 +454,44 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             self.toggle_user_led = True
             self.check_done = True
 
-        elif platform == 'ss2':
+        elif 'ss2' in self.platform:
             if force or sn or hw_location:
                 target_logger.warning("force, sn and hw_location parameters have no effect on this platform")
             if not scope:
                 raise ValueError("scope must be specified")
-            self.fpga = CW312T_XC7A35T(scope)
-            if not fpga_id is None:
-                if fpga_id != 'cw312t_a35':
-                    raise ValueError(f"Invalid fpga {fpga_id}")
-            self._fpga_id = fpga_id
+
+            if self.platform == 'ss2_ice40':
+                self.fpga = LatticeICE40(scope)
+                self._fpga_id = 'cw312t_ice40'
+            else:
+                self.fpga = CW312T_XC7A35T(scope)
+                self._fpga_id = 'cw312t_a35'
 
             if bsfile is None:
-                from chipwhisperer.hardware.firmware.xc7a35 import getsome
-                if self.target_name == 'AES':
-                    bsfile = getsome(f"AES_{fpga_id}.bit")
-                elif self.target_name == 'Cryptech ecdsa256-v1 pmul':
-                    bsfile = getsome(f"ECDSA256v1_pmul_{fpga_id}.bit")
-                elif self.target_name == 'Pipelined AES':
-                    if version is None:
-                        version = 0
-                    bsfile = getsome(f"Pipelined_AES_{fpga_id}_half{version}.bit")
+                if self.platform == 'ss2_ice40':
+                    from chipwhisperer.hardware.firmware.cwtargetice40 import getsome
+                    if self.target_name == 'AES':
+                        bsfile = getsome(f"iCE40UP5K_SS2.bin")
+                    else:
+                        raise ValueError('Unknown target!')
                 else:
-                    raise ValueError('Unknown target!')
+                    from chipwhisperer.hardware.firmware.xc7a35 import getsome
+                    if self.target_name == 'AES':
+                        bsfile = getsome(f"AES_cw312t_a35.bit")
+                    elif self.target_name == 'Cryptech ecdsa256-v1 pmul':
+                        bsfile = getsome(f"ECDSA256v1_pmul_cw312t_a35.bit")
+                    elif self.target_name == 'Pipelined AES':
+                        if version is None:
+                            version = 0
+                        bsfile = getsome(f"Pipelined_AES_cw312t_a35_half{version}.bit")
+                    else:
+                        raise ValueError('Unknown target!')
 
-            self.fpga.program(bsfile, sck_speed=prog_speed)
+            if self.platform == 'ss2_ice40':
+                self.fpga.erase_and_init()
+                self.fpga.program(bsfile, sck_speed=prog_speed, start=True, use_fast_usb=False)
+            else:
+                self.fpga.program(bsfile, sck_speed=prog_speed)
 
             ss2 = SimpleSerial2()
             ss2.con(scope)

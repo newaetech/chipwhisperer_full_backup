@@ -64,7 +64,9 @@ cwnano_files = [
     ]
 
 
-target_ice40_neorv32_files = [("neorv32_iCE40CW312_MinimalBoot_directclk_7370KHz.bit", r"C:\dev\neorv32-setups\osflow\neorv32_iCE40CW312_MinimalBoot.bit")]
+target_ice40_files = [("neorv32_iCE40CW312_MinimalBoot_directclk_7370KHz.bit", r"/home/jpnewae/Downloads/neorv32_iCE40CW312_MinimalBoot.bit"),
+                      ("iCE40UP5K_SS2.bin", os.path.join(hwdir, r'victims/cw308_ufo_target/ice40up5k/ss2_aes_icestorm/iCE40UP5K_SS2.bin'))
+                     ]
 
 xc7a35_v = [0, 1]
 xc7a35_files = [("AES_cw312t_a35.bit", os.path.join(hwdir, r"victims/cw308_ufo_target/xc7a35/vivado/ss2_cw305_aes.runs/impl_1/ss2_aes_wrapper.bit")),
@@ -88,7 +90,7 @@ file_list = [
     ("cw1200.py", cw1200_v, cw1200_files),
     ("cwhusky.py", cwhusky_v, cwhusky_files),
     ("cwbergen.py", cwbergen_v, cwbergen_files),
-    ("cwtargetice40.py", [0,0], target_ice40_neorv32_files)
+    ("cwtargetice40.py", [0,0], target_ice40_files)
 ]
 
 def parse_version(file_data):
