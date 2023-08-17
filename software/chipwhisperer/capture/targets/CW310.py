@@ -269,7 +269,7 @@ class CW310(CW305):
         return self.get_xadc_vcc('vccaux', maximum=True)
     @property
     def current_vccint(self):
-        self.get_xadc_vcc('vccint')
+        return self.get_xadc_vcc('vccint')
     @property
     def current_vccbram(self):
         return self.get_xadc_vcc('vccbram')
