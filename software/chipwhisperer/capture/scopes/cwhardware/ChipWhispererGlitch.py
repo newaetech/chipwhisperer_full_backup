@@ -55,7 +55,6 @@ class MultiGlitchList(list):
     Useful so that we can do scope.glitch.ext_offset[1] = 5 with Husky multi-glitch
     """
     def __setitem__(self, *args, **kwargs):
-        print("Setting using multiglitchlist")
         oldval = self._getter()
         oldval[args[0]] = args[1]
         self._setter(oldval)
