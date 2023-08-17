@@ -94,10 +94,10 @@ class CW340(CW310):
             if not self.jumper_warned:
                 target_logger.warning("""
                     Reading/writing the FPGA with this class requires a jumper cable from:
-                    - the lower left pin of the blue J24 header (pin 13, USBSPARE3 on the schematic) 
+                    - the third bottom left pin of the blue J24 header (pin 9, USB_SPI_CS on the schematic) 
                     to:
-                    - pin 1 of the J2 header (part of the long 47x2 header next to the FPGA connector, 
-                      OT_IOA0 on the schematic).
+                    - the third bottom left pin of the blue J23 header (pin 9, OT_SPI_DEV_CS_L on the schematic)
+                    You can also simply connect a ribbon cable between J23 and J24.
                     This warning is printed once as a reminder; set target.jumper_warned to True to
                     avoid seeing it.
                     """)
