@@ -44,7 +44,7 @@ from ...logging import *
 
 def check_cw305(fn):
     def inner(self=None, *args, **kwargs):
-        if self.platform != 'cw305':
+        if self.platform not in ['cw305', 'cw310', 'cw340']:
             target_logger.warning("%s is a CW305 method for hardware which does not exist on this target." % fn.__name__)
         else:
             return fn(self, *args, **kwargs)
