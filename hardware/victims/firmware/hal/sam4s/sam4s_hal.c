@@ -20,6 +20,7 @@ void platform_init(void)
     pmc_switch_mck_to_mainck(SYSCLK_PRES_1);
     SystemCoreClockUpdate();
     system_init_flash(7.37E6);
+    EFC0->EEFC_FMR &= ~(0b100) << 24; // disable code loop optimizations (causes trace desyncs)
 
     sysclk_enable_peripheral_clock(ID_PIOA);
     gpio_configure_pin(PIO_PA15_IDX, PIO_OUTPUT_1 | PIO_DEFAULT);
