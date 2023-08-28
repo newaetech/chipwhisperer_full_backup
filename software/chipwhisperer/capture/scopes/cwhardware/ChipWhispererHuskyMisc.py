@@ -68,6 +68,7 @@ ADDR_USERIO_READ        = 97
 ADDR_USERIO_DEBUG_SELECT= 109
 
 ADDR_TRACE_EN           = 0xc0 + 0x2d
+ADDR_TRACE_USERIO_DIR   = 0xc0 + 0x2e
 
 
 class XilinxDRP(util.DisableNewAttr):
@@ -351,12 +352,15 @@ class USERIOSettings(util.DisableNewAttr):
 
     def __init__(self, oaiface : OAI.OpenADCInterface):
         super().__init__()
+        self._last_mode = None
         self.oa = oaiface
         self.disable_newattr()
 
     def _dict_repr(self):
         rtn = {}
         rtn['mode'] = self.mode
+        if self.mode in ['fpga_debug', 'swo_trace_plus_debug']:
+            rtn['fpga_mode'] = self.fpga_mode
         rtn['direction'] = self.direction
         rtn['drive_data'] = self.drive_data
         rtn['status'] = self.status
@@ -376,19 +380,23 @@ class USERIOSettings(util.DisableNewAttr):
             "target_debug_jtag": for target debugging with ChipWhisperer using MPSSE in JTAG mode
             "target_debug_swd": for target debugging with ChipWhisperer using MPSSE in SWD mode
             "fpga_debug": for FPGA debug (look to cwhusky_top.v for signal definitions).
+            "swo_trace_plus_debug": pins D0-D2 are used for SWO trace, D3-D7 for fpga_debug.
         """
-        debug = self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_DRIVEN, maxResp=1)[0]
-        trace = self.oa.sendMessage(CODE_READ, ADDR_TRACE_EN, maxResp=1)[0]
-        if trace:
-            return "trace"
-        elif debug == 1:
-            return "fpga_debug"
-        elif debug == 2:
-            return "target_debug_jtag"
-        elif debug == 6:
-            return "target_debug_swd"
+        if self._last_mode:
+            return self._last_mode
         else:
-            return "normal"
+            debug = self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_DRIVEN, maxResp=1)[0]
+            trace = self.oa.sendMessage(CODE_READ, ADDR_TRACE_EN, maxResp=1)[0]
+            if trace:
+                return "trace"
+            elif debug == 1:
+                return "fpga_debug"
+            elif debug == 2:
+                return "target_debug_jtag"
+            elif debug == 6:
+                return "target_debug_swd"
+            else:
+                return "normal"
 
     @mode.setter
     def mode(self, setting):
@@ -398,9 +406,14 @@ class USERIOSettings(util.DisableNewAttr):
         elif setting == 'trace':
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [0])
             self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [1])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_USERIO_DIR,    [3])  # restore default just in case
         elif setting == 'fpga_debug':
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [1])
             self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
+        elif setting == 'swo_trace_plus_debug':
+            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [1])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [1])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_USERIO_DIR,    [0xff-4])
         elif setting == 'target_debug_jtag':
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [2])
             self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
@@ -409,6 +422,7 @@ class USERIOSettings(util.DisableNewAttr):
             self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
         else:
             raise ValueError("Invalid mode; use normal/trace/fpga_debug/target_debug_jtag/target_debug_swd")
+        self._last_mode = setting
 
     @property
     def fpga_mode(self):
@@ -419,8 +433,8 @@ class USERIOSettings(util.DisableNewAttr):
 
     @fpga_mode.setter
     def fpga_mode(self, setting):
-        if not setting in range(0, 12):
-            raise ValueError("Must be integer in [0, 11]")
+        if not setting in range(0, 16):
+            raise ValueError("Must be integer in [0, 15]")
         else:
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_SELECT, [setting])
 

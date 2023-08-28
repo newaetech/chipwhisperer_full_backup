@@ -201,6 +201,10 @@ class TraceWhisperer(util.DisableNewAttr):
         """ Set some registers which for various reasons don't reset to what we want them to.
         """
         self.fpga_write(self.REG_CAPTURE_WHILE_TRIG, [1])
+        # this is a register which, in Husky, is changed by scope.userio.mode = 'swo_trace_plus_debug'; 
+        # that setting would prevent parallel trace from working, so let's make sure we have the proper
+        # value whenever we connect:
+        self.fpga_write(self.REG_TRACE_USERIO_DIR, [3]) 
 
 
     def reset_fpga(self):
