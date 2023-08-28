@@ -350,7 +350,7 @@ class USERIOSettings(util.DisableNewAttr):
     '''
     _name = 'USERIO Control'
 
-    fpga_mode_definitions = [0]*16
+    fpga_mode_definitions = [None]*16 # type: list
 
     # fpga_mode = 0:
     fpga_mode_definitions[0] = ['streaming debug',
