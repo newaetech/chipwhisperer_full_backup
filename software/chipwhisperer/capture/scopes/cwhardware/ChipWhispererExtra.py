@@ -1114,6 +1114,8 @@ class HuskyTrigger(TriggerSettings):
     def _dict_repr(self):
         rtn = {}
         rtn['sequencer_enabled'] = self.sequencer_enabled
+        if self.sequencer_enabled:
+            rtn['num_triggers'] = self.num_triggers
         rtn['module'] = self.module
         if self.sequencer_enabled:
             rtn['triggers'] = self.triggers
@@ -1164,6 +1166,9 @@ class HuskyTrigger(TriggerSettings):
             msg.extend(d)
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGSRC, msg, maxResp=len(msg))
 
+    @property
+    def num_triggers(self):
+        return 2
 
     @property
     def module(self):
@@ -1224,6 +1229,27 @@ class HuskyTrigger(TriggerSettings):
     def setModule(self, modes):
         if type(modes) != list:
             modes = [modes]
+        # first things first, check that it's legal: only the 'basic' module can be used multiple times, and the
+        # trace/UART module can only be used once (trace or UART but not both)
+        if self.sequencer_enabled:
+            if len(modes) < self.num_triggers:
+                new_modes = self.module
+                for i,m in enumerate(modes):
+                    new_modes[i] = m
+            else:
+                new_modes = modes
+            modes_used = {}
+            for m in new_modes:
+                if m in ['trace', 'UART']:
+                    m = 'trace/UART'
+                if m in modes_used.keys():
+                    modes_used[m] += 1
+                else:
+                    modes_used[m] = 1
+            for m in modes_used.keys():
+                if m != 'basic' and modes_used[m] > 1:
+                    raise ValueError('Module %s can only be used once in a trigger sequence.' % m)
+
         modules = []
         for i, mode in enumerate(modes):
             if mode in self.MODULE.keys():
@@ -1244,7 +1270,6 @@ class HuskyTrigger(TriggerSettings):
                     msg = msg + key + ', '
                 raise ValueError(msg)
             modules.append(module)
-        #resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=self._max_sequenced_triggers)
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, modules)
 
     @property
@@ -1280,6 +1305,7 @@ class HuskyTrigger(TriggerSettings):
 
     @window_start.setter
     def window_start(self, start):
+        self._check_window(start, self.window_end)
         raw = list(int.to_bytes(start, length=2, byteorder='little'))
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
 
@@ -1293,10 +1319,14 @@ class HuskyTrigger(TriggerSettings):
 
     @window_end.setter
     def window_end(self, end):
+        self._check_window(self.window_start, end)
         raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=4)
         raw[2:4] = list(int.to_bytes(end, length=2, byteorder='little'))
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
 
+    def _check_window(self, start, end):
+        if start > 0 and end > 0 and start > end:
+            scope_logger.warning('window is such that this trigger will never fire!')
 
 
     @property
