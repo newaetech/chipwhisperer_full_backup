@@ -1168,7 +1168,20 @@ class HuskyTrigger(TriggerSettings):
 
     @property
     def num_triggers(self):
-        return 2
+        """Number of triggers in the trigger sequence.
+        """
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        return (raw & 0x0f) + 1
+
+    @num_triggers.setter
+    def num_triggers(self, num):
+        if num < 2 or num > self._max_sequenced_triggers:
+            raise ValueError('Minimum 2, maximum %d' % self._max_sequenced_triggers)
+        else:
+            raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+            raw = (raw & 0xf0) + (num-1)
+            self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_CONFIG, [raw])
+
 
     @property
     def module(self):
