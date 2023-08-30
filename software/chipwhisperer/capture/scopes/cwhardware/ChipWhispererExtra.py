@@ -1107,7 +1107,6 @@ class HuskyTrigger(TriggerSettings):
 
     def __init__(self, cwextra):
         self._edges = 1
-        self._max_sequenced_triggers = 2
         super().__init__(cwextra)
         self._is_husky = True
 
@@ -1119,7 +1118,7 @@ class HuskyTrigger(TriggerSettings):
         rtn['module'] = self.module
         if self.sequencer_enabled:
             rtn['triggers'] = self.triggers
-            for i in range(self._max_sequenced_triggers):
+            for i in range(self.num_triggers):
                 seq_trig_rtn = {}
                 seq_trig_rtn['module'] = self.module[i]
                 if self.module[i] == 'ADC':
@@ -1129,7 +1128,7 @@ class HuskyTrigger(TriggerSettings):
                 if self.module[i] == 'edge_counter':
                     seq_trig_rtn['edges'] = self.edges
                 if i > 0:
-                    # NOTE: assuming self._max_sequenced_triggers = 2; expand if needed
+                    # NOTE: assuming self.max_sequenced_triggers = 2; expand if needed
                     seq_trig_rtn['window_start'] = self.window_start
                     seq_trig_rtn['window_end'] = self.window_end
                 rtn['sequence trigger #%d' % i] = seq_trig_rtn
@@ -1145,7 +1144,7 @@ class HuskyTrigger(TriggerSettings):
 
     def readMultipleTriggers(self):
         message = []
-        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGSRC, Validate=False, maxResp=self.cwe._addr_trigsrc_size*self._max_sequenced_triggers)
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGSRC, Validate=False, maxResp=self.cwe._addr_trigsrc_size*self.max_sequenced_triggers)
         for i in range(0, len(raw), self.cwe._addr_trigsrc_size):
             pins, mode = self.cwe.raw2pins(raw[i:i+2])
             message.append(self._trigger_value2string(pins, mode))
@@ -1167,6 +1166,13 @@ class HuskyTrigger(TriggerSettings):
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGSRC, msg, maxResp=len(msg))
 
     @property
+    def max_sequenced_triggers(self):
+        """Maximum number of triggers in the trigger sequence.
+        """
+        return self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=2)[1]
+
+
+    @property
     def num_triggers(self):
         """Number of triggers in the trigger sequence.
         """
@@ -1175,8 +1181,8 @@ class HuskyTrigger(TriggerSettings):
 
     @num_triggers.setter
     def num_triggers(self, num):
-        if num < 2 or num > self._max_sequenced_triggers:
-            raise ValueError('Minimum 2, maximum %d' % self._max_sequenced_triggers)
+        if num < 2 or num > self.max_sequenced_triggers:
+            raise ValueError('Minimum 2, maximum %d' % self.max_sequenced_triggers)
         else:
             raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
             raw = (raw & 0xf0) + (num-1)
@@ -1215,7 +1221,7 @@ class HuskyTrigger(TriggerSettings):
 
 
     def readModule(self):
-        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=self._max_sequenced_triggers)
+        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=self.max_sequenced_triggers)
         modules = []
         for r in resp:
             module = None
@@ -1312,12 +1318,16 @@ class HuskyTrigger(TriggerSettings):
     def window_start(self):
         """Minimum number of clock cycles (of the ADC sampling clock) that must follow trigger #0
         before trigger #1 is allowed to complete the sequence. 0 = no limit.
+        Args:
+            start: 16-bit integer
         """
         return int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=2), byteorder='little')
 
 
     @window_start.setter
     def window_start(self, start):
+        if start >= 2**16:
+            raise ValueError('too big')
         self._check_window(start, self.window_end)
         raw = list(int.to_bytes(start, length=2, byteorder='little'))
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
@@ -1326,12 +1336,16 @@ class HuskyTrigger(TriggerSettings):
     def window_end(self):
         """Maximum number of clock cycles (of the ADC sampling clock) that can follow trigger #0
         before trigger #1 is allowed to complete the sequence. 0 = no limit.
+        Args:
+            end: 16-bit integer
         """
         return (int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=4), byteorder='little') >> 16)
 
 
     @window_end.setter
     def window_end(self, end):
+        if end >= 2**16:
+            raise ValueError('too big')
         self._check_window(self.window_start, end)
         raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=4)
         raw[2:4] = list(int.to_bytes(end, length=2, byteorder='little'))
