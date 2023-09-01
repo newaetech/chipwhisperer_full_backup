@@ -1107,6 +1107,7 @@ class HuskyTrigger(TriggerSettings):
 
     def __init__(self, cwextra):
         self._edges = 1
+        self._window_bytes = 2
         super().__init__(cwextra)
         self._is_husky = True
 
@@ -1114,10 +1115,13 @@ class HuskyTrigger(TriggerSettings):
         rtn = {}
         rtn['sequencer_enabled'] = self.sequencer_enabled
         if self.sequencer_enabled:
+            rtn['max_sequenced_triggers'] = self.max_sequenced_triggers
             rtn['num_triggers'] = self.num_triggers
         rtn['module'] = self.module
         if self.sequencer_enabled:
             rtn['triggers'] = self.triggers
+            rtn['window_start'] = self.window_start
+            rtn['window_end'] = self.window_end
             for i in range(self.num_triggers):
                 seq_trig_rtn = {}
                 seq_trig_rtn['module'] = self.module[i]
@@ -1128,9 +1132,8 @@ class HuskyTrigger(TriggerSettings):
                 if self.module[i] == 'edge_counter':
                     seq_trig_rtn['edges'] = self.edges
                 if i > 0:
-                    # NOTE: assuming self.max_sequenced_triggers = 2; expand if needed
-                    seq_trig_rtn['window_start'] = self.window_start
-                    seq_trig_rtn['window_end'] = self.window_end
+                    seq_trig_rtn['window_start'] = self.window_start[i-1]
+                    seq_trig_rtn['window_end'] = self.window_end[i-1]
                 rtn['sequence trigger #%d' % i] = seq_trig_rtn
 
         else:
@@ -1296,23 +1299,22 @@ class HuskyTrigger(TriggerSettings):
         """Enable the trigger sequencer.
         """
         raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
-        if raw == 0x81:
+        if raw & 0x80:
             return True
-        elif raw == 0x00:
-            return False
         else:
-            raise ValueError("Unexpected value: %d" % raw)
+            return False
 
 
     @sequencer_enabled.setter
     def sequencer_enabled(self, enable):
-        # MSB is enable bit; LSB is number of triggers-1; since Husky supports only 2 sequenced triggers, this boils
-        # down to two cases only:
+        # MSB is enable bit; LSB is number of triggers-1;
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
         if enable:
-            raw = 0x81
+            raw = (raw & 0x0f) | 0x80
         else:
-            raw = 0x00
+            raw = raw & 0x0f
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_CONFIG, [raw])
+
 
     @property
     def window_start(self):
@@ -1321,16 +1323,46 @@ class HuskyTrigger(TriggerSettings):
         Args:
             start: 16-bit integer
         """
-        return int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=2), byteorder='little')
-
+        return self.get_window_start()
 
     @window_start.setter
     def window_start(self, start):
-        if start >= 2**16:
-            raise ValueError('too big')
-        self._check_window(start, self.window_end)
-        raw = list(int.to_bytes(start, length=2, byteorder='little'))
+        self.set_window_start(start)
+
+    def get_window_start(self):
+        starts = self.read_multiple_window_start()
+        return SequenceTriggerList(starts, setter=self.set_multiple_window_start, getter=self.read_multiple_window_start)
+
+    def read_multiple_window_start(self):
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
+        starts = []
+        for i in range(self.max_sequenced_triggers-1):
+            raw_index = i * self._window_bytes
+            starts.append(int.from_bytes(raw[raw_index:raw_index+self._window_bytes], byteorder='little'))
+        return starts
+
+    def set_window_start(self, start):
+        if self.max_sequenced_triggers == 2 or type(start) is int:
+            if start >= 2**(8*self._window_bytes):
+                raise ValueError('too big')
+            self._check_windows(start, self.window_end)
+            raw = list(int.to_bytes(start, length=self._window_bytes, byteorder='little'))
+            self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
+        else:
+            self.set_multiple_window_start(start)
+
+    def set_multiple_window_start(self, starts):
+        if len(starts) > self.max_sequenced_triggers-1:
+            raise ValueError('Too many settings: can only specify %d windows' % (self.max_sequenced_triggers-1))
+        self._check_windows(starts, self.window_end)
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
+        for i,start in enumerate(starts):
+            if start >= 2**(8*self._window_bytes):
+                raise ValueError('too big')
+            raw_index = i * self._window_bytes
+            raw[raw_index:raw_index+self._window_bytes] = list(int.to_bytes(start, length=self._window_bytes, byteorder='little'))
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
+
 
     @property
     def window_end(self):
@@ -1339,21 +1371,57 @@ class HuskyTrigger(TriggerSettings):
         Args:
             end: 16-bit integer
         """
-        return (int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=4), byteorder='little') >> 16)
+        return self.get_window_end()
 
 
     @window_end.setter
     def window_end(self, end):
-        if end >= 2**16:
-            raise ValueError('too big')
-        self._check_window(self.window_start, end)
-        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=4)
-        raw[2:4] = list(int.to_bytes(end, length=2, byteorder='little'))
+        self.set_window_end(end)
+
+    def get_window_end(self):
+        ends = self.read_multiple_window_end()
+        return SequenceTriggerList(ends, setter=self.set_multiple_window_end, getter=self.read_multiple_window_end)
+
+    def read_multiple_window_end(self):
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
+        ends = []
+        for i in range(self.max_sequenced_triggers-1):
+            raw_index = (self.max_sequenced_triggers -1 + i) * self._window_bytes
+            ends.append(int.from_bytes(raw[raw_index:raw_index+self._window_bytes], byteorder='little'))
+        return ends
+
+    def set_window_end(self, end):
+        if self.max_sequenced_triggers == 2 or type(end) is int:
+            if end >= 2**(8*self._window_bytes):
+                raise ValueError('too big')
+            self._check_windows(self.window_start, end)
+            raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=2*self._window_bytes)
+            raw[2:4] = list(int.to_bytes(end, length=2, byteorder='little'))
+            self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
+        else:
+            self.set_multiple_window_end(end)
+
+    def set_multiple_window_end(self, ends):
+        if len(ends) > self.max_sequenced_triggers-1:
+            raise ValueError('Too many settings: can only specify %d windows' % (self.max_sequenced_triggers-1))
+        self._check_windows(self.window_start, ends)
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
+        for i,end in enumerate(ends):
+            if end >= 2**(8*self._window_bytes):
+                raise ValueError('too big')
+            raw_index = (self.max_sequenced_triggers - 1 + i) * self._window_bytes
+            raw[raw_index:raw_index+self._window_bytes] = list(int.to_bytes(end, length=self._window_bytes, byteorder='little'))
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
 
-    def _check_window(self, start, end):
-        if start > 0 and end > 0 and start > end:
-            scope_logger.warning('window is such that this trigger will never fire!')
+
+    def _check_windows(self, starts, ends):
+        if type(starts) is int:
+            starts = [starts]
+        if type(ends) is int:
+            ends = [ends]
+        for i,(start,end) in enumerate(zip(starts, ends)):
+            if start > 0 and end > 0 and start > end:
+                scope_logger.warning('window %d is such that this trigger will never fire! (start=%d, end=%d)' % (i, start, end))
 
 
     @property
