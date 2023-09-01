@@ -1117,6 +1117,7 @@ class HuskyTrigger(TriggerSettings):
         if self.sequencer_enabled:
             rtn['max_sequenced_triggers'] = self.max_sequenced_triggers
             rtn['num_triggers'] = self.num_triggers
+            rtn['sad_always_active'] = self.sad_always_active
         rtn['module'] = self.module
         if self.sequencer_enabled:
             rtn['triggers'] = self.triggers
@@ -1190,6 +1191,30 @@ class HuskyTrigger(TriggerSettings):
             raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
             raw = (raw & 0xf0) + (num-1)
             self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_CONFIG, [raw])
+
+    @property
+    def sad_always_active(self):
+        """Make the SAD trigger module always active. Its associated trigger
+        window will still be used: only SAD triggers inside its window will be
+        recognized as part of the trigger sequence, but setting this allows the
+        SAD module to fire outside of its window, which can be helpful in
+        tuning SAD parameters.
+        """
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        if raw & 0x40:
+            return True
+        else:
+            return False
+
+
+    @sad_always_active.setter
+    def sad_always_active(self, enable):
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        if enable:
+            raw = (raw & 0b10111111) | 0x40
+        else:
+            raw = raw & 0b10111111
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_CONFIG, [raw])
 
 
     @property
@@ -1310,9 +1335,9 @@ class HuskyTrigger(TriggerSettings):
         # MSB is enable bit; LSB is number of triggers-1;
         raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
         if enable:
-            raw = (raw & 0x0f) | 0x80
+            raw = (raw & 0x7f) | 0x80
         else:
-            raw = raw & 0x0f
+            raw = raw & 0x7f
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_CONFIG, [raw])
 
 
