@@ -136,6 +136,8 @@ but we'll grab 3.9.5 here and make an env called cw:
 	pyenv virtualenv 3.9.5 cw
     pyenv activate cw
 
+.. _linux-install-chipwhisperer:
+
 ========================
 Installing ChipWhisperer
 ========================

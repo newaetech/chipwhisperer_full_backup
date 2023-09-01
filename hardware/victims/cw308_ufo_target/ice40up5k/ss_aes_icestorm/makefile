@@ -6,12 +6,14 @@ bitfile: synth pnr pack
 
 synth:
 	yosys -p 'synth_ice40 -top $(TOP) -json $(TOP).json' \
+	-D SBOX_GF \
 	../hdl/iCE40UP5K_SS.v \
 	../../spartan6lx9/hdl_src/SimpleSerial.v \
 	../../spartan6lx9/hdl_src/UART.v \
 	../../../cw305_artixtarget/fpga/cryptosrc/aes_googlevault/aes_ks.v \
 	../../../cw305_artixtarget/fpga/cryptosrc/aes_googlevault/aes_sbox.v \
 	../../../cw305_artixtarget/fpga/cryptosrc/aes_googlevault/aes_core.v  \
+	../../../cw305_artixtarget/fpga/cryptosrc/aes_newae/aes_sbox_lut.v \
 	-l yosys.log
 
 pnr:

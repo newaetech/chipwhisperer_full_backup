@@ -49,6 +49,32 @@ def SIGNEXT(x, b):
     x = x & ((1 << b) - 1)
     return (x ^ m) - m
 
+class MultiGlitchList(list):
+    """Class that behaves like a list, but can set individual elements using a getter/setter
+
+    Useful so that we can do scope.glitch.ext_offset[1] = 5 with Husky multi-glitch
+    """
+    def __setitem__(self, *args, **kwargs):
+        oldval = self._getter()
+        oldval[args[0]] = args[1]
+        self._setter(oldval)
+        pass
+
+    def __repr__(self):
+        oldrepr = super().__repr__()
+        return f"MultiGlitchList({oldrepr})"
+
+    def __init__(self, *args, **kwargs):
+        if "getter" not in kwargs:
+            raise KeyError("MultiGlitchList requires a getter")
+        if "setter" not in kwargs:
+            raise KeyError("MultiGlitchList requires a setter")
+        
+        self._getter = kwargs.pop("getter")
+        self._setter = kwargs.pop("setter")
+        super().__init__(*args, **kwargs)
+        
+
 class GlitchSettings(util.DisableNewAttr):
 
     # Output modes, sorted by ID (FPGA value)
@@ -240,6 +266,8 @@ class GlitchSettings(util.DisableNewAttr):
 
         This parameter has no effect when scope.glitch.trigger_src is set to
         "manual" or "continuous".
+
+        .. note:: Subsequent glitches are offset from the previous glitch.
 
         Raises:
            ValueError: number outside of [1, 32].
@@ -530,7 +558,8 @@ class GlitchSettings(util.DisableNewAttr):
 
         :Getter: Return the current external trigger offset(s). For CW-lite/pro
            or when num_glitches=1, this is an integer (for backwards
-           compatibility).  Otherwise, it is a list of integers.
+           compatibility).  Otherwise, it is a MultiGlitchList, which behaves as a list,
+           but allows ext_offset[x] = y to set settings for glitch x.
 
         :Setter: Set the external trigger offset(s). Integer for CW-lite/pro,
            list of integers for Husky.
@@ -970,8 +999,7 @@ class ChipWhispererGlitch(object):
             raw += int_val * 2**(32*i)
         self.oa.sendMessage(CODE_WRITE, glitchoffsetaddr, list(int.to_bytes(raw, length=4*len(offsets), byteorder='little')))
 
-    def getTriggerOffset(self):
-        """Get offset between trigger event and glitch in clock cycles"""
+    def readTriggerOffset(self):
         num_glitches = self.getNumGlitches()
         raw = int.from_bytes(self.oa.sendMessage(CODE_READ, glitchoffsetaddr, maxResp=4*num_glitches), byteorder='little')
         if num_glitches == 1:
@@ -982,6 +1010,14 @@ class ChipWhispererGlitch(object):
                 offsets.append(raw & (2**32-1))
                 raw = raw >> 32
             return offsets
+        
+    def getTriggerOffset(self):
+        """Get offset between trigger event and glitch in clock cycles"""
+        offsets = self.readTriggerOffset()
+        if type(offsets) is int:
+            return offsets
+        else:
+            return MultiGlitchList(offsets, setter=self.setTriggerOffset, getter=self.readTriggerOffset)
 
 
     def setGlitchOffsetFine(self, fine):
@@ -1115,8 +1151,7 @@ class ChipWhispererGlitch(object):
             bytes_to_write = math.ceil((len(repeats)-1)*self._repeat_bits/8)
             self.oa.sendMessage(CODE_WRITE, glitchrepeats, list(int.to_bytes(raw, length=bytes_to_write, byteorder='little')))
 
-    def getRepeat(self):
-        """Get number of glitches to occur after a trigger"""
+    def readRepeat(self):
         num_glitches = self.getNumGlitches()
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         num = resp[6]
@@ -1133,6 +1168,16 @@ class ChipWhispererGlitch(object):
                 repeats.append((raw & (2**self._repeat_bits-1)) + 1)
                 raw = raw >> self._repeat_bits
             return repeats
+        
+
+    def getRepeat(self):
+        """Get number of glitches to occur after a trigger"""
+        repeats = self.readRepeat()
+        if type(repeats) is int:
+            return repeats
+        else:
+            return MultiGlitchList(offsets, setter=self.setRepeat, getter=self.readRepeat)
+            
 
 
     def setGlitchTrigger(self, trigger):

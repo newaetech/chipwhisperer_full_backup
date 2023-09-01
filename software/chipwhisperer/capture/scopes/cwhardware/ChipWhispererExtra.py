@@ -503,6 +503,9 @@ class GPIOSettings(util.DisableNewAttr):
     def pdic(self):
         """The function of the PDIC pin output pin.
 
+        PDIC is often used to selecting between normal boot and its bootloader. See the
+        rtfm.newae.com page for your target for more information.
+
         This is a GPIO pin. The following values are allowed:
          * "high" / True: logic 1
          * "low" / False: logic 0

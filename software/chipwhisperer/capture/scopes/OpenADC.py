@@ -697,9 +697,9 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.glitch_mmcm1 = XilinxMMCMDRP(self.glitch_drp1)
             self.glitch_mmcm2 = XilinxMMCMDRP(self.glitch_drp2)
             self.la_mmcm = XilinxMMCMDRP(self.la_drp)
-            self.clock = ChipWhispererHuskyClock.ChipWhispererHuskyClock(self.sc, \
-                self._fpga_clk, self.glitch_mmcm1, self.glitch_mmcm2)
             self.ADS4128 = ADS4128Settings(self.sc)
+            self.clock = ChipWhispererHuskyClock.ChipWhispererHuskyClock(self.sc, \
+                self._fpga_clk, self.glitch_mmcm1, self.glitch_mmcm2, self.ADS4128)
             self.XADC = XADCSettings(self.sc)
             self.LEDs = LEDSettings(self.sc)
             self.LA = LASettings(oaiface=self.sc, mmcm=self.la_mmcm, scope=self)

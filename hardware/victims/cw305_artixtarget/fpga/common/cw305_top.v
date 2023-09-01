@@ -183,6 +183,11 @@ module cw305_top #(
     assign usb_data = isout? usb_dout : 8'bZ;
 
 
+`ifdef ICE40
+    assign usb_clk_buf = usb_clk;
+    assign crypt_clk = usb_clk;
+    assign tio_clkout = usb_clk;
+`else
     clocks U_clocks (
        .usb_clk                 (usb_clk),
        .usb_clk_buf             (usb_clk_buf),
@@ -194,6 +199,7 @@ module cw305_top #(
        .O_cw_clkout             (tio_clkout),
        .O_cryptoclk             (crypt_clk)
     );
+`endif
 
 
 

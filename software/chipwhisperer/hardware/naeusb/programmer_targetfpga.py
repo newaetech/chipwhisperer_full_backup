@@ -81,7 +81,7 @@ class XilinxGeneric(FPGASlaveSPI):
 
         if initb == False:
             raise IOError("Erase Error: INITB should be HIGH, reads LOW, abort!")
-        
+
     def program(self, bs_path_or_data_or_iobytes, sck_speed=1E6, use_fast_usb=True):
         """Program bitstream file. By default uses a faster mode, you can set
            `sck_speed` up to around 20E6 successfully."""
@@ -232,18 +232,23 @@ class LatticeICE40(FPGASlaveSPI):
         time.sleep(0.001)
         setattr(self.scope.io, self.csline, True)
 
-    def program(self, bs_path_or_data, sck_speed=1E6, use_fast_usb=True, start=True):
+    def program(self, bs_path_or_data_or_iobytes, sck_speed=1E6, use_fast_usb=True, start=True):
         """Program bitstream file. By default uses a faster mode, you can set
            `sck_speed` up to around 20E6 successfully."""
 
-
-        # No-body has 5K path lengths right !?
-        if len(bs_path_or_data) < 5E3:
-            bs_path = bs_path_or_data
+        if type(bs_path_or_data_or_iobytes) is io.BytesIO:
+            bs_path = None
             bs_data = None
+            bs_iobytes = bs_path_or_data_or_iobytes
+        # No-body has 5K path lengths right !?
+        elif len(bs_path_or_data_or_iobytes) < 5E3:
+            bs_path = bs_path_or_data_or_iobytes
+            bs_data = None
+            bs_iobytes = None
         else:
             bs_path = None
-            bs_data = bs_path_or_data
+            bs_data = bs_path_or_data_or_iobytes
+            bs_iobytes = None
 
             if use_fast_usb:
                 logging.info("Falling back to 'slow' USB when data is passed")
@@ -263,8 +268,11 @@ class LatticeICE40(FPGASlaveSPI):
             #Only supported with slow SPI
             use_fast_usb = False
 
-        if use_fast_usb and bs_path:
-            bsfile = open(bs_path, "rb")
+        if use_fast_usb and (bs_path or bs_iobytes):
+            if bs_path:
+                bsfile = open(bs_path, "rb")
+            else:
+                bsfile = bs_iobytes
             try:
                 fastfpga = FPGA(self.scope._getNAEUSB(), prog_mask=0xB0)
                 util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(True)
@@ -278,7 +286,10 @@ class LatticeICE40(FPGASlaveSPI):
                 util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(False)
                 bsfile.close()
         else:
-            if bs_path:
+            if bs_iobytes:
+                data = bs_iobytes.read()
+                bs_iobytes.close()
+            elif bs_path:
                 bsfile = open(bs_path, "rb")
                 data = bsfile.read()
                 bsfile.close()

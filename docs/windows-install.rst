@@ -29,7 +29,7 @@ prerequisites for you. The steps for using the installer are as follows:
     :width: 800
 
  * Find the latest ChipWhisperer Windows install executable (currently 
-   :code:`Chipwhisperer.v5.6.1.exe`)
+   :code:`Chipwhisperer.v5.7.0.exe`)
  
  * Run the executable and choose the path you want to install ChipWhisperer at. 
    You must have read/write permissions for the location you install to, so 
@@ -37,8 +37,7 @@ prerequisites for you. The steps for using the installer are as follows:
    default install location (the user's home directory) will work for most users.
 
  * Choose whether or not you want to create a desktop shortcut for running 
-   ChipWhisperer and whether or not you want to install make and compilers (we recommend that you
-   do).
+   ChipWhisperer. Make and compilers will always be installed.
 
    .. image:: _images/win-installer-2.png
     :width: 600

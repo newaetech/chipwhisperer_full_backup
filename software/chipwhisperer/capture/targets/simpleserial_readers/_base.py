@@ -24,6 +24,7 @@
 
 import collections
 import logging
+import time
 
 class SimpleSerialTemplate:
 
@@ -73,7 +74,7 @@ class SimpleSerialTemplate:
     def flushInput(self):
         self.flush()
 
-    def write(self, string):
+    def write(self, string, timeout=0):
         """
         Write a string to the device.
 
@@ -90,7 +91,17 @@ class SimpleSerialTemplate:
         """
 
         # Write to hardware
+
         self.hardware_write(string)
+        if timeout is None:
+            timeout = 10000000000
+        else:
+            while timeout > 0:
+                start = time.perf_counter()
+                if self.inWaitingTX() <= 0:
+                    return
+                end = time.perf_counter()
+                timeout -= end - start
 
         # Update terminal buffer
         for c in string:

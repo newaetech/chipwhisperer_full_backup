@@ -54,20 +54,22 @@ and make sure it reports that you're using Python 3.9.5.
 Compilers
 =========
 
-The compilers are also available on Mac OSx. The ARM compiler can be found
-on the `ARM website`_. If needed, the AVR compiler can be installed as well
-using:
+The compilers are also available on Mac OSx. You can install by running:
 
 .. code:: bash
 
+    # install arm-gcc
+    brew install --cask gcc-arm-embedded
+
+    # install avr-gcc
     brew tap osx-cross/avr
     brew install avr-gcc
+
 
 This brew install does not work for some older versions of Mac OS X. You will
 have to find a different way to install the compilers.
 
 .. _Python Software Foundation's website: https://www.python.org/downloads/mac-osx/
-.. _ARM website: https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads
 
 Mac M1 Notes
 ============
@@ -76,4 +78,12 @@ ChipWhisperer is compatable with Mac M1; however, due to the M1's different arch
 as well as its x86 emulation, you need to manually install libusb1 and ensure that the
 architecture for libusb1 matches the architecture for Python.
 
+The best way to do this seems to be to install Python via conda miniforge and to use the newest
+homebrew to install libusb.
+
 See https://github.com/newaetech/chipwhisperer/issues/381 for more information.
+
+Installing ChipWhisperer
+========================
+
+See the :ref:`Linux install instructions. <linux-install-chipwhisperer>`

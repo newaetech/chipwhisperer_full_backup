@@ -92,7 +92,7 @@ target.baud = 38400 * 10 / 7.37
 if scope._is_husky_plus:
     MAXCLOCK = 250e6
     OVERCLOCK1 = 255e6
-    OVERCLOCK2 = 255e6
+    OVERCLOCK2 = 300e6
     MAXSAMPLES = 327828
     MAXSEGMENTSAMPLES = 295056
 else:
@@ -518,7 +518,7 @@ testPLLData = [
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '6/22/2023, 15:40'
+    assert scope.fpga_buildtime == '7/28/2023, 12:29'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
