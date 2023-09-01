@@ -509,14 +509,14 @@ class USERIOSettings(util.DisableNewAttr):
                                   'ununsed']]
 
     # fpga_mode = 13:
-    fpga_mode_definitions[13] = ['sequencer debug',
-                                 ['O_trigger',
-                                  'slot',
-                                  'too_early',
-                                  'I_trigger[0]',
-                                  'I_trigger[1]',
-                                  'state[0]',
-                                  'state[1]',
+    fpga_mode_definitions[13] = ['sequencer debug (2 triggers)',
+                                 ['trigger 0',
+                                  'trigger 1',
+                                  'too early',
+                                  'too late',
+                                  'sequence trigger output',
+                                  'trigger 0 window',
+                                  'trigger 1 window',
                                   'armed_and_ready',
                                   'unused']]
 
@@ -525,23 +525,23 @@ class USERIOSettings(util.DisableNewAttr):
                                  ['unused',
                                   'unused',
                                   'unused',
-                                  'trace_active',
-                                  'sad_active',
                                   'trigger[0]',
                                   'trigger[1]',
-                                  'trigger_sequencer_out',
+                                  'trigger 0 window',
+                                  'trigger 1 window',
+                                  'too late',
                                   'unused']]
 
     # fpga_mode = 15:
-    fpga_mode_definitions[15] = ['sequencer/SAD debug 2',
-                                 ['I_trigger[0]',
-                                  'I_trigger[1]',
-                                  'slot',
-                                  'too_late',
-                                  'too_early',
-                                  'sad_active',
-                                  'state[0]',
-                                  'state[1]',
+    fpga_mode_definitions[15] = ['sequencer/SAD debug (4 triggers)',
+                                 ['trigger 0',
+                                  'trigger 1',
+                                  'trigger 2',
+                                  'trigger 3',
+                                  'trigger 0 window',
+                                  'trigger 1 window',
+                                  'trigger 2 window',
+                                  'trigger 3 window',
                                   'unused']]
 
     def __init__(self, oaiface : OAI.OpenADCInterface):
@@ -596,7 +596,7 @@ class USERIOSettings(util.DisableNewAttr):
             "trace": for target trace capture.
             "target_debug_jtag": for target debugging with ChipWhisperer using MPSSE in JTAG mode
             "target_debug_swd": for target debugging with ChipWhisperer using MPSSE in SWD mode
-            "fpga_debug": for FPGA debug (look to cwhusky_top.v for signal definitions).
+            "fpga_debug": for FPGA debug (print the scope.userio object to obtain current signal definition, which is determined by scope.userio.fpga_mode).
             "swo_trace_plus_debug": pins D0-D2 are used for SWO trace, D3-D7 for fpga_debug.
         """
         if self._last_mode:
@@ -644,7 +644,8 @@ class USERIOSettings(util.DisableNewAttr):
     @property
     def fpga_mode(self):
         """When scope.userio.mode = 'fpga_debug', selects which FPGA signals
-        are routed to the USERIO pins. See cwhusky_top.v for definitions.
+        are routed to the USERIO pins. Print the scope.userio object to obtain the signal definition
+        corresponding to the current fpga_mode setting.
         """
         return self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_SELECT, maxResp=1)[0]
 
