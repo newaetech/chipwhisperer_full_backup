@@ -1176,7 +1176,7 @@ class ChipWhispererGlitch(object):
         if type(repeats) is int:
             return repeats
         else:
-            return MultiGlitchList(offsets, setter=self.setRepeat, getter=self.readRepeat)
+            return MultiGlitchList(repeats, setter=self.setRepeat, getter=self.readRepeat)
             
 
 
