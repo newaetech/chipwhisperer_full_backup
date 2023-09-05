@@ -3,6 +3,9 @@
 #include "uECC.h"
 #include "uECC_vli.h"
 
+#include "hal.h"
+#include "simpleserial.h"
+
 #ifndef uECC_RNG_MAX_TRIES
     #define uECC_RNG_MAX_TRIES 64
 #endif
@@ -874,8 +877,14 @@ static void EccPoint_mult(uECC_word_t * result,
     XYcZ_initial_double(Rx[1], Ry[1], Rx[0], Ry[0], initial_Z, curve);
 
     for (i = num_bits - 2; i > 0; --i) {
+#ifdef FW_TRIGGER
+        trigger_high();
+#endif
         nb = !uECC_vli_testBit(scalar, i);
         XYcZ_addC(Rx[1 - nb], Ry[1 - nb], Rx[nb], Ry[nb], curve);
+#ifdef FW_TRIGGER
+        trigger_low();
+#endif
         XYcZ_add(Rx[nb], Ry[nb], Rx[1 - nb], Ry[1 - nb], curve);
     }
 

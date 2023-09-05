@@ -1,0 +1,10 @@
+Same as ../simpleserial-ecc, but with ARM trace things removed.
+
+Intended to be built either with or without firmware triggers (i.e. trigger_high()/trigger_low()):
+
+make PLATFORM=<platform> CRYPTO_TARGET=MICROECC FW_TRIGGER=1
+
+or 
+
+make PLATFORM=<platform> CRYPTO_TARGET=MICROECC FW_TRIGGER=0
+
