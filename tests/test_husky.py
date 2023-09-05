@@ -1862,6 +1862,9 @@ def test_pll(fulltest, freq, adc_mul, xtal, oversample, tolerance, reps, desc):
     else:
         refclk = 'target'
     exp_phase = get_adc_clock_phase(refclk)
+    half_period = oversample//adc_mul//2
+    if exp_phase > half_period:
+        exp_phase -= half_period*2
     for i in range(reps):
         for op in ['recal', 'reset']:
             if op == 'recal':
@@ -1871,6 +1874,9 @@ def test_pll(fulltest, freq, adc_mul, xtal, oversample, tolerance, reps, desc):
             assert scope.clock.pll.pll_locked
             assert scope.LA.locked
             delta = get_adc_clock_phase(refclk)
+            half_period = oversample//adc_mul//2
+            if delta > half_period:
+                delta -= 2*half_period
             if abs(delta - exp_phase) >= oversample//adc_mul//2 + tolerance:
                 # this is the real error that we're testing for:
                 assert False, 'Uh-oh, looks like a 180 degree phase shift! exp_phase=%d, delta=%d, op=%s, iteration=%d' % (exp_phase, delta, op, i)
