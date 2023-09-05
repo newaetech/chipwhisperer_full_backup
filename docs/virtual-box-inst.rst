@@ -66,6 +66,24 @@ You are now ready to use ChipWhisperer. Open Chrome/Firefox and
 type **localhost:8888** into the address bar. This will give you access to
 the Jupyter Notebook server running in the virtual machine.
 
+===================================
+Troubleshooting Hardware Connection
+===================================
+
+If you're not able to connect to your ChipWhisperer in a VM, but are able to outside of the VM,
+you may need to disable the USB device filters and manually connect. An example of this is
+being able to see the ChipWhisperer in Windows Device Manager when the VM is off, but not being
+able to connect in the VM.
+
+To disable the device filters, open VirtualBox, right click :code:`ChipWhisperer Jupyter`,
+go to :code:`Settings>USB` and uncheck the boxes for your devices. 
+
+To manually connect, boot the VM. Then, in the top tool bar, go to :code:`Devices>USB` and
+click on the entry for your ChipWhisperer. You will need to do this each time you boot the VM.
+
+If this doesn't work and you're on Linux, make sure you've added your user to :code:`vboxusers`
+as indicated above.
+
 .. _GitHub releases page: https://github.com/newaetech/chipwhisperer/releases
 
 .. _VirtualBox: https://www.virtualbox.org/wiki/Downloads
