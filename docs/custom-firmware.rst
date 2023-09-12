@@ -120,7 +120,7 @@ plaintext and send it back. Our project files typically support both simpleseria
 Note that the above doesn't use the crypto portion of the build system. Unless you want to use your algorithm
 across multiple projects, typically it's easier to just include your algorithm in the main project files.
 
-The final thing we need to do is setup our makefile. This is simple. Your makefile just needs to
+The final thing we need to do is setup our makefile. Your makefile just needs to
 include the build filename that you want, the source files, and include the simpleserial and main
 makefiles:
 
@@ -137,3 +137,9 @@ makefiles:
 
     FIRMWAREPATH = ../.
     include $(FIRMWAREPATH)/Makefile.inc
+
+With all that done, you can now build your firmware for any supported target in our build system:
+
+.. code:: bash
+
+    make -j PLATFORM=CW308_SAM4S CRYPTO_TARGET=NONE SS_VER=SS_VER_2_1
