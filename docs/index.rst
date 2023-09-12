@@ -88,6 +88,7 @@ and control over logging in Python.
     ChipWhisperer as a Debugger <debugging.rst>
     SimpleSerial <simpleserial.rst>
     Logging <logging.rst>
+    Custom Firmware <custom-firmware.rst>
 
 Other
 ============================
