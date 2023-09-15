@@ -154,4 +154,5 @@ With all that done, you can now build your firmware for any supported target in 
 You may need to run :code:`make clean` before building your new firmware:
 
 .. code:: bash
+
     make clean
