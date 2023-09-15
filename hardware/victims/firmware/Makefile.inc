@@ -33,10 +33,13 @@ ifeq ($(PLATFORM),)
   endif
 endif
 
-include $(FIRMWAREPATH)/simpleserial/Makefile.simpleserial
-include $(FIRMWAREPATH)/hal/Makefile.hal
 
-include $(FIRMWAREPATH)/crypto/Makefile.crypto
+include $(FIRMWAREPATH)/hal/Makefile.hal
+ifneq ($(MAKECMDGOALS),clean)
+	include $(FIRMWAREPATH)/simpleserial/Makefile.simpleserial
+
+	include $(FIRMWAREPATH)/crypto/Makefile.crypto
+endif
 
 #Debug - can be useful to see variables
 #${info '$(.VARIABLES)'}
@@ -559,20 +562,20 @@ clean_print :
 
 # Clean all object files related to any of the platforms
 clean_all_objs :
-	@$(REMOVE) $(addsuffix .hex,$(TARGET-ALL))
-	@$(REMOVE) $(addsuffix .eep,$(TARGET-ALL))
-	@$(REMOVE) $(addsuffix .bin,$(TARGET-ALL))
-	@$(REMOVE) $(addsuffix .cof,$(TARGET-ALL))
-	@$(REMOVE) $(addsuffix .elf,$(TARGET-ALL))
-	@$(REMOVE) $(addsuffix .map,$(TARGET-ALL))
-	@$(REMOVE) $(addsuffix .sym,$(TARGET-ALL))
-	@$(REMOVE) $(addsuffix .lss,$(TARGET-ALL))
-	@$(REMOVE) $(OBJDIR)/*.o
-	@$(REMOVE) $(OBJDIR)/*.lst
-	@$(REMOVEDIR) $(OBJDIR)
-	@$(REMOVE) $(SRC:.c=.s)
-	@$(REMOVE) $(SRC:.c=.d)
-	@$(REMOVE) $(SRC:.c=.i)
+	$(REMOVE) $(addsuffix .hex,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .eep,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .bin,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .cof,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .elf,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .map,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .sym,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .lss,$(TARGET-ALL))
+	$(REMOVE) $(OBJDIR)/*.o
+	$(REMOVE) $(OBJDIR)/*.lst
+	$(REMOVEDIR) $(OBJDIR)
+	$(REMOVE) $(SRC:.c=.s)
+	$(REMOVE) $(SRC:.c=.d)
+	$(REMOVE) $(SRC:.c=.i)
 
 clean_list :
 	$(REMOVEDIR) .dep

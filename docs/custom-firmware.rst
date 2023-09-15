@@ -49,7 +49,7 @@ Examples
 Simple XOR cipher
 =================
 
-To illustrate how to make your own project, we'll go through making a project that implements a simple
+To illustrate how to make your own project, we'll go through implementing a simple
 XOR cipher. Let's start by making a new folder for our project, which we'll call :code:`simpleserial-xor` :
 
 .. code:: bash
@@ -90,7 +90,7 @@ plaintext and send it back. Our project files typically support both simpleseria
 
         trigger_high();
         for (uint8_t i = 0; i < 16; i++) {
-            buf[i] ^= key; // do "encryption"
+            buf[i] ^= key[i]; // do "encryption"
         }
         trigger_low();
 
@@ -132,6 +132,12 @@ makefiles:
     # our C firmware file
     SRC += simpleserial-xor.c
 
+    # Use simpleserial 2
+    SS_VER = SS_VER_2_1
+
+    # No crypto required
+    CRYPTO_TARGET = NONE
+
     # include other required build files
     include ../simpleserial/Makefile.simpleserial
 
@@ -142,4 +148,10 @@ With all that done, you can now build your firmware for any supported target in 
 
 .. code:: bash
 
-    make -j PLATFORM=CW308_SAM4S CRYPTO_TARGET=NONE SS_VER=SS_VER_2_1
+    make -j PLATFORM=CW308_SAM4S
+
+
+You may need to run :code:`make clean` before building your new firmware:
+
+.. code:: bash
+    make clean
