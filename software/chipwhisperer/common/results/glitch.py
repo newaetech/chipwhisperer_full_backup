@@ -3,10 +3,16 @@
 # GlitchController will be part of ChipWhisperer core - just run this block
 # for now.
 
+import random, math
+
 try:
     import ipywidgets as widgets # type: ignore
 except ModuleNotFoundError:
     widgets = None
+
+def apply_ticks(value, ticks, round):
+    value = float(value) * ticks
+    return int(round(value))
 
 class GlitchController:
     
@@ -28,10 +34,36 @@ class GlitchController:
         self._glitch_plotdots = None
         
         self.clear()
-        
+
+    @property
+    def steps_count(self):
+        return len(self.steps)
+    
+    @property
+    def group_count(self):
+        return len(self.groups)
+
+    @property
+    def param_count(self):
+        return len(self.parameters)
+
+    @property
+    def last_param_index(self):
+        return self.param_count - 1
+
+    def get_group_index(self, group):
+        return self.groups.index(group)
+
+    def get_param_index(self, param):
+        return self.parameters.index(param)
+
+    def get_group_counter(self, group):
+        i = self.get_group_index(group)
+        return self.group_counts[i]
+
     def clear(self):
         self.results.clear()        
-        self.group_counts = [0] * len(self.groups)
+        self.group_counts = [0] * self.group_count
         
         if self.widget_list_groups:
             for w in self.widget_list_groups:
@@ -44,7 +76,7 @@ class GlitchController:
             low = high
             high = t
         
-        i = self.parameters.index(parameter)
+        i = self.get_param_index(parameter)
         self.parameter_min[i] = low
         self.parameter_max[i] = high
         if not (widgets is None): 
@@ -55,6 +87,47 @@ class GlitchController:
                 self.widget_list_parameter[i].min = low
                 self.widget_list_parameter[i].max = high
     
+    def set_extoff_range(self, insn_count, **args):
+        """Sets the range of a parameter that is meant to control the ext_offset setting.
+            parameter_min[extoff_param_name] = floor((range_start - tolerance) * (clkgen_freq / target_freq))
+            parameter_max[extoff_param_name] = ceil((range_start + (instruction_count * arch_pipeline_cycles) + tolerance) * (clkgen_freq / target_freq))
+        """
+        # Minimum/starting value for the range
+        start = args.get('range_start', 0)
+        # Instruction pipeline cycles
+        cycles = args.get('arch_pipeline_cycles', 3)
+        # Extra count added to min and max
+        tolerance = args.get('tolerance', 0)
+        # Clock ratios
+        clkgen_freq = args.get('clkgen_freq', 0)
+        target_freq = args.get('target_freq', 0)
+        clkgen_ticks = args.get('clkgen_per_target_tick', 1)
+        # Override clkgen_per_target_tick if both frequencies defined
+        if (clkgen_freq > 0) and (target_freq > 0):
+            clkgen_ticks = float(clkgen_freq) / float(target_freq)
+        
+        # Calculate window max
+        insn_count = start + (insn_count * cycles) + tolerance
+        
+        """Calculate window min
+        NOTE: We do not apply cycles to start on the thought that the CPU's pipelines are running
+        optimally.  Favor a larger window (with lower minimum/starting point) to increase the odds
+        to hit a glitch.
+        """
+        if start > tolerance:
+            start -= tolerance
+        else:
+            start = 0
+        
+        # Apply clkgen ratio
+        if clkgen_ticks != 1:
+            clkgen_ticks = float(clkgen_ticks)
+            start = apply_ticks(start, clkgen_ticks, math.floor)
+            insn_count = apply_ticks(insn_count, clkgen_ticks, math.ceil)
+
+        name = args.get('extoff_param_name', 'ext_offset')
+        self.set_range(name, start, insn_count)
+
     def set_step(self, parameter, step):
         '''Set a step for a single parameter
 
@@ -74,7 +147,7 @@ class GlitchController:
             gc.set_step(2, [1, 2, 5, 10]) # error, list too long
         '''
         if type(parameter) is str:
-            parameter = self.parameters.index(parameter)
+            parameter = self.get_param_index(parameter)
         if hasattr(step, "__iter__"):
             if len(step) != self._num_steps:
                 raise ValueError("Invalid number of steps {}")
@@ -91,23 +164,23 @@ class GlitchController:
         
         Overwrites individually set steps.
         '''
-        for i in range(len(self.steps)):
+        for i in range(self.steps_count):
             if hasattr(steps, "__iter__"):
                 self.steps[i] = steps
             else:
                 self.steps[i] = [steps]
         self._num_steps = len(self.steps[0])
 
-    
     def add(self, group, parameters=None, strdesc=None, metadata=None, plot=True):
         if parameters is None:
             parameters = self.parameter_values
         self.results.add(group, parameters, strdesc, metadata)    
         
-        i = self.groups.index(group)        
+        i = self.get_group_index(group)        
         #Basic count
         self.group_counts[i] += 1
-        self.widget_list_groups[i].value =  self.group_counts[i]
+        if not self.widget_list_groups is None:
+            self.widget_list_groups[i].value =  self.group_counts[i]
 
         if plot and self._buffers:
             self.update_plot(parameters[self._x_index], parameters[self._y_index], group)
@@ -207,26 +280,6 @@ class GlitchController:
             plotdots = self._glitch_plotdots
 
         return self.results.plot_2d(plotdots, x_index, y_index, *args, **kwargs)
-
-       
-        
-    def glitch_values(self, clear=True):
-        """Generator returning the given parameter values in order, using the step size (or step list)"""
-        
-        self.parameter_values = self.parameter_min[:]
-        
-        if clear:
-            self.clear()
-        
-        #transpose steps so that all parameters' steps get passed to loop_rec instead of just one
-        steps = list(map(list, zip(*self.steps)))
-
-        for stepsize in steps:
-            for val in self._loop_rec(0, len(self.parameter_values)-1, stepsize):
-                if self.widget_list_parameter:
-                    for i,v in enumerate(val):
-                        self.widget_list_parameter[i].value = v
-                yield val
         
     def _loop_rec(self, parameter_index, final_index, step):
         self.parameter_values[parameter_index] = self.parameter_min[parameter_index]
@@ -257,7 +310,104 @@ class GlitchController:
         else:
             rtn =list(rtn.items())
         return rtn
-                
+
+    def create_iteration_counts(self):
+        """Creates a tuple of iteration counts of (max - min)/step for each parameter.
+
+        Return:
+            The tuple of parameter iteration counts.
+        """
+        set_counts = [ None ] * self.param_count
+        for i in range(self.param_count):
+            steps = self.steps[i]
+            param_counts = [ None ] * len(steps)
+            for j in range(len(steps)):
+                param_counts[j] = int((self.parameter_max[i] - self.parameter_min[i]) / steps[j])
+            set_counts[i] = tuple(param_counts)
+        return tuple(set_counts)
+
+    def _set_param_val(self, i, val):
+        if self.widget_list_parameter:
+            self.widget_list_parameter[i].value = val
+        self.parameter_values[i] = val
+
+    def _rst_param_val(self, i):
+        self._set_param_val(i, self.parameter_min[i])
+        
+    def _glitch_val_init(self, clear):
+        if clear:
+            self.clear()
+
+        self.parameter_values = self.parameter_min[:]
+
+    def glitch_values(self, clear=True):
+        """Generator returning the given parameter values in order, using the step size (or step list)"""
+
+        self._glitch_val_init(clear)
+        step_idx = [0] * self.param_count
+
+        for i in range(self.param_count):
+            self._rst_param_val(i)
+
+        """NOTE: Initializing/resetting i to the final index to iterate parameters starting from
+        the final parameter (instead of index 0) like previous logic. Could maybe change to start
+        from 0 to simplify logic?
+        """
+        valid = True
+        i = self.last_param_index
+        while i >= 0:
+            if valid:
+                yield self.parameter_values
+            
+            steps = self.steps[i]
+            # Check if the current parameter has a usable step
+            j = step_idx[i]
+            if j < len(steps):
+                # Increment parameter by the current step and check if it's valid
+                val = self.parameter_values[i]
+                val += steps[j]
+                if val <= self.parameter_max[i]:
+                    # Parameter is within the valid range
+                    self._set_param_val(i, val)
+                    valid = True
+                    i = self.last_param_index
+                else:
+                    # Parameter overflowed the range, move to next step mutator
+                    self._rst_param_val(i)
+                    valid = False
+                    step_idx[i] = j + 1
+            else:
+                # No step mutators left, move to the next parameter
+                self._rst_param_val(i)
+                valid = False
+                step_idx[i] = 0
+                i -= 1
+
+    def rand_glitch_values(self, clear=True, randgen=random.randrange):
+        """Generator continuously generating random values of parameters divisible by their steps and within their min-max range
+        """
+
+        self._glitch_val_init(clear)
+
+        # Get a list of counts for RNG constraints
+        counts = self.create_iteration_counts()
+
+        while True:
+            for i in range(self.param_count):
+                # Randomly select a step mutator
+                j = 0
+                param_steps = counts[i]
+                if len(param_steps) > 1:
+                    j = randgen(len(param_steps))
+
+                # Generate a random value for the parameter: min + (step_mutator * RNG(mutator_iterations))
+                val = self.parameter_min[i]
+                param_steps = param_steps[j]
+                if param_steps > 0:
+                    val += self.steps[i][j] * randgen(param_steps)
+                self._set_param_val(i, val)
+
+            yield self.parameter_values        
 
 class GlitchResults:
     """GlitchResults tracks and plots fault injection attempts.
@@ -356,8 +506,6 @@ class GlitchResults:
 
         return rtn
 
-
-        
     def calc(self, ignore_params=[]):
         '''
         Calculate how many glitches had various effects. Return updated stats.
