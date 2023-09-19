@@ -28,6 +28,7 @@ import logging
 from .logging import *
 
 from .common.results.glitch import GlitchController
+from .common.utils.looper import *
 import sys, subprocess
 
 
