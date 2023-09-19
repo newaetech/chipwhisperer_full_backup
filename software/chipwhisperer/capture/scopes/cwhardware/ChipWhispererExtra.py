@@ -74,7 +74,586 @@ _gpio_alias = {
 _tio_api_alias = {_tio_alias[n]: n for n in _tio_alias}
 _gpio_api_alias = {_gpio_alias[n]: n for n in _gpio_alias}
 
+class CWExtraSettings:
+    PIN_FPA = 0x01
+    PIN_TNRST = 0x02
+    PIN_RTIO1 = 0x04
+    PIN_RTIO2 = 0x08
+    PIN_RTIO3 = 0x10
+    PIN_RTIO4 = 0x20
+    MODE_OR = 0x00
+    MODE_AND = 0x01
+    MODE_NAND = 0x02
+
+    PIN_USERIO0 = 0x0100
+    PIN_USERIO1 = 0x0200
+    PIN_USERIO2 = 0x0400
+    PIN_USERIO3 = 0x0800
+    PIN_USERIO4 = 0x1000
+    PIN_USERIO5 = 0x2000
+    PIN_USERIO6 = 0x4000
+    PIN_USERIO7 = 0x8000
+
+    CLOCK_FPA = 0x00
+    CLOCK_FPB = 0x01
+    CLOCK_PLL = 0x02
+    CLOCK_RTIOIN = 0x03
+    CLOCK_RTIOOUT = 0x04
+
+    IOROUTE_HIGHZ = 0
+    IOROUTE_STX = 0b00000001
+    IOROUTE_SRX = 0b00000010
+    IOROUTE_USIO = 0b00000100
+    IOROUTE_USII = 0b00001000
+    IOROUTE_USINOUT = 0b00011000
+    IOROUTE_STXRX = 0b00100010
+    IOROUTE_GPIO = 0b01000000
+    IOROUTE_GPIOE = 0b10000000
+
+    GLITCH_OUT_DISABLE = 0
+    GLITCH_OUT_HP = 1 << 0
+    GLITCH_OUT_LP = 1 << 1
+    GLITCH_OUT_BOTH = GLITCH_OUT_HP | GLITCH_OUT_LP
+    GLITCH_OUT_CLR = ~GLITCH_OUT_BOTH
+
+    _name = "CW Extra Settings"
+
+    def __init__(self, oa, cwtype):
+
+        if cwtype == "cwrev2":
+            hasFPAFPB = True
+            hasGlitchOut = False
+            hasPLL = True
+            hasAux=False
+            hasUserio=False
+        elif cwtype == "cwlite":
+            hasFPAFPB=False
+            hasGlitchOut=True
+            hasPLL=False
+            hasAux=False
+            hasUserio=False
+        elif cwtype == "cw1200":
+            hasFPAFPB=False
+            hasGlitchOut=True
+            hasPLL=False
+            hasAux=True
+            hasUserio=False
+        elif cwtype in ["cwhusky", "cwhusky-plus"]:
+            hasFPAFPB=False
+            hasGlitchOut=True
+            hasPLL=False
+            hasAux=True
+            hasUserio=True
+        else:
+            raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
+
+        self.oa = oa
+        self.hasFPAFPB = hasFPAFPB
+        self.hasGlitchOut = hasGlitchOut
+        self.hasPLL = hasPLL
+        self.hasAux = hasAux
+        self.hasUserio = hasUserio
+
+
+        #Add special single-class items used as higher-level API
+        self.gpiomux = GPIOSettings(self)
+        self.triggermux = TriggerSettings(self)
+        self.protrigger = ProTrigger(self)
+        self.huskytrigger = HuskyTrigger(self)
+
+        if cwtype in ["cwhusky", "cwhusky-plus"]:
+            self.gpiomux._is_husky = True
+            self.triggermux._is_husky = True
+            self._addr_trigsrc_size = 2
+            self._is_husky = True
+        else:
+            self._addr_trigsrc_size = 1
+            self._is_husky = False
+
+### IOROUTE Helpers
+
+    def read_ioroute(self):
+        """Reads the IOROUTE device state.
+
+        Return:
+            bytearray representing the IOROUTE state.
+        """
+        return self.oa.msg_read(ADDR_IOROUTE, max_resp=8)
+
+    def write_ioroute(self, data):
+        """Writes a specified state to IOROUTE.
+        """
+        self.oa.msg_write(ADDR_IOROUTE, data)
+
+    def extr_ioroute_mask(self, i, mask):
+        return self.oa.msg_extr_mask(ADDR_IOROUTE, i, mask, max_resp=8)
+
+    def test_ioroute_mask(self, i, mask):
+        """Evaluates a non-zero flag for a specified byte in the IOROUTE state.
+
+        Return:
+            False if the mask evaluates to 0, else True.
+        """
+        return self.oa.msg_test_mask(ADDR_IOROUTE, i, mask, max_resp=8)
+
+    def set_ioroute_mask(self, i, mask):
+        """OR's a mask into a specified byte in the IOROUTE state.
+
+        Return:
+            The updated IOROUTE state.
+        """
+        return self.oa.msg_set_mask(ADDR_IOROUTE, i, mask, max_resp=8)
+
+    def clr_ioroute_mask(self, i, mask):
+        """NAND's a mask into a specified byte in the IOROUTE state.
+
+        Return:
+            The updated IOROUTE state.
+        """
+        return self.oa.msg_clr_mask(ADDR_IOROUTE, i, mask, max_resp=8)
+
+    def upd_ioroute_mask(self, i, mask, set):
+        """Conditionally OR's or NAND's a mask into a specified byte in the IOROUTE state.
+
+        Return:
+            The updated IOROUTE state.
+        """
+        return self.oa.msg_upd_mask(ADDR_IOROUTE, i, mask, set, max_resp=8)
+
+    def ins_ioroute_mask(self, i, mask, value):
+        """Injects a value into a specified byte in the IOROUTE state.
+
+        Return:
+            The updated IOROUTE state.
+        """
+        return self.oa.msg_ins_mask(ADDR_IOROUTE, i, mask, value, max_resp=8)
+
+    def get_ioroute_value(self, i):
+        """Gets a specified byte from the IOROUTE state.
+
+        Return:
+            The specified IOROUTE byte.
+        """
+        return self.oa.msg_get_value(ADDR_IOROUTE, i, max_resp=8)
+
+    def set_ioroute_value(self, i, value):
+        """Assigns a specified byte in the IOROUTE state.
+
+        Return:
+            The updated IOROUTE state.
+        """
+        return self.oa.msg_set_value(ADDR_IOROUTE, i, value, max_resp=8)
+
+### GPIO Settings
+
+    def _setGPIOState(self, state, IONumber):
+        # Special GPIO nRST, PDID, PDIC
+        if IONumber >= 100:
+            if IONumber == 100:  # nRST IO Number
+                bitnum = 0
+            elif IONumber == 101:  # PDID IO Number
+                bitnum = 2
+            elif IONumber == 102:  # PDIC IO Number
+                bitnum = 4
+            else:
+                raise ValueError("Invalid special IO Number: %d" % IONumber)
+
+            data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+
+            if state is None:
+                # Disable GPIO mode
+                data[6] &= ~(1 << bitnum)
+            else:
+                # Enable GPIO mode
+                data[6] |= (1 << bitnum)
+
+                # Set pin high/low
+                if state:
+                    data[6] |= (1 << (bitnum + 1))
+                else:
+                    data[6] &= ~(1 << (bitnum + 1))
+
+            self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+        # Regular GPIO1-4
+        elif state is not None:
+            data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+
+            if data[IONumber] & self.IOROUTE_GPIOE == 0:
+                raise IOError("TargetIO %d is not in GPIO mode" % IONumber)
+
+            if state:
+                data[IONumber] |= self.IOROUTE_GPIO
+            else:
+                data[IONumber] &= ~(self.IOROUTE_GPIO)
+
+            self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def setGPIOState1(self, state):
+        self._setGPIOState(state, 0)
+
+    def setGPIOState2(self, state):
+        self._setGPIOState(state, 1)
+
+    def setGPIOState3(self, state):
+        self._setGPIOState(state, 2)
+
+    def setGPIOState4(self, state):
+        self._setGPIOState(state, 3)
+
+    def setGPIOStatenrst(self, state):
+        self._setGPIOState(state, 100)
+
+    def setGPIOStatepdid(self, state):
+        self._setGPIOState(state, 101)
+
+    def setGPIOStatepdic(self, state):
+        self._setGPIOState(state, 102)
+
+    def setGPIOState(self, state, IONumber):
+        if IONumber == 0:
+            self.setGPIOState1(state)
+        elif IONumber == 1:
+            self.setGPIOState2(state)
+        elif IONumber == 2:
+            self.setGPIOState3(state)
+        elif IONumber == 3:
+            self.setGPIOState4(state)
+        elif IONumber == 100:
+            self.setGPIOStatenrst(state)
+        elif IONumber == 101:
+            self.setGPIOStatepdid(state)
+        elif IONumber == 102:
+            self.setGPIOStatepdic(state)
+        else:
+            raise ValueError("Invalid GPIO State")
+
+    def getGPIOState(self, IONumber):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+
+        #Catch special modes
+        if IONumber >= 100:
+            if IONumber == 100: # nRST IO Number
+                bitnum = 0
+            elif IONumber == 101: # PDID IO Number
+                bitnum = 2
+            elif IONumber == 102: # PDIC IO Number
+                bitnum = 4
+            else:
+                raise ValueError("Invalid special IO Number: %d"%IONumber)
+
+            if (data[6] & (1<<bitnum)) == 0:
+                return None
+            else:
+                return (data[6] & (1<<(bitnum+1))) != 0
+
+        if data[IONumber] & self.IOROUTE_GPIOE == 0:
+            return None
+
+        return data[IONumber] & self.IOROUTE_GPIO
+
+    def readTIOPins(self):
+        """Read signal level of all 4 Target IOn pins synchronously.
+
+        In most cases this is useful for low-speed digital input, hence the
+        GPIO state of the Target IOn pin(s) used for digital input should be
+        configured as 'High-Z'.
+
+        Returns a bit mask where set bits indicate which of the 4 target IOn
+        pins is read as high. Counting starts at bit 0, for example, bit0
+        refers to tio1.
+        """
+
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOREAD, Validate=False, maxResp=1)
+        return data[0]
+
+    def readTIOPin(self, tio):
+        """Read signal level of a Target IOn pin.
+
+        Returns True if the signal level of the Target IOn pin is high,
+        otherwise False is returned.
+        """
+        if tio < 1 or tio > 4:
+            raise ValueError("Invalid Target IO. Currently only tio1 to tio4 are supported.")
+        tios = self.readTIOPins()
+        return (tios & (1<<(tio-1))) > 0
+
+    def setTargetIOMode1(self, setting):
+        self._setTargetIOMode(setting, 0)
+
+    def setTargetIOMode2(self, setting):
+        self._setTargetIOMode(setting, 1)
+
+    def setTargetIOMode3(self, setting):
+        self._setTargetIOMode(setting, 2)
+
+    def setTargetIOMode4(self, setting):
+        self._setTargetIOMode(setting, 3)
+
+    def _setTargetIOMode(self, setting, IONumber):
+        #Sends actual IO mode to FPGA
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        data[IONumber] = setting
+        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def setTargetIOMode(self, setting, IONumber):
+        #To keep parameters syncronized, we need ot call individual set functions
+        if IONumber == 0:
+            self.setTargetIOMode1(setting)
+        elif IONumber == 1:
+            self.setTargetIOMode2(setting)
+        elif IONumber == 2:
+            self.setTargetIOMode3(setting)
+        elif IONumber == 3:
+            self.setTargetIOMode4(setting)
+        else:
+            raise ValueError("Invalid IO Number, valid range is 0,1,2,3", IONumber)
+
+    def getTargetIOMode(self, IONumber):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        return data[IONumber]
+
+    def setClockSource(self, source):
+        data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        data[0] = (data[0] & ~0x07) | source
+        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data)
+
+    def clockSource(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        return resp[0] & 0x07
+
+    def setTargetCLKOut(self, clkout):
+        data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        data[0] = (data[0] & ~(3<<5)) | (clkout << 5)
+        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data)
+
+    def targetClkOut(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        return ((resp[0] & (3<<5)) >> 5)
+
+### VCC Glitch Control
+
+    def vglitch_get_mode(self):
+        """Gets a GLITCH_OUT_* bitmask indicating which VCC glitch MOSFET's are enabled.
+
+        Return:
+            A bitmask of GLITCH_OUT_HP/LP set if they are enabled.
+        """
+        return self.extr_ioroute_mask(4, self.GLITCH_OUT_BOTH)
+
+    def vglitch_set_mode(self, mask):
+        """Sets the VCC glitch mosfet enabled states.
+
+        Return:
+            The updated IOROUTE state.
+        """
+        return self.ins_ioroute_mask(4, self.GLITCH_OUT_BOTH, mask)
+
+    def vglitch_get_hp(self):
+        """Gets the enabled state for the HP glitch mosfet.
+
+        Return:
+            True if the HP glitch mosfet is enabled, else False.
+        """
+        return self.test_ioroute_mask(4, self.GLITCH_OUT_HP)
+
+    def vglitch_get_lp(self):
+        """Gets the enabled state for the LP glitch mosfet.
+
+        Return:
+            True if the LP glitch mosfet is enabled, else False.
+        """
+        return self.test_ioroute_mask(4, self.GLITCH_OUT_LP)
+
+    def vglitch_enable(self, mask, enabled):
+        """Conditionally enables or disables a GLITCH_OUT_* mask.
+
+        Return:
+            The updated IOROUTE state.
+        """
+        return self.upd_ioroute_mask(4, mask & self.GLITCH_OUT_BOTH, enabled)
+
+    def vglitch_clear(self):
+        """Disables both of the VCC glitch mosfets.
+
+        Return:
+            The updated IOROUTE state.
+        """
+        return self.clr_ioroute_mask(4, self.GLITCH_OUT_BOTH)
+
+    def vglitch_reset(self, delay):
+        """Disables and reenables the VCC glitch mosfets that were previously enabled.
+
+        TODO: Would be nice to have this as firmware API call.
+
+        Return:
+            The updated IOROUTE state.
+        """
+        data = self.read_ioroute()
+        d4 = data[4]
+
+        data[4] = d4 & self.GLITCH_OUT_CLR
+        self.write_ioroute(data)
+
+        time.sleep(delay)
+
+        data[4] = d4
+        self.write_ioroute(data)
+        return data
+
+### Power Settings
+
+    def setAVRISPMode(self, enabled):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        if enabled:
+            data[5] |= 0x01
+        else:
+            data[5] &= ~(0x01)
+
+        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def setTargetPowerState(self, enabled):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        if enabled:
+            data[5] &= ~(0x02)
+        else:
+            data[5] |= (0x02)
+
+        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def setTargetPowerSlew(self, fastmode):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        if fastmode:
+            data[5] |= (0x04)
+        else:
+            data[5] &= ~(0x04)
+
+        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def setHuskySoftPowerOnParameters(self, pwm_cycles1, pwm_cycles2, pwm_period, pwm_off_time1, pwm_off_time2):
+        """Sets the soft power-on PWM parameters.
+
+        Args:
+            pwm_cycles1 (8-bit int): this plus pwm_cycles2 is the number of PWM on/off cycles before power is fully on
+            pwm_cycles2 (8-bit int): this plus pwm_cycles1 is the number of PWM on/off cycles before power is fully on
+            pwm_period (16-bit int): number of cycles in PWM period
+            pwm_off_time1 (16-bit int): number of cycles in PWM period where power is off, for the first pwm_cycles1
+        """
+        if not self._is_husky:
+            raise ValueError("For Husky only")
+        raw = [pwm_cycles1, pwm_cycles2]
+        raw.extend(list(int.to_bytes(pwm_period, length=2, byteorder='little')))
+        raw.extend(list(int.to_bytes(pwm_off_time1, length=2, byteorder='little')))
+        raw.extend(list(int.to_bytes(pwm_off_time2, length=2, byteorder='little')))
+        self.oa.sendMessage(CODE_WRITE, ADDR_SOFTPOWER_CONTROL, raw)
+
+    def getHuskySoftPowerOnParameters(self):
+        """Get the soft power-on PWM parameters as (pwm_cycles1, pwm_cycles2, pwm_period, pwm_off_time1, pwm_off_time2)
+        """
+        if not self._is_husky:
+            raise ValueError("For Husky only")
+        raw = self.oa.sendMessage(CODE_READ, ADDR_SOFTPOWER_CONTROL, Validate=False, maxResp=8)
+        pwm_cycles1 = raw[0]
+        pwm_cycles2 = raw[1]
+        pwm_period = int.from_bytes(raw[2:4], byteorder='little')
+        pwm_off_time1 = int.from_bytes(raw[4:6], byteorder='little')
+        pwm_off_time2 = int.from_bytes(raw[6:8], byteorder='little')
+        return (pwm_cycles1, pwm_cycles2, pwm_period, pwm_off_time1, pwm_off_time2)
+
+    def getTargetPowerState(self):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        if data[5] & 0x02:
+            return False
+        else:
+            return True
+
+    def setPin(self, enabled, pin):
+        current = self.getPins()
+
+        pincur = current[0] & ~(pin)
+        if enabled:
+            pincur = pincur | pin
+
+        self.setPins(pincur, current[1])
+
+    def getPin(self, pin):
+        current = self.getPins()
+        current = current[0] & pin
+        if current == 0:
+            return False
+        else:
+            return True
+
+    def setPinMode(self, mode):
+        current = self.getPins()
+        self.setPins(current[0], mode)
+
+    def getPinMode(self):
+        current = self.getPins()
+        return current[1]
+
+    def setPins(self, pins, mode):
+        d = list(int.to_bytes((mode << 6) | pins, length=self._addr_trigsrc_size, byteorder='little'))
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGSRC, d, maxResp=self._addr_trigsrc_size)
+
+    def getPins(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGSRC, Validate=False, maxResp=self._addr_trigsrc_size)
+        pins, mode = self.raw2pins(resp)
+        return(pins, mode)
+
+    def raw2pins(self, raw):
+        pins = raw[0] & 0x3F
+        if self._addr_trigsrc_size == 2:
+            pins += (raw[1] << 8)
+        mode = raw[0] >> 6
+        return(pins, mode)
+
+    def setTriggerModule(self, module):
+        #When using special modes, force rising edge & stop user from easily changing
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        resp[0] &= 0xF8
+        resp[0] |= module
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+
+    def getTriggerModule(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        return resp[0]
+
+    def setTrigOutAux(self, enabled):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        resp[0] &= 0xE7
+        if enabled:
+            resp[0] |= 0x08
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+
+    def setTrigOut(self, enabled):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        resp[0] &= 0xE7
+        if enabled:
+            resp[0] |= 0x08
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+
+    def getTrigOut(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        return resp[0] & 0x08
+
 class GPIOSettings(util.DisableNewAttr):
+    VCC_GLITCHT_DISABLED = CWExtraSettings.GLITCH_OUT_DISABLE
+    VCC_GLITCHT_HP = CWExtraSettings.GLITCH_OUT_HP
+    VCC_GLITCHT_LP = CWExtraSettings.GLITCH_OUT_LP
+    VCC_GLITCHT_BOTH = CWExtraSettings.GLITCH_OUT_BOTH
+
+    # NOTE: Technically, VCC_GLITCHT is a bit field, but in this situation, it can also be used as a 4 value enum.
+    VCC_GLITCHT_TRANSLATE = util.EnumTranslationDirect.alloc_instance(
+        (
+            'disabled',
+            'hp',
+            'lp',
+            'both',
+        ), {
+            None: VCC_GLITCHT_DISABLED,
+        }
+    )
 
     def __init__(self, cwextra):
         super().__init__()
@@ -638,6 +1217,23 @@ class GPIOSettings(util.DisableNewAttr):
         self.cwe.setTargetPowerState(power)
 
     @property
+    def vcc_glitcht(self):
+        """Gets a bitmask indicating which VCC glitch MOSFET's are enabled, based on the
+        VCC_GLITCHT_* consts.
+
+        Return:
+            A bitmask with the VCC_GLITCHT_HP/LP set if enabled.
+        """
+        return self.cwe.vglitch_get_mode()
+
+    @vcc_glitcht.setter
+    def vcc_glitcht(self, mode):
+        glitcht = self.VCC_GLITCHT_TRANSLATE.try_var_to_api(mode)
+        if not self.VCC_GLITCHT_TRANSLATE.is_valid_api(glitcht):
+            raise ValueError('%s is an invalid glitch mode!' % mode)
+        self.cwe.vglitch_set_mode(glitcht)
+
+    @property
     def glitch_hp(self):
         """Whether the high-power crowbar MOSFET is enabled.
 
@@ -654,28 +1250,11 @@ class GPIOSettings(util.DisableNewAttr):
 
         :Setter: Turn the high-power MOSFET on or off
         """
-        return self.cwe.targetGlitchOut('A')
+        return self.cwe.vglitch_get_hp()
 
     @glitch_hp.setter
     def glitch_hp(self, active):
-        self.cwe.setTargetGlitchOut('A', active)
-
-    def vglitch_reset(self, delay=0.005):
-        """
-        Sets scope.io.glitch_hp and scope.io.glitch_lp to False, waits 'delay' 
-        seconds, then returns scope.io.glitch_hp and scope.io.glitch_lp to 
-        their original settings.
-        """
-        hp = self.glitch_hp
-        lp = self.glitch_lp
-
-        self.glitch_hp = False
-        self.glitch_lp = False
-
-        time.sleep(delay)
-
-        self.glitch_hp = hp
-        self.glitch_lp = lp
+        self.cwe.vglitch_enable(CWExtraSettings.GLITCH_OUT_HP, active)
 
     @property
     def glitch_lp(self):
@@ -688,12 +1267,21 @@ class GPIOSettings(util.DisableNewAttr):
             configured before enabling this setting, as it is possible to
             permanently damage hardware with this output.
         """
-        return self.cwe.targetGlitchOut('B')
+        return self.cwe.vglitch_get_lp()
 
     @glitch_lp.setter
     def glitch_lp(self, active):
-        self.cwe.setTargetGlitchOut('B', active)
+        self.cwe.vglitch_enable(CWExtraSettings.GLITCH_OUT_LP, active)
 
+    def vglitch_disable(self):
+        """Disables both glitch mosfets.
+        """
+        self.cwe.vglitch_clear()
+
+    def vglitch_reset(self, delay=0.005):
+        """Disables and reenables the glitch mosfets that were previously enabled.
+        """
+        self.cwe.vglitch_reset(delay)
 
     def reset_target(self, initial_state=1, reset_state=0, reset_delay=0.01, postreset_delay=0.01):
         raise NotImplementedError()
@@ -837,7 +1425,6 @@ class TriggerSettings(util.DisableNewAttr):
         #Return a string indicating trigger mode
         return " ".join(tstring)
 
-
     @property
     def triggers(self):
         """The logical input into the trigger module.
@@ -882,11 +1469,9 @@ class TriggerSettings(util.DisableNewAttr):
         """
         return self.getTriggers()
 
-
     @triggers.setter
     def triggers(self, s):
         self.setTriggers(s)
-
 
     def getTriggers(self):
         if self._is_husky and self.sequencer_enabled:
@@ -955,6 +1540,7 @@ class TriggerSettings(util.DisableNewAttr):
         else:
             enablelogic, mode = self._trigger_string2value(s)
             self.cwe.setPins(enablelogic, mode)
+
 
 
     @property
@@ -1091,7 +1677,6 @@ class SequenceTriggerList(list):
         self._getter = kwargs.pop("getter")
         self._setter = kwargs.pop("setter")
         super().__init__(*args, **kwargs)
-        
 
 
 class HuskyTrigger(TriggerSettings):
@@ -1559,16 +2144,11 @@ class HuskyTrigger(TriggerSettings):
             return False
 
 
-
-
-
 class SADTrigger(util.DisableNewAttr):
     pass
 
-
 class DataTrigger(util.DisableNewAttr):
     pass
-
 
 class ChipWhispererExtra(util.DisableNewAttr):
     _name = 'CW Extra'
@@ -1596,447 +2176,6 @@ class ChipWhispererExtra(util.DisableNewAttr):
     #    clk = 30E6
     #    clkdivider = (clk / (2 * desired_freq)) + 1
     #    self.cwADV.setIOPattern(strToPattern("\n"), clkdiv=clkdivider)
-
-
-class CWExtraSettings:
-    PIN_FPA = 0x01
-    PIN_TNRST = 0x02
-    PIN_RTIO1 = 0x04
-    PIN_RTIO2 = 0x08
-    PIN_RTIO3 = 0x10
-    PIN_RTIO4 = 0x20
-    MODE_OR = 0x00
-    MODE_AND = 0x01
-    MODE_NAND = 0x02
-
-    PIN_USERIO0 = 0x0100
-    PIN_USERIO1 = 0x0200
-    PIN_USERIO2 = 0x0400
-    PIN_USERIO3 = 0x0800
-    PIN_USERIO4 = 0x1000
-    PIN_USERIO5 = 0x2000
-    PIN_USERIO6 = 0x4000
-    PIN_USERIO7 = 0x8000
-
-    CLOCK_FPA = 0x00
-    CLOCK_FPB = 0x01
-    CLOCK_PLL = 0x02
-    CLOCK_RTIOIN = 0x03
-    CLOCK_RTIOOUT = 0x04
-
-    IOROUTE_HIGHZ = 0
-    IOROUTE_STX = 0b00000001
-    IOROUTE_SRX = 0b00000010
-    IOROUTE_USIO = 0b00000100
-    IOROUTE_USII = 0b00001000
-    IOROUTE_USINOUT = 0b00011000
-    IOROUTE_STXRX = 0b00100010
-    IOROUTE_GPIO = 0b01000000
-    IOROUTE_GPIOE = 0b10000000
-
-    _name = "CW Extra Settings"
-
-    def __init__(self, oa, cwtype):
-
-        if cwtype == "cwrev2":
-            hasFPAFPB = True
-            hasGlitchOut = False
-            hasPLL = True
-            hasAux=False
-            hasUserio=False
-        elif cwtype == "cwlite":
-            hasFPAFPB=False
-            hasGlitchOut=True
-            hasPLL=False
-            hasAux=False
-            hasUserio=False
-        elif cwtype == "cw1200":
-            hasFPAFPB=False
-            hasGlitchOut=True
-            hasPLL=False
-            hasAux=True
-            hasUserio=False
-        elif cwtype in ["cwhusky", "cwhusky-plus"]:
-            hasFPAFPB=False
-            hasGlitchOut=True
-            hasPLL=False
-            hasAux=True
-            hasUserio=True
-        else:
-            raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
-
-        self.oa = oa
-        self.hasFPAFPB = hasFPAFPB
-        self.hasGlitchOut = hasGlitchOut
-        self.hasPLL = hasPLL
-        self.hasAux = hasAux
-        self.hasUserio = hasUserio
-
-
-        #Add special single-class items used as higher-level API
-        self.gpiomux = GPIOSettings(self)
-        self.triggermux = TriggerSettings(self)
-        self.protrigger = ProTrigger(self)
-        self.huskytrigger = HuskyTrigger(self)
-
-        if cwtype in ["cwhusky", "cwhusky-plus"]:
-            self.gpiomux._is_husky = True
-            self.triggermux._is_husky = True
-            self._addr_trigsrc_size = 2
-            self._is_husky = True
-        else:
-            self._addr_trigsrc_size = 1
-            self._is_husky = False
-
-
-    def _setGPIOState(self, state, IONumber):
-        # Special GPIO nRST, PDID, PDIC
-        if IONumber >= 100:
-            if IONumber == 100:  # nRST IO Number
-                bitnum = 0
-            elif IONumber == 101:  # PDID IO Number
-                bitnum = 2
-            elif IONumber == 102:  # PDIC IO Number
-                bitnum = 4
-            else:
-                raise ValueError("Invalid special IO Number: %d" % IONumber)
-
-            data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-
-            if state is None:
-                # Disable GPIO mode
-                data[6] &= ~(1 << bitnum)
-            else:
-                # Enable GPIO mode
-                data[6] |= (1 << bitnum)
-
-                # Set pin high/low
-                if state:
-                    data[6] |= (1 << (bitnum + 1))
-                else:
-                    data[6] &= ~(1 << (bitnum + 1))
-
-            self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
-
-        # Regular GPIO1-4
-        elif state is not None:
-            data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-
-            if data[IONumber] & self.IOROUTE_GPIOE == 0:
-                raise IOError("TargetIO %d is not in GPIO mode" % IONumber)
-
-            if state:
-                data[IONumber] |= self.IOROUTE_GPIO
-            else:
-                data[IONumber] &= ~(self.IOROUTE_GPIO)
-
-            self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
-
-    def setGPIOState1(self, state):
-        self._setGPIOState(state, 0)
-
-    def setGPIOState2(self, state):
-        self._setGPIOState(state, 1)
-
-    def setGPIOState3(self, state):
-        self._setGPIOState(state, 2)
-
-    def setGPIOState4(self, state):
-        self._setGPIOState(state, 3)
-
-    def setGPIOStatenrst(self, state):
-        self._setGPIOState(state, 100)
-
-    def setGPIOStatepdid(self, state):
-        self._setGPIOState(state, 101)
-
-    def setGPIOStatepdic(self, state):
-        self._setGPIOState(state, 102)
-
-    def setGPIOState(self, state, IONumber):
-        if IONumber == 0:
-            self.setGPIOState1(state)
-        elif IONumber == 1:
-            self.setGPIOState2(state)
-        elif IONumber == 2:
-            self.setGPIOState3(state)
-        elif IONumber == 3:
-            self.setGPIOState4(state)
-        elif IONumber == 100:
-            self.setGPIOStatenrst(state)
-        elif IONumber == 101:
-            self.setGPIOStatepdid(state)
-        elif IONumber == 102:
-            self.setGPIOStatepdic(state)
-        else:
-            raise ValueError("Invalid GPIO State")
-
-    def getGPIOState(self, IONumber):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-
-        #Catch special modes
-        if IONumber >= 100:
-            if IONumber == 100: # nRST IO Number
-                bitnum = 0
-            elif IONumber == 101: # PDID IO Number
-                bitnum = 2
-            elif IONumber == 102: # PDIC IO Number
-                bitnum = 4
-            else:
-                raise ValueError("Invalid special IO Number: %d"%IONumber)
-
-            if (data[6] & (1<<bitnum)) == 0:
-                return None
-            else:
-                return (data[6] & (1<<(bitnum+1))) != 0
-
-        if data[IONumber] & self.IOROUTE_GPIOE == 0:
-            return None
-
-        return data[IONumber] & self.IOROUTE_GPIO
-
-    def readTIOPins(self):
-        """Read signal level of all 4 Target IOn pins synchronously.
-
-        In most cases this is useful for low-speed digital input, hence the
-        GPIO state of the Target IOn pin(s) used for digital input should be
-        configured as 'High-Z'.
-
-        Returns a bit mask where set bits indicate which of the 4 target IOn
-        pins is read as high. Counting starts at bit 0, for example, bit0
-        refers to tio1.
-        """
-
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOREAD, Validate=False, maxResp=1)
-        return data[0]
-
-    def readTIOPin(self, tio):
-        """Read signal level of a Target IOn pin.
-
-        Returns True if the signal level of the Target IOn pin is high,
-        otherwise False is returned.
-        """
-        if tio < 1 or tio > 4:
-            raise ValueError("Invalid Target IO. Currently only tio1 to tio4 are supported.")
-        tios = self.readTIOPins()
-        return (tios & (1<<(tio-1))) > 0
-
-    def setTargetIOMode1(self, setting):
-        self._setTargetIOMode(setting, 0)
-
-    def setTargetIOMode2(self, setting):
-        self._setTargetIOMode(setting, 1)
-
-    def setTargetIOMode3(self, setting):
-        self._setTargetIOMode(setting, 2)
-
-    def setTargetIOMode4(self, setting):
-        self._setTargetIOMode(setting, 3)
-
-    def _setTargetIOMode(self, setting, IONumber):
-        #Sends actual IO mode to FPGA
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-        data[IONumber] = setting
-        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
-
-    def setTargetIOMode(self, setting, IONumber):
-        #To keep parameters syncronized, we need ot call individual set functions
-        if IONumber == 0:
-            self.setTargetIOMode1(setting)
-        elif IONumber == 1:
-            self.setTargetIOMode2(setting)
-        elif IONumber == 2:
-            self.setTargetIOMode3(setting)
-        elif IONumber == 3:
-            self.setTargetIOMode4(setting)
-        else:
-            raise ValueError("Invalid IO Number, valid range is 0,1,2,3", IONumber)
-
-
-    def getTargetIOMode(self, IONumber):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-        return data[IONumber]
-
-    def setClockSource(self, source):
-        data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
-        data[0] = (data[0] & ~0x07) | source
-        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data)
-
-    def clockSource(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
-        return resp[0] & 0x07
-
-    def setTargetCLKOut(self, clkout):
-        data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
-        data[0] = (data[0] & ~(3<<5)) | (clkout << 5)
-        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data)
-
-    def targetClkOut(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
-        return ((resp[0] & (3<<5)) >> 5)
-
-    def setTargetGlitchOut(self, out='A', enabled=False):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-
-        if out == 'A':
-            bn = 0
-        elif out == 'B':
-            bn = 1
-        else:
-            raise ValueError("Invalid glitch output: %s" % str(out))
-
-        if enabled:
-            data[4] = data[4] | (1 << bn)
-        else:
-            data[4] = data[4] & ~(1 << bn)
-        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
-
-    def targetGlitchOut(self, out='A'):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-        if out == 'A':
-            bn = 0
-        elif out == 'B':
-            bn = 1
-        else:
-            raise ValueError("Invalid glitch output: %s" % str(out))
-        return bool(resp[4] & (1 << bn))
-
-    def setAVRISPMode(self, enabled):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-        if enabled:
-            data[5] |= 0x01
-        else:
-            data[5] &= ~(0x01)
-
-        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
-
-    def setTargetPowerState(self, enabled):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-        if enabled:
-            data[5] &= ~(0x02)
-        else:
-            data[5] |= (0x02)
-
-        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
-
-    def setTargetPowerSlew(self, fastmode):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-        if fastmode:
-            data[5] |= (0x04)
-        else:
-            data[5] &= ~(0x04)
-
-        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
-
-    def setHuskySoftPowerOnParameters(self, pwm_cycles1, pwm_cycles2, pwm_period, pwm_off_time1, pwm_off_time2):
-        """Sets the soft power-on PWM parameters.
-
-        Args:
-            pwm_cycles1 (8-bit int): this plus pwm_cycles2 is the number of PWM on/off cycles before power is fully on
-            pwm_cycles2 (8-bit int): this plus pwm_cycles1 is the number of PWM on/off cycles before power is fully on
-            pwm_period (16-bit int): number of cycles in PWM period
-            pwm_off_time1 (16-bit int): number of cycles in PWM period where power is off, for the first pwm_cycles1
-        """
-        if not self._is_husky:
-            raise ValueError("For Husky only")
-        raw = [pwm_cycles1, pwm_cycles2]
-        raw.extend(list(int.to_bytes(pwm_period, length=2, byteorder='little')))
-        raw.extend(list(int.to_bytes(pwm_off_time1, length=2, byteorder='little')))
-        raw.extend(list(int.to_bytes(pwm_off_time2, length=2, byteorder='little')))
-        self.oa.sendMessage(CODE_WRITE, ADDR_SOFTPOWER_CONTROL, raw)
-
-    def getHuskySoftPowerOnParameters(self):
-        """Get the soft power-on PWM parameters as (pwm_cycles1, pwm_cycles2, pwm_period, pwm_off_time1, pwm_off_time2)
-        """
-        if not self._is_husky:
-            raise ValueError("For Husky only")
-        raw = self.oa.sendMessage(CODE_READ, ADDR_SOFTPOWER_CONTROL, Validate=False, maxResp=8)
-        pwm_cycles1 = raw[0]
-        pwm_cycles2 = raw[1]
-        pwm_period = int.from_bytes(raw[2:4], byteorder='little')
-        pwm_off_time1 = int.from_bytes(raw[4:6], byteorder='little')
-        pwm_off_time2 = int.from_bytes(raw[6:8], byteorder='little')
-        return (pwm_cycles1, pwm_cycles2, pwm_period, pwm_off_time1, pwm_off_time2)
-
-    def getTargetPowerState(self):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
-        if data[5] & 0x02:
-            return False
-        else:
-            return True
-
-    def setPin(self, enabled, pin):
-        current = self.getPins()
-
-        pincur = current[0] & ~(pin)
-        if enabled:
-            pincur = pincur | pin
-
-        self.setPins(pincur, current[1])
-
-    def getPin(self, pin):
-        current = self.getPins()
-        current = current[0] & pin
-        if current == 0:
-            return False
-        else:
-            return True
-
-    def setPinMode(self, mode):
-        current = self.getPins()
-        self.setPins(current[0], mode)
-
-    def getPinMode(self):
-        current = self.getPins()
-        return current[1]
-
-    def setPins(self, pins, mode):
-        d = list(int.to_bytes((mode << 6) | pins, length=self._addr_trigsrc_size, byteorder='little'))
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGSRC, d, maxResp=self._addr_trigsrc_size)
-
-    def getPins(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGSRC, Validate=False, maxResp=self._addr_trigsrc_size)
-        pins, mode = self.raw2pins(resp)
-        return(pins, mode)
-
-    def raw2pins(self, raw):
-        pins = raw[0] & 0x3F
-        if self._addr_trigsrc_size == 2:
-            pins += (raw[1] << 8)
-        mode = raw[0] >> 6
-        return(pins, mode)
-
-
-    def setTriggerModule(self, module):
-
-        #When using special modes, force rising edge & stop user from easily changing
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        resp[0] &= 0xF8
-        resp[0] |= module
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
-
-    def getTriggerModule(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        return resp[0]
-
-    def setTrigOutAux(self, enabled):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        resp[0] &= 0xE7
-        if enabled:
-            resp[0] |= 0x08
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
-
-    def setTrigOut(self, enabled):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        resp[0] &= 0xE7
-        if enabled:
-            resp[0] |= 0x08
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
-
-    def getTrigOut(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        return resp[0] & 0x08
-
 
 class CWPLLDriver(object):
     def __init__(self):
