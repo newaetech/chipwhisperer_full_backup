@@ -608,6 +608,7 @@ class CWExtraSettings:
         mode = raw[0] >> 6
         return(pins, mode)
 
+
     def setTriggerModule(self, module):
         #When using special modes, force rising edge & stop user from easily changing
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
@@ -1542,7 +1543,6 @@ class TriggerSettings(util.DisableNewAttr):
             self.cwe.setPins(enablelogic, mode)
 
 
-
     @property
     def module(self):
         """The trigger module in use.
@@ -1608,6 +1608,7 @@ class ProTrigger(TriggerSettings):
         resp = self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD,
                                        resp)
         self.last_module = mode
+
 
     @property
     def aux_out(self):

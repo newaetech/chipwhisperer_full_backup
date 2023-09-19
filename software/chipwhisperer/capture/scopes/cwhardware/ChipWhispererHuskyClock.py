@@ -443,7 +443,7 @@ class CDCI6214:
             pll_input = input_freq // okay_in_div
 
             # calculate all valid PLL multiples for the current input division
-            okay_pll_muls = np.array(pll_muls)
+            okay_pll_muls = np.array(pll_muls, dtype='int64')
             okay_pll_muls = okay_pll_muls[((pll_input * 5 * okay_pll_muls) >= 2400E6)]
             okay_pll_muls = okay_pll_muls[((pll_input * 5 * okay_pll_muls) <= 2800E6)]
 

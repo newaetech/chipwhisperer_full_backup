@@ -11,6 +11,7 @@
 import logging
 from chipwhisperer.common.utils import util
 from ..scopes import ScopeTypes
+from ..scopes import CWNano
 from .cwcommon import ChipWhispererCommonInterface
 from chipwhisperer.hardware.naeusb.programmer_avr import supported_avr
 from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
@@ -410,10 +411,12 @@ class STM32FProgrammer(Programmer):
     def find(self):
         stm32f = self.stm32prog()
         stm32f.scope = self.scope
-        if (self.scope.io.tio1, self.scope.io.tio2) != ("serial_rx", "serial_tx"):
-            target_logger.warning("Serial pins incorrect for NewAE STM32 target") 
-            target_logger.warning("(tio1, tio2) != ('serial_rx', 'serial_tx')")
-            target_logger.warning("Did you forget to call scope.default_setup()?")
+        # only check this for non-Nano, as Nano can't adjust these pins
+        if not type(self.scope) is CWNano:
+            if (self.scope.io.tio1, self.scope.io.tio2) != ("serial_rx", "serial_tx"):
+                target_logger.warning("Serial pins incorrect for NewAE STM32 target") 
+                target_logger.warning("(tio1, tio2) != ('serial_rx', 'serial_tx')")
+                target_logger.warning("Did you forget to call scope.default_setup()?")
         sig, chip = stm32f.find()
 
         # logging is done at the lower level
