@@ -1,6 +1,7 @@
 from .CW310 import CW310
 from ...hardware.naeusb.pll_cdce906 import PLLCDCE906
 from ...logging import *
+from ...hardware.naeusb.serial import USART
 
 class CW340(CW310):
     """CW340 Luna Board target object.
@@ -56,8 +57,12 @@ class CW340(CW310):
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, board="CW340")
         self.jumper_warned = False
 
+    def _get_usart(self):
+        return self._usart
+
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=None, sn=None, hw_location=None, prog_mode="serial"):
         self._naeusb.con(idProduct=[0xC340], serial_number=sn, hw_location=hw_location)
+        self._usart = USART(self._naeusb)
         if prog_mode not in self.PROG_MODES:
             raise ValueError("Unknown prog mode {}, valid are {}".format(prog_mode, self.PROG_MODES))
         if prog_speed is None:
