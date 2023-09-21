@@ -984,14 +984,14 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
     def __str__(self):
         return self.__repr__()
 
-    def upgrade_firmware(self):
-        """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
+    # def upgrade_firmware(self, fw_path=None):
+    #     """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
 
-        .. versionadded:: 5.6.1
-            Improved programming interface
-        """
-        prog = SAMFWLoader(self)
-        prog.auto_program()
+    #     .. versionadded:: 5.6.1
+    #         Improved programming interface
+    #     """
+    #     prog = SAMFWLoader(self)
+    #     prog.auto_program(fw_path)
 
     def fpga_reg_read(self, addr, numbytes):
         """Convenience method to read an FPGA register. Intended for debug/development.

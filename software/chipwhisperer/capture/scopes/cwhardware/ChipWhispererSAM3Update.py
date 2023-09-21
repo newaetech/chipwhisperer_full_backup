@@ -25,6 +25,7 @@
 from ....hardware.naeusb.bootloader_sam3u import Samba
 from ....logging import *
 import time
+import os
 
 def get_at91_ports():
     from serial.tools import list_ports # type: ignore
@@ -168,12 +169,15 @@ class SAMFWLoader:
             self.usb.enterBootloader(True)
             del self.scope
 
-    def auto_program(self):
+    def auto_program(self, fw_path=None):
         """Erase and program firmware of ChipWhisperer
 
         Autodetects comport and hardware type.
         """
         import serial.tools.list_ports # type: ignore
+        if fw_path:
+            if not os.path.exists(fw_path):
+                raise OSError("File {} does not exist. Firmware has not been erased.".format(fw_path))
         if not self._hw_type:
             raise OSError("Unable to detect chipwhisperer hardware type")
         before = serial.tools.list_ports.comports()
@@ -192,7 +196,10 @@ class SAMFWLoader:
             raise OSError("Could not detect COMPORT. Continue using programmer.program()")
         com = candidate[0]
         print("Detected com port {}".format(com))
-        self.program(com, hardware_type=self._hw_type)
+        if fw_path:
+            self.program(com, fw_path=fw_path)
+        else:
+            self.program(com, hardware_type=self._hw_type)
 
 
     def program(self, port, fw_path=None, hardware_type=None, bypass_warning=False):

@@ -162,7 +162,7 @@ class ChipWhispererCommonInterface:
         """
         return self._getNAEUSB().get_serial_ports()
 
-    def upgrade_firmware(self):
+    def upgrade_firmware(self, fw_path=None):
         """Attempt a firmware upgrade. See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information.
 
         .. versionadded:: 5.6.1
@@ -170,7 +170,7 @@ class ChipWhispererCommonInterface:
         """
         from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
         prog = SAMFWLoader(self)
-        prog.auto_program()
+        prog.auto_program(fw_path)
 
     def reset_sam3u(self):
         """Reset the ChipWhisperer's microcontroller
