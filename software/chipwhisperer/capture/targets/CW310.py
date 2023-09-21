@@ -120,11 +120,20 @@ class CW310(CW305):
         from ...hardware.firmware.cwbergen import fwver
         return fwver
         
+    def _get_usart(self, num=0):
+        if num == 0:
+            return self._usart0
+        elif num == 1:
+            return self._usart1
+        else:
+            raise ValueError("Invalid usart {}".format(num))
 
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=20E6, sn=None, hw_location=None, platform='cw310'):
         # add more stuff later
         self.platform = platform
         self._naeusb.con(idProduct=[0xC310], serial_number=sn, hw_location=hw_location)
+        self._usart0 = USART(self._naeusb, usart_num=0)
+        self._usart1 = USART(self._naeusb, usart_num=1)
         self.pll.cdce906init()
         if fpga_id:
             target_logger.warning("fpga_id is currently unused")
