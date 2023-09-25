@@ -46,6 +46,11 @@ ADDR_IOROUTE = 55
 ADDR_IOREAD = 59
 ADDR_EDGE_TRIGGER = 113
 ADDR_SOFTPOWER_CONTROL = 115
+ADDR_NUM_TRIGGERS_STAT = 117
+ADDR_NUM_TRIGGERS_DATA = 118
+ADDR_SEQ_TRIG_CONFIG = 119
+ADDR_SEQ_TRIG_MINMAX = 120
+ADDR_SEQ_TRIG_UART_EDGE_CHOOSER = 121
 
 # API aliases for the TIO settings
 _tio_alias = {
@@ -88,14 +93,6 @@ class CWExtraSettings:
     PIN_USERIO5 = 0x2000
     PIN_USERIO6 = 0x4000
     PIN_USERIO7 = 0x8000
-
-    MODULE_BASIC = 0x00
-    MODULE_ADVPATTERN = 0x01
-    MODULE_SADPATTERN = 0x02
-    MODULE_DECODEIO = 0x03
-    MODULE_TRACE = 0x04
-    MODULE_ADC = 0x05
-    MODULE_EDGE_COUNTER = 0x06
 
     CLOCK_FPA = 0x00
     CLOCK_FPB = 0x01
@@ -601,14 +598,18 @@ class CWExtraSettings:
 
     def getPins(self):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGSRC, Validate=False, maxResp=self._addr_trigsrc_size)
-        pins = resp[0] & 0x3F
-        if self._addr_trigsrc_size == 2:
-            pins += (resp[1] << 8)
-        mode = resp[0] >> 6
+        pins, mode = self.raw2pins(resp)
         return(pins, mode)
 
-    def setTriggerModule(self, module):
+    def raw2pins(self, raw):
+        pins = raw[0] & 0x3F
+        if self._addr_trigsrc_size == 2:
+            pins += (raw[1] << 8)
+        mode = raw[0] >> 6
+        return(pins, mode)
 
+
+    def setTriggerModule(self, module):
         #When using special modes, force rising edge & stop user from easily changing
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         resp[0] &= 0xF8
@@ -1346,6 +1347,85 @@ class TriggerSettings(util.DisableNewAttr):
     def __str__(self):
         return self.__repr__()
 
+    def _trigger_value2string(self, pins, mode):
+        """Takes the raw programmed ADDR_TRIGSRC register value and
+        converts its meaning into a human-readable string.
+
+        Args:
+            pins, mode: as returned by getPins()
+
+        Returns:
+            String describing the trigger input(s).
+        """
+        tstring = []
+        if mode == self.cwe.MODE_OR: modes = "OR"
+        elif mode ==  self.cwe.MODE_AND: modes = "AND"
+        elif mode == self.cwe.MODE_NAND: modes = "NAND"
+        else: raise IOError("Unknown mode reported by hardware: %02x" % mode)
+
+        if pins & self.cwe.PIN_RTIO1:
+            tstring.append("tio1")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_RTIO2:
+            tstring.append("tio2")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_RTIO3:
+            tstring.append("tio3")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_RTIO4:
+            tstring.append("tio4")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_FPA:
+            tstring.append("sma")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_TNRST:
+            tstring.append("nrst")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_USERIO0:
+            tstring.append("userio_d0")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_USERIO1:
+            tstring.append("userio_d1")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_USERIO2:
+            tstring.append("userio_d2")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_USERIO3:
+            tstring.append("userio_d3")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_USERIO4:
+            tstring.append("userio_d4")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_USERIO5:
+            tstring.append("userio_d5")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_USERIO6:
+            tstring.append("userio_d6")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_USERIO7:
+            tstring.append("userio_d7")
+            tstring.append(modes)
+
+        #Remove last useless combination mode
+        if len(tstring) > 1:
+            tstring = tstring[0:-1]
+
+        #Return a string indicating trigger mode
+        return " ".join(tstring)
+
     @property
     def triggers(self):
         """The logical input into the trigger module.
@@ -1388,134 +1468,80 @@ class TriggerSettings(util.DisableNewAttr):
         Raises:
            ValueError: if string cannot be converted to a legal mode
         """
-        #Get pin logic + combo mode
-        if self.module == 'trace':
-            return 'N/A (use scope.trace.trace_mode)'
-        else:
-            pins, mode = self.cwe.getPins()
-
-            tstring = []
-            if mode == self.cwe.MODE_OR: modes = "OR"
-            elif mode ==  self.cwe.MODE_AND: modes = "AND"
-            elif mode == self.cwe.MODE_NAND: modes = "NAND"
-            else: raise IOError("Unknown mode reported by hardware: %02x" % mode)
-
-            if pins & self.cwe.PIN_RTIO1:
-                tstring.append("tio1")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_RTIO2:
-                tstring.append("tio2")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_RTIO3:
-                tstring.append("tio3")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_RTIO4:
-                tstring.append("tio4")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_FPA:
-                tstring.append("sma")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_TNRST:
-                tstring.append("nrst")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_USERIO0:
-                tstring.append("userio_d0")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_USERIO1:
-                tstring.append("userio_d1")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_USERIO2:
-                tstring.append("userio_d2")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_USERIO3:
-                tstring.append("userio_d3")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_USERIO4:
-                tstring.append("userio_d4")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_USERIO5:
-                tstring.append("userio_d5")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_USERIO6:
-                tstring.append("userio_d6")
-                tstring.append(modes)
-
-            if pins & self.cwe.PIN_USERIO7:
-                tstring.append("userio_d7")
-                tstring.append(modes)
-
-            #Remove last useless combination mode
-            if len(tstring) > 1:
-                tstring = tstring[0:-1]
-
-            #Return a string indicating trigger mode
-            return " ".join(tstring)
+        return self.getTriggers()
 
     @triggers.setter
     def triggers(self, s):
+        self.setTriggers(s)
 
-        if self.module == 'trace':
-            scope_logger.error('N/A for trace module. See scope.trace.trace_mode.')
+    def getTriggers(self):
+        if self._is_husky and self.sequencer_enabled:
+            message = self.getMultipleTriggers()
         else:
-            s = s.lower()
+            pins, mode = self.cwe.getPins()
+            message = self._trigger_value2string(pins, mode)
+        return message
 
-            #Split up string
-            triggers = s.split()
+    def _trigger_string2value(self, s):
+        """Takes human-readable trigger description and returns the
+        inputs required by setPins().
+        """
 
-            #Check there is only one type of combination mode
-            triggerset = set(triggers)
-            numcombined = int('and' in triggerset) + int('or' in triggerset) + int('nand' in triggerset)
-            if numcombined > 1:
-                raise ValueError("Combining multiple triggers requires same logic between each combination", s)
+        s = s.lower()
 
-            if numcombined == 0 and len(triggers) > 1:
-                raise ValueError("Detected more than 1 trigger pin specified, but no combination logic.", s)
+        #Split up string
+        triggers = s.split()
 
-            enablelogic = 0
+        #Check there is only one type of combination mode
+        triggerset = set(triggers)
+        numcombined = int('and' in triggerset) + int('or' in triggerset) + int('nand' in triggerset)
+        if numcombined > 1:
+            raise ValueError("Combining multiple triggers requires same logic between each combination", s)
 
-            #Figure out enabled triggers
-            for t in list(self.supported_tpins.keys()):
-                if t in triggers:
-                    if triggers.count(t) != 1:
-                        raise ValueError("Pin '%s' appears %d times, only 1 apperance supported" % (t, triggers.count(t)), s)
-                    enablelogic |= self.supported_tpins[t]
+        if numcombined == 0 and len(triggers) > 1:
+            raise ValueError("Detected more than 1 trigger pin specified, but no combination logic.", s)
 
-            #Find mode
-            if ('or' in triggerset) or (len(triggerset) == 1):
-                mode = self.cwe.MODE_OR
-                modes = "or"
-            elif 'and' in triggerset:
-                mode = self.cwe.MODE_AND
-                modes = "and"
-            elif 'nand' in triggerset:
-                mode = self.cwe.MODE_NAND
-                modes = "nand"
+        enablelogic = 0
 
-            #Check mode operations in correct order, no unknown things
-            expect_tpin = True
-            for t in triggers:
-                if expect_tpin:
-                    if t not in list(self.supported_tpins.keys()):
-                        raise ValueError("Error processing string at expected pin '%s'. Valid pins: %s"%(t, list(self.supported_tpins.keys())), s)
-                else:
-                    if t != modes:
-                        raise ValueError("Unexpected combination mode '%s'. Expected %s."%(t, modes), s)
-                expect_tpin ^= True
+        #Figure out enabled triggers
+        for t in list(self.supported_tpins.keys()):
+            if t in triggers:
+                if triggers.count(t) != 1:
+                    raise ValueError("Pin '%s' appears %d times, only 1 apperance supported" % (t, triggers.count(t)), s)
+                enablelogic |= self.supported_tpins[t]
 
-            #Finally set this thing, guess we're looking HOT
+        #Find mode
+        if ('or' in triggerset) or (len(triggerset) == 1):
+            mode = self.cwe.MODE_OR
+            modes = "or"
+        elif 'and' in triggerset:
+            mode = self.cwe.MODE_AND
+            modes = "and"
+        elif 'nand' in triggerset:
+            mode = self.cwe.MODE_NAND
+            modes = "nand"
+
+        #Check mode operations in correct order, no unknown things
+        expect_tpin = True
+        for t in triggers:
+            if expect_tpin:
+                if t not in list(self.supported_tpins.keys()):
+                    raise ValueError("Error processing string at expected pin '%s'. Valid pins: %s"%(t, list(self.supported_tpins.keys())), s)
+            else:
+                if t != modes:
+                    raise ValueError("Unexpected combination mode '%s'. Expected %s."%(t, modes), s)
+            expect_tpin ^= True
+
+        return (enablelogic, mode)
+
+
+    def setTriggers(self, s):
+        if self._is_husky and self.sequencer_enabled:
+            self.setMultipleTriggers(s)
+        else:
+            enablelogic, mode = self._trigger_string2value(s)
             self.cwe.setPins(enablelogic, mode)
+
 
     @property
     def module(self):
@@ -1533,6 +1559,11 @@ class TriggerSettings(util.DisableNewAttr):
         return "basic"
 
 class ProTrigger(TriggerSettings):
+    MODULE = {'basic':          0x00,
+              'SAD':            0x02,
+              'DECODEIO':       0x03
+              }
+
     def _dict_repr(self):
         rtn = super()._dict_repr()
         rtn['module'] = self.module
@@ -1563,15 +1594,13 @@ class ProTrigger(TriggerSettings):
 
     @module.setter
     def module(self, mode):
-        if mode == "basic":
-            module = self.cwe.MODULE_BASIC
-        elif mode == "SAD":
-            module = self.cwe.MODULE_SADPATTERN
-        elif mode == "DECODEIO":
-            module = self.cwe.MODULE_DECODEIO
+        if mode in self.MODULE.keys():
+            module = self.MODULE[mode]
         else:
-            raise ValueError("Invalid mode {}. Must be 'basic', 'SAD', or 'DECODEIO'")
-
+            msg = 'Invalid mode %s. Must be one of: ' % mode
+            for key in self.MODULE.keys():
+                msg = msg + key + ', '
+            raise ValueError(msg)
         resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
                                        Validate=False, maxResp=1)
         resp[0] &= 0xF8
@@ -1579,6 +1608,7 @@ class ProTrigger(TriggerSettings):
         resp = self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD,
                                        resp)
         self.last_module = mode
+
 
     @property
     def aux_out(self):
@@ -1623,26 +1653,158 @@ class ProTrigger(TriggerSettings):
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
         self.cwe.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, resp2)
 
+
+class SequenceTriggerList(list):
+    """Class that behaves like a list, but can set individual elements using a getter/setter
+
+    Useful so that we can do scope.trigger.<property>[<index>] = <value> with Husky sequenced triggers
+    """
+    def __setitem__(self, *args, **kwargs):
+        oldval = self._getter()
+        oldval[args[0]] = args[1]
+        self._setter(oldval)
+        pass
+
+    def __repr__(self):
+        oldrepr = super().__repr__()
+        return f"SequenceTriggerList({oldrepr})"
+
+    def __init__(self, *args, **kwargs):
+        if "getter" not in kwargs:
+            raise KeyError("SequenceTriggerList requires a getter")
+        if "setter" not in kwargs:
+            raise KeyError("SequenceTriggerList requires a setter")
+        
+        self._getter = kwargs.pop("getter")
+        self._setter = kwargs.pop("setter")
+        super().__init__(*args, **kwargs)
+
+
 class HuskyTrigger(TriggerSettings):
     """Husky trigger object.
     Communicates with all the trigger modules inside CW-Husky.
     Usage depends on the active trigger module.
     """
+    MODULE = {'basic':          0x00,
+              'advpattern':     0x01,
+              'SAD':            0x02,
+              'UART':           0x03,
+              'trace':          0x04,
+              'ADC':            0x05,
+              'edge_counter':   0x06
+              }
+
     def __init__(self, cwextra):
         self._edges = 1
+        self._window_bytes = 2
         super().__init__(cwextra)
         self._is_husky = True
 
     def _dict_repr(self):
         rtn = {}
+        rtn['sequencer_enabled'] = self.sequencer_enabled
+        if self.sequencer_enabled:
+            rtn['max_sequenced_triggers'] = self.max_sequenced_triggers
+            rtn['num_triggers'] = self.num_triggers
+            rtn['sad_always_active'] = self.sad_always_active
         rtn['module'] = self.module
-        if self.module == 'ADC':
-            rtn['level'] = self.level
-        if self.module in ['basic', 'UART', 'edge_counter']:
+        if self.sequencer_enabled:
             rtn['triggers'] = self.triggers
-        if self.module == 'edge_counter':
-            rtn['edges'] = self.edges
+            rtn['window_start'] = self.window_start
+            rtn['window_end'] = self.window_end
+            for i in range(self.num_triggers):
+                seq_trig_rtn = {}
+                seq_trig_rtn['module'] = self.module[i]
+                if self.module[i] == 'ADC':
+                    seq_trig_rtn['level'] = self.level
+                if self.module[i] in ['basic', 'UART', 'edge_counter']:
+                    seq_trig_rtn['triggers'] = self.triggers[i]
+                if self.module[i] == 'edge_counter':
+                    seq_trig_rtn['edges'] = self.edges
+                if i > 0:
+                    seq_trig_rtn['window_start'] = self.window_start[i-1]
+                    seq_trig_rtn['window_end'] = self.window_end[i-1]
+                rtn['sequence trigger #%d' % i] = seq_trig_rtn
+
+        else:
+            if self.module == 'ADC':
+                rtn['level'] = self.level
+            if self.module in ['basic', 'UART', 'edge_counter']:
+                rtn['triggers'] = self.triggers
+            if self.module == 'edge_counter':
+                rtn['edges'] = self.edges
         return rtn
+
+    def readMultipleTriggers(self):
+        message = []
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGSRC, Validate=False, maxResp=self.cwe._addr_trigsrc_size*self.max_sequenced_triggers)
+        for i in range(0, len(raw), self.cwe._addr_trigsrc_size):
+            pins, mode = self.cwe.raw2pins(raw[i:i+2])
+            message.append(self._trigger_value2string(pins, mode))
+        return message
+
+    def getMultipleTriggers(self):
+        triggers = self.readMultipleTriggers()
+        if type(triggers) is str:
+            return triggers
+        else:
+            return SequenceTriggerList(triggers, setter=self.setMultipleTriggers, getter=self.readMultipleTriggers)
+
+    def setMultipleTriggers(self, triggers):
+        msg = []
+        for s in triggers:
+            pins, mode = self._trigger_string2value(s)
+            d = list(int.to_bytes((mode << 6) | pins, length=self.cwe._addr_trigsrc_size, byteorder='little'))
+            msg.extend(d)
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGSRC, msg, maxResp=len(msg))
+
+    @property
+    def max_sequenced_triggers(self):
+        """Maximum number of triggers in the trigger sequence.
+        """
+        return self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=2)[1]
+
+
+    @property
+    def num_triggers(self):
+        """Number of triggers in the trigger sequence.
+        """
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        return (raw & 0x0f) + 1
+
+    @num_triggers.setter
+    def num_triggers(self, num):
+        if num < 2 or num > self.max_sequenced_triggers:
+            raise ValueError('Minimum 2, maximum %d' % self.max_sequenced_triggers)
+        else:
+            raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+            raw = (raw & 0xf0) + (num-1)
+            self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_CONFIG, [raw])
+
+    @property
+    def sad_always_active(self):
+        """Make the SAD trigger module always active. Its associated trigger
+        window will still be used: only SAD triggers inside its window will be
+        recognized as part of the trigger sequence, but setting this allows the
+        SAD module to fire outside of its window, which can be helpful in
+        tuning SAD parameters.
+        """
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        if raw & 0x40:
+            return True
+        else:
+            return False
+
+
+    @sad_always_active.setter
+    def sad_always_active(self, enable):
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        if enable:
+            raw = (raw & 0b10111111) | 0x40
+        else:
+            raw = raw & 0b10111111
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_CONFIG, [raw])
+
 
     @property
     def module(self):
@@ -1667,32 +1829,214 @@ class HuskyTrigger(TriggerSettings):
         Raises:
             ValueError: module isn't one of the available strings
         """
-        return self.last_module
+        return self.getModule()
+
 
     @module.setter
     def module(self, mode):
-        if mode == "basic":
-            module = self.cwe.MODULE_BASIC
-        elif mode == "SAD":
-            module = self.cwe.MODULE_SADPATTERN
-        elif mode == "UART":
-            module = self.cwe.MODULE_DECODEIO
-        elif mode == "trace":
-            module = self.cwe.MODULE_TRACE
-        elif mode == "ADC":
-            module = self.cwe.MODULE_ADC
-        elif mode == "edge_counter":
-            module = self.cwe.MODULE_EDGE_COUNTER
-        else:
-            raise ValueError("Invalid mode {}. Must be 'basic', 'SAD', 'UART', 'ADC', 'trace', or 'edge_counter'")
+        self.setModule(mode)
 
-        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
-                                       Validate=False, maxResp=1)
-        resp[0] &= 0xF8
-        resp[0] |= module
-        resp = self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD,
-                                       resp)
-        self.last_module = mode
+
+    def readModule(self):
+        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=self.max_sequenced_triggers)
+        modules = []
+        for r in resp:
+            module = None
+            for key,value in self.MODULE.items():
+                if value == r:
+                    module = key
+                    break
+            if not module:
+                raise ValueError('Internal error: unknown trigger module ID %d' % r)
+            modules.append(module)
+        if self.sequencer_enabled:
+            return modules
+        else:
+            return modules[0]
+
+    def getModule(self):
+        modules = self.readModule()
+        if type(modules) is str:
+            return modules
+        else:
+            return SequenceTriggerList(modules, setter=self.setModule, getter=self.readModule)
+
+
+    def setModule(self, modes):
+        if type(modes) != list:
+            modes = [modes]
+        # first things first, check that it's legal: only the 'basic' module can be used multiple times, and the
+        # trace/UART module can only be used once (trace or UART but not both)
+        if self.sequencer_enabled:
+            if len(modes) < self.num_triggers:
+                new_modes = self.module
+                for i,m in enumerate(modes):
+                    new_modes[i] = m
+            else:
+                new_modes = modes
+            modes_used = {}
+            for m in new_modes:
+                if m in ['trace', 'UART']:
+                    m = 'trace/UART'
+                if m in modes_used.keys():
+                    modes_used[m] += 1
+                else:
+                    modes_used[m] = 1
+            for m in modes_used.keys():
+                if m != 'basic' and modes_used[m] > 1:
+                    raise ValueError('Module %s can only be used once in a trigger sequence.' % m)
+
+        modules = []
+        for i, mode in enumerate(modes):
+            if mode in self.MODULE.keys():
+                module = self.MODULE[mode]
+                # for UART and edge, the trigger line must be specified separately to the FPGA:
+                if mode in ['UART', 'edge_counter']:
+                    raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_UART_EDGE_CHOOSER, Validate=False, maxResp=1)[0]
+                    if i > 0xf:
+                        raise ValueError('Internal error, too many triggers!')
+                    if mode == 'UART':
+                        raw = raw & 0x0f | (i << 4)
+                    else:
+                        raw = raw & 0xf0 | i
+                    self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_UART_EDGE_CHOOSER, [raw])
+            else:
+                msg = 'Invalid mode %s. Must be one of: ' % mode
+                for key in self.MODULE.keys():
+                    msg = msg + key + ', '
+                raise ValueError(msg)
+            modules.append(module)
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, modules)
+
+    @property
+    def sequencer_enabled(self):
+        """Enable the trigger sequencer.
+        """
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        if raw & 0x80:
+            return True
+        else:
+            return False
+
+
+    @sequencer_enabled.setter
+    def sequencer_enabled(self, enable):
+        # MSB is enable bit; LSB is number of triggers-1;
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        if enable:
+            raw = (raw & 0x7f) | 0x80
+        else:
+            raw = raw & 0x7f
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_CONFIG, [raw])
+
+
+    @property
+    def window_start(self):
+        """Minimum number of clock cycles (of the ADC sampling clock) that must follow trigger #0
+        before trigger #1 is allowed to complete the sequence. 0 = no limit.
+        Args:
+            start: 16-bit integer
+        """
+        return self.get_window_start()
+
+    @window_start.setter
+    def window_start(self, start):
+        self.set_window_start(start)
+
+    def get_window_start(self):
+        starts = self.read_multiple_window_start()
+        return SequenceTriggerList(starts, setter=self.set_multiple_window_start, getter=self.read_multiple_window_start)
+
+    def read_multiple_window_start(self):
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
+        starts = []
+        for i in range(self.max_sequenced_triggers-1):
+            raw_index = i * self._window_bytes
+            starts.append(int.from_bytes(raw[raw_index:raw_index+self._window_bytes], byteorder='little'))
+        return starts
+
+    def set_window_start(self, start):
+        if self.max_sequenced_triggers == 2 or type(start) is int:
+            if start >= 2**(8*self._window_bytes):
+                raise ValueError('too big')
+            self._check_windows(start, self.window_end)
+            raw = list(int.to_bytes(start, length=self._window_bytes, byteorder='little'))
+            self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
+        else:
+            self.set_multiple_window_start(start)
+
+    def set_multiple_window_start(self, starts):
+        if len(starts) > self.max_sequenced_triggers-1:
+            raise ValueError('Too many settings: can only specify %d windows' % (self.max_sequenced_triggers-1))
+        self._check_windows(starts, self.window_end)
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
+        for i,start in enumerate(starts):
+            if start >= 2**(8*self._window_bytes):
+                raise ValueError('too big')
+            raw_index = i * self._window_bytes
+            raw[raw_index:raw_index+self._window_bytes] = list(int.to_bytes(start, length=self._window_bytes, byteorder='little'))
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
+
+
+    @property
+    def window_end(self):
+        """Maximum number of clock cycles (of the ADC sampling clock) that can follow trigger #0
+        before trigger #1 is allowed to complete the sequence. 0 = no limit.
+        Args:
+            end: 16-bit integer
+        """
+        return self.get_window_end()
+
+
+    @window_end.setter
+    def window_end(self, end):
+        self.set_window_end(end)
+
+    def get_window_end(self):
+        ends = self.read_multiple_window_end()
+        return SequenceTriggerList(ends, setter=self.set_multiple_window_end, getter=self.read_multiple_window_end)
+
+    def read_multiple_window_end(self):
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
+        ends = []
+        for i in range(self.max_sequenced_triggers-1):
+            raw_index = (self.max_sequenced_triggers -1 + i) * self._window_bytes
+            ends.append(int.from_bytes(raw[raw_index:raw_index+self._window_bytes], byteorder='little'))
+        return ends
+
+    def set_window_end(self, end):
+        if self.max_sequenced_triggers == 2 or type(end) is int:
+            if end >= 2**(8*self._window_bytes):
+                raise ValueError('too big')
+            self._check_windows(self.window_start, end)
+            raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=2*self._window_bytes)
+            raw[2:4] = list(int.to_bytes(end, length=2, byteorder='little'))
+            self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
+        else:
+            self.set_multiple_window_end(end)
+
+    def set_multiple_window_end(self, ends):
+        if len(ends) > self.max_sequenced_triggers-1:
+            raise ValueError('Too many settings: can only specify %d windows' % (self.max_sequenced_triggers-1))
+        self._check_windows(self.window_start, ends)
+        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
+        for i,end in enumerate(ends):
+            if end >= 2**(8*self._window_bytes):
+                raise ValueError('too big')
+            raw_index = (self.max_sequenced_triggers - 1 + i) * self._window_bytes
+            raw[raw_index:raw_index+self._window_bytes] = list(int.to_bytes(end, length=self._window_bytes, byteorder='little'))
+        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
+
+
+    def _check_windows(self, starts, ends):
+        if type(starts) is int:
+            starts = [starts]
+        if type(ends) is int:
+            ends = [ends]
+        for i,(start,end) in enumerate(zip(starts, ends)):
+            if start > 0 and end > 0 and start > end:
+                scope_logger.warning('window %d is such that this trigger will never fire! (start=%d, end=%d)' % (i, start, end))
+
 
     @property
     def level(self):
@@ -1752,6 +2096,54 @@ class HuskyTrigger(TriggerSettings):
         be useful to understand why. Resets upon :code:`scope.arm()`.
         """
         return int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_EDGE_TRIGGER, Validate=False, maxResp=2), byteorder='little')
+
+    def get_trigger_times(self):
+        """Retrieve the timestamped trigger times.
+
+        When multiple triggers occur, the number of ADC clock cycles between
+        successive triggers is recorded. Up to 1024 triggers can be
+        timestamped. The counter for each timestamp is 32-bits wide; overflows
+        are noted. Recorded triggers are automatically reset when the scope is
+        armed.
+        
+        """
+        if self._trigger_times_empty():
+            return None
+        else:
+            if self._trigger_times_overflow():
+                scope_logger.warning('Trigger times FIFO overflowed (too many triggers occured).')
+                self.cwe.oa.sendMessage(CODE_WRITE, ADDR_NUM_TRIGGERS_STAT, [1]) # clears the overflow flag
+            times = []
+            while not self._trigger_times_empty():
+                self.cwe.oa.sendMessage(CODE_WRITE, ADDR_NUM_TRIGGERS_DATA, [1])
+                raw = int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_NUM_TRIGGERS_DATA, Validate=False, maxResp=4), byteorder='little')
+                if raw == 2**32-1 and len(times): # don't care about overflow on first entry
+                    scope_logger.error('Trigger times counter overflowed (more than 2**32 cycles between successive triggers).')
+                else:
+                    times.append(raw)
+            if self._trigger_times_underflow():
+                scope_logger.error('Internal error: trigger times FIFO underflowed.')
+            return times[1:]
+
+
+    def _trigger_times_empty(self):
+        if self.cwe.oa.sendMessage(CODE_READ, ADDR_NUM_TRIGGERS_STAT, Validate=False, maxResp=1)[0] & 1:
+            return True
+        else:
+            return False
+
+    def _trigger_times_overflow(self):
+        if self.cwe.oa.sendMessage(CODE_READ, ADDR_NUM_TRIGGERS_STAT, Validate=False, maxResp=1)[0] & 2:
+            return True
+        else:
+            return False
+
+    def _trigger_times_underflow(self):
+        if self.cwe.oa.sendMessage(CODE_READ, ADDR_NUM_TRIGGERS_STAT, Validate=False, maxResp=1)[0] & 4:
+            return True
+        else:
+            return False
+
 
 class SADTrigger(util.DisableNewAttr):
     pass
