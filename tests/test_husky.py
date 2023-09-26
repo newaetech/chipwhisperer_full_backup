@@ -92,7 +92,7 @@ target.baud = 38400 * 10 / 7.37
 if scope._is_husky_plus:
     MAXCLOCK = 250e6
     OVERCLOCK1 = 255e6
-    OVERCLOCK2 = 300e6
+    OVERCLOCK2 = 280e6
     MAXSAMPLES = 327828
     MAXSEGMENTSAMPLES = 295056
 else:
@@ -508,17 +508,20 @@ testPLLData = [
     (5e6 ,  1,      True,   20,         1,          20,     'xtal_ref'),
     (10e6,  1,      True,   20,         1,          20,     'xtal_ref_SLOW'),
     (15e6,  1,      True,   16,         1,          20,     'xtal_ref'),
-    (50e6,  1,      True,   6,          0,          20,     'xtal_ref_SLOW'),
-    (75e6,  1,      True,   4,          0,          20,     'xtal_ref_SLOW'),
+    (50e6,  1,      True,   6,          1,          20,     'xtal_ref_SLOW'),
+    (75e6,  1,      True,   4,          1,          20,     'xtal_ref_SLOW'),
     (5e6 ,  4,      True,   40,         1,          20,     'xtal_ref_mul4'),
     (15e6,  3,      True,   16,         1,          20,     'xtal_ref_mul3'),
     (20e6,  2,      True,   15,         1,          20,     'xtal_ref_mul2_SLOW'),
-    (25e6,  2,      True,   12,         0,          20,     'xtal_ref_mul2_SLOW'),
+    (25e6,  2,      True,   12,         1,          20,     'xtal_ref_mul2_SLOW'),
 ]
 
 
 def test_fpga_version():
-    assert scope.fpga_buildtime == '7/28/2023, 12:29'
+    if scope._is_husky_plus:
+        assert scope.fpga_buildtime == '9/19/2023, 22:43'
+    else:
+        assert scope.fpga_buildtime == '9/1/2023, 21:45'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1

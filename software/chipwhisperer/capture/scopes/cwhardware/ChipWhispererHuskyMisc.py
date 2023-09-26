@@ -68,6 +68,7 @@ ADDR_USERIO_READ        = 97
 ADDR_USERIO_DEBUG_SELECT= 109
 
 ADDR_TRACE_EN           = 0xc0 + 0x2d
+ADDR_TRACE_USERIO_DIR   = 0xc0 + 0x2e
 
 
 class XilinxDRP(util.DisableNewAttr):
@@ -349,17 +350,237 @@ class USERIOSettings(util.DisableNewAttr):
     '''
     _name = 'USERIO Control'
 
+    fpga_mode_definitions = [None]*16 # type: list
+
+    # fpga_mode = 0:
+    fpga_mode_definitions[0] = ['streaming debug',
+                                 ['stream_segment_available',
+                                  'slow_fifo_wr_slow',
+                                  'slow_fifo_rd_slow',
+                                  'reg_read_slow',
+                                  'fifo_error_flag',
+                                  'fast_fifo_read',
+                                  'glitchclk',
+                                  'glitch_enable',
+                                  'unused']]
+
+    # fpga_mode = 1:
+    fpga_mode_definitions[1] = ['trigger_unit.v debug', 
+                                  ['cmd_arm_usb',
+                                   'trigger',
+                                   'armed',
+                                   'capture_active_o',
+                                   'capture_done_i',
+                                   'int_reset_capture',
+                                   'arm_o',
+                                   'armed_and_ready',
+                                   'adc_capture_done']]
+
+    # fpga_mode = 2:
+    fpga_mode_definitions[2] = ['fifo_top_husky.v debug', 
+                                 ['state[0]',
+                                  'state[1]',
+                                  'state[2]',
+                                  'capture_go',
+                                  'arming',
+                                  'armed_and_ready',
+                                  'fifo_rst',
+                                  'adc_capture_stop',
+                                  'unused']]
+
+    # fpga_mode = 3:
+    fpga_mode_definitions[3] = ['glitch debug', 
+                                 ['cmd_arm_usb',
+                                  'trigger_capture',
+                                  'glitch_enable',
+                                  'glitchclk',
+                                  'glitch_mmcm2_clk_out',
+                                  'glitch_mmcm1_clk_out',
+                                  'xadc_error_flag',
+                                  'unused',
+                                  'unused']]
+
+    # fpga_mode = 4:
+    fpga_mode_definitions[4] = ['clockglitch debug1', 
+                                 ['exttrigger',
+                                  'exttrigger_resync',
+                                  'trigger_resync_idle',
+                                  'glitch_trigger',
+                                  'glitch_done_count[0]',
+                                  'glitch_done_count[1]',
+                                  'clockglitch_count[0]',
+                                  'clockglitch_count[1]',
+                                  'unused']]
+
+    # fpga_mode = 5:
+    fpga_mode_definitions[5] = ['clockglitch debug2', 
+                                 ['glitch_done_count[1]',
+                                  'glitch_done_count[0]',
+                                  'glitch_enable',
+                                  'glitchclk',
+                                  'glitch_trigger',
+                                  'glitch_mmcm1_clk_out',
+                                  'sourceclk',
+                                  'exttrigger',
+                                  'unused']]
+
+    # fpga_mode = 6:
+    fpga_mode_definitions[6] = ['usb debug1', 
+                                 ['USB_Data[4]',
+                                  'USB_Data[5]',
+                                  'USB_Data[6]',
+                                  'USB_Data[7]',
+                                  'clk_usb_buf',
+                                  'USB_CEn',
+                                  'USB_WRn',
+                                  'USB_RDn',
+                                  'unused']]
+
+    # fpga_mode = 7:
+    fpga_mode_definitions[7] = ['usb debug2', 
+                                 ['USB_Data[0]',
+                                  'USB_Data[1]',
+                                  'USB_Data[2]',
+                                  'USB_Data[3]',
+                                  'clk_usb_buf',
+                                  'USB_CEn',
+                                  'USB_WRn',
+                                  'USB_RDn',
+                                  'unused']]
+
+    # fpga_mode = 8:
+    fpga_mode_definitions[8] = ['usb debug3', 
+                                 ['USB_Data[0]',
+                                  'USB_Data[1]',
+                                  'USB_Data[2]',
+                                  'USB_Data[3]',
+                                  'USB_Data[4]',
+                                  'USB_Data[5]',
+                                  'USB_Data[6]',
+                                  'reg_write',
+                                  'unused']]
+
+    # fpga_mode = 9:
+    fpga_mode_definitions[9] = ['edge trigger debug', 
+                                 ['trigger_in',
+                                  'trigger_in_r[0]',
+                                  'trigger_in_r[1]',
+                                  'triggered',
+                                  'armed_and_ready',
+                                  'running',
+                                  'edge_counter[0]',
+                                  'edge_counter[1]',
+                                  'unused']]
+
+    # fpga_mode = 10:
+    fpga_mode_definitions[10] = ['clockglitch debug3 (trigger_resync)', 
+                                 ['exttrig',
+                                  'exttrigger_resync',
+                                  'async_trigger',
+                                  'state[0]',
+                                  'state[1]',
+                                  'done',
+                                  'oneshot',
+                                  'glitch_condition',
+                                  'unused']]
+
+    # fpga_mode = 11:
+    fpga_mode_definitions[11] = ['triggers',
+                                 ['cmd_arm_usb',
+                                  'trigger_edge_counter',
+                                  'trigger_adc',
+                                  'trace_trig_out',
+                                  'trigger_sad',
+                                  'uart_trigger_line',
+                                  'target_io4',
+                                  'edge_trigger_line',
+                                  'unused']]
+
+    # fpga_mode = 12:
+    fpga_mode_definitions[12] = ['trigger_unit.v debug2',
+                                 ['arm_i',
+                                  'adc_capture_done',
+                                  'trigger',
+                                  'capture_active_o',
+                                  'int_reset_capture',
+                                  'capture_go_start',
+                                  'capture_go_o',
+                                  'adc_delay_cnt == 0',
+                                  'ununsed']]
+
+    # fpga_mode = 13:
+    fpga_mode_definitions[13] = ['sequencer debug (2 triggers)',
+                                 ['trigger 0',
+                                  'trigger 1',
+                                  'too early',
+                                  'too late',
+                                  'sequence trigger output',
+                                  'trigger 0 window',
+                                  'trigger 1 window',
+                                  'armed_and_ready',
+                                  'unused']]
+
+    # fpga_mode = 14:
+    fpga_mode_definitions[14] = ['sequencer/SAD debug',
+                                 ['unused',
+                                  'unused',
+                                  'unused',
+                                  'trigger[0]',
+                                  'trigger[1]',
+                                  'trigger 0 window',
+                                  'trigger 1 window',
+                                  'too late',
+                                  'unused']]
+
+    # fpga_mode = 15:
+    fpga_mode_definitions[15] = ['sequencer/SAD debug (4 triggers)',
+                                 ['trigger 0',
+                                  'trigger 1',
+                                  'trigger 2',
+                                  'trigger 3',
+                                  'trigger 0 window',
+                                  'trigger 1 window',
+                                  'trigger 2 window',
+                                  'trigger 3 window',
+                                  'unused']]
+
     def __init__(self, oaiface : OAI.OpenADCInterface):
         super().__init__()
+        self._last_mode = None
         self.oa = oaiface
         self.disable_newattr()
 
     def _dict_repr(self):
         rtn = {}
         rtn['mode'] = self.mode
+        if self.mode in ['fpga_debug', 'swo_trace_plus_debug']:
+            rtn['fpga_mode'] = self.fpga_mode
         rtn['direction'] = self.direction
         rtn['drive_data'] = self.drive_data
         rtn['status'] = self.status
+        pins_rtn = {}
+        trace_pins = ['TMS', 'TCK', 'TDO/SWO', 'unused', 'TRACEDATA[0]', 'TRACEDATA[1]', 'TRACEDATA[2]', 'TRACEDATA[3]', 'TRACECLOCK']
+        for i in range(9):
+            if self.mode == 'trace':
+                info = trace_pins[i]
+            elif self.mode == 'swo_trace_plus_debug':
+                if i < 3:
+                    info = trace_pins[i]
+                else:
+                    info = self.fpga_mode_definitions[self.fpga_mode][1][i]
+            elif self.direction & 2**i:
+                info = 'Husky-driven, '
+                if self.mode == 'normal':
+                    info += 'value = %d' % ((self.status >> i) & 0x01)
+                else:
+                    info = self.fpga_mode_definitions[self.fpga_mode][1][i]
+            else:
+                info = 'Target-driven, value = %d' % ((self.status >> i) & 0x01)
+            if i < 8:
+                pins_rtn['pin D%d' % i] = info
+            else:
+                pins_rtn['pin CK'] = info
+        rtn['Individual pins'] = pins_rtn
         return rtn
 
     def __repr__(self):
@@ -375,20 +596,24 @@ class USERIOSettings(util.DisableNewAttr):
             "trace": for target trace capture.
             "target_debug_jtag": for target debugging with ChipWhisperer using MPSSE in JTAG mode
             "target_debug_swd": for target debugging with ChipWhisperer using MPSSE in SWD mode
-            "fpga_debug": for FPGA debug (look to cwhusky_top.v for signal definitions).
+            "fpga_debug": for FPGA debug (print the scope.userio object to obtain current signal definition, which is determined by scope.userio.fpga_mode).
+            "swo_trace_plus_debug": pins D0-D2 are used for SWO trace, D3-D7 for fpga_debug.
         """
-        debug = self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_DRIVEN, maxResp=1)[0]
-        trace = self.oa.sendMessage(CODE_READ, ADDR_TRACE_EN, maxResp=1)[0]
-        if trace:
-            return "trace"
-        elif debug == 1:
-            return "fpga_debug"
-        elif debug == 2:
-            return "target_debug_jtag"
-        elif debug == 6:
-            return "target_debug_swd"
+        if self._last_mode:
+            return self._last_mode
         else:
-            return "normal"
+            debug = self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_DRIVEN, maxResp=1)[0]
+            trace = self.oa.sendMessage(CODE_READ, ADDR_TRACE_EN, maxResp=1)[0]
+            if trace:
+                return "trace"
+            elif debug == 1:
+                return "fpga_debug"
+            elif debug == 2:
+                return "target_debug_jtag"
+            elif debug == 6:
+                return "target_debug_swd"
+            else:
+                return "normal"
 
     @mode.setter
     def mode(self, setting):
@@ -398,9 +623,14 @@ class USERIOSettings(util.DisableNewAttr):
         elif setting == 'trace':
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [0])
             self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [1])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_USERIO_DIR,    [3])  # restore default just in case
         elif setting == 'fpga_debug':
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [1])
             self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
+        elif setting == 'swo_trace_plus_debug':
+            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [1])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [1])
+            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_USERIO_DIR,    [0xff-4])
         elif setting == 'target_debug_jtag':
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [2])
             self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
@@ -409,18 +639,20 @@ class USERIOSettings(util.DisableNewAttr):
             self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
         else:
             raise ValueError("Invalid mode; use normal/trace/fpga_debug/target_debug_jtag/target_debug_swd")
+        self._last_mode = setting
 
     @property
     def fpga_mode(self):
         """When scope.userio.mode = 'fpga_debug', selects which FPGA signals
-        are routed to the USERIO pins. See cwhusky_top.v for definitions.
+        are routed to the USERIO pins. Print the scope.userio object to obtain the signal definition
+        corresponding to the current fpga_mode setting.
         """
         return self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_SELECT, maxResp=1)[0]
 
     @fpga_mode.setter
     def fpga_mode(self, setting):
-        if not setting in range(0, 11):
-            raise ValueError("Must be integer in [0, 10]")
+        if not setting in range(0, 16):
+            raise ValueError("Must be integer in [0, 15]")
         else:
             self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_SELECT, [setting])
 
