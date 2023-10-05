@@ -498,7 +498,7 @@ class NAEUSB_Backend:
         if len(dev_list) == 0:
             return []
 
-        for dev in dev_list:
+        for dev in dev_list[:]:
             try:
                 a = dev.getSerialNumber()
                 naeusb_logger.info("Found ChipWhisperer with serial number {}".format(a))
