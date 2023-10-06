@@ -28,6 +28,7 @@ from ...hardware.naeusb.fpga import FPGA
 from ...logging import *
 from collections import OrderedDict
 from ...common.utils import util
+from ...hardware.naeusb.serial import USART
 
 class CW310(CW305):
     """CW310 Bergen Board target object.
