@@ -432,9 +432,6 @@ class NAEUSB_Backend:
             raise
         self._usbdev = self.handle
 
-        # claim bulk interface, may not be necessary?
-        self.handle.claimInterface(0)
-
         self.sn = self.handle.getSerialNumber()
         self.pid = self.device.getProductID()
         naeusb_logger.debug('Found %s, Serial Number = %s' % (self.handle.getProduct(), self.sn))
