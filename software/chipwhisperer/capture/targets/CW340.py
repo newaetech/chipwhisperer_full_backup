@@ -57,6 +57,9 @@ class CW340(CW310):
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, board="CW340")
         self.jumper_warned = False
 
+    def _getCWType(self):
+        return "luna"
+
     def _get_usart(self, num=0):
         if num == 0:
             return self._usart0
