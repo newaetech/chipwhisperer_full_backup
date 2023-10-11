@@ -231,7 +231,10 @@ class USART(object):
             waiting = self.inWaiting()
 
         # print("read: " + str(resp))
-        return resp
+        if dlen == 0:
+            return resp
+        else:
+            return resp[:pos]
 
 
     def _usartTxCmd(self, cmd, data=[]):

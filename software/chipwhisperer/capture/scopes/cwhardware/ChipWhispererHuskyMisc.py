@@ -358,8 +358,8 @@ class USERIOSettings(util.DisableNewAttr):
                                   'slow_fifo_wr_slow',
                                   'slow_fifo_rd_slow',
                                   'reg_read_slow',
-                                  'fifo_error_flag',
                                   'fast_fifo_read',
+                                  'fifo_error_flag',
                                   'glitchclk',
                                   'glitch_enable',
                                   'unused']]
