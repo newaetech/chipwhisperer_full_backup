@@ -319,9 +319,9 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.adc.basic_mode = 'rising_edge'
         self.clock.clkgen_freq = self.DEFAULT_CLOCKGEN_FREQ
         self.trigger.triggers = 'tio4'
-        self.io.tio1 = 'serial_rx'
-        self.io.tio2 = 'serial_tx'
-        self.io.tio4 = 'high_z'
+        self.io.tio1 = self.io.GPIO_MODE_SERIAL_RX
+        self.io.tio2 = self.io.GPIO_MODE_SERIAL_TX
+        self.io.tio4 = self.io.GPIO_MODE_HIGHZ
         self.io.hs2 = 'clkgen'
 
         if self._is_husky:
