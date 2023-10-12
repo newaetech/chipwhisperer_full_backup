@@ -86,6 +86,8 @@ class CW310(CW305):
         self.last_key = bytearray([0]*16)
         self.target_name = 'AES'
         self._io = FPGAIO(self._naeusb, 200)
+        self.toggle_user_led = False
+        self.check_done = False
 
         # TODO- temporary until these are added to the parsed defines file
         self.REG_XADC_DRP_ADDR = 0x17
