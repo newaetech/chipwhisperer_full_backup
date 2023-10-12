@@ -431,6 +431,8 @@ class NAEUSB_Backend:
                 naeusb_logger.error("Or that you have the proper permissions to access it")
             raise
         self._usbdev = self.handle
+        if os.name == "nt":
+            self.handle.claimInterface(0)
 
         self.sn = self.handle.getSerialNumber()
         self.pid = self.device.getProductID()

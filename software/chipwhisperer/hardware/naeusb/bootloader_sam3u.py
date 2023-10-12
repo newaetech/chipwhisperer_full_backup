@@ -284,6 +284,9 @@ class Samba(object):
         elif chipid == 0x29970ce0:
             flash = EefcFlash(self, "at91sam4sd16b", 0x400000, 2048, 512, 2, 256, 0x20001000, 0x20010000, 0x400e0a00, False)
             self.rstc_addr = 0x400E1400
+        elif chipid == 0x289c0ce0:
+            flash = EefcFlash(self, "at91sam4s16b", 0x400000, 2048, 512, 1, 256, 0x20001000, 0x20010000, 0x400e0a00, False)
+            self.rstc_addr = 0x400E1400
         elif chipid == 0x286e0a60 or chipid == 0x285e0a60  or chipid == 0x284e0a60 :
             flash = EefcFlash(self, "ATSAM3X8", 0x80000, 2048, 256, 2, 32, 0x20001000, 0x20010000, 0x400e0a00, False)
             self.rstc_addr = 0x400E1A00

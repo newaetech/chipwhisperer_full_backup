@@ -178,8 +178,8 @@ class SAMFWLoader:
         if fw_path:
             if not os.path.exists(fw_path):
                 raise OSError("File {} does not exist. Firmware has not been erased.".format(fw_path))
-        if not self._hw_type:
-            raise OSError("Unable to detect chipwhisperer hardware type")
+        if (not self._hw_type) and (not fw_path):
+            raise OSError("Unable to detect chipwhisperer hardware type and firmware not specified")
         before = serial.tools.list_ports.comports()
         before = get_at91_ports()
         # time.sleep(0.5)
