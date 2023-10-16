@@ -153,10 +153,10 @@ else:
 ktp = cw.ktp.Basic()
 key, text = ktp.next()
 
-def check_ramp(raw, testmode, samples, segment_cycles, verbose=False):
+def check_ramp(raw, testmode, bits_per_sample, samples, segment_cycles, verbose=False):
     errors = 0
     first_error = None
-    MOD=2**scope.adc.bits_per_sample
+    MOD=2**bits_per_sample
     current_count = raw[0]
 
     if testmode == 'ADCramp':
@@ -193,7 +193,7 @@ def check_ramp(raw, testmode, samples, segment_cycles, verbose=False):
                 current_count = byte
 
     elif testmode == 'ADCalt':
-        if segment_cycles > 0 or scope.adc.bits_per_sample != 12:
+        if segment_cycles > 0 or bits_per_sample != 12:
             raise ValueError('not supported')
         for i, byte in enumerate(raw[1:]):
             if current_count == 0xaaa:
@@ -279,19 +279,26 @@ testADCsweep = [
 ]
 
 testTargetData = [
-    # samples   presamples  testmode    clock       fastreads   adcmul  bit stream  threshold   check   segs    segcycs desc
-    (200,       0,          'internal', 20e6,       True,       1,      8,  False,  65536,      True,   1,      0,      'quick'),
-    ('max',     0,          'internal', 15e6,       True,       1,      12, False,  65536,      True,   1,      0,      'maxsamples12'),
-    (400000,    0,          'internal', 20e6,       True,       1,      8,  True ,  65536,      True,   1,      0,      'quickstream8'),
-    (2000000,   0,          'internal', 16e6,       True,       1,      12, True ,  65536,      True,   1,      0,      'longstream12_SLOW'),
-    (6000000,   0,          'internal', 16e6,       True,       1,      12, True ,  65536,      False,  1,      0,      'vlongstream12_SLOW'),
-    (500000,    0,          'internal', 20e6,       True,       1,      12, True ,  16384,      True,   1,      0,      'over_SLOW'),
-    (3000000,   0,          'internal', 24e6,       True,       1,      12, True ,  65536,      False,  1,      0,      'overflow_SLOW'),
-    (200000,    0,          'internal', 15e6,       True,       1,      12, True ,  65536,      True,   1,      0,      'postfail_SLOW'),
-    (2000,      0,          'internal', 10e6,       True,       1,      8,  False,  65536,      True,   1,      0,      'back2nostream_SLOW'),
-    (500000,    0,          'internal', 12e6,       False,      1,      12, True ,  65536,      True,   1,      0,      'slowreads1_SLOW'),
-    (2000000,   0,          'internal', 10e6,       False,      1,      12, True ,  65536,      True,   1,      0,      'slowreads2_SLOW'),
+    # samples   presamples  testmode    clock       fastreads   adcmul  bit stream  threshold   seg_size,   check   segs    segcycs desc
+    (900000,    0,          'internal', 10e6,       True,       1,      8,  True ,  65536,      65536,      True,   1,      0,      'midstream'),
+    (900000,    0,          'internal', 8e6,        True,       1,      8,  True ,  65536,      65536,      True,   1,      0,      'slowstream'),
+    (900000,    0,          'internal', 5e6,        True,       1,      12, True ,  65536,      65536,      True,   1,      0,      'slowerstream12'),
+    (900000,    0,          'internal', 5e6,        True,       1,      8,  True ,  65536,      65536,      True,   1,      0,      'slowerstream'),
+    (4000000,   0,          'internal', 5e6,        True,       1,      8,  True ,  65536,      65536,      True,   1,      0,      'slowerstream_SLOW'),
+    # N.B.: much more slow stream tests over at test_husky_stream.py
+    (200,       0,          'internal', 20e6,       True,       1,      8,  False,  65536,      65536,      True,   1,      0,      'quick'),
+    ('max',     0,          'internal', 15e6,       True,       1,      12, False,  65536,      65536,      True,   1,      0,      'maxsamples12'),
+    (400000,    0,          'internal', 20e6,       True,       1,      8,  True ,  65536,      65536,      True,   1,      0,      'quickstream8'),
+    (2000000,   0,          'internal', 16e6,       True,       1,      12, True ,  65536,      65536,      True,   1,      0,      'longstream12_SLOW'),
+    (6000000,   0,          'internal', 16e6,       True,       1,      12, True ,  65536,      65536,      False,  1,      0,      'vlongstream12_SLOW'),
+    (500000,    0,          'internal', 20e6,       True,       1,      12, True ,  16384,      65536,      True,   1,      0,      'over_SLOW'),
+    (3000000,   0,          'internal', 24e6,       True,       1,      12, True ,  65536,      65536,      False,  1,      0,      'overflow_SLOW'),
+    (200000,    0,          'internal', 15e6,       True,       1,      12, True ,  65536,      65536,      True,   1,      0,      'postfail_SLOW'),
+    (2000,      0,          'internal', 10e6,       True,       1,      8,  False,  65536,      65536,      True,   1,      0,      'back2nostream_SLOW'),
+    (500000,    0,          'internal', 12e6,       False,      1,      12, True ,  65536,      65536,      True,   1,      0,      'slowreads1_SLOW'),
+    (2000000,   0,          'internal', 10e6,       False,      1,      12, True ,  65536,      65536,      True,   1,      0,      'slowreads2_SLOW'),
 ]
+
 
 if test_platform == "sam4s":
     testSegmentData = [
@@ -625,7 +632,7 @@ def test_internal_ramp(fulltest, samples, presamples, testmode, clock, fastreads
         scope.sc.arm(False)
         assert scope.capture() == False
         raw = scope.get_last_trace(True)
-        errors, first_error = check_ramp(raw, testmode, samples, segment_cycles)
+        errors, first_error = check_ramp(raw, testmode, bits, samples, segment_cycles)
         assert errors == 0, "%d errors; First error: %d; scope.adc.errors: %s" % (errors, first_error, scope.adc.errors)
         assert scope.adc.errors == False
     scope.sc._fast_fifo_read_enable = True # return to default
@@ -689,7 +696,7 @@ def test_adc_freq_sweep(fulltest, samples, presamples, freq_start, freq_stop, fr
             scope.sc.arm(False)
             assert scope.capture(poll_done=True) == False
             raw = scope.get_last_trace(True)
-            errors, first_error = check_ramp(raw, testmode, samples, segment_cycles)
+            errors, first_error = check_ramp(raw, testmode, bits, samples, segment_cycles)
 
             if errors or scope.adc.errors != False:
                 all_passed = False
@@ -1034,9 +1041,9 @@ def test_glitch_output_doubles(fulltest, reps, clock, vco, glitches, oversamp, s
 
 
 
-@pytest.mark.parametrize("samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc", testTargetData)
+@pytest.mark.parametrize("samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, threshold, seg_size, check, segments, segment_cycles, desc", testTargetData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, threshold, check, segments, segment_cycles, desc):
+def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, threshold, seg_size, check, segments, segment_cycles, desc):
     if not fulltest and 'SLOW' in desc:
         pytest.skip("use --fulltest to run")
         return None
@@ -1083,10 +1090,17 @@ def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, f
     scope.adc.segment_cycles = segment_cycles
     scope.adc.stream_mode = stream
     scope.adc.stream_segment_threshold = threshold
+    scope.adc.stream_segment_size = seg_size
     scope.adc.segment_cycle_counter_en = True
     scope.adc.bits_per_sample = bits
     scope.adc.clip_errors_disabled = True
     scope.adc.lo_gain_errors_disabled = True
+    scope.userio.mode = 'fpga_debug'
+    scope.userio.fpga_mode = 0
+    if samples > 10000000:
+        scope.adc.timeout = 5
+    if samples > 20000000:
+        scope.adc.timeout = 10
     target.flush()
     ret = cw.capture_trace(scope, target, text, key)
     raw = scope.get_last_trace(True)
@@ -1098,7 +1112,7 @@ def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, f
     else:
         assert scope.adc.errors == False
     if check: 
-        errors, first_error = check_ramp(raw, testmode, samples, segment_cycles)
+        errors, first_error = check_ramp(raw, testmode, bits, samples, segment_cycles)
         assert errors == 0, "%d errors; First error: %d" % (errors, first_error)
     scope.sc._fast_fifo_read_enable = True # return to default
 
