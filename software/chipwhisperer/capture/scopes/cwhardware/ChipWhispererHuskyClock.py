@@ -470,7 +470,7 @@ class CDCI6214:
                             format(best_in_div, best_out_div, best_pll_mul, best_prescale, best_error, real_target_freq))
 
         if best_error == float('inf'):
-            raise ValueError("Could not calculate pll settings for input {}, output {} with mul {}".format(target_freq, adc_mul))
+            raise ValueError("Could not calculate pll settings for input {}, output {} with mul {}".format(input_freq, target_freq, adc_mul))
 
         # set the output settings we found
         self.set_prescale(3, best_prescale)
