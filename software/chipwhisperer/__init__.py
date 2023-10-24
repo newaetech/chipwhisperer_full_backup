@@ -319,6 +319,8 @@ def scope(scope_type : Optional[Type[scopes.ScopeTypes]]=None, name : Optional[s
             multiple ChipWhisperers, all of different type, are connected.
             Defaults to None. Valid values:
 
+            * Nano
+
             * Lite
 
             * Pro
@@ -329,6 +331,8 @@ def scope(scope_type : Optional[Type[scopes.ScopeTypes]]=None, name : Optional[s
             connect to. Alternative to specifying the serial number when
             multiple ChipWhisperers, all of different type, are connected.
             Defaults to None. Valid values:
+
+            * 0xace0: CW-Nano
 
             * 0xace2: CW-Lite
 
@@ -378,6 +382,8 @@ def scope(scope_type : Optional[Type[scopes.ScopeTypes]]=None, name : Optional[s
             kwargs['idProduct'] = 0xace2
         elif name == 'Pro':
             kwargs['idProduct'] = 0xace3
+        elif name == 'Nano':
+            kwargs['idProduct'] = 0xace0
         else:
             raise ValueError
 
