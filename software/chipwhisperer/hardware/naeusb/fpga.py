@@ -54,6 +54,7 @@ class FPGA(object):
         self._usb = usb
         self._timeout = timeout
         self._prog_mask = prog_mask
+        self._programmed = False
 
     def isFPGAProgrammed(self):
         """
@@ -126,6 +127,7 @@ class FPGA(object):
                 target_logger.error("FPGA programming failed. Typically either bad bitstream or prog speed too high (current {})".format(prog_speed))
                 raise IOError("FPGA Done pin failed to go high, bad bitstream?", bitstream)
 
+            self._programmed = True
             return programStatus
         else:
             # No bitstream, exit programming mode

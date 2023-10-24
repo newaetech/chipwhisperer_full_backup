@@ -68,8 +68,12 @@ class CW340(CW310):
         else:
             raise ValueError("Invalid usart {}".format(num))
 
+    def _get_fpga_programmer(self):
+        return self.fpga
+
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=None, sn=None, hw_location=None, prog_mode="serial"):
         self._naeusb.con(idProduct=[0xC340], serial_number=sn, hw_location=hw_location)
+        self.fpga = FPGA(self._naeusb)
         self._usart0 = USART(self._naeusb, usart_num=0)
         self._usart1 = USART(self._naeusb, usart_num=1)
         if prog_mode not in self.PROG_MODES:

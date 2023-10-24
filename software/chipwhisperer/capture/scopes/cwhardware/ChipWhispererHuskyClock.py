@@ -425,12 +425,12 @@ class CDCI6214:
             # setting the reference divider to 0.5 seems to result in inconsistant phase relationship between the target clock and the
             # ADC sampling clock (the CDCI6214 datasheet hints at this in section 8.3.6); it's prevented by default:
             okay_in_divs.append(0.5)
-        okay_in_divs = np.array(okay_in_divs)
+        okay_in_divs = np.array(okay_in_divs, dtype='int64')
         okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) >= 1E6]
         okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) <= 100E6]
         scope_logger.debug("OK in divs: {}".format(okay_in_divs))
 
-        pll_muls = np.arange(5, 2**14)
+        pll_muls = np.arange(5, 2**14, dtype='int64')
 
         best_in_div = 0
         best_out_div = 0
@@ -449,7 +449,7 @@ class CDCI6214:
 
             # go through all the valid PLL multiples we calculated
             # and if we find better settings, update our best settings
-            scope_logger.debug("Ok PLL muls: {}".format(okay_pll_muls))
+            scope_logger.info("Ok PLL muls: {}".format(okay_pll_muls))
             for pll_mul in okay_pll_muls:
                 for prescale in [4, 5, 6]:
                     output_input = pll_input * pll_mul * 5 // prescale
@@ -470,7 +470,7 @@ class CDCI6214:
                             format(best_in_div, best_out_div, best_pll_mul, best_prescale, best_error, real_target_freq))
 
         if best_error == float('inf'):
-            raise ValueError("Could not calculate pll settings for input {} with mul {}".format(target_freq, adc_mul))
+            raise ValueError("Could not calculate pll settings for input {}, output {} with mul {}".format(target_freq, adc_mul))
 
         # set the output settings we found
         self.set_prescale(3, best_prescale)

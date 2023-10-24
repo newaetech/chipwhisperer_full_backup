@@ -70,7 +70,6 @@ class CW310(CW305):
         import chipwhisperer as cw
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, board="CW310")
-        self.fpga = FPGA(self._naeusb)
 
         self.hw = None
         self.oa = None
@@ -131,12 +130,16 @@ class CW310(CW305):
         else:
             raise ValueError("Invalid usart {}".format(num))
 
+    def _get_fpga_programmer(self):
+        return self.fpga
+
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=20E6, sn=None, hw_location=None, platform='cw310'):
         # add more stuff later
         self.platform = platform
         self._naeusb.con(idProduct=[0xC310], serial_number=sn, hw_location=hw_location)
         self._usart0 = USART(self._naeusb, usart_num=0)
         self._usart1 = USART(self._naeusb, usart_num=1)
+        self.fpga = FPGA(self._naeusb)
         self.pll.cdce906init()
         if fpga_id:
             target_logger.warning("fpga_id is currently unused")

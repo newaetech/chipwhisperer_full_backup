@@ -624,6 +624,8 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.gain._clear_caches()
         self.ADS4128.set_defaults()
 
+    def _get_fpga_programmer(self):
+        return self.scopetype.fpga
 
     def con(self, sn=None, idProduct=None, bitstream=None, force=False, prog_speed=10E6, **kwargs):
         """Connects to attached chipwhisperer hardware (Lite, Pro, or Husky)

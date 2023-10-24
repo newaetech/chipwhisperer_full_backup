@@ -11,6 +11,7 @@
 
 from ...hardware.naeusb.naeusb import NAEUSB
 from ...common.utils import util
+from ...hardware.naeusb.fpga import FPGA
 from typing import Callable, Union, Dict, Tuple, cast, List, Optional
 
 import io
@@ -110,6 +111,19 @@ class ChipWhispererCommonInterface:
 
     def _getFWPy(self) -> List[int]:
         raise NotImplementedError("_getFWPy method required")
+
+    def _get_fpga_programmer(self) -> FPGA:
+        raise NotImplementedError("_get_fpga_programmer method required")
+
+    def was_fpga_prog_on_con(self):
+        """ Whether or not the ChipWhisperer's FPGA was programmed last time it was connected to
+
+        Will raise NotImplementedError if the device does not have an FPGA.
+
+        Returns:
+            True if the FPGA was programmed, False otherwise.
+        """
+        return self._get_fpga_programmer()._programmed
 
     @property
     def latest_fw(self) -> Dict[str, int]:

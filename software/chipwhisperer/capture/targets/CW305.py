@@ -385,6 +385,11 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         resp = self._naeusb.readCtrl(CW305_USB.REQ_VCCINT, dlen=3)
         return float(resp[1] | (resp[2] << 8)) / 1000.0
 
+    def _get_fpga_programmer(self):
+        if self.platform != 'cw305':
+            raise NotImplementedError("Not supported for non CW305 boards")
+        return self.fpga
+
     def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=20E6, hw_location=None, sn=None, platform='cw305', version=None):
         """Connect to CW305 board, and download bitstream.
 
