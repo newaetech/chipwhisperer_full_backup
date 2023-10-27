@@ -52,6 +52,9 @@ should get you up and running:
 
     python -m pip install -e .
     python -m pip install -r jupyter/requirements.txt
+    cd jupyter
+    python -m pip install nbstripout
+    nbstripout --install
 
 After running these install instructions, make sure to restart your computer. This is required for the
 new udev rules to be applied.
@@ -184,6 +187,14 @@ With that done, all that's left is to install ChipWhisperer:
     python -m pip install -e .
     python -m pip install -r jupyter/requirements.txt
 
+You may also want to grab `nbstripout`_, which will make git and jupyter interact a little nicer:
+
+.. code:: bash
+
+    cd jupyter
+    pip install nbstripout
+    nbstripout --install # must be run from the jupyter folder
+
 You can check that the install succeeded by navigating to :code:`chipwhisperer`
 and running:
 
@@ -194,3 +205,4 @@ and running:
 Which should open a window like the following in your browser:
 
 .. image:: _images/Jupyter\ ChipWhisperer.png
+.. _nbstripout: https://github.com/kynan/nbstripout

@@ -142,6 +142,14 @@ You can clone and install ChipWhisperer by running the following commands in Git
     python -m pip install -e .
     python -m pip install -r jupyter/requirements.txt
 
+You may also want to grab `nbstripout`_, which will make git and jupyter interact a little nicer:
+
+.. code:: bash
+
+    cd jupyter
+    pip install nbstripout
+    nbstripout --install # must be run from the jupyter folder
+
 If everything there completes successfully, then congratulations, you've successfully installed ChipWhisperer!
 All that's left is to launch Jupyter and run the verification notebooks. Run the following in Git Bash:
 
@@ -163,3 +171,4 @@ to verify that everything installed correctly. If you run into any issues, pleas
 .. _avr-gcc: https://blog.zakkemble.net/avr-gcc-builds/
 .. _git-bash: https://git-scm.com/downloads
 .. _WinPython: https://sourceforge.net/projects/winpython/files/
+.. _nbstripout: https://github.com/kynan/nbstripout
