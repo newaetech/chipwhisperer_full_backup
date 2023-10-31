@@ -28,3 +28,6 @@
 [submodule "hardware/victims/cw305_artixtarget/fw/sam3u/CW305_SAM3U_FW/src/naeusb"]
 	path = hardware/victims/cw305_artixtarget/fw/sam3u/CW305_SAM3U_FW/src/naeusb
 	url = https://github.com/newaetech/naeusb
+[submodule "firmware/fpgas/fpga-common"]
+	path = firmware/fpgas/fpga-common
+	url = https://github.com/newaetech/fpga-common.git
