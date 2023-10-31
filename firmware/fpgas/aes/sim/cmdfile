@@ -1,0 +1,11 @@
+tb.v
+../../cryptosrc/aes_googlevault/aes_sbox.v
+../../cryptosrc/aes_googlevault/aes_ks.v
+../../cryptosrc/aes_googlevault/aes_core.v
+../../cryptosrc/aes_newae/aes_sbox_lut.v
+../hdl/cw305_top.v
+../hdl/cw305_reg_aes.v
+../hdl/cw305_usb_reg_fe.v
+../hdl/clocks.v
+../../fpga-common/hdl/cdc_pulse.v
+

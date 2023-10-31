@@ -1,0 +1,133 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Tue Oct 13 02:33:01 2020
+[*]
+[dumpfile] "/mnt/c/Users/jp/GitHub/cw_dev3/hardware/victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/sim/results/tb.fst"
+[dumpfile_mtime] "Tue Oct 13 02:22:56 2020"
+[dumpfile_size] 141449485
+[savefile] "/mnt/c/Users/jp/GitHub/cw_dev3/hardware/victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/sim/basic.gtkw"
+[timestart] 2238589700
+[size] 3840 2131
+[pos] -1 -1
+*-14.856730 2238751200 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] tb.
+[treeopen] tb.U_dut.
+[treeopen] tb.U_dut.U_curve_mul_256.
+[treeopen] tb.U_dut.U_curve_mul_256.worker.
+[treeopen] tb.U_dut.U_curve_mul_256.worker.modular_adder_inst.adder32.
+[treeopen] tb.U_dut.U_reg_pmul.
+[sst_width] 510
+[signals_width] 499
+[sst_expanded] 1
+[sst_vpaned_height] 1184
+@800200
+-DUT
+@24
+tb.cycle_count[31:0]
+@28
+tb.U_dut.U_curve_mul_256.clk
+tb.U_dut.U_curve_mul_256.ena
+tb.U_dut.U_curve_mul_256.rdy
+@22
+tb.U_dut.U_curve_mul_256.bit_counter[7:0]
+tb.U_dut.U_curve_mul_256.k_din[31:0]
+@28
+tb.U_dut.U_curve_mul_256.k_addr[2:0]
+@1000200
+-DUT
+@22
+tb.U_dut.U_reg_pmul.reg_rx[255:0]
+tb.U_dut.U_reg_pmul.reg_rx_usb[255:0]
+tb.U_dut.U_reg_pmul.reg_ry[255:0]
+tb.U_dut.U_reg_pmul.reg_ry_usb[255:0]
+tb.U_dut.U_reg_pmul.I_ry_word[31:0]
+@28
+tb.U_dut.U_reg_pmul.ry_addr[2:0]
+tb.U_dut.U_reg_pmul.ry_wren
+@200
+-
+@22
+tb.U_dut.U_curve_mul_256.fsm_state[3:0]
+@28
+tb.U_dut.U_curve_mul_256.worker.mod_add_ena
+tb.U_dut.U_curve_mul_256.worker.mod_mul_ena
+tb.U_dut.U_curve_mul_256.worker.mod_sub_ena
+@22
+tb.U_dut.U_curve_mul_256.k_din_reg[31:0]
+@28
+tb.U_dut.U_curve_mul_256.move_inhibit
+@200
+-
+@28
+tb.U_dut.U_curve_mul_256.bram_rx_wr_en
+tb.U_dut.U_curve_mul_256.bram_ry_wr_en
+tb.U_dut.U_curve_mul_256.bram_rz_wr_en
+@200
+-
+@22
+tb.U_dut.U_curve_mul_256.bit_counter[7:0]
+@200
+-
+@800200
+-adder
+@28
+tb.U_dut.U_curve_mul_256.worker.modular_adder_inst.ena
+@22
+tb.U_dut.U_curve_mul_256.worker.modular_adder_inst.a_din[31:0]
+@1000200
+-adder
+@200
+-
+@22
+tb.U_dut.U_curve_mul_256.bram_rx_wr_data_in[31:0]
+tb.U_dut.U_curve_mul_256.bram_ry_wr_data_in[31:0]
+tb.U_dut.U_curve_mul_256.bram_rz_wr_data_in[31:0]
+@200
+-
+@800200
+-rx_bram
+@24
+tb.U_dut.U_curve_mul_256.bram_rx.a_addr[2:0]
+@28
+tb.U_dut.U_curve_mul_256.bram_rx.a_wr
+@22
+tb.U_dut.U_curve_mul_256.bram_rx.a_in[31:0]
+@28
+tb.U_dut.U_curve_mul_256.bram_rx.b_addr[2:0]
+@22
+tb.U_dut.U_curve_mul_256.bram_rx.b_out[31:0]
+@1000200
+-rx_bram
+@800200
+-ry_bram
+@28
+tb.U_dut.U_curve_mul_256.bram_ry.b_addr[2:0]
+@22
+tb.U_dut.U_curve_mul_256.bram_ry.b_out[31:0]
+@1000200
+-ry_bram
+@800200
+-rz_bram
+@24
+tb.U_dut.U_curve_mul_256.bram_rz.b_addr[2:0]
+@22
+tb.U_dut.U_curve_mul_256.bram_rz.b_out[31:0]
+@1000200
+-rz_bram
+@22
+tb.U_dut.U_reg_pmul.reg_gx[255:0]
+tb.U_dut.U_reg_pmul.reg_gx_crypt[255:0]
+@28
+tb.U_dut.U_reg_pmul.gx_addr[2:0]
+@22
+tb.U_dut.U_reg_pmul.O_gx_word[31:0]
+@28
+tb.U_dut.U_reg_pmul.gy_addr[2:0]
+@22
+tb.U_dut.U_reg_pmul.O_gy_word[31:0]
+@28
+tb.U_dut.U_curve_mul_256.worker.brom_g_x_inst.b_addr[2:0]
+@23
+tb.U_dut.U_curve_mul_256.worker.brom_g_x_inst.b_out[31:0]
+[pattern_trace] 1
+[pattern_trace] 0
