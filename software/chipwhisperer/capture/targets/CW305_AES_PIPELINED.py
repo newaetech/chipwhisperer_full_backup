@@ -166,8 +166,16 @@ class CW305_AES_PIPELINED(CW305):
         rtn = OrderedDict()
         rtn['target_name']      = self.target_name
         rtn['fpga_buildtime']   = self.fpga_buildtime
+        rtn['core_type']        = self.core_type
         rtn['fifo_depth']       = self.fifo_depth
         rtn['half_pipe']        = self.half_pipe
+        rtn['crypt_type']       = self.crypt_type
+        rtn['crypt_rev']        = self.crypt_rev
+        rtn['platform']         = self.platform
+        for prop in self.__dir__():
+            if 'REG_' in prop:
+                if getattr(self, prop): # this some stock registers are delcared as None and may remain so
+                    rtn[prop] = getattr(self, prop)
         return rtn
 
     def __repr__(self):

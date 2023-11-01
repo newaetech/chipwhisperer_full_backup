@@ -39,6 +39,7 @@ from ...common.utils import util
 from ...common.utils.util import camel_case_deprecated
 from ..scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader
 from ..api.cwcommon import ChipWhispererCommonInterface
+from collections import OrderedDict
 
 from ...logging import *
 
@@ -134,6 +135,8 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         self.REG_USER_LED = None
         self.REG_CRYPT_CIPHEROUT = None
         self.REG_BUILDTIME = None
+        self.REG_CRYPT_TYPE = None
+        self.REG_CRYPT_REV = None
 
         self._naeusb = None
         self.pll = None
@@ -145,8 +148,8 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         self.oa = None
 
         self._woffset_sam3U = 0x000
-        self.default_verilog_defines = 'cw305_defines.v'
-        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/../../hardware/victims/cw305_artixtarget/fpga/common/' + self.default_verilog_defines
+        self.default_verilog_defines = 'cw305_aes_defines.v'
+        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/../../firmware/fpgas/aes/hdl/' + self.default_verilog_defines
         self.registers = 12 # number of registers we expect to find
         self.bytecount_size = 7 # pBYTECNT_SIZE in Verilog
 
@@ -159,6 +162,26 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
 
     def _getNAEUSB(self):
         return self._naeusb
+
+    def _dict_repr(self):
+        rtn = OrderedDict()
+        rtn['target_name']      = self.target_name
+        rtn['fpga_buildtime']   = self.fpga_buildtime
+        rtn['core_type']        = self.core_type
+        rtn['crypt_type']       = self.crypt_type
+        rtn['crypt_rev']        = self.crypt_rev
+        rtn['platform']         = self.platform
+        for prop in self.__dir__():
+            if 'REG_' in prop:
+                if getattr(self, prop): # this some stock registers are delcared as None and may remain so
+                    rtn[prop] = getattr(self, prop)
+        return rtn
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
 
     def slurp_defines(self, defines_files=None):
         """ Parse Verilog defines file so we can access register and bit
@@ -231,6 +254,36 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
     @property
     def fpga_buildtime(self):
         return self.get_fpga_buildtime()
+
+    @property
+    def crypt_type(self):
+        """ Returns the value of the target's REG_CRYPT_TYPE register (if it exists).
+        """
+        if self.REG_CRYPT_TYPE is None:
+            target_logger.error("target.REG_CRYPT_TYPE unset. Have you given target a verilog defines file?")
+        return self.fpga_read(self.REG_CRYPT_TYPE, 1)[0]
+
+    @property
+    def crypt_rev(self):
+        """ Returns the value of the target's REG_CRYPT_REV register (if it exists).
+        """
+        if self.REG_CRYPT_REV is None:
+            target_logger.error("target.REG_CRYPT_REV unset. Have you given target a verilog defines file?")
+        return self.fpga_read(self.REG_CRYPT_REV, 1)[0]
+
+    @property
+    def core_type(self):
+        """ Infers the target core type from the target's REG_CRYPT_TYPE register (if it exists).
+        """
+        ctype = self.crypt_type
+        if ctype == 2:
+            return 'AES'
+        elif ctype == 3:
+            return 'ECC'
+        elif ctype == 4:
+            return 'AES pipeline'
+        else:
+            return 'unknown'
 
 
     def fpga_write(self, addr, data):
@@ -427,7 +480,11 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
                         if self.target_name == 'AES':
                             bsdata = getsome(f"AES_{fpga_id}.bit")
                         elif self.target_name == 'Cryptech ecdsa256-v1 pmul':
-                            bsdata = getsome(f"ECDSA256v1_pmul_{fpga_id}.bit")
+                            if version is None or version == 0:
+                                version = ''
+                            else:
+                                version = '_attempt' + str(version)
+                            bsdata = getsome(f"ECDSA256v1_pmul{version}_{fpga_id}.bit")
                         elif self.target_name == 'Pipelined AES':
                             if version is None:
                                 version = 0
@@ -484,7 +541,11 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
                     if self.target_name == 'AES':
                         bsfile = getsome(f"AES_cw312t_a35.bit")
                     elif self.target_name == 'Cryptech ecdsa256-v1 pmul':
-                        bsfile = getsome(f"ECDSA256v1_pmul_cw312t_a35.bit")
+                        if version is None or version == 0:
+                            version = ''
+                        else:
+                            version = '_attempt' + str(version)
+                        bsfile = getsome(f"ECDSA256v1_pmul{version}_{fpga_id}.bit")
                     elif self.target_name == 'Pipelined AES':
                         if version is None:
                             version = 0
