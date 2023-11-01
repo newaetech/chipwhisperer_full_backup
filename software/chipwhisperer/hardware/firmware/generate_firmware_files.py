@@ -8,27 +8,42 @@ import binascii
 import pathlib
 
 hwdir = r"../../../../hardware/"
+fpgadir = r"../../../../firmware/fpgas/"
 
 #List of versions, file-names, and object name
 cw305_v = [0, 53]
 cw305_files = [("SAM3U_CW305.bin", os.path.join(hwdir, r"victims/cw305_artixtarget/fw/sam3u/CW305_SAM3U_FW/src/ChipWhisperer-CW305.bin")),
-                ("SPI_flash_100t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/spiflash_feedthrough/spiflash_feedthrough.runs/impl_100t/cw305_top.bit")),
-                ("SPI_flash_35t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/spiflash_feedthrough/spiflash_feedthrough.runs/impl_35t/cw305_top.bit")),
-                ("AES_100t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_verilog/aes128_verilog.runs/impl_100t/cw305_top.bit")),
-                ("AES_35t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_verilog/aes128_verilog.runs/impl_35t/cw305_top.bit")),
-                ("cw305_defines.v", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/common/cw305_defines.v")),
-                ("ECDSA256v1_pmul_100t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/ecc_p256_pmul.runs/impl_100t/cw305_ecc_p256_pmul_top.bit")),
-                ("ECDSA256v1_pmul_35t.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/ecc_p256_pmul.runs/impl_35t/cw305_ecc_p256_pmul_top.bit")),
-                ("cw305_pmul_defines.v", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/hdl/cw305_pmul_defines.v")),
-                ("Pipelined_AES_100t_half0.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_pipelined/aes128_pipelined.runs/impl_full/cw305_aes_pipelined_top.bit")),
-                ("Pipelined_AES_100t_half1.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_pipelined/aes128_pipelined.runs/impl_half1/cw305_aes_pipelined_top.bit")),
-                ("Pipelined_AES_100t_half2.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_pipelined/aes128_pipelined.runs/impl_half2/cw305_aes_pipelined_top.bit")),
-                ("Pipelined_AES_100t_half3.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_pipelined/aes128_pipelined.runs/impl_half3/cw305_aes_pipelined_top.bit")),
-                ("Pipelined_AES_35t_half0.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_pipelined/aes128_pipelined.runs/impl_full_35t/cw305_aes_pipelined_top.bit")),
-                ("Pipelined_AES_35t_half1.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_pipelined/aes128_pipelined.runs/impl_half1_35t/cw305_aes_pipelined_top.bit")),
-                ("Pipelined_AES_35t_half2.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_pipelined/aes128_pipelined.runs/impl_half2_35t/cw305_aes_pipelined_top.bit")),
-                ("Pipelined_AES_35t_half3.bit", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_pipelined/aes128_pipelined.runs/impl_half3_35t/cw305_aes_pipelined_top.bit")),
-                ("cw305_aes_pipelined_defines.v", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_pipelined/hdl/cw305_aes_pipelined_defines.v")),
+
+                ("SPI_flash_100t.bit", os.path.join(fpgadir, r"spiflash_feedthrough/spiflash_feedthrough.runs/impl_100t/cw305_top.bit")),
+                ("SPI_flash_35t.bit",  os.path.join(fpgadir, r"spiflash_feedthrough/spiflash_feedthrough.runs/impl_35t/cw305_top.bit")),
+
+                ("AES_100t.bit", os.path.join(fpgadir, r"aes/vivado/cw305_aes.runs/impl_100t/cw305_top.bit")),
+                ("AES_35t.bit",  os.path.join(fpgadir, r"aes/vivado/cw305_aes.runs/impl_35t/cw305_top.bit")),
+
+                ("ECDSA256v1_pmul_100t.bit",          os.path.join(fpgadir, r"ecc/vivado/cw305_ecc.runs/impl_100t/cw305_ecc_p256_pmul_top.bit")),
+                ("ECDSA256v1_pmul_attempt1_100t.bit", os.path.join(fpgadir, r"ecc/vivado/cw305_ecc_attempt1.runs/impl_100t/cw305_ecc_p256_pmul_top.bit")),
+                ("ECDSA256v1_pmul_attempt2_100t.bit", os.path.join(fpgadir, r"ecc/vivado/cw305_ecc_attempt2.runs/impl_100t/cw305_ecc_p256_pmul_top.bit")),
+                ("ECDSA256v1_pmul_attempt3_100t.bit", os.path.join(fpgadir, r"ecc/vivado/cw305_ecc_attempt3.runs/impl_100t/cw305_ecc_p256_pmul_top.bit")),
+                ("ECDSA256v1_pmul_attempt4_100t.bit", os.path.join(fpgadir, r"ecc/vivado/cw305_ecc_attempt4.runs/impl_100t/cw305_ecc_p256_pmul_top.bit")),
+                ("ECDSA256v1_pmul_35t.bit",           os.path.join(fpgadir, r"ecc/vivado/cw305_ecc.runs/impl_35t/cw305_ecc_p256_pmul_top.bit")),
+                ("ECDSA256v1_pmul_attempt1_35t.bit",  os.path.join(fpgadir, r"ecc/vivado/cw305_ecc_attempt1.runs/impl_35t/cw305_ecc_p256_pmul_top.bit")),
+                ("ECDSA256v1_pmul_attempt2_35t.bit",  os.path.join(fpgadir, r"ecc/vivado/cw305_ecc_attempt2.runs/impl_35t/cw305_ecc_p256_pmul_top.bit")),
+                ("ECDSA256v1_pmul_attempt4_35t.bit",  os.path.join(fpgadir, r"ecc/vivado/cw305_ecc_attempt4.runs/impl_35t/cw305_ecc_p256_pmul_top.bit")),
+
+                ("Pipelined_AES_100t_half0.bit", os.path.join(fpgadir, r"aes_pipelined/vivado/cw305_aes_pipelined.runs/impl_full/cw305_aes_pipelined_top.bit")),
+                ("Pipelined_AES_100t_half1.bit", os.path.join(fpgadir, r"aes_pipelined/vivado/cw305_aes_pipelined.runs/impl_half1/cw305_aes_pipelined_top.bit")),
+                ("Pipelined_AES_100t_half2.bit", os.path.join(fpgadir, r"aes_pipelined/vivado/cw305_aes_pipelined.runs/impl_half2/cw305_aes_pipelined_top.bit")),
+                ("Pipelined_AES_100t_half3.bit", os.path.join(fpgadir, r"aes_pipelined/vivado/cw305_aes_pipelined.runs/impl_half3/cw305_aes_pipelined_top.bit")),
+                ("Pipelined_AES_35t_half0.bit",  os.path.join(fpgadir, r"aes_pipelined/vivado/cw305_aes_pipelined.runs/impl_full_35t/cw305_aes_pipelined_top.bit")),
+                ("Pipelined_AES_35t_half1.bit",  os.path.join(fpgadir, r"aes_pipelined/vivado/cw305_aes_pipelined.runs/impl_half1_35t/cw305_aes_pipelined_top.bit")),
+                ("Pipelined_AES_35t_half2.bit",  os.path.join(fpgadir, r"aes_pipelined/vivado/cw305_aes_pipelined.runs/impl_half2_35t/cw305_aes_pipelined_top.bit")),
+                ("Pipelined_AES_35t_half3.bit",  os.path.join(fpgadir, r"aes_pipelined/vivado/cw305_aes_pipelined.runs/impl_half3_35t/cw305_aes_pipelined_top.bit")),
+
+                ("cw305_defines.v", os.path.join(fpgadir, r"aes/hdl/cw305_aes_defines.v")),
+                ("cw305_pmul_defines.v", os.path.join(fpgadir, r"ecc/hdl/cw305_pmul_defines.v")),
+                ("cw305_aes_pipelined_defines.v", os.path.join(fpgadir, r"aes_pipelined/hdl/cw305_aes_pipelined_defines.v")),
+
+                ("lowrisc_ibex_demo_system.bit", os.path.join(hwdir, r"/home/jpnewae/git/forked-ibex-demo-system/build/lowrisc_ibex_demo_system_0/synth_cw305-vivado/lowrisc_ibex_demo_system_0.bit")),
                 ("version", os.path.join(hwdir, r"victims/cw305_artixtarget/fw/sam3u/CW305_SAM3U_FW/src/version.txt"))
                 ]
 
@@ -64,20 +79,29 @@ cwnano_files = [
     ]
 
 
-target_ice40_files = [("neorv32_iCE40CW312_MinimalBoot_directclk_7370KHz.bit", r"/home/jpnewae/Downloads/neorv32_iCE40CW312_MinimalBoot.bit"),
-                      ("iCE40UP5K_SS2.bin", os.path.join(hwdir, r'victims/cw308_ufo_target/ice40up5k/ss2_aes_icestorm/iCE40UP5K_SS2.bin'))
+target_ice40_files = [("neorv32_iCE40CW312_MinimalBoot_directclk_7370KHz.bit", r"/home/jpnewae/Downloads/neorv32_iCE40CW312_MinimalBoot.bit"), # note this doesn't actually work; need to re-generate it (or just 
+                                                                                                                                               # re-use what's currently in cwtargetice40.py via copy/paste)
+                      ("iCE40UP5K_SS2.bin", os.path.join(fpgadir, r"aes/icestorm/ss2_ice40_aes_top.bin")),
                      ]
 
+
 xc7a35_v = [0, 1]
-xc7a35_files = [("AES_cw312t_a35.bit", os.path.join(hwdir, r"victims/cw308_ufo_target/xc7a35/vivado/ss2_cw305_aes.runs/impl_1/ss2_aes_wrapper.bit")),
-                ("cw305_defines.v", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/common/cw305_defines.v")),
-                ("ECDSA256v1_pmul_cw312t_a35.bit", os.path.join(hwdir, r"victims/cw308_ufo_target/xc7a35/vivado/ss2_cw305_ecc.runs/impl_1/ss2_ecc_wrapper.bit")),
-                ("cw305_pmul_defines.v", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/ecc_p256_pmul/hdl/cw305_pmul_defines.v")),
-                ("Pipelined_AES_cw312t_a35_half0.bit", os.path.join(hwdir, r"victims/cw308_ufo_target/xc7a35/vivado/ss2_cw305_aes_pipelined.runs/impl_full/ss2_aes_pipelined_wrapper.bit")),
-                ("Pipelined_AES_cw312t_a35_half1.bit", os.path.join(hwdir, r"victims/cw308_ufo_target/xc7a35/vivado/ss2_cw305_aes_pipelined.runs/impl_half1/ss2_aes_pipelined_wrapper.bit")),
-                ("Pipelined_AES_cw312t_a35_half2.bit", os.path.join(hwdir, r"victims/cw308_ufo_target/xc7a35/vivado/ss2_cw305_aes_pipelined.runs/impl_half2/ss2_aes_pipelined_wrapper.bit")),
-                ("Pipelined_AES_cw312t_a35_half3.bit", os.path.join(hwdir, r"victims/cw308_ufo_target/xc7a35/vivado/ss2_cw305_aes_pipelined.runs/impl_half3/ss2_aes_pipelined_wrapper.bit")),
-                ("cw305_aes_pipelined_defines.v", os.path.join(hwdir, r"victims/cw305_artixtarget/fpga/vivado_examples/aes128_pipelined/hdl/cw305_aes_pipelined_defines.v")),
+xc7a35_files = [("AES_cw312t_a35.bit",                      os.path.join(fpgadir, r"./aes/vivado/ss2_xc7a35_aes.runs/impl_1/ss2_aes_wrapper.bit")),
+                ("ECDSA256v1_pmul_cw312t_a35.bit",          os.path.join(fpgadir, r"./ecc/vivado/ss2_xc7a35_ecc.runs/impl_35t/ss2_ecc_wrapper.bit")),
+                ("ECDSA256v1_pmul_attempt1_cw312t_a35.bit", os.path.join(fpgadir, r"./ecc/vivado/ss2_xc7a35_ecc_attempt1.runs/impl_35t/ss2_ecc_wrapper.bit")),
+                ("ECDSA256v1_pmul_attempt2_cw312t_a35.bit", os.path.join(fpgadir, r"./ecc/vivado/ss2_xc7a35_ecc_attempt2.runs/impl_35t/ss2_ecc_wrapper.bit")),
+                ("ECDSA256v1_pmul_attempt4_cw312t_a35.bit", os.path.join(fpgadir, r"./ecc/vivado/ss2_xc7a35_ecc_attempt4.runs/impl_35t/ss2_ecc_wrapper.bit")),
+
+                ("Pipelined_AES_cw312t_a35_half0.bit",      os.path.join(fpgadir, r"./aes_pipelined/vivado/ss2_xc7a35_aes_pipelined.runs/impl_full/ss2_aes_pipelined_wrapper.bit")),
+                ("Pipelined_AES_cw312t_a35_half1.bit",      os.path.join(fpgadir, r"./aes_pipelined/vivado/ss2_xc7a35_aes_pipelined.runs/impl_half1/ss2_aes_pipelined_wrapper.bit")),
+                ("Pipelined_AES_cw312t_a35_half2.bit",      os.path.join(fpgadir, r"./aes_pipelined/vivado/ss2_xc7a35_aes_pipelined.runs/impl_half2/ss2_aes_pipelined_wrapper.bit")),
+                ("Pipelined_AES_cw312t_a35_half3.bit",      os.path.join(fpgadir, r"./aes_pipelined/vivado/ss2_xc7a35_aes_pipelined.runs/impl_half3/ss2_aes_pipelined_wrapper.bit")),
+
+                ("cw305_defines.v", os.path.join(fpgadir, r"aes/hdl/cw305_aes_defines.v")),
+                ("cw305_pmul_defines.v", os.path.join(fpgadir, r"ecc/hdl/cw305_pmul_defines.v")),
+                ("cw305_aes_pipelined_defines.v", os.path.join(fpgadir, r"aes_pipelined/hdl/cw305_aes_pipelined_defines.v")),
+
+                ("lowrisc_ibex_demo_system.bit", os.path.join(hwdir, r"/home/jpnewae/git/forked-ibex-demo-system/build/lowrisc_ibex_demo_system_0/synth_cw312a35-vivado/lowrisc_ibex_demo_system_0.bit")),
                 ]
 
 
