@@ -22,7 +22,7 @@ We've also brought up several soft-cores on our target boards; source code and
 instuctions for building these are found elsewhere, but we've collected
 pointers to that here:
 * [neorv32 on CW312T\_iCE40](https://rtfm.newae.com/Targets/UFO%20Targets/CW312T-ICE40UP/#neorv32-soft-core-processor)
-* [lowRISC Ibex on CW305 and CW312T\_A35](https://github.com/lowRISC/ibex-demo-system)
+* [lowRISC Ibex on CW305 and CW312T\_A35](https://rtfm.newae.com/Targets/UFO%20Targets/CW312T-XC7A35T/#1-ibex)
 * [Arm DesignStart on CW305 and
   CW312T\_A35](https://github.com/newaetech/CW305-Arm-DesignStart), with or
   without built-in 
@@ -38,7 +38,7 @@ In general we aim to provide builds of each project for each of our target
 boards (if the project fits!):
 * [CW305](https://rtfm.newae.com/Targets/CW305%20Artix%20FPGA/) (35t and
   100t variants)
-* CW312T\_A35 (link coming)
+* [CW312T\_A35](https://rtfm.newae.com/Targets/UFO%20Targets/CW312T-XC7A35T/)
 * [CW312T\_iCE40](https://rtfm.newae.com/Targets/UFO%20Targets/CW312T-ICE40UP/)
 * [CW308T-S6LX9](https://rtfm.newae.com/Targets/UFO%20Targets/CW308T-S6LX9/)
 
