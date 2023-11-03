@@ -62,7 +62,7 @@ class ChipWhispererDecodeTrigger(DisableNewAttr):
         return self.__repr__()
 
     def __repr__(self):
-        return dict_to_str(self._dict_repr)
+        return dict_to_str(self._dict_repr())
 
     def _dict_repr(self):
         rtn = {}
