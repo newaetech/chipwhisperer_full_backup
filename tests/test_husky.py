@@ -528,7 +528,7 @@ def test_fpga_version():
     if scope._is_husky_plus:
         assert scope.fpga_buildtime == '9/19/2023, 22:43'
     else:
-        assert scope.fpga_buildtime == '9/1/2023, 21:45'
+        assert scope.fpga_buildtime == '10/12/2023, 19:07'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -1229,6 +1229,7 @@ def test_trace (swo_trace, raw_capture, interface, trigger_source, desc):
         pytest.skip("use --swo_trace to run")
         return None
     reset_setup()
+    scope.default_setup(verbose=False)
     setup_trace(interface)
     assert trace.uart_state == 'ERX_IDLE', 'UART is still stuck!'
     scope.adc.clip_errors_disabled = True

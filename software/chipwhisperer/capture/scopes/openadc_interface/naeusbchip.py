@@ -48,6 +48,7 @@ class OpenADCInterface_NAEUSBChip(DisableNewAttr):
 
         self.scope = None
         self.last_id = None
+        self.registers = None
 
         self.cwFirmwareConfig = {
             0xACE2:FWLoaderConfig(CWLite_Loader()),
@@ -55,8 +56,7 @@ class OpenADCInterface_NAEUSBChip(DisableNewAttr):
             0xACE5:FWLoaderConfig(CWHusky_Loader())
         }
 
-    def con(self, sn=None, idProduct=None, bitstream=None, force=False, prog_speed=1E6, **kwargs):
-        # try:
+    def con(self, sn=None, idProduct=None, bitstream=None, force=False, prog_speed=1E6, registers=None, **kwargs):
         if idProduct:
             nae_products = [idProduct]
         else:
@@ -72,6 +72,10 @@ class OpenADCInterface_NAEUSBChip(DisableNewAttr):
         self.last_id = found_id
 
         self.getFWConfig().setInterface(self.fpga)
+        if not registers:
+            self.registers = self.getFWConfig().loader._registers
+        else:
+            self.registers = registers
 
         try:
             if bitstream is None:

@@ -32,25 +32,6 @@ from ....logging import *
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
-ADDR_ADC_TRIGGER_LEVEL = 21
-ADDR_DATA = 33
-ADDR_LEN = 34
-ADDR_BAUD = 35
-ADDR_AUX_IO = 37
-ADDR_EXTCLK = 38
-ADDR_TRIGSRC = 39
-ADDR_TRIGMOD = 40
-ADDR_I2CSTATUS = 47
-ADDR_I2CDATA = 48
-ADDR_IOROUTE = 55
-ADDR_IOREAD = 59
-ADDR_EDGE_TRIGGER = 113
-ADDR_SOFTPOWER_CONTROL = 115
-ADDR_NUM_TRIGGERS_STAT = 117
-ADDR_NUM_TRIGGERS_DATA = 118
-ADDR_SEQ_TRIG_CONFIG = 119
-ADDR_SEQ_TRIG_MINMAX = 120
-ADDR_SEQ_TRIG_UART_EDGE_CHOOSER = 121
 
 class CWExtraSettings:
     PIN_FPA = 0x01
@@ -220,15 +201,15 @@ class CWExtraSettings:
         Return:
             bytearray representing the IOROUTE state.
         """
-        return self.oa.msg_read(ADDR_IOROUTE, max_resp=8)
+        return self.oa.msg_read("CW_IOROUTE_ADDR", max_resp=8)
 
     def write_ioroute(self, data):
         """Writes a specified state to IOROUTE.
         """
-        self.oa.msg_write(ADDR_IOROUTE, data)
+        self.oa.msg_write("CW_IOROUTE_ADDR", data)
 
     def extr_ioroute_mask(self, i, mask):
-        return self.oa.msg_extr_mask(ADDR_IOROUTE, i, mask, max_resp=8)
+        return self.oa.msg_extr_mask("CW_IOROUTE_ADDR", i, mask, max_resp=8)
 
     def test_ioroute_mask(self, i, mask):
         """Evaluates a non-zero flag for a specified byte in the IOROUTE state.
@@ -236,7 +217,7 @@ class CWExtraSettings:
         Return:
             False if the mask evaluates to 0, else True.
         """
-        return self.oa.msg_test_mask(ADDR_IOROUTE, i, mask, max_resp=8)
+        return self.oa.msg_test_mask("CW_IOROUTE_ADDR", i, mask, max_resp=8)
 
     def set_ioroute_mask(self, i, mask):
         """OR's a mask into a specified byte in the IOROUTE state.
@@ -244,7 +225,7 @@ class CWExtraSettings:
         Return:
             The updated IOROUTE state.
         """
-        return self.oa.msg_set_mask(ADDR_IOROUTE, i, mask, max_resp=8)
+        return self.oa.msg_set_mask("CW_IOROUTE_ADDR", i, mask, max_resp=8)
 
     def clr_ioroute_mask(self, i, mask):
         """NAND's a mask into a specified byte in the IOROUTE state.
@@ -252,7 +233,7 @@ class CWExtraSettings:
         Return:
             The updated IOROUTE state.
         """
-        return self.oa.msg_clr_mask(ADDR_IOROUTE, i, mask, max_resp=8)
+        return self.oa.msg_clr_mask("CW_IOROUTE_ADDR", i, mask, max_resp=8)
 
     def upd_ioroute_mask(self, i, mask, set):
         """Conditionally OR's or NAND's a mask into a specified byte in the IOROUTE state.
@@ -260,7 +241,7 @@ class CWExtraSettings:
         Return:
             The updated IOROUTE state.
         """
-        return self.oa.msg_upd_mask(ADDR_IOROUTE, i, mask, set, max_resp=8)
+        return self.oa.msg_upd_mask("CW_IOROUTE_ADDR", i, mask, set, max_resp=8)
 
     def ins_ioroute_mask(self, i, mask, value):
         """Injects a value into a specified byte in the IOROUTE state.
@@ -268,7 +249,7 @@ class CWExtraSettings:
         Return:
             The updated IOROUTE state.
         """
-        return self.oa.msg_ins_mask(ADDR_IOROUTE, i, mask, value, max_resp=8)
+        return self.oa.msg_ins_mask("CW_IOROUTE_ADDR", i, mask, value, max_resp=8)
 
     def get_ioroute_value(self, i):
         """Gets a specified byte from the IOROUTE state.
@@ -276,7 +257,7 @@ class CWExtraSettings:
         Return:
             The specified IOROUTE byte.
         """
-        return self.oa.msg_get_value(ADDR_IOROUTE, i, max_resp=8)
+        return self.oa.msg_get_value("CW_IOROUTE_ADDR", i, max_resp=8)
 
     def set_ioroute_value(self, i, value):
         """Assigns a specified byte in the IOROUTE state.
@@ -284,7 +265,7 @@ class CWExtraSettings:
         Return:
             The updated IOROUTE state.
         """
-        return self.oa.msg_set_value(ADDR_IOROUTE, i, value, max_resp=8)
+        return self.oa.msg_set_value("CW_IOROUTE_ADDR", i, value, max_resp=8)
 
 ### GPIO Settings
 
@@ -365,7 +346,7 @@ class CWExtraSettings:
             for_extra = 2
         else:
             for_extra = 1
-        return self.oa.msg_read(ADDR_IOREAD, max_resp=for_extra)
+        return self.oa.msg_read("CW_IOREAD_ADDR", max_resp=for_extra)
 
     def read_tio_pins(self):
         """Read signal level of all 4 Target IOn pins synchronously.
@@ -419,21 +400,21 @@ class CWExtraSettings:
 ### Clock API
 
     def setClockSource(self, source):
-        data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        data = self.oa.sendMessage(CODE_READ, "CW_EXTCLK_ADDR", Validate=False, maxResp=1)
         data[0] = (data[0] & ~0x07) | source
-        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data)
+        self.oa.sendMessage(CODE_WRITE, "CW_EXTCLK_ADDR", data)
 
     def clockSource(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        resp = self.oa.sendMessage(CODE_READ, "CW_EXTCLK_ADDR", Validate=False, maxResp=1)
         return resp[0] & 0x07
 
     def setTargetCLKOut(self, clkout):
-        data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        data = self.oa.sendMessage(CODE_READ, "CW_EXTCLK_ADDR", Validate=False, maxResp=1)
         data[0] = (data[0] & ~(3<<5)) | (clkout << 5)
-        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data)
+        self.oa.sendMessage(CODE_WRITE, "CW_EXTCLK_ADDR", data)
 
     def targetClkOut(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        resp = self.oa.sendMessage(CODE_READ, "CW_EXTCLK_ADDR", Validate=False, maxResp=1)
         return ((resp[0] & (3<<5)) >> 5)
 
 ### VCC Glitch Control
@@ -509,31 +490,31 @@ class CWExtraSettings:
 ### Power Settings
 
     def setAVRISPMode(self, enabled):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "CW_IOROUTE_ADDR", Validate=False, maxResp=8)
         if enabled:
             data[5] |= 0x01
         else:
             data[5] &= ~(0x01)
 
-        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+        self.oa.sendMessage(CODE_WRITE, "CW_IOROUTE_ADDR", data)
 
     def setTargetPowerState(self, enabled):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "CW_IOROUTE_ADDR", Validate=False, maxResp=8)
         if enabled:
             data[5] &= ~(0x02)
         else:
             data[5] |= (0x02)
 
-        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+        self.oa.sendMessage(CODE_WRITE, "CW_IOROUTE_ADDR", data)
 
     def setTargetPowerSlew(self, fastmode):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "CW_IOROUTE_ADDR", Validate=False, maxResp=8)
         if fastmode:
             data[5] |= (0x04)
         else:
             data[5] &= ~(0x04)
 
-        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+        self.oa.sendMessage(CODE_WRITE, "CW_IOROUTE_ADDR", data)
 
     def setHuskySoftPowerOnParameters(self, pwm_cycles1, pwm_cycles2, pwm_period, pwm_off_time1, pwm_off_time2):
         """Sets the soft power-on PWM parameters.
@@ -550,14 +531,14 @@ class CWExtraSettings:
         raw.extend(list(int.to_bytes(pwm_period, length=2, byteorder='little')))
         raw.extend(list(int.to_bytes(pwm_off_time1, length=2, byteorder='little')))
         raw.extend(list(int.to_bytes(pwm_off_time2, length=2, byteorder='little')))
-        self.oa.sendMessage(CODE_WRITE, ADDR_SOFTPOWER_CONTROL, raw)
+        self.oa.sendMessage(CODE_WRITE, "SOFTPOWER_CONTROL", raw)
 
     def getHuskySoftPowerOnParameters(self):
         """Get the soft power-on PWM parameters as (pwm_cycles1, pwm_cycles2, pwm_period, pwm_off_time1, pwm_off_time2)
         """
         if not self._is_husky:
             raise ValueError("For Husky only")
-        raw = self.oa.sendMessage(CODE_READ, ADDR_SOFTPOWER_CONTROL, Validate=False, maxResp=8)
+        raw = self.oa.sendMessage(CODE_READ, "SOFTPOWER_CONTROL", Validate=False, maxResp=8)
         pwm_cycles1 = raw[0]
         pwm_cycles2 = raw[1]
         pwm_period = int.from_bytes(raw[2:4], byteorder='little')
@@ -566,7 +547,7 @@ class CWExtraSettings:
         return (pwm_cycles1, pwm_cycles2, pwm_period, pwm_off_time1, pwm_off_time2)
 
     def getTargetPowerState(self):
-        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "CW_IOROUTE_ADDR", Validate=False, maxResp=8)
         if data[5] & 0x02:
             return False
         else:
@@ -599,10 +580,10 @@ class CWExtraSettings:
 
     def setPins(self, pins, mode):
         d = list(int.to_bytes((mode << 6) | pins, length=self._addr_trigsrc_size, byteorder='little'))
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGSRC, d, maxResp=self._addr_trigsrc_size)
+        self.oa.sendMessage(CODE_WRITE, "CW_TRIGSRC_ADDR", d, maxResp=self._addr_trigsrc_size)
 
     def getPins(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGSRC, Validate=False, maxResp=self._addr_trigsrc_size)
+        resp = self.oa.sendMessage(CODE_READ, "CW_TRIGSRC_ADDR", Validate=False, maxResp=self._addr_trigsrc_size)
         pins, mode = self.raw2pins(resp)
         return(pins, mode)
 
@@ -616,31 +597,31 @@ class CWExtraSettings:
 
     def setTriggerModule(self, module):
         #When using special modes, force rising edge & stop user from easily changing
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        resp = self.oa.sendMessage(CODE_READ, "CW_TRIGMOD_ADDR", Validate=False, maxResp=1)
         resp[0] &= 0xF8
         resp[0] |= module
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+        self.oa.sendMessage(CODE_WRITE, "CW_TRIGMOD_ADDR", resp)
 
     def getTriggerModule(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        resp = self.oa.sendMessage(CODE_READ, "CW_TRIGMOD_ADDR", Validate=False, maxResp=1)
         return resp[0]
 
     def setTrigOutAux(self, enabled):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        resp = self.oa.sendMessage(CODE_READ, "CW_TRIGMOD_ADDR", Validate=False, maxResp=1)
         resp[0] &= 0xE7
         if enabled:
             resp[0] |= 0x08
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+        self.oa.sendMessage(CODE_WRITE, "CW_TRIGMOD_ADDR", resp)
 
     def setTrigOut(self, enabled):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        resp = self.oa.sendMessage(CODE_READ, "CW_TRIGMOD_ADDR", Validate=False, maxResp=1)
         resp[0] &= 0xE7
         if enabled:
             resp[0] |= 0x08
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+        self.oa.sendMessage(CODE_WRITE, "CW_TRIGMOD_ADDR", resp)
 
     def getTrigOut(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        resp = self.oa.sendMessage(CODE_READ, "CW_TRIGMOD_ADDR", Validate=False, maxResp=1)
         return resp[0] & 0x08
 
 class GPIOSettings(util.DisableNewAttr):
@@ -1146,7 +1127,7 @@ class GPIOSettings(util.DisableNewAttr):
         """
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
-        data = self.cwe.oa.sendMessage(CODE_READ, ADDR_AUX_IO, Validate=False, maxResp=1)[0]
+        data = self.cwe.oa.sendMessage(CODE_READ, "CW_AUX_IO", Validate=False, maxResp=1)[0]
         if data & 0x01:
             return "hs2"
         else:
@@ -1156,14 +1137,14 @@ class GPIOSettings(util.DisableNewAttr):
     def aux_io_mcx(self, state):
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
-        data = self.cwe.oa.sendMessage(CODE_READ, ADDR_AUX_IO, Validate=False, maxResp=1)[0]
+        data = self.cwe.oa.sendMessage(CODE_READ, "CW_AUX_IO", Validate=False, maxResp=1)[0]
         if state == 'high_z':
             data &= 0xfe
         elif state == 'hs2':
             data |= 0x01
         else:
             raise ValueError("Options: high_z, hs2")
-        return self.cwe.oa.sendMessage(CODE_WRITE, ADDR_AUX_IO, [data])
+        return self.cwe.oa.sendMessage(CODE_WRITE, "CW_AUX_IO", [data])
 
     @property
     def glitch_trig_mcx(self):
@@ -1176,7 +1157,7 @@ class GPIOSettings(util.DisableNewAttr):
         """
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
-        data = self.cwe.oa.sendMessage(CODE_READ, ADDR_AUX_IO, Validate=False, maxResp=1)[0]
+        data = self.cwe.oa.sendMessage(CODE_READ, "CW_AUX_IO", Validate=False, maxResp=1)[0]
         if data & 0x04:
             setting = 'inverted '
         else:
@@ -1191,7 +1172,7 @@ class GPIOSettings(util.DisableNewAttr):
     def glitch_trig_mcx(self, state):
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
-        data = self.cwe.oa.sendMessage(CODE_READ, ADDR_AUX_IO, Validate=False, maxResp=1)[0]
+        data = self.cwe.oa.sendMessage(CODE_READ, "CW_AUX_IO", Validate=False, maxResp=1)[0]
         if 'trigger' in state:
             data &= 0xfd
         elif 'glitch' in state:
@@ -1202,7 +1183,7 @@ class GPIOSettings(util.DisableNewAttr):
             data |= 0x04
         else:
             data &= 0xfb
-        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_AUX_IO, [data])
+        self.cwe.oa.sendMessage(CODE_WRITE, "CW_AUX_IO", [data])
 
     @property
     def extclk_src(self):
@@ -1402,7 +1383,7 @@ class TriggerSettings(util.DisableNewAttr):
         return self.__repr__()
 
     def _trigger_value2string(self, pins, mode):
-        """Takes the raw programmed ADDR_TRIGSRC register value and
+        """Takes the raw programmed "CW_TRIGSRC_ADDR" register value and
         converts its meaning into a human-readable string.
 
         Args:
@@ -1655,11 +1636,11 @@ class ProTrigger(TriggerSettings):
             for key in self.MODULE.keys():
                 msg = msg + key + ', '
             raise ValueError(msg)
-        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD,
+        resp = self.cwe.oa.sendMessage(CODE_READ, "CW_TRIGMOD_ADDR",
                                        Validate=False, maxResp=1)
         resp[0] &= 0xF8
         resp[0] |= module
-        resp = self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD,
+        resp = self.cwe.oa.sendMessage(CODE_WRITE, "CW_TRIGMOD_ADDR",
                                        resp)
         self.last_module = mode
 
@@ -1675,9 +1656,9 @@ class ProTrigger(TriggerSettings):
         :Setter: Set False or 0 to disable, True or :code:`'trigger'` for trig_out,
                 :code:`'glitch'` for glitch out, or :code:`'clock'` for clock_out
         """
-        # resp1 = self.cwe.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
-        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        resp2 = self.cwe.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        # resp1 = self.cwe.oa.sendMessage(CODE_READ, "CW_EXTCLK_ADDR", Validate=False, maxResp=1)
+        resp = self.cwe.oa.sendMessage(CODE_READ, "CW_TRIGMOD_ADDR", Validate=False, maxResp=1)
+        resp2 = self.cwe.oa.sendMessage(CODE_READ, "CW_EXTCLK_ADDR", Validate=False, maxResp=1)
 
 
         if (resp[0] & 0x08):
@@ -1694,8 +1675,8 @@ class ProTrigger(TriggerSettings):
         if enabled is True:
             enabled = "trigger"
         
-        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        resp2 = self.cwe.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        resp = self.cwe.oa.sendMessage(CODE_READ, "CW_TRIGMOD_ADDR", Validate=False, maxResp=1)
+        resp2 = self.cwe.oa.sendMessage(CODE_READ, "CW_EXTCLK_ADDR", Validate=False, maxResp=1)
         resp2[0] &= 0xE7
         resp[0] &= 0xE7
         if enabled == "trigger":
@@ -1704,8 +1685,8 @@ class ProTrigger(TriggerSettings):
             resp2[0] |= 0x10
         elif enabled == "clock":
             resp2[0] |= 0x08
-        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
-        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, resp2)
+        self.cwe.oa.sendMessage(CODE_WRITE, "CW_TRIGMOD_ADDR", resp)
+        self.cwe.oa.sendMessage(CODE_WRITE, "CW_EXTCLK_ADDR", resp2)
 
 
 class SequenceTriggerList(list):
@@ -1791,7 +1772,7 @@ class HuskyTrigger(TriggerSettings):
 
     def readMultipleTriggers(self):
         message = []
-        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGSRC, Validate=False, maxResp=self.cwe._addr_trigsrc_size*self.max_sequenced_triggers)
+        raw = self.cwe.oa.sendMessage(CODE_READ, "CW_TRIGSRC_ADDR", Validate=False, maxResp=self.cwe._addr_trigsrc_size*self.max_sequenced_triggers)
         for i in range(0, len(raw), self.cwe._addr_trigsrc_size):
             pins, mode = self.cwe.raw2pins(raw[i:i+2])
             message.append(self._trigger_value2string(pins, mode))
@@ -1810,20 +1791,20 @@ class HuskyTrigger(TriggerSettings):
             pins, mode = self._trigger_string2value(s)
             d = list(int.to_bytes((mode << 6) | pins, length=self.cwe._addr_trigsrc_size, byteorder='little'))
             msg.extend(d)
-        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGSRC, msg, maxResp=len(msg))
+        self.cwe.oa.sendMessage(CODE_WRITE, "CW_TRIGSRC_ADDR", msg, maxResp=len(msg))
 
     @property
     def max_sequenced_triggers(self):
         """Maximum number of triggers in the trigger sequence.
         """
-        return self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=2)[1]
+        return self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_CONFIG", Validate=False, maxResp=2)[1]
 
 
     @property
     def num_triggers(self):
         """Number of triggers in the trigger sequence.
         """
-        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        raw = self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_CONFIG", Validate=False, maxResp=1)[0]
         return (raw & 0x0f) + 1
 
     @num_triggers.setter
@@ -1831,9 +1812,9 @@ class HuskyTrigger(TriggerSettings):
         if num < 2 or num > self.max_sequenced_triggers:
             raise ValueError('Minimum 2, maximum %d' % self.max_sequenced_triggers)
         else:
-            raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+            raw = self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_CONFIG", Validate=False, maxResp=1)[0]
             raw = (raw & 0xf0) + (num-1)
-            self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_CONFIG, [raw])
+            self.cwe.oa.sendMessage(CODE_WRITE, "SEQ_TRIGGERS_CONFIG", [raw])
 
     @property
     def sad_always_active(self):
@@ -1843,7 +1824,7 @@ class HuskyTrigger(TriggerSettings):
         SAD module to fire outside of its window, which can be helpful in
         tuning SAD parameters.
         """
-        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        raw = self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_CONFIG", Validate=False, maxResp=1)[0]
         if raw & 0x40:
             return True
         else:
@@ -1852,12 +1833,12 @@ class HuskyTrigger(TriggerSettings):
 
     @sad_always_active.setter
     def sad_always_active(self, enable):
-        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        raw = self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_CONFIG", Validate=False, maxResp=1)[0]
         if enable:
             raw = (raw & 0b10111111) | 0x40
         else:
             raw = raw & 0b10111111
-        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_CONFIG, [raw])
+        self.cwe.oa.sendMessage(CODE_WRITE, "SEQ_TRIGGERS_CONFIG", [raw])
 
 
     @property
@@ -1892,7 +1873,7 @@ class HuskyTrigger(TriggerSettings):
 
 
     def readModule(self):
-        resp = self.cwe.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=self.max_sequenced_triggers)
+        resp = self.cwe.oa.sendMessage(CODE_READ, "CW_TRIGMOD_ADDR", Validate=False, maxResp=self.max_sequenced_triggers)
         modules = []
         for r in resp:
             module = None
@@ -1946,27 +1927,27 @@ class HuskyTrigger(TriggerSettings):
                 module = self.MODULE[mode]
                 # for UART and edge, the trigger line must be specified separately to the FPGA:
                 if mode in ['UART', 'edge_counter']:
-                    raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_UART_EDGE_CHOOSER, Validate=False, maxResp=1)[0]
+                    raw = self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_UART_EDGE_CHOOSER", Validate=False, maxResp=1)[0]
                     if i > 0xf:
                         raise ValueError('Internal error, too many triggers!')
                     if mode == 'UART':
                         raw = raw & 0x0f | (i << 4)
                     else:
                         raw = raw & 0xf0 | i
-                    self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_UART_EDGE_CHOOSER, [raw])
+                    self.cwe.oa.sendMessage(CODE_WRITE, "SEQ_TRIGGERS_UART_EDGE_CHOOSER", [raw])
             else:
                 msg = 'Invalid mode %s. Must be one of: ' % mode
                 for key in self.MODULE.keys():
                     msg = msg + key + ', '
                 raise ValueError(msg)
             modules.append(module)
-        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, modules)
+        self.cwe.oa.sendMessage(CODE_WRITE, "CW_TRIGMOD_ADDR", modules)
 
     @property
     def sequencer_enabled(self):
         """Enable the trigger sequencer.
         """
-        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        raw = self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_CONFIG", Validate=False, maxResp=1)[0]
         if raw & 0x80:
             return True
         else:
@@ -1976,12 +1957,12 @@ class HuskyTrigger(TriggerSettings):
     @sequencer_enabled.setter
     def sequencer_enabled(self, enable):
         # MSB is enable bit; LSB is number of triggers-1;
-        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_CONFIG, Validate=False, maxResp=1)[0]
+        raw = self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_CONFIG", Validate=False, maxResp=1)[0]
         if enable:
             raw = (raw & 0x7f) | 0x80
         else:
             raw = raw & 0x7f
-        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_CONFIG, [raw])
+        self.cwe.oa.sendMessage(CODE_WRITE, "SEQ_TRIGGERS_CONFIG", [raw])
 
 
     @property
@@ -2002,7 +1983,7 @@ class HuskyTrigger(TriggerSettings):
         return SequenceTriggerList(starts, setter=self.set_multiple_window_start, getter=self.read_multiple_window_start)
 
     def read_multiple_window_start(self):
-        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
+        raw = self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_MINMAX", Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
         starts = []
         for i in range(self.max_sequenced_triggers-1):
             raw_index = i * self._window_bytes
@@ -2015,7 +1996,7 @@ class HuskyTrigger(TriggerSettings):
                 raise ValueError('too big')
             self._check_windows(start, self.window_end)
             raw = list(int.to_bytes(start, length=self._window_bytes, byteorder='little'))
-            self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
+            self.cwe.oa.sendMessage(CODE_WRITE, "SEQ_TRIGGERS_MINMAX", raw)
         else:
             self.set_multiple_window_start(start)
 
@@ -2023,13 +2004,13 @@ class HuskyTrigger(TriggerSettings):
         if len(starts) > self.max_sequenced_triggers-1:
             raise ValueError('Too many settings: can only specify %d windows' % (self.max_sequenced_triggers-1))
         self._check_windows(starts, self.window_end)
-        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
+        raw = self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_MINMAX", Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
         for i,start in enumerate(starts):
             if start >= 2**(8*self._window_bytes):
                 raise ValueError('too big')
             raw_index = i * self._window_bytes
             raw[raw_index:raw_index+self._window_bytes] = list(int.to_bytes(start, length=self._window_bytes, byteorder='little'))
-        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
+        self.cwe.oa.sendMessage(CODE_WRITE, "SEQ_TRIGGERS_MINMAX", raw)
 
 
     @property
@@ -2051,7 +2032,7 @@ class HuskyTrigger(TriggerSettings):
         return SequenceTriggerList(ends, setter=self.set_multiple_window_end, getter=self.read_multiple_window_end)
 
     def read_multiple_window_end(self):
-        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
+        raw = self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_MINMAX", Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
         ends = []
         for i in range(self.max_sequenced_triggers-1):
             raw_index = (self.max_sequenced_triggers -1 + i) * self._window_bytes
@@ -2063,9 +2044,9 @@ class HuskyTrigger(TriggerSettings):
             if end >= 2**(8*self._window_bytes):
                 raise ValueError('too big')
             self._check_windows(self.window_start, end)
-            raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=2*self._window_bytes)
+            raw = self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_MINMAX", Validate=False, maxResp=2*self._window_bytes)
             raw[2:4] = list(int.to_bytes(end, length=2, byteorder='little'))
-            self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
+            self.cwe.oa.sendMessage(CODE_WRITE, "SEQ_TRIGGERS_MINMAX", raw)
         else:
             self.set_multiple_window_end(end)
 
@@ -2073,13 +2054,13 @@ class HuskyTrigger(TriggerSettings):
         if len(ends) > self.max_sequenced_triggers-1:
             raise ValueError('Too many settings: can only specify %d windows' % (self.max_sequenced_triggers-1))
         self._check_windows(self.window_start, ends)
-        raw = self.cwe.oa.sendMessage(CODE_READ, ADDR_SEQ_TRIG_MINMAX, Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
+        raw = self.cwe.oa.sendMessage(CODE_READ, "SEQ_TRIGGERS_MINMAX", Validate=False, maxResp=self._window_bytes*(self.max_sequenced_triggers-1)*2)
         for i,end in enumerate(ends):
             if end >= 2**(8*self._window_bytes):
                 raise ValueError('too big')
             raw_index = (self.max_sequenced_triggers - 1 + i) * self._window_bytes
             raw[raw_index:raw_index+self._window_bytes] = list(int.to_bytes(end, length=self._window_bytes, byteorder='little'))
-        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_SEQ_TRIG_MINMAX, raw)
+        self.cwe.oa.sendMessage(CODE_WRITE, "SEQ_TRIGGERS_MINMAX", raw)
 
 
     def _check_windows(self, starts, ends):
@@ -2107,7 +2088,7 @@ class HuskyTrigger(TriggerSettings):
         conjunction with segmented capture).
         """
         offset = self.cwe.oa.offset
-        raw = int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_ADC_TRIGGER_LEVEL, Validate=False, maxResp=2), byteorder='little')
+        raw = int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, "ADC_TRIGGER_LEVEL", Validate=False, maxResp=2), byteorder='little')
         return raw / 2**12 - offset
 
     @level.setter
@@ -2116,7 +2097,7 @@ class HuskyTrigger(TriggerSettings):
             raise ValueError("Out of range: [-0.5, 0.5]")
         offset = self.cwe.oa.offset
         val = int((val + offset) * 2**12)
-        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_ADC_TRIGGER_LEVEL, list(int.to_bytes(val, length=2, byteorder='little')))
+        self.cwe.oa.sendMessage(CODE_WRITE, "ADC_TRIGGER_LEVEL", list(int.to_bytes(val, length=2, byteorder='little')))
 
     @property
     def edges(self):
@@ -2139,7 +2120,7 @@ class HuskyTrigger(TriggerSettings):
         if val < 1 or val > 2**16:
             raise ValueError("Out of range: [1, 2**16]")
         self._edges = val
-        self.cwe.oa.sendMessage(CODE_WRITE, ADDR_EDGE_TRIGGER, list(int.to_bytes(val-1, length=2, byteorder='little')))
+        self.cwe.oa.sendMessage(CODE_WRITE, "EDGE_TRIGGER_COUNT", list(int.to_bytes(val-1, length=2, byteorder='little')))
 
     @property
     def edges_seen(self):
@@ -2149,7 +2130,7 @@ class HuskyTrigger(TriggerSettings):
         be the same as :code:`scope.trigger.edges`. When trigger generation failed, Can
         be useful to understand why. Resets upon :code:`scope.arm()`.
         """
-        return int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_EDGE_TRIGGER, Validate=False, maxResp=2), byteorder='little')
+        return int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, "EDGE_TRIGGER_COUNT", Validate=False, maxResp=2), byteorder='little')
 
     def get_trigger_times(self):
         """Retrieve the timestamped trigger times.
@@ -2166,11 +2147,11 @@ class HuskyTrigger(TriggerSettings):
         else:
             if self._trigger_times_overflow():
                 scope_logger.warning('Trigger times FIFO overflowed (too many triggers occured).')
-                self.cwe.oa.sendMessage(CODE_WRITE, ADDR_NUM_TRIGGERS_STAT, [1]) # clears the overflow flag
+                self.cwe.oa.sendMessage(CODE_WRITE, "NUM_TRIGGERS_STAT", [1]) # clears the overflow flag
             times = []
             while not self._trigger_times_empty():
-                self.cwe.oa.sendMessage(CODE_WRITE, ADDR_NUM_TRIGGERS_DATA, [1])
-                raw = int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, ADDR_NUM_TRIGGERS_DATA, Validate=False, maxResp=4), byteorder='little')
+                self.cwe.oa.sendMessage(CODE_WRITE, "NUM_TRIGGERS_DATA", [1])
+                raw = int.from_bytes(self.cwe.oa.sendMessage(CODE_READ, "NUM_TRIGGERS_DATA", Validate=False, maxResp=4), byteorder='little')
                 if raw == 2**32-1 and len(times): # don't care about overflow on first entry
                     scope_logger.error('Trigger times counter overflowed (more than 2**32 cycles between successive triggers).')
                 else:
@@ -2181,19 +2162,19 @@ class HuskyTrigger(TriggerSettings):
 
 
     def _trigger_times_empty(self):
-        if self.cwe.oa.sendMessage(CODE_READ, ADDR_NUM_TRIGGERS_STAT, Validate=False, maxResp=1)[0] & 1:
+        if self.cwe.oa.sendMessage(CODE_READ, "NUM_TRIGGERS_STAT", Validate=False, maxResp=1)[0] & 1:
             return True
         else:
             return False
 
     def _trigger_times_overflow(self):
-        if self.cwe.oa.sendMessage(CODE_READ, ADDR_NUM_TRIGGERS_STAT, Validate=False, maxResp=1)[0] & 2:
+        if self.cwe.oa.sendMessage(CODE_READ, "NUM_TRIGGERS_STAT", Validate=False, maxResp=1)[0] & 2:
             return True
         else:
             return False
 
     def _trigger_times_underflow(self):
-        if self.cwe.oa.sendMessage(CODE_READ, ADDR_NUM_TRIGGERS_STAT, Validate=False, maxResp=1)[0] & 4:
+        if self.cwe.oa.sendMessage(CODE_READ, "NUM_TRIGGERS_STAT", Validate=False, maxResp=1)[0] & 4:
             return True
         else:
             return False
@@ -2233,6 +2214,9 @@ class ChipWhispererExtra(util.DisableNewAttr):
     #    self.cwADV.setIOPattern(strToPattern("\n"), clkdiv=clkdivider)
 
 class CWPLLDriver(object):
+    ADDR_I2CSTATUS = 47
+    ADDR_I2CDATA = 48
+
     def __init__(self):
         super(CWPLLDriver, self).__init__()
         self.oa = None

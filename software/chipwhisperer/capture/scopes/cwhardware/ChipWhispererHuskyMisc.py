@@ -35,42 +35,6 @@ import time
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
 
-ADDR_LED_SELECT         = 34
-
-ADDR_XADC_DRP_ADDR      = 41
-ADDR_XADC_DRP_DATA      = 42
-ADDR_XADC_STAT          = 43
-
-ADDR_NO_CLIP_ERRORS     = 45
-
-ADDR_HUSKY_ADC_CTRL     = 60
-
-ADDR_LA_DRP_ADDR        = 68
-ADDR_LA_DRP_DATA        = 69
-ADDR_LA_STATUS          = 70
-ADDR_LA_CLOCK_SOURCE    = 71
-ADDR_LA_TRIGGER_SOURCE  = 72
-ADDR_LA_POWERDOWN       = 73
-ADDR_LA_DRP_RESET       = 74
-ADDR_LA_MANUAL_CAPTURE  = 75
-ADDR_COMPONENTS_EXIST   = 96
-ADDR_LA_CAPTURE_GROUP   = 76
-ADDR_LA_CAPTURE_DEPTH   = 77
-ADDR_LA_DOWNSAMPLE      = 78
-ADDR_LA_ARM             = 98
-ADDR_LA_ENABLED         = 99
-ADDR_LA_SOURCE_FREQ     = 112
-
-ADDR_USERIO_CW_DRIVEN   = 86
-ADDR_USERIO_DEBUG_DRIVEN= 87
-ADDR_USERIO_DRIVE_DATA  = 88
-ADDR_USERIO_READ        = 97
-ADDR_USERIO_DEBUG_SELECT= 109
-
-ADDR_TRACE_EN           = 0xc0 + 0x2d
-ADDR_TRACE_USERIO_DIR   = 0xc0 + 0x2e
-
-
 class XilinxDRP(util.DisableNewAttr):
     ''' Read/write methods for DRP port in Xilinx primitives such as MMCM and XADC.
         Husky only.
@@ -293,7 +257,7 @@ class LEDSettings(util.DisableNewAttr):
         be updated to account for this).
 
         """
-        raw = self.oa.sendMessage(CODE_READ, ADDR_LED_SELECT, maxResp=1)[0]
+        raw = self.oa.sendMessage(CODE_READ, "LED_SELECT", maxResp=1)[0]
         if raw == 0:   return "0 (default, as labelled)"
         elif raw == 1: return "1 (USB and CLKGEN clock heartbeats)"
         elif raw == 2: return "2 (ADC clock heartbeats)"
@@ -304,7 +268,7 @@ class LEDSettings(util.DisableNewAttr):
     def setting(self, val):
         if val < 0 or val > 3:
             raise ValueError
-        self.oa.sendMessage(CODE_WRITE, ADDR_LED_SELECT, [val])
+        self.oa.sendMessage(CODE_WRITE, "LED_SELECT", [val])
 
 
 class HuskyErrors(ChipWhispererSAMErrors):
@@ -544,10 +508,11 @@ class USERIOSettings(util.DisableNewAttr):
                                   'trigger 3 window',
                                   'unused']]
 
-    def __init__(self, oaiface : OAI.OpenADCInterface):
+    def __init__(self, oaiface : OAI.OpenADCInterface, trace):
         super().__init__()
         self._last_mode = None
         self.oa = oaiface
+        self._trace = trace
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -602,8 +567,11 @@ class USERIOSettings(util.DisableNewAttr):
         if self._last_mode:
             return self._last_mode
         else:
-            debug = self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_DRIVEN, maxResp=1)[0]
-            trace = self.oa.sendMessage(CODE_READ, ADDR_TRACE_EN, maxResp=1)[0]
+            debug = self.oa.sendMessage(CODE_READ, "USERIO_DEBUG_DRIVEN", maxResp=1)[0]
+            if self._trace:
+                trace = self._trace.enabled
+            else:
+                trace = None
             if trace:
                 return "trace"
             elif debug == 1:
@@ -618,25 +586,25 @@ class USERIOSettings(util.DisableNewAttr):
     @mode.setter
     def mode(self, setting):
         if setting == 'normal':
-            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [0])
-            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
+            self.oa.sendMessage(CODE_WRITE, "USERIO_DEBUG_DRIVEN", [0])
+            self._trace._set_enabled(0)
         elif setting == 'trace':
-            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [0])
-            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [1])
-            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_USERIO_DIR,    [3])  # restore default just in case
+            self.oa.sendMessage(CODE_WRITE, "USERIO_DEBUG_DRIVEN", [0])
+            self._trace._set_enabled(1)
+            self._trace._set_userio_dir(3)  # restore default just in case
         elif setting == 'fpga_debug':
-            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [1])
-            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
+            self.oa.sendMessage(CODE_WRITE, "USERIO_DEBUG_DRIVEN", [1])
+            self._trace._set_enabled(0)
         elif setting == 'swo_trace_plus_debug':
-            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [1])
-            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [1])
-            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_USERIO_DIR,    [0xff-4])
+            self.oa.sendMessage(CODE_WRITE, "USERIO_DEBUG_DRIVEN", [1])
+            self._trace._set_enabled(1)
+            self._trace._set_userio_dir(0xff-4)
         elif setting == 'target_debug_jtag':
-            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [2])
-            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
+            self.oa.sendMessage(CODE_WRITE, "USERIO_DEBUG_DRIVEN", [2])
+            self._trace._set_enabled(0)
         elif setting == 'target_debug_swd':
-            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_DRIVEN, [6])
-            self.oa.sendMessage(CODE_WRITE, ADDR_TRACE_EN,            [0])
+            self.oa.sendMessage(CODE_WRITE, "USERIO_DEBUG_DRIVEN", [6])
+            self._trace._set_enabled(0)
         else:
             raise ValueError("Invalid mode; use normal/trace/fpga_debug/target_debug_jtag/target_debug_swd")
         self._last_mode = setting
@@ -647,14 +615,14 @@ class USERIOSettings(util.DisableNewAttr):
         are routed to the USERIO pins. Print the scope.userio object to obtain the signal definition
         corresponding to the current fpga_mode setting.
         """
-        return self.oa.sendMessage(CODE_READ, ADDR_USERIO_DEBUG_SELECT, maxResp=1)[0]
+        return self.oa.sendMessage(CODE_READ, "USERIO_DEBUG_SELECT", maxResp=1)[0]
 
     @fpga_mode.setter
     def fpga_mode(self, setting):
         if not setting in range(0, 16):
             raise ValueError("Must be integer in [0, 15]")
         else:
-            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DEBUG_SELECT, [setting])
+            self.oa.sendMessage(CODE_WRITE, "USERIO_DEBUG_SELECT", [setting])
 
 
     @property
@@ -667,33 +635,33 @@ class USERIOSettings(util.DisableNewAttr):
         by the FPGA and cannot be changed by the user.
         Use with care.
         """
-        return self.oa.sendMessage(CODE_READ, ADDR_USERIO_CW_DRIVEN, maxResp=1)[0]
+        return self.oa.sendMessage(CODE_READ, "USERIO_CW_DRIVEN", maxResp=1)[0]
 
     @direction.setter
     def direction(self, setting):
         if not setting in range(0, 256):
             raise ValueError("Must be integer 0-255")
         else:
-            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_CW_DRIVEN, [setting])
+            self.oa.sendMessage(CODE_WRITE, "USERIO_CW_DRIVEN", [setting])
 
     @property
     def drive_data(self):
         """8-bit data to drive on the USERIO data bus.
         """
-        return self.oa.sendMessage(CODE_READ, ADDR_USERIO_DRIVE_DATA, maxResp=1)[0]
+        return self.oa.sendMessage(CODE_READ, "USERIO_DRIVE_DATA", maxResp=1)[0]
 
     @drive_data.setter
     def drive_data(self, setting):
         if not setting in range(0, 256):
             raise ValueError("Must be integer 0-255")
         else:
-            self.oa.sendMessage(CODE_WRITE, ADDR_USERIO_DRIVE_DATA, [setting])
+            self.oa.sendMessage(CODE_WRITE, "USERIO_DRIVE_DATA", [setting])
 
     @property
     def status(self):
         """Returns current value of header pins. LSB=D0, MSB=CK.
         """
-        raw = self.oa.sendMessage(CODE_READ, ADDR_USERIO_READ, maxResp=2)
+        raw = self.oa.sendMessage(CODE_READ, "USERIO_READ", maxResp=2)
         return int.from_bytes(raw, byteorder='little')
 
 
@@ -709,7 +677,7 @@ class XADCSettings(util.DisableNewAttr):
     def __init__(self, oaiface : OAI.OpenADCInterface):
         super().__init__()
         self.oa = oaiface
-        self.drp = XilinxDRP(oaiface, ADDR_XADC_DRP_DATA, ADDR_XADC_DRP_ADDR)
+        self.drp = XilinxDRP(oaiface, "XADC_DRP_DATA", "XADC_DRP_ADDR")
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -739,7 +707,7 @@ class XADCSettings(util.DisableNewAttr):
 
         :Setter: Clear the status error bits (they are sticky).
         """
-        raw = self.oa.sendMessage(CODE_READ, ADDR_XADC_STAT, maxResp=1)[0]
+        raw = self.oa.sendMessage(CODE_READ, "XADC_STAT", maxResp=1)[0]
         stat = ''
         if raw & 1:  stat += 'Over temperature alarm, '
         if raw & 2:  stat += 'User temperature alarm, '
@@ -752,7 +720,7 @@ class XADCSettings(util.DisableNewAttr):
 
     @status.setter
     def status(self, clear):
-        self.oa.sendMessage(CODE_WRITE, ADDR_XADC_STAT, [0x0])
+        self.oa.sendMessage(CODE_WRITE, "XADC_STAT", [0x0])
 
     def errors(self):
         if self.status == 'good':
@@ -1023,8 +991,8 @@ class LASettings(util.DisableNewAttr):
     def trigger_now(self):
         """Trigger the capture manually.
         """
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_MANUAL_CAPTURE, [1], Validate=False)
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_MANUAL_CAPTURE, [0], Validate=False)
+        self.oa.sendMessage(CODE_WRITE, "LA_MANUAL_CAPTURE", [1], Validate=False)
+        self.oa.sendMessage(CODE_WRITE, "LA_MANUAL_CAPTURE", [0], Validate=False)
 
 
     @staticmethod
@@ -1041,7 +1009,7 @@ class LASettings(util.DisableNewAttr):
         """ Return whether the logic analyzer functionality is present in this build (True or False).
         If it is not present, none of the functionality of this class is available.
         """
-        raw = self.oa.sendMessage(CODE_READ, ADDR_COMPONENTS_EXIST, Validate=False, maxResp=1)[0]
+        raw = self.oa.sendMessage(CODE_READ, "COMPONENTS_EXIST", Validate=False, maxResp=1)[0]
         if raw & 1:
             return True
         else:
@@ -1051,7 +1019,7 @@ class LASettings(util.DisableNewAttr):
     def locked(self):
         """ Return whether the sampling clock MMCM is locked (True or False).
         """
-        raw = self.oa.sendMessage(CODE_READ, ADDR_LA_STATUS, Validate=False, maxResp=1)[0]
+        raw = self.oa.sendMessage(CODE_READ, "LA_STATUS", Validate=False, maxResp=1)[0]
         if raw & 1:
             return True
         else:
@@ -1073,7 +1041,7 @@ class LASettings(util.DisableNewAttr):
         Args:
             depth (int): capture <depth> samples of each signal. 16-bit value, in range [1, scope.LA.max_capture_depth]
         """
-        raw = self.oa.sendMessage(CODE_READ, ADDR_LA_CAPTURE_DEPTH, Validate=False, maxResp=2)
+        raw = self.oa.sendMessage(CODE_READ, "LA_CAPTURE_DEPTH", Validate=False, maxResp=2)
         return int.from_bytes(raw, byteorder='little')
 
     @capture_depth.setter
@@ -1082,7 +1050,7 @@ class LASettings(util.DisableNewAttr):
             raise ValueError("Maximum capture depth is %s" % self.max_capture_depth)
         if depth % 2:
             depth -= 1
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_CAPTURE_DEPTH, int.to_bytes(depth, length=2, byteorder='little'), Validate=False)
+        self.oa.sendMessage(CODE_WRITE, "LA_CAPTURE_DEPTH", int.to_bytes(depth, length=2, byteorder='little'), Validate=False)
 
 
     @property
@@ -1091,7 +1059,7 @@ class LASettings(util.DisableNewAttr):
         and trace components share the same FPGA storage, so they cannot be
         simultaneously enabled.
         """
-        raw = self.oa.sendMessage(CODE_READ, ADDR_LA_ENABLED, Validate=False, maxResp=1)[0]
+        raw = self.oa.sendMessage(CODE_READ, "LA_ENABLED", Validate=False, maxResp=1)[0]
         if raw:
             return True
         else:
@@ -1108,7 +1076,7 @@ class LASettings(util.DisableNewAttr):
             self.clkgen_enabled = True
         else:
             val = [0]
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_ENABLED, val, Validate=False)
+        self.oa.sendMessage(CODE_WRITE, "LA_ENABLED", val, Validate=False)
         self.reset_MMCM()
 
     @property
@@ -1119,7 +1087,7 @@ class LASettings(util.DisableNewAttr):
         If you run into temperature issues and don't require the logic analyzer
         or debug trace functionality, power down this MMCM.
         """
-        raw = self.oa.sendMessage(CODE_READ, ADDR_LA_POWERDOWN, Validate=False, maxResp=1)[0]
+        raw = self.oa.sendMessage(CODE_READ, "LA_POWERDOWN", Validate=False, maxResp=1)[0]
         if raw == 1:
             return False
         elif raw == 0:
@@ -1133,7 +1101,7 @@ class LASettings(util.DisableNewAttr):
             val = [0]
         else:
             val = [1]
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_POWERDOWN, val, Validate=False)
+        self.oa.sendMessage(CODE_WRITE, "LA_POWERDOWN", val, Validate=False)
         self.reset_MMCM()
 
 
@@ -1164,7 +1132,7 @@ class LASettings(util.DisableNewAttr):
         self.reset_MMCM()
 
     def arm(self):
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_ARM, [1], Validate=False)
+        self.oa.sendMessage(CODE_WRITE, "LA_ARM", [1], Validate=False)
 
     @property
     def errors(self):
@@ -1357,7 +1325,7 @@ class LASettings(util.DisableNewAttr):
     def source_clock_frequency(self):
         """Report the actual clock frequency of the input clock to the shared LA/trace MMCM.
         """
-        raw = int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_LA_SOURCE_FREQ, Validate=False, maxResp=4), byteorder='little')
+        raw = int.from_bytes(self.oa.sendMessage(CODE_READ, "LA_SOURCE_FREQ", Validate=False, maxResp=4), byteorder='little')
         freq = raw * 96e6 / float(pow(2,23))
         return freq
 
@@ -1446,10 +1414,10 @@ class LASettings(util.DisableNewAttr):
             val = [2]
         else:
             raise ValueError("Must be one of 'target', 'usb', or 'pll'")
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_CLOCK_SOURCE, val, Validate=False)
+        self.oa.sendMessage(CODE_WRITE, "LA_CLOCK_SOURCE", val, Validate=False)
 
     def _getClkSource(self):
-        raw = self.oa.sendMessage(CODE_READ, ADDR_LA_CLOCK_SOURCE, Validate=False, maxResp=1)[0]
+        raw = self.oa.sendMessage(CODE_READ, "LA_CLOCK_SOURCE", Validate=False, maxResp=1)[0]
         if raw == 0:
             return 'target'
         elif raw == 1:
@@ -1486,10 +1454,10 @@ class LASettings(util.DisableNewAttr):
             val = [0x28 + int(source[-1]) - 1]
         else:
             raise ValueError("Must be one of 'glitch', 'capture', 'glitch_source', 'HS1', '[rising|falling]_userio_d[0-7]', or [rising|falling]_tio[0-3]")
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_TRIGGER_SOURCE, val, Validate=False)
+        self.oa.sendMessage(CODE_WRITE, "LA_TRIGGER_SOURCE", val, Validate=False)
 
     def _getTriggerSource(self):
-        raw = self.oa.sendMessage(CODE_READ, ADDR_LA_TRIGGER_SOURCE, Validate=False, maxResp=1)[0]
+        raw = self.oa.sendMessage(CODE_READ, "LA_TRIGGER_SOURCE", Validate=False, maxResp=1)[0]
         if raw == 0:
             return 'glitch'
         elif raw == 1:
@@ -1527,10 +1495,10 @@ class LASettings(util.DisableNewAttr):
         if factor < 1 or factor > 2**16:
             raise ValueError("Error: downsample value out of range.")
         factor -= 1
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_DOWNSAMPLE, int.to_bytes(factor, length=2, byteorder='little'), Validate=False)
+        self.oa.sendMessage(CODE_WRITE, "LA_DOWNSAMPLE", int.to_bytes(factor, length=2, byteorder='little'), Validate=False)
 
     def _getDownsample(self):
-        return int.from_bytes(self.oa.sendMessage(CODE_READ, ADDR_LA_DOWNSAMPLE, Validate=False, maxResp=2), byteorder='little') + 1
+        return int.from_bytes(self.oa.sendMessage(CODE_READ, "LA_DOWNSAMPLE", Validate=False, maxResp=2), byteorder='little') + 1
 
 
     def _setCaptureGroup(self, group):
@@ -1550,10 +1518,10 @@ class LASettings(util.DisableNewAttr):
             num = 6
         else:
             raise ValueError("invalid group name")
-        self.oa.sendMessage(CODE_WRITE, ADDR_LA_CAPTURE_GROUP, [num], Validate=False)
+        self.oa.sendMessage(CODE_WRITE, "LA_CAPTURE_GROUP", [num], Validate=False)
 
     def _getCaptureGroup(self):
-        num = self.oa.sendMessage(CODE_READ, ADDR_LA_CAPTURE_GROUP, Validate=False, maxResp=1)[0]
+        num = self.oa.sendMessage(CODE_READ, "LA_CAPTURE_GROUP", Validate=False, maxResp=1)[0]
         if num == 0:
             group = 'glitch'
         elif num == 1:
@@ -1603,29 +1571,29 @@ class ADS4128Settings(util.DisableNewAttr):
         """Resets the ADC.
         Note this is done by the FPGA - see reg_husky_adc.v
         """
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0xc1])
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
+        self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [0x41])
+        self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [0xc1])
+        self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [0x41])
 
     def _adc_write(self, address, data):
         """Write ADC configuration register.
         Note this is done by the FPGA - see reg_husky_adc.v
         """
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
+        self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [0x41])
         for i in range(8):
             bit = (address >> (7-i)) & 1
             val = (bit << 4) + 1
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
+            self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [val])
             val = (bit << 4) + 0
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
+            self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [val])
 
         for i in range(8):
             bit = (data >> (7-i)) & 1
             val = (bit << 4) + 1
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
+            self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [val])
             val = (bit << 4) + 0
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [val])
+            self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [val])
+        self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [val])
 
     def _adc_read(self, address):
         """Read ADC configuration register.
@@ -1633,16 +1601,16 @@ class ADS4128Settings(util.DisableNewAttr):
         """
         # first, enable readout:
         self._adc_write(0x0, 0x1)
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
+        self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [0x41])
         for i in range(8):
             bit = (address >> (7-i)) & 1
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [(bit<<4) + 1])
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [(bit<<4) + 0])
+            self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [(bit<<4) + 1])
+            self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [(bit<<4) + 0])
         for i in range(8):
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x01])
-            self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x02])
-        self.oa.sendMessage(CODE_WRITE, ADDR_HUSKY_ADC_CTRL, [0x41])
-        data =  self.oa.sendMessage(CODE_READ, ADDR_HUSKY_ADC_CTRL, maxResp=1)[0]
+            self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [0x01])
+            self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [0x02])
+        self.oa.sendMessage(CODE_WRITE, "CW_ADC_CTRL", [0x41])
+        data =  self.oa.sendMessage(CODE_READ, "CW_ADC_CTRL", maxResp=1)[0]
         # finished, disable readout:
         self._adc_write(0x0, 0x0)
         return data
@@ -1713,10 +1681,10 @@ class ADS4128Settings(util.DisableNewAttr):
     def setMode(self, mode):
         if mode == "normal":
             self.set_normal_settings()
-            self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [0])
+            self.oa.sendMessage(CODE_WRITE, "NO_CLIP_ERRORS", [0])
         elif mode in ("test ramp", "test alternating"):
             self.set_test_settings(mode)
-            self.oa.sendMessage(CODE_WRITE, ADDR_NO_CLIP_ERRORS, [1])
+            self.oa.sendMessage(CODE_WRITE, "NO_CLIP_ERRORS", [1])
         else:
             raise ValueError("Invalid mode, only 'normal', 'test ramp' or 'test alternating' allowed")
 

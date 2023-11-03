@@ -50,6 +50,7 @@ cw305_files = [("SAM3U_CW305.bin", os.path.join(hwdir, r"victims/cw305_artixtarg
 cwlite_v = [0, 64]
 cwlite_files = [("cwlite_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-lite/cwlite_firmware.zip")),
                 ("SAM3U_CW1173.bin", os.path.join(hwdir, r"capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src/ChipWhisperer-Lite.bin")),
+                ("registers.v", os.path.join(hwdir, r"capture/chipwhisperer-lite/registers.v")),
                 ("version", os.path.join(hwdir, r"capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src/version.txt"))
                 ]
 
@@ -61,6 +62,7 @@ cw1200_files = [("cw1200_firmware.zip", os.path.join(hwdir, r"capture/chipwhispe
 
 cwhusky_v = [1, 5]
 cwhusky_files = [("husky_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-husky/husky_firmware.zip")),
+                ("registers.v", os.path.join(hwdir, r"capture/chipwhisperer-husky/registers.v")),
                 ("Husky.bin", os.path.join(hwdir, r"capture/chipwhisperer-husky/ChipWhisperer-Husky.bin")),
                 ("version", os.path.join(hwdir, r"capture/chipwhisperer-husky/version.txt"))
                 ]

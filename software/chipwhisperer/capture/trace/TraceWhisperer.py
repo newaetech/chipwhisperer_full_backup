@@ -41,10 +41,6 @@ import numpy as np
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
-ADDR_COMPONENTS_EXIST  = 96
-ADDR_LA_DRP_ADDR       = 68
-ADDR_LA_DRP_DATA       = 69
-ADDR_LA_DRP_RESET      = 74
 
 class TraceWhisperer(util.DisableNewAttr):
 
@@ -206,6 +202,9 @@ class TraceWhisperer(util.DisableNewAttr):
         # value whenever we connect:
         self.fpga_write(self.REG_TRACE_USERIO_DIR, [3]) 
 
+    def _set_userio_dir(self, val):
+        self.fpga_write(self.REG_TRACE_USERIO_DIR, [val])
+
 
     def reset_fpga(self):
         """ Reset FPGA registers to defaults, use liberally to clear incorrect states.
@@ -276,7 +275,7 @@ class TraceWhisperer(util.DisableNewAttr):
         If it is not present, none of the functionality of this class is available.
         """
         if self.platform == 'Husky':
-            raw = self.fpga_read(ADDR_COMPONENTS_EXIST, 1)[0]
+            raw = self.fpga_read("COMPONENTS_EXIST", 1)[0]
             if raw & 2:
                 return True
             else:
@@ -308,8 +307,10 @@ class TraceWhisperer(util.DisableNewAttr):
             self._scope.LA.clkgen_enabled = True
         if not enable:
             self.capture.use_husky_arm = False
-        self.fpga_write(self.REG_TRACE_EN, [enable])
+        self._set_enabled(enable)
 
+    def _set_enabled(self, enable):
+        self.fpga_write(self.REG_TRACE_EN, [enable])
 
     @property 
     def target(self):
@@ -527,9 +528,8 @@ class TraceWhisperer(util.DisableNewAttr):
         Args: none
         """
         if self.platform == 'Husky':
-            # TODO: slurp
-            reg_pwdriven = 86
-            reg_data = 88
+            reg_pwdriven = "USERIO_CW_DRIVEN"
+            reg_data = "USERIO_DRIVE_DATA"
         else:
             reg_pwdriven = self.REG_USERIO_PWDRIVEN
             reg_data = self.REG_USERIO_DATA
@@ -1246,7 +1246,7 @@ class clock(util.DisableNewAttr):
         super().__init__()
         self.main = main
         if self.main.platform == 'Husky':
-            self.swo_drp = XilinxDRP(main, ADDR_LA_DRP_DATA, ADDR_LA_DRP_ADDR, ADDR_LA_DRP_RESET)
+            self.swo_drp = XilinxDRP(main, "LA_DRP_DATA", "LA_DRP_ADDR", "LA_DRP_RESET")
         else:
             self.swo_drp = XilinxDRP(main, main.REG_TRIGGER_DRP_DATA, main.REG_TRIGGER_DRP_ADDR, main.REG_TRIGGER_DRP_RESET)
         self.traceclk_drp = XilinxDRP(main, main.REG_TRACECLK_DRP_DATA, main.REG_TRACECLK_DRP_ADDR, main.REG_TRACECLK_DRP_RESET)

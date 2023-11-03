@@ -50,6 +50,7 @@ class CW_Loader:
         self._bsZipLoc = ""
         self._bsZipLoc_filename = ""
         self._bsBuiltinData = None
+        self._registers = None
 
     def read_setting(self, settingname, default):
         """ Returns a setting if saved, otherwise defaults """
@@ -133,6 +134,7 @@ class CWLite_Loader(CW_Loader):
         self._bsLoc = self.read_setting('debugbitstream-location', def_bsLoc)
         self._fwFLoc = ""
         self._bsBuiltinData = cwlite_getsome("cwlite_firmware.zip", filelike=True)
+        self._registers = cwlite_getsome("registers.v")
 
     def loadRequired(self, callback, forceFirmware=False):
         callback()
@@ -165,6 +167,7 @@ class CW1200_Loader(CW_Loader):
         self._bsLoc = self.read_setting('debugbitstream-location', def_bsLoc)
         self._fwFLoc = ""
         self._bsBuiltinData = cw1200_getsome("cw1200_firmware.zip", filelike=True)
+        self._registers = cwlite_getsome("registers.v")
 
 
     def loadRequired(self, callback, forceFirmware=False):
@@ -197,6 +200,7 @@ class CWHusky_Loader(CW_Loader):
         self._bsLoc = self.read_setting('debugbitstream-location', def_bsLoc)
         self._fwFLoc = ""
         self._bsBuiltinData = husky_getsome("husky_firmware.zip", filelike=True)
+        self._registers = husky_getsome("registers.v")
 
 
     def loadRequired(self, callback, forceFirmware=False):

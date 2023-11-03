@@ -32,12 +32,7 @@ from copy import copy
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
-
 CODE_USART      = 0x01
-
-ADDR_DECODECFG = 57
-ADDR_DECODEDATA = 58
-
 
 class ChipWhispererDecodeTrigger(DisableNewAttr):
     """
@@ -202,29 +197,29 @@ class ChipWhispererDecodeTrigger(DisableNewAttr):
             raise ValueError("Unknown decode type {}. Must be 'USART'".format(typ))
 
     def set_decodetype(self, decode_type):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_CFG_ADDR", Validate=False, maxResp=8)
         data[0] = (data[0] & 0xF0) | decode_type
-        self.oa.sendMessage(CODE_WRITE, ADDR_DECODECFG, data)
+        self.oa.sendMessage(CODE_WRITE, "IODECODETRIG_CFG_ADDR", data)
 
     def get_decodetype(self):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_CFG_ADDR", Validate=False, maxResp=8)
         return data[0] & 0x0F
 
     def get_trig_bitmap(self):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_CFG_ADDR", Validate=False, maxResp=8)
         return data[2]
 
     def set_trig_bitmap(self, bm):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_CFG_ADDR", Validate=False, maxResp=8)
         data[2] = bm
-        self.oa.sendMessage(CODE_WRITE, ADDR_DECODECFG, data)
+        self.oa.sendMessage(CODE_WRITE, "IODECODETRIG_CFG_ADDR", data)
 
     def get_trig_rawdata(self):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODEDATA, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_DATA_ADDR", Validate=False, maxResp=8)
         return data
 
     def set_trig_rawdata(self, data):
-        self.oa.sendMessage(CODE_WRITE, ADDR_DECODEDATA, data)
+        self.oa.sendMessage(CODE_WRITE, "IODECODETRIG_DATA_ADDR", data)
 
     @property
     def rx_baud(self):
@@ -262,13 +257,13 @@ class ChipWhispererDecodeTrigger(DisableNewAttr):
 
 
     def setRxBaudReg(self, breg):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_CFG_ADDR", Validate=False, maxResp=8)
         data[3] = breg & 0xff
         data[4] = (breg >> 8) & 0xff
-        self.oa.sendMessage(CODE_WRITE, ADDR_DECODECFG, data)
+        self.oa.sendMessage(CODE_WRITE, "IODECODETRIG_CFG_ADDR", data)
 
     def rxBaudReg(self):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_CFG_ADDR", Validate=False, maxResp=8)
         breg = data[3] | (data[4] << 8)
         return breg
 
