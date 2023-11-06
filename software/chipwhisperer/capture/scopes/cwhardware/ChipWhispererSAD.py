@@ -286,8 +286,7 @@ class HuskySAD(util.DisableNewAttr):
         scope.SAD.sad_reference_length samples are used).
         Args:
             wave: (list of ints or floats): reference waveform
-            bits_per_sample: (int, optional): number of bits per sample in
-                wave. If not provided, we use scope.adc.bits_per_sample.
+            bits_per_sample: (int, optional): number of bits per sample in wave. If not provided, we use scope.adc.bits_per_sample.
         """
         if self.sad_reference_length > 128:
             # in this case we have to read in blocks of 128 bytes:
