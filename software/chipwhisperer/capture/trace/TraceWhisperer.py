@@ -288,6 +288,7 @@ class TraceWhisperer(util.DisableNewAttr):
     def enabled(self):
         """Controls whether trace data collecting is enabled or not. Mostly affects configuration
         of the front 20-pin header.
+
         Args:
             enable (bool)
         """
@@ -317,6 +318,7 @@ class TraceWhisperer(util.DisableNewAttr):
         """Set the target object. Not strictly necessary for TraceWhisperer operation; it is used for
         setting/getting the target debug registers, which is done with SimpleSerial communication with
         the target. If you don't require this, then you don't need to set this property.
+
         Args:
             target: SimpleSerial target object
         """
@@ -340,6 +342,7 @@ class TraceWhisperer(util.DisableNewAttr):
             - TRACEDATA[2] to D6
             - TRACEDATA[3] to D7
             - TRACECLOCK   to CK
+
         Args:
             mode (string): 'parallel' or 'swo'
         """
@@ -374,6 +377,7 @@ class TraceWhisperer(util.DisableNewAttr):
     def set_trace_mode(self, mode, swo_div=8, acpr=0):
         """Set trace or SWO mode. SWO mode is only available on CW610 platform.
         For SWO mode, we also adjust the target clock to match the SWO parameters.
+
         Args:
             mode (string): 'trace' or 'swo'
             swo_div (int): number of 96 MHz clock cycles per SWO bit (SWO mode only)
@@ -491,10 +495,10 @@ class TraceWhisperer(util.DisableNewAttr):
 
     def set_capture_mode(self, mode, counts=0):
         """Determine the duration of the trace capture.
+
         Args:
             mode (string): 'while_trig' or 'count_cycles' or 'count_writes'
-            counts (int): number of cycles (mode == 'count_cycles') or writes (mode == 'count_writes') to capture for
-                          (0 = capture until full)
+            counts (int): number of cycles (mode == 'count_cycles') or writes (mode == 'count_writes') to capture for (0 = capture until full)
         """
         tracewhisperer_logger.warning('Deprecated; use trace.capture.capture_mode / capture_count instead.')
         if mode == 'while_trig':
@@ -525,6 +529,7 @@ class TraceWhisperer(util.DisableNewAttr):
     def jtag_to_swd(self):
         """Switch to SWD mode by driving the JTAG-to-SWD sequence on TMS/TCK.
         (reference: https://developer.arm.com/documentation/ka001179/1-0/)
+
         Args: none
         """
         if self.platform == 'Husky':
@@ -546,6 +551,7 @@ class TraceWhisperer(util.DisableNewAttr):
 
     def _send_tms_byte(self, addr, data):
         """Bit-bang 8 bits of data on TMS/TCK (LSB first).
+
         Args:
             data (int): 8 bits data to send.
         """
@@ -557,6 +563,7 @@ class TraceWhisperer(util.DisableNewAttr):
 
     def _line_reset(self, addr, num_bytes=8):
         """Bit-bang a line reset on TMS/TCK.
+
         Args: none
         """
         for i in range(num_bytes): self._send_tms_byte(addr, 0xff)
@@ -605,6 +612,7 @@ class TraceWhisperer(util.DisableNewAttr):
             mask (list, optional): list of bytes, must have same size as 'pattern' if
                 set. Defaults to [0]*(self.pattern_size*8-len(pattern) + [0xff]*len(pattern) if not set.
                 See usage notes below for implications of this for short patterns.
+
         Usage notes:
             The pattern matching logic looks at the full match pattern and mask, including mask bytes which
             are set to 0. For example, pattern = [1,2,3,4,0,0,0,0], mask = [255,255,255,255,0,0,0,0] will
@@ -650,6 +658,7 @@ class TraceWhisperer(util.DisableNewAttr):
         When used as part of Husky, it's possible for forego this and have the
         trace module be armed by the regular Husky arm, by setting
         :code:`scope.trace.capture.use_husky_arm` to True.
+
         Args:
             check_uart (bool): check that the hardware UART state machine is not stuck,
             and if it is, reset it. Should not be required unless trace is left enabled
@@ -1033,6 +1042,7 @@ class TraceWhisperer(util.DisableNewAttr):
 
     def use_trace_trigger(self, rule=0):
         """ Use matching trace data to initiate trace capture.
+
         Args:
             rule (int): rule number to use
         """
@@ -1048,6 +1058,7 @@ class TraceWhisperer(util.DisableNewAttr):
 
     def set_isync_matches(self, addr0=0, addr1=0, match=None):
         """ Set exact PC address matching rules.
+
         Args:
             addr0 (int): Matching address 0 (DWT_COMP0)
             addr1 (int): Matching address 0 (DWT_COMP1)
@@ -1074,6 +1085,7 @@ class TraceWhisperer(util.DisableNewAttr):
         this method will start PC sampling *after* the target triggers, thereby
         ensuring that the resulting trace data can be parsed without trouble.
         Alternatively, you can set the DWT_CTRL register directly.
+
         Args:
             enable (int): enable or disable periodic PC sampling
             cyctap (int): DWT_CTRL.CYCTAP bit
@@ -1090,6 +1102,7 @@ class TraceWhisperer(util.DisableNewAttr):
     def write_raw_capture(self, raw, filename='raw.bin', presyncs=8):
         """Writes raw trace data to a file (which can be read by orbuculum).
         Prepends a number of sync frames to facilitate parsing.
+
         Args:
             raw (array): raw trace data as obtained from
                 get_raw_trace_packets()
@@ -1111,6 +1124,7 @@ class TraceWhisperer(util.DisableNewAttr):
         option to turn on parity is provided because on the Husky platform, the
         same UART receiver that is used for trace is also used as a receiver
         for triggering on generic UART traffic.
+
         Args:
             value: 'none' / 'even' / 'odd'
         """
@@ -1159,6 +1173,7 @@ class TraceWhisperer(util.DisableNewAttr):
         trigger; otherwise it will not.
         2. [A,B,C^,C,D]: if accept_parity_errors is set, the pattern match will
         *not* trigger; otherwise it *will* trigger.
+
         Args:
             value (bool)
         """
@@ -1194,6 +1209,7 @@ class TraceWhisperer(util.DisableNewAttr):
         The option to set this to 2 is provided because on the Husky platform,
         the same UART receiver that is used for trace is also used as a
         receiver for triggering on generic UART traffic.
+
         Args:
             value (int): 1 or 2
         """
@@ -1218,6 +1234,7 @@ class TraceWhisperer(util.DisableNewAttr):
         to 8.  The option to set this to [5,9] is provided because on the Husky
         platform, the same UART receiver that is used for trace is also used as
         a receiver for triggering on generic UART traffic.
+
         Args:
             value (int): minimum 5, maximum 9
         """
@@ -1384,6 +1401,7 @@ class clock(util.DisableNewAttr):
         On the CW305 platform, "target_clock" is the only option.
         On Husky, "target_clock" refers to either the target-generated clock or
         Husky-generated clock, as per :code:`scope.clock.clkgen_src`.
+
         Args:
             src (str): "target_clock", "trace_clock" or "usb_clock"
         """
@@ -1419,6 +1437,7 @@ class clock(util.DisableNewAttr):
         """Turn on the MMCM for shifting the trace clock. When disabled, the
         raw input trace clock is used; when enabled, the MMCM-shifted trace
         clock is used.
+
         Args:
             enable (bool)
         """
@@ -1508,6 +1527,7 @@ class clock(util.DisableNewAttr):
         period. The MMCM's VCO frequency can optionally be specified. Note that
         the trace clock frequency is usually half of the target's clock
         frequency.
+
         Args:
             freq (int): trace clock frequency. Minimum: 5 MHz.
             vco (int): VCO frequency. Allowed range [600e6, 1200e6]. Higher
@@ -1574,6 +1594,7 @@ class capture(util.DisableNewAttr):
     @property
     def raw(self):
         """ Set whether TraceWhisperer captures raw trace data or matching rule indices.
+
         Args:
             val (int or bool): if set, capture raw trace data. Otherwise, capture the index
                                of the matching rule number.
@@ -1597,6 +1618,7 @@ class capture(util.DisableNewAttr):
             this is done as "best effort", and some sync frames will still be
             captured. The intent of this feature is to minimize the storage
             consumed by the sync frames, not eliminate it.
+
         Args:
             val (int or bool)
         """
@@ -1635,6 +1657,7 @@ class capture(util.DisableNewAttr):
             trace module knows when it is 'done'; it's also useful to
             coordinate with e.g.  segmented capture parameters
             (:code:`scope.adc.segments`).
+
         Args:
             number (int): number from 1 to 2**16-1.
         """
@@ -1658,6 +1681,7 @@ class capture(util.DisableNewAttr):
     def trigger_source(self):
         """ Set whether firmware trigger or trace trigger is used to enable recording of trace data.
         To use the firmware trigger on CW610, it must be connected to the side connector 'PC' pin.
+
         Args:
             source (str or int): "firmware trigger": Use target-generated trigger to initiate trace capture.
                                  int: use matching trace data to initiate trace capture, with given rule number.
@@ -1692,6 +1716,7 @@ class capture(util.DisableNewAttr):
     @property
     def mode(self):
         """Determine the duration of the trace capture.
+
         Args:
             mode (string): 'while_trig': capture while the trigger input is high
                            'count_cycles': capture for self.count clock cycles
@@ -1733,10 +1758,9 @@ class capture(util.DisableNewAttr):
     @property
     def count(self):
         """Control how long we capture trace events when self.mode != 'while_trig'.
+
         Args:
-            counts (int): number of clock cycles (self.mode == 'count_cycles') or writes 
-                          (self.mode == 'count_writes') to capture for; 0 means capture until
-                          storage is full
+            counts (int): number of clock cycles (self.mode == 'count_cycles') or writes (self.mode == 'count_writes') to capture for; 0 means capture until storage is full
         """
         return int.from_bytes(self.main.fpga_read(self.main.REG_CAPTURE_LEN, 4), byteorder='little')
 
@@ -1747,9 +1771,9 @@ class capture(util.DisableNewAttr):
     @property
     def rules_enabled(self):
         """Set which matching rules are enabled.
+
         Args:
-            rules (list of ints): turn on the specified rules; others are turned off.
-                                  example: [0, 5, 7]: turns on rules 0, 5 and 7.
+            rules (list of ints): turn on the specified rules; others are turned off.  example: [0, 5, 7]: turns on rules 0, 5 and 7.
         """
         raw = self.main.fpga_read(self.main.REG_PATTERN_ENABLE, 1)[0]
         rules = []
@@ -1958,6 +1982,7 @@ class ARM_debug_registers(util.DisableNewAttr):
 
     def _set(self, reg, data, printresult=False):
         """Set a Cortex debug register
+
         Args:
             reg (string): Register to write. See self.regs for available registers.
             data (int or string): 32-bit integer or 8-character hex string, value to write to
@@ -1988,6 +2013,7 @@ class ARM_debug_registers(util.DisableNewAttr):
 
     def _get(self, reg):
         """Reads a Cortex debug register
+
         Args:
             reg (string): Register to read. See self.regs for available registers.
         """
@@ -2063,6 +2089,7 @@ class UARTTrigger(TraceWhisperer):
     def enabled(self):
         """Controls whether trace data collecting is enabled or not. Mostly affects configuration
         of the front 20-pin header.
+
         Args:
             enable (bool)
         """
@@ -2140,6 +2167,7 @@ class UARTTrigger(TraceWhisperer):
 
     def uart_data(self, rawdata, prepend_matched_pattern=True, return_ascii=True):
         """ Helper function to parse the captured UART data.
+
         Args:
             rawdata (list): raw capture data, list of lists, e.g. obtained from read_capture_data()
             prepend_matched_pattern (bool): 
@@ -2165,6 +2193,7 @@ class UARTTrigger(TraceWhisperer):
 
     def matched_pattern_data(self, as_string=True):
         """ Return the actual trace data seen for the last matched pattern.
+
         Args:
             as_string (bool): convert each byte to its boolean string; otherwise,
             results are returned as a list of self.data_bits-sized words.
@@ -2197,6 +2226,7 @@ class UARTTrigger(TraceWhisperer):
     @property
     def trigger_source(self):
         """ Set which pattern match rule is used to generate a trigger.
+
         Args:
             rule (int)
         """

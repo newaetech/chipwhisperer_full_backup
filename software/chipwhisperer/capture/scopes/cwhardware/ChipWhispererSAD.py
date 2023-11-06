@@ -261,6 +261,7 @@ class HuskySAD(util.DisableNewAttr):
         resolution, so if you're used to setting SAD thresholds on CW-Pro,
         simply scale accordingly.
         The maximum threshold is a build-time parameter.
+
         Raises:
             ValueError: if setting a threshold higher than what the hardware
             supports.  If you would like a higher threshold than what's
@@ -284,6 +285,7 @@ class HuskySAD(util.DisableNewAttr):
         scope.trigger._sad_bits_per_sample resolution. Can be of any length
         (minimum scope.SAD.sad_reference_length) but only the first
         scope.SAD.sad_reference_length samples are used).
+
         Args:
             wave: (list of ints or floats): reference waveform
             bits_per_sample: (int, optional): number of bits per sample in wave. If not provided, we use scope.adc.bits_per_sample.

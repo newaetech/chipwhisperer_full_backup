@@ -180,7 +180,7 @@ The following attributes are only available on, or differ substantially on the C
 Pro Only Features
 -----------------------
 
-SAD
+scope.SAD
 ^^^^^^^^^^^^^^
     Communicates with and drives the Sum of Absolute Differences module on the ChipWhisperer Pro.
 
@@ -210,13 +210,20 @@ scope.decode_IO
 Husky Only Features
 -------------------
 
-SAD
+scope.SAD
 ^^^^^^^^^^^^^^
     Communicates with and drives the Sum of Absolute Differences module on the ChipWhisperer Husky (API is different
     from CW-Pro SAD API).
 
 .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.HuskySAD
     :members:
+
+scope.trace
+^^^^^^^^^^^^^^^^^
+
+.. autoclass:: scope.trace <chipwhisperer.capture.trace.TraceWhisperer
+    :members:
+
 
 scope.UARTTrigger
 ^^^^^^^^^^^^^^^^^

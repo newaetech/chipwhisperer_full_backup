@@ -51,6 +51,7 @@ class XilinxDRP(util.DisableNewAttr):
 
     def write(self, addr, data):
         """Write DRP register. UG480 for register definitions.
+
         Args:
             addr (int): 6-bit address
             data (int): 16-bit write data
@@ -60,8 +61,10 @@ class XilinxDRP(util.DisableNewAttr):
 
     def read(self, addr):
         """Read DRP register. UG480 for register definitions.
+
         Args:
             addr (int): 6-bit address
+
         Returns:
             A 16-bit integer.
         """
@@ -786,8 +789,10 @@ class XADCSettings(util.DisableNewAttr):
 
     def get_temp(self, addr=0):
         """Read XADC temperature.
+
         Args:
             addr (int): DRP address (0: current; 32: max; 36: min)
+
         Returns:
             Temperature in celcius (float).
         """
@@ -796,9 +801,11 @@ class XADCSettings(util.DisableNewAttr):
 
     def set_temp(self, temp, addr=0):
         """Set XADC temperature thresholds.
+
         Args:
             addr (int): DRP address
             temp (float): temperature threshold [celcius]
+
         Returns:
             Temperature in celcius (float).
         """
@@ -826,9 +833,11 @@ class XADCSettings(util.DisableNewAttr):
 
     def get_vcc(self, rail='vccint', value='current'):
         """Read XADC vcc.
+
         Args:
             rail (string): 'vccint', 'vccaux', or 'vccbram'
             value (string): 'current', 'min', or 'max'
+
         Returns:
             voltage (float).
         """
@@ -857,9 +866,11 @@ class XADCSettings(util.DisableNewAttr):
 
     def _get_vcc_limit(self, rail='vccint', limit='upper'):
         """Get XADC vcc limit.
+
         Args:
             rail (string): 'vccint', 'vccaux', or 'vccbram'
             limit (string): 'upper', 'lower'
+
         Returns:
             voltage (float).
         """
@@ -882,6 +893,7 @@ class XADCSettings(util.DisableNewAttr):
 
     def _set_vcc_limit(self, value, rail='vccint', limit='upper'):
         """Set XADC vcc limit.
+
         Args:
             value (float): voltage limit
             rail (string): 'vccint', 'vccaux', or 'vccbram'
