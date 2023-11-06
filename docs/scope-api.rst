@@ -45,7 +45,7 @@ Usage examples:
  * `Power Analysis <https://github.com/newaetech/chipwhisperer-jupyter/tree/master/courses/sca101>`_
  * `Glitch <https://github.com/newaetech/chipwhisperer-jupyter/tree/master/courses/fault101>`_
  * `Pro features <https://github.com/newaetech/chipwhisperer-jupyter/blob/master/demos/CW-Pro%20Using%20SAD%20(Analog%20Pattern)%20Trigger%20-%20Attacking%20AES.ipynb>`_
- * `Husky glitching <https://github.com/newaetech/chipwhisperer-jupyter/blob/master/demos/husky_glitch.ipynb>`_
+ * `Husky glitching <https://github.com/newaetech/chipwhisperer-jupyter/blob/master/demos/husky/03%20-%20Husky%20Glitching.ipynb>`_
 
 .. autoclass:: chipwhisperer.scopes.OpenADC
     :members:
@@ -177,7 +177,7 @@ The following attributes are only available on, or differ substantially on the C
 
     .. autoattribute:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererGlitch.GlitchSettings.num_glitches
         
-Pro/Husky Only Featuers
+Pro Only Features
 -----------------------
 
 SAD
@@ -198,10 +198,25 @@ SAD
     .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.ChipWhispererSAD
         :members:
 
+scope.decode_IO
+^^^^^^^^^^^^^^^
+
+.. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger
+    :members:
+
+
 .. _api-scope-husky:
 
 Husky Only Features
 -------------------
+
+SAD
+^^^^^^^^^^^^^^
+    Communicates with and drives the Sum of Absolute Differences module on the ChipWhisperer Husky (API is different
+    from CW-Pro SAD API).
+
+.. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.HuskySAD
+    :members:
 
 scope.UARTTrigger
 ^^^^^^^^^^^^^^^^^
@@ -216,7 +231,7 @@ scope.LA
 
 Built in logic analyzer for visualizing internal FPGA signals. Notably can
 be used for visualizing glitch parameters, as in the 
-`Husky Glitch Notebook <https://github.com/newaetech/chipwhisperer-jupyter/blob/master/demos/husky_glitch.ipynb>`_
+`Husky Glitch Notebook <https://github.com/newaetech/chipwhisperer-jupyter/blob/master/demos/husky/03%20-%20Husky%20Glitching.ipynb>`_
 
 .. autoclass:: chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyMisc.LASettings
     :members:

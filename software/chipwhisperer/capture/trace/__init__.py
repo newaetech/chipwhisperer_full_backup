@@ -26,4 +26,5 @@
 Package containing all of the target types that the ChipWhisperer API can connect to:
 """
 from .TraceWhisperer import TraceWhisperer
+from .TraceWhisperer import UARTTrigger
 

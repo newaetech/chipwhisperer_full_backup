@@ -82,11 +82,22 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
      *  :meth:`scope.get_last_trace <.OpenADC.get_last_trace>`
      *  :meth:`scope.get_serial_ports <.ChipWhispererCommonInterface.get_serial_ports>`
 
-    If you have a CW1200 ChipWhisperer Pro/Husky, you have access to some additional features:
+    If you have a CW1200 ChipWhisperer Pro, you have access to some additional features:
 
      * :attr:`scope.SAD <chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.ChipWhispererSAD>`
      * :attr:`scope.DecodeIO <chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger>`
      * :attr:`scope.adc.stream_mode <chipwhisperer.capture.scopes._OpenADCInterface.TriggerSettings.stream_mode>`
+
+    If you have a CW-Husky, you have access to even more additional features:
+     * :attr"`scope.SAD <chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD.HuskySAD>`
+     * :attr:`scope.LA <chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyMisc.LASettings>`
+     * :attr"`scope.trace <chipwhisperer.capture.trace.TraceWhisperer>`
+     * :attr"`scope.UARTTrigger <chipwhisperer.capture.trace.UARTTrigger>`
+     * :attr"`scope.userio <chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyMisc.USERIOSettings>`
+     * :attr"`scope.errors <chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyMisc.HuskyError>`
+     * :attr"`scope.XADC <chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyMisc.XADCSettings>`
+     * :attr"`scope.ADS4128 <chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyMisc.ADS4128Settings>`
+     * :attr"`scope.LEDs <chipwhisperer.capture.scopes.cwhardware.ChipWhispererHuskyMisc.LEDSettings>`
 
     Inherits from :class:`chipwhisperer.capture.api.cwcommon.ChipWhispererCommonInterface`
     """
