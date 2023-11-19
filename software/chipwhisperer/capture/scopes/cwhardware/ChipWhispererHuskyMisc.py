@@ -1031,8 +1031,8 @@ class LASettings(util.DisableNewAttr):
     def locked(self):
         """ Return whether the sampling clock MMCM is locked (True or False).
         """
-        raw = self.oa.sendMessage(CODE_READ, "LA_STATUS", Validate=False, maxResp=1)[0]
-        if raw & 1:
+        raw = self.oa.sendMessage(CODE_READ, "LA_ENABLED", Validate=False, maxResp=1)[0]
+        if raw & 2:
             return True
         else:
             return False
@@ -1071,7 +1071,7 @@ class LASettings(util.DisableNewAttr):
         and trace components share the same FPGA storage, so they cannot be
         simultaneously enabled.
         """
-        raw = self.oa.sendMessage(CODE_READ, "LA_ENABLED", Validate=False, maxResp=1)[0]
+        raw = self.oa.sendMessage(CODE_READ, "LA_ENABLED", Validate=False, maxResp=1)[0] & 0x01
         if raw:
             return True
         else:
@@ -1079,16 +1079,17 @@ class LASettings(util.DisableNewAttr):
 
     @enabled.setter
     def enabled(self, enable):
+        raw = self.oa.sendMessage(CODE_READ, "LA_ENABLED", Validate=False, maxResp=1)[0]
         if enable:
-            val = [1]
+            val = raw | 0x01
             # only one of Trace/LA can be enabled at once:
             if self._scope.trace.enabled and self._scope.trace.capture.mode != 'off':
                 scope_logger.warning("Can't enable scope.LA and scope.trace simultaneously; turning off scope.trace.")
                 self._scope.trace.enabled = False
             self.clkgen_enabled = True
         else:
-            val = [0]
-        self.oa.sendMessage(CODE_WRITE, "LA_ENABLED", val, Validate=False)
+            val = raw & 0xfe
+        self.oa.sendMessage(CODE_WRITE, "LA_ENABLED", [val], Validate=False)
         self.reset_MMCM()
 
     @property
