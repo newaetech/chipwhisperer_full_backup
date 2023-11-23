@@ -1013,7 +1013,8 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         """
         return int((self.pll.adc_delay - self.pll.target_delay) * 255 / 31)
 
-    @adc_phase.setter
+    @adc_phase.setter # type: ignore
+    @clear_adc_unlock
     def adc_phase(self, phase):
         self._cached_adc_freq = None
         if abs(phase) > 255:
