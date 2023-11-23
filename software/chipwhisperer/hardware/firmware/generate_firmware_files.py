@@ -39,7 +39,7 @@ cw305_files = [("SAM3U_CW305.bin", os.path.join(hwdir, r"victims/cw305_artixtarg
                 ("Pipelined_AES_35t_half2.bit",  os.path.join(fpgadir, r"aes_pipelined/vivado/cw305_aes_pipelined.runs/impl_half2_35t/cw305_aes_pipelined_top.bit")),
                 ("Pipelined_AES_35t_half3.bit",  os.path.join(fpgadir, r"aes_pipelined/vivado/cw305_aes_pipelined.runs/impl_half3_35t/cw305_aes_pipelined_top.bit")),
 
-                ("cw305_defines.v", os.path.join(fpgadir, r"aes/hdl/cw305_aes_defines.v")),
+                ("cw305_aes_defines.v", os.path.join(fpgadir, r"aes/hdl/cw305_aes_defines.v")),
                 ("cw305_pmul_defines.v", os.path.join(fpgadir, r"ecc/hdl/cw305_pmul_defines.v")),
                 ("cw305_aes_pipelined_defines.v", os.path.join(fpgadir, r"aes_pipelined/hdl/cw305_aes_pipelined_defines.v")),
 
@@ -99,7 +99,7 @@ xc7a35_files = [("AES_cw312t_a35.bit",                      os.path.join(fpgadir
                 ("Pipelined_AES_cw312t_a35_half2.bit",      os.path.join(fpgadir, r"./aes_pipelined/vivado/ss2_xc7a35_aes_pipelined.runs/impl_half2/ss2_aes_pipelined_wrapper.bit")),
                 ("Pipelined_AES_cw312t_a35_half3.bit",      os.path.join(fpgadir, r"./aes_pipelined/vivado/ss2_xc7a35_aes_pipelined.runs/impl_half3/ss2_aes_pipelined_wrapper.bit")),
 
-                ("cw305_defines.v", os.path.join(fpgadir, r"aes/hdl/cw305_aes_defines.v")),
+                ("cw305_aes_defines.v", os.path.join(fpgadir, r"aes/hdl/cw305_aes_defines.v")),
                 ("cw305_pmul_defines.v", os.path.join(fpgadir, r"ecc/hdl/cw305_pmul_defines.v")),
                 ("cw305_aes_pipelined_defines.v", os.path.join(fpgadir, r"aes_pipelined/hdl/cw305_aes_pipelined_defines.v")),
 

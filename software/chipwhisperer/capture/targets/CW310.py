@@ -75,8 +75,8 @@ class CW310(CW305):
         self.oa = None
 
         self._woffset_sam3U = 0x000
-        self.default_verilog_defines = 'cw305_defines.v'
-        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/../../hardware/victims/cw305_artixtarget/fpga/common/' + self.default_verilog_defines
+        self.default_verilog_defines = 'cw305_aes_defines.v'
+        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/../../firmware/fpgas/aes/hdl/' + self.default_verilog_defines
         self.registers = 12 # number of registers we expect to find
         self.bytecount_size = 7 # pBYTECNT_SIZE in Verilog
 
