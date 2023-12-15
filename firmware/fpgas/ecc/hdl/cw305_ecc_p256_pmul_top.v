@@ -39,9 +39,12 @@ module cw305_ecc_p256_pmul_top #(
     // USB Interface
     input wire                          usb_clk,        // Clock
 `ifdef SS2_WRAPPER
-    output wire                         usb_clk_buf,    // Clock
-`endif
+    output wire                         usb_clk_buf,    // if needed by parent module
+    input  wire [7:0]                   usb_data,
+    output wire [7:0]                   usb_dout,
+`else
     inout wire [7:0]                    usb_data,       // Data for write/read
+`endif
     input wire [pADDR_WIDTH-1:0]        usb_addr,       // Address
     input wire                          usb_rdn,        // !RD, low when addr valid for read
     input wire                          usb_wrn,        // !WR, low when data+addr valid for write
@@ -84,6 +87,8 @@ module cw305_ecc_p256_pmul_top #(
 
 `ifndef SS2_WRAPPER
     wire usb_clk_buf;
+    wire [7:0] usb_dout;
+    assign usb_data = isout? usb_dout : 8'bZ;
 `endif
 
     wire crypt_init;
@@ -92,7 +97,6 @@ module cw305_ecc_p256_pmul_top #(
     wire crypt_done;
     wire crypt_busy;
 
-    wire [7:0] usb_dout;
     wire isout;
     wire [pADDR_WIDTH-pBYTECNT_SIZE-1:0] reg_address;
     wire [pBYTECNT_SIZE-1:0] reg_bytecnt;
@@ -195,8 +199,6 @@ module cw305_ecc_p256_pmul_top #(
        .O_user_led              (led3),
        .O_start                 (crypt_start)
     );
-
-    assign usb_data = isout? usb_dout : 8'bZ;
 
 
     clocks U_clocks (

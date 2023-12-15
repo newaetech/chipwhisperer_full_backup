@@ -39,6 +39,7 @@ module ss2_ecc_wrapper #(
 );
 
     wire [7:0] dut_data;
+    wire [7:0] dut_datao;
     wire [31:0] dut_address;
     wire dut_rdn;
     wire dut_wrn;
@@ -60,7 +61,8 @@ module ss2_ecc_wrapper #(
         .rxd                    (rxd         ),
         .txd                    (txd         ),
 
-        .dut_data               (dut_data    ),
+        .dut_data               (dut_datao   ),
+        .dut_wdata              (dut_data    ),
         .dut_address            (dut_address ),
         .dut_rdn                (dut_rdn     ),
         .dut_wrn                (dut_wrn     ),
@@ -76,6 +78,7 @@ module ss2_ecc_wrapper #(
         .usb_clk                        (clk),
         .usb_clk_buf                    (clk_buf),
         .usb_data                       (dut_data),
+        .usb_dout                       (dut_datao),
         .usb_addr                       (dut_address),
         .usb_rdn                        (dut_rdn ),
         .usb_wrn                        (dut_wrn ),
