@@ -788,6 +788,8 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         self.fpga_clk_settings = fpga_clk_settings
         self.fpga_clk_settings.freq_ctr_src = "extclk"
         self.adc_phase = 0
+        self._extclk_tolerance_cached = 100e3
+        self._extclk_tolerance_enabled = True
         # self.adv_settings = ChipWhispererHuskyClockAdv(pll, fpga_clk_settings)
         self.disable_newattr()
 
@@ -1011,7 +1013,8 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         """
         return int((self.pll.adc_delay - self.pll.target_delay) * 255 / 31)
 
-    @adc_phase.setter
+    @adc_phase.setter # type: ignore
+    @clear_adc_unlock
     def adc_phase(self, phase):
         self._cached_adc_freq = None
         if abs(phase) > 255:
@@ -1049,21 +1052,17 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         :Setter: Enable/disable the external clock monitor.
         """
-        raw = self.oa.sendMessage(CODE_READ, "EXTCLK_MONITOR_DISABLED", maxResp=1)[0] & 0x01
-        if raw:
-            return False
-        else:
-            return True
+        return self._extclk_tolerance_enabled
 
     @extclk_monitor_enabled.setter
     def extclk_monitor_enabled(self, en):
-        raw = self.oa.sendMessage(CODE_READ, "EXTCLK_MONITOR_DISABLED", maxResp=1)[0]
-        # set bit 0 to disable, clear to enable
         if en:
-            raw &= 0xfe # clear bit 0
+            self.extclk_tolerance = self._extclk_tolerance_cached
+            self._extclk_tolerance_enabled = True
         else:
-            raw |= 0x01 # set bit 0
-        self.oa.sendMessage(CODE_WRITE, "EXTCLK_MONITOR_DISABLED", [raw])
+            self._extclk_tolerance_enabled = False
+            self._extclk_tolerance_cached = self.extclk_tolerance
+            self.oa.sendMessage(CODE_WRITE, "EXTCLK_MONITOR", [0,0,0,0])
 
     def _adc_error_enabled(self, en):
         """Enable or disable the front panel red LED labeled "ADC", which (when
@@ -1071,13 +1070,11 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         This is not something users are intended to play with; it's used internally
         to mask PLL unlock events when making clock changes.
         """
-        raw = self.oa.sendMessage(CODE_READ, "EXTCLK_MONITOR_DISABLED", maxResp=1)[0]
-        # set bit 1 to disable, clear to enable
         if en:
-            raw &= 0xfd # clear bit 1
+            raw = 0
         else:
-            raw |= 0x02 # set bit 1
-        self.oa.sendMessage(CODE_WRITE, "EXTCLK_MONITOR_DISABLED", [raw])
+            raw = 1
+        self.oa.sendMessage(CODE_WRITE, "ADCFREQ_ADDR", [raw])
 
     @property
     def extclk_error(self):
@@ -1090,7 +1087,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         :Setter: Clear the error.
         """
-        raw = self.oa.sendMessage(CODE_READ, "EXTCLK_MONITOR_STAT", maxResp=1)[0]
+        raw = self.oa.sendMessage(CODE_READ, "EXTCLK_MONITOR", maxResp=1)[0]
         if raw:
             return True
         else:
@@ -1113,15 +1110,15 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         :Setter: Set the frequency change tolerance [Hz].
         """
-        raw = int.from_bytes(self.oa.sendMessage(CODE_READ, "EXTCLK_CHANGE_LIMIT", maxResp=4), byteorder='little')
         samplefreq = float(self.oa.hwInfo.sysFrequency()) / float(pow(2,23))
-        return raw * samplefreq
+        return self._extclk_tolerance_cached * samplefreq
 
     @extclk_tolerance.setter
     def extclk_tolerance(self, freq):
         samplefreq = float(self.oa.hwInfo.sysFrequency()) / float(pow(2,23))
         freq = int(freq/samplefreq)
-        self.oa.sendMessage(CODE_WRITE, "EXTCLK_CHANGE_LIMIT", list(int.to_bytes(freq, length=4, byteorder='little')))
+        self._extclk_tolerance_cached = freq
+        self.oa.sendMessage(CODE_WRITE, "EXTCLK_MONITOR", list(int.to_bytes(freq, length=4, byteorder='little')))
 
 
     def _dict_repr(self):
