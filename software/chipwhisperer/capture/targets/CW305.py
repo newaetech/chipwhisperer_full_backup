@@ -443,7 +443,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             raise NotImplementedError("Not supported for non CW305 boards")
         return self.fpga
 
-    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=20E6, hw_location=None, sn=None, platform='cw305', version=None):
+    def _con(self, scope=None, bsfile=None, force=False, fpga_id=None, defines_files=None, slurp=True, prog_speed=20E6, hw_location=None, sn=None, platform='cw305', version=None, program=True):
         """Connect to CW305 board, and download bitstream.
 
         If the target has already been programmed it skips reprogramming
@@ -455,13 +455,14 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             force (bool): Whether or not to force reprogramming.
             fpga_id (string): '100t', '35t', or None. If bsfile is None and fpga_id specified,
                               program with AES firmware for fpga_id
-            defines_files (list, optional): path to cw305_defines.v
+            defines_files (list, optional): list of Verilog define files to parse
             slurp (bool, optional): Whether or not to slurp the Verilog defines.
             platform (string, optional): 'cw305', or 'ss2' for non-CW305 target FPGA platforms.
                 The latter is intended for target designs using the ss2.v
                 simpleserial-to-parallel wrapper.
             version (optional): when required to differentiate from multiple possible bitfiles
                 for a particular target (to be used with fpga_id)
+            program (bool, optional): for ss2 platforms, program the FPGA
         """
         self.platform = platform
         if platform == 'cw305':
@@ -522,42 +523,43 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             if not scope:
                 raise ValueError("scope must be specified")
 
-            if self.platform == 'ss2_ice40':
-                self.fpga = LatticeICE40(scope)
-                self._fpga_id = 'cw312t_ice40'
-            else:
-                self.fpga = CW312T_XC7A35T(scope)
-                self._fpga_id = 'cw312t_a35'
-
-            if bsfile is None:
+            if program:
                 if self.platform == 'ss2_ice40':
-                    from chipwhisperer.hardware.firmware.cwtargetice40 import getsome
-                    if self.target_name == 'AES':
-                        bsfile = getsome(f"iCE40UP5K_SS2.bin")
-                    else:
-                        raise ValueError('Unknown target!')
+                    self.fpga = LatticeICE40(scope)
+                    self._fpga_id = 'cw312t_ice40'
                 else:
-                    from chipwhisperer.hardware.firmware.xc7a35 import getsome
-                    if self.target_name == 'AES':
-                        bsfile = getsome(f"AES_cw312t_a35.bit")
-                    elif self.target_name == 'Cryptech ecdsa256-v1 pmul':
-                        if version is None or version == 0:
-                            version = ''
-                        else:
-                            version = '_attempt' + str(version)
-                        bsfile = getsome(f"ECDSA256v1_pmul{version}_{fpga_id}.bit")
-                    elif self.target_name == 'Pipelined AES':
-                        if version is None:
-                            version = 0
-                        bsfile = getsome(f"Pipelined_AES_cw312t_a35_half{version}.bit")
-                    else:
-                        raise ValueError('Unknown target!')
+                    self.fpga = CW312T_XC7A35T(scope)
+                    self._fpga_id = 'cw312t_a35'
 
-            if self.platform == 'ss2_ice40':
-                self.fpga.erase_and_init()
-                self.fpga.program(bsfile, sck_speed=prog_speed, start=True, use_fast_usb=False)
-            else:
-                self.fpga.program(bsfile, sck_speed=prog_speed)
+                if bsfile is None:
+                    if self.platform == 'ss2_ice40':
+                        from chipwhisperer.hardware.firmware.cwtargetice40 import getsome
+                        if self.target_name == 'AES':
+                            bsfile = getsome(f"iCE40UP5K_SS2.bin")
+                        else:
+                            raise ValueError('Unknown target!')
+                    else:
+                        from chipwhisperer.hardware.firmware.xc7a35 import getsome
+                        if self.target_name == 'AES':
+                            bsfile = getsome(f"AES_cw312t_a35.bit")
+                        elif self.target_name == 'Cryptech ecdsa256-v1 pmul':
+                            if version is None or version == 0:
+                                version = ''
+                            else:
+                                version = '_attempt' + str(version)
+                            bsfile = getsome(f"ECDSA256v1_pmul{version}_{fpga_id}.bit")
+                        elif self.target_name == 'Pipelined AES':
+                            if version is None:
+                                version = 0
+                            bsfile = getsome(f"Pipelined_AES_cw312t_a35_half{version}.bit")
+                        else:
+                            raise ValueError('Unknown target!')
+
+                if self.platform == 'ss2_ice40':
+                    self.fpga.erase_and_init()
+                    self.fpga.program(bsfile, sck_speed=prog_speed, start=True, use_fast_usb=False)
+                else:
+                    self.fpga.program(bsfile, sck_speed=prog_speed)
 
             ss2 = SimpleSerial2()
             ss2.con(scope)
