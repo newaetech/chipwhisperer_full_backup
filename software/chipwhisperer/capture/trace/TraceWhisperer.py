@@ -56,15 +56,15 @@ class TraceWhisperer(util.DisableNewAttr):
 
         (a) CW-Husky case: available as scope.trace, no additional steps needed.
 
-        (b) CW305 (DesignStart) case::
-        
+        (b) CW305 (DesignStart) case:
+    
             import chipwhisperer as cw
             from chipwhisperer.capture.trace.TraceWhisperer import TraceWhisperer
             scope = cw.scope()
             target = cw.target(scope, targets.CW305, bsfile=<valid FPGA bitstream file>)
             trace = TraceWhisperer(target, scope)
 
-        (c) CW610 (PhyWhisperer) case::
+        (c) CW610 (PhyWhisperer) case:
         
             import chipwhisperer as cw
             from chipwhisperer.capture.trace.TraceWhisperer import TraceWhisperer
@@ -332,6 +332,7 @@ class TraceWhisperer(util.DisableNewAttr):
     @property 
     def trace_mode(self):
         """Set trace or SWO mode. SWO mode is only available on the Husky and CW610 platforms.
+
         For SWO mode, the following connections are needed, from the target to the Husky or CW610 front header:
             - TMS to D0
             - TCK to D1
@@ -345,6 +346,7 @@ class TraceWhisperer(util.DisableNewAttr):
 
         Args:
             mode (string): 'parallel' or 'swo'
+
         """
         if self.swo_mode:
             return "SWO"
