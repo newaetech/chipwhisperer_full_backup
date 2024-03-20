@@ -221,7 +221,7 @@ scope.SAD
 scope.trace
 ^^^^^^^^^^^^^^^^^
 
-.. autoclass:: scope.trace <chipwhisperer.capture.trace.TraceWhisperer
+.. autoclass:: scope.trace chipwhisperer.capture.trace.TraceWhisperer
     :members:
 
 
