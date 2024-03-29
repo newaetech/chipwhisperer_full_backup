@@ -1,0 +1,77 @@
+
+########################################
+########################################
+#### Default Options
+
+EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/
+VPATH += :$(FIRMWAREPATH)/crypto/
+
+########################################
+########################################
+#### Select the Crypto Library
+
+ifeq ($(CRYPTO_OPTIONS),)
+  ifneq ($(CRYPTO_TARGET),NONE)
+    ${info Blank crypto options, building for AES128}
+    CRYPTO_OPTIONS = AES128C
+  endif
+endif
+
+ifeq ($(CRYPTO_TARGET),AVRCRYPTOLIB)
+# avr-crypto-lib fom daslabor.de
+# Crypto Target: AVRCRYPTOLIB
+# Crypto Options:
+#    AES128C = AES128 in C
+#    AES128ASM = AES128 in Assembly
+# Notes:
+#
+  include $(FIRMWAREPATH)/crypto/Makefile.avrcryptolib
+
+
+else ifeq ($(CRYPTO_TARGET),AESSIMPLE)
+#
+# Crypto Target: AESSIMPLE
+# Crypto Options:
+#    None
+# Notes:
+#
+  include $(FIRMWAREPATH)/crypto/Makefile.straightforward-aes
+
+
+else ifeq ($(CRYPTO_TARGET),TINYAES128C)
+#
+# Crypto Target: TINYAES128C
+# Crypto Options:
+#   None
+# Notes:
+#   You can define AES_CONST_VAR to define what is used to put SBOX in flash (or other memory location)
+  include $(FIRMWAREPATH)/crypto/Makefile.tinyaes128c
+
+
+else ifeq ($(CRYPTO_TARGET),MBEDTLS)
+#
+# Crypto Target: MBEDTLS
+# Crypto Options:
+#    AES128 = AES128
+#    SHA1 
+# Notes:
+#
+  include $(FIRMWAREPATH)/crypto/Makefile.mbedtls
+
+else ifeq ($(CRYPTO_TARGET),MASKEDAES)
+  include $(FIRMWAREPATH)/crypto/Makefile.maskedaes
+
+else ifeq ($(CRYPTO_TARGET),HWAES)
+  CFLAGS += -DHWCRYPTO=1
+  CPPFLAGS += -DHWCRYPTO=1
+  SRC += aes-independant.c
+
+else ifeq ($(CRYPTO_TARGET),MICROECC)
+  include $(FIRMWAREPATH)/crypto/Makefile.micro-ecc
+
+else ifeq ($(CRYPTO_TARGET),NONE)
+  #Nothing to do :)
+
+else
+ ${error Unknown or blank CRYPTO_TARGET: $(CRYPTO_TARGET). If supposed to be blank set to NONE to continue}
+endif
