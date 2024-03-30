@@ -83,30 +83,9 @@ ifeq ($(filter $(F_CPU),$(F_CPUS_ALLOWED)),)
     $(error Invalid F_CPU: $(F_CPU); allowed values for platform $(PLATFORM): $(F_CPUS_ALLOWED))
 endif
 
-ifeq ($(F_CPU), 24000000)
-    CLOCK = FOSC_240000
-endif
-ifeq ($(F_CPU), 22100000)
-    CLOCK = FOSC_221000
-endif
-ifeq ($(F_CPU), 20000000)
-    CLOCK = FOSC_200000
-endif
-ifeq ($(F_CPU), 18432000)
-    CLOCK = FOSC_184320
-endif
-ifeq ($(F_CPU), 16600000)
-    CLOCK = FOSC_166000
-endif
-ifeq ($(F_CPU), 16000000)
-    CLOCK = FOSC_160000
-endif
-ifeq ($(F_CPU), 11059200)
-    CLOCK = FOSC_110592
-endif
 USE_EXTERNAL_CLOCK := 1
 # CDEFS :=
-CDEFS += -D$(CLOCK) -DUSE_EXTERNAL_CLOCK=$(USE_EXTERNAL_CLOCK) -D__SDCC__
+CDEFS += -DF_CPU=$(F_CPU) -DUSE_EXTERNAL_CLOCK=$(USE_EXTERNAL_CLOCK) -D__SDCC__
 # ------------------------------------------------------
 # Target and Source
 

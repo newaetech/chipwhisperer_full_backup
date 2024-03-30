@@ -30,6 +30,9 @@
 
 #define tmp_clr_EA(statement) BIT_TMP=EA;EA=0;statement;EA=BIT_TMP // Disable interrupts for the length of the statement, then enables them again if they were already enabled
 
+#define DIV_ROUND_CLOSEST_UNSIGNED(n, d) (((n) + (d) / 2) / (d))
+#define DIV_ROUND_CLOSEST(n, d) ((((n) < 0) == ((d) < 0)) ? DIV_ROUND_CLOSEST_UNSIGNED(n, d) : (((n) - (d) / 2) / (d)))
+
 
 
 void  InitialUART0_Timer1(UINT32 u32Baudrate); //T1M = 1, SMOD = 1
