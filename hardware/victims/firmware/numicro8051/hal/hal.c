@@ -6,10 +6,12 @@
 #include "clock.h"
 #include "isp_uart0.h"
 
-// NOTE: When using FOSC_160000, the actual baud rate as processed will be closer to 111111 (see N76E003 datasheet, section 13.5). 
+// NOTE: When using 16.0Mhz, the actual baud rate as processed will have a high deviation when >38400 (see N76E003 datasheet, section 13.5).
+// 115200 will be closer to 111111 
+// 230400 will be closer to 250000
 // The `target.baud` setting must be set to account for this
 #ifndef BAUD_RATE
-#define BAUD_RATE 115200
+#define BAUD_RATE 230400
 #endif
 
 int putchar(int c)

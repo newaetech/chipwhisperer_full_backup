@@ -128,7 +128,7 @@ ifneq ($(CRYPTO_OPTIONS),NONE)
 endif
 
 ifeq ($(BAUD_RATE),)
-    BAUD_RATE = 115200
+    BAUD_RATE = 230400
 endif
 CDEFS += -DBAUD_RATE=$(BAUD_RATE)
 
