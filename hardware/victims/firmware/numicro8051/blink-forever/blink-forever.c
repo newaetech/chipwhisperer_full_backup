@@ -23,27 +23,9 @@
 #include <stdlib.h>
 #include "Delay.h"
 #include "clock.h"
-#define TIMER_DIV12_VALUE_10ms_16MHZ			65536-13334	//13334*12/16000000 = 10 mS 		// Timer divider = 12 
 
-// the idea is that the device will blink at different intervals depending on the clock speed
-void Timer1_Delay10ms_16mhz_vals(UINT32 u32CNT)
-{
-    clr_T1M;      // T1M=0, Timer1 Clock = Fsys/12
-    TMOD |= 0x10; // Timer1 is 16-bit mode
-    set_TR1;      // Start Timer1
-    while (u32CNT != 0)
-    {
-        TL1 = LOBYTE(TIMER_DIV12_VALUE_10ms_16MHZ); // Find  define in "Function_define.h" "TIMER VALUE"
-        TH1 = HIBYTE(TIMER_DIV12_VALUE_10ms_16MHZ);
-        while (TF1 != 1)
-            ; // Check Timer1 Time-Out Flag
-        clr_TF1;
-        u32CNT--;
-    }
-    clr_TR1; // Stop Timer1
-}
-
-#define BLINK_DELAY 50 // half a second
+// Half a second
+#define BLINK_DELAY 50
 
 int main(void)
 {
@@ -55,8 +37,8 @@ int main(void)
     P05 = 0;
     while(1){
         led_ok(1);
-        Timer1_Delay10ms_16mhz_vals(BLINK_DELAY);
+        Timer1_Delay10ms(BLINK_DELAY);
         led_ok(0);
-        Timer1_Delay10ms_16mhz_vals(BLINK_DELAY);
+        Timer1_Delay10ms(BLINK_DELAY);
     }
 }

@@ -4,8 +4,7 @@
 
 
 #define _DIV_ROUND_CLOSEST_POS(n, d) (((n) + (d) / 2) / (d))
-#define _get_minus_factor(delay_us, clk_div, cpu_hz) (_DIV_ROUND_CLOSEST_POS((delay_us * cpu_hz / clk_div), 1000000))
-#define get_delay_timer_value(delay_us, clk_div, cpu_hz) (65536 - _get_minus_factor(delay_us, clk_div, cpu_hz))
+#define get_delay_timer_value(delay_us, clk_div, cpu_hz) (65536 - (_DIV_ROUND_CLOSEST_POS((delay_us * cpu_hz / clk_div), 1000000)))
 
 // Because these are all constant expressions, SDCC should optimize all usages of these into constant values
 #define TIMER_DIV12_VALUE_10us	   get_delay_timer_value(10, 12, F_CPU)
