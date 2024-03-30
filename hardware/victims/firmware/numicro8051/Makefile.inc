@@ -18,15 +18,14 @@ ifeq ($(PLATFORM),)
     $(error PLATFORM not defined)
 endif
 
-CLOCK =
-F_CPUS_ALLOWED = 11059200 16000000 16600000 18432000 20000000 22100000 24000000
+# These CPUs aren't really stable at other frequencies when using the internal oscillator
+INT_OSC_ALLOWED = 16000000 16600000
 ifeq ($(PLATFORM), CW308_N76E003)
     ifeq ($(F_CPU),)
         F_CPU = 16000000
     endif
+    SUPPORTS_24MHZ = 0
     INCDIR = $(PINCDIR)/N76E003
-    # Not stable at other frequencies
-    F_CPUS_ALLOWED = 16000000 16600000
     # PRG Size = 18K Bytes
     CODE_SIZE = 18432
     # INT-MEM Size = 256 Bytes
@@ -37,9 +36,8 @@ else ifeq ($(PLATFORM), CW308_N76S003)
     ifeq ($(F_CPU),)
         F_CPU = 16000000
     endif
+    SUPPORTS_24MHZ = 0
     INCDIR = $(PINCDIR)/N76S003
-    # Not stable at other frequencies
-    F_CPUS_ALLOWED = 16000000 16600000
     # PRG Size = 18K Bytes, -128 for SPROM (maybe????)
     # Spec sheet implies it has an SPROM area, but it is not clear if it actually does.
     # The feature part looks like they sloppily copied it from the MS51 series spec sheet:
@@ -56,7 +54,7 @@ else ifeq ($(PLATFORM), CW308_MS5116K)
     ifeq ($(F_CPU),)
         F_CPU = 24000000
     endif
-    CDEFS += -DNUM51_CPU24MHZ_SUPPORTED
+    SUPPORTS_24MHZ = 1
     INCDIR = $(PINCDIR)/MS5132K
     # PRG Size = 16K Bytes, -128 for the SPROM
     CODE_SIZE = 16256
@@ -68,6 +66,7 @@ else ifeq ($(PLATFORM), CW308_MS5132K)
     ifeq ($(F_CPU),)
         F_CPU = 24000000
     endif
+    SUPPORTS_24MHZ = 1
     CDEFS += -DNUM51_CPU24MHZ_SUPPORTED
     INCDIR = $(PINCDIR)/MS5132K
     # PRG Size = 32K Bytes, -128 for the SPROM
@@ -79,11 +78,25 @@ else ifeq ($(PLATFORM), CW308_MS5132K)
 else
     $(error Unsupported PLATFORM: $(PLATFORM))
 endif
-ifeq ($(filter $(F_CPU),$(F_CPUS_ALLOWED)),)
-    $(error Invalid F_CPU: $(F_CPU); allowed values for platform $(PLATFORM): $(F_CPUS_ALLOWED))
+# default: Use the External clock
+ifeq ($(USE_EXTERNAL_CLOCK),)
+    USE_EXTERNAL_CLOCK = 1
+endif
+ifeq ($(SUPPORTS_24MHZ),1)
+    CDEFS += -DNUM51_CPU24MHZ_SUPPORTED
+    INT_OSC_ALLOWED = 16000000 16600000 24000000
+else
+    ifeq ($(shell test $(F_CPU) -gt 16600000; echo $$?),0)
+        $(warning WARNING: F_CPU is set to $(F_CPU), but $(PLATFORM) only supports up to 16.6MHz)
+    endif
 endif
 
-USE_EXTERNAL_CLOCK := 1
+ifeq ($(USE_EXTERNAL_CLOCK),0)
+    ifeq ($(filter $(F_CPU),$(INT_OSC_ALLOWED)),)
+        $(error Invalid F_CPU: $(F_CPU); When using internal clock, allowed values for $(PLATFORM) are: $(INT_OSC_ALLOWED))
+    endif
+endif
+
 # CDEFS :=
 CDEFS += -DF_CPU=$(F_CPU) -DUSE_EXTERNAL_CLOCK=$(USE_EXTERNAL_CLOCK) -D__SDCC__
 # ------------------------------------------------------
@@ -107,7 +120,7 @@ ifneq ($(CRYPTO_OPTIONS),NONE)
 endif
 
 ifeq ($(BAUD_RATE),)
-    BAUD_RATE = 230400
+    BAUD_RATE = 115200
 endif
 CDEFS += -DBAUD_RATE=$(BAUD_RATE)
 

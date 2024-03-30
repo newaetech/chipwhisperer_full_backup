@@ -14,6 +14,10 @@
 #define BAUD_RATE 230400
 #endif
 
+#if BAUD_RATE > 230400 && F_CPU <= 16600000
+#error "Baud rate too high for 16.0Mhz clock"
+#endif
+
 int putchar(int c)
 {
     Send_Data_To_UART0(c);
