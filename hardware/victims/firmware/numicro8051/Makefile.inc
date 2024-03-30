@@ -127,6 +127,11 @@ ifneq ($(CRYPTO_OPTIONS),NONE)
   endif
 endif
 
+ifeq ($(BAUD_RATE),)
+    BAUD_RATE = 115200
+endif
+CDEFS += -DBAUD_RATE=$(BAUD_RATE)
+
 # Not enough memory to run crypto targets with SS_VER_1_1 when XRAM_SIZE <= 768, only SS_VER_2_1
 SMALL_XRAM_SIZES = 128 256 512 768
 ifneq ($(MAKECMDGOALS),clean)

@@ -8,7 +8,9 @@
 
 // NOTE: When using FOSC_160000, the actual baud rate as processed will be closer to 111111 (see N76E003 datasheet, section 13.5). 
 // The `target.baud` setting must be set to account for this
+#ifndef BAUD_RATE
 #define BAUD_RATE 115200
+#endif
 
 int putchar(int c)
 {
