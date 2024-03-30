@@ -5,6 +5,7 @@
 #include "Delay.h"
 #include "clock.h"
 #include "isp_uart0.h"
+#include "hal.h"
 
 // NOTE: When using 16.0Mhz, the actual baud rate as processed will have a high deviation when >38400 (see N76E003 datasheet, section 13.5).
 // 115200 will be closer to 111111 
@@ -34,17 +35,19 @@ int getchar(void)
     return (c);
 }
 
+
+
 void init_uart(void)
 {
     // setting pushpull mode for LED1, LED2, and LED3 because they sometimes do not have enough voltage
-    P03_PUSHPULL_MODE;
-    P12_PUSHPULL_MODE;
-    P05_PUSHPULL_MODE;
+    PIN_LED_STATUS_PUSHPULL_MODE;
+    PIN_LED_OK_PUSHPULL_MODE;
+    PIN_LED_ERROR_PUSHPULL_MODE;
 
     // set LED 1 to on
-    P03 = 1;
-    P12 = 0;
-    P05 = 0;
+    PIN_LED_STATUS = 1;
+    PIN_LED_OK = 0;
+    PIN_LED_ERROR = 0;
 
     InitialUART0_Timer3(BAUD_RATE);
 }
@@ -60,17 +63,17 @@ char getch(void)
 
 void trigger_setup(void)
 {
-    P04 = 0;
-    P04_QUASI_MODE;
+    PIN_TRIGGER = 0;
+    PIN_TRIGGER_QUASI_MODE;
 }
 
 void trigger_low(void)
 {
-    P04 = 0;
+    PIN_TRIGGER = 0;
 }
 void trigger_high(void)
 {
-    P04 = 1;
+    PIN_TRIGGER = 1;
 }
 
 void platform_init(void)

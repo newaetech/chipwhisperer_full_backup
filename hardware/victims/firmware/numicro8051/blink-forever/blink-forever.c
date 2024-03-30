@@ -25,20 +25,21 @@
 #include "clock.h"
 
 // Half a second
-#define BLINK_DELAY 50
+#define BLINK_DELAY 500
 
 int main(void)
 {
-    P03_PUSHPULL_MODE;
-    P12_PUSHPULL_MODE;
-    P05_PUSHPULL_MODE;
-    P03 = 1;
-    P12 = 0;
-    P05 = 0;
+    platform_init();
+    PIN_LED_STATUS_PUSHPULL_MODE;
+    PIN_LED_OK_PUSHPULL_MODE;
+    PIN_LED_ERROR_PUSHPULL_MODE;
+    PIN_LED_STATUS = 1;
+    PIN_LED_ERROR = 0;
+    PIN_LED_OK = 0;
     while(1){
         led_ok(1);
-        Timer1_Delay10ms(BLINK_DELAY);
+        Timer0_Delay1ms(BLINK_DELAY);
         led_ok(0);
-        Timer1_Delay10ms(BLINK_DELAY);
+        Timer0_Delay1ms(BLINK_DELAY);
     }
 }
