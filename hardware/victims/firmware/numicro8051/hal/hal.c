@@ -11,7 +11,7 @@
 // 230400 will be closer to 250000
 // The `target.baud` setting must be set to account for this
 #ifndef BAUD_RATE
-#define BAUD_RATE 230400
+#define BAUD_RATE 115200
 #endif
 
 #if BAUD_RATE > 230400 && F_CPU <= 16600000
