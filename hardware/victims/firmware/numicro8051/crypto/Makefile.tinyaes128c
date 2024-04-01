@@ -1,0 +1,6 @@
+########
+CRYPTO_LIB = tiny-AES128-C
+SRC += aes.c aes-independant.c
+CDEFS += -DTINYAES128C
+VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)
+EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)

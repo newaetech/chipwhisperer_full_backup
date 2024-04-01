@@ -1,0 +1,7 @@
+replace {
+	mov	%1,%2
+	orl	a%1,%3
+	mov	%2,%1
+} by {
+	orl	%2,%3
+}

@@ -1,0 +1,20 @@
+#pragma once
+
+// If other boards with non-pin compatible MCUS are added, they should #ifdef these defines here:
+#define PIN_LED_STATUS  P03
+#define PIN_LED_OK      P12
+#define PIN_LED_ERROR   P05
+#define PIN_TRIGGER     P04
+#define PIN_CLK_OUT     P11
+
+#define PIN_LED_STATUS_PUSHPULL_MODE  P03_PUSHPULL_MODE
+#define PIN_LED_OK_PUSHPULL_MODE      P12_PUSHPULL_MODE
+#define PIN_LED_ERROR_PUSHPULL_MODE   P05_PUSHPULL_MODE
+#define PIN_TRIGGER_QUASI_MODE        P04_QUASI_MODE
+#define PIN_CLK_OUT_PUSHPULL_MODE     P11_PUSHPULL_MODE
+
+#define PIN_LED_STATUS_QUASI_MODE     P03_QUASI_MODE
+#define PIN_LED_OK_QUASI_MODE         P12_QUASI_MODE
+#define PIN_LED_ERROR_QUASI_MODE      P05_QUASI_MODE
+#define PIN_TRIGGER_QUASI_MODE        P04_QUASI_MODE
+#define PIN_CLK_OUT_QUASI_MODE        P11_QUASI_MODE
