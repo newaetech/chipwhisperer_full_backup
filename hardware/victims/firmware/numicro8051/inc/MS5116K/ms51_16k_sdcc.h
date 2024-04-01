@@ -163,6 +163,7 @@ __sfr  __at  (0xF9) PDTEN     ; //TA Protection
 __sfr  __at  (0xFA) PDTCNT    ; //TA Protection
 __sfr  __at  (0xFB) PMEN      ;
 __sfr  __at  (0xFC) PMD       ;
+__sfr  __at  (0xFD) PORDIS    ; //TA Protection
 __sfr  __at  (0xFE) EIP1      ;
 __sfr  __at  (0xFF) EIPH1     ;
 

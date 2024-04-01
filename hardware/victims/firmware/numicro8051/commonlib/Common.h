@@ -2,6 +2,14 @@
 
 #include <stdint.h>
 #include <numicro_8051.h>
+#define _SELECT_ASSERT_FUNC(x, EXPR, MSG, ASSERT_MACRO, ...) ASSERT_MACRO
+#define STATIC_ASSERT_SIMPLE(EXPR)      _Static_assert(EXPR, "unspecified message")
+#define STATIC_ASSERT_MSG(EXPR, MSG)    _Static_assert(EXPR, MSG)
+#define STATIC_ASSERT(...)                                                                          \
+    _SELECT_ASSERT_FUNC(x, ##__VA_ARGS__,                                                           \
+                        STATIC_ASSERT_MSG(__VA_ARGS__),                                             \
+                        STATIC_ASSERT_SIMPLE(__VA_ARGS__))
+
 
 #define     CID_READ				0x0B
 #define     DID_READ				0x0C

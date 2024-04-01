@@ -24,12 +24,20 @@ void get_hircmap_16mhz_vals(uint8_t *hircmap)
 }
 
 void set_hircmap(uint8_t *hircmap){
-  TA = 0XAA;
-  TA = 0X55;
-  RCTRIM0 = hircmap[0];
-  TA = 0XAA;
-  TA = 0X55;
-  RCTRIM1 = hircmap[1];
+    // doing this to ensure that these are near accesses
+    // it screws up the timing of writing to TA-protected registers if we have to get a far pointer
+    uint8_t hircmap0, hircmap1;
+    hircmap0 = hircmap[0];
+    hircmap1 = hircmap[1];
+    BIT_TMP = EA;
+    EA = 0;
+    TA = 0XAA;
+    TA = 0X55;
+    RCTRIM0 = hircmap0;
+    TA = 0XAA;
+    TA = 0X55;
+    RCTRIM1 = hircmap1;
+    EA = BIT_TMP;
 }
 
 #ifdef NUM51_CPU24MHZ_SUPPORTED

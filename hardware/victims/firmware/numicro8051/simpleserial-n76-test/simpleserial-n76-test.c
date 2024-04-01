@@ -178,5 +178,6 @@ int main(void)
     simpleserial_addcmd('x', 0, get_rc_trim_values);
     simpleserial_addcmd('y', 0, echo);
     simpleserial_addcmd('b', 0, blink_forever);
-    simpleserial_get();
+    while(1)
+        simpleserial_get();
 }

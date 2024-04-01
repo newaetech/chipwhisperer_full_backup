@@ -5,7 +5,8 @@
 # PATH
 PLATFORM := CW308_N76E003
 PINCDIR  = $(FIRMWAREPATH)/inc
-OBJDIR  = objdir-$(PLATFORM)
+_OBJDIR = objdir
+OBJDIR  = $(_OBJDIR)-$(PLATFORM)
 LIBDIR  = $(FIRMWAREPATH)/commonlib
 HALDIR = $(FIRMWAREPATH)/hal
 TOOLSDIR = $(FIRMWAREPATH)/tools
@@ -47,7 +48,7 @@ else ifeq ($(PLATFORM), CW308_N76S003_AT20)
 else ifeq ($(PLATFORM), CW308_MS5116K_AT20)
     SUPPORTS_24MHZ = 1
     DEFAULT_CLK = 24000000
-    INCDIR = $(PINCDIR)/MS5132K
+    INCDIR = $(PINCDIR)/MS5116K
     # PRG Size = 16K Bytes, -128 for the SPROM
     CODE_SIZE = 16256
     # INT-MEM Size = 256 Bytes
@@ -83,23 +84,29 @@ ifeq ($(USE_EXTERNAL_CLOCK),1)
     endif
     # EXT_CLK is used by the `delay_xx_us()` functions
     ifeq ($(EXT_CLK),)
-        EXT_CLK = $(DEFAULT_CLK)
+        _EXT_CLK = $(DEFAULT_CLK)UL
+    else
+        ifneq ($(findstring UL,$(EXT_CLK)),UL)
+            _EXT_CLK = $(addsuffix UL,$(EXT_CLK))
+        endif
     endif
-    ifneq ($(findstring UL,$(EXT_CLK)),UL)
-        EXT_CLK := $(addsuffix UL,$(EXT_CLK))
-    endif
-    CDEFS += -DEXT_CLK=$(EXT_CLK)
+    CDEFS += -DEXT_CLK=$(_EXT_CLK)
 else # USE_EXTERNAL_CLOCK = 0
     ifeq ($(F_CPU),)
-        F_CPU = $(DEFAULT_CLK)
+        F_CPU = $(DEFAULT_CLK)UL
     endif
 endif
 
 ifneq ($(findstring UL,$(F_CPU)),UL)
-    F_CPU := $(addsuffix UL,$(F_CPU))
+    _F_CPU = $(addsuffix UL,$(F_CPU))
+else
+    _F_CPU = $(F_CPU)
 endif
-F_CPU_INT := $(subst UL,,$(F_CPU))
-EXT_CLK_INT := $(subst UL,,$(EXT_CLK))
+
+
+F_CPU_INT := $(subst UL,,$(_F_CPU))
+EXT_CLK_INT := $(subst UL,,$(_EXT_CLK))
+$(info FCPU=$(F_CPU))
 
 # These chips aren't stable at other frequencies when using the internal oscillator
 INT_OSC_ALLOWED = 16000000 16600000
@@ -117,14 +124,16 @@ else
     endif
 endif
 
-ifeq ($(USE_EXTERNAL_CLOCK),0)
-    ifeq ($(filter $(F_CPU_INT),$(INT_OSC_ALLOWED)),)
-        $(error Invalid F_CPU: $(F_CPU_INT); When using internal clock, allowed values for $(PLATFORM) are: $(INT_OSC_ALLOWED))
+ifneq ($(MAKECMDGOALS),clean)
+    ifeq ($(USE_EXTERNAL_CLOCK),0)
+        ifeq ($(filter $(F_CPU_INT),$(INT_OSC_ALLOWED)),)
+            $(error Invalid F_CPU: $(F_CPU_INT); When using internal clock, allowed values for $(PLATFORM) are: $(INT_OSC_ALLOWED))
+        endif
     endif
 endif
 
 # CDEFS :=
-CDEFS += -DF_CPU=$(F_CPU) -DUSE_EXTERNAL_CLOCK=$(USE_EXTERNAL_CLOCK) -D__SDCC__
+CDEFS += -DF_CPU=$(_F_CPU) -DUSE_EXTERNAL_CLOCK=$(USE_EXTERNAL_CLOCK) -D__SDCC__
 # ------------------------------------------------------
 # Target and Source
 
@@ -145,10 +154,9 @@ ifneq ($(CRYPTO_OPTIONS),NONE)
   endif
 endif
 
-ifeq ($(BAUD_RATE),)
-    BAUD_RATE = 115200
+ifneq ($(BAUD_RATE),)
+    CDEFS += -DBAUD_RATE=$(BAUD_RATE)
 endif
-CDEFS += -DBAUD_RATE=$(BAUD_RATE)
 
 # Not enough memory to run crypto targets with SS_VER_1_1 when XRAM_SIZE <= 768, only SS_VER_2_1
 SMALL_XRAM_SIZES = 128 256 512 768
@@ -244,10 +252,10 @@ $(OBJDIR)/%.asm.rel: %.asm
 .PHONY: clean
 
 clean:
-	rm -rf $(OBJDIR)/*
-	rm -rf $(TARGET-PLAT).hex
-	rm -rf $(TARGET-PLAT).bin
-	rm -rf $(TARGET-PLAT).asm
+	rm -rf $(_OBJDIR)-*/*
+	rm -rf $(TARGET)-*.hex
+	rm -rf $(TARGET)-*.bin
+	rm -rf $(TARGET)-*.asm
 
 
 asm: $(CTOASM)
