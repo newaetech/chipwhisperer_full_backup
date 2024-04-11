@@ -62,7 +62,8 @@ if "HUSKY_TARGET_PLATFORM" in os.environ:
     test_platform = os.environ["HUSKY_TARGET_PLATFORM"]
 
 print("Husky target platform {}".format(test_platform))
-scope = cw.scope(name='Husky', hw_location=hw_loc)
+#scope = cw.scope(name='Husky', hw_location=hw_loc)
+scope = cw.scope(name='Husky', hw_location=hw_loc, registers='/home/jpnewae/git/cw_husky/fpga/hdl/registers.v')
 if test_platform == 'cw305':
     target = cw.target(scope, cw.targets.CW305, force=False)
 else:
@@ -438,7 +439,8 @@ testSADTriggerData = [
     (10e6,  10,     8,     250,        0,      50,     'fast_SLOW'),
     (10e6,  18,     8,     250,        0,      50,     'faster_SLOW'),
     (10e6,  'max',  8,     250,        0,      50,     'fastest'),
-    (10e6,  'over', 8,     250,        0,      50,     'overclocked_SLOW'),
+    (10e6,  1,      8,     250,        0,      200,    'recover_SLOW'), # allow for temp to come down before we overclock it
+    (10e6,  'over', 8,     250,        0,      20,     'overclocked_SLOW'),
 ]
 
 if test_platform == "sam4s":
@@ -451,7 +453,7 @@ if test_platform == "sam4s":
 else:
     testMultipleSADTriggerData = [
         #clock  adc_mul bits   half threshold   plus_thresh segments    offset  reps    desc
-        (10e6,  4,      8,     0,   200,        400,        11,         3525,   20,     'regular'),
+        (10e6,  4,      8,     0,   150,        350,        11,         3525,   20,     'regular'),
         (10e6,  4,      8,     1,   100,        300,        11,         3525,   20,     'half'),
         (10e6,  'max',  8,     0,   350,        600,        11,         17625,  20,     'fast'),
     ]
@@ -526,9 +528,9 @@ testPLLData = [
 
 def test_fpga_version():
     if scope._is_husky_plus:
-        assert scope.fpga_buildtime == '1/12/2024, 15:19'
+        assert scope.fpga_buildtime == '3/26/2024, 15:55'
     else:
-        assert scope.fpga_buildtime == '1/12/2024, 09:25'
+        assert scope.fpga_buildtime == '3/18/2024, 12:34'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -562,6 +564,16 @@ def xadc_check(xadc, log):
                 ))
         logfile.close()
     scope.XADC.status = 0 # clear any errors after each test
+
+@pytest.fixture(autouse=True)
+def cooldown():
+    # runs before test:
+    #...
+    yield
+    # runs after test:
+    # in case the last testcase leaves scope in a high-power-consuming state that would eventually lead to XADC shutoff:
+    scope.clock.clkgen_freq = 7.37e6
+    reset_setup()
 
 @pytest.mark.parametrize("address, nbytes, reps, desc", testRWData)
 def test_reg_rw(address, nbytes, reps, desc):
@@ -1335,6 +1347,7 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
     scope.trace.enabled = False
     scope.trace.target = None
 
+    scope.SAD.half_pattern = False
     scope.adc.lo_gain_errors_disabled = True
     scope.adc.clip_errors_disabled = False
     scope.adc.segment_cycle_counter_en = False
@@ -1367,7 +1380,7 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
         assert sadtrace is not None, 'SAD-triggered capture failed on rep {}'.format(r)
         assert scope.adc.errors == False
         sad = 0
-        for i in range(scope.SAD.sad_reference_length):
+        for i in range(scope.SAD.samples_enabled):
             sad += abs(reftrace.wave[i] - sadtrace.wave[i])
         sad = int(sad*2**scope.SAD._sad_bits_per_sample)
         assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d)' %(sad, threshold, r)
@@ -1436,7 +1449,7 @@ def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, half, threshold, 
         assert scope.adc.errors == False
         for s in range(scope.adc.segments):
             sad = 0
-            for i in range(scope.SAD.sad_reference_length):
+            for i in range(scope.SAD.samples_enabled):
                 sad += abs(reftrace.wave[i] - sadtrace.wave[i+s*scope.adc.samples])
             sad = int(sad*2**scope.SAD._sad_bits_per_sample)
             assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d, segment %d)' %(sad, threshold, r, s)
@@ -1850,6 +1863,7 @@ def test_pll(fulltest, freq, adc_mul, xtal, oversample, tolerance, reps, desc):
     # initial clock setup so that LA can lock:
     if xtal:
         scope.clock.clkgen_src = 'system'
+        scope.clock.adc_mul = 1
         scope.clock.clkgen_freq = freq
         scope.clock.adc_mul = adc_mul
     else:
@@ -1858,9 +1872,10 @@ def test_pll(fulltest, freq, adc_mul, xtal, oversample, tolerance, reps, desc):
         target.pll.pll_outenable_set(True, 1)
         target.pll.pll_outenable_set(False, 2)
         target.pll.pll_outfreq_set(freq, 1)
+        scope.clock.adc_mul = 1
         scope.clock.clkgen_freq = freq
-        scope.clock.clkgen_src = 'extclk'
         scope.clock.adc_mul = adc_mul
+        scope.clock.clkgen_src = 'extclk'
     # LA setup:
     scope.LA.enabled = True
     if xtal:
@@ -1889,8 +1904,8 @@ def test_pll(fulltest, freq, adc_mul, xtal, oversample, tolerance, reps, desc):
                 scope.clock.recal_pll()
             else:
                 scope.clock.reset_adc()
-            assert scope.clock.pll.pll_locked
-            assert scope.LA.locked
+            assert scope.clock.pll.pll_locked, 'failed on rep %d' % i
+            assert scope.LA.locked, 'failed on rep %d' % i
             delta = get_adc_clock_phase(refclk)
             half_period = oversample//adc_mul//2
             if delta > half_period:

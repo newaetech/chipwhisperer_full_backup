@@ -202,6 +202,31 @@ class ChipWhispererSAD(util.DisableNewAttr):
         self.start()
 
 
+class Lister(list):
+    """Class that behaves like a list, but can set individual elements using a getter/setter.
+    """
+    def __setitem__(self, *args, **kwargs):
+        oldval = self._getter()
+        oldval[args[0]] = args[1]
+        self._setter(oldval)
+        pass
+
+    def __repr__(self):
+        oldrepr = super().__repr__()
+        return f"Lister({oldrepr})"
+
+    def __init__(self, *args, **kwargs):
+        if "getter" not in kwargs:
+            raise KeyError("Lister requires a getter")
+        if "setter" not in kwargs:
+            raise KeyError("Lister requires a setter")
+        
+        self._getter = kwargs.pop("getter")
+        self._setter = kwargs.pop("setter")
+        super().__init__(*args, **kwargs)
+
+
+
 class HuskySAD(util.DisableNewAttr):
     """Communicates with the SAD module inside CW-Husky.
 
@@ -231,6 +256,7 @@ class HuskySAD(util.DisableNewAttr):
     def __init__(self, oa):
         super().__init__()
         self.oa = oa
+        self._samples_enabled = self.sad_reference_length
         self.disable_newattr()
 
     def _dict_repr(self):
@@ -238,7 +264,7 @@ class HuskySAD(util.DisableNewAttr):
         rtn['threshold'] = self.threshold
         rtn['reference'] = self.reference
         rtn['sad_reference_length'] = self.sad_reference_length
-        rtn['half_pattern'] = self.half_pattern
+        rtn['samples_enabled'] = self.samples_enabled
         rtn['multiple_triggers'] = self.multiple_triggers
         rtn['num_triggers_seen'] = self.num_triggers_seen
         rtn['always_armed'] = self.always_armed
@@ -265,8 +291,8 @@ class HuskySAD(util.DisableNewAttr):
         Raises:
             ValueError: if setting a threshold higher than what the hardware
             supports.  If you would like a higher threshold than what's
-            possible, consider enabling half_pattern instead (which effectively
-            doubles the threshold).
+            possible, you can turn off comparison for some samples via
+            enabled_samples, which effectively increases the threshold range.
         """
         return  int.from_bytes(self.oa.sendMessage(CODE_READ, "SAD_THRESHOLD", Validate=False, maxResp=4), byteorder='little')
 
@@ -313,7 +339,8 @@ class HuskySAD(util.DisableNewAttr):
             wave_bits_per_sample = self.oa._bits_per_sample
         reflen = self.sad_reference_length
         if len(wave) < reflen:
-            scope_logger.error('Reference provided is too short, it needs to be at least %d samples long' % reflen)
+            scope_logger.info('Reference provided is too short (it should be at least %d samples long); extending with zeros' % reflen)
+            wave.extend([0]*(reflen-len(wave)))
         # first, trim and translate reference waveform to ints:
         if type(wave[0]) is not int:
             refints = []
@@ -360,15 +387,9 @@ class HuskySAD(util.DisableNewAttr):
 
     @property
     def sad_reference_length(self):
-        """Read-only. Returns the number of samples that are used by the SAD module. Hardware property,
-        but can be halved by the half_pattern setting.
+        """Read-only. Returns the number of samples that are used by the SAD module. Hardware property.
         """
-        value = int.from_bytes(self.oa.sendMessage(CODE_READ, "SAD_REF_SAMPLES", Validate=False, maxResp=2), byteorder='little')
-        if self.half_pattern:
-            div = 2
-        else:
-            div = 1
-        return value//div
+        return int.from_bytes(self.oa.sendMessage(CODE_READ, "SAD_REF_SAMPLES", Validate=False, maxResp=2), byteorder='little')
 
     @property
     def latency(self):
@@ -392,6 +413,8 @@ class HuskySAD(util.DisableNewAttr):
             return 'OG'
         elif version_bits == 1:
             return 'X2_slow'
+        elif version_bits == 2:
+            return 'X4_slow'
         else:
             raise ValueError("Unexpected version bits: %d" % version_bits)
 
@@ -400,19 +423,78 @@ class HuskySAD(util.DisableNewAttr):
         """If set, reduces by half the number of samples used by the SAD module.
         Can be useful when a higher effective threshold is needed.
         """
-        half = self.oa.sendMessage(CODE_READ, "SAD_SHORT", Validate=False, maxResp=1)[0]
-        if half:
-            return True
-        else: 
-            return False
+        scope_logger.warning('This property no longer exists, use the samples_enabled property instead.')
+        return False
 
     @half_pattern.setter
     def half_pattern(self, val):
+        scope_logger.info('You can now use the samples_enabled (or, more generally, enabled_samples) property to reduce the number of samples used for SAD by any number. Executing the equivalent via samples_enabled for you.')
+        num = self.sad_reference_length
         if val:
-            raw = [1]
+            num = num//2
+        self.samples_enabled = num
+        #enables = [1]*self.sad_reference_length
+        #if val:
+        #    enables[self.sad_reference_length//2:] = [0]*(self.sad_reference_length//2)
+        #self.enabled_samples = enables
+
+
+    @property
+    def samples_enabled(self):
+        """TODO-describe
+        """
+        return self._samples_enabled
+
+    @samples_enabled.setter
+    def samples_enabled(self, num):
+        if num < 1 or num > self.sad_reference_length:
+            raise ValueError("Must be in range [1, scope.SAD.sad_reference_length]")
+        enables = [1]*self.sad_reference_length
+        enables[num:] = [0]*(self.sad_reference_length-num)
+        self._samples_enabled = num
+        self.enabled_samples = enables
+
+
+    @property
+    def enabled_samples(self):
+        """Control which samples of the reference pattern are enabled
+        for the SAD computation.
+        """
+        return self.get_enabled_samples()
+
+    @enabled_samples.setter
+    def enabled_samples(self, enables):
+        self.set_enabled_samples(enables)
+
+    def get_enabled_samples(self):
+        """Whether specified samples are to be used in the SAD computation.
+        """
+        enables = self.read_enabled_samples()
+        if type(enables) is bool:
+            return enables
         else:
-            raw = [0]
-        self.oa.sendMessage(CODE_WRITE, "SAD_SHORT", raw)
+            return Lister(enables, setter=self.set_enabled_samples, getter=self.read_enabled_samples)
+
+    def read_enabled_samples(self):
+        raw = list(self.oa.sendMessage(CODE_READ, "SAD_REFEN", Validate=False, maxResp=self.sad_reference_length//8))
+        enables = []
+        for item in raw:
+            for bit in range(8):
+                if item & 2**bit:
+                    enables.append(True)
+                else:
+                    enables.append(False)
+        return enables
+
+    def set_enabled_samples(self, enables):
+        raw = 0
+        for i, item in enumerate(enables):
+            if item: raw += 2**i
+        #print('XXX DEBUG: got enables=%s, raw=%d' % (enables, raw))
+        rawlist = list(int.to_bytes(raw, length=len(enables)//8, byteorder='little'))
+        self.oa.sendMessage(CODE_WRITE, "SAD_REFEN", rawlist)
+
+
 
     @property
     def multiple_triggers(self):
