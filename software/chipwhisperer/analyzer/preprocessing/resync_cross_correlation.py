@@ -26,7 +26,7 @@
 #=================================================
 
 import numpy as np
-import scipy as sp
+import scipy as sp # type: ignore
 
 from ._base import PreprocessingBase
 from chipwhisperer.common.utils.parameter import setupSetParam

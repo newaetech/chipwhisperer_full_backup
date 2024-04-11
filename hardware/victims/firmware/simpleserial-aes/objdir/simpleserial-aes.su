@@ -1,0 +1,5 @@
+simpleserial-aes.c:56:9:reset	0	static
+simpleserial-aes.c:25:9:get_mask	8	static
+simpleserial-aes.c:31:9:get_key	8	static
+simpleserial-aes.c:37:9:get_pt	16	static
+simpleserial-aes.c:105:5:main	24	static

@@ -19,6 +19,8 @@
 #ifndef HAL_H_
 #define HAL_H_
 
+#include <stdint.h>
+
 void platform_init(void);
 
 //PLATFORM Define Types
@@ -46,6 +48,15 @@ void platform_init(void);
 #define CW308_LPC55S6X 26
 #define CW308_PSOC62   27
 #define CW308_IMXRT1062 28
+#define CW308_FE310    29
+#define CW308_EFR32MG21A  30
+#define CW308_EFM32GG11  31
+#define CW308_STM32L5  32
+#define CW308_STM32L4  33
+#define CW308_RX65N  34
+#define CW308_MPC5676R 35
+#define CW308_NEORV32  36
+#define CW305_IBEX  37
 
 //HAL_TYPE Define Types
 #define HAL_avr      1
@@ -68,6 +79,16 @@ void platform_init(void);
 #define HAL_lpc55s6x 18
 #define HAL_psoc62   19
 #define HAL_imxrt1062 20
+#define HAL_fe310    21
+#define HAL_efr32mg21a 22
+#define HAL_efm32gg11 23
+#define HAL_stm32l5 24
+#define HAL_stm32l4 25
+#define HAL_rx65n 26
+#define HAL_mpc5676r 27
+#define HAL_neorv32  28
+#define HAL_sam4s  29
+#define HAL_ibex  30
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
@@ -107,6 +128,8 @@ void platform_init(void);
     #include "nrf52840/nrf52840_hal.h"   
 #elif HAL_TYPE == HAL_stm32f0_nano
     #include "stm32f0/stm32f0_hal.h" 
+    void led_error(unsigned int status);
+    void led_ok(unsigned int status);
 #elif HAL_TYPE == HAL_aurix
     #include "aurix/aurix_hal.h"
 #elif HAL_TYPE == HAL_saml11
@@ -119,10 +142,29 @@ void platform_init(void);
     #include "psoc62/psoc62_hal.h"
 #elif HAL_TYPE == HAL_imxrt1062
     #include "imxrt1062/imxrt1062_hal.h"
+#elif HAL_TYPE == HAL_fe310
+    #include "fe310/fe310_hal.h"
+#elif HAL_TYPE == HAL_efr32mg21a
+    #include "efr32mg21a/efr32mg21a_hal.h"
+#elif HAL_TYPE == HAL_efm32gg11
+    #include "efm32gg11/efm32gg11_hal.h"
+#elif HAL_TYPE == HAL_stm32l5
+    #include "stm32l5/stm32l5_hal.h"
+#elif HAL_TYPE == HAL_stm32l4
+    #include "stm32l4/stm32l4_hal.h"
+#elif HAL_TYPE == HAL_rx65n
+    #include "rx65n/rx65n_hal.h"
+#elif HAL_TYPE == HAL_mpc5676r
+    #include "mpc5676r/MPC5676R_hal.h"
+#elif HAL_TYPE == HAL_neorv32
+    #include "neorv32/neorv32_hal.h"
+#elif HAL_TYPE == HAL_sam4s
+    #include "sam4s/sam4s_hal.h"
+#elif HAL_TYPE == HAL_ibex
+    #include "ibex/ibex_hal.h"
 #else
     #error "Unsupported HAL Type"
 #endif
-
 
 #if PLATFORM == CW308_MEGARF
     #undef trigger_setup
@@ -155,13 +197,12 @@ void platform_init(void);
     
 #endif
 
+__attribute__((weak)) void led_ok(unsigned int status)
+{
+}
 
-#ifndef led_error
-#define led_error(a)
-#endif
-
-#ifndef led_ok
-#define led_ok(a)
-#endif
+__attribute__((weak)) void led_error(unsigned int status)
+{
+}
 
 #endif //HAL_H_

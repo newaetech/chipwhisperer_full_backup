@@ -30,13 +30,13 @@ void platform_init(void)
     BOARD_InitBootClocks();
     //BOARD_BootClockPLL100M();
 
-    
+    RNG_Init(RNG);
 }
 
 void init_uart(void)
 {
     BOARD_InitDebugConsole();
-}    
+}
 
 void putch(char c)
 {
@@ -161,7 +161,8 @@ void BOARD_InitPins(void)
     IOCON_PinMuxSet(IOCON, 0U, 30U, port0_pin30_config);
 
 
-    const uint32_t port1_pin24_config = (
+    /* Trigger/GPIO4 PIN on NAE-CW308T-LPC55S6X-02 is wired into PIO0_24 */
+    const uint32_t port0_pin24_config = (
 										 /* Standard mode, output slew rate control is enabled */
                                          IOCON_PIO_SLEW_STANDARD |
                                          /* Input function is not inverted */
@@ -170,7 +171,7 @@ void BOARD_InitPins(void)
                                          IOCON_PIO_DIGITAL_EN |
                                          /* Open drain is disabled */
                                          IOCON_PIO_OPENDRAIN_DI);
-    IOCON_PinMuxSet(IOCON, 1U, 24U, port1_pin24_config);
+    IOCON_PinMuxSet(IOCON, 0U, 24U, port0_pin24_config);
 
 
     const uint32_t port1_pin27_config = (
@@ -189,17 +190,24 @@ void BOARD_InitPins(void)
 void trigger_setup(void)
 {
     gpio_pin_config_t pinconfig = { kGPIO_DigitalOutput,  0, };
-    GPIO_PinInit(GPIO, 1, 24, &pinconfig);
+    GPIO_PinInit(GPIO, 0, 24, &pinconfig);
 }
 
 void trigger_low(void)
 {
-    GPIO_PinWrite(GPIO, 1, 24, 0);
+    GPIO_PinWrite(GPIO, 0, 24, 0);
 }
 
 void trigger_high(void)
 {
-    GPIO_PinWrite(GPIO, 1, 24, 1);
+    GPIO_PinWrite(GPIO, 0, 24, 1);
+}
+
+uint32_t get_rand(void)
+{
+    uint32_t value;
+    RNG_GetRandomData(RNG, &value, sizeof(value));
+    return value;
 }
 
 void HW_AES128_Init(void)
@@ -215,9 +223,17 @@ void HW_AES128_LoadKey(uint8_t* key)
     HASHCRYPT_AES_SetKey(HASHCRYPT, &hch, key, 16);
 }
 
+void HW_AES128_Enc_pretrigger(uint8_t* pt)
+{
+}
+
 void HW_AES128_Enc(uint8_t* pt)
 {
     HASHCRYPT_AES_EncryptEcb(HASHCRYPT, &hch, pt, pt, 16);
+}
+
+void HW_AES128_Enc_posttrigger(uint8_t* pt)
+{
 }
 
 void HW_AES128_Dec(uint8_t *pt)

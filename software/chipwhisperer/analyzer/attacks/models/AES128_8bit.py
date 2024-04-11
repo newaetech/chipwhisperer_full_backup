@@ -28,10 +28,12 @@ from collections import OrderedDict
 import inspect
 
 from chipwhisperer.analyzer.attacks.models.aes.funcs import sbox, inv_sbox, subbytes, inv_subbytes, mixcolumns, inv_mixcolumns, shiftrows, inv_shiftrows
+from chipwhisperer.common.utils.aes_tables import t_table_hw, t_table_hw_dec
 
 from .base import ModelsBase
 from chipwhisperer.analyzer.attacks.models.aes.key_schedule import key_schedule_rounds
 from chipwhisperer.common.utils.util import camel_case_deprecated
+from typing import Optional
 
 class AESLeakageHelper(object):
 
@@ -39,8 +41,8 @@ class AESLeakageHelper(object):
     name = 'AES Leakage Model (unnamed)'
 
     #c model enumeration value, if a C model exists for this device
-    c_model_enum_value = None
-    c_model_enum_name = None
+    c_model_enum_value : Optional[int]= None
+    c_model_enum_name : Optional[str] = None
 
     INVSHIFT_undo = [0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11]
 
@@ -125,6 +127,17 @@ class InvSBox_output(AESLeakageHelper):
     def leakage(self, pt, ct, key, bnum):
         return self.inv_sbox(pt[bnum] ^ key[bnum])
 
+class InvSBox_output_alt(AESLeakageHelper):
+    name = 'HW: AES Inv SBox Output, First Round (Dec)'
+    c_model_enum_value = 61
+    c_model_enum_name = 'LEAK_HW_INVSBOXOUT_FIRSTROUND'
+    def leakage(self, pt, ct, key, bnum):
+        return self.inv_sbox(pt[bnum] ^ key[bnum])
+
+    def process_known_key(self, inpkey):
+        k = key_schedule_rounds(inpkey, 0, 10)
+        return k
+
 class LastroundHW(AESLeakageHelper):
     name = 'HW: AES Last-Round State'
     def leakage(self, pt, ct, key, bnum):
@@ -137,7 +150,6 @@ class LastroundHW(AESLeakageHelper):
     def process_known_key(self, inpkey):
         return key_schedule_rounds(inpkey, 0, 10)
 
-
 class LastroundStateDiff(AESLeakageHelper):
     name = 'HD: AES Last-Round State'
     c_model_enum_value = 2
@@ -148,6 +160,26 @@ class LastroundStateDiff(AESLeakageHelper):
         st10 = ct[self.INVSHIFT_undo[bnum]]
         st9 = inv_sbox(ct[bnum] ^ key[bnum])
         return (st9 ^ st10)
+
+    def process_known_key(self, inpkey):
+        return key_schedule_rounds(inpkey, 0, 10)
+
+class PipelineDiff(AESLeakageHelper):
+    name = 'HD: AES round 9 between previous and current encryptions'
+    def leakage(self, pt, ct, prev_pt, prev_ct, key, bnum):
+        curr = inv_sbox(ct[bnum] ^ key[bnum])
+        prev = inv_sbox(prev_ct[bnum] ^ key[bnum])
+        return curr ^ prev
+
+    def process_known_key(self, inpkey):
+        return key_schedule_rounds(inpkey, 0, 10)
+
+class HalfPipelineDiff(AESLeakageHelper):
+    name = 'HD: AES previous round 10 and current round 9'
+    def leakage(self, pt, ct, prev_pt, prev_ct, key, bnum):
+        curr = inv_sbox(ct[bnum] ^ key[bnum])
+        prev = prev_ct[self.INVSHIFT_undo[bnum]]
+        return curr ^ prev
 
     def process_known_key(self, inpkey):
         return key_schedule_rounds(inpkey, 0, 10)
@@ -176,7 +208,7 @@ class SBoxInOutDiff(AESLeakageHelper):
 
 class SBoxInputSuccessive(AESLeakageHelper):
     name = 'HD: AES SBox Input i to i+1'
-    c_model_enum_name = 4
+    c_model_enum_value = 4
     c_model_enum_name = 'LEAK_HD_SBOX_IN_SUCCESSIVE'
     def leakage(self, pt, ct, key, bnum):
         st1 = pt[bnum] ^ key[bnum]
@@ -203,11 +235,6 @@ class SBoxOutputSuccessive(AESLeakageHelper):
         else:
             st2 = 0
         return st1 ^ st2
-
-class AfterKeyMixin(AESLeakageHelper):
-    name = 'HW: AES After Key/PT Addition'
-    def leakage(self, pt, ct, key, bnum):
-        return pt[bnum] ^ key[bnum]
 
 class Mixcolumns_output(AESLeakageHelper):
     name = 'HW: AES Mixcolumns Output'
@@ -266,8 +293,9 @@ class Round1Round2StateDiff_SBox(AESLeakageHelper):
         return state[bnum] ^ state1[bnum]
 
 #List of all classes you can use
-enc_list = [SBox_output, PtKey_XOR, SBoxInputSuccessive, SBoxInOutDiff, LastroundStateDiff, LastroundStateDiffAlternate, SBoxOutputSuccessive, ShiftColumns_output, Mixcolumns_output, Round1Round2StateDiff_Text, Round1Round2StateDiff_KeyMix, Round1Round2StateDiff_SBox]
+enc_list = [SBox_output, PtKey_XOR, SBoxInputSuccessive, SBoxInOutDiff, LastroundStateDiff, LastroundStateDiffAlternate, PipelineDiff, HalfPipelineDiff, SBoxOutputSuccessive, ShiftColumns_output, Mixcolumns_output, Round1Round2StateDiff_Text, Round1Round2StateDiff_KeyMix, Round1Round2StateDiff_SBox]
 dec_list = [InvSBox_output]
+
 
 class AES128_8bit(ModelsBase):
     """Leakage model for AES128 attacks.
@@ -276,9 +304,11 @@ class AES128_8bit(ModelsBase):
     """
     _name = 'AES 128'
 
-    hwModels = OrderedDict((mod.name, mod) for mod in (enc_list+dec_list) )
+    hwModels = OrderedDict((mod.name, mod) for mod in (enc_list+dec_list) ) # type: ignore
 
-    hw_models = OrderedDict((mod.__name__, mod) for mod in (enc_list+dec_list))
+    hw_models = OrderedDict((mod.__name__, mod) for mod in (enc_list+dec_list)) # type: ignore
+
+    _has_prev = False
 
     def __init__(self, model=SBox_output, bitmask=0xFF):
         ModelsBase.__init__(self, 16, 256, model=model)
@@ -361,3 +391,123 @@ class AES128_8bit(ModelsBase):
         return key_schedule_rounds(inputkey, inputround, desiredround)
 
     keyScheduleRounds = camel_case_deprecated(key_schedule_rounds)
+
+
+class AES128_ttable(AES128_8bit):
+    _has_prev = False
+    def leakage(self, pt, ct, guess, bnum, state):
+        """ Leakage as set by model
+
+        Args:
+            pt (list): Plaintext/textin
+            ct (list): Ciphertext/textout
+            guess (list): Key guess
+            bnum (list): Subkey Byte Number
+            state (list): The state of the key finding
+
+        Returns:
+            A hamming weight (int)
+        """
+        try:
+            #Make a copy so we don't screw with anything...
+            key = list(state['knownkey'])
+        except:
+            #We don't log due to time-sensitive nature... but if state doesn't have "knownkey" will result in
+            #unknown knownkey which causes some attacks to fail. Possibly should make this some sort of
+            #flag to indicate we want to ignore the problem?
+            key = [None]*16
+
+        #Guess can be 'none' if we want to use original key as-is
+        if guess is not None:
+            key[bnum] = guess
+
+        #Get intermediate value
+        intermediate_value = self.modelobj.leakage(pt, ct, key, bnum)
+
+        #For bit-wise attacks, mask off specific bit value
+        intermediate_value = self._mask & intermediate_value
+
+        #Return HW of guess
+        return t_table_hw[intermediate_value]
+
+class AES128_ttable_dec(AES128_8bit):
+    _has_prev = False
+    def leakage(self, pt, ct, guess, bnum, state):
+        """ Leakage as set by model
+
+        Args:
+            pt (list): Plaintext/textin
+            ct (list): Ciphertext/textout
+            guess (list): Key guess
+            bnum (list): Subkey Byte Number
+            state (list): The state of the key finding
+
+        Returns:
+            A hamming weight (int)
+        """
+        try:
+            #Make a copy so we don't screw with anything...
+            key = list(state['knownkey'])
+        except:
+            #We don't log due to time-sensitive nature... but if state doesn't have "knownkey" will result in
+            #unknown knownkey which causes some attacks to fail. Possibly should make this some sort of
+            #flag to indicate we want to ignore the problem?
+            key = [None]*16
+
+        #Guess can be 'none' if we want to use original key as-is
+        if guess is not None:
+            key[bnum] = guess
+
+        #Get intermediate value
+        intermediate_value = self.modelobj.leakage(pt, ct, key, bnum)
+
+        #For bit-wise attacks, mask off specific bit value
+        intermediate_value = self._mask & intermediate_value
+
+        #Return HW of guess
+        return t_table_hw_dec[intermediate_value]
+
+
+class AES128_prev(AES128_8bit):
+    """Extension of AES128_8bit which adds prev_pt and prev_ct parameters, for when the
+    leakage is tied to both the current and previous ciphertext and/or plaintext.
+    """
+    _has_prev = True
+
+    def leakage(self, pt, ct, prev_pt, prev_ct, guess, bnum, state):
+        """ Leakage as set by model
+
+        Args:
+            pt (list): Plaintext/textin
+            ct (list): Ciphertext/textout
+            prev_pt (list): Plaintext/textin for the previous encryption
+            prev_ct (list): Ciphertext/textout for the previous encryption
+            guess (list): Key guess
+            bnum (list): Subkey Byte Number
+            state (list): The state of the key finding
+
+        Returns:
+            A hamming weight (int)
+        """
+        try:
+            #Make a copy so we don't screw with anything...
+            key = list(state['knownkey'])
+        except:
+            #We don't log due to time-sensitive nature... but if state doesn't have "knownkey" will result in
+            #unknown knownkey which causes some attacks to fail. Possibly should make this some sort of
+            #flag to indicate we want to ignore the problem?
+            key = [None]*16
+
+        #Guess can be 'none' if we want to use original key as-is
+        if guess is not None:
+            key[bnum] = guess
+
+        #Get intermediate value
+        intermediate_value = self.modelobj.leakage(pt, ct, prev_pt, prev_ct, key, bnum)
+
+        #For bit-wise attacks, mask off specific bit value
+        intermediate_value = self._mask & intermediate_value
+
+        #Return HW of guess
+        return self.HW[intermediate_value]
+

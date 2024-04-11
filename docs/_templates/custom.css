@@ -1,0 +1,48 @@
+/* div.sphinxsidebar {
+    max-height: 93%;
+    overflow-y: auto;
+}
+
+div.input {
+    overflow-x: auto;
+}
+
+pre {
+    border-radius: 5px;
+}
+
+div.data_html {
+    max-width: 100%;
+    overflow-x: auto;
+} */
+
+    div.body h2, div.body h1, div.body h3, div.body h4 {
+        background-color: #f2f2f2;
+        color: #20435c;
+    }
+
+    div.sphinxsidebar {
+        max-height: 100%;
+        overflow-y: auto;
+        overflow-x: auto;
+    }
+
+    dt.sig.sig-object.py {
+        background-color: #d7eeff;
+        margin-top: 1%;
+    }
+
+    .toc-title {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .toc-toc {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .toc-list {
+        /* margin-left: 15px; */
+        font-size: 15px;
+    }

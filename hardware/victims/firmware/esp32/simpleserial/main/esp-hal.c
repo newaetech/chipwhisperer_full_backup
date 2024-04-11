@@ -33,7 +33,7 @@ static void clock_configure(void)
     //uart_tx_wait_idle(0);
     rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
     clk_cfg.xtal_freq = RTC_XTAL_FREQ_26M;
-    clk_cfg.cpu_freq = RTC_CPU_FREQ_XTAL;
+    clk_cfg.cpu_freq_mhz = 26;//same clk speed as osc?
     clk_cfg.slow_freq = rtc_clk_slow_freq_get();
     clk_cfg.fast_freq = rtc_clk_fast_freq_get();
     rtc_clk_init(clk_cfg);
@@ -57,7 +57,7 @@ void platform_init()
 void init_uart()
 {
     uart_config_t uart_config = {
-        .baud_rate = 417042,
+        .baud_rate = 59000, //??? 38400->25000
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -69,7 +69,7 @@ void init_uart()
     //Install UART driver (we don't need an event queue here)
     //In this example we don't even use a buffer for sending data.
     uart_driver_install(UART_NUM, BUF_SIZE * 2, 0, 0, NULL, 0);
-	putch('\n');
+	//putch('\n');
 }
 
 void putch(char c)
@@ -111,6 +111,6 @@ void aes128_enc(uint8_t* pt, uint8_t* k)
 {
 	esp_aes_context ctx;
 	esp_aes_init(&ctx);
-	esp_aes_setkey_enc(&ctx, k, 128);
-	esp_aes_encrypt(&ctx, pt, pt);
+	esp_aes_setkey(&ctx, k, 128);
+	esp_aes_crypt_ecb(&ctx, ESP_AES_ENCRYPT, pt, pt);
 }

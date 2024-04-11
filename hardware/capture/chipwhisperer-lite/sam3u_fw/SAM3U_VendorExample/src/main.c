@@ -21,18 +21,24 @@
 #include "ui.h"
 #include "genclk.h"
 #include "fpga_program.h"
-#include "pdi/XPROGNewAE.h"
-#include "pdi/XPROGTimeout.h"
-#include "pdi/XPROGTarget.h"
-#include "isp/V2Protocol.h"
-#include "ccdebug/chipcon.h"
+#include "XPROGNewAE.h"
+#include "XPROGTimeout.h"
+#include "XPROGTarget.h"
+#include "V2Protocol.h"
 #include "usart_driver.h"
+#include "naeusb_default.h"
+#include "naeusb_openadc.h"
+#include "naeusb_usart.h"
+#include "naeusb_mpsse.h"
 #include <string.h>
 
 //Serial Number - will be read by device ID
 char usb_serial_number[33] = "000000000000DEADBEEF";
-
+#ifndef RSTC_CR_KEY_PASSWD
+#define RSTC_CR_KEY_PASSWD RSTC_CR_KEY(0xA5)
+#endif
 static void configure_console(void);
+volatile uint32_t usb_checked = 0x00;
 
 /*! \brief Main function. Execution starts here.
  */
@@ -43,7 +49,7 @@ int main(void)
 	// Read Device-ID from SAM3U. Do this before enabling interrupts etc.
 	flash_read_unique_id(serial_number, sizeof(serial_number));
 		
-	configure_console();
+	// configure_console();
 
 	irq_initialize_vectors();
 	cpu_irq_enable();
@@ -83,6 +89,7 @@ int main(void)
 	gpio_configure_pin(PIN_EBI_NRD, PIN_EBI_NRD_FLAGS);
 	gpio_configure_pin(PIN_EBI_NWE, PIN_EBI_NWE_FLAGS);
 	gpio_configure_pin(PIN_EBI_NCS0, PIN_EBI_NCS0_FLAGS);
+
 		
 	/* We don't use address mapping so don't enable this */	
 	/*
@@ -129,6 +136,7 @@ int main(void)
 
 	// Start USB stack to authorize VBus monitoring
 	udc_start();
+	board_power(1);
 
 	/* Enable PCLK0 at 96 MHz */	
 	genclk_enable_config(GENCLK_PCK_0, GENCLK_PCK_SRC_MCK, GENCLK_PCK_PRES_1);
@@ -137,12 +145,19 @@ int main(void)
 	//genclk_enable_config(GENCLK_PCK_0, GENCLK_PCK_SRC_PLLBCK, GENCLK_PCK_PRES_4);
 	
 	printf("Event Loop Entered, waiting...\n");
+	naeusb_register_handlers();
+	naeusart_register_handlers();
+	openadc_register_handlers();
+	mpsse_register_handlers();
 	
 	// The main loop manages only the power mode
 	// because the USB management is done by interrupt
 	while (true) {
-		sleepmgr_enter_sleep();
+        // if we've received stuff on USART, send it back to the PC
+		cdc_send_to_pc();
+		MPSSE_main_sendrecv_byte();
 	}
+	return 0;
 }
 
 /**

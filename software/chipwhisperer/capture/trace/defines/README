@@ -1,0 +1,9 @@
+Verilog defines files containing register and bitfield definitions; these are
+read by TraceWhisperer.py to allow it to refer to these by name instead of by
+magic numbers.  These files originate in the DesignStartTrace repository and it
+would be nice to have them be automatically kept in sync, but for now that
+process is manual :-(
+
+If things are working strangely or not at all, check that these files match the
+ones that were used to build the Trace FPGA bitfile!
+

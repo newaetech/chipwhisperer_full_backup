@@ -1,0 +1,19 @@
+name: Periodic Full Test
+
+on: 
+  schedule:
+    - cron: '0 0 1,15 * *'
+
+jobs:
+  trigger_action:
+    name: Push dispatch
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: private_workflow
+          repo: newaetech/ChipWhisperer-Private-Tests
+          token: ${{ secrets.PRIVATE_TEST_PUSH }}
+          ref: refs/heads/main
+          inputs: '{ "long_test": "true" }'

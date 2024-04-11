@@ -1,0 +1,52 @@
+VPATH += :$(HALPATH)/neorv32
+SRC += neorv32_cfs.c neorv32_cpu.c neorv32_gpio.c neorv32_gptmr.c neorv32_mtime.c 
+SRC += neorv32_neoled.c neorv32_pwm.c neorv32_rte.c neorv32_slink.c neorv32_spi.c 
+SRC += neorv32_trng.c neorv32_twi.c neorv32_uart.c neorv32_wdt.c neorv32_xip.c neorv32_xirq.c
+SRC += neorv32_hal.c
+SRC += syscalls.c
+
+EXTRAINCDIRS += $(HALPATH)/neorv32
+
+ASRC += crt0.S
+
+MCU_FLAGS = -march=rv32i -mabi=ilp32 
+
+# If you are missing 'which' (Windows uses 'where') you can change
+# program, or just fix the values for CC. On RISC-V we autodetect as
+# the documentation for neorv32 suggests to download pre-built 32-bit
+# compilers, but users will often have 64-bit compiler already if on Linux.
+
+ifeq (, $(shell which riscv64-unknown-elf-gcc))
+ifeq (, $(shell which riscv32-unknown-elf-gcc))
+$(error Could not find riscv32-unknown-elf-gcc or riscv64-unknown-elf-gcc)
+else
+# which was successful - use 32-bit gcc
+CC = riscv32-unknown-elf-gcc
+OBJCOPY = riscv32-unknown-elf-objcopy
+OBJDUMP = riscv32-unknown-elf-objdump
+SIZE = riscv32-unknown-elf-size
+AR = riscv32-unknown-elf-ar rcs
+NM = riscv32-unknown-elf-nm
+endif #END of which riscv32-unknown-elf-gcc test
+
+else #ELSE of which riscv64-unknown-elf-gcc test
+# which was successful - use 64-bit gcc
+CC = riscv64-unknown-elf-gcc
+OBJCOPY = riscv64-unknown-elf-objcopy
+OBJDUMP = riscv64-unknown-elf-objdump
+SIZE = riscv64-unknown-elf-size
+AR = riscv64-unknown-elf-ar rcs
+NM = riscv64-unknown-elf-nm
+endif 
+
+#Output Format = Binary for this target
+FORMAT = binary
+
+CFLAGS += -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv -Wl,--gc-sections -lm -lc -lgcc -lc
+CFLAGS += -falign-functions=4 -falign-labels=4 -falign-loops=4 -falign-jumps=4
+CPPFLAGS += -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv -Wl,--gc-sections -lm -lc -lgcc -lc
+CPPFLAGS += -falign-functions=4 -falign-labels=4 -falign-loops=4 -falign-jumps=4
+ASFLAGS += -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv -Wl,--gc-sections -lm -lc -lgcc -lc
+ASFLAGS += -falign-functions=4 -falign-labels=4 -falign-loops=4 -falign-jumps=4
+
+LDFLAGS += -T $(HALPATH)/neorv32/neorv32.ld

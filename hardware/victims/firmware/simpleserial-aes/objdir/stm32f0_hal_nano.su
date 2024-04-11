@@ -1,0 +1,9 @@
+stm32f0_hal_nano.c:13:6:platform_init	112	static
+stm32f0_hal_nano.c:62:6:init_uart	56	static
+stm32f0_hal_nano.c:89:6:trigger_setup	40	static
+stm32f0_hal_nano.c:103:6:trigger_high	8	static
+stm32f0_hal_nano.c:108:6:trigger_low	8	static
+stm32f0_hal_nano.c:113:6:getch	24	static
+stm32f0_hal_nano.c:121:6:putch	16	static
+stm32f0_hal_nano.c:128:6:led_error	8	static
+stm32f0_hal_nano.c:133:6:led_ok	8	static

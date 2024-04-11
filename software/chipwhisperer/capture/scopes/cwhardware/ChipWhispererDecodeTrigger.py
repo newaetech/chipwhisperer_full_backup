@@ -25,22 +25,16 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
-import logging
-from chipwhisperer.common.utils.util import dict_to_str
-from collections import OrderedDict
+from chipwhisperer.logging import *
+from ....common.utils.util import dict_to_str, DisableNewAttr
+from .._OpenADCInterface import OpenADCInterface
 from copy import copy
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
-
 CODE_USART      = 0x01
 
-ADDR_DECODECFG = 57
-ADDR_DECODEDATA = 58
-
-
-class ChipWhispererDecodeTrigger(object):
+class ChipWhispererDecodeTrigger(DisableNewAttr):
     """
     Communicates and drives the Digital Pattern Match module inside the FPGA.
 
@@ -54,7 +48,8 @@ class ChipWhispererDecodeTrigger(object):
         scope.decode_IO.trigger_pattern = ['r']
     """
     _name = 'I/O Decoder Trigger Module'
-    def __init__(self, oa):
+    def __init__(self, oa : OpenADCInterface):
+        super().__init__()
         self.oa = oa
         self.pattern = None
 
@@ -67,14 +62,14 @@ class ChipWhispererDecodeTrigger(object):
         return self.__repr__()
 
     def __repr__(self):
-        return dict_to_str(self._dict_repr)
+        return dict_to_str(self._dict_repr())
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['trigger_pattern'] = self.trigger_pattern
-        dict['rx_baud'] = self.rx_baud
-        dict['decode_type'] = self.decode_type
-        return dict
+        rtn = {}
+        rtn['trigger_pattern'] = self.trigger_pattern
+        rtn['rx_baud'] = self.rx_baud
+        rtn['decode_type'] = self.decode_type
+        return rtn
 
     @property
     def trigger_pattern(self):
@@ -89,7 +84,7 @@ class ChipWhispererDecodeTrigger(object):
 
         Warns the user if they try to set an incorrect pattern.
 
-        Example to trigger off of 'r\\n'::
+        Example to trigger off of :code:`'r\n'`::
 
             scope.decode_IO.trigger_pattern = ['r', 0x10]
 
@@ -136,18 +131,18 @@ class ChipWhispererDecodeTrigger(object):
             # If we can't evaluate the string, give up now
             try:
                 tl = eval(tp)
-            except Exception:
-                logging.error("IO Decode Trigger: could not evaluate string %s"%tp)
+            except Exception as e:
+                scope_logger.error("IO Decode Trigger: could not evaluate string %s, err = %s"%(tp, e))
                 return
         else:
             tl = tp
 
         # If we didn't get a list or it's too long, we can't use this trigger pattern
         if type(tl) is not list:
-            logging.error("Trigger pattern must be a list")
+            scope_logger.error("Trigger pattern must be a list")
             return
         if len(tl) > 8:
-            logging.error("Trigger pattern is of length %d, too long (max is 8)"%len(tl))
+            scope_logger.error("Trigger pattern is of length %d, too long (max is 8)"%len(tl))
             return
 
         #Reverse order
@@ -160,11 +155,11 @@ class ChipWhispererDecodeTrigger(object):
         for i in range(0, len(tl)):
             tli = tl[i]
             # "XX" and "xx" are don't care signals
-            if tli == "XX" or tli == "xx":
+            if tli in ("XX", "xx"):
                 pass
             # Other strings need to be length 1
             elif (isinstance(tli, str)) and (len(tli) != 1):
-                logging.error("Trigger pattern with list of strings must have length = 1 for each string")
+                scope_logger.error("Trigger pattern with list of strings must have length = 1 for each string")
                 return
             else:
                 if isinstance(tl[i], str):
@@ -201,30 +196,30 @@ class ChipWhispererDecodeTrigger(object):
         else:
             raise ValueError("Unknown decode type {}. Must be 'USART'".format(typ))
 
-    def set_decodetype(self, type):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
-        data[0] = (data[0] & 0xF0) | type
-        self.oa.sendMessage(CODE_WRITE, ADDR_DECODECFG, data)
+    def set_decodetype(self, decode_type):
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_CFG_ADDR", Validate=False, maxResp=8)
+        data[0] = (data[0] & 0xF0) | decode_type
+        self.oa.sendMessage(CODE_WRITE, "IODECODETRIG_CFG_ADDR", data)
 
     def get_decodetype(self):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_CFG_ADDR", Validate=False, maxResp=8)
         return data[0] & 0x0F
 
     def get_trig_bitmap(self):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_CFG_ADDR", Validate=False, maxResp=8)
         return data[2]
 
     def set_trig_bitmap(self, bm):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_CFG_ADDR", Validate=False, maxResp=8)
         data[2] = bm
-        self.oa.sendMessage(CODE_WRITE, ADDR_DECODECFG, data)
+        self.oa.sendMessage(CODE_WRITE, "IODECODETRIG_CFG_ADDR", data)
 
     def get_trig_rawdata(self):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODEDATA, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_DATA_ADDR", Validate=False, maxResp=8)
         return data
 
     def set_trig_rawdata(self, data):
-        self.oa.sendMessage(CODE_WRITE, ADDR_DECODEDATA, data)
+        self.oa.sendMessage(CODE_WRITE, "IODECODETRIG_DATA_ADDR", data)
 
     @property
     def rx_baud(self):
@@ -262,13 +257,13 @@ class ChipWhispererDecodeTrigger(object):
 
 
     def setRxBaudReg(self, breg):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_CFG_ADDR", Validate=False, maxResp=8)
         data[3] = breg & 0xff
         data[4] = (breg >> 8) & 0xff
-        self.oa.sendMessage(CODE_WRITE, ADDR_DECODECFG, data)
+        self.oa.sendMessage(CODE_WRITE, "IODECODETRIG_CFG_ADDR", data)
 
     def rxBaudReg(self):
-        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data = self.oa.sendMessage(CODE_READ, "IODECODETRIG_CFG_ADDR", Validate=False, maxResp=8)
         breg = data[3] | (data[4] << 8)
         return breg
 

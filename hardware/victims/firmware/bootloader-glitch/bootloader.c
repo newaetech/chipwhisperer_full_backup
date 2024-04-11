@@ -24,17 +24,6 @@
 
 char hex_lookup[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-void hex_decode(const char *in, int len,uint8_t *out)
-{
-	unsigned int i, t, hn, ln;
-	
-	for (t = 0,i = 0; i < len; i+=2,++t) {
-		hn = in[i] > '9' ? (in[i]|32) - 'a' + 10 : in[i] - '0';
-		ln = in[i+1] > '9' ? (in[i+1]|32) - 'a' + 10 : in[i+1] - '0';
-		out[t] = (hn << 4 ) | ln;
-	}
-}
-
 void hex_print(const uint8_t * in, int len, char *out)
 {
 	unsigned int i,j;
@@ -50,9 +39,9 @@ void hex_print(const uint8_t * in, int len, char *out)
 #define DATA_BUFLEN 40
 #define ASCII_BUFLEN (2 * DATA_BUFLEN)
 
-//uint8_t buffer[ASCII_BUFLEN + DATA_BUFLEN];
-//uint8_t* ascii_buffer = buffer;
-//uint8_t* data_buffer = buffer + ASCII_BUFLEN;
+// uint8_t buffer[ASCII_BUFLEN + DATA_BUFLEN];
+// uint8_t *ascii_buffer = buffer;
+// uint8_t *data_buffer = buffer + ASCII_BUFLEN;
 uint8_t ascii_buffer[ASCII_BUFLEN];
 uint8_t data_buffer[DATA_BUFLEN];
 
@@ -67,14 +56,12 @@ int main(void)
 	trigger_setup();
 	
  	/* Uncomment this to get a HELLO message for debug */
-	/*
-	putch('h');
-	putch('e');
-	putch('l');
-	putch('l');
-	putch('o');
-	putch('\n');
-	*/
+	// putch('h');
+	// putch('e');
+	// putch('l');
+	// putch('l');
+	// putch('o');
+	// putch('\n');
 		
 	char c;
 	char state = 0;
@@ -100,7 +87,7 @@ int main(void)
 		else if (state == INPUT) {
 			if ((c == '\n') || (c == '\r')) {
 				// We received the final character - decode our string
-				hex_decode((char*)ascii_buffer, ascii_idx, data_buffer);
+				hex_decode(ascii_idx, (char*)ascii_buffer, data_buffer);
 
 				// Decrypt data in-place
 				decrypt_data(data_buffer, DATA_BUFLEN);

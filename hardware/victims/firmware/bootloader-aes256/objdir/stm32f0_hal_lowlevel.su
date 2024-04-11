@@ -1,0 +1,15 @@
+stm32f0_hal_lowlevel.c:48:10:HAL_GetTick	0	static
+stm32f0_hal_lowlevel.c:60:10:HAL_RCC_GetSysClockFreq	0	static
+stm32f0_hal_lowlevel.c:65:10:HAL_RCC_GetPCLK1Freq	0	static
+stm32f0_hal_lowlevel.c:76:10:HAL_RCC_GetPCLK2Freq	0	static
+stm32f0_hal_lowlevel.c:97:19:HAL_RCC_OscConfig	40	static
+stm32f0_hal_lowlevel.c:553:19:HAL_RCC_ClockConfig	32	static
+stm32f0_hal_lowlevel.c:709:19:HAL_RCCEx_PeriphCLKConfig	40	static
+stm32f0_hal_lowlevel.c:901:6:HAL_GPIO_Init	48	static
+stm32f0_hal_lowlevel.c:1034:6:HAL_GPIO_WritePin	0	static
+stm32f0_hal_lowlevel.c:1059:19:UART_WaitOnFlagUntilTimeout	24	static
+stm32f0_hal_lowlevel.c:1090:19:UART_CheckIdleState	0	static
+stm32f0_hal_lowlevel.c:1142:19:UART_SetConfig	16	static
+stm32f0_hal_lowlevel.c:1248:19:HAL_UART_Init	16	static
+stm32f0_hal_lowlevel.c:1333:19:HAL_UART_Receive	40	static
+stm32f0_hal_lowlevel.c:1420:19:HAL_UART_Transmit	40	static

@@ -1,0 +1,15 @@
+aes256.c:34:9:gf_alog	8	static
+aes256.c:44:9:gf_log	16	static
+aes256.c:58:9:gf_mulinv	8	static
+aes256.c:64:9:calc_sbox	16	static
+aes256.c:76:9:calc_sbox_inv	8	static
+aes256.c:89:9:rj_xtime	0	static
+aes256.c:95:6:aes_subBytes_inv	8	static
+aes256.c:103:6:aes_addRoundKey	8	static
+aes256.c:111:6:aes_addRoundKey_cpy	12	static
+aes256.c:120:6:aes_shiftRows_inv	0	static
+aes256.c:133:6:aes_mixColumns_inv	56	static
+aes256.c:149:6:aes_expandEncKey	12	static
+aes256.c:173:6:aes_expandDecKey	16	static
+aes256.c:199:6:aes256_init	48	static
+aes256.c:220:6:aes256_decrypt_ecb	32	static

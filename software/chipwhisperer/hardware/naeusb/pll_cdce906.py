@@ -4,22 +4,22 @@
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
-# project, http://www.assembla.com/spaces/chipwhisperer
+# project, http://www.chipwhisperer.com . ChipWhisperer is a registered
+# trademark of NewAE Technology Inc in the US & Europe.
 #
 #    This file is part of chipwhisperer.
 #
-#    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-#    chipwhisperer is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Lesser General Public License for more details.
+#       http://www.apache.org/licenses/LICENSE-2.0
 #
-#    You should have received a copy of the GNU General Public License
-#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 #==========================================================================
 
 import math
@@ -27,13 +27,14 @@ import time
 
 class PLLCDCE906(object):
 
-    def __init__(self, usb, ref_freq):
+    def __init__(self, usb, ref_freq, board="CW305"):
         self._usb = usb
         self.reffreq = ref_freq
         self._pll0source = 'PLL0'
         self._pll0slew = '+0nS'
         self._pll1slew = '+0nS'
         self._pll2slew = '+0nS'
+        self._board = board
 
     def pll_outfreq_set(self, freq, outnum):
         """Set the output frequency of a PLL
@@ -49,13 +50,13 @@ class PLLCDCE906(object):
         """
         if freq is None or (freq < 630E3) or (freq > 167E6):
             raise ValueError("Illegal clock frequency = %d" % freq)
-            return
         best = self.calcMulDiv(freq, self.reffreq)
         self.pllwrite(outnum, N=best[0], M=best[1], outdiv=best[2])
         self.outputUpdateOutputs(outnum)
 
     def outnumToPin(self, outnum):
         """Convert from PLL Number to actual output pin"""
+        outnum = self.swap_340_pllnum(outnum)
         if outnum == 0:
             return 0
         elif outnum == 1:
@@ -67,6 +68,7 @@ class PLLCDCE906(object):
 
     def outputUpdateOutputs(self, outnum, pllsrc_new=None, pllenabled_new=None, pllslewrate_new=None):
         """Update the output pins with enabled/disabled, slew rate, etc"""
+        outnum = self.swap_340_pllnum(outnum)
         # Map to output pins on CDCE906 Chip
         if outnum == 0:
             outpin = 0
@@ -140,10 +142,15 @@ class PLLCDCE906(object):
 
     def pll_outslew_set(self, slew, outnum):
         """ Set clock slew rate for the selected clock output.
-            - outnum=0: specifies CLK-SMA X6 output.
-            - outnum=1: specifies FPGA pin N13 output.
-            - outnum=2: specifies FPGA pin E12 output.
-        Allowed values: '+3nS', '+2nS', '+1nS', '+0nS'.
+
+        Args:
+            slew (string): Desired slew rate. Allowed values: '+3nS', '+2nS', 
+                            '+1nS', '+0nS'.
+
+            outnum (int): PLL output
+
+        Raises:
+            ValueError: Invalid PLL output or invalid slew value
         """
         if slew in ['+3nS', '+2nS', '+1nS', '+0nS']:
             if   outnum == 0: self._pll0slew = slew
@@ -172,9 +179,20 @@ class PLLCDCE906(object):
 
     def pll_outsource_set(self, source, outnum):
         """Update clock source for the selected clock output.
-            - outnum=0: specifies CLK-SMA X6 source; allowed source values: 'PLL0', 'PLL1', 'PLL2'.
-            - outnum=1: specifies FPGA pin N13 source; allowed source values: 'PLL1'.
-            - outnum=2: specifies FPGA pin E12 source; allowed source values: 'PLL2'.
+
+        Output 0 can be configured for PLL0, PLL1, or PLL2.
+
+        Output 1 is restricted to PLL1.
+
+        Output 2 is restricted to PLL2.
+
+        Args:
+            source (String): Desired clock source ('PLL0', 'PLL1', 'PLL2')
+            outnum (int): Output to configure. 0 goes to CLK-SMA X6, 1 goes
+                          to FPGA pin N13, and 2 goes to FPGA pin E12.
+
+        Raises:
+            ValueError: Invalid source for specified clock output
         """
         if outnum==0 and source in ['PLL0', 'PLL1', 'PLL2']:
             self._pll0source = source
@@ -219,14 +237,22 @@ class PLLCDCE906(object):
         self._usb.sendCtrl(0x30, data=[0x01, addr, data])
         resp = self._usb.readCtrl(0x30, dlen=2)
         if resp[0] != 2:
-            raise IOError("CDCE906 Write Error, response = %d" % resp[0])
+            time.sleep(0.01)
+            self._usb.sendCtrl(0x30, data=[0x01, addr, data])
+            resp = self._usb.readCtrl(0x30, dlen=2)
+            if resp[0] != 2:
+                raise IOError("CDCE906 Write Error, response = %d" % resp[0])
 
     def cdce906read(self, addr):
         """ Read a byte from the CDCE906 External PLL Chip """
         self._usb.sendCtrl(0x30, data=[0x00, addr, 0])
         resp = self._usb.readCtrl(0x30, dlen=2)
         if resp[0] != 2:
-            raise IOError("CDCE906 Read Error, response = %d" % resp[0])
+            time.sleep(0.01)
+            self._usb.sendCtrl(0x30, data=[0x00, addr, 0])
+            resp = self._usb.readCtrl(0x30, dlen=2)
+            if resp[0] != 2:
+                raise IOError("CDCE906 Read Error, response = %d" % resp[0])
         return resp[1]
 
     def cdce906init(self):
@@ -309,8 +335,19 @@ class PLLCDCE906(object):
                             return best
         return best
 
+    def swap_340_pllnum(self, pllnum):
+        # handles the fact that PLL2 and PLL1 are swapped on CW340
+        if self._board == 'CW340':
+            if pllnum == 2:
+                pllnum = 1
+            elif pllnum == 1:
+                pllnum = 2
+        return pllnum
+
+
     def pllwrite(self, pllnum, N, M, outdiv):
         """Write N/M/output divisors to PLL chip"""
+        pllnum = self.swap_340_pllnum(pllnum)
         offset = 3 * pllnum
 
         self.cdce906write(1 + offset, M & 0xFF)
@@ -343,6 +380,7 @@ class PLLCDCE906(object):
 
     def pllread(self, pllnum):
         """Read N/M/output divisors from PLL chip"""
+        pllnum = self.swap_340_pllnum(pllnum)
         offset = 3 * pllnum
 
         # Read M & N

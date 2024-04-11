@@ -36,10 +36,11 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 import copy
 from chipwhisperer.common.traces import Trace
+from ...logging import *
 import shutil
 
 try:
-    from configobj import ConfigObj  # import the module
+    from configobj import ConfigObj # type: ignore
 except ImportError:
     print("ERROR: configobj (https://pypi.python.org/pypi/configobj/) is required for this program")
     sys.exit()
@@ -415,11 +416,11 @@ class Project(Parameterized):
         ram = util.convert_to_str(self.config)
 
     def hasDiffs(self):
-        if self.dirty.value(): return True
+        # if self.dirty.value(): return True
 
-        #added, removed, changed = self.checkDiff()
-        if (len(added) + len(removed) + len(changed)) == 0:
-            return False
+        # #added, removed, changed = self.checkDiff()
+        # if (len(added) + len(removed) + len(changed)) == 0:
+        #     return False
         return True
 
     def consolidate(self, keepOriginals = True):
@@ -488,12 +489,12 @@ class Project(Parameterized):
 
         if file_type == 'zip':
             file_path = os.path.abspath(file_path)
-            with zipfile.ZipFile(file_path, 'w') as zip:
+            with zipfile.ZipFile(file_path, 'w', zipfile.ZIP_DEFLATED) as myzip:
                 common_path = os.path.commonpath(file_paths)
                 for file in file_paths:
                     relative_path = os.path.relpath(file, common_path)
-                    zip.write(file, arcname=relative_path)
-                    export_file_path = os.path.abspath(zip.filename)
+                    myzip.write(file, arcname=relative_path)
+                    export_file_path = os.path.abspath(myzip.filename)
         else:
             raise ValueError('{} not supported'.format(file_type))
 
@@ -668,23 +669,25 @@ class Traces:
     def keys(self):
         return self._keys
 
-    def append(self, trace):
+    def append(self, trace, dtype=np.double):
         """Append a Trace containing the trace and related operation information.
 
         Args:
             trace (:class:`Trace <chipwhisperer.common.trace.Trace>`): A captured or created trace.
+            dtype: Numpy data type for storing trace.wave
 
         Raises:
             TypeError: When trying to append something other than a trace.
         """
         if not isinstance(trace, Trace):
-            raise TypeError("Expected Trace object, got {}.".format(trace))
+            other_logger.error("Invalid type appended to traces. Try appending cw.Trace(trace_data, textin, textout, key)")
+            raise TypeError("Expected Trace object, got {}.".format(type(trace)))
 
         if self.cur_trace_num > self.seg_ind_max:
             self.cur_seg = self.project.segments.new()
             self.project.segments.append(self.cur_seg)
             self.cur_trace_num = 0
-        self.cur_seg.add_trace(*trace)
+        self.cur_seg.add_trace(*trace, dtype=dtype)
         self.cur_trace_num += 1
 
     def extend(self, iterable):
@@ -848,7 +851,10 @@ class IndividualIterable:
             raise StopIteration
 
         self.n += 1
-        return self.getter(self.n)
+        return self.getter(self.n - 1)
+    
+    def __len__(self):
+        return self.trace_num_func()
 
     def __getitem__(self, item):
         if isinstance(item, int):
@@ -870,3 +876,14 @@ class IndividualIterable:
         else:
             raise TypeError('Indexing by integer or slice only')
 
+    def __array__(self):
+        # to make converting to numpy arrays much easier
+        if hasattr(self.getter(0), "dtype"):
+            dtype = self.getter(0).dtype
+        else:
+            dtype = 'uint8'
+        num_traces = self.trace_num_func()
+        len_trace = len(self.getter(0))
+        arr = np.zeros((num_traces, len_trace), dtype=dtype)
+        arr[:,:] = np.array([self.getter(i) for i in range(num_traces)])[:,:]
+        return arr

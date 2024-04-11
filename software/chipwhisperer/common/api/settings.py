@@ -25,11 +25,7 @@
 import os
 
 #If we have QSettings(), use that to get values from registry
-try:
-    from PySide.QtCore import QSettings
-    settings_backendclass = QSettings
-except ImportError:
-    settings_backendclass = None
+settings_backendclass = None
 
 class Settings(object):
 

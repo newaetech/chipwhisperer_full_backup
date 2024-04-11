@@ -42,6 +42,15 @@ class Results(object):
         self.known_key = None
         self.clear()
 
+    def key_guess(self):
+        """ Get best guess for key in a list.
+
+        Returns:
+            Guessed key as a list
+        """
+        best_guesses = self.best_guesses()
+        return [byte['guess'] for byte in best_guesses]
+
     def best_guesses(self):
         """ Gets best subkey guesses from attack results
 
@@ -51,11 +60,11 @@ class Results(object):
         guess_list = []
         stats = self.find_maximums()
         for i, subkey in enumerate(stats):
-            dict = OrderedDict()
-            dict['guess'] = subkey[0][0]
-            dict['correlation'] = subkey[0][2]
-            dict['pge'] = self.simple_PGE(i)
-            guess_list.append(dict)
+            guess = {}
+            guess['guess'] = subkey[0][0]
+            guess['correlation'] = subkey[0][2]
+            guess['pge'] = self.simple_PGE(i)
+            guess_list.append(guess)
 
         return guess_list
 
@@ -85,8 +94,21 @@ class Results(object):
 
         #TODO: Ensure this gets called by attack algorithms when rerunning
 
+    def calc_PGE(self, bnum):
+        if self.known_key is None:
+            raise ValueError("Set result.known_key before running this method!")
+        result = self.find_maximums()[bnum]
+        for i in range(len(result)):
+            if self.known_key[bnum] == result[i][0]:
+                return i
+
     def simple_PGE(self, bnum):
         """Returns the partial guessing entropy of subkey."""
+        if self.pge[bnum] == 255:
+            # actually have to do the calculation
+            if self.known_key is None:
+                return 255
+            return self.calc_PGE(bnum)
         if self.maxValid[bnum] == False:
             #TODO: should sort
             return 1
@@ -187,10 +209,7 @@ class Results(object):
                     mvalue = v
 
                     #Get maximum value for this hypothesis
-                    try:
-                        mindex = np.amin(np.where(v == mvalue))
-                    except ValueError:
-                        mindex = self.numPerms-1
+                    mindex = np.nanargmax(np.fabs(self.diffs[i][hyp]))
                     self.maxes[i][hyp]['hyp'] = hyp
                     self.maxes[i][hyp]['point'] = mindex
                     self.maxes[i][hyp]['value'] = mvalue
@@ -213,9 +232,11 @@ class Results(object):
                 if self.known_key is not None:
                     try:
                         self.pge[i] = np.where(self.maxes[i]['hyp'] == self.known_key[i])[0][0] - numnans
+                        # print(self.pge)
                         if self.pge[i] < 0:
                             self.pge[i] = self.numPerms/2
-                    except IndexError:
+                    except IndexError as e:
+                        print("AHHH " + str(e))
                         self.pge[i] = self.numPerms-1
 
             tnum = self.diffs_tnum[i]

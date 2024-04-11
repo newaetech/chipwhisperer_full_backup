@@ -1,14 +1,21 @@
-# configobj required for project stuff, date stuff for projects, sphinx_rtd_theme for proper syntax highlighting
-configobj==5.0.6
-iso8601==0.1.12
-numpy>=1.14.0
-pycryptodome>=3.7.0
-pyparsing==2.2.0
-python-dateutil==2.6.1
-pytz==2017.3
-pyusb==1.0.2
-scipy==1.1.0
-sphinx>=2.0
-sphinx_rtd_theme>=0.3.1
-sphinxcontrib-images>=0.9.1
-pyserial==3.4
+# # configobj required for project stuff, date stuff for projects, sphinx_rtd_theme for proper syntax highlighting
+# configobj==5.0.6
+# iso8601==0.1.12
+# numpy>=1.14.0
+# pycryptodome>=3.7.0
+# pyparsing==2.2.0
+# python-dateutil==2.6.1
+# pytz==2017.3
+# pyusb==1.1.0
+# scipy==1.1.0
+# sphinx>=2.0
+# sphinx_rtd_theme>=0.3.1
+# sphinxcontrib-images>=0.9.1
+# pyserial==3.4
+# fastdtw==0.3.4
+# Cython>=0.29.14
+# pypandoc==1.3.3
+# tqdm>=4.40.0
+# ipython #needed for rtd
+# ECPy==0.10.0
+# sphinx_autodoc_typehints==1.12.0

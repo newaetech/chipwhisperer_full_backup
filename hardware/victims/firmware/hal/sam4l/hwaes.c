@@ -13,7 +13,7 @@
  * \retval true if the initialization was successful.
  * \retval false if initialization failed.
  */
-void aes_init(void)
+void HW_AES128_Init(void)
 {
 	periclk_aesa_init();
 	SCIF->SCIF_GCCTRL[AESA_GCLK_NUM].SCIF_GCCTRL = SCIF_GCCTRL_OSCSEL(GENCLK_SRC_CLK_CPU) |  SCIF_GCCTRL_CEN;
@@ -32,7 +32,7 @@ void aes_init(void)
     AESA->AESA_DRNGSEED = 0xDEADBEEF; //A very random number        
 }
 
-void aes_set_key(uint8_t * key)
+void HW_AES128_LoadKey(uint8_t * key)
 {
     AESA->AESA_KEY[0].AESA_KEY = *(WoReg *)(key + 0);
     AESA->AESA_KEY[1].AESA_KEY = *(WoReg *)(key + 4);
@@ -40,23 +40,25 @@ void aes_set_key(uint8_t * key)
     AESA->AESA_KEY[3].AESA_KEY = *(WoReg *)(key + 12);
 }
 
-void aes_indep_mask(uint8_t* m)
-{
-	;
-}
 
-
-void aes_encrypt(uint8_t * pt)
+void HW_AES128_Enc_pretrigger(uint8_t* pt)
 {
-	AESA->AESA_DATABUFPTR = 0; /* Auto-intecremented */
+    AESA->AESA_DATABUFPTR = 0; /* Auto-intecremented */
     AESA->AESA_IDATA = *(WoReg *)(pt + 0);
     AESA->AESA_IDATA = *(WoReg *)(pt + 4);
     AESA->AESA_IDATA = *(WoReg *)(pt + 8);
+}
+
+void HW_AES128_Enc(uint8_t * pt)
+{
     AESA->AESA_IDATA = *(WoReg *)(pt + 12);
 	
 	/* Wait */
 	while((AESA->AESA_SR & AESA_SR_ODATARDY) == 0);
-	
+}
+
+void HW_AES128_Enc_posttrigger(uint8_t* pt)
+{
 	AESA->AESA_DATABUFPTR = 0;
     *(WoReg *)(pt + 0) = AESA->AESA_ODATA;
 	*(WoReg *)(pt + 4) = AESA->AESA_ODATA;

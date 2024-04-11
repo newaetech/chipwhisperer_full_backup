@@ -20,6 +20,10 @@ CFLAGS +=   -mthumb -mfloat-abi=soft -ffunction-sections
 CPPFLAGS += -mthumb -mfloat-abi=soft -ffunction-sections
 ASFLAGS +=  -mthumb -mfloat-abi=soft -ffunction-sections
 
+ifeq ($(MCU_CLK), INT)
+  CFLAGS += -DUSE_INTERNAL_CLK
+endif
+
 CDEFS   += -DSTM32F100xB -DSTM32F1 -DSTM32 -DDEBUG
 CPPDEFS += -DSTM32F100xB -DSTM32F1 -DSTM32 -DDEBUG
 

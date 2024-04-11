@@ -37,7 +37,7 @@ SRC += imxrt1062_hal.c
 SRC += evkmimxrt1060_flexspi_nor_config.c fsl_flexspi_nor_boot.c
 SRC += fsl_dcp.c fsl_snvs_lp.c
 
-MCU_FLAGS = -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb
+MCU_FLAGS = -mcpu=cortex-m7 -mthumb -mfloat-abi=soft
 
 CC = arm-none-eabi-gcc
 OBJCOPY = arm-none-eabi-objcopy

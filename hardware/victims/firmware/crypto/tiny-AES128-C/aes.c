@@ -70,6 +70,8 @@ static state_t* state;
 // The array that stores the round keys.
 static uint8_t RoundKey[176];
 
+static uint8_t input_save[16];
+
 // The Key input to the AES Program
 static uint8_t* Key;
 
@@ -224,6 +226,18 @@ static void SubBytes(void)
   {
     for(j = 0; j < 4; ++j)
     {
+      #ifdef JITTER_2
+      if (input_save[4*i+j] & 0x01) {
+        volatile int i = 1;
+        i+=1;
+      }
+      #endif
+      #ifdef JITTER_2
+      if (input_save[4*i+j] & 0x02) {
+        volatile int i = 1;
+        i+=1;
+      }
+      #endif
       (*state)[j][i] = getSBoxValue((*state)[j][i]);
     }
   }
@@ -237,6 +251,18 @@ static void ShiftRows(void)
   uint8_t temp;
 
   // Rotate first row 1 columns to left  
+      #ifdef JITTER_2
+      if (input_save[1] & 0x01) {
+        volatile int i = 0;
+        i += 1;
+      }
+      if (input_save[2] & 0x02) {
+        volatile int i = 0;
+        i += 1;
+      }
+      #endif
+  #ifdef JITTER_2
+  #endif
   temp           = (*state)[0][1];
   (*state)[0][1] = (*state)[1][1];
   (*state)[1][1] = (*state)[2][1];
@@ -244,14 +270,52 @@ static void ShiftRows(void)
   (*state)[3][1] = temp;
 
   // Rotate second row 2 columns to left  
+      #ifdef JITTER_2
+      if (input_save[4] & 0x01) {
+        volatile int i = 0;
+        i += 1;
+      }
+      if (input_save[10] & 0x02) {
+        volatile int i = 0;
+        i += 1;
+      }
+      #endif
+  #ifdef JITTER_2
+  #endif
   temp           = (*state)[0][2];
   (*state)[0][2] = (*state)[2][2];
   (*state)[2][2] = temp;
+  // Rotate second row 2 columns to left  
+  #ifdef JITTER_2
+  #endif
+      #ifdef JITTER_2
+      if (input_save[5] & 0x01) {
+        volatile int i = 0;
+        i += 1;
+      }
+      if (input_save[8] & 0x02) {
+        volatile int i = 0;
+        i += 1;
+      }
+      #endif
 
   temp       = (*state)[1][2];
   (*state)[1][2] = (*state)[3][2];
   (*state)[3][2] = temp;
 
+  // Rotate second row 2 columns to left  
+      #ifdef JITTER_2
+      if (input_save[0] & 0x01) {
+        volatile int i = 0;
+        i += 1;
+      }
+      if (input_save[3] & 0x02) {
+        volatile int i = 0;
+        i += 1;
+      }
+      #endif
+  #ifdef JITTER_2
+  #endif
   // Rotate third row 3 columns to left
   temp       = (*state)[0][3];
   (*state)[0][3] = (*state)[3][3];
@@ -272,6 +336,16 @@ static void MixColumns(void)
   uint8_t Tmp,Tm,t;
   for(i = 0; i < 4; ++i)
   {  
+      #ifdef JITTER_2
+      if (input_save[4*i] & 0x01) {
+        volatile int i = 0;
+        i += 1;
+      }
+      if (input_save[4*i] & 0x02) {
+        volatile int i = 0;
+        i += 1;
+      }
+      #endif
     t   = (*state)[i][0];
     Tmp = (*state)[i][0] ^ (*state)[i][1] ^ (*state)[i][2] ^ (*state)[i][3] ;
     Tm  = (*state)[i][0] ^ (*state)[i][1] ; Tm = xtime(Tm);  (*state)[i][0] ^= Tm ^ Tmp ;
@@ -441,6 +515,7 @@ void AES128_ECB_indp_setkey(uint8_t* key)
 void AES128_ECB_indp_crypto(uint8_t* input)
 {
   state = (state_t*)input;
+  BlockCopy(input_save, input);
   Cipher();
 }
 

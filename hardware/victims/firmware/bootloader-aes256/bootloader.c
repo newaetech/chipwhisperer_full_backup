@@ -34,6 +34,8 @@
 #define COMM_BADCHECKSUM 0xA1
 #define COMM_OK 0xA4
 
+uint8_t tmp32[32] = SECRET_KEY;
+uint8_t iv[16] = IV;
 int main(void)
   {
     platform_init();
@@ -52,11 +54,9 @@ int main(void)
 
   //Load Super-Secret key
     aes256_context ctx;
-    uint8_t tmp32[32] = SECRET_KEY;
     aes256_init(&ctx, tmp32);
 
     //Load super-secret IV
-    uint8_t iv[16] = IV;
 
     //Do this forever (we don't actually have a jumper to bootloader)
     uint8_t i;

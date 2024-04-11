@@ -48,6 +48,7 @@
 #include "udi.h"
 #include "udc.h"
 
+#define WINUSB_PLATFORM_DESCRIPTOR_LENGTH 0x9E
 /**
  * \ingroup udc_group
  * \defgroup udc_group_interne Implementation of UDC
@@ -654,15 +655,43 @@ static bool udc_req_std_dev_get_str_desc(void)
 
 	return true;
 }
+//0xC0 bRequestType, 0x01 bRequest, 0x00 wValue, 0x07 wIndex
 
 /**
  * \brief Standard device request to get descriptors about USB device
  *
  * \return true if success
  */
+	const uint8_t BOS_DESC[] = {
+		//bos descriptor, technically a USB3 thing, but also 2.1 which kind of exists
+		0x05,  // bos length
+		0x0F,  // bos request type
+		0x21, 0x00, // wTotalLength: 0x05 + 0x1C (WinUSB descriptor length)
+		0x01,       // # of platform specific descriptors. 1 (WinUSB) in our case
+		
+		// WinUSB descriptor
+		0x1C, // Descriptor length
+		0x10, // Descriptor type (Device capability)
+		0x05, // Capability type (Platform)
+		0x00, // Reserved byte
+
+		// MS GUID (D8DD60DF-4589-4CC7-9CD2-659D9E648A9F)- some mixed endian bs
+		0xDF, 0x60, 0xDD, 0xD8, 
+		0x89, 0x45, 0xC7, 0x4C, 
+		0x9C, 0xD2, 0x65, 0x9D, 
+		0x9E ,0x64, 0x8A, 0x9F,
+
+		0x00, 0x00, 0x03, 0x06, // Min Windows version, 8.1, so should work on that and above
+
+		// Windows will ask for another descriptor based on this info
+		WINUSB_PLATFORM_DESCRIPTOR_LENGTH, 0x00, //length of other descriptor
+		0x01, // when asking for MS 2.0 descriptor, will do bmRequestType = 0xC0, bRequest = this (0x01)
+		0x00  // if non 0, Windows will send this before asking for the next descriptor
+		};
 static bool udc_req_std_dev_get_descriptor(void)
 {
 	uint8_t conf_num;
+
 
 	conf_num = udd_g_ctrlreq.req.wValue & 0xff;
 
@@ -672,12 +701,15 @@ static bool udc_req_std_dev_get_descriptor(void)
 		// Device descriptor requested
 #ifdef USB_DEVICE_HS_SUPPORT
 		if (!udd_is_high_speed()) {
+			//(udc_config.confdev_hs)->bcdUSB = 0x0210;
 			udd_set_setup_payload(
 				(uint8_t *) udc_config.confdev_hs,
 				udc_config.confdev_hs->bLength);
 		} else
 #endif
 		{
+			// Windows will only ask for BOS if we set this to USB 2.1
+			(udc_config.confdev_lsfs)->bcdUSB = 0x0210;
 			udd_set_setup_payload(
 				(uint8_t *) udc_config.confdev_lsfs,
 				udc_config.confdev_lsfs->bLength);
@@ -744,14 +776,9 @@ static bool udc_req_std_dev_get_descriptor(void)
 				USB_DT_OTHER_SPEED_CONFIGURATION;
 		break;
 #endif
-
-	case USB_DT_BOS:
-		// Device BOS descriptor requested
-		if (udc_config.conf_bos == NULL) {
-			return false;
-		}
-		udd_set_setup_payload( (uint8_t *) udc_config.conf_bos,
-				udc_config.conf_bos->wTotalLength);
+	case USB_DT_BOS: //bos descriptor
+		udd_set_setup_payload( (uint8_t *) BOS_DESC,
+			0x21);
 		break;
 
 	case USB_DT_STRING:
@@ -1078,6 +1105,45 @@ static bool udc_req_ep(void)
 	}
 	return false;
 }
+// WinUSB 2.0 descriptor. This is what modern systems use
+// https://github.com/sowbug/weblight/blob/192ad7a0e903542e2aa28c607d98254a12a6399d/firmware/webusb.c
+// http://janaxelson.com/files/ms_os_20_descriptors.c
+// https://books.google.com/books?id=pkefBgAAQBAJ&pg=PA353&lpg=PA353
+// Taken from panda, this does something. 
+uint8_t winusb_20_desc[WINUSB_PLATFORM_DESCRIPTOR_LENGTH] = {
+  // Microsoft OS 2.0 descriptor set header (table 10)
+  0x0A, 0x00, // Descriptor size (10 bytes)
+  0x00, 0x00, // MS OS 2.0 descriptor set header
+
+  0x00, 0x00, 0x03, 0x06, // Windows version (8.1) (0x06030000)
+  WINUSB_PLATFORM_DESCRIPTOR_LENGTH, 0x00, // Total size of MS OS 2.0 descriptor set
+
+  // Microsoft OS 2.0 compatible ID descriptor
+    0x14, 0x00, // Descriptor size (20 bytes)
+    0x03, 0x00, // MS OS 2.0 compatible ID descriptor
+    'W', 'I', 'N', 'U', 'S', 'B', 0x00, 0x00, // compatible ID (WINUSB)
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // Sub-compatible ID
+
+  // Registry property descriptor
+  0x80, 0x00, // Descriptor size (130 bytes)
+  0x04, 0x00, // Registry Property descriptor
+  0x01, 0x00, // Strings are null-terminated Unicode
+  0x28, 0x00, // Size of Property Name (40 bytes) "DeviceInterfaceGUID"
+
+  // bPropertyName (DeviceInterfaceGUID)
+    'C', 0x00, 'h', 0x00, 'i', 0x00, 'p', 0x00, 'w', 0x00, 'h', 0x00, 'i', 0x00, 's', 0x00,
+    'p', 0x00, 'e', 0x00, 'r', 0x00, 'e', 0x00, 'r', 0x00, 'L', 0x00, 'i', 0x00, 't', 0x00,
+    'e', 0x00, 'G', 0x00, 'U', 0x00, 'I', 'D',
+
+  0x4E, 0x00, // Size of Property Data (78 bytes)
+
+  // Vendor-defined property data: {CCE5291C-A69F-4995-A4C2-2AE57A51ADE9}
+    '{', 0x00, 'c', 0x00, 'c', 0x00, 'e', 0x00, '5', 0x00, '2', 0x00, '9', 0x00, '1', 0x00, // 16
+    'c', 0x00, '-', 0x00, 'a', 0x00, '6', 0x00, '9', 0x00, 'f', 0x00, '-', 0x00, '4', 0x00, // 32
+    '9', 0x00, '9', 0x00, '5', 0x00, '-', 0x00, 'a', 0x00, '4', 0x00, 'c', 0x00, '2', 0x00, // 48
+    '-', 0x00, '2', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, '7', 0x00, 'a', 0x00, '5', 0x00, // 64
+    '1', 0x00, 'a', 0x00, 'd', 0x00, 'e', 0x00, '9', 0x00, '}', 0x00, 0x00, 0x00 // 78 bytes
+};
 
 /**
  * \brief Main routine to manage the USB SETUP request.
@@ -1098,6 +1164,12 @@ bool udc_process_setup(void)
 	udd_g_ctrlreq.payload_size = 0;
 	udd_g_ctrlreq.callback = NULL;
 	udd_g_ctrlreq.over_under_run = NULL;
+
+	// MS requests this using request type 0xC0 and our user defined bRequest (0x01 in our case)
+	if ((udd_g_ctrlreq.req.bmRequestType == 0xC0) && (udd_g_ctrlreq.req.bRequest == 0x01)) {
+		udd_set_setup_payload(winusb_20_desc, WINUSB_PLATFORM_DESCRIPTOR_LENGTH);
+		return true;
+	}
 
 	if (Udd_setup_is_in()) {
 		if (udd_g_ctrlreq.req.wLength == 0) {

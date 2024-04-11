@@ -16,17 +16,20 @@ from glob import glob
 import shutil
 import re
 from pathlib import Path
+import datetime
+from chipwhisperer import __version__
+
 sys.path.insert(0, os.path.abspath('./../software'))
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'ChipWhisperer'
-copyright = "2019, NewAE Technology Inc."
+copyright = "{}, NewAE Technology Inc.".format(datetime.datetime.now().year)
 author = "NewAE Technology Inc."
 
 # The full version, including alpha/beta/rc tags
-release = '5.1.3'
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -37,9 +40,27 @@ release = '5.1.3'
 extensions = [
 	'sphinx.ext.napoleon',
 	'sphinx.ext.autodoc',
+    'sphinx_autodoc_typehints',
 	'sphinx.ext.todo',
-    'sphinxcontrib.images'
+    'sphinxcontrib.images',
+    # 'sphinx_autodoc_typehints'
 ]
+
+#napoleon settings
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+napoleon_include_init_with_doc = False
+napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
+napoleon_use_param = True
+napoleon_use_rtype = True
+napoleon_preprocess_types = False
+napoleon_type_aliases = None
+napoleon_attr_annotations = True
 
 # explicitly set the master document to index.rst
 master_doc = 'index'
@@ -60,6 +81,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 #
 html_theme = 'alabaster'
 
+
 html_theme_options = {
     'description': 'Side-Channel analysis tool-chain.',
     'fixed_sidebar': 'true',
@@ -68,14 +90,15 @@ html_theme_options = {
     'github_user': 'newaetech',
     'github_repo': 'chipwhisperer',
     'github_banner': 'true',
-    'github_button': 'true',
+    'github_button': 'false',
     'github_type': 'watch',
     'extra_nav_links': {
-        'Hardware Docs': 'https://wiki.newae.com/Main_Page#Hardware_Documentation',
+        'Hardware Docs': 'https://rtfm.newae.com',
         'Our Source Code': 'https://github.com/newaetech/chipwhisperer',
     },
     'sidebar_width': '265px',
-    'page_width': '1000px',
+    'page_width': '80%',
+    'anchor': 'grey'
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -89,11 +112,23 @@ todo_include_todos = True
 # remove module names
 add_module_names = False
 
+html_css_files = ['backup.css']
+
 # side bar customization
 html_sidebars = {
-    'index': ['about.html', 'navigation.html', 'searchbox.html'],
-    '**': ['about_short.html', 'localtoc.html', 'searchbox.html']
+    'index': ['about.html', 'testtoc.html', 'searchbox.html'],
+    'api': ['about.html', 'navigation.html', 'searchbox.html'],
+    'prerequisites': ['about.html', 'testtoc.html', 'searchbox.html'],
+    'tutorials': ['about.html', 'testtoc.html', 'searchbox.html'],
+    'installing': ['about.html', 'testtoc.html', 'searchbox.html'],
+    '**': ['about.html', 'localtoc.html', 'searchbox.html']
 }
+
+# html_extra_path = ["install.html"]
+
+# rst_epilog = """
+# .. include:: <s5defs.txt>
+# """
 
 
 def create_tutorial_files(app, config):
@@ -124,7 +159,8 @@ def create_tutorial_files(app, config):
         shutil.copyfile(image_file, os.path.join(output_image_dir, image_name))
 
     # for tutorial identifier (pa_cpa_1), scope and target
-    p = re.compile(r'([A-Za-z_\d]*)-.*-([^-]*)-([^-]*)\.rst')
+    #p = re.compile(r'([A-Za-z_\d]*)-.*-([^-]*)-([^-]*)\.rst')
+    p = re.compile(r'([A-Za-z_ \d]*)-.*-([^-]*)-([^-]*)\.rst')
 
     generated_files = []
     for file in glob(os.path.join(tutorials_src_dir, "*.rst")):
@@ -158,6 +194,22 @@ def create_tutorial_files(app, config):
     Path(tutorials_overview_file).touch()
     generated_files.append(tutorials_overview_file)
 
+def generate_contributing(app, config):
+    """Callback to convert the contributing.md to an rst file"""
+    import pypandoc
+
+    print('Downloading pandoc')
+    pypandoc.pandoc_download.download_pandoc()
+
+    print('Generating contributing.rst')
+    pypandoc.convert_file('../contributing.md', 'rst', outputfile='contributing.rst')
+
+    print('Generating simpleserial.rst')
+    pypandoc.convert_file('../hardware/victims/firmware/simpleserial/README.rst', 'rst', outputfile='simpleserial.rst')
+            
+
 
 def setup(app):
-    app.connect('config-inited', create_tutorial_files)
+    # app.connect('config-inited', create_tutorial_files)
+    app.connect('config-inited', generate_contributing)
+    app.add_css_file("custom.css")

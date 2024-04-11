@@ -1,0 +1,29 @@
+VPATH += :$(HALPATH)/ibex
+
+SRC += ibex_hal.c demo_system.c gpio.c pwm.c spi.c timer.c uart.c
+
+EXTRAINCDIRS += $(HALPATH)/ibex
+
+ASRC += crt0.S
+
+# If you are missing 'which' (Windows uses 'where') you can change
+# program, or just fix the values for CC.
+ifeq (, $(shell which riscv32-unknown-elf-gcc))
+$(error Could not find riscv32-unknown-elf-gcc)
+else
+CC = riscv32-unknown-elf-gcc
+OBJCOPY = riscv32-unknown-elf-objcopy
+OBJDUMP = riscv32-unknown-elf-objdump
+SIZE = riscv32-unknown-elf-size
+AR = riscv32-unknown-elf-ar rcs
+NM = riscv32-unknown-elf-nm
+endif
+
+#Output Format = Binary for this target
+FORMAT = binary
+
+CFLAGS += -march=rv32imc -mabi=ilp32 -static -mcmodel=medany -Wall -g -fvisibility=hidden -nostartfiles -ffreestanding
+CPPLAGS += -march=rv32imc -mabi=ilp32 -static -mcmodel=medany -Wall -g -fvisibility=hidden -nostartfiles -ffreestanding
+ASFLAGS += -march=rv32imc -mabi=ilp32 -static -mcmodel=medany -Wall -g -fvisibility=hidden -nostartfiles -ffreestanding
+
+LDFLAGS += -nostartfiles -T $(HALPATH)/ibex/link.ld

@@ -97,7 +97,17 @@ void HW_AES128_LoadKey(uint8_t* key)
 
 void HW_AES128_Enc(uint8_t* pt)
 {
-     idau_aes_enc(hw_key, 4, pt, pt);
+    idau_aes_enc(hw_key, 4, pt, pt);
+}
+
+void HW_AES128_Enc_pretrigger(uint8_t* pt)
+{
+    ;
+}
+
+void HW_AES128_Enc_posttrigger(uint8_t* pt)
+{
+     ;
 }
 
 void HW_AES128_Dec(uint8_t *pt)

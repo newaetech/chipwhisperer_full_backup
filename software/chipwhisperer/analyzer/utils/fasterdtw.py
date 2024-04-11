@@ -56,10 +56,10 @@ import numbers
 import numpy as np
 from collections import defaultdict
 
-try:
-    range = xrange
-except NameError:
-    pass
+# try:
+#     range = xrange
+# except NameError:
+#     pass
 
 
 def fastdtw(x, y, radius=1, dist=None):

@@ -59,14 +59,14 @@ analyzerPlots = analyzer_plots
 # current_trace_iteration = 0
 current_trace_iteration = 0
 def _default_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
-    import pandas as pd
-    from IPython.display import clear_output
+    import pandas as pd # type: ignore
+    from IPython.display import clear_output # type: ignore
     global current_trace_iteration
     attack_results = attack.results
     key = attack.known_key()
 
     def format_stat(stat):
-        if type(stat) is int:
+        if (type(stat) is int) or (type(stat) is float):
             return str(stat)
         return str(fmt.format(stat[0], stat[2]))
 
@@ -74,12 +74,15 @@ def _default_jupyter_callback(attack, head = 6, fmt="{:02X}<br>{:.3f}"):
         ret = [""] * 16
         key = attack.known_key()
         for i,bnum in enumerate(row):
-            if type(bnum) is int:
-                continue
-            if bnum[0] == key[i]:
-                ret[i] = "color: red"
-            else:
-                ret[i] = ""
+            try:
+                if (type(bnum) is int) or (type(bnum) is float):
+                    continue
+                if bnum[0] == key[i]:
+                    ret[i] = "color: red"
+                else:
+                    ret[i] = ""
+            except Exception as e:
+                print("bnum: {}, key: {}".format(bnum, key))
         return ret
     attack_results.set_known_key(key)
     stat_data = attack_results.find_maximums()

@@ -56,7 +56,7 @@ class PtKey_XOR(XORLeakageHelper):
 
 #List of all classes you can use
 enc_list = [PtKey_XOR]
-dec_list = []
+dec_list = [] # type: ignore
 
 class XOR_8bit(ModelsBase):
     _name = 'XOR'

@@ -6,8 +6,7 @@ Starting
 
 After finishing the installation process, there are two different ways of
 using the **chipwhisperer** software. You will most likely be using a Jupyter
-server to run a Jupyter notebook inside of your browser. This will make
-following the :ref:`tutorials <tutorials>` easier.
+server to run a Jupyter notebook inside of your browser. 
 
 *****************
 Jupyter Notebooks
@@ -19,7 +18,24 @@ Recommended reading for using Jupyter notebooks:
 
 Here is a quick start guide based on you having finished the installation
 of **chipwhisperer**. It only covers steps unique to our chipwhisperer/Jupyter
-installation.
+installation. 
+
+If you've installed via the VirtualBox VM image:
+
+ #. Open VirtualBox and start the virtual machine
+
+ #. Open your browser outside the VM
+
+ #. Connect to localhost:8888 in your browser
+
+
+If you've installed via the Windows Installer:
+
+ #. Run the ChipWhisperer shortcut.
+      * This shortcut is available in the ChipWhisperer install folder,
+         the start menu, and optionally as a shortcut on the desktop.
+
+If you've installed natively:
 
  #. Make sure you are using a bash like terminal. Many of the jupyter
     notebooks use bash to run **make** or remove files for building
@@ -89,5 +105,4 @@ interpreter, use **chipwhisperer** as you normally would any python package::
     help(cw)
 
 The :ref:`Python API <api>` has all the information about what functions,
-and classes are at your disposal. You can also you the
-:ref:`tutorials <tutorials>` as a reference as well.
+and classes are at your disposal.

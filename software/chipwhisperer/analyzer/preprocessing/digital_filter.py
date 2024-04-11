@@ -30,7 +30,7 @@
 #    20-Jun-2016  marc                  Added "bandstop" filter option
 
 from ._base import PreprocessingBase
-from scipy import signal
+from scipy import signal # type: ignore
 from chipwhisperer.common.utils.parameter import setupSetParam
 
 class Filter(PreprocessingBase):

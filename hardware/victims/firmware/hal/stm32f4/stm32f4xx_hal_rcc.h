@@ -1333,7 +1333,7 @@ void HAL_RCC_CSSCallback(void);
 #define RCC_DBP_TIMEOUT_VALUE      2U
 #define RCC_LSE_TIMEOUT_VALUE      LSE_STARTUP_TIMEOUT
 
-#define HSE_TIMEOUT_VALUE          HSE_STARTUP_TIMEOUT
+#define HSE_TIMEOUT_VALUE          HSE_STARTUP_TIMEOUT * 1E6
 #define HSI_TIMEOUT_VALUE          2U  /* 2 ms */
 #define LSI_TIMEOUT_VALUE          2U  /* 2 ms */
 

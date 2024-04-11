@@ -126,6 +126,7 @@ module clockglitch_s6(
 	
 	wire glitchstream;
 
+
         reg [12:0] glitch_cnt;
         (* ASYNC_REG = "TRUE" *) reg[2:0] glitch_trigger_pipe;
         reg glitch_trigger_resync;
@@ -189,6 +190,7 @@ module clockglitch_s6(
 	                      (glitch_type == 3'b001) ? source_clk | glitchstream :
 								 (glitch_type == 3'b010) ? glitchstream :
 								 (glitch_type == 3'b011) ? source_clk :
+
 								 (glitch_type == 3'b100) ? glitch_go_r :
 								 1'b0;
 			

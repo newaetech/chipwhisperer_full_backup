@@ -265,7 +265,6 @@ module reg_clockglitch(
 			glitch_go_local <= 'b0;
 	 end
 	
-	 
 	 assign clockglitch_settings_read[18:0] = clockglitch_settings_reg[18:0];
 	 assign clockglitch_settings_read[36:19] = {phase2_actual, phase1_actual};
 	 assign clockglitch_settings_read[37] = phase1_done_reg;

@@ -1,0 +1,1 @@
+Headers taken from https://github.com/OpenNuvoton/NuMicro-8051-Family, lightly edited to remove dependency on stddriver headers.

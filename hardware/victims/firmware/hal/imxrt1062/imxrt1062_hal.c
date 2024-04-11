@@ -39,7 +39,7 @@ void init_uart(void)
     lpuartConfig.baudRate_Bps = 38400U;
     lpuartConfig.enableTx = 1;
     lpuartConfig.enableRx = 1;
-    LPUART_Init(LPUART1, &lpuartConfig, 4000000U);
+    LPUART_Init(LPUART1, &lpuartConfig, 80000000U);
 }
 
 void putch(char c)
@@ -66,15 +66,16 @@ char getch(void)
 
 void trigger_setup(void)
 {
+    //Setup is done in pin_mux file
     ;
 }
 void trigger_high(void)
 {
-    ;
+    GPIO_PinWrite(GPIO1, (14U), 1U);
 }
 void trigger_low(void)
 {
-    ;
+    GPIO_PinWrite(GPIO1, (14U), 0U);
 }
 
 /*******************************************************************************
@@ -116,7 +117,7 @@ void SysTick_DelayTicks(uint32_t n)
 
 static dcp_handle_t _dcp_handle;
 
-void hwcrypto_init(void)
+void HW_AES128_Init(void)
 {
     dcp_config_t config;
     DCP_GetDefaultConfig(&config);
@@ -126,14 +127,24 @@ void hwcrypto_init(void)
     _dcp_handle.keySlot = 0;
 } 
 
-void hwcrypto_setkey(uint8_t * key)
+void HW_AES128_LoadKey(uint8_t * key)
 {
     DCP_AES_SetKey(DCP, &_dcp_handle, key, 16);
 }
 
-void hwcrypto_enc(uint8_t * pt)
+void HW_AES128_Enc_pretrigger(uint8_t * pt)
+{
+    ;
+}
+
+void HW_AES128_Enc(uint8_t * pt)
 {
     DCP_AES_EncryptEcb(DCP, &_dcp_handle, pt, pt, 16);
+}
+
+void HW_AES128_Enc_posttrigger(uint8_t * pt)
+{
+    ;
 }
 
 void platform_init(void)
@@ -151,6 +162,7 @@ void platform_init(void)
     if(hal_glitch_detected()) {
         uart_puts("BOOT-GLITCH\n");
     }
+    
     
     /* Power glitch detector enabled */
     SNVS_LP_Init(SNVS);

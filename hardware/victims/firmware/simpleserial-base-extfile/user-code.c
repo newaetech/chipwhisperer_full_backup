@@ -3,7 +3,7 @@
 
 static uint8_t known_password[SECRET_KEY_LEN] = {'p', 'a', 's', 's', 'w', 'o', 'r', 'd'};
 
-uint8_t process_secret_key(uint8_t* key)
+uint8_t process_secret_key(uint8_t* key, uint8_t len)
 {
     //Do something with key if needed here (store to local variable for example)
     for(uint8_t i = 0; i < SECRET_KEY_LEN; i++){
@@ -13,7 +13,7 @@ uint8_t process_secret_key(uint8_t* key)
     return 0x00;
 }
 
-uint8_t process_input(uint8_t* pt)
+uint8_t process_input(uint8_t* pt, uint8_t len)
 {
     uint8_t pass_ok = 0x00;
 

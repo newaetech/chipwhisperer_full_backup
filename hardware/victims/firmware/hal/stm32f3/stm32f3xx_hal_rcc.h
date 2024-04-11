@@ -70,7 +70,7 @@
 #define HSE_TIMEOUT_VALUE          HSE_STARTUP_TIMEOUT
 #define HSI_TIMEOUT_VALUE          (2U)      /* 2 ms (minimum Tick + 1U) */
 #define LSI_TIMEOUT_VALUE          (2U)      /* 2 ms (minimum Tick + 1U) */
-#define PLL_TIMEOUT_VALUE          (2U)      /* 2 ms (minimum Tick + 1U) */
+#define PLL_TIMEOUT_VALUE          (2U) * 100000      /* 2 ms (minimum Tick + 1U) */
 /**
   * @}
   */

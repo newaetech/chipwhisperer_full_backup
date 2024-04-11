@@ -28,13 +28,14 @@ import logging
 import uuid
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
+from typing import Dict
 
 class TraceSource(object):
     """
     It has traces as output
     Keeps a dictionary with all the registered objets and emits a signal when a new one is added
     """
-    registeredObjects = util.DictType()
+    registeredObjects : Dict[str, object] = {}
     registeredObjects["None"] = None
     sigRegisteredObjectsChanged = util.Signal()
 

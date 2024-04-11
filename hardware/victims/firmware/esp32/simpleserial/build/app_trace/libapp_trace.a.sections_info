@@ -1,0 +1,131 @@
+In archive C:/Users/adewa/Code/chipwhisperer/hardware/victims/firmware/esp32/simpleserial/build/app_trace/libapp_trace.a:
+
+app_trace.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .debug_info   00000079  00000000  00000000  00000034  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  4 .debug_abbrev 00000026  00000000  00000000  000000ad  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_aranges 00000018  00000000  00000000  000000d3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  6 .debug_line   0000001d  00000000  00000000  000000eb  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_str    000001aa  00000000  00000000  00000108  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .comment      0000003c  00000000  00000000  000002b2  2**0
+                  CONTENTS, READONLY
+  9 .xtensa.info  00000038  00000000  00000000  000002ee  2**0
+                  CONTENTS, READONLY
+
+app_trace_util.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.esp_apptrace_tmo_check 0000000c  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.esp_apptrace_lock_take 0000000c  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.esp_apptrace_lock_give 00000008  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .text         00000000  00000000  00000000  00000054  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  4 .data         00000000  00000000  00000000  00000054  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  5 .bss          00000000  00000000  00000000  00000054  2**0
+                  ALLOC
+  6 .text.esp_apptrace_tmo_check 00000062  00000000  00000000  00000054  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.esp_apptrace_lock_take 00000031  00000000  00000000  000000b8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.esp_apptrace_lock_give 00000019  00000000  00000000  000000ec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.esp_apptrace_rb_produce 000000e6  00000000  00000000  00000108  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.esp_apptrace_rb_consume 00000090  00000000  00000000  000001f0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.esp_apptrace_rb_read_size_get 0000002f  00000000  00000000  00000280  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.esp_apptrace_rb_write_size_get 0000003e  00000000  00000000  000002b0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .debug_frame  000000b8  00000000  00000000  000002f0  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 14 .debug_info   000004c6  00000000  00000000  000003a8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 15 .debug_abbrev 00000199  00000000  00000000  0000086e  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 16 .debug_loc    00000375  00000000  00000000  00000a07  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 17 .debug_aranges 00000050  00000000  00000000  00000d7c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 18 .debug_ranges 00000040  00000000  00000000  00000dcc  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 19 .debug_line   000004ae  00000000  00000000  00000e0c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 20 .debug_str    000003c2  00000000  00000000  000012ba  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 21 .comment      0000003c  00000000  00000000  0000167c  2**0
+                  CONTENTS, READONLY
+ 22 .xtensa.info  00000038  00000000  00000000  000016b8  2**0
+                  CONTENTS, READONLY
+ 23 .xt.lit       00000018  00000000  00000000  000016f0  2**0
+                  CONTENTS, RELOC, READONLY
+ 24 .xt.prop      000002d0  00000000  00000000  00001708  2**0
+                  CONTENTS, RELOC, READONLY
+
+host_file_io.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .debug_info   00000079  00000000  00000000  00000034  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  4 .debug_abbrev 00000026  00000000  00000000  000000ad  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_aranges 00000018  00000000  00000000  000000d3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  6 .debug_line   0000001d  00000000  00000000  000000eb  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_str    000001ad  00000000  00000000  00000108  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .comment      0000003c  00000000  00000000  000002b5  2**0
+                  CONTENTS, READONLY
+  9 .xtensa.info  00000038  00000000  00000000  000002f1  2**0
+                  CONTENTS, READONLY
+
+gcov_rtio.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .debug_info   00000079  00000000  00000000  00000034  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  4 .debug_abbrev 00000026  00000000  00000000  000000ad  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_aranges 00000018  00000000  00000000  000000d3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  6 .debug_line   0000001d  00000000  00000000  000000eb  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_str    000001af  00000000  00000000  00000108  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .comment      0000003c  00000000  00000000  000002b7  2**0
+                  CONTENTS, READONLY
+  9 .xtensa.info  00000038  00000000  00000000  000002f3  2**0
+                  CONTENTS, READONLY

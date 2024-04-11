@@ -1,0 +1,83 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Wed Oct  4 15:11:11 2023
+[*]
+[dumpfile] "/home/jpnewae/git/chipwhisperer-target-fpga/aes/sim/results/tb.fst"
+[dumpfile_mtime] "Wed Oct  4 15:11:00 2023"
+[dumpfile_size] 74747
+[savefile] "/home/jpnewae/git/chipwhisperer-target-fpga/aes/sim/aes.gtkw"
+[timestart] 0
+[size] 3840 2123
+[pos] -1 -1
+*-19.146631 3430000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] tb.
+[treeopen] tb.U_dut.
+[treeopen] tb.U_dut.U_reg_aes.
+[sst_width] 412
+[signals_width] 726
+[sst_expanded] 1
+[sst_vpaned_height] 687
+@800200
+-USB top
+@28
+tb.U_dut.U_clocks.usb_clk
+tb.U_dut.crypt_clk
+tb.U_dut.usb_cen
+tb.U_dut.usb_wrn
+tb.U_dut.usb_rdn
+@22
+tb.U_dut.usb_addr[20:0]
+tb.U_dut.usb_data[7:0]
+tb.U_dut.usb_dout[7:0]
+@28
+tb.U_dut.usb_trigger
+@1000200
+-USB top
+@800200
+-registers
+@28
+tb.U_dut.U_reg_aes.reg_write
+tb.U_dut.U_reg_aes.reg_read
+tb.U_dut.U_reg_aes.reg_crypt_go_pulse
+tb.U_dut.U_reg_aes.reg_crypt_go_pulse_crypt
+tb.U_dut.U_reg_aes.crypt_go_pulse
+tb.U_dut.U_reg_aes.O_start
+tb.U_dut.U_reg_aes.busy_usb
+@22
+tb.U_dut.U_reg_aes.reg_address[13:0]
+tb.U_dut.U_reg_aes.reg_bytecnt[6:0]
+@c00022
+tb.U_dut.U_reg_aes.reg_read_data[7:0]
+@28
+(0)tb.U_dut.U_reg_aes.reg_read_data[7:0]
+(1)tb.U_dut.U_reg_aes.reg_read_data[7:0]
+(2)tb.U_dut.U_reg_aes.reg_read_data[7:0]
+(3)tb.U_dut.U_reg_aes.reg_read_data[7:0]
+(4)tb.U_dut.U_reg_aes.reg_read_data[7:0]
+(5)tb.U_dut.U_reg_aes.reg_read_data[7:0]
+(6)tb.U_dut.U_reg_aes.reg_read_data[7:0]
+(7)tb.U_dut.U_reg_aes.reg_read_data[7:0]
+@1401200
+-group_end
+@28
+tb.U_dut.U_reg_aes.I_busy
+tb.U_dut.U_reg_aes.I_done
+tb.U_dut.U_reg_aes.done_pulse
+tb.U_dut.U_reg_aes.busy_usb
+@1000200
+-registers
+@800200
+-AES top
+@28
+tb.U_dut.aes_core.clk
+@22
+tb.U_dut.aes_core.key_i[255:0]
+tb.U_dut.aes_core.data_i[127:0]
+tb.U_dut.aes_core.data_o[127:0]
+@28
+tb.U_dut.aes_core.load_i
+tb.U_dut.aes_core.busy_o
+@1000200
+-AES top
+[pattern_trace] 1
+[pattern_trace] 0

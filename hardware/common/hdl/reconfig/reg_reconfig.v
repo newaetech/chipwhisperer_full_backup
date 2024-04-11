@@ -180,6 +180,7 @@ module reg_reconfig(
 		icap_cfg <= icap_cfg2;
 	end
 	
+        `ifndef __ICARUS__
 	// ICAP_SPARTAN6: Internal Configuration Access Port
 	// Spartan-6
         `ifndef __ICARUS__

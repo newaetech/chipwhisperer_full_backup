@@ -17,4 +17,3 @@ lint:
 	-D__ICARUS__ \
 	--top-module cwlite_interface \
 	2>&1 | tee lint.out \
-

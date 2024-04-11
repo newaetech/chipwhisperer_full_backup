@@ -4,108 +4,107 @@
 Overview
 ########
 
-Welcome to the home of the installation guide, software documentation,
-and tutorials for the ChipWhisperer tool-chain (this site)! This page
-is meant to give you an overview of the most recent
-:ref:`major changes <getting_started-major_changes>`, and the provide
-a overview to get you :ref:`oriented <getting_started-overview>`. Consider
-this page the answer to "Help, I'm confused... there are too many websites
+New to ChipWhisperer? No problem!
+
+This page will give a brief overview of what ChipWhisperer is, where you can
+find documentation about different parts of the ChipWhisperer toolchain,
+as well as some of the major changes that have recently happened to ChipWhisperer.
+
+Consider this page the answer to "Help, I'm confused... there are too many websites
 that have resources related to ChipWhisperer".
 
-.. _getting_started-major_changes:
+.. _getting_started_what-is-chipwhisperer:
 
-*************
-Major Changes
-*************
+**********************
+What is ChipWhisperer?
+**********************
 
-There were some major changes related to where resources are located
-and in what format, after ChipWhisperer 5.1.0 was released. A more
-:ref:`detailed version <change_log>` of the version changes also exists.
-Here are some of the major changes we are most excited about:
+ChipWhisperer is a complete open source toolchain for learning about
+side channel attacks on embedded devices and validating
+the side channel resistance of these devices. In particular,
+ChipWhisperer focuses on power analysis, which uses information
+leaked by a device's power consumption to mount an attack, as well
+as voltage and clock glitching attacks, which briefly disrupt
+a device's power or clock to cause unintended behaviour (such 
+as skipping a password check).
 
-  * We changed our interface from the QT Graphical User Interface (GUI)
-    we had before to using `Jupyter Notebook`_. Keeping the GUI usable
-    required a lot of effort, and since we are a small team it often
-    meant bugs stayed around much too long. Also the change gave us a
-    chance to make our :ref:`Python API <api>` much more usable. Our
-    project is open-source, and you are free to modify the software
-    to meet your needs, however before the change this was sometimes
-    quite difficult. We have not completely fixed the internals of
-    the software but the new, documented API should make customization
-    to your needs a whole lot easier.
+.. _getting_started-links:
 
-  * We now have a :ref:`documented Python API <api>`. You can actually
-    read what functions and classes do, and this API should stay reliable
-    in between minor version changes. Anything not documented in the API
-    is not guaranteed to stay backwards compatible. This allows us the
-    freedom to make improvements to the internals while you have a usable
-    API.
+**********
+Components
+**********
 
-  * We switched to Python 3, finally. This completely breaks all backwards
-    compatibility with previous versions (less than 5.0.0), if we had
-    not already done that will all of our changes.
+In total, ChipWhisperer has four layers of open source components:
 
-  * We have this site now. The installation procedure, the software
-    documentation, and the tutorials are on this site. All other resources
-    stay on the `NewAE Wiki`_. This site will be version based on releases
-    of the software. Thank you `readthedocs`_!
+.. _getting_started-hardware:
 
-  * :ref:`Tutorials <tutorials>` are now auto-generated with our tutorial
-    build system. The jupyter notebooks that are included in the
-    `ChipWhisperer GitHub repository`_  in the *jupyter* submodule
-    are build with multiple different types of hardware. The output is on
-    the :ref:`tutorials <tutorials>` page of this site. Just like when you
-    complete the tutorials some of the tutorials will contain output with
-    warnings during the capture of power traces. This will make it easier
-    to know what to expect when running the tutorials yourself.
+=========
+Hardware
+=========
+
+ChipWhisperer has scope boards, which are used to mount side channel attacks,
+as well as target boards, which function as a device under test (DuT).
+Hardware documentation can be found at https://rtfm.newae.com
+
+Hardware is for the most part open source and design files/schematics
+can be found either on the `ChipWhisperer Github repository`_,
+or on a `UFO target board repository`_.
+
+.. image:: _images/cwlite_basic.png
+  :width: 600
+
+.. _getting_started-firmware:
+
+=========
+Firmware
+=========
+
+ChipWhisperer also includes open source firmware for both scopes
+and targets. 
+
+Scope firmware is written in Verilog (for
+the FPGA) and C (USB microcontroller) and can be found in the
+:code:`hardware/capture` sections of the `ChipWhisperer
+Github repository`_.
+
+Target firmware is mostly written in C (though we do have
+a few FPGA targets with code in Verilog) and can be found 
+in the :code:`hardware/victims/firmware` directory of
+the `ChipWhisperer Github repository`_.
+
+.. _getting_started-software:
+
+=========
+Software
+=========
+
+ChipWhisperer has an open source Python library for controlling the
+capture hardware and communicating with the target. `ChipWhisperer ReadTheDocs`_
+(this website) has the :ref:`API documentation <api>` and :ref:`installation instructions <install>` 
+for this part of the ChipWhisperer toolchain.
+
+The source code for the API is located on the `ChipWhisperer Github repository`_.
+
+.. _getting_started-tutorials:
+
+==========
+Tutorials
+==========
+
+Finally, ChipWhisperer also includes Jupyter Notebook tutorials and labs that both
+teach about side channel attacks that can be performed with ChipWhisperer,
+as well as showcase how to use the Python API. These tutorials/labs 
+are available in the `ChipWhisperer Jupyter Github repository`_.
 
 
-.. _getting_started-overview:
+  .. image:: _images/jupyter_example.png
+    :width: 800
 
-********
-Overview
-********
+.. _getting_started-important-links:
 
-You may find there are a lot of different sites with ChipWhisperer related
-content. The question is how do you make sense of them all. Here is an
-attempt at an overview of the resources related to the ChipWhisperer
-tool-chain:
-
-`NewAE Wiki`_:
-
-    The home of all the documentation for ChipWhisperer hardware, and extra
-    wiki stuff from NewAE, including usage of ChipWhisperer in academics
-    papers, side-channel analysis theory and upcoming events. If you
-    need to find out how to set up the board you have, this is a great place
-    to start. This is also where upcoming conferences are listed.
-
-    Ever since the release of ChipWhisperer software 5.0.0 this
-    site does **not** hold the most up to date tutorials for using the
-    ChipWhisperer software with your board, however, it holds the tutorials
-    for all previous version of the ChipWhisperer software.
-
-    The wiki hosts all the extra theory for learning some of the
-    side-channel attacks (Ex. `CPA theory`_) excluding what theory is
-    included in the :ref:`tutorials` on this readthedocs site.
-
-`ChipWhisperer ReadTheDocs`_:
-
-    This site. It contains the software
-    :ref:`installation procedure <install>`, software
-    :ref:`API documentation <api>`, and the :ref:`tutorials <tutorials>` for
-    the ChipWhisperer tool-chain. This is newly introduced since
-    ChipWhisperer 5.1.0.
-
-`newaetech/chipwhisperer Github Repository`_:
-
-    The ChipWhisperer software is open-source, and can be found on our
-    GitHub repository. If you are a fan of having the latest and greatest,
-    with the latest and greatest bugs you can also check out the **develop**
-    branch. **master** is where the stable releases go. If you want to
-    contribute to the project this is the place for you. Fork the branch
-    with the most up to date changes, make your changes, and then take out
-    a pull request. We will review and discuss the changes then. Also,
-    here is a link to our :ref:`contributing page <contributing>`.
+***************
+Important Links
+***************
 
 `Issue Tracker`_:
 
@@ -128,6 +127,14 @@ tool-chain:
     please take a look at other forum posts. You may find your answer
     quicker than you think.
 
+`Online Courses`_:
+
+    NewAE offers paid online courses that go in depth into
+    things not covered by the free tutorials, such as 
+    different power measurement techniques, as well as how
+    to setup non ChipWhisperer hardware for side channel
+    attacks.
+
 `NewAE Website`_:
 
     The is the website for NewAE Technolgy Inc. the maintainers of the
@@ -143,17 +150,19 @@ tool-chain:
     Here you can get yours hands on one of those hardware boards used by all
     of the tutorials. NewAE Technology sells hardware to take away the
     frustration of setting up the hardware for side-channel attacks. These
-    boards are available at the `NewAE Store`_.
+    boards are available at the `NewAE Store`_. Boards are also available
+    on `Mouser`_.
 
-
+.. _Mouser: https://www.mouser.com/Search/Refine?Keyword=newae
+.. _UFO target board repository: https://github.com/newaetech/chipwhisperer-target-cw308t
 .. _NewAE Store: https://store.newae.com/
 .. _Jupyter Notebook: https://jupyter.org/
-.. _readthedocs: http://readthedocs.org/
-.. _NewAE Wiki: https://wiki.newae.com/Main_Page
+.. _NewAE Hardware Documentation: https://rtfm.newae.com
 .. _ChipWhisperer ReadTheDocs: https://chipwhisperer.readthedocs.io
-.. _newaetech/chipwhisperer Github Repository: https://github.com/newaetech/chipwhisperer
 .. _Issue Tracker: https://github.com/newaetech/chipwhisperer/issues
-.. _CPA theory: https://wiki.newae.com/Correlation_Power_Analysis
 .. _ChipWhisperer GitHub repository: https://github.com/newaetech/chipwhisperer
 .. _NewAE Forum: https://forum.newae.com/
 .. _NewAE Website: https://newae.com/
+.. _ChipWhisperer Jupyter Github repository: https://github.com/newaetech/chipwhisperer-jupyter
+.. _readthedocs: https://readthedocs.org
+.. _Online Courses: https://learn.chipwhisperer.io

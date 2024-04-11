@@ -118,15 +118,22 @@ void HW_AES128_LoadKey(uint8_t * key)
     memcpy((void *)&CRYKEY0, key, 16);
 }
 
+void HW_AES128_Enc_pretrigger(uint8_t * pt)
+{
+    memcpy((void*)&CRYTXTA0, pt, 16);
+}
+
 
 void HW_AES128_Enc(uint8_t * pt)
 {
-    memcpy((void*)&CRYTXTA0, pt, 16);   
     CRYCONLbits.CRYGO = 1;
 
     // Wait for completion
     while (CRYCONLbits.CRYGO == 1)
-            ;
+}
+
+void HW_AES128_Enc_posttrigger(uint8_t * pt)
+{
     memcpy(pt, (void*)&CRYTXTB0, 16);   
 }
 

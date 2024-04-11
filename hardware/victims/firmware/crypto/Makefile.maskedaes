@@ -1,21 +1,83 @@
-
-CRYPTO_LIB = secAES-ATmega8515/src
 SRC += aes-independant.c
-ASRC += maskedAES128enc.S
-EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)
 CDEFS += -DMASKEDAES
 
-ifeq ($(CRYPTO_OPTIONS),VERSION1)
- VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/Version1
- EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/Version1
+# CRYPTO_OPTIONS is used here to select the underlying implementation
+# and their options.
+# For example, CRYPTO_OPTIONS=ANSSI+UNROLLED+KEYSCHEDULE will compile
+# a firmware using ANSSI's implementation of masked AES for Cortex-M4 devices
+# with unrolled loops and the keyschedule will be part of the capture.
 
-else ifeq ($(CRYPTO_OPTIONS),VERSION2)
- VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/Version2
- EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/Version2
+implementation=$(firstword $(subst +, ,$(CRYPTO_OPTIONS)))
+options=$(wordlist 2,$(words $(subst +, ,$(CRYPTO_OPTIONS))),$(subst +, ,$(CRYPTO_OPTIONS)))
+$(info Impletementation=$(implementation))
+$(info Options=$(options))
+
+ifeq ($(implementation),ANSSI)
+  # ARM Cortex-M4 targets
+  ifeq ($(HAL),$(filter $(HAL),sam4l stm32f3 stm32f4 stm32l4 stm32l5 cc2538 k24f k82f nrf52840 efm32tg11b lpc55s6x psoc62))
+    CDEFS += -DANSSI_CM4
+    CRYPTO_LIB = SecAESSTM32/src
+    SRC += platform.c aes.c
+    ASRC += affine_aes.S
+    EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)
+    EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/aes
+    EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/printf
+    VPATH += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)
+    VPATH += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/aes
+    CFLAGS += -mthumb-interwork -fno-builtin
+    CPPFLAGS += -mthumb-interwork -fno-builtin
+    ASFLAGS += -mthumb-interwork -fno-builtin
+    LDFLAGS += -mthumb-interwork -fno-builtin
+    CDEFS += -DUSE_KEIL_PLATFORM
+	ifneq ($(words $(filter-out UNROLLED KEYSCHEDULE,$(options))),0)
+      $(error Unsupported options for this target: $(options).)
+	endif
+    ifeq ($(findstring UNROLLED,$(options)),UNROLLED)
+      CDEFS += -DUSE_FULL_UNROLLING
+    endif
+    ifeq ($(findstring KEYSCHEDULE,$(options)),KEYSCHEDULE)
+      CDEFS += -DTRIG_BEFORE_KS
+    endif
+
+  else ifeq ($(HAL),avr)
+    CDEFS += -DANSSI_AVR
+    CRYPTO_LIB = secAES-ATmega8515/src
+    ASRC += maskedAES128enc.S
+    EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)
+
+    ifeq ($(options),VERSION1)
+      VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/Version1
+      EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/Version1
+
+    else ifeq ($(options),VERSION2)
+      VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/Version2
+      EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/Version2
+
+    else
+      $(error Unknown version for AVR masked AES: $(options).)
+
+    endif  # version
+
+  else
+    $(error Unsupported platform/hal for ANSSI masked AES crypto)
+
+  endif  # ANSSI
+
+else ifeq ($(implementation),RIOUBSAES)
+  CDEFS += -DRIOUBSAES
+  CRYPTOLIB = masked-bit-sliced-aes-128
+  VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTOLIB)/source
+  SRC += bitslice.c secure_aes_pbs.c
+  EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTOLIB)/include
+
+else ifeq ($(implementation),KNARFRANK)
+  CDEFS += -DKNARFRANKBSAES
+  CRYPTOLIB = Higher-Order-Masked-AES-128
+  VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTOLIB)
+  SRC += maths.c masked_combined.c
+  EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTOLIB)
 
 else
+  $(error Unsupported implementation for masked AES crypto: $(implementation))
 
- $(error: Unknown or blank CRYPTO_OPTIONS: $(CRYPTO_OPTIONS). CRYPTO_OPTIONS is required for this CRYPTO_TARGET)
-endif #MASKEDAES
-
-
+endif # implementation

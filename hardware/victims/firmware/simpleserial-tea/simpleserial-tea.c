@@ -40,7 +40,7 @@ void swap_endian(uint8_t* buf, int len)
 uint8_t pt[TEA_BLOCK_BYTES];
 uint8_t key[TEA_KEY_BYTES];
 
-void update_key(uint8_t* k)
+void update_key(uint8_t* k, uint8_t len)
 {
 	swap_endian(key+0 , 4);
 	swap_endian(key+4 , 4);
@@ -51,7 +51,7 @@ void update_key(uint8_t* k)
 		key[i] = k[i];
 	}
 }
-void encrypt(uint8_t* pt)
+void encrypt(uint8_t* pt, uint8_t len)
 {
 	trigger_high();
 	tea_encrypt((uint32_t*)pt, (uint32_t*)key);
@@ -62,16 +62,16 @@ void encrypt(uint8_t* pt)
 	simpleserial_put('r', TEA_BLOCK_BYTES, pt);
 }
 
-void no_op(uint8_t* x)
+void no_op(uint8_t* x, uint8_t len)
 {
 }
 
 int main(void)
 {
     platform_init();
-	init_uart();	
+	init_uart();
 	trigger_setup();
-	
+
  	/* Uncomment this to get a HELLO message for debug */
 	/*
 	putch('h');
@@ -81,7 +81,7 @@ int main(void)
 	putch('o');
 	putch('\n');
 	*/
-	
+
 	simpleserial_addcmd('k', TEA_KEY_BYTES, update_key);
     simpleserial_addcmd('p', TEA_BLOCK_BYTES, encrypt);
     simpleserial_addcmd('x', 0, no_op);

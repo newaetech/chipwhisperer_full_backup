@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2016, NewAE Technology Inc
+# Copyright (c) 2013-2021, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -9,23 +9,24 @@
 #
 #    This file is part of chipwhisperer.
 #
-#    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-#    chipwhisperer is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Lesser General Public License for more details.
+#       http://www.apache.org/licenses/LICENSE-2.0
 #
-#    You should have received a copy of the GNU General Public License
-#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 #=================================================
 import logging
 
 from ._base import SimpleSerialTemplate
-from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
+# from ....capture.scopes.OpenADC import OpenADC
+# from ....capture.scopes.cwnano import CWNano
+# from typing import Union
 
 class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
     _name = 'NewAE USB (CWLite/CW1200)'
@@ -34,6 +35,7 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         SimpleSerialTemplate.__init__(self)
         self._baud = 38400
         self.cwlite_usart = None
+        self._buf_size = None
 
     def close(self):
         pass
@@ -48,22 +50,23 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
     def baud(self):
         return self._baud
 
-    def con(self, scope = None):
-        if scope is None or not hasattr(scope, "qtadc"):
-            Warning("You need a scope with OpenADC connected to use this Target")
-
-        if hasattr(scope, 'qtadc'):
-            ser = scope.qtadc.ser
-        else:
-            ser = scope._cwusb
-        self.cwlite_usart = CWL_USART(ser)
-        self.cwlite_usart.init(baud=self._baud)
+    def con(self, scope): # remove typing here to avoid pulling in OpenADC/CWNano
+        if not scope is None:
+            self.cwlite_usart = scope._get_usart()
+            self.cwlite_usart.init(baud=self._baud)
+            self._buf_size = 128
+            if self.cwlite_usart._usb.check_feature("SERIAL_200_BUFFER"):
+                self._buf_size = 200
 
 
     def hardware_inWaiting(self):
         bwait = self.cwlite_usart.inWaiting()
-        if bwait == 127:
+        if bwait >= (self._buf_size - 1):
             logging.warning('SAM3U Serial buffers OVERRUN - data loss has occurred.')
+        return bwait
+
+    def hardware_inWaitingTX(self):
+        bwait = self.cwlite_usart.in_waiting_tx()
         return bwait
 
     def hardware_write(self, string):

@@ -53,7 +53,7 @@ module reg_decodeiotrigger(
 	  /*
 		0x39 - Configuration (8 Bytes)
 		 [ S  S  S  C  MM MM MM MM ] (Byte 0)
-		 [ Module-Specific Config  ] (Byte 1)
+		 [ Module-Specific Config    ] (Byte 1)
 		 [ Byte Bitmap (LSB = 1st) ] (Byte 2)
 		 [    Baud Div (LSB)       ] (Byte 3)
 		 [    Baid Div (MSB)       ] (Byte 4)
@@ -101,9 +101,11 @@ module reg_decodeiotrigger(
 	 reg [64:0] reg_trig_cfg;
 	 reg [64:0] reg_trig_data; 
 	 reg [64:0] data_buffer;
+	 wire [7:0] module_specific;
 	 
 	 assign match_module = reg_trig_cfg[3:0];
 	 assign datain_src = reg_trig_cfg[7:5];
+	 assign module_specific = reg_trig_cfg[15:8];
 	 	  	 
 	 always @(posedge clk) begin
 		if (reg_read) begin
@@ -189,8 +191,8 @@ module reg_decodeiotrigger(
 	wire even_parity, two_stopbits, rx_data_rdy;
 	wire [7:0] rx_data;
 	
-	assign even_parity = 1'b0;
-	assign two_stopbits = 1'b0;
+	assign even_parity = module_specific[0]; //1'b0;
+	assign two_stopbits = module_specific[1]; //1'b0;
 	assign RxD_Baud8GeneratorInc = reg_trig_cfg[39:24];
 		 
 	targ_async_receiver uart(

@@ -40,6 +40,12 @@
 #include <asf.h>
 #include "led.h"
 #include "main.h"
+#include "conf_usb.h"
+#include "circbuffer.h"
+#include "naeusb_default.h"
+#include "naeusb_usart.h"
+#include "naeusb_nano.h"
+#include "naeusb_mpsse.h"
 
 //Serial Number - will be read by device ID
 char usb_serial_number[33] = "000000000000DEADBEEF";
@@ -73,12 +79,19 @@ int main (void)
 	cwnano_adc_init();
 	
 	cpu_irq_enable();
-			
-	// The main loop manages only the power mode
-	// because the USB management is done by interrupt
+	
+	naeusb_register_handlers();
+	naeusart_register_handlers();
+	nano_register_handlers();
+	mpsse_register_handlers();
+
 	while (true) {
-		;//sleepmgr_enter_sleep();
+		//sleepmgr_enter_sleep();
+		cdc_send_to_pc();
+		MPSSE_main_sendrecv_byte();
+				
 	}
+	
 }
 
 
@@ -114,11 +127,34 @@ void ui_loop_back_state(bool b_started)
 
 void ui_process(uint16_t framenumber)
 {
-	if ((framenumber % 1000) == 0) {
+	if ((framenumber % 1024) == 0) {
 		LED_On(LED0_GPIO);
 	}
-	if ((framenumber % 1000) == 500) {
+	if ((framenumber % 1024) == 512) {
 		LED_Off(LED0_GPIO);
+		LED_Off(LED1_GPIO);
+	}
+
+	if (LED_SETTING == CW_LED_DEBUG_SETTING) {
+		if ((framenumber % 1024) == 0) {
+			LED_On(LED1_GPIO);
+		}
+		if ((framenumber % 1024) == 512) {
+			LED_Off(LED1_GPIO);
+		}
+	}
+
+	if (LED_SETTING == CW_LED_ERR_SETTING) {
+		if (CURRENT_ERRORS == 0) {
+			LED_Off(LED1_GPIO);
+		} else {
+			LED_On(LED1_GPIO);
+		}
+	}
+	
+	if ((framenumber % 512) == 0) {
+		// LED_Off(LED1_GPIO);
+		//LED_Off(LED2_GPIO);
 	}
 }
 

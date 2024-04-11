@@ -1,0 +1,9 @@
+Supported platforms:
+- CWLITEARM
+- CW308_STM32F3
+- CW308_K82F
+- CW308_SAM4S (no ETM, which limits what's possible)
+
+On the K82, the parallel trace port can be enabled by compiling with
+EXTRA_OPTS=ETM_ENABLE.
+

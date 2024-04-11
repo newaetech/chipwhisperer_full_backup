@@ -1,0 +1,16 @@
+tb.v
+../hdl/cw305_aes_pipelined_top.v
+../hdl/cw305_aes_pipelined_reg.v
+../hdl/aes_pipeline_top.v
+../hdl/aes_half_pipeline_top.v
+../hdl/aes_half_pipeline_top_fixed.v
+../hdl/aes_round.v
+../hdl/aes_two_rounds.v
+../../cryptosrc/aes_newae/aes_sbox_lut.v
+../../cryptosrc/aes_googlevault/aes_sbox.v
+../../cryptosrc/aes_googlevault/aes_ks.v
+../../aes/hdl/cw305_usb_reg_fe.v
+../../aes/hdl/clocks.v
+../../fpga-common/hdl/cdc_pulse.v
+../../fpga-common/hdl/fifo_async.v
+

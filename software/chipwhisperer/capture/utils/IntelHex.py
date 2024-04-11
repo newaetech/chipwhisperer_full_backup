@@ -1070,6 +1070,7 @@ def diff_dumps(ih1, ih2, tofile=None, name1="a", name2="b", n_context=3):
 class Record(object):
     """Helper methods to build valid ihex records."""
 
+    @staticmethod
     def _from_bytes(bytes):
         """Takes a list of bytes, computes the checksum, and outputs the entire
         record as a string. bytes should be the hex record without the colon
@@ -1083,8 +1084,8 @@ class Record(object):
         s = (-sum(bytes)) & 0x0FF
         bin = array('B', bytes + [s])
         return ':' + asstr(hexlify(bin.tostring())).upper()
-    _from_bytes = staticmethod(_from_bytes)
 
+    @staticmethod
     def data(offset, bytes):
         """Return Data record. This constructs the full record, including
         the length information, the record type (0x00), the
@@ -1099,15 +1100,15 @@ class Record(object):
         assert 0 < len(bytes) < 256
         b = [len(bytes), (offset >> 8) & 0x0FF, offset & 0x0FF, 0x00] + bytes
         return Record._from_bytes(b)
-    data = staticmethod(data)
 
+    @staticmethod
     def eof():
         """Return End of File record as a string.
         @return         String representation of Intel Hex EOF record 
         """
         return ':00000001FF'
-    eof = staticmethod(eof)
-
+    
+    @staticmethod
     def extended_segment_address(usba):
         """Return Extended Segment Address Record.
         @param  usba     Upper Segment Base Address.
@@ -1116,8 +1117,8 @@ class Record(object):
         """
         b = [2, 0, 0, 0x02, (usba >> 8) & 0x0FF, usba & 0x0FF]
         return Record._from_bytes(b)
-    extended_segment_address = staticmethod(extended_segment_address)
 
+    @staticmethod
     def start_segment_address(cs, ip):
         """Return Start Segment Address Record.
         @param  cs      16-bit value for CS register.
@@ -1128,8 +1129,8 @@ class Record(object):
         b = [4, 0, 0, 0x03, (cs >> 8) & 0x0FF, cs & 0x0FF,
              (ip >> 8) & 0x0FF, ip & 0x0FF]
         return Record._from_bytes(b)
-    start_segment_address = staticmethod(start_segment_address)
 
+    @staticmethod
     def extended_linear_address(ulba):
         """Return Extended Linear Address Record.
         @param  ulba    Upper Linear Base Address.
@@ -1138,8 +1139,8 @@ class Record(object):
         """
         b = [2, 0, 0, 0x04, (ulba >> 8) & 0x0FF, ulba & 0x0FF]
         return Record._from_bytes(b)
-    extended_linear_address = staticmethod(extended_linear_address)
 
+    @staticmethod
     def start_linear_address(eip):
         """Return Start Linear Address Record.
         @param  eip     32-bit linear address for the EIP register.
@@ -1149,7 +1150,6 @@ class Record(object):
         b = [4, 0, 0, 0x05, (eip >> 24) & 0x0FF, (eip >> 16) & 0x0FF,
              (eip >> 8) & 0x0FF, eip & 0x0FF]
         return Record._from_bytes(b)
-    start_linear_address = staticmethod(start_linear_address)
 
 
 class _BadFileNotation(Exception):

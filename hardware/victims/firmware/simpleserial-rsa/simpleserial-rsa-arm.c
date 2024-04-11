@@ -22,15 +22,48 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#if defined(__arm__)
+#if defined(__arm__) || defined(__riscv__) || defined(__riscv)
 
 #include "mbedtls/rsa.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/oid.h"
-uint8_t sig_chunk_1(uint8_t *pt);
-uint8_t sig_chunk_2(uint8_t *pt);
+uint8_t sig_chunk_1(uint8_t *pt, uint8_t len);
+uint8_t sig_chunk_2(uint8_t *pt, uint8_t len);
 #define mbedtls_calloc calloc
 #define mbedtls_free free
+
+// MWC random number implementation - https://en.wikipedia.org/wiki/Multiply-with-carry_pseudorandom_number_generator
+#define PHI 0x9e3779b9
+
+static uint32_t Q[4096], c = 362436;
+
+void init_rand(uint32_t x)
+{
+    int i;
+
+    Q[0] = x;
+    Q[1] = x + PHI;
+    Q[2] = x + PHI + PHI;
+
+    for (i = 3; i < 4096; i++)
+            Q[i] = Q[i - 3] ^ Q[i - 2] ^ PHI ^ i;
+}
+
+uint32_t rand_cmwc(void)
+{
+    uint64_t t, a = 18782LL;
+    static uint32_t i = 4095;
+    uint32_t x, r = 0xfffffffe;
+    i = (i + 1) & 4095;
+    t = a * Q[i] + c;
+    c = (t >> 32);
+    x = t + c;
+    if (x < c) {
+            x++;
+            c++;
+    }
+    return (Q[i] = r - x);
+}
 
 static int myrand( void *rng_state, unsigned char *output, size_t len )
 {
@@ -40,7 +73,7 @@ static int myrand( void *rng_state, unsigned char *output, size_t len )
           rng_state  = NULL;
 
      for( i = 0; i < len; ++i )
-          output[i] = rand();
+          output[i] = rand_cmwc();
 
      return( 0 );
 }
@@ -296,6 +329,7 @@ cleanup:
 
 void rsa_init(void)
 {
+    init_rand(0);
     mbedtls_rsa_init( &rsa_ctx, MBEDTLS_RSA_PKCS_V15, 0 );
     simpleserial_addcmd('1', 0, sig_chunk_1);
     simpleserial_addcmd('2', 0, sig_chunk_2);
@@ -335,37 +369,45 @@ void rsa_init(void)
  */
 uint8_t buf[128];
 uint8_t hash[32];
-uint8_t real_dec(uint8_t *pt)
+#if SS_VER == SS_VER_2_1
+uint8_t real_dec(uint8_t cmd, uint8_t scmd, uint8_t len, uint8_t *pt)
+#else
+uint8_t real_dec(uint8_t *pt, uint8_t len)
+#endif
 {
-     int ret = 0;
+    int ret = 0;
 
-     //first need to hash our message
-     memset(buf, 0, 128);
-     mbedtls_sha256(MESSAGE, 12, hash, 0);
+    //first need to hash our message
+    memset(buf, 0, 128);
+    mbedtls_sha256(MESSAGE, 12, hash, 0);
 
-     trigger_high();
-     ret = simpleserial_mbedtls_rsa_rsassa_pkcs1_v15_sign(&rsa_ctx, NULL, NULL, MBEDTLS_RSA_PRIVATE, MBEDTLS_MD_SHA256, 32, hash, buf);
-     trigger_low();
+    trigger_high();
+    ret = simpleserial_mbedtls_rsa_rsassa_pkcs1_v15_sign(&rsa_ctx, NULL, NULL, MBEDTLS_RSA_PRIVATE, MBEDTLS_MD_SHA256, 32, hash, buf);
+    trigger_low();
 
-     //send back first 48 bytes
-     simpleserial_put('r', 48, buf);
-     return ret;
+    //send back first 48 bytes
+#if SS_VER == SS_VER_2_1
+    simpleserial_put('r', 128, buf);
+#else
+    simpleserial_put('r', 48, buf);
+#endif
+    return ret;
 }
 
-uint8_t sig_chunk_1(uint8_t *pt)
+uint8_t sig_chunk_1(uint8_t *pt, uint8_t len)
 {
      simpleserial_put('r', 48, buf + 48);
      return 0x00;
 }
 
-uint8_t sig_chunk_2(uint8_t *pt)
+uint8_t sig_chunk_2(uint8_t *pt, uint8_t len)
 {
      simpleserial_put('r', 128 - 48 * 2, buf + 48*2);
      return 0x00;
 }
 
 
-uint8_t get_pt(uint8_t *pt)
+uint8_t get_pt(uint8_t *pt, uint8_t len)
 {
 }
 

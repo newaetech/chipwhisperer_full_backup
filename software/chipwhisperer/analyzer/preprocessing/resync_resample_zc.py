@@ -27,8 +27,8 @@
 
 import numpy as np
 from ._base import PreprocessingBase
-from matplotlib.mlab import find
-import scipy.signal as sig
+from matplotlib.mlab import find # type: ignore
+import scipy.signal as sig # type: ignore
 from chipwhisperer.common.utils.parameter import setupSetParam
 
 

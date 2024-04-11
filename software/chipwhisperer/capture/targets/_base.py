@@ -9,22 +9,21 @@
 #
 #    This file is part of chipwhisperer.
 #
-#    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-#    chipwhisperer is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Lesser General Public License for more details.
+#       http://www.apache.org/licenses/LICENSE-2.0
 #
-#    You should have received a copy of the GNU General Public License
-#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 #=================================================
 
-from chipwhisperer.capture.api.programmers import Programmer
-from chipwhisperer.common.utils import util
+# from ...capture.api.programmers import Programmer
+from ...common.utils import util
 
 
 class TargetTemplate:
@@ -34,8 +33,14 @@ class TargetTemplate:
     def __init__(self):
         pass
 
+    def getName(self):
+        return ""
+
     def setSomething(self):
         """Here you would send value to the reader hardware"""
+        pass
+
+    def _dis(self):
         pass
 
     def __del__(self):
@@ -47,13 +52,14 @@ class TargetTemplate:
 
     def dis(self):
         """Disconnect from target"""
-        self.close()
+        # self.close()
+        self._dis()
         self.connectStatus = False
 
 
     def con(self, scope=None, **kwargs):
         """Connect to target"""
-        Programmer.lastFlashedFile = "unknown"
+        # Programmer.lastFlashedFile = "unknown"
         try:
             self.connectStatus = True
             self._con(scope, **kwargs)
@@ -62,7 +68,16 @@ class TargetTemplate:
             raise
 
 
-    def _con(self, scope=None):
+    @property
+    def output_len(self):
+        """The length of the output expected from the crypto algorithm (in bytes)"""
+        return 16
+
+    @output_len.setter
+    def output_len(self, length):
+        return 16
+
+    def _con(self, scope=None, **kwargs):
         raise NotImplementedError
 
     def flush(self):
@@ -128,13 +143,13 @@ class TargetTemplate:
         """Based on key & text get expected if known, otherwise returns None"""
         # e.g. for AES we can do this:
         return None
-        """if AES and hasattr(self, 'key') and hasattr(self, 'input') and self.input and self.key:
-            cipher = AES.new(bytes(self.key), AES.MODE_ECB)
-            ct = cipher.encrypt(bytes(self.input))
-            ct = bytearray(ct)
-            return ct
-        else:
-            return None"""
+        # """if AES and hasattr(self, 'key') and hasattr(self, 'input') and self.input and self.key:
+        #     cipher = AES.new(bytes(self.key), AES.MODE_ECB)
+        #     ct = cipher.encrypt(bytes(self.input))
+        #     ct = bytearray(ct)
+        #     return ct
+        # else:
+        #     return None"""
 
     def validateSettings(self):
         # return [("warn", "Target Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
@@ -148,3 +163,9 @@ class TargetTemplate:
 
     def __str__(self):
         return self.__repr__()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.dis()

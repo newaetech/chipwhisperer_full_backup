@@ -1,0 +1,11 @@
+# Ignore autotools files when computing language stats
+m4/* linguist-vendored=true
+ar-lib linguist-generated=true
+compile linguist-generated=true
+configure linguist-generated=true
+depcomp linguist-generated=true
+install-sh linguist-generated=true
+missing linguist-generated=true
+Makefile.in linguist-generated=true
+aclocal.m4 linguist-generated=true
+

@@ -28,17 +28,13 @@ import collections
 import os.path
 import shutil
 import weakref
-import numpy as np
+import time
 from functools import wraps
 import warnings
+from ...logging import *
+from typing import List
 
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    DictType = OrderedDict
-except ImportError:
-    DictType = dict
-
+BYTE_ARRAY_TYPES = (bytes, bytearray, memoryview)
 
 def getRootDir():
     path = os.path.join(os.path.dirname(__file__), "../../../")
@@ -146,23 +142,67 @@ def binarylist2bytearray(bitlist, nrBits=8):
 
 
 def bytearray2binarylist(bytes, nrBits=8):
+    import numpy as np
     init = np.array([], dtype=bool)
     for byte in bytes:
         init = np.concatenate((init, np.unpackbits(np.uint8(byte))[8 - nrBits:]), axis=0)
     return init
 
+def unpack_u16(buf, i : int):
+    return (buf[i + 1] << 8) | buf[i]
 
-def getPyFiles(dir, extension=False):
-    scriptList = []
-    if os.path.isdir(dir):
-        for fn in os.listdir(dir):
-            fnfull = dir + '/' + fn
-            if os.path.isfile(fnfull) and fnfull.lower().endswith('.py') and (not fnfull.endswith('__init__.py')) and (not fn.startswith('_')):
-                if extension:
-                    scriptList.append(fn)
-                else:
-                    scriptList.append(os.path.splitext(fn)[0])
-    return scriptList
+def pack_u16_into(buf, i : int, value : int):
+    """Packs a little endian 16 bit integer into a buffer."""
+    buf[i] = value & 0xff
+    buf[i + 1] = (value >> 8) & 0xff
+
+def pack_u32_into(buf, i : int, value : int):
+    """Packs a little endian 32 bit integer into a buffer."""
+    buf[i] = value & 0xff
+    buf[i + 1] = (value >> 8) & 0xff
+    buf[i + 2] = (value >> 16) & 0xff
+    buf[i + 3] = (value >> 24) & 0xff
+
+def pack_u32_bytes(data):
+    """Creates a bytearray of a little endian packed 32 bit integer."""
+    buf = bytearray(4)
+    pack_u32_into(buf, 0, data)
+    return buf
+
+def get_bytes(data):
+    """Ensures that input data is an array of bytes.
+
+    Return:
+        An object that can either be a bytearray, bytes, or memoryview.
+    """
+    if not isinstance(data, BYTE_ARRAY_TYPES):
+        try:
+            data = bytearray(data)
+        except TypeError:
+            try:
+                data = bytearray(data, 'latin-1')
+            except TypeError:
+                # Usually happens if list has elements that are outside of an U8 integer
+                pass
+    return data
+
+def get_bytes_memview(data):
+    """Ensures input data is a memoryview of bytes.
+
+    Return:
+        A memoryview of bytes.
+    """
+    if isinstance(data, memoryview):
+        return data
+    data = get_bytes(data)
+    return memoryview(data)
+
+def bytes_fast_copy(dst_buf, i : int, src_data):
+    """Generic byte buffer copy that tries to avoid type conversions or object copies when possible.
+    """
+    if not isinstance(src_data, list):
+        src_data = get_bytes(src_data)
+    dst_buf[i:i+len(src_data)] = src_data
 
 def _make_id(target):
     if hasattr(target, '__func__'):
@@ -170,6 +210,7 @@ def _make_id(target):
     return id(target)
 
 
+# all over analyzer stuff
 class Signal(object):
     class Cleanup(object):
         def __init__(self, key, d):
@@ -235,6 +276,22 @@ class Signal(object):
                         method(targetObj, *args, **kwargs)
 
 
+import signal, logging
+class DelayedKeyboardInterrupt:
+    def __enter__(self):
+        self.signal_received = False
+        self.old_handler = signal.signal(signal.SIGINT, self.handler)
+
+    def handler(self, sig, frame):
+        self.signal_received = (sig, frame)
+        logging.debug('SIGINT received. Delaying KeyboardInterrupt.')
+
+    def __exit__(self, type, value, traceback):
+        signal.signal(signal.SIGINT, self.old_handler)
+        if self.signal_received:
+            self.old_handler(*self.signal_received)
+
+# removing breaks projects
 class Observable(Signal):
     def __init__(self, value):
         super(Observable, self).__init__()
@@ -258,25 +315,7 @@ class ConsoleBreakException(BaseException):
     """
     pass
 
-def requestConsoleBreak():
-    global _consoleBreakRequested
-    _consoleBreakRequested = True
-
 _uiupdateFunction = None
-
-def setUIupdateFunction(func):
-    global _uiupdateFunction
-    _uiupdateFunction= func
-
-def updateUI():
-    if _uiupdateFunction:
-        _uiupdateFunction()
-
-    # If an event handler has asked for a console break, raise an exception now
-    global _consoleBreakRequested
-    if _consoleBreakRequested:
-        _consoleBreakRequested = False
-        raise ConsoleBreakException()
 
 class WeakMethod(object):
     """A callable object. Takes one argument to init: 'object.method'.
@@ -320,19 +359,6 @@ class Command:
     def __call__(self, *args, **kwargs):
         return self.callback(*self.args, **self.kwargs)
 
-if __name__ == '__main__':
-    class test(object):
-        def m(self):
-            print("here")
-
-        def __del__(self):
-            print("deleted")
-
-    x = test()
-    y = x.m
-    x = None
-    y()
-
 class DisableNewAttr(object):
     """Provides an ability to disable setting new attributes in a class, useful to prevent typos.
 
@@ -350,19 +376,51 @@ class DisableNewAttr(object):
     >>> obj = MyClass()
     >>> #obj.my_new_attr = 456   <-- Raises AttributeError
     """
+    _new_attributes_disabled = False
+    _new_attributes_disabled_strict = False
+    _read_only_attrs : List[str] = []
 
     def __init__(self):
-        self.disable_newattr()
+        self._read_only_attrs = []
+        self.enable_newattr()
 
     def disable_newattr(self):
         self._new_attributes_disabled = True
+        self._new_attributes_disabled_strict = False
 
     def enable_newattr(self):
         self._new_attributes_disabled = False
+        self._new_attributes_disabled_strict = False
+
+    def disable_strict_newattr(self):
+        self._new_attributes_disabled = True
+        self._new_attributes_disabled_strict = True
+
+    def add_read_only(self, name):
+        if isinstance(name, list):
+            for a in name:
+                self.add_read_only(a)
+            return
+        if name in self._read_only_attrs:
+            return
+        self._read_only_attrs.append(name)
+
+    def remove_read_only(self, name):
+        if isinstance(name, list):
+            for a in name:
+                self.remove_read_only(a)
+                return
+        if name in self._read_only_attrs:
+            self._read_only_attrs.remove(name)
 
     def __setattr__(self, name, value):
         if hasattr(self, '_new_attributes_disabled') and self._new_attributes_disabled and not hasattr(self, name):  # would this create a new attribute?
-            raise AttributeError("Attempt to set unknown attribute in %s"%self.__class__, name)
+            #raise AttributeError("Attempt to set unknown attribute in %s"%self.__class__, name)
+            other_logger.error("Setting unknown attribute {} in {}".format(name, self.__class__))
+            if hasattr(self, '_new_attributes_disabled_strict') and self._new_attributes_disabled_strict and not hasattr(self, name):
+                raise AttributeError("Attempt to set unknown attribute in %s"%self.__class__, name)
+        if name in self._read_only_attrs:
+            raise AttributeError("Attribute {} is read-only!".format(name))
         super(DisableNewAttr, self).__setattr__(name, value)
 
 
@@ -382,7 +440,7 @@ def dict_to_str(input_dict, indent=""):
     # Build string
     ret = ""
     for n in input_dict:
-        if type(input_dict[n]) in (dict, OrderedDict):
+        if isinstance(input_dict[n], dict):
             ret += indent + str(n) + ' = '
             ret += '\n' + dict_to_str(input_dict[n], indent+"    ")
         else:
@@ -391,8 +449,7 @@ def dict_to_str(input_dict, indent=""):
 
     return ret
 
-
-class bytearray(bytearray):
+class CWByteArray(bytearray):
     """bytearray with better repr and str methods.
 
     Overwrites the __repr__ and __str__ methods of the builtin bytearray class
@@ -422,6 +479,28 @@ class NoneTypeTarget(object):
     def __getattr__(self, item):
         raise AttributeError('Target has not been connected')
 
+# def fw_ver_compare(a, b):
+#     #checks that a is newer or as new as b
+#     if a["major"] > b["major"]:
+#         return True
+#     elif (a["major"] == b["major"]) and (a["minor"] >= b["minor"]):
+#         return True
+#     return False
+
+
+# def fw_ver_required(major, minor):
+#     def decorator(func):
+#         @wraps(func)
+#         def func_wrapper(self, *args, **kwargs):
+#             fw_ver = self.fw_version
+#             good = fw_ver_compare(fw_ver, {"major": major, "minor": minor})
+#             if good:
+#                 return func(self, *args, **kwargs)
+#             else:
+#                 raise IOError(f"This function requires newer firmware: ({major}.{minor}) vs ({fw_ver['major']}.{fw_ver['minor']})")
+#         return func_wrapper
+#     raise DeprecationWarning("DO NOT USE")
+#     return decorator
 
 def camel_case_deprecated(func):
     """Wrapper function to deprecate camel case functions.
@@ -471,50 +550,335 @@ def camel_case_deprecated(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        warnings.warn('{} function is deprecated use {} instead.'.format(cc_func, func.__name__))
+        warnings.warn('{} function is deprecated use {} instead. This function will be removed in ChipWhisperer 5.7.0'.format(cc_func, func.__name__))
         return func(*args, *kwargs)
 
     wrapper.__name__ = underscore_to_camelcase(func.__name__)
-    wrapper.__doc__ = 'Deprecated: Use {} instead.'.format(func.__name__)
+    wrapper.__doc__ = ':deprecated: Use {} instead\n\n:meta private:\n\n'.format(func.__name__)
+    # raise DeprecationWarning("Delete me")
     return wrapper
 
 
-def get_cw_type(sn=None):
-    """ Gets the scope type of the connected ChipWhisperer
 
+def get_cw_type(sn=None, idProduct=None, hw_location=None, **kwargs) -> type:
+    """ Gets the scope type of the connected ChipWhisperer
     If multiple connected, sn must be specified
     """
-    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
+    from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, NAEUSB_Backend
     from chipwhisperer.capture import scopes
-    possible_ids = [0xace0, 0xace2, 0xace3]
+    # from ...capture.scopes import ScopeTypes
+    # todo: pyusb as well
 
-    cwusb = NAEUSB()
-    possible_sn = cwusb.get_possible_devices(idProduct=possible_ids)
-    name = ""
-    if len(possible_sn) == 0:
-        raise OSError("USB Device not found. Did you connect it first?")
-
-    if (len(possible_sn) > 1):
-        if sn is None:
-            serial_numbers = []
-            for d in possible_sn:
-                serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
-            raise Warning("Multiple chipwhisperers connected, but device and/or serial number not specified.\nDevices:\n{}".format(serial_numbers))
-        else:
-            for d in possible_sn:
-                if d['sn'] == sn:
-                    name = d['product']
+    if idProduct:
+        possible_ids = [idProduct]
     else:
-        name = possible_sn[0]['product']
+        possible_ids = [0xace0, 0xace2, 0xace3, 0xace5]
 
-    #print(name)
-    if (name == "ChipWhisperer Lite") or (name == "ChipWhisperer CW1200"):
+    cwusb = NAEUSB_Backend()
+    device = cwusb.find(serial_number=sn, idProduct=possible_ids, hw_location=hw_location)
+    name = device.getProduct()
+    cwusb.usb_ctx.close()
+
+    if (name == "ChipWhisperer Lite") or (name == "ChipWhisperer CW1200") or (name == "ChipWhisperer Husky"):
         return scopes.OpenADC
     elif name == "ChipWhisperer Nano":
         return scopes.CWNano
+    else:
+        raise OSError("Got chipwhisperer with unknown name {} (ID = {})".format(name, possible_ids))
 
-import time
 def better_delay(ms):
     t = time.perf_counter() + ms / 1000
     while time.perf_counter() < t:
         pass
+
+# API translation
+
+def dict_ref_upd(dict_ref, dict_upd):
+    """Conditionally updates a dictionary with another if it exists.
+    """
+    if dict_upd:
+        dict_ref.update(dict_upd)
+    return dict_ref
+
+def dict_invert(d, dict_upd=None):
+    """Creates an inverted dictionary in which every dict[key] = value becomes dict[value] = key.
+    """
+    d = { d[k]: k for k in d }
+    return dict_ref_upd(d, dict_upd)
+
+def list_to_inv_dict(coll, dict_upd=None):
+    """Creates an inverted dictionary in which every index of a list becomes the entry value.
+    dict[value] = index.
+    """
+    coll = { coll[i]: i for i in range(len(coll)) }
+    return dict_ref_upd(coll, dict_upd)
+
+def is_valid_basic_enum(max, value):
+    """Ensures a value within the range of a basic enum where every value is defined.
+    0 <= value < enum_max
+    """
+    return (value >= 0) and (value < max)
+
+class BitField(object):
+    """Class that helps modify bit fields contained in an integer.
+    """
+    def __init__(self, width, pos):
+        self._width = width
+        self._pos = pos
+
+    @property
+    def width(self):
+        return self._width
+
+    @property
+    def pos(self):
+        return self._pos
+
+    @property
+    def value_mask(self):
+        return (1 << self.width) - 1
+
+    @property
+    def extr_mask(self):
+        return self.value_mask << self.pos
+
+    @property
+    def clr_mask(self):
+        return ~self.extr_mask
+
+    def clr_field(self, istruct):
+        """Clears this bit field in a structure (integer).
+        """
+        return istruct & self.clr_mask
+
+    def extr_field(self, istruct):
+        """Masks this bit field from a structure (integer).
+        """
+        return istruct & self.extr_mask
+
+    def make_field(self, value):
+        """Creates this bit field from a value.
+        """
+        return (value & self.value_mask) << self.pos
+
+    def extr_value(self, istruct):
+        """Extracts the value for this bit field from a structure (integer).
+        """
+        return self.extr_field(istruct) >> self.pos
+
+    def ins_field(self, istruct, field):
+        """Inserts this bit field into a structure (integer).
+        """
+        return self.clr_field(istruct) | self.extr_field(field)
+
+    def ins_value(self, istruct, value):
+        """Inserts the value for this bit field into a structure (integer).
+        """
+        return self.clr_field(istruct) | self.make_field(value)
+
+# Translate argument from user to interface API
+
+class VarToAPITranslation(object):
+    """Interface to convert a top level public API value to an internal API value.
+    """
+    def __init__(self, var_map):
+        self._var_map = var_map
+
+    def try_var_to_api(self, value, default=None):
+        """Tries to get the internal API value from the public API value.
+
+        Return:
+            The internal API value if the input public API value is valid, else the default value.
+        """
+        return self._var_map.get(value, default)
+
+class VarToEnumTranslation(VarToAPITranslation):
+    """Interface to convert a top level public API value to an internal API enum.
+    """
+    def try_var_to_api(self, value, default=-1):
+        """Tries to get the internal API enum from the public API value.  If the input value is
+        already an integer, it will just return the input value.
+
+        Return:
+            The internal API value if the input public API value is valid, else the default value.
+        """
+        if isinstance(value, int):
+            return value
+        return VarToAPITranslation.try_var_to_api(self, value, default)
+
+# Translate interface API to string
+
+class ObjToStrTranslation(object):
+    """Interface to convert an internal API value to a public API string.
+    """
+    def __init__(self, str_dict):
+        self._str_dict = str_dict
+
+    def is_valid_api(self, value):
+        return value in self._str_dict
+
+    def api_to_str(self, value):
+        return self._str_dict[value]
+
+class EnumToStrTranslation(object):
+    """Interface to convert an internal API enum to a public API string.
+    """
+    def __init__(self, str_list):
+        self._str_list = str_list
+
+    @property
+    def enum_max(self):
+        return len(self._str_list)
+
+    def api_values(self):
+        return range(self.enum_max)
+
+    def is_valid_api(self, value):
+        return is_valid_basic_enum(self.enum_max, value)
+
+    def api_to_str(self, value):
+        return self._str_list[value]
+
+# Translate HW API to interface API
+
+class HWToObjTranslation(object):
+    def __init__(self, hw_map):
+        self._hw_map = hw_map
+
+    def hw_values(self):
+        return self._hw_map.keys()
+
+    def try_hw_to_api(self, value, default=None):
+        return self._hw_map.get(value, default)
+
+    def try_hw_to_str(self, value, default=None):
+        value = self.try_hw_to_api(value, default)
+        if value == default:
+            return None
+        return self.api_to_str(value)
+
+class HWToEnumTranslation(HWToObjTranslation):
+    def try_hw_to_api(self, value, default=-1):
+        return super().try_hw_to_api(value, default)
+
+    def try_hw_to_str(self, value, default=-1):
+        return super().try_hw_to_str(value, default)
+
+# Interface and HW API use the same values
+
+class ObjTranslationDirect(VarToAPITranslation, ObjToStrTranslation):
+    """Class that allows conversion between top level public API values and internal API values.
+    """
+    def __init__(self, str_dict, var_map):
+        VarToAPITranslation.__init__(self, var_map)
+        ObjToStrTranslation.__init__(self, str_dict)
+
+    @staticmethod
+    def alloc_instance(str_dict, extra_vars=None):
+        return ObjTranslationDirect(
+            str_dict,
+            dict_invert(str_dict, extra_vars)
+        )
+
+class EnumTranslationDirect(VarToEnumTranslation, EnumToStrTranslation):
+    """Class that allows conversion between top level public API values and internal API enums.
+    """
+    def __init__(self, str_list, var_map):
+        VarToEnumTranslation.__init__(self, var_map)
+        EnumToStrTranslation.__init__(self, str_list)
+
+    @staticmethod
+    def alloc_instance(str_list, extra_vars=None):
+        return EnumTranslationDirect(
+            str_list,
+            list_to_inv_dict(str_list, extra_vars)
+        )
+
+    def try_var_to_api(self, value, default=-1):
+        """Tries to get the internal API enum from the public API value.  If the input value is
+        already an integer, it will just return the input value.
+
+        Return:
+            The internal API value if the input public API value is valid, else the default value.
+        """
+        if not isinstance(value, int):
+            return VarToAPITranslation.try_var_to_api(self, value, default)
+        if self.is_valid_api(value):
+            return value
+        return default
+
+# Full translation of user arguments to matching interface and HW API values
+
+class ObjTranslationToHW(ObjTranslationDirect):
+    def __init__(self, hw_dict, str_dict, var_map):
+        super().__init__(str_dict, var_map)
+        self._hw_dict = hw_dict
+
+    @staticmethod
+    def alloc_instance(hw_dict, str_dict, extra_vars=None):
+        return ObjTranslationToHW(
+            hw_dict,
+            str_dict,
+            dict_invert(str_dict, extra_vars)
+        )
+
+    def hw_values(self):
+        return self._hw_dict.values()
+
+    def api_to_hw(self, value):
+        return self._hw_dict[value]
+
+class EnumTranslationToHW(EnumTranslationDirect):
+    """Converts an internal enum to a hardware API value.
+    """
+    def __init__(self, hw_list, str_list, var_map):
+        EnumTranslationDirect.__init__(self, str_list, var_map)
+        self._hw_list = hw_list
+
+    @staticmethod
+    def alloc_instance(hw_list, str_list, extra_vars=None):
+        return EnumTranslationToHW(
+            hw_list,
+            str_list,
+            list_to_inv_dict(str_list, extra_vars)
+        )
+
+    def hw_values(self):
+        return iter(self._hw_list)
+
+    def api_to_hw(self, value):
+        return self._hw_list[value]
+
+# Full translation of user arguments, interface API, and HW API values
+
+class ObjTranslationAPI(ObjTranslationToHW, HWToObjTranslation):
+    def __init__(self, hw_dict, hw_map, str_dict, var_map):
+        ObjTranslationToHW.__init__(self, hw_dict, str_dict, var_map)
+        HWToObjTranslation.__init__(self, hw_map)
+
+    @staticmethod
+    def alloc_instance(hw_dict, str_dict, extra_vars=None):
+        return ObjTranslationAPI(
+            hw_dict,
+            dict_invert(hw_dict),
+            str_dict,
+            dict_invert(str_dict, extra_vars)
+        )
+
+class EnumTranslationAPI(EnumTranslationToHW, HWToEnumTranslation):
+    """Converts between internal enum values and hardware API values.
+    """
+    def __init__(self, hw_list, hw_map, str_list, var_map):
+        EnumTranslationToHW.__init__(self, hw_list, str_list, var_map)
+        HWToEnumTranslation.__init__(self, hw_map)
+
+    @staticmethod
+    def alloc_instance(hw_list, str_list, extra_vars=None):
+        return EnumTranslationAPI(
+            hw_list,
+            list_to_inv_dict(hw_list),
+            str_list,
+            list_to_inv_dict(str_list, extra_vars)
+        )
+
+    hw_values = EnumTranslationToHW.hw_values

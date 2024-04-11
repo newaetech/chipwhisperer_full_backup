@@ -14,9 +14,9 @@ NM = arm-none-eabi-nm
 #Output Format = Binary for this target
 FORMAT = binary
 
-CFLAGS += -fdata-sections -ffunction-sections -mthumb -mlong-calls
+CFLAGS += -fdata-sections -ffunction-sections -mthumb -mlong-calls -mfloat-abi=soft
 CPPFLAGS += $(CFLAGS)
-ASFLAGS += -mthumb
+ASFLAGS += -mthumb -mfloat-abi=soft
 
 CDEFS += -D__ATSAM4LC2A__
 CPPDEFS += $(CDEFS)

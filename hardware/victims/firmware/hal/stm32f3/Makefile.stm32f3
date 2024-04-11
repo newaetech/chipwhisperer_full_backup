@@ -11,11 +11,16 @@ ASRC += stm32f3_startup.S
 MCU_FLAGS = -mcpu=cortex-m4
 
 CC = arm-none-eabi-gcc
+CXX = arm-none-eabi-g++
 OBJCOPY = arm-none-eabi-objcopy
 OBJDUMP = arm-none-eabi-objdump
 SIZE = arm-none-eabi-size
 AR = arm-none-eabi-ar rcs
 NM = arm-none-eabi-nm
+
+ifeq ($(MCU_CLK), INT)
+  CFLAGS += -DUSE_INTERNAL_CLK
+endif
 
 #Output Format = Binary for this target
 FORMAT = binary
@@ -27,4 +32,4 @@ ASFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
 CDEFS += -DSTM32F303xC -DSTM32F3 -DSTM32 -DDEBUG
 CPPDEFS += -DSTM32F303xC -DSTM32F3 -DSTM32 -DDEBUG
 
-LDFLAGS += --specs=nano.specs -T $(HALPATH)/stm32f3/LinkerScript.ld -Wl,--gc-sections -lm
+LDFLAGS += --specs=nano.specs --specs=nosys.specs -T $(HALPATH)/stm32f3/LinkerScript.ld -Wl,--gc-sections -lm

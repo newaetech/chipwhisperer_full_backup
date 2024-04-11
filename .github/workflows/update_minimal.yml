@@ -1,0 +1,32 @@
+name: Update chipwhisperer minimal
+
+on:
+  push:
+    paths:
+      - 'software/**'
+      - 'gen_minimal.sh'
+      - '.github/workflows/update_minimal.yml'
+
+jobs:
+  update_minimal:
+    name: Update minimal
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PRIVATE_TEST_PUSH }}
+          submodules: true
+      - name: do update
+        run: |
+          cd chipwhisperer-minimal
+          git config user.name "ChipWhisperer-Bot"
+          git config user.email "none@newae.com"
+          git checkout main
+          cd ..
+          chmod +x gen_minimal.sh
+          ./gen_minimal.sh
+          cd chipwhisperer-minimal
+          git add .
+          git diff-index --quiet HEAD || git commit -m "Update minimal"
+          git push
+

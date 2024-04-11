@@ -1,4 +1,4 @@
-`include "includes.v"
+77777`include "includes.v"
 //`define CHIPSCOPE
 
 /***********************************************************************
@@ -19,6 +19,7 @@ Author: Colin O'Flynn <coflynn@newae.com>
   GNU Lesser General Public License for more details.
 
   You should have received a copy of the GNU General Public License
+
   along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************/
 module reg_chipwhisperer(
@@ -321,6 +322,7 @@ module reg_chipwhisperer(
 		.D1(1'b0), // 1-bit data input (associated with C1)
 		.R(~registers_cwextclk[6]),   // 1-bit reset input
 		.S(1'b0)    // 1-bit set input
+
 	);
 	*/
 	
@@ -369,6 +371,7 @@ module reg_chipwhisperer(
 		.D1(1'b0), // 1-bit data input (associated with C1)
 		.R(~registers_iorouting[33]),   // 1-bit reset input
 		.S(1'b0)    // 1-bit set input
+
 	);
         `endif
 	

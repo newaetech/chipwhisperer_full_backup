@@ -4,34 +4,35 @@
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
-# project, http://www.assembla.com/spaces/chipwhisperer
+# project, http://www.chipwhisperer.com . ChipWhisperer is a registered
+# trademark of NewAE Technology Inc in the US & Europe.
 #
 #    This file is part of chipwhisperer.
 #
-#    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-#    chipwhisperer is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Lesser General Public License for more details.
+#       http://www.apache.org/licenses/LICENSE-2.0
 #
-#    You should have received a copy of the GNU General Public License
-#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 #==========================================================================
 import logging, os, time
 from datetime import datetime
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 
+from chipwhisperer.logging import *
 from .naeusb import packuint32
 
 # NOTE: These objects are currently manually maintained. Eventually it will be automatically created
 #      from avrdude.conf, but I'd like to test with a few more devices before doing that.
 
-class AVRBase(object):
+class AVRBase:
     name = "INVALID DEVICE"
     signature = [0xFF, 0xFF, 0xFF]
     timeout = 200
@@ -262,12 +263,10 @@ class AVRISP(object):
                 "File %s appears to be %d bytes, larger than %s size of %d" % (filename, fsize, memtype, maxsize))
 
         logfunc("AVR Programming %s..." % memtype)
-        util.updateUI()
         fdata = f.tobinarray(start=0)
         self.writeMemory(0, fdata, memtype)
 
         logfunc("AVR Reading %s..." % memtype)
-        util.updateUI()
         # Do verify run
         rdata = self.readMemory(0, len(fdata))  # memtype ?
 
@@ -336,6 +335,7 @@ class AVRISP(object):
 
         # Check status
         if checkStatus:
+            time.sleep(0.01)
             status = self._avrDoRead(cmd=0x0020, dlen=2)
             if status[1] != 0x00:
                 status_txt = "0x%02x"%status[1]
@@ -438,7 +438,7 @@ class AVRISP(object):
         """
         Read lock byte and return value.
         """
-        return self._readFuseLockSig(self.ISP_CMD_READ_LOCK_ISP, [0xAC, 0xE0, 0x00, 0x00], 4)
+        return self._readFuseLockSig(self.ISP_CMD_READ_LOCK_ISP, [0x58, 0x00, 0x00, 0x00], 4)
 
 
     def writeFuse(self, fusename, value):
@@ -554,7 +554,7 @@ class AVRISP(object):
         pagesize = memspec["pagesize"]
 
         if addr % pagesize:
-            logging.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
+            target_logger.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
 
         self._avrDoWrite(self.ISP_CMD_LOAD_ADDRESS, data=[0, 0, 0, 0])
 

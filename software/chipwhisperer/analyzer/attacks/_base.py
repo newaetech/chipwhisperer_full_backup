@@ -39,7 +39,7 @@ def enforceLimits(value, limits):
 class AttackBaseClass(PassiveTraceObserver):
     """Generic Attack Interface"""
     _name= 'Attack Settings'
-    _algos = {}
+    _algos = {} # type: ignore
 
     def __init__(self):
         PassiveTraceObserver.__init__(self)

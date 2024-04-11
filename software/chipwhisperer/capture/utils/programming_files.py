@@ -23,7 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.capture.utils.IntelHex import IntelHex
+from .IntelHex import IntelHex
 
 def FileReader(filename):
     if filename.lower().endswith(".hex") or filename.lower().endswith(".ihex"):

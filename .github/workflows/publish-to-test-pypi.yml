@@ -1,0 +1,22 @@
+name: Pub Python dist to TestPyPi
+
+on: push
+
+jobs:
+    build-n-publish:
+      name: Build/pub python to testpypi
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@master
+        - name: Setup Python 3.9
+          uses: actions/setup-python@v1
+          with:
+            python-version: 3.9
+        - name: Build ChipWhisperer
+          run: >-
+            python setup.py bdist
+        - name: Publish to pypi
+          if: startsWith(github.ref, 'refs/tags')
+          uses: pypa/gh-action-pypi-publish@master
+          with:
+            password: ${{ secrets.py_pi_deploy }}

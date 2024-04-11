@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2020, NewAE Technology Inc
 # All rights reserved.
 #
 # Author: Colin O'Flynn
@@ -26,8 +26,12 @@
 #=================================================
 
 from ._base import PreprocessingBase
-from chipwhisperer.analyzer.utils.fasterdtw import fastdtw
 from chipwhisperer.common.utils.util import camel_case_deprecated
+try:
+    from fastdtw import fastdtw # type: ignore
+except ModuleNotFoundError:
+    from chipwhisperer.analyzer.utils.fasterdtw import fastdtw
+import numpy as np
 
 class ResyncDTW(PreprocessingBase):
     """Align traces using the Dynamic Time Warp algorithm. Doesn't play well
@@ -103,7 +107,10 @@ class ResyncDTW(PreprocessingBase):
         N = self._traceSource.num_points()
         r = self._radius
         #try:
-        dist, path = fastdtw(ref, trace, radius=r, dist=None)
+        # cython fastdtw can't take numpy.memmap inputs, so we convert them to arrays:
+        aref = np.array(list(ref))
+        atrace = np.array(list(trace))
+        dist, path = fastdtw(aref, atrace, radius=r, dist=None)
         #except:
         #    return None
         px = [x for x, y in path]

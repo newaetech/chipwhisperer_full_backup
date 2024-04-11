@@ -1,0 +1,43 @@
+name: Update private repo
+
+on: 
+  push:
+    paths:
+      - 'jupyter'
+      - 'software/**'
+      - 'tests/test_husky.py'
+      - '.github/workflows/update_private.yml'
+
+jobs:
+  trigger_action:
+    name: Push dispatch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # OR "2" -> To retrieve the preceding commit.
+      - name: Check_husky_bs_changed
+        id: changed-husky
+        uses: tj-actions/changed-files@v41.0.0
+        with:
+          files: |
+            tests/test_husky.py
+            software/chipwhisperer/hardware/firmware/cwhusky.py
+
+      - uses: benc-uk/workflow-dispatch@v1
+        if: steps.changed-husky.outputs.any_changed == 'true'
+        with:
+          workflow: private_workflow
+          repo: newaetech/ChipWhisperer-Private-Tests
+          token: ${{ secrets.PRIVATE_TEST_PUSH }}
+          ref: refs/heads/main
+          inputs: '{ "full_husky_test": "true" }'
+
+      - uses: benc-uk/workflow-dispatch@v1
+        if: steps.changed-husky.outputs.any_changed != 'true'
+        with:
+          workflow: private_workflow
+          repo: newaetech/ChipWhisperer-Private-Tests
+          token: ${{ secrets.PRIVATE_TEST_PUSH }}
+          ref: refs/heads/main
+          inputs: '{ "full_husky_test": "false" }'

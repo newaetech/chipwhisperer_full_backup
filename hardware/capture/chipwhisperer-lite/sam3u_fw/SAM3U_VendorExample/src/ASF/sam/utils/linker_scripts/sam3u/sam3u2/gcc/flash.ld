@@ -58,7 +58,7 @@ MEMORY
 }
 
 /* The stack size used by the application. NOTE: you need to adjust  */
-__stack_size__ = DEFINED(__stack_size__) ? __stack_size__ : 0x2000;
+__stack_size__ = DEFINED(__stack_size__) ? __stack_size__ : 0x1500;
 __ram_end__ = ORIGIN(ram) + LENGTH(ram) - 4;
 
 /* Section Definitions */ 
@@ -147,6 +147,11 @@ SECTIONS
         _ezero = .;
     } > sram0
 
+    .mpssemem (NOLOAD) :
+    {
+        KEEP(*(.mpssemem))
+    } > sram1
+
     /* stack section */
     .stack (NOLOAD):
     {
@@ -157,6 +162,7 @@ SECTIONS
         _estack = .;
     } > sram1
 
+    
     . = ALIGN(4); 
     _end = . ; 
 }

@@ -221,7 +221,7 @@
 #endif
 
 #ifndef UDD_BULK_NB_BANK
-# define UDD_BULK_NB_BANK(ep) 2
+# define UDD_BULK_NB_BANK(ep) ((ep < 3) ? 2: 1)
 #else
 # if UDD_BULK_NB_BANK_ERROR
 #  error UDD_BULK_NB_BANK must be define with 1 or 2.
@@ -653,7 +653,7 @@ void udd_enable(void)
 	// Cortex-M3, uses NVIC, no need to register IRQ handler
 	// Here, only the Device mode is possible,
 	// UDPHS interrupt is UDD interrupt
-	NVIC_SetPriority((IRQn_Type) ID_UDPHS, UDD_USB_INT_LEVEL);
+	NVIC_SetPriority((IRQn_Type) ID_UDPHS, UDD_USB_INT_LEVEL - 1);
 	NVIC_EnableIRQ((IRQn_Type) ID_UDPHS);
 
 	// Reset internal variables

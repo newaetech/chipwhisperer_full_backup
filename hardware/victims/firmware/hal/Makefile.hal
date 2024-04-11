@@ -14,12 +14,18 @@ EXTRAINCDIRS += $(HALPATH)
 PLATFORM_LIST = CW308_CC2538 CW301_AVR CW303 CW304 CW308_MEGARF CW308_SAM4L \
 	CW308_STM32F0 CW308_STM32F1 CW308_STM32F2 CW308_STM32F3 CW308_STM32F4 CW308_K24F \
     CW308_NRF52 CW308_AURIX CW308_SAML11 CW308_EFM32TG11B CWLITEARM CWLITEXMEGA CWNANO CW308_K82F \
-    CW308_PSOC62 CW308_IMXRT1062
+    CW308_PSOC62 CW308_IMXRT1062 CW308_FE310 CW308_EFR32MG21A CW308_EFM32GG11 CW308_STM32L5 CW308_NEORV32\
+    CW308_SAM4S CW305_IBEX
 
 define KNOWN_PLATFORMS
 
 +-------------------------------------------------------+
 | PLATFORM      | DESCRIPTION                           |
++=======================================================+
+| AVR/XMEGA Targets (8-Bit RISC)                        |
++=======================================================+
++-------------------------------------------------------+
+| CWLITEXMEGA   | CW-Lite XMEGA (Alias for CW303)       |
 +-------------------------------------------------------+
 | CW301_AVR     | Multi-Target Board, AVR Target        |
 +-------------------------------------------------------+
@@ -31,43 +37,84 @@ define KNOWN_PLATFORMS
 +-------------------------------------------------------+
 | CW308_MEGARF  | ATMega2564RFR2 Target for CW308T      |
 +-------------------------------------------------------+
-| CW308_SAM4L   | CW308T-SAM4L (Atmel SAM4L)            |
-+-------------------------------------------------------+
-| CW308_STM32F0 | CW308T-STM32F0 (ST Micro STM32F0)     |
-+-------------------------------------------------------+
-| CW308_STM32F1 | CW308T-STM32F0 (ST Micro STM32F1)     |
-+-------------------------------------------------------+
-| CW308_STM32F2 | CW308T-STM32F2 (ST Micro STM32F2)     |
-+-------------------------------------------------------+
-| CW308_STM32F3 | CW308T-STM32F3 (ST Micro STM32F3)     |
-+-------------------------------------------------------+
-| CW308_STM32F4 | CW308T-STM32F4 (ST Micro STM32F4)     |
-+-------------------------------------------------------+
-| CW308_CC2538  | CW308T-CC2538 (TI CC2538)             |
-+-------------------------------------------------------+
-| CW308_K24F    | CW308T-K24F (NXP Kinetis K24F)        |
-+-------------------------------------------------------+
-| CW308_NRF52   | CW308T-NRF52840 (Nordic Semi)         |
-+-------------------------------------------------------+
-| CWLITEXMEGA   | CW-Lite XMEGA (Alias for CW303)       |
++=======================================================+
++ ARM Cortex-M Targets (Generic)                        |
++=======================================================+
 +-------------------------------------------------------+
 | CWLITEARM     | CW-Lite Arm (Alias for CW308_STM32F3) |
 +-------------------------------------------------------+
 | CWNANO        | CW-Lite Nano (STM32F0_NANO)           |
 +-------------------------------------------------------+
-| CW308_AURIX   | CW-Lite AURIX (Infineon TC233A)       |
+| CW308_STM32F0 | CW308T-STM32F0 (ST Micro STM32F0)     |
 +-------------------------------------------------------+
-| CW308_SAML11  | CW-Lite SAML11 (Atmel SAML11)         |
+| CW308_STM32F1 | CW308T-STM32F1 (ST Micro STM32F1)     |
++-------------------------------------------------------+
+| CW308_STM32F2 | CW308T-STM32F2 (ST Micro STM32F2)     |
++-------------------------------------------------------+
+| CW308_STM32F3 | CW308T-STM32F3 (ST Micro STM32F3)     |
++-------------------------------------------------------+
+| CW308_STM32F4 | CW308T-STM32F4 (ST Micro STM32F405)   |
++-------------------------------------------------------+
++=======================================================+
++ ARM Cortex-M Targets (Support CRYPTO_TARGET=HWAES)    |
++=======================================================+
++-------------------------------------------------------+
+| CW308_CC2538  | CW308T-CC2538 (TI CC2538)             |
++-------------------------------------------------------+
+| CW308_        | CW308T-EFM32GG11                      |
+|   EFM32GG11   | (Silicon Labs Giant Gecko)            |
 +-------------------------------------------------------+
 | CW308_        | CW-Lite EFM32TG11B                    |
-| EFM32TG11B    | (Silicon Labs EFM32TG11B)             |
+|   EFM32TG11B  | (Silicon Labs Tiny Geko)              |
++-------------------------------------------------------+
+| CW308_        | CW308T-EFR32MG21 (A version without   |
+|   EFR32MG21A  |                   'secure vault')     |
++-------------------------------------------------------+
+| CW308_        | CW308T-IMXRT1062 (iMX RT1062)         |
+|   IMXRT1062   |   NXP "Cross-Over" Microcontroller    |
++-------------------------------------------------------+
+| CW308_K24F    | CW308T-K24F (NXP Kinetis K24F)        |
 +-------------------------------------------------------+
 | CW308_K82F    | CW308T-K82F (NXP Kinetis K82F)        |
 +-------------------------------------------------------+
+| CW308_LPC55S6X| CW308T-LPC55S69 (NXP LPC55S69)        |
++-------------------------------------------------------+
+| CW308_NRF52   | CW308T-NRF52840 (Nordic Semi)         |
++-------------------------------------------------------+
 | CW308_PSOC62  | CW308T-PSOC62 (Cypress PSOC 62)       |
 +-------------------------------------------------------+
-| CW308_IMXRT1062 | CW308T-IMXRT1062 (iMX RT1062)       |
-+------------------------------------------------------+
+| CW308_SAM4L   | CW308T-SAM4L (Atmel SAM4L)            |
++-------------------------------------------------------+
+| CW308_SAML11  | CW-Lite SAML11 (Atmel SAML11)         |
++-------------------------------------------------------+
+| CW308_STM32F2 | CW308T-STM32F2HWC (ST Micro STM32F215)|
++-------------------------------------------------------+
+| CW308_STM32F4 | CW308T-STM32F4HWC (ST Micro STM32F415)|
++-------------------------------------------------------+
+| CW308_STM32L4 | CW308T-STM32L4 (ST Micro STM32L443)   |
++-------------------------------------------------------+
+| CW308_STM32L5 | CW308T-STM32L5HWC (ST Micro STM32L562)|
++-------------------------------------------------------+
+| CW308_SAM4S   | CW308T-SAM4S (Microchip SAM4S)        |
++-------------------------------------------------------+
++=======================================================+
++ Other 32-bit Architecture                             |
++=======================================================+
++-------------------------------------------------------+
+| CW308_AURIX   | CW-Lite AURIX (Infineon TC233A)       |
++-------------------------------------------------------+
+| CW308_FE310   | CW308T-FE310-G002 (RISC-V)            |
++-------------------------------------------------------+
+| CW308_        | CW308T-MPC5676R (NXP MPC5676R)        |
+|   MPC5676R    |                                       |
++---------------|---------------------------------------+
+| CW308_NEORV32 | CW308/CW312-iCE40 with neorv32        |
+|               |   (RISC-V) soft-core processor.       |
++---------------|---------------------------------------+
+| CW305_IBEX    | CW305 or CW312-A35 with Ibex          |
+|               |   (RISC-V) soft-core processor.       |
++---------------|---------------------------------------+
+
 
 Options to define platform:
 (1) Run make with PLATFORM specified as follows:
@@ -88,96 +135,131 @@ ifeq ($(MCU_CLK), INT)
   CFLAGS += -DUSE_INTERNAL_CLK
 endif
 
-ifeq ($(PLATFORM),CW301_AVR)
- MCU = atmega328
- HAL = avr
- PLTNAME = Multi-Target Board, AVR Target
-else ifeq ($(PLATFORM),CW301_XMEGA)
- MCU = atxmega16a4
- HAL = xmega
- PLTNAME = Multi-Target Board, XMEGA Target
-else ifeq ($(PLATFORM),CWAVRCAN)
- MCU = at90can128
- HAL = avr
- PLTNAME = AT90CAN128 Target
-else ifeq ($(PLATFORM),CW303)
-#d4 not officially supported, by has same reg map
- MCU = atxmega128d3
- HAL = xmega
- PLTNAME = CW-Lite XMEGA
-else ifeq ($(PLATFORM),CWLITEXMEGA)
-#d4 not officially supported, by has same reg map
- MCU = atxmega128d3
- HAL = xmega
- PLTNAME = CW-Lite XMEGA
-else ifeq ($(PLATFORM),CW304)
- MCU = atmega328
- HAL = avr
- PLTNAME = CW-Lite NOTDUINO
-else ifeq ($(PLATFORM),CW308_MEGARF)
- MCU = atmega128rfa1
-# MCU = atmega2564rfr2
- HAL = avr
- PLTNAME = CW308T: ATMegaRF Target
-else ifeq ($(PLATFORM),CW308_SAM4L)
- HAL = sam4l
- PLTNAME = CW308T: SAM4L Target
-else ifeq ($(PLATFORM),CW308_STM32F0)
- HAL = stm32f0
- PLTNAME = CW308T: STM32F0 Target
-else ifeq ($(PLATFORM),CW308_STM32F1)
- HAL = stm32f1
- PLTNAME = CW308T: STM32F1 Target
-else ifeq ($(PLATFORM),CW308_STM32F2)
- HAL = stm32f2
- PLTNAME = CW308T: STM32F2 Target
-else ifeq ($(PLATFORM),CW308_STM32F3)
- HAL = stm32f3
- PLTNAME = CW308T: STM32F3 Target
-else ifeq ($(PLATFORM),CWLITEARM)
- HAL = stm32f3
- PLTNAME = CW-Lite Arm \(STM32F3\)
-else ifeq ($(PLATFORM),CW308_STM32F4)
- HAL = stm32f4
- PLTNAME = CW308T: STM32F4 Target
-else ifeq ($(PLATFORM),CW308_CC2538)
- HAL = cc2538
- PLTNAME = cc2538 Target
-else ifeq ($(PLATFORM),CW308_K24F)
- HAL = k24f
- PLTNAME = k24f Target
-else ifeq ($(PLATFORM),CW308_K82F)
- HAL = k82f
- PLTNAME = k82f Target
-else ifeq ($(PLATFORM),CW308_NRF52)
- HAL = nrf52840
- PLTNAME = NRF52840 Target
-else ifeq ($(PLATFORM),CWNANO)
- HAL = stm32f0_nano
- PLTNAME = CWNANO STM32F030
-else ifeq ($(PLATFORM),CW308_AURIX)
- HAL = aurix
- PLTNAME = AURIX
-else ifeq ($(PLATFORM),CW308_SAML11)
- HAL = saml11
- PLTNAME = SAML11
-else ifeq ($(PLATFORM),CW308_EFM32TG11B)
- HAL = efm32tg11b
- PLTNAME = EFM32TG11B
-else ifeq ($(PLATFORM),CW308_LPC55S6X)
- HAL = lpc55s6x
- PLTNAME = LPC55S6X
-else ifeq ($(PLATFORM),CW308_PSOC62)
- HAL = psoc62
- PLTNAME = PSOC62
-else ifeq ($(PLATFORM),CW308_IMXRT1062)
- HAL = imxrt1062
- PLTNAME = IMXRT1062
-else
-  $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
+ifneq ($(MAKECMDGOALS),clean)
+  ifeq ($(PLATFORM),CW301_AVR)
+  MCU = atmega328
+  HAL = avr
+  PLTNAME = Multi-Target Board, AVR Target
+  else ifeq ($(PLATFORM),CW301_XMEGA)
+  MCU = atxmega16a4
+  HAL = xmega
+  PLTNAME = Multi-Target Board, XMEGA Target
+  else ifeq ($(PLATFORM),CWAVRCAN)
+  MCU = at90can128
+  HAL = avr
+  PLTNAME = AT90CAN128 Target
+  else ifeq ($(PLATFORM),CW303)
+  #d4 not officially supported, by has same reg map
+  MCU = atxmega128d3
+  HAL = xmega
+  PLTNAME = CW-Lite XMEGA
+  else ifeq ($(PLATFORM),CWLITEXMEGA)
+  #d4 not officially supported, by has same reg map
+  MCU = atxmega128d3
+  HAL = xmega
+  PLTNAME = CW-Lite XMEGA
+  else ifeq ($(PLATFORM),CW304)
+  MCU = atmega328
+  HAL = avr
+  PLTNAME = CW-Lite NOTDUINO
+  else ifeq ($(PLATFORM),CW308_MEGARF)
+  MCU = atmega128rfa1
+  # MCU = atmega2564rfr2
+  HAL = avr
+  PLTNAME = CW308T: ATMegaRF Target
+  else ifeq ($(PLATFORM),CW308_SAM4L)
+  HAL = sam4l
+  PLTNAME = CW308T: SAM4L Target
+  else ifeq ($(PLATFORM),CW308_STM32F0)
+  HAL = stm32f0
+  PLTNAME = CW308T: STM32F0 Target
+  else ifeq ($(PLATFORM),CW308_STM32F1)
+  HAL = stm32f1
+  PLTNAME = CW308T: STM32F1 Target
+  else ifeq ($(PLATFORM),CW308_STM32F2)
+  HAL = stm32f2
+  PLTNAME = CW308T: STM32F2 Target
+  else ifeq ($(PLATFORM),CW308_STM32F3)
+  HAL = stm32f3
+  PLTNAME = CW308T: STM32F3 Target
+  else ifeq ($(PLATFORM),CWLITEARM)
+  HAL = stm32f3
+  PLTNAME = CW-Lite Arm \(STM32F3\)
+  else ifeq ($(PLATFORM),CW308_STM32F4)
+  HAL = stm32f4
+  PLTNAME = CW308T: STM32F4 Target
+  else ifeq ($(PLATFORM),CW308_CC2538)
+  HAL = cc2538
+  PLTNAME = CW308T: CC2538 Target
+  else ifeq ($(PLATFORM),CW308_K24F)
+  HAL = k24f
+  PLTNAME = CW308T: Kinetis K24F Target
+  else ifeq ($(PLATFORM),CW308_K82F)
+  HAL = k82f
+  PLTNAME = CW308T: Kinetis MK82F Target
+  else ifeq ($(PLATFORM),CW308_NRF52)
+  HAL = nrf52840
+  PLTNAME = NRF52840 Target
+  else ifeq ($(PLATFORM),CWNANO)
+  HAL = stm32f0_nano
+  PLTNAME = CWNANO Built-in Target (STM32F030)
+  else ifeq ($(PLATFORM),CW308_AURIX)
+  HAL = aurix
+  PLTNAME = CW308T: AURIX TC233A Target
+  else ifeq ($(PLATFORM),CW308_SAML11)
+  HAL = saml11
+  PLTNAME = CW308T: SAML11 Target
+  else ifeq ($(PLATFORM),CW308_EFM32TG11B)
+  HAL = efm32tg11b
+  PLTNAME = CW308T: EFM32TG11B Target
+  else ifeq ($(PLATFORM),CW308_LPC55S6X)
+  HAL = lpc55s6x
+  PLTNAME = CW308T: LPC55S6X Target
+  else ifeq ($(PLATFORM),CW308_PSOC62)
+  HAL = psoc62
+  PLTNAME = CW308T: PSOC62 Target
+  else ifeq ($(PLATFORM),CW308_IMXRT1062)
+  HAL = imxrt1062
+  PLTNAME = CW308T: IMXRT1062 Target
+  else ifeq ($(PLATFORM),CW308_FE310)
+  HAL = fe310
+  PLTNAME = CW308T: FE310-G002 Target
+  else ifeq ($(PLATFORM),CW308_EFR32MG21A)
+  HAL = efr32mg21a
+  PLTNAME = CW308T: EFR32MG21A Target
+  else ifeq ($(PLATFORM),CW308_EFM32GG11)
+  HAL = efm32gg11
+  PLTNAME = CW308T: EFM32GG11 Target
+  else ifeq ($(PLATFORM),CW308_STM32L4)
+  HAL = stm32l4
+  PLTNAME = CW308T: STM32L4 Target
+  else ifeq ($(PLATFORM),CW308_STM32L5)
+  HAL = stm32l5
+  PLTNAME = CW308T: STM32L5 Target
+  else ifeq ($(PLATFORM),CW308_RX65N)
+  HAL = rx65n
+  PLTNAME = CW308T: RX65N
+  else ifeq ($(PLATFORM),CW308_MPC5676R)
+  HAL = mpc5676r
+  PLTNAME = CW308T: MPC5676R Target
+  else ifeq ($(PLATFORM),CW308_NEORV32)
+  HAL = neorv32
+  PLTNAME = iCE40 Target with neorv softcore
+  else ifeq ($(PLATFORM), CW308_SAM4S)
+    HAL = sam4s
+    PLTNAME = Microchip SAM4S
+  else ifeq ($(PLATFORM), CWHUSKY)
+    HAL = sam4s
+    PLTNAME = CW-Husky Microchip SAM4S
+  else ifeq ($(PLATFORM), CW305_IBEX)
+    HAL = ibex
+    PLTNAME = CW305 or CW312-A35 with Ibex softcore
+  else
+      $(error Invalid or empty PLATFORM: $(PLATFORM). Known platforms: $(KNOWN_PLATFORMS))
+  endif
+
+  include $(HALPATH)/$(HAL)/Makefile.$(HAL)
+  CDEFS += -DHAL_TYPE=HAL_$(HAL) -DPLATFORM=$(PLATFORM)
 endif
 
-include $(HALPATH)/$(HAL)/Makefile.$(HAL)
-
-CDEFS += -DHAL_TYPE=HAL_$(HAL) -DPLATFORM=$(PLATFORM)
 

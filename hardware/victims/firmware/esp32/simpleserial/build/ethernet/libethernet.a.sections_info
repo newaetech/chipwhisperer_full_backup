@@ -1,0 +1,575 @@
+In archive C:/Users/adewa/Code/chipwhisperer/hardware/victims/firmware/esp32/simpleserial/build/ethernet/libethernet.a:
+
+emac_dev.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.emac_enable_flowctrl 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .literal.emac_disable_flowctrl 00000004  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .literal.emac_enable_dma_tx 00000008  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  3 .literal.emac_enable_dma_rx 00000004  00000000  00000000  00000048  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  4 .literal.emac_disable_dma_tx 00000008  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .literal.emac_disable_dma_rx 00000004  00000000  00000000  00000054  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .literal.emac_enable_clk 00000014  00000000  00000000  00000058  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.emac_dma_init 0000000c  00000000  00000000  0000006c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  8 .literal.emac_mac_enable_txrx 00000004  00000000  00000000  00000078  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  9 .literal.emac_mac_init 00000014  00000000  00000000  0000007c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 10 .literal.emac_enable_promiscuous 00000004  00000000  00000000  00000090  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 11 .literal.emac_disable_promiscuous 00000004  00000000  00000000  00000094  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 12 .text         00000000  00000000  00000000  00000098  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 13 .data         00000000  00000000  00000000  00000098  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 14 .bss          00000000  00000000  00000000  00000098  2**0
+                  ALLOC
+ 15 .text.emac_enable_flowctrl 0000005e  00000000  00000000  00000098  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .text.emac_disable_flowctrl 00000053  00000000  00000000  000000f8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .text.emac_enable_dma_tx 00000018  00000000  00000000  0000014c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.emac_enable_dma_rx 00000017  00000000  00000000  00000164  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.emac_disable_dma_tx 00000018  00000000  00000000  0000017c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .text.emac_disable_dma_rx 00000017  00000000  00000000  00000194  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .text.emac_enable_clk 00000039  00000000  00000000  000001ac  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .text.emac_dma_init 0000003f  00000000  00000000  000001e8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .text.emac_mac_enable_txrx 00000026  00000000  00000000  00000228  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .text.emac_mac_init 0000004a  00000000  00000000  00000250  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .text.emac_enable_promiscuous 00000017  00000000  00000000  0000029c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .text.emac_disable_promiscuous 00000017  00000000  00000000  000002b4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .debug_frame  00000130  00000000  00000000  000002cc  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 28 .debug_info   00000335  00000000  00000000  000003fc  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 29 .debug_abbrev 000000fe  00000000  00000000  00000731  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 30 .debug_loc    00000039  00000000  00000000  0000082f  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 31 .debug_aranges 00000078  00000000  00000000  00000868  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 32 .debug_ranges 00000068  00000000  00000000  000008e0  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 33 .debug_line   0000032f  00000000  00000000  00000948  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 34 .debug_str    000002df  00000000  00000000  00000c77  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 35 .comment      0000003c  00000000  00000000  00000f56  2**0
+                  CONTENTS, READONLY
+ 36 .xtensa.info  00000038  00000000  00000000  00000f92  2**0
+                  CONTENTS, READONLY
+ 37 .xt.lit       00000060  00000000  00000000  00000fca  2**0
+                  CONTENTS, RELOC, READONLY
+ 38 .xt.prop      00000258  00000000  00000000  0000102a  2**0
+                  CONTENTS, RELOC, READONLY
+
+emac_main.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.emac_setup_tx_desc 00000004  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .literal.emac_clean_rx_desc 00000008  00000000  00000000  00000038  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .literal.emac_set_tx_base_reg 00000008  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.emac_set_rx_base_reg 00000008  00000000  00000000  00000048  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.emac_reset_dma_chain 00000004  00000000  00000000  00000050  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.emac_init_dma_chain 00000024  00000000  00000000  00000054  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.emac_set_user_config_data 00000004  00000000  00000000  00000078  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.emac_enable_intr 00000008  00000000  00000000  0000007c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  8 .literal.emac_disable_intr 00000004  00000000  00000000  00000084  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  9 .iram1.18.literal 00000008  00000000  00000000  00000088  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 10 .literal.emac_process_rx 00000014  00000000  00000000  00000090  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .literal.emac_process_rx_unavail 00000014  00000000  00000000  000000a4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .literal.emac_set_macaddr_reg 00000010  00000000  00000000  000000b8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .literal.emac_hw_init 00000004  00000000  00000000  000000c8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .literal.emac_verify_args 00000098  00000000  00000000  000000cc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .literal.emac_process_tx 0000002c  00000000  00000000  00000164  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .literal.emac_check_phy_init 00000020  00000000  00000000  00000190  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .literal.emac_process_link_updown 00000020  00000000  00000000  000001b0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .literal.emac_link_check_timer_init 00000010  00000000  00000000  000001d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .literal.emac_link_check_timer_start 0000000c  00000000  00000000  000001e0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .literal.emac_link_check_timer_delete 00000008  00000000  00000000  000001ec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .literal.emac_link_check_timer_stop 00000008  00000000  00000000  000001f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .literal.emac_stop 00000024  00000000  00000000  000001fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .literal.emac_init_default_data 00000008  00000000  00000000  00000220  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .literal.emac_macaddr_init 00000008  00000000  00000000  00000228  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .literal.esp_eth_get_mac 00000008  00000000  00000000  00000230  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .literal.esp_eth_set_mac 00000008  00000000  00000000  00000238  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .literal.esp_eth_get_speed 00000004  00000000  00000000  00000240  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 28 .literal.esp_eth_smi_write 0000000c  00000000  00000000  00000244  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 29 .literal.esp_eth_smi_read 0000000c  00000000  00000000  00000250  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 30 .literal.esp_eth_smi_wait_value 00000024  00000000  00000000  0000025c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 31 .literal.emac_reset 00000040  00000000  00000000  00000280  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 32 .literal.emac_start 00000044  00000000  00000000  000002c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 33 .literal.esp_eth_free_rx_buf 00000040  00000000  00000000  00000304  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 34 .literal.esp_eth_tx 00000030  00000000  00000000  00000344  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 35 .literal.emac_process_link_check 0000000c  00000000  00000000  00000374  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 36 .literal.emac_task 00000044  00000000  00000000  00000380  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 37 .iram1.20.literal 00000020  00000000  00000000  000003c4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 38 .literal.emac_link_check_func 00000004  00000000  00000000  000003e4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 39 .literal.emac_ioctl 00000034  00000000  00000000  000003e8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 40 .literal.esp_eth_enable 0000001c  00000000  00000000  0000041c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 41 .literal.esp_eth_disable 00000008  00000000  00000000  00000438  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 42 .iram1.19.literal 00000024  00000000  00000000  00000440  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 43 .literal.esp_eth_init_internal 000000d8  00000000  00000000  00000464  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 44 .literal.esp_eth_init 00000008  00000000  00000000  0000053c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 45 .literal.esp_eth_deinit 00000060  00000000  00000000  00000544  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 46 .text         00000000  00000000  00000000  000005a4  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 47 .data         00000000  00000000  00000000  000005a4  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 48 .bss          00000000  00000000  00000000  000005a4  2**0
+                  ALLOC
+ 49 .text.emac_setup_tx_desc 0000000f  00000000  00000000  000005a4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 50 .text.emac_clean_tx_desc 0000000b  00000000  00000000  000005b4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 51 .text.emac_clean_rx_desc 00000014  00000000  00000000  000005c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 52 .text.emac_set_tx_base_reg 00000012  00000000  00000000  000005d4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 53 .text.emac_set_rx_base_reg 00000012  00000000  00000000  000005e8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 54 .text.emac_reset_dma_chain 00000016  00000000  00000000  000005fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 55 .text.emac_init_dma_chain 000000a5  00000000  00000000  00000614  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 56 .text.emac_set_user_config_data 00000052  00000000  00000000  000006bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 57 .text.emac_enable_intr 00000010  00000000  00000000  00000710  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 58 .text.emac_disable_intr 0000000f  00000000  00000000  00000720  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 59 .iram1.18     00000023  00000000  00000000  00000730  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 60 .text.emac_process_rx 00000080  00000000  00000000  00000754  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 61 .text.emac_process_rx_unavail 00000096  00000000  00000000  000007d4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 62 .text.emac_set_macaddr_reg 00000050  00000000  00000000  0000086c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 63 .text.emac_hw_init 0000000b  00000000  00000000  000008bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 64 .rodata.str1.4 00000482  00000000  00000000  000008c8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 65 .text.emac_verify_args 000001c0  00000000  00000000  00000d4c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 66 .text.emac_process_tx 0000008c  00000000  00000000  00000f0c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 67 .text.emac_check_phy_init 0000008a  00000000  00000000  00000f98  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 68 .text.emac_process_link_updown 00000053  00000000  00000000  00001024  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 69 .text.emac_link_check_timer_init 00000028  00000000  00000000  00001078  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 70 .text.emac_link_check_timer_start 0000002b  00000000  00000000  000010a0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 71 .text.emac_link_check_timer_delete 0000001e  00000000  00000000  000010cc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 72 .text.emac_link_check_timer_stop 00000024  00000000  00000000  000010ec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 73 .text.emac_stop 00000052  00000000  00000000  00001110  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 74 .text.emac_init_default_data 00000013  00000000  00000000  00001164  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 75 .text.emac_macaddr_init 00000010  00000000  00000000  00001178  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 76 .text.esp_eth_get_mac 00000012  00000000  00000000  00001188  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 77 .text.esp_eth_set_mac 00000021  00000000  00000000  0000119c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 78 .text.esp_eth_get_speed 00000010  00000000  00000000  000011c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 79 .text.esp_eth_smi_write 00000049  00000000  00000000  000011d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 80 .text.esp_eth_smi_read 00000048  00000000  00000000  0000121c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 81 .text.esp_eth_smi_wait_value 00000071  00000000  00000000  00001264  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 82 .text.emac_reset 000000bc  00000000  00000000  000012d8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 83 .text.emac_start 000000a6  00000000  00000000  00001394  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 84 .text.esp_eth_free_rx_buf 000000bf  00000000  00000000  0000143c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 85 .text.esp_eth_tx 000000b0  00000000  00000000  000014fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 86 .text.emac_process_link_check 0000003a  00000000  00000000  000015ac  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 87 .text.emac_task 000000a7  00000000  00000000  000015e8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 88 .rodata.emac_task 00000018  00000000  00000000  00001690  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 89 .iram1.20     00000090  00000000  00000000  000016a8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 90 .text.emac_link_check_func 0000000f  00000000  00000000  00001738  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 91 .text.emac_ioctl 000000a0  00000000  00000000  00001748  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 92 .text.esp_eth_enable 00000072  00000000  00000000  000017e8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 93 .text.esp_eth_disable 0000003d  00000000  00000000  0000185c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 94 .iram1.19     00000093  00000000  00000000  0000189c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 95 .text.esp_eth_init_internal 000002ec  00000000  00000000  00001930  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 96 .text.esp_eth_init 00000015  00000000  00000000  00001c1c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 97 .text.esp_eth_deinit 000000e5  00000000  00000000  00001c34  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 98 .bss.pause_send 00000001  00000000  00000000  00001d19  2**0
+                  ALLOC
+ 99 .bss.eth_intr_handle 00000004  00000000  00000000  00001d1c  2**2
+                  ALLOC
+100 .bss.emac_tx_xMutex 00000004  00000000  00000000  00001d1c  2**2
+                  ALLOC
+101 .bss.emac_rx_xMutex 00000004  00000000  00000000  00001d1c  2**2
+                  ALLOC
+102 .bss.emac_timer 00000004  00000000  00000000  00001d1c  2**2
+                  ALLOC
+103 .bss.emac_sig_cnt 00000032  00000000  00000000  00001d1c  2**2
+                  ALLOC
+104 .bss.emac_xqueue 00000004  00000000  00000000  00001d1c  2**2
+                  ALLOC
+105 .bss.emac_task_hdl 00000004  00000000  00000000  00001d1c  2**2
+                  ALLOC
+106 .data.g_emac_mux 00000008  00000000  00000000  00001d1c  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+107 .bss.emac_g_sem 00000004  00000000  00000000  00001d24  2**2
+                  ALLOC
+108 .bss.emac_dma_tx_buf 00000028  00000000  00000000  00001d24  2**2
+                  ALLOC
+109 .bss.emac_dma_rx_buf 00000028  00000000  00000000  00001d24  2**2
+                  ALLOC
+110 .bss.emac_dma_tx_chain_buf 00000004  00000000  00000000  00001d24  2**2
+                  ALLOC
+111 .bss.emac_dma_rx_chain_buf 00000004  00000000  00000000  00001d24  2**2
+                  ALLOC
+112 .bss.emac_config 00000070  00000000  00000000  00001d24  2**2
+                  ALLOC
+113 .debug_frame  00000478  00000000  00000000  00001d24  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+114 .debug_info   00002d53  00000000  00000000  0000219c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+115 .debug_abbrev 000004b7  00000000  00000000  00004eef  2**0
+                  CONTENTS, READONLY, DEBUGGING
+116 .debug_loc    000009cd  00000000  00000000  000053a6  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+117 .debug_aranges 00000190  00000000  00000000  00005d73  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+118 .debug_ranges 00000198  00000000  00000000  00005f03  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+119 .debug_line   0000159c  00000000  00000000  0000609b  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+120 .debug_str    00001db7  00000000  00000000  00007637  2**0
+                  CONTENTS, READONLY, DEBUGGING
+121 .comment      0000003c  00000000  00000000  000093ee  2**0
+                  CONTENTS, READONLY
+122 .xtensa.info  00000038  00000000  00000000  0000942a  2**0
+                  CONTENTS, READONLY
+123 .xt.lit       00000170  00000000  00000000  00009462  2**0
+                  CONTENTS, RELOC, READONLY
+124 .xt.prop      000010e0  00000000  00000000  000095d2  2**0
+                  CONTENTS, RELOC, READONLY
+
+phy_common.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.phy_rmii_configure_data_interface_pins 00000024  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.phy_rmii_smi_configure_pins 00000060  00000000  00000000  00000058  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.phy_mii_enable_flow_ctrl 0000000c  00000000  00000000  000000b8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.phy_mii_check_link_status 00000004  00000000  00000000  000000c4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.phy_mii_get_partner_pause_enable 00000004  00000000  00000000  000000c8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text         00000000  00000000  00000000  000000cc  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .data         00000000  00000000  00000000  000000cc  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  7 .bss          00000000  00000000  00000000  000000cc  2**0
+                  ALLOC
+  8 .text.phy_rmii_configure_data_interface_pins 00000076  00000000  00000000  000000cc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .rodata.str1.4 0000045c  00000000  00000000  00000144  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 10 .text.phy_rmii_smi_configure_pins 00000120  00000000  00000000  000005a0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.phy_mii_enable_flow_ctrl 0000001f  00000000  00000000  000006c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.phy_mii_check_link_status 0000001e  00000000  00000000  000006e0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.phy_mii_get_partner_pause_enable 00000020  00000000  00000000  00000700  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .rodata.__func__$3766 0000001c  00000000  00000000  00000720  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 15 .debug_frame  00000088  00000000  00000000  0000073c  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_info   000004b6  00000000  00000000  000007c4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 17 .debug_abbrev 0000014a  00000000  00000000  00000c7a  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 18 .debug_loc    0000005f  00000000  00000000  00000dc4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 19 .debug_aranges 00000040  00000000  00000000  00000e23  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 20 .debug_ranges 00000030  00000000  00000000  00000e63  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 21 .debug_line   00000400  00000000  00000000  00000e93  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 22 .debug_str    000003ce  00000000  00000000  00001293  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 23 .comment      0000003c  00000000  00000000  00001661  2**0
+                  CONTENTS, READONLY
+ 24 .xtensa.info  00000038  00000000  00000000  0000169d  2**0
+                  CONTENTS, READONLY
+ 25 .xt.lit       00000028  00000000  00000000  000016d5  2**0
+                  CONTENTS, RELOC, READONLY
+ 26 .xt.prop      00000144  00000000  00000000  000016fd  2**0
+                  CONTENTS, RELOC, READONLY
+
+phy_ip101.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.phy_ip101_check_phy_init 00000004  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.phy_ip101_get_speed_mode 00000004  00000000  00000000  00000038  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.phy_ip101_get_duplex_mode 00000004  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.phy_ip101_power_enable 00000010  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.phy_ip101_init 00000030  00000000  00000000  00000050  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text         00000000  00000000  00000000  00000080  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .data         00000000  00000000  00000000  00000080  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  7 .bss          00000000  00000000  00000000  00000080  2**0
+                  ALLOC
+  8 .text.phy_ip101_check_phy_init 00000013  00000000  00000000  00000080  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.phy_ip101_get_speed_mode 0000001e  00000000  00000000  00000094  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.phy_ip101_get_duplex_mode 0000001e  00000000  00000000  000000b4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.phy_ip101_power_enable 00000029  00000000  00000000  000000d4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.phy_ip101_init 0000006b  00000000  00000000  00000100  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.phy_ip101_dump_registers 00000005  00000000  00000000  0000016c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 14 .rodata.phy_ip101_default_ethernet_config 0000003c  00000000  00000000  00000174  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 15 .debug_frame  000000a0  00000000  00000000  000001b0  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_info   000006c9  00000000  00000000  00000250  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 17 .debug_abbrev 000001d0  00000000  00000000  00000919  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 18 .debug_loc    00000060  00000000  00000000  00000ae9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 19 .debug_aranges 00000048  00000000  00000000  00000b49  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 20 .debug_ranges 00000038  00000000  00000000  00000b91  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 21 .debug_line   00000387  00000000  00000000  00000bc9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 22 .debug_str    0000072f  00000000  00000000  00000f50  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 23 .comment      0000003c  00000000  00000000  0000167f  2**0
+                  CONTENTS, READONLY
+ 24 .xtensa.info  00000038  00000000  00000000  000016bb  2**0
+                  CONTENTS, READONLY
+ 25 .xt.lit       00000028  00000000  00000000  000016f3  2**0
+                  CONTENTS, RELOC, READONLY
+ 26 .xt.prop      00000174  00000000  00000000  0000171b  2**0
+                  CONTENTS, RELOC, READONLY
+
+phy_lan8720.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.phy_lan8720_check_phy_init 0000000c  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.phy_lan8720_get_speed_mode 00000004  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.phy_lan8720_get_duplex_mode 00000004  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.phy_lan8720_power_enable 00000010  00000000  00000000  00000048  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.phy_lan8720_init 00000030  00000000  00000000  00000058  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text         00000000  00000000  00000000  00000088  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .data         00000000  00000000  00000000  00000088  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  7 .bss          00000000  00000000  00000000  00000088  2**0
+                  ALLOC
+  8 .text.phy_lan8720_check_phy_init 00000022  00000000  00000000  00000088  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.phy_lan8720_get_speed_mode 0000001e  00000000  00000000  000000ac  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.phy_lan8720_get_duplex_mode 0000001e  00000000  00000000  000000cc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.phy_lan8720_power_enable 00000029  00000000  00000000  000000ec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.phy_lan8720_init 00000066  00000000  00000000  00000118  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.phy_lan8720_dump_registers 00000005  00000000  00000000  00000180  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 14 .rodata.phy_lan8720_default_ethernet_config 0000003c  00000000  00000000  00000188  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 15 .debug_frame  000000a0  00000000  00000000  000001c4  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_info   00000710  00000000  00000000  00000264  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 17 .debug_abbrev 000001f9  00000000  00000000  00000974  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 18 .debug_loc    0000004d  00000000  00000000  00000b6d  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 19 .debug_aranges 00000048  00000000  00000000  00000bba  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 20 .debug_ranges 00000038  00000000  00000000  00000c02  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 21 .debug_line   00000378  00000000  00000000  00000c3a  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 22 .debug_str    0000073f  00000000  00000000  00000fb2  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 23 .comment      0000003c  00000000  00000000  000016f1  2**0
+                  CONTENTS, READONLY
+ 24 .xtensa.info  00000038  00000000  00000000  0000172d  2**0
+                  CONTENTS, READONLY
+ 25 .xt.lit       00000028  00000000  00000000  00001765  2**0
+                  CONTENTS, RELOC, READONLY
+ 26 .xt.prop      00000168  00000000  00000000  0000178d  2**0
+                  CONTENTS, RELOC, READONLY
+
+phy_tlk110.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.phy_tlk110_check_phy_init 0000000c  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.phy_tlk110_get_speed_mode 00000004  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.phy_tlk110_get_duplex_mode 00000004  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.phy_tlk110_power_enable 0000000c  00000000  00000000  00000048  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.phy_tlk110_init 00000030  00000000  00000000  00000054  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text         00000000  00000000  00000000  00000084  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .data         00000000  00000000  00000000  00000084  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  7 .bss          00000000  00000000  00000000  00000084  2**0
+                  ALLOC
+  8 .text.phy_tlk110_check_phy_init 00000030  00000000  00000000  00000084  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.phy_tlk110_get_speed_mode 0000001e  00000000  00000000  000000b4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.phy_tlk110_get_duplex_mode 0000001e  00000000  00000000  000000d4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.phy_tlk110_power_enable 0000001c  00000000  00000000  000000f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text.phy_tlk110_init 0000005a  00000000  00000000  00000110  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .text.phy_tlk110_dump_registers 00000005  00000000  00000000  0000016c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 14 .rodata.phy_tlk110_default_ethernet_config 0000003c  00000000  00000000  00000174  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 15 .debug_frame  000000a0  00000000  00000000  000001b0  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_info   00000710  00000000  00000000  00000250  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 17 .debug_abbrev 000001e7  00000000  00000000  00000960  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 18 .debug_loc    00000013  00000000  00000000  00000b47  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 19 .debug_aranges 00000048  00000000  00000000  00000b5a  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 20 .debug_ranges 00000038  00000000  00000000  00000ba2  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 21 .debug_line   0000036c  00000000  00000000  00000bda  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 22 .debug_str    00000732  00000000  00000000  00000f46  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 23 .comment      0000003c  00000000  00000000  00001678  2**0
+                  CONTENTS, READONLY
+ 24 .xtensa.info  00000038  00000000  00000000  000016b4  2**0
+                  CONTENTS, READONLY
+ 25 .xt.lit       00000028  00000000  00000000  000016ec  2**0
+                  CONTENTS, RELOC, READONLY
+ 26 .xt.prop      00000168  00000000  00000000  00001714  2**0
+                  CONTENTS, RELOC, READONLY

@@ -26,8 +26,8 @@ ry = [6, 7, 8]
 emit("add r0, %s", (size - init_size) * 4) # move z
 emit("add r2, %s", (size - init_size) * 4) # move y
 
-emit("ldmia r1!, {%s}", ",".join(["r%s" % (rx[i]) for i in xrange(init_size)]))
-emit("ldmia r2!, {%s}", ",".join(["r%s" % (ry[i]) for i in xrange(init_size)]))
+emit("ldmia r1!, {%s}", ", ".join(["r%s" % (rx[i]) for i in xrange(init_size)]))
+emit("ldmia r2!, {%s}", ", ".join(["r%s" % (ry[i]) for i in xrange(init_size)]))
 
 print ""
 if init_size == 1:
@@ -40,12 +40,12 @@ else:
     print ""
     emit("mov r10, #0")
     emit("umull r11, r9, r3, r7")
-    emit("adds r12, r11")
-    emit("adc r9, #0")
+    emit("adds r12, r12, r11")
+    emit("adc r9, r9, #0")
     emit("umull r11, r14, r4, r6")
-    emit("adds r12, r11")
-    emit("adcs r9, r14")
-    emit("adc r10, #0")
+    emit("adds r12, r12, r11")
+    emit("adcs r9, r9, r14")
+    emit("adc r10, r10, #0")
     emit("stmia r0!, {r12}")
     print ""
 
@@ -55,9 +55,9 @@ else:
         emit("mov r%s, #0", acc[2])
         for i in xrange(0, 3):
             emit("umull r%s, r%s, r%s, r%s", acc[3], acc[4], rx[i], ry[2 - i])
-            emit("adds r%s, r%s", acc[0], acc[3])
-            emit("adcs r%s, r%s", acc[1], acc[4])
-            emit("adc r%s, #0", acc[2])
+            emit("adds r%s, r%s, r%s", acc[0], acc[0], acc[3])
+            emit("adcs r%s, r%s, r%s", acc[1], acc[1], acc[4])
+            emit("adc r%s, r%s, #0", acc[2], acc[2])
         emit("stmia r0!, {r%s}", acc[0])
         print ""
         acc = acc[1:] + acc[:1]
@@ -65,16 +65,16 @@ else:
         emit("mov r%s, #0", acc[2])
         for i in xrange(0, 2):
             emit("umull r%s, r%s, r%s, r%s", acc[3], acc[4], rx[i + 1], ry[2 - i])
-            emit("adds r%s, r%s", acc[0], acc[3])
-            emit("adcs r%s, r%s", acc[1], acc[4])
-            emit("adc r%s, #0", acc[2])
+            emit("adds r%s, r%s, r%s", acc[0], acc[0], acc[3])
+            emit("adcs r%s, r%s, r%s", acc[1], acc[1], acc[4])
+            emit("adc r%s, r%s, #0", acc[2], acc[2])
         emit("stmia r0!, {r%s}", acc[0])
         print ""
         acc = acc[1:] + acc[:1]
     
     emit("umull r%s, r%s, r%s, r%s", acc[3], acc[4], rx[init_size-1], ry[init_size-1])
-    emit("adds r%s, r%s", acc[0], acc[3])
-    emit("adc r%s, r%s", acc[1], acc[4])
+    emit("adds r%s, r%s, r%s", acc[0], acc[0], acc[3])
+    emit("adc r%s, r%s, r%s", acc[1], acc[1], acc[4])
     emit("stmia r0!, {r%s}", acc[0])
     emit("stmia r0!, {r%s}", acc[1])
 print ""
@@ -84,11 +84,11 @@ emit("sub r0, %s", (2 * init_size + 3) * 4)
 emit("sub r2, %s", (init_size + 3) * 4)
 
 #### load y registers
-emit("ldmia r2!, {%s}", ",".join(["r%s" % (ry[i]) for i in xrange(3)]))
+emit("ldmia r2!, {%s}", ", ".join(["r%s" % (ry[i]) for i in xrange(3)]))
 
 #### load additional x registers
 if init_size != 3:
-    emit("ldmia r1!, {%s}", ",".join(["r%s" % (rx[i]) for i in xrange(init_size, 3)]))
+    emit("ldmia r1!, {%s}", ", ".join(["r%s" % (rx[i]) for i in xrange(init_size, 3)]))
 print ""
 
 prev_size = init_size
@@ -98,12 +98,12 @@ for row in xrange(full_rows):
     print ""
     emit("mov r10, #0")
     emit("umull r11, r9, r3, r7")
-    emit("adds r12, r11")
-    emit("adc r9, #0")
+    emit("adds r12, r12, r11")
+    emit("adc r9, r9, #0")
     emit("umull r11, r14, r4, r6")
-    emit("adds r12, r11")
-    emit("adcs r9, r14")
-    emit("adc r10, #0")
+    emit("adds r12, r12, r11")
+    emit("adcs r9, r9, r14")
+    emit("adc r10, r10, #0")
     emit("stmia r0!, {r12}")
     print ""
 
@@ -111,9 +111,9 @@ for row in xrange(full_rows):
     emit("mov r%s, #0", acc[2])
     for i in xrange(0, 3):
         emit("umull r%s, r%s, r%s, r%s", acc[3], acc[4], rx[i], ry[2 - i])
-        emit("adds r%s, r%s", acc[0], acc[3])
-        emit("adcs r%s, r%s", acc[1], acc[4])
-        emit("adc r%s, #0", acc[2])
+        emit("adds r%s, r%s, r%s", acc[0], acc[0], acc[3])
+        emit("adcs r%s, r%s, r%s", acc[1], acc[1], acc[4])
+        emit("adc r%s, r%s, #0", acc[2], acc[2])
     emit("stmia r0!, {r%s}", acc[0])
     print ""
     acc = acc[1:] + acc[:1]
@@ -126,13 +126,13 @@ for row in xrange(full_rows):
         emit("mov r%s, #0", acc[2])
         for i in xrange(0, 3):
             emit("umull r%s, r%s, r%s, r%s", acc[3], acc[4], x_regs[i], ry[2 - i])
-            emit("adds r%s, r%s", acc[0], acc[3])
-            emit("adcs r%s, r%s", acc[1], acc[4])
-            emit("adc r%s, #0", acc[2])
+            emit("adds r%s, r%s, r%s", acc[0], acc[0], acc[3])
+            emit("adcs r%s, r%s, r%s", acc[1], acc[1], acc[4])
+            emit("adc r%s, r%s, #0", acc[2], acc[2])
         emit("ldr r%s, [r0]", acc[3]) # load stored value from initial block, and add to accumulator
-        emit("adds r%s, r%s", acc[0], acc[3])
-        emit("adcs r%s, #0", acc[1])
-        emit("adc r%s, #0", acc[2])
+        emit("adds r%s, r%s, r%s", acc[0], acc[0], acc[3])
+        emit("adcs r%s, r%s, #0", acc[1], acc[1])
+        emit("adc r%s, r%s, #0", acc[2], acc[2])
         emit("stmia r0!, {r%s}", acc[0])
         print ""
         acc = acc[1:] + acc[:1]
@@ -145,13 +145,13 @@ for row in xrange(full_rows):
         emit("mov r%s, #0", acc[2])
         for i in xrange(0, 3):
             emit("umull r%s, r%s, r%s, r%s", acc[3], acc[4], x_regs[i], y_regs[2 - i])
-            emit("adds r%s, r%s", acc[0], acc[3])
-            emit("adcs r%s, r%s", acc[1], acc[4])
-            emit("adc r%s, #0", acc[2])
+            emit("adds r%s, r%s, r%s", acc[0], acc[0], acc[3])
+            emit("adcs r%s, r%s, r%s", acc[1], acc[1], acc[4])
+            emit("adc r%s, r%s, #0", acc[2], acc[2])
         emit("ldr r%s, [r0]", acc[3]) # load stored value from initial block, and add to accumulator
-        emit("adds r%s, r%s", acc[0], acc[3])
-        emit("adcs r%s, #0", acc[1])
-        emit("adc r%s, #0", acc[2])
+        emit("adds r%s, r%s, r%s", acc[0], acc[0], acc[3])
+        emit("adcs r%s, r%s, #0", acc[1], acc[1])
+        emit("adc r%s, r%s, #0", acc[2], acc[2])
         emit("stmia r0!, {r%s}", acc[0])
         print ""
         acc = acc[1:] + acc[:1]
@@ -160,16 +160,16 @@ for row in xrange(full_rows):
     emit("mov r%s, #0", acc[2])
     for i in xrange(0, 2):
         emit("umull r%s, r%s, r%s, r%s", acc[3], acc[4], x_regs[i + 1], y_regs[2 - i])
-        emit("adds r%s, r%s", acc[0], acc[3])
-        emit("adcs r%s, r%s", acc[1], acc[4])
-        emit("adc r%s, #0", acc[2])
+        emit("adds r%s, r%s, r%s", acc[0], acc[0], acc[3])
+        emit("adcs r%s, r%s, r%s", acc[1], acc[1], acc[4])
+        emit("adc r%s, r%s, #0", acc[2], acc[2])
     emit("stmia r0!, {r%s}", acc[0])
     print ""
     acc = acc[1:] + acc[:1]
     
     emit("umull r%s, r%s, r%s, r%s", acc[3], acc[4], x_regs[2], y_regs[2])
-    emit("adds r%s, r%s", acc[0], acc[3])
-    emit("adc r%s, r%s", acc[1], acc[4])
+    emit("adds r%s, r%s, r%s", acc[0], acc[0], acc[3])
+    emit("adc r%s, r%s, r%s", acc[1], acc[1], acc[4])
     emit("stmia r0!, {r%s}", acc[0])
     emit("stmia r0!, {r%s}", acc[1])
     print ""

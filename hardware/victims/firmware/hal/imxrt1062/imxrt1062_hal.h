@@ -19,6 +19,8 @@
 #ifndef IMXRT1062_HAL_H_
 #define IMXRT1062_HAL_H_
 
+#include <stdint.h>
+
 void trigger_setup(void);
 void trigger_high(void); 
 void trigger_low(void);
@@ -27,8 +29,14 @@ void init_uart(void);
 void putch(char c);
 char getch(void);
 
-/* MXRT1062 has Glithc Detector */
+/* MXRT1062 has Glitch Detector, which seems to detect power on/off mostly */
 int hal_glitch_detected(void);
 void hal_glitch_detect_reset(void);
+
+void HW_AES128_Init(void);
+void HW_AES128_LoadKey(uint8_t * key);
+void HW_AES128_Enc_pretrigger(uint8_t * pt);
+void HW_AES128_Enc(uint8_t * pt);
+void HW_AES128_Enc_posttrigger(uint8_t * pt);
 
 #endif //IMXRT1062

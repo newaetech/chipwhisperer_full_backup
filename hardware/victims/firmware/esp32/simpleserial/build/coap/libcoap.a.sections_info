@@ -1,0 +1,1179 @@
+In archive C:/Users/adewa/Code/chipwhisperer/hardware/victims/firmware/esp32/simpleserial/build/coap/libcoap.a:
+
+address.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.coap_address_equals 00000020  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.coap_is_mcast 0000000c  00000000  00000000  00000054  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .text         00000000  00000000  00000000  00000060  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  3 .data         00000000  00000000  00000000  00000060  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  4 .bss          00000000  00000000  00000000  00000060  2**0
+                  ALLOC
+  5 .rodata.str1.4 00000052  00000000  00000000  00000060  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  6 .text.coap_address_equals 00000098  00000000  00000000  000000b4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.coap_is_mcast 00000052  00000000  00000000  0000014c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .rodata.__func__$6411 00000014  00000000  00000000  000001a0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  9 .debug_frame  00000040  00000000  00000000  000001b4  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 10 .debug_info   00000472  00000000  00000000  000001f4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 11 .debug_abbrev 00000145  00000000  00000000  00000666  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_loc    00000162  00000000  00000000  000007ab  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 13 .debug_aranges 00000028  00000000  00000000  0000090d  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 14 .debug_ranges 00000018  00000000  00000000  00000935  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 15 .debug_line   000002cb  00000000  00000000  0000094d  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_str    00000397  00000000  00000000  00000c18  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 17 .comment      0000003c  00000000  00000000  00000faf  2**0
+                  CONTENTS, READONLY
+ 18 .xtensa.info  00000038  00000000  00000000  00000feb  2**0
+                  CONTENTS, READONLY
+ 19 .xt.lit       00000010  00000000  00000000  00001023  2**0
+                  CONTENTS, RELOC, READONLY
+ 20 .xt.prop      000001bc  00000000  00000000  00001033  2**0
+                  CONTENTS, RELOC, READONLY
+
+async.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.coap_register_async 00000028  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.coap_remove_async 00000004  00000000  00000000  0000005c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.coap_free_async 00000008  00000000  00000000  00000060  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .text         00000000  00000000  00000000  00000068  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  4 .data         00000000  00000000  00000000  00000068  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  5 .bss          00000000  00000000  00000000  00000068  2**0
+                  ALLOC
+  6 .rodata.str1.4 00000066  00000000  00000000  00000068  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  7 .text.coap_register_async 000000e6  00000000  00000000  000000d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.coap_find_async 00000014  00000000  00000000  000001b8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .text.coap_remove_async 00000037  00000000  00000000  000001cc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.coap_free_async 00000022  00000000  00000000  00000204  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .debug_frame  00000070  00000000  00000000  00000228  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 12 .debug_info   00000d35  00000000  00000000  00000298  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 13 .debug_abbrev 00000295  00000000  00000000  00000fcd  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 14 .debug_loc    0000015d  00000000  00000000  00001262  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 15 .debug_aranges 00000038  00000000  00000000  000013bf  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_ranges 00000028  00000000  00000000  000013f7  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 17 .debug_line   00000495  00000000  00000000  0000141f  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 18 .debug_str    000007cc  00000000  00000000  000018b4  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 19 .comment      0000003c  00000000  00000000  00002080  2**0
+                  CONTENTS, READONLY
+ 20 .xtensa.info  00000038  00000000  00000000  000020bc  2**0
+                  CONTENTS, READONLY
+ 21 .xt.lit       00000018  00000000  00000000  000020f4  2**0
+                  CONTENTS, RELOC, READONLY
+ 22 .xt.prop      00000174  00000000  00000000  0000210c  2**0
+                  CONTENTS, RELOC, READONLY
+
+block.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.coap_opt_block_num 0000001c  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.coap_get_block 0000003c  00000000  00000000  00000050  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.coap_write_block_opt 00000038  00000000  00000000  0000008c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.coap_add_block 00000004  00000000  00000000  000000c4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text         00000000  00000000  00000000  000000c8  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .data         00000000  00000000  00000000  000000c8  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  6 .bss          00000000  00000000  00000000  000000c8  2**0
+                  ALLOC
+  7 .text.coap_opt_block_num 0000006e  00000000  00000000  000000c8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .rodata.str1.4 000000cb  00000000  00000000  00000138  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  9 .text.coap_get_block 000000f0  00000000  00000000  00000204  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .text.coap_write_block_opt 00000116  00000000  00000000  000002f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text.coap_add_block 00000036  00000000  00000000  0000040c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .rodata.__func__$6689 00000015  00000000  00000000  00000444  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 13 .rodata.__func__$6677 0000000f  00000000  00000000  0000045c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 14 .debug_frame  00000070  00000000  00000000  0000046c  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 15 .debug_info   000007bc  00000000  00000000  000004dc  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_abbrev 0000020e  00000000  00000000  00000c98  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 17 .debug_loc    00000411  00000000  00000000  00000ea6  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 18 .debug_aranges 00000038  00000000  00000000  000012b7  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 19 .debug_ranges 00000040  00000000  00000000  000012ef  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 20 .debug_line   00000426  00000000  00000000  0000132f  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 21 .debug_str    00000406  00000000  00000000  00001755  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 22 .comment      0000003c  00000000  00000000  00001b5b  2**0
+                  CONTENTS, READONLY
+ 23 .xtensa.info  00000038  00000000  00000000  00001b97  2**0
+                  CONTENTS, READONLY
+ 24 .xt.lit       00000020  00000000  00000000  00001bcf  2**0
+                  CONTENTS, RELOC, READONLY
+ 25 .xt.prop      00000264  00000000  00000000  00001bef  2**0
+                  CONTENTS, RELOC, READONLY
+
+coap_time.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.coap_clock_init 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.coap_ticks 00000008  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.coap_ticks_to_rt 00000008  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .text         00000000  00000000  00000000  0000004c  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  4 .data         00000000  00000000  00000000  0000004c  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  5 .bss          00000000  00000000  00000000  0000004c  2**0
+                  ALLOC
+  6 .text.coap_clock_init 00000016  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.coap_ticks 00000027  00000000  00000000  00000064  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text.coap_ticks_to_rt 00000015  00000000  00000000  0000008c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .bss.coap_clock_offset 00000004  00000000  00000000  000000a4  2**2
+                  ALLOC
+ 10 .debug_frame  00000058  00000000  00000000  000000a4  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 11 .debug_info   000001a3  00000000  00000000  000000fc  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 12 .debug_abbrev 00000114  00000000  00000000  0000029f  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 13 .debug_loc    00000021  00000000  00000000  000003b3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 14 .debug_aranges 00000030  00000000  00000000  000003d4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 15 .debug_ranges 00000020  00000000  00000000  00000404  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 16 .debug_line   000001b3  00000000  00000000  00000424  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 17 .debug_str    00000239  00000000  00000000  000005d7  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 18 .comment      0000003c  00000000  00000000  00000810  2**0
+                  CONTENTS, READONLY
+ 19 .xtensa.info  00000038  00000000  00000000  0000084c  2**0
+                  CONTENTS, READONLY
+ 20 .xt.lit       00000018  00000000  00000000  00000884  2**0
+                  CONTENTS, RELOC, READONLY
+ 21 .xt.prop      0000009c  00000000  00000000  0000089c  2**0
+                  CONTENTS, RELOC, READONLY
+
+debug.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.msg_type_string 00000004  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.msg_code_string 00000010  00000000  00000000  00000038  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.print_content_format 00000014  00000000  00000000  00000048  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.msg_option_string 00000010  00000000  00000000  0000005c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.print_readable 0000001c  00000000  00000000  0000006c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.coap_package_name 00000004  00000000  00000000  00000088  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.coap_package_version 00000004  00000000  00000000  0000008c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.coap_get_log_level 00000004  00000000  00000000  00000090  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .literal.coap_set_log_level 00000004  00000000  00000000  00000094  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .literal.coap_print_addr 0000002c  00000000  00000000  00000098  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .literal.coap_show_pdu 00000114  00000000  00000000  000000c4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .literal.coap_log_impl 00000024  00000000  00000000  000001d8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text         00000000  00000000  00000000  000001fc  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 13 .data         00000000  00000000  00000000  000001fc  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 14 .bss          00000000  00000000  00000000  000001fc  2**0
+                  ALLOC
+ 15 .text.msg_type_string 00000012  00000000  00000000  000001fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .rodata.str1.4 00000305  00000000  00000000  00000210  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 17 .text.msg_code_string 0000002a  00000000  00000000  00000518  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.print_content_format 00000040  00000000  00000000  00000544  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.msg_option_string 0000003c  00000000  00000000  00000584  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .text.print_readable 000000a1  00000000  00000000  000005c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .text.coap_package_name 00000008  00000000  00000000  00000664  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .text.coap_package_version 00000008  00000000  00000000  0000066c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .text.coap_get_log_level 0000000a  00000000  00000000  00000674  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .text.coap_set_log_level 0000000a  00000000  00000000  00000680  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .text.coap_print_addr 000000e4  00000000  00000000  0000068c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .text.coap_show_pdu 000003c0  00000000  00000000  00000770  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .rodata.coap_show_pdu 000000dc  00000000  00000000  00000b30  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 28 .text.coap_log_impl 0000006a  00000000  00000000  00000c0c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 29 .rodata.__func__$6973 0000000f  00000000  00000000  00000c78  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 30 .bss.buf$7005 00000006  00000000  00000000  00000c88  2**2
+                  ALLOC
+ 31 .rodata.options$7004 00000098  00000000  00000000  00000c88  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 32 .rodata.formats$7018 00000038  00000000  00000000  00000d20  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 33 .bss.buf$6997 00000005  00000000  00000000  00000d58  2**2
+                  ALLOC
+ 34 .rodata.methods$6996 00000018  00000000  00000000  00000d58  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 35 .rodata.types$6992 00000014  00000000  00000000  00000d70  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 36 .rodata.loglevels 00000020  00000000  00000000  00000d84  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 37 .data.maxlog  00000004  00000000  00000000  00000da4  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+ 38 .debug_frame  00000130  00000000  00000000  00000da8  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 39 .debug_info   00001a49  00000000  00000000  00000ed8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 40 .debug_abbrev 00000421  00000000  00000000  00002921  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 41 .debug_loc    0000053c  00000000  00000000  00002d42  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 42 .debug_aranges 00000078  00000000  00000000  0000327e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 43 .debug_ranges 00000068  00000000  00000000  000032f6  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 44 .debug_line   0000085d  00000000  00000000  0000335e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 45 .debug_str    00000b9e  00000000  00000000  00003bbb  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 46 .comment      0000003c  00000000  00000000  00004759  2**0
+                  CONTENTS, READONLY
+ 47 .xtensa.info  00000038  00000000  00000000  00004795  2**0
+                  CONTENTS, READONLY
+ 48 .xt.lit       00000060  00000000  00000000  000047cd  2**0
+                  CONTENTS, RELOC, READONLY
+ 49 .xt.prop      000006e4  00000000  00000000  0000482d  2**0
+                  CONTENTS, RELOC, READONLY
+
+encode.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.coap_fls 00000016  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.coap_decode_var_bytes 0000001f  00000000  00000000  0000004c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .text.coap_encode_var_bytes 0000003b  00000000  00000000  0000006c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .debug_frame  00000058  00000000  00000000  000000a8  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  7 .debug_info   00000159  00000000  00000000  00000100  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  8 .debug_abbrev 00000096  00000000  00000000  00000259  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_loc    00000144  00000000  00000000  000002ef  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 10 .debug_aranges 00000030  00000000  00000000  00000433  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 11 .debug_ranges 00000020  00000000  00000000  00000463  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 12 .debug_line   00000134  00000000  00000000  00000483  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 13 .debug_str    000001de  00000000  00000000  000005b7  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 14 .comment      0000003c  00000000  00000000  00000795  2**0
+                  CONTENTS, READONLY
+ 15 .xtensa.info  00000038  00000000  00000000  000007d1  2**0
+                  CONTENTS, READONLY
+ 16 .xt.prop      000000d8  00000000  00000000  00000809  2**0
+                  CONTENTS, RELOC, READONLY
+
+hashkey.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.coap_hash_impl 00000044  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .debug_frame  00000028  00000000  00000000  00000078  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  5 .debug_info   000000dc  00000000  00000000  000000a0  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  6 .debug_abbrev 0000008c  00000000  00000000  0000017c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_loc    00000095  00000000  00000000  00000208  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  8 .debug_aranges 00000020  00000000  00000000  0000029d  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  9 .debug_ranges 00000010  00000000  00000000  000002bd  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 10 .debug_line   000000fb  00000000  00000000  000002cd  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 11 .debug_str    00000160  00000000  00000000  000003c8  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .comment      0000003c  00000000  00000000  00000528  2**0
+                  CONTENTS, READONLY
+ 13 .xtensa.info  00000038  00000000  00000000  00000564  2**0
+                  CONTENTS, READONLY
+ 14 .xt.prop      00000054  00000000  00000000  0000059c  2**0
+                  CONTENTS, RELOC, READONLY
+
+mem.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.coap_malloc_type 00000004  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.coap_free_type 00000004  00000000  00000000  00000038  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .text         00000000  00000000  00000000  0000003c  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  3 .data         00000000  00000000  00000000  0000003c  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  4 .bss          00000000  00000000  00000000  0000003c  2**0
+                  ALLOC
+  5 .text.coap_memory_init 00000005  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  6 .text.coap_malloc_type 00000010  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.coap_free_type 0000000e  00000000  00000000  00000054  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .debug_frame  00000058  00000000  00000000  00000064  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  9 .debug_info   00000193  00000000  00000000  000000bc  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 10 .debug_abbrev 000000f9  00000000  00000000  0000024f  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_loc    00000021  00000000  00000000  00000348  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 12 .debug_aranges 00000030  00000000  00000000  00000369  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 13 .debug_ranges 00000020  00000000  00000000  00000399  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 14 .debug_line   00000199  00000000  00000000  000003b9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 15 .debug_str    000002a2  00000000  00000000  00000552  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 16 .comment      0000003c  00000000  00000000  000007f4  2**0
+                  CONTENTS, READONLY
+ 17 .xtensa.info  00000038  00000000  00000000  00000830  2**0
+                  CONTENTS, READONLY
+ 18 .xt.lit       00000010  00000000  00000000  00000868  2**0
+                  CONTENTS, RELOC, READONLY
+ 19 .xt.prop      00000084  00000000  00000000  00000878  2**0
+                  CONTENTS, RELOC, READONLY
+
+net.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.no_response 00000028  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.coap_delete_node 00000008  00000000  00000000  0000005c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.coap_delete_all 00000004  00000000  00000000  00000064  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.coap_new_node 00000010  00000000  00000000  00000068  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.coap_new_context 00000038  00000000  00000000  00000078  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.coap_free_context 00000010  00000000  00000000  000000b0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.coap_option_check_critical 0000001c  00000000  00000000  000000c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.coap_transaction_id 00000014  00000000  00000000  000000dc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .literal.coap_send_impl 00000018  00000000  00000000  000000f0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .literal.coap_send 00000004  00000000  00000000  00000108  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .literal.coap_send_ack 0000000c  00000000  00000000  0000010c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .literal.coap_send_message_type 0000000c  00000000  00000000  00000118  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .literal.coap_send_confirmed 00000030  00000000  00000000  00000124  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .literal.coap_retransmit 00000028  00000000  00000000  00000154  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .literal.coap_remove_from_queue 0000000c  00000000  00000000  0000017c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .literal.coap_cancel_all_messages 0000002c  00000000  00000000  00000188  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .literal.coap_cancel 00000008  00000000  00000000  000001b4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .literal.coap_new_error_response 00000058  00000000  00000000  000001bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .literal.coap_send_error 00000024  00000000  00000000  00000214  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .literal.coap_wellknown_response 00000090  00000000  00000000  00000238  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .literal.handle_request 000000e8  00000000  00000000  000002c8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .literal.coap_dispatch 00000064  00000000  00000000  000003b0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .literal.coap_handle_message 00000048  00000000  00000000  00000414  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .literal.coap_read 00000010  00000000  00000000  0000045c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .text         00000000  00000000  00000000  0000046c  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 25 .data         00000000  00000000  00000000  0000046c  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 26 .bss          00000000  00000000  00000000  0000046c  2**0
+                  ALLOC
+ 27 .rodata.str1.4 000006e8  00000000  00000000  0000046c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 28 .text.no_response 00000082  00000000  00000000  00000b54  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 29 .text.coap_adjust_basetime 0000004c  00000000  00000000  00000bd8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 30 .text.coap_insert_node 00000061  00000000  00000000  00000c24  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 31 .text.coap_delete_node 00000020  00000000  00000000  00000c88  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 32 .text.coap_delete_all 00000014  00000000  00000000  00000ca8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 33 .text.coap_new_node 0000002e  00000000  00000000  00000cbc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 34 .text.coap_peek_next 0000000d  00000000  00000000  00000cec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 35 .text.coap_pop_next 00000026  00000000  00000000  00000cfc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 36 .text.coap_new_context 0000009a  00000000  00000000  00000d24  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 37 .text.coap_free_context 0000002a  00000000  00000000  00000dc0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 38 .text.coap_option_check_critical 00000061  00000000  00000000  00000dec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 39 .rodata.coap_option_check_critical 000000a0  00000000  00000000  00000e50  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 40 .text.coap_transaction_id 00000077  00000000  00000000  00000ef0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 41 .text.coap_send_impl 00000080  00000000  00000000  00000f68  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 42 .text.coap_send 00000015  00000000  00000000  00000fe8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 43 .text.coap_send_ack 00000048  00000000  00000000  00001000  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 44 .text.coap_send_message_type 0000003e  00000000  00000000  00001048  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 45 .text.coap_send_confirmed 000000ef  00000000  00000000  00001088  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 46 .text.coap_retransmit 000000c9  00000000  00000000  00001178  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 47 .text.coap_remove_from_queue 0000007c  00000000  00000000  00001244  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 48 .text.coap_cancel_all_messages 000000f2  00000000  00000000  000012c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 49 .text.coap_cancel 00000047  00000000  00000000  000013b4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 50 .text.coap_find_transaction 00000012  00000000  00000000  000013fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 51 .text.coap_new_error_response 00000160  00000000  00000000  00001410  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 52 .text.coap_send_error 0000005a  00000000  00000000  00001570  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 53 .text.coap_wellknown_response 00000299  00000000  00000000  000015cc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 54 .text.handle_request 00000372  00000000  00000000  00001868  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 55 .text.coap_dispatch 000001d2  00000000  00000000  00001bdc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 56 .text.coap_handle_message 000000e0  00000000  00000000  00001db0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 57 .text.coap_read 0000004a  00000000  00000000  00001e90  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 58 .text.coap_can_exit 00000015  00000000  00000000  00001edc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 59 .rodata.__func__$7390 0000000c  00000000  00000000  00001ef4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 60 .rodata.__func__$7406 0000000f  00000000  00000000  00001f00  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 61 .rodata.__func__$7364 00000018  00000000  00000000  00001f10  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 62 .rodata.__func__$7331 00000018  00000000  00000000  00001f28  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 63 .rodata.__func__$7231 00000010  00000000  00000000  00001f40  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 64 .debug_frame  000002e0  00000000  00000000  00001f50  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 65 .debug_info   00003337  00000000  00000000  00002230  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 66 .debug_abbrev 000004a8  00000000  00000000  00005567  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 67 .debug_loc    00001442  00000000  00000000  00005a0f  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 68 .debug_aranges 00000108  00000000  00000000  00006e51  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 69 .debug_ranges 00000128  00000000  00000000  00006f59  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 70 .debug_line   00001338  00000000  00000000  00007081  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 71 .debug_str    00000f3a  00000000  00000000  000083b9  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 72 .comment      0000003c  00000000  00000000  000092f3  2**0
+                  CONTENTS, READONLY
+ 73 .xtensa.info  00000038  00000000  00000000  0000932f  2**0
+                  CONTENTS, READONLY
+ 74 .xt.lit       000000c0  00000000  00000000  00009367  2**0
+                  CONTENTS, RELOC, READONLY
+ 75 .xt.prop      00001110  00000000  00000000  00009427  2**0
+                  CONTENTS, RELOC, READONLY
+
+option.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.coap_option_filter_op 00000004  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.coap_opt_parse 00000050  00000000  00000000  00000038  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.coap_option_iterator_init 00000030  00000000  00000000  00000088  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.coap_opt_delta 00000008  00000000  00000000  000000b8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.coap_opt_length 00000010  00000000  00000000  000000c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.coap_opt_value 00000010  00000000  00000000  000000d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.coap_opt_size 00000004  00000000  00000000  000000e0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.coap_opt_setheader 00000028  00000000  00000000  000000e4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .literal.coap_opt_encode 00000028  00000000  00000000  0000010c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .literal.coap_option_filter_set 00000004  00000000  00000000  00000134  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .literal.coap_option_filter_unset 00000004  00000000  00000000  00000138  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .literal.coap_option_filter_get 00000004  00000000  00000000  0000013c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .literal.coap_option_next 00000028  00000000  00000000  00000140  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .literal.coap_check_option 0000000c  00000000  00000000  00000168  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text         00000000  00000000  00000000  00000174  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 15 .data         00000000  00000000  00000000  00000174  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 16 .bss          00000000  00000000  00000000  00000174  2**0
+                  ALLOC
+ 17 .text.coap_option_filter_op 000000d8  00000000  00000000  00000174  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.options_start 00000038  00000000  00000000  0000024c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .rodata.str1.4 00000272  00000000  00000000  00000284  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 20 .text.coap_opt_parse 00000170  00000000  00000000  000004f8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .text.coap_option_iterator_init 000000bc  00000000  00000000  00000668  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .text.coap_opt_delta 0000004e  00000000  00000000  00000724  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .text.coap_opt_length 0000007e  00000000  00000000  00000774  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .text.coap_opt_value 00000068  00000000  00000000  000007f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .text.coap_opt_size 00000014  00000000  00000000  0000085c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .text.coap_opt_setheader 0000010c  00000000  00000000  00000870  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .text.coap_opt_encode 00000064  00000000  00000000  0000097c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 28 .text.coap_option_filter_set 00000014  00000000  00000000  000009e0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 29 .text.coap_option_filter_unset 00000014  00000000  00000000  000009f4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 30 .text.coap_option_filter_get 00000014  00000000  00000000  00000a08  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 31 .text.coap_option_next 000000d9  00000000  00000000  00000a1c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 32 .text.coap_check_option 0000002e  00000000  00000000  00000af8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 33 .rodata.__func__$6736 00000010  00000000  00000000  00000b28  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 34 .rodata.__func__$6727 00000013  00000000  00000000  00000b38  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 35 .rodata.__func__$6663 0000000d  00000000  00000000  00000b4c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 36 .rodata.__func__$6671 00000011  00000000  00000000  00000b5c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 37 .rodata.__func__$6659 0000001a  00000000  00000000  00000b70  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 38 .rodata.__func__$6643 0000000f  00000000  00000000  00000b8c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 39 .debug_frame  00000178  00000000  00000000  00000b9c  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 40 .debug_info   00000f9c  00000000  00000000  00000d14  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 41 .debug_abbrev 00000356  00000000  00000000  00001cb0  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 42 .debug_loc    00000e45  00000000  00000000  00002006  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 43 .debug_aranges 00000090  00000000  00000000  00002e4b  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 44 .debug_ranges 00000080  00000000  00000000  00002edb  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 45 .debug_line   00000941  00000000  00000000  00002f5b  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 46 .debug_str    00000521  00000000  00000000  0000389c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 47 .comment      0000003c  00000000  00000000  00003dbd  2**0
+                  CONTENTS, READONLY
+ 48 .xtensa.info  00000038  00000000  00000000  00003df9  2**0
+                  CONTENTS, READONLY
+ 49 .xt.lit       00000070  00000000  00000000  00003e31  2**0
+                  CONTENTS, RELOC, READONLY
+ 50 .xt.prop      00000960  00000000  00000000  00003ea1  2**0
+                  CONTENTS, RELOC, READONLY
+
+pdu.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.next_option_safe 0000002c  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.coap_pdu_clear 00000014  00000000  00000000  00000060  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.coap_pdu_init 00000020  00000000  00000000  00000074  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.coap_new_pdu 00000014  00000000  00000000  00000094  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.coap_delete_pdu 00000008  00000000  00000000  000000a8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.coap_add_token 00000004  00000000  00000000  000000b0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.coap_add_option 00000024  00000000  00000000  000000b4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.coap_add_option_later 00000024  00000000  00000000  000000d8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .literal.coap_add_data 00000028  00000000  00000000  000000fc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .literal.coap_get_data 00000020  00000000  00000000  00000124  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .literal.coap_response_phrase 00000004  00000000  00000000  00000144  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .literal.coap_pdu_parse 00000060  00000000  00000000  00000148  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .text         00000000  00000000  00000000  000001a8  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 13 .data         00000000  00000000  00000000  000001a8  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 14 .bss          00000000  00000000  00000000  000001a8  2**0
+                  ALLOC
+ 15 .rodata.str1.4 000003ff  00000000  00000000  000001a8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 16 .text.next_option_safe 00000076  00000000  00000000  000005a8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .text.coap_pdu_clear 00000045  00000000  00000000  00000620  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.coap_pdu_init 00000090  00000000  00000000  00000668  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.coap_new_pdu 0000002e  00000000  00000000  000006f8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .text.coap_delete_pdu 0000001e  00000000  00000000  00000728  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .text.coap_add_token 00000060  00000000  00000000  00000748  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .text.coap_add_option 00000070  00000000  00000000  000007a8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .text.coap_add_option_later 00000076  00000000  00000000  00000818  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .text.coap_add_data 00000090  00000000  00000000  00000890  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .text.coap_get_data 00000069  00000000  00000000  00000920  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .text.coap_response_phrase 0000002a  00000000  00000000  0000098c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .text.coap_pdu_parse 000001ae  00000000  00000000  000009b8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 28 .rodata.__func__$6733 00000011  00000000  00000000  00000b68  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 29 .rodata.__func__$6740 0000000f  00000000  00000000  00000b7c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 30 .rodata.__func__$6714 0000000e  00000000  00000000  00000b8c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 31 .rodata.__func__$6708 0000000e  00000000  00000000  00000b9c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 32 .rodata.__func__$6702 00000016  00000000  00000000  00000bac  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 33 .rodata.__func__$6694 00000010  00000000  00000000  00000bc4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 34 .rodata.__func__$6672 0000000e  00000000  00000000  00000bd4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 35 .rodata.__func__$6664 0000000f  00000000  00000000  00000be4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 36 .data.coap_error 000000c0  00000000  00000000  00000bf4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, DATA
+ 37 .debug_frame  00000130  00000000  00000000  00000cb4  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 38 .debug_info   00000d7f  00000000  00000000  00000de4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 39 .debug_abbrev 000002b9  00000000  00000000  00001b63  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 40 .debug_loc    000004c8  00000000  00000000  00001e1c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 41 .debug_aranges 00000078  00000000  00000000  000022e4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 42 .debug_ranges 00000068  00000000  00000000  0000235c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 43 .debug_line   0000072c  00000000  00000000  000023c4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 44 .debug_str    000004a1  00000000  00000000  00002af0  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 45 .comment      0000003c  00000000  00000000  00002f91  2**0
+                  CONTENTS, READONLY
+ 46 .xtensa.info  00000038  00000000  00000000  00002fcd  2**0
+                  CONTENTS, READONLY
+ 47 .xt.lit       00000060  00000000  00000000  00003005  2**0
+                  CONTENTS, RELOC, READONLY
+ 48 .xt.prop      000005f4  00000000  00000000  00003065  2**0
+                  CONTENTS, RELOC, READONLY
+
+resource.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.match 00000024  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.coap_notify_observers 00000044  00000000  00000000  00000058  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.coap_remove_failed_observers 00000020  00000000  00000000  0000009c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.coap_resource_init 00000014  00000000  00000000  000000bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.coap_add_attr 0000000c  00000000  00000000  000000d0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.coap_find_attr 00000004  00000000  00000000  000000dc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.coap_delete_attr 0000000c  00000000  00000000  000000e0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.coap_free_resource 00000020  00000000  00000000  000000ec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .literal.coap_hash_request_uri 00000018  00000000  00000000  0000010c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .literal.coap_delete_all_resources 00000004  00000000  00000000  00000124  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .literal.coap_get_resource_from_key 00000004  00000000  00000000  00000128  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .literal.coap_delete_resource 00000008  00000000  00000000  0000012c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .literal.coap_print_link 00000008  00000000  00000000  00000134  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 13 .literal.coap_print_wellknown 00000050  00000000  00000000  0000013c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .literal.coap_find_observer 00000020  00000000  00000000  0000018c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .literal.coap_add_observer 00000028  00000000  00000000  000001ac  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .literal.coap_touch_observer 00000004  00000000  00000000  000001d4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .literal.coap_delete_observer 00000008  00000000  00000000  000001d8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .literal.coap_check_notify 00000004  00000000  00000000  000001e0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .literal.coap_handle_failed_notify 00000004  00000000  00000000  000001e4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .text         00000000  00000000  00000000  000001e8  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 21 .data         00000000  00000000  00000000  000001e8  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 22 .bss          00000000  00000000  00000000  000001e8  2**0
+                  ALLOC
+ 23 .rodata.str1.4 00000208  00000000  00000000  000001e8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 24 .text.match   000000a0  00000000  00000000  000003f0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .text.coap_notify_observers 000001da  00000000  00000000  00000490  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .text.coap_remove_failed_observers 000000c6  00000000  00000000  0000066c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .text.coap_resource_init 00000042  00000000  00000000  00000734  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 28 .text.coap_add_attr 00000054  00000000  00000000  00000778  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 29 .text.coap_find_attr 0000003a  00000000  00000000  000007cc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 30 .text.coap_delete_attr 00000030  00000000  00000000  00000808  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 31 .text.coap_free_resource 00000058  00000000  00000000  00000838  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 32 .text.coap_hash_request_uri 00000061  00000000  00000000  00000890  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 33 .text.coap_add_resource 0000000b  00000000  00000000  000008f4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 34 .text.coap_delete_all_resources 0000001b  00000000  00000000  00000900  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 35 .text.coap_get_resource_from_key 0000001e  00000000  00000000  0000091c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 36 .text.coap_delete_resource 00000042  00000000  00000000  0000093c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 37 .text.coap_print_link 0000017c  00000000  00000000  00000980  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 38 .text.coap_print_wellknown 00000212  00000000  00000000  00000afc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 39 .text.coap_find_observer 0000005d  00000000  00000000  00000d10  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 40 .text.coap_add_observer 00000082  00000000  00000000  00000d70  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 41 .text.coap_touch_observer 00000029  00000000  00000000  00000df4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 42 .text.coap_delete_observer 00000045  00000000  00000000  00000e20  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 43 .text.coap_check_notify 00000019  00000000  00000000  00000e68  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 44 .text.coap_handle_failed_notify 0000001d  00000000  00000000  00000e84  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 45 .rodata.__func__$7313 00000016  00000000  00000000  00000ea4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 46 .rodata.__func__$7284 00000012  00000000  00000000  00000ebc  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 47 .rodata.__func__$7273 00000013  00000000  00000000  00000ed0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 48 .rodata.__func__$7204 00000013  00000000  00000000  00000ee4  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 49 .rodata.__func__$7115 00000006  00000000  00000000  00000ef8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 50 .rodata.__func__$7148 00000015  00000000  00000000  00000f00  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 51 .rodata._rt_attributes$7140 00000020  00000000  00000000  00000f18  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+ 52 .debug_frame  00000208  00000000  00000000  00000f38  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 53 .debug_info   00002064  00000000  00000000  00001140  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 54 .debug_abbrev 000003d1  00000000  00000000  000031a4  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 55 .debug_loc    00000d97  00000000  00000000  00003575  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 56 .debug_aranges 000000c0  00000000  00000000  0000430c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 57 .debug_ranges 00000110  00000000  00000000  000043cc  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 58 .debug_line   00001068  00000000  00000000  000044dc  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 59 .debug_str    00000c1b  00000000  00000000  00005544  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 60 .comment      0000003c  00000000  00000000  0000615f  2**0
+                  CONTENTS, READONLY
+ 61 .xtensa.info  00000038  00000000  00000000  0000619b  2**0
+                  CONTENTS, READONLY
+ 62 .xt.lit       000000a0  00000000  00000000  000061d3  2**0
+                  CONTENTS, RELOC, READONLY
+ 63 .xt.prop      00000c54  00000000  00000000  00006273  2**0
+                  CONTENTS, RELOC, READONLY
+
+str.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.coap_new_string 0000000c  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.coap_delete_string 00000004  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .text         00000000  00000000  00000000  00000044  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  3 .data         00000000  00000000  00000000  00000044  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  4 .bss          00000000  00000000  00000000  00000044  2**0
+                  ALLOC
+  5 .rodata.str1.4 00000019  00000000  00000000  00000044  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  6 .text.coap_new_string 00000034  00000000  00000000  00000060  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .text.coap_delete_string 0000000f  00000000  00000000  00000094  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .debug_frame  00000040  00000000  00000000  000000a4  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  9 .debug_info   0000026e  00000000  00000000  000000e4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 10 .debug_abbrev 00000183  00000000  00000000  00000352  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_loc    00000094  00000000  00000000  000004d5  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 12 .debug_aranges 00000028  00000000  00000000  00000569  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 13 .debug_ranges 00000018  00000000  00000000  00000591  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 14 .debug_line   00000178  00000000  00000000  000005a9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 15 .debug_str    00000312  00000000  00000000  00000721  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 16 .comment      0000003c  00000000  00000000  00000a33  2**0
+                  CONTENTS, READONLY
+ 17 .xtensa.info  00000038  00000000  00000000  00000a6f  2**0
+                  CONTENTS, READONLY
+ 18 .xt.lit       00000010  00000000  00000000  00000aa7  2**0
+                  CONTENTS, RELOC, READONLY
+ 19 .xt.prop      00000078  00000000  00000000  00000ab7  2**0
+                  CONTENTS, RELOC, READONLY
+
+subscribe.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.coap_subscription_init 00000014  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .text         00000000  00000000  00000000  00000048  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .data         00000000  00000000  00000000  00000048  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  3 .bss          00000000  00000000  00000000  00000048  2**0
+                  ALLOC
+  4 .rodata.str1.4 0000004f  00000000  00000000  00000048  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  5 .text.coap_subscription_init 00000027  00000000  00000000  00000098  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .rodata.__func__$7112 00000017  00000000  00000000  000000c0  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  7 .debug_frame  00000028  00000000  00000000  000000d8  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  8 .debug_info   000004dc  00000000  00000000  00000100  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+  9 .debug_abbrev 00000152  00000000  00000000  000005dc  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_aranges 00000020  00000000  00000000  0000072e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 11 .debug_ranges 00000010  00000000  00000000  0000074e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 12 .debug_line   00000264  00000000  00000000  0000075e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 13 .debug_str    0000040b  00000000  00000000  000009c2  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 14 .comment      0000003c  00000000  00000000  00000dcd  2**0
+                  CONTENTS, READONLY
+ 15 .xtensa.info  00000038  00000000  00000000  00000e09  2**0
+                  CONTENTS, READONLY
+ 16 .xt.lit       00000008  00000000  00000000  00000e41  2**0
+                  CONTENTS, RELOC, READONLY
+ 17 .xt.prop      00000048  00000000  00000000  00000e49  2**0
+                  CONTENTS, RELOC, READONLY
+
+uri.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.check_segment 00000004  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.coap_split_path_impl 00000004  00000000  00000000  00000038  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.make_decoded_option 0000002c  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.write_option 00000014  00000000  00000000  00000068  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.hash_segment 00000004  00000000  00000000  0000007c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.coap_split_uri 00000018  00000000  00000000  00000080  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.coap_split_path 00000008  00000000  00000000  00000098  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.coap_split_query 00000008  00000000  00000000  000000a0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .literal.coap_new_uri 00000010  00000000  00000000  000000a8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  9 .literal.coap_clone_uri 00000014  00000000  00000000  000000b8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 10 .literal.coap_hash_path 00000008  00000000  00000000  000000cc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 11 .text         00000000  00000000  00000000  000000d4  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 12 .data         00000000  00000000  00000000  000000d4  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 13 .bss          00000000  00000000  00000000  000000d4  2**0
+                  ALLOC
+ 14 .text.decode_segment 00000058  00000000  00000000  000000d4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .text.check_segment 00000051  00000000  00000000  0000012c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .rodata.str1.4 000000bc  00000000  00000000  00000180  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 17 .text.coap_split_path_impl 000000ad  00000000  00000000  0000023c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.make_decoded_option 0000007e  00000000  00000000  000002ec  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.write_option 00000040  00000000  00000000  0000036c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 20 .text.hash_segment 00000012  00000000  00000000  000003ac  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .text.coap_split_uri 000001da  00000000  00000000  000003c0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 22 .text.coap_split_path 00000029  00000000  00000000  0000059c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 23 .text.coap_split_query 0000004a  00000000  00000000  000005c8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 24 .text.coap_new_uri 00000055  00000000  00000000  00000614  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 25 .text.coap_clone_uri 00000094  00000000  00000000  0000066c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 26 .text.coap_hash_path 0000002a  00000000  00000000  00000700  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 27 .rodata.__func__$6726 00000014  00000000  00000000  0000072c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 28 .rodata.__func__$6756 0000000d  00000000  00000000  00000740  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 29 .debug_frame  00000130  00000000  00000000  00000750  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 30 .debug_info   00000ae7  00000000  00000000  00000880  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 31 .debug_abbrev 0000039c  00000000  00000000  00001367  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 32 .debug_loc    000007b7  00000000  00000000  00001703  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 33 .debug_aranges 00000078  00000000  00000000  00001eba  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 34 .debug_ranges 00000088  00000000  00000000  00001f32  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 35 .debug_line   00000834  00000000  00000000  00001fba  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 36 .debug_str    00000485  00000000  00000000  000027ee  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 37 .comment      0000003c  00000000  00000000  00002c73  2**0
+                  CONTENTS, READONLY
+ 38 .xtensa.info  00000038  00000000  00000000  00002caf  2**0
+                  CONTENTS, READONLY
+ 39 .xt.lit       00000058  00000000  00000000  00002ce7  2**0
+                  CONTENTS, RELOC, READONLY
+ 40 .xt.prop      000007f8  00000000  00000000  00002d3f  2**0
+                  CONTENTS, RELOC, READONLY
+
+coap_io_socket.o:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .literal.coap_malloc_packet 00000008  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .literal.coap_new_endpoint 00000068  00000000  00000000  0000003c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  2 .literal.coap_free_endpoint 00000008  00000000  00000000  000000a4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  3 .literal.coap_network_send 00000004  00000000  00000000  000000ac  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .literal.coap_free_packet 00000004  00000000  00000000  000000b0  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .literal.coap_packet_populate_endpoint 00000004  00000000  00000000  000000b4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  6 .literal.coap_packet_copy_source 00000004  00000000  00000000  000000b8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  7 .literal.coap_network_read 000000ac  00000000  00000000  000000bc  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  8 .text         00000000  00000000  00000000  00000168  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  9 .data         00000000  00000000  00000000  00000168  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+ 10 .bss          00000000  00000000  00000000  00000168  2**0
+                  ALLOC
+ 11 .text.coap_malloc_packet 0000001f  00000000  00000000  00000168  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 12 .rodata.str1.4 00000250  00000000  00000000  00000188  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 13 .text.coap_new_endpoint 0000010c  00000000  00000000  000003d8  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 14 .text.coap_free_endpoint 0000001c  00000000  00000000  000004e4  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 15 .text.coap_network_send 00000019  00000000  00000000  00000500  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 16 .text.coap_free_packet 0000000f  00000000  00000000  0000051c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 17 .text.coap_packet_populate_endpoint 00000023  00000000  00000000  0000052c  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 18 .text.coap_packet_copy_source 00000012  00000000  00000000  00000550  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 19 .text.coap_packet_get_memmapped 0000000f  00000000  00000000  00000564  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 20 .text.coap_network_read 0000020c  00000000  00000000  00000574  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+ 21 .rodata.__func__$6560 00000013  00000000  00000000  00000780  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 22 .rodata.__func__$6556 00000012  00000000  00000000  00000794  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 23 .rodata.__func__$6678 00000012  00000000  00000000  000007a8  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 24 .debug_frame  000000e8  00000000  00000000  000007bc  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 25 .debug_info   00001424  00000000  00000000  000008a4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 26 .debug_abbrev 000003e8  00000000  00000000  00001cc8  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 27 .debug_loc    00000553  00000000  00000000  000020b0  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 28 .debug_aranges 00000060  00000000  00000000  00002603  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 29 .debug_ranges 00000050  00000000  00000000  00002663  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 30 .debug_line   00000663  00000000  00000000  000026b3  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING
+ 31 .debug_str    0000086c  00000000  00000000  00002d16  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 32 .comment      0000003c  00000000  00000000  00003582  2**0
+                  CONTENTS, READONLY
+ 33 .xtensa.info  00000038  00000000  00000000  000035be  2**0
+                  CONTENTS, READONLY
+ 34 .xt.lit       00000040  00000000  00000000  000035f6  2**0
+                  CONTENTS, RELOC, READONLY
+ 35 .xt.prop      000003c0  00000000  00000000  00003636  2**0
+                  CONTENTS, RELOC, READONLY

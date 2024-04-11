@@ -2,44 +2,32 @@
 # HIGHLEVEL_CLASSLOAD_FAIL_FUNC_WARN
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2018, NewAE Technology Inc
+# Copyright (c) 2013-2022, NewAE Technology Inc
 # All rights reserved.
-#
-# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.github.com/newaetech/chipwhisperer
 #
-#    This file is part of chipwhisperer.
-#
-#    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    chipwhisperer is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Lesser General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
-import numpy as np
-from usb import USBError
-from .base import ScopeTemplate
-from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.utils import util, timer
-from chipwhisperer.common.utils.util import dict_to_str
-from collections import OrderedDict
 
-from chipwhisperer.hardware.naeusb.serial import USART
-from chipwhisperer.hardware.naeusb.naeusb import NAEUSB, packuint32, unpackuint32
-from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
-from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
-from chipwhisperer.hardware.naeusb.programmer_stm32fserial import STM32FSerial
-from chipwhisperer.common.utils.util import camel_case_deprecated
+from ...logging import *
+
+import numpy as np
+from ...capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
+from ...common.utils import util
+from ...common.utils.util import dict_to_str
+from collections import OrderedDict
+from ...hardware.naeusb.serial import USART
+from .cwhardware.ChipWhispererSAM3Update import SAMFWLoader
+
+from ...hardware.naeusb.serial import USART
+from ...hardware.naeusb.naeusb import NAEUSB, packuint32, unpackuint32
+from ...hardware.naeusb.programmer_avr import AVRISP
+from ...hardware.naeusb.programmer_xmega import XMEGAPDI
+from ...hardware.naeusb.programmer_stm32fserial import STM32FSerial
+from ...common.utils.util import camel_case_deprecated, DelayedKeyboardInterrupt
+from ..api.cwcommon import ChipWhispererCommonInterface, ChipWhispererSAMErrors
 import time
 import datetime
 
@@ -51,21 +39,24 @@ class ADCSettings(util.DisableNewAttr):
 
 
     def __init__(self, usb):
+        super().__init__()
         self.usb = usb
         self.disable_newattr()
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['clk_src'] = self.clk_src
-        dict['clk_freq'] = self.clk_freq
-        dict['samples'] = self.samples
-        return dict
+        rtn = OrderedDict()
+        rtn['clk_src'] = self.clk_src
+        rtn['clk_freq'] = self.clk_freq
+        rtn['samples'] = self.samples
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
 
     def __str__(self):
         return self.__repr__()
+
+
 
     @property
     def samples(self):
@@ -113,7 +104,7 @@ class ADCSettings(util.DisableNewAttr):
         resp[3] = src
         resp[4] = 1
 
-        self.usb.sendCtrl(self.USB_ADCLK_SET, 0, 5)
+        self.usb.sendCtrl(self.USB_ADCLK_SET, 0, resp)
 
     @property
     def clk_freq(self):
@@ -172,10 +163,10 @@ class GlitchSettings(util.DisableNewAttr):
 
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['repeat'] = self.repeat
-        dict['ext_offset'] = self.ext_offset
-        return dict
+        rtn = OrderedDict()
+        rtn['repeat'] = self.repeat
+        rtn['ext_offset'] = self.ext_offset
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -249,21 +240,23 @@ class GPIOSettings(util.DisableNewAttr):
 
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['tio1'] = self.tio1
-        dict['tio2'] = self.tio2
-        dict['tio3'] = self.tio3
-        dict['tio4'] = self.tio4
+        rtn = OrderedDict()
+        rtn['tio1'] = self.tio1
+        rtn['tio2'] = self.tio2
+        rtn['tio3'] = self.tio3
+        rtn['tio4'] = self.tio4
 
-        dict['pdid'] = self.pdid
-        dict['pdic'] = self.pdic
-        dict['nrst'] = self.nrst
+        rtn['pdid'] = self.pdid
+        rtn['pdic'] = self.pdic
+        rtn['nrst'] = self.nrst
 
-        #dict['glitch_lp'] = self.glitch_lp
+        #rtn['glitch_lp'] = self.glitch_lp
 
-        dict['clkout'] = self.clkout
+        rtn['clkout'] = self.clkout
 
-        return dict
+        rtn['cdc_settings'] = self.cdc_settings
+
+        return rtn
 
     def __repr__(self):
         return util.dict_to_str(self._dict_repr())
@@ -277,14 +270,10 @@ class GPIOSettings(util.DisableNewAttr):
 
         TIO1 can be used for the following functions:
           * "serial_rx": UART input
-          * "high_z" / None: High impedance input
-          * "gpio_low" / False: Driven output: logic 0
-          * "gpio_high" / True: Driven output: logic 1
-          * "gpio_disabled": Driven output: no effect
 
         Default value is "serial_rx".
 
-        :Getter: Return one of the above strings
+        :Getter: Return None
 
         :Setter: Set the Target IO1 mode.
             Raises: ValueError if new value is not one of the above modes
@@ -305,14 +294,10 @@ class GPIOSettings(util.DisableNewAttr):
 
         TIO2 can be used for the following functions:
           * "serial_tx": UART output
-          * "high_z" / None: High impedance input
-          * "gpio_low" / False: Driven output: logic 0
-          * "gpio_high" / True: Driven output: logic 1
-          * "gpio_disabled": Driven output: no effect
 
         Default value is "serial_tx".
 
-        :Getter: Return one of the above strings
+        :Getter: Return None
 
         :Setter: Set the Target IO2 mode.
             Raises: ValueError if new value is not one of the above modes
@@ -357,19 +342,16 @@ class GPIOSettings(util.DisableNewAttr):
 
         TIO4 can be used for the following functions:
           * "high_z" / None: High impedance input
-          * "gpio_low" / False: Driven output: logic 0
-          * "gpio_high" / True: Driven output: logic 1
-          * "gpio_disabled": Driven output: no effect
 
         Default value is "high_z". Typically, this pin is used as a trigger
         input.
 
-        :Getter: Return one of the above strings
+        :Getter: Return None
 
         :Setter: Set the Target IO4 mode
             Raises: ValueError if new value is not one of the above modes
         """
-        return None
+        return "high_z"
 
     @tio4.setter
     def tio4(self, state):
@@ -502,8 +484,33 @@ class GPIOSettings(util.DisableNewAttr):
 
         return state
 
+    @property
+    def cdc_settings(self):
+        """Check or set whether USART settings can be changed via the USB CDC connection
 
-class CWNano(ScopeTemplate, util.DisableNewAttr):
+        i.e. whether you can change USART settings (baud rate, 8n1) via a serial client like PuTTY
+
+        :getter: An array of length two for two possible CDC serial ports (though only one is used)
+
+        :setter: Can set either via an integer (which sets both ports) or an array of length 2 (which sets each port)
+
+        Returns None if using firmware before the CDC port was added
+        """
+        rawver = self.usb.readFwVersion()
+        ver = '{}.{}'.format(rawver[0], rawver[1])
+        if ver < '0.30':
+            return None
+        return self.usb.get_cdc_settings()
+
+    @cdc_settings.setter
+    def cdc_settings(self, port):
+        rawver = self.usb.readFwVersion()
+        ver = '{}.{}'.format(rawver[0], rawver[1])
+        if ver < '0.30':
+            return None
+        return self.usb.set_cdc_settings(port)
+
+class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
     """CWNano scope object.
 
     This class contains the public API for the CWNano hardware. It includes
@@ -521,15 +528,18 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
     For more help about scope settings, try help() on each of the ChipWhisperer
     scope submodules (scope.adc, scope.io, scope.glitch):
 
-      * :attr:`scope.adc <.CWNano.adc>`
-      * :attr:`scope.io <.CWNano.io>`
-      * :attr:`scope.glitch <.CWNano.glitch>`
+      * :attr:`scope.adc <chipwhisperer.capture.scopes.cwnano.ADCSettings>`
+      * :attr:`scope.io <chipwhisperer.capture.scopes.cwnano.GPIOSettings>`
+      * :attr:`scope.glitch <chipwhisperer.capture.scopes.cwnano.GlitchSettings>`
       * :meth:`scope.default_setup <.CWNano.default_setup>`
       * :meth:`scope.con <.CWNano.con>`
       * :meth:`scope.dis <.CWNano.dis>`
       * :meth:`scope.get_last_trace <.CWNano.get_last_trace>`
       * :meth:`scope.arm <.CWNano.arm>`
       * :meth:`scope.capture <.CWNano.capture>`
+      * :meth:`scope.get_serial_ports <chipwhisperer.capture.api.cwcommon.ChipWhispererCommonInterface.get_serial_ports>`
+
+    Inherits from :class:`chipwhisperer.capture.api.cwcommon.ChipWhispererCommonInterface`
     """
 
     _name = "ChipWhisperer Nano"
@@ -538,7 +548,6 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
     REQ_SAMPLES = 0x2A
 
     def __init__(self):
-        ScopeTemplate.__init__(self)
         self._is_connected = False
 
 
@@ -555,11 +564,18 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
         self.io = GPIOSettings(self._cwusb)
         self.adc = ADCSettings(self._cwusb)
         self.glitch = GlitchSettings(self._cwusb)
+        self.errors = ChipWhispererSAMErrors(self._getNAEUSB())
         self._timeout = 2
 
         self._lasttrace = None
 
+        self.connectStatus = False
+        self._lasttrace_int = None
         self.disable_newattr()
+
+    def _getFWPy(self):
+        from ...hardware.firmware.cwnano import fwver
+        return fwver
 
     def default_setup(self):
         """ Sets up sane capture defaults for this scope
@@ -581,80 +597,171 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
         self.io.tio2 = "serial_tx"
         self.glitch.repeat = 0
 
+    def glitch_disable(self):
+        self.glitch.repeat = 0
+        self.glitch.ext_offset = 0
+
+    def vglitch_setup(self, glitcht=None, default_setup=True):
+        """Sets up sane defaults for voltage glitch
+
+        repeat = 1
+        ext_offset = 0
+        """
+        if default_setup:
+            self.default_setup()
+
+        self.glitch.repeat = 1
+        self.glitch.ext_offset = 0
+
     def getCurrentScope(self):
         return self
+
+    def _get_usart(self) -> USART:
+        return self.usart
 
     def _getNAEUSB(self):
         return self._cwusb
 
-    def _con(self, sn=None):
+    def _getCWType(self):
+        return 'cwnano'
+
+    def reset_clock_phase(self):
+        """Resets the target and adc clocks, resetting their phase
+
+        .. warning:: causes an interruption in the target clock. You may need to reset the target.
+        """
+        if self.check_feature("NANO_CLOCK_RESET"):
+            tfreq = self.io.clkout
+            afreq = self.adc.clk_freq
+            self._getNAEUSB().sendCtrl(0x22, 0xF0)
+            self.io.clkout = tfreq
+            self.adc.clk_freq = afreq
+
+    def con(self, sn=None, **kwargs):
+        """Connects to attached chipwhisperer hardware (Nano)
+
+        Args:
+            sn (str): The serial number of the attached device. Does not need to
+                be specified unless there are multiple devices attached.
+
+        Returns:
+            True if connection is successful, False otherwise.
+        """
+        self._read_only_attrs = []
         try:
-            possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
-            serial_numbers = []
-            if len(possible_sn) > 1:
-                if sn is None:
-                    for d in possible_sn:
-                        serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
-                    raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
-            else:
-                sn = None
-            found_id = self._cwusb.con(idProduct=[0xACE0], serial_number=sn)
-        except (IOError, ValueError):
-            raise Warning("Could not connect to cwnano. It may have been disconnected, is in an error state, or is being used by another tool.")
+            # possible_sn = self._cwusb.get_possible_devices(idProduct=[0xACE0])
+            # serial_numbers = []
+            # if len(possible_sn) > 1:
+            #     if sn is None:
+            #         for d in possible_sn:
+            #             serial_numbers.append("sn = {} ({})".format(str(d['sn']), str(d['product'])))
+            #         raise Warning("Multiple ChipWhisperers detected. Please specify device from the following list using cw.scope(sn=<SN>): \n{}".format(serial_numbers))
+            # else:
+            #     sn = None
+            if "idProduct" in kwargs:
+                del kwargs['idProduct']
+            found_id = self._cwusb.con(idProduct=[0xACE0], serial_number=sn, **kwargs)
+        except (IOError, ValueError) as e:
+            raise Warning("Could not connect to cwnano. It may have been disconnected,\
+is in an error state, or is being used by another tool.") from e
+        module_list = [x for x in self.__dict__ if isinstance(self.__dict__[x], util.DisableNewAttr)]
+        self.add_read_only(module_list)
         self.disable_newattr()
         self._is_connected = True
+        self.connectStatus=True
         return True
 
-    def _dis(self):
-        self.enable_newattr()
+    def dis(self):
+        """Disconnects the current scope object.
+
+        Returns:
+            True if the disconnection was successful, False otherwise.
+        """
+        self._read_only_attrs = []
+        self.usbdev().close()
         self._is_connected = False
         return True
 
     def arm(self):
         """Arm the ADC, the trigger will be GPIO4 rising edge (fixed trigger)."""
-        if self.connectStatus is False:
-            raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
+        with DelayedKeyboardInterrupt():
+            if self.connectStatus is False:
+                raise Warning("Scope \"" + 'CWNano' + "\" is not connected. Connect it first...")
 
-        self._cwusb.sendCtrl(self.REQ_ARM, 1)
+            self._cwusb.sendCtrl(self.REQ_ARM, 1)
 
 
-    def capture(self):
+    def capture(self, poll_done=False):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
 
-        starttime = datetime.datetime.now()
-        while self._cwusb.readCtrl(self.REQ_ARM, dlen=1)[0] == 0:
-            # Wait for a moment before re-running the loop
-            time.sleep(0.05)
-            diff = datetime.datetime.now() - starttime
+        with DelayedKeyboardInterrupt():
+            starttime = datetime.datetime.now()
+            while self._cwusb.readCtrl(self.REQ_ARM, dlen=1)[0] == 0:
+                # Wait for a moment before re-running the loop
+                time.sleep(0.001)
+                diff = datetime.datetime.now() - starttime
 
-            # If we've timed out, don't wait any longer for a trigger
-            if (diff.total_seconds() > self._timeout):
-                logging.warning('Timeout in cwnano capture()')
-                return True
+                # If we've timed out, don't wait any longer for a trigger
+                if (diff.total_seconds() > self._timeout):
+                    scope_logger.warning('Timeout in cwnano capture()')
+                    return True
 
-        self._lasttrace = self._cwusb.cmdReadMem(0, self.adc.samples)
+            self._lasttrace = self._cwusb.cmdReadMem(0, self.adc.samples)
 
-        self._lasttrace = np.array(self._lasttrace) / 256.0 - 0.5
+            # can just keep rerunning this until it works I think
+            i = 0
+            while len(self._lasttrace) < self.adc.samples:
+                scope_logger.debug("couldn't read ADC data from Nano, retrying...")
 
-        #self.newDataReceived(0, self._lasttrace, 0, self.adc.clk_freq)
+                self._lasttrace = self._cwusb.cmdReadMem(0, self.adc.samples)
+                i+= 1
+                if i > 20:
+                    scope_logger.warning("Couldn't read trace data back from Nano")
+                    return True
+            self._lasttrace_int = np.array(self._lasttrace)
+            self._lasttrace = np.array(self._lasttrace) / 256.0 - 0.5
 
-        return False
+            #self.newDataReceived(0, self._lasttrace, 0, self.adc.clk_freq)
+
+            return False
 
 
-    def get_last_trace(self):
+    def get_last_trace(self, as_int=False):
         """Return the last trace captured with this scope.
+
+        Can return traces as floating point values (:code:`as_int=False`)
+        or as integers.
+
+        Floating point values are scaled and shifted to be between -0.5 and 0.5.
+
+        Integer values are raw readings from the ChipWhisperer ADC. The ChipWhisperer-Lite
+        has a 10-bit ADC, the Nano has an 8-bit ADC, and the Husky can read either
+        8-bits or 12-bits of ADC data.
+
+        Args:
+            as_int (bool): If False, return trace as a float. Otherwise, return as an int.
+
+        Returns:
+           Numpy array of the last capture trace.
+
+        .. versionchanged:: 5.6.1
+            Added as_int parameter
         """
+        if as_int:
+            return self._lasttrace_int
         return self._lasttrace
 
     getLastTrace = camel_case_deprecated(get_last_trace)
 
 
     def _dict_repr(self):
-        dict = OrderedDict()
-        dict['io']    = self.io._dict_repr()
-        dict['adc']   = self.adc._dict_repr()
-        dict['glitch'] = self.glitch._dict_repr()
-        return dict
+        rtn = OrderedDict()
+        rtn['fw_version'] = self.fw_version
+        rtn['io']    = self.io._dict_repr()
+        rtn['adc']   = self.adc._dict_repr()
+        rtn['glitch'] = self.glitch._dict_repr()
+        rtn['errors'] = self.errors._dict_repr()
+        return rtn
 
     def __repr__(self):
         # Add some extra information about ChipWhisperer type here
@@ -673,3 +780,9 @@ class CWNano(ScopeTemplate, util.DisableNewAttr):
 
     def usbdev(self):
         return self._cwusb
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.dis()

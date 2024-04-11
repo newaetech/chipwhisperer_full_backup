@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2016, NewAE Technology Inc
+# Copyright (c) 2013-2021, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -9,22 +9,22 @@
 #
 #    This file is part of chipwhisperer.
 #
-#    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-#    chipwhisperer is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Lesser General Public License for more details.
+#       http://www.apache.org/licenses/LICENSE-2.0
 #
-#    You should have received a copy of the GNU General Public License
-#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 #=================================================
 
 import collections
 import logging
+import time
 
 class SimpleSerialTemplate:
 
@@ -74,7 +74,7 @@ class SimpleSerialTemplate:
     def flushInput(self):
         self.flush()
 
-    def write(self, string):
+    def write(self, string, timeout=0):
         """
         Write a string to the device.
 
@@ -91,7 +91,17 @@ class SimpleSerialTemplate:
         """
 
         # Write to hardware
+
         self.hardware_write(string)
+        if timeout is None:
+            timeout = 10000000000
+        else:
+            while timeout > 0:
+                start = time.perf_counter()
+                if self.inWaitingTX() <= 0:
+                    return
+                end = time.perf_counter()
+                timeout -= end - start
 
         # Update terminal buffer
         for c in string:
@@ -128,7 +138,9 @@ class SimpleSerialTemplate:
             num -= 1
 
         if num == 0:
-            return ret
+            if isinstance(ret, str):
+                return ret
+            return ret.decode('latin-1')
 
         # If we didn't get enough data, try to read more from the hardware
         data = bytearray(self.hardware_read(num, timeout=timeout)).decode('latin-1')
@@ -168,6 +180,9 @@ class SimpleSerialTemplate:
         if bbuf == self.max_queue_size:
             logging.warning('Python SimpleSerial reader buffer OVERRUN - data loss has occurred.')
         return self.hardware_inWaiting() + bbuf
+
+    def inWaitingTX(self):
+        return self.hardware_inWaitingTX()
 
     def terminal_write(self, string):
         """
@@ -253,6 +268,17 @@ class SimpleSerialTemplate:
         return self.hardware_inWaiting() + bbuf
 
     def hardware_inWaiting(self):
+        """
+        Check how many bytes are in waiting on the device's hardware buffer.
+
+        This function needs to be implemented in child classes.
+
+        Returns:
+            int: number of bytes waiting to be read
+        """
+        raise NotImplementedError
+
+    def hardware_inWaitingTX(self):
         """
         Check how many bytes are in waiting on the device's hardware buffer.
 

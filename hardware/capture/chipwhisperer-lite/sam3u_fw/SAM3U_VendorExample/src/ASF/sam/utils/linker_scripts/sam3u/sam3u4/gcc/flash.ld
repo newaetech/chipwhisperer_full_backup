@@ -156,7 +156,16 @@ SECTIONS
         . = . + __stack_size__;
         . = ALIGN(8);
         _estack = .;
+    } > sram0
+
+    .mpsse (NOLOAD) :
+    {
+        . = ALIGN(1);
+        KEEP(*(.mympsse));
+        *(.mympsse)
     } > sram1
+
+    /* MPSSE section */
 
     . = ALIGN(4); 
     _end = . ; 

@@ -1287,6 +1287,7 @@ static inline void tc_awex_clear_fault(AWEX_t *awex)
  * \param awex Pointer to AWeX module (AWEXC or AWEXE)
  * \param fd_act Fault action
  */
+#if 0
 static inline void tc_awex_set_fault_detection_action(AWEX_t *
 		awex, AWEX_FDACT_t fd_act)
 {
@@ -1294,6 +1295,7 @@ static inline void tc_awex_set_fault_detection_action(AWEX_t *
 		(fd_act & AWEX_FDACT_gm);
 
 }
+#endif
 
 /**
  * \brief AWeX extension : configures fault detection event
@@ -1352,6 +1354,7 @@ static inline void tc_awex_disable_fault_debug_break(AWEX_t *awex)
  * \param hires Pointer to AWeX module (AWEXC or AWEXE)
  * \param hi_res_mode HIRES configuration
  */
+#if 0
 static inline void tc_hires_set_mode(HIRES_t * hires, HIRES_HREN_t hi_res_mode)
 {
 	((HIRES_t *)hires)->CTRLA = hi_res_mode;
@@ -1359,7 +1362,7 @@ static inline void tc_hires_set_mode(HIRES_t * hires, HIRES_HREN_t hi_res_mode)
 //@}
 
 /** @} */
-
+#endif
 
 #ifdef __cplusplus
 }

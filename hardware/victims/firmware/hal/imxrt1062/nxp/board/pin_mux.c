@@ -52,14 +52,14 @@ BOARD_InitPins:
 void BOARD_InitPins(void) {
   CLOCK_EnableClock(kCLOCK_Iomuxc);           /* iomuxc clock (iomuxc_clk_enable): 0x03U */
 
-  /* GPIO configuration of SEMC_A12 on GPIO_EMC_20 (pin A3) */
-  gpio_pin_config_t SEMC_A12_config = {
+  /* GPIO configuration of B0_14 */
+  gpio_pin_config_t B0_14_config = {
       .direction = kGPIO_DigitalOutput,
       .outputLogic = 0U,
       .interruptMode = kGPIO_NoIntmode
   };
-  /* Initialize GPIO functionality on GPIO_EMC_20 (pin A3) */
-  GPIO_PinInit(GPIO4, 20U, &SEMC_A12_config);
+  /* Initialize GPIO functionality on B0_14  */
+  GPIO_PinInit(GPIO1, 14U, &B0_14_config);
 
   IOMUXC_SetPinMux(
       IOMUXC_GPIO_AD_B0_12_LPUART1_TX,        /* GPIO_AD_B0_12 is configured as LPUART1_TX */
@@ -68,7 +68,7 @@ void BOARD_InitPins(void) {
       IOMUXC_GPIO_AD_B0_13_LPUART1_RX,        /* GPIO_AD_B0_13 is configured as LPUART1_RX */
       0U);                                    /* Software Input On Field: Input Path is determined by functionality */
   IOMUXC_SetPinMux(
-      IOMUXC_GPIO_EMC_20_GPIO4_IO20,          /* GPIO_EMC_20 is configured as GPIO4_IO20 */
+      IOMUXC_GPIO_AD_B0_14_GPIO1_IO14,          /* GPIO_AD_B0_14 is configured as GPIO1_IO14 */
       0U);                                    /* Software Input On Field: Input Path is determined by functionality */
   IOMUXC_GPR->GPR29 = ((IOMUXC_GPR->GPR29 &
     (~(IOMUXC_GPR_GPR29_GPIO_MUX4_GPIO_SEL_MASK))) /* Mask bits to zero which are setting */

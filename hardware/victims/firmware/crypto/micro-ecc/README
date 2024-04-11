@@ -1,0 +1,6 @@
+From https://github.com/kmackay/micro-ecc/commit/601bd11062c551b108adbb43ba99f199b840777c
+
+There are subsequent commits to micro-ecc which address side-channel leakage, but these should not impact the micro-ecc attack tutorial.
+
+Added trigger_high() and trigger_low() to uECC.c, but they are #ifdef'd out by default.
+
