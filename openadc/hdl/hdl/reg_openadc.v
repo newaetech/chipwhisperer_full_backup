@@ -38,6 +38,7 @@ module reg_openadc(
 	input 			reset_i,
 	output			reset_o,
 	input 			clk,
+	input 			adc_sampleclk,
 	input [5:0]    reg_address,  // Address of register
 	input [15:0]   reg_bytecnt,  // Current byte count
 	input [7:0]    reg_datai,    // Data to write
@@ -67,6 +68,7 @@ module reg_openadc(
 	output 			trigger_now,
 	output [31:0]  trigger_offset,
 	input  [31:0]  trigger_length,
+	output [1:0]   fifo_mode,
 	
 	/* Measurement of external clock frequency */
 	input [31:0]	extclk_frequency,
@@ -141,6 +143,7 @@ module reg_openadc(
 	 //reg			phase_done;		
 	 wire [47:0] version_data;	
 	 wire [31:0] system_frequency = 32'd`SYSTEM_CLK;
+         wire cmd_arm_usb;
 	 
 	 assign version_data[47:16] = 'b0;
 	 assign version_data[15:11] = 5'd`HW_TYPE;
@@ -186,11 +189,28 @@ module reg_openadc(
 				default: reg_hyplen_reg<= 0;
 		endcase
 	 end
-	 	    
-	 assign reset_fromreg = registers_settings[0];
+
+   (* ASYNC_REG = "TRUE" *) reg[1:0] arm_pipe;
+   reg arm_r;
+   reg arm_r2;
+
+   always @(posedge adc_sampleclk) begin
+      if (reset) begin
+         arm_pipe <= 0;
+         arm_r <= 0;
+         arm_r2 <= 0;
+      end
+      else begin
+         {arm_r2, arm_r, arm_pipe} <= {arm_r, arm_pipe, cmd_arm_usb};
+      end
+   end
+   assign cmd_arm = arm_r2;
+
+	    
+	 wire   reset_fromreg = registers_settings[0];
 	 assign hilow = registers_settings[1];
 	 assign trigger_mode = registers_settings[2];
-	 assign cmd_arm = registers_settings[3];
+	 assign cmd_arm_usb = registers_settings[3];
 	 assign fifo_stream = registers_settings[4];
 	 assign trigger_wait = registers_settings[5];	 
 	 assign trigger_now = registers_settings[6];
@@ -206,6 +226,7 @@ module reg_openadc(
 	 assign clkblock_dcm_reset_o = registers_advclocksettings[4];
 	 assign clkblock_gen_reset_o = registers_advclocksettings[26];
 	 assign extclk_measure_src = registers_advclocksettings[27];
+	 assign fifo_mode[1:0] = registers_advclocksettings[29:28];
 	 
 	 assign downsample_o = registers_downsample[12:0];
 		

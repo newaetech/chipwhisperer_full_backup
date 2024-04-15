@@ -526,9 +526,9 @@ testPLLData = [
 
 def test_fpga_version():
     if scope._is_husky_plus:
-        assert scope.fpga_buildtime == '9/19/2023, 22:43'
+        assert scope.fpga_buildtime == '1/12/2024, 15:19'
     else:
-        assert scope.fpga_buildtime == '10/12/2023, 19:07'
+        assert scope.fpga_buildtime == '1/12/2024, 09:25'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1

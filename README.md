@@ -50,3 +50,4 @@ Stuck? If you need a hand, there are a few places you can ask for help:
 ---
 
 ChipWhisperer is a trademark of NewAE Technology Inc., registered in the US, Europe, and China.
+

@@ -22,6 +22,7 @@ import math
 from threading import Thread
 import usb1  # type: ignore
 import os
+import sys
 import array
 from typing import Optional, Union, List, Tuple, Dict, cast
 from ...common.utils import util
@@ -433,7 +434,7 @@ class NAEUSB_Backend:
                 naeusb_logger.error("Or that you have the proper permissions to access it")
             raise
         self._usbdev = self.handle
-        if os.name == "nt":
+        if os.name == "nt" or sys.platform == "darwin":
             self.handle.claimInterface(0)
 
         self.sn = self.handle.getSerialNumber()

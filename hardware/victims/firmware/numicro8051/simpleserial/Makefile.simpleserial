@@ -1,0 +1,29 @@
+SRC += simpleserial.c
+VPATH += :$(FIRMWAREPATH)/simpleserial/
+EXTRAINCDIRS += $(FIRMWAREPATH)/simpleserial/
+
+SS_VERS_ALLOWED = SS_VER_1_0 SS_VER_1_1 SS_VER_2_0 SS_VER_2_1
+
+define SS_VERS_LIST
+
+  +---------+--------------+
+  | Version | SS_VER value |
+  +---------+--------------+
+  | V1.0    | SS_VER_1_0   |
+  | V1.1    | SS_VER_1_1   |
+  | V2.1    | SS_VER_2_1   |
+  +---------+--------------+
+
+endef
+
+# SimpleSerial version
+# To change this, define SS_VER before including this file
+ifeq ($(SS_VER),)
+  SS_VER = SS_VER_1_1
+else ifeq ($(filter $(SS_VER),$(SS_VERS_ALLOWED)),)
+  $(error Invalid SimpleSerial version: $(SS_VER); allowed verions: $(SS_VERS_LIST))
+endif
+
+${info SS_VER set to $(SS_VER)}
+
+CDEFS += -DSS_VER=$(SS_VER)

@@ -41,8 +41,11 @@ module cw305_aes_pipelined_top #(
     input wire                          usb_clk,        // Clock
 `ifdef SS2_WRAPPER
     output wire                         usb_clk_buf,    // if needed by parent module
-`endif
+    input  wire [7:0]                   usb_data,
+    output wire [7:0]                   usb_dout,
+`else
     inout wire [7:0]                    usb_data,       // Data for write/read
+`endif
     input wire [pADDR_WIDTH-1:0]        usb_addr,       // Address
     input wire                          usb_rdn,        // !RD, low when addr valid for read
     input wire                          usb_wrn,        // !WR, low when data+addr valid for write
@@ -101,7 +104,6 @@ module cw305_aes_pipelined_top #(
     wire aes_write_data;
     wire aes_read_data;
 
-    wire [7:0] usb_dout;
     wire isout;
     wire [pADDR_WIDTH-pBYTECNT_SIZE-1:0] reg_address;
     wire [pBYTECNT_SIZE-1:0] reg_bytecnt;
@@ -118,6 +120,8 @@ module cw305_aes_pipelined_top #(
 
 `ifndef SS2_WRAPPER
     wire usb_clk_buf;
+    wire [7:0] usb_dout;
+    assign usb_data = isout? usb_dout : 8'bZ;
 `endif
 
     assign tio_trigger = crypt_busy;
@@ -192,7 +196,6 @@ module cw305_aes_pipelined_top #(
        .I_fifo_errors           (fifo_errors)
     );
 
-    assign usb_data = (isout)? usb_dout : 8'bZ;
 
     clocks U_clocks (
        .usb_clk                 (usb_clk),

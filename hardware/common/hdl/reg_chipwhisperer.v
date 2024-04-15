@@ -1,4 +1,4 @@
-`include "includes.v"
+77777`include "includes.v"
 //`define CHIPSCOPE
 
 /***********************************************************************
@@ -19,6 +19,7 @@ Author: Colin O'Flynn <coflynn@newae.com>
   GNU Lesser General Public License for more details.
 
   You should have received a copy of the GNU General Public License
+
   along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************/
 module reg_chipwhisperer(
@@ -267,15 +268,19 @@ module reg_chipwhisperer(
 	
 	wire rearclk;
 	
-	BUFGMUX #(
-	.CLK_SEL_TYPE("ASYNC") // Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
-	)
-	clkgenfx_mux (
-	.O(rearclk), // 1-bit output: Clock buffer output
-	.I0(clkgen_i), // 1-bit input: Clock buffer input (S=0)
-	.I1(glitchclk_i), // 1-bit input: Clock buffer input (S=1)
-	.S(registers_cwextclk[5]) // 1-bit input: Clock buffer select
-	);
+        `ifndef __ICARUS__
+	   BUFGMUX #(
+	   .CLK_SEL_TYPE("ASYNC") // Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
+	   )
+	   clkgenfx_mux (
+	   .O(rearclk), // 1-bit output: Clock buffer output
+	   .I0(clkgen_i), // 1-bit input: Clock buffer input (S=0)
+	   .I1(glitchclk_i), // 1-bit input: Clock buffer input (S=1)
+	   .S(registers_cwextclk[5]) // 1-bit input: Clock buffer select
+	   );
+        `else
+           assign rearclk = registers_cwextclk[5]? glitchclk_i : clkgen_i;
+        `endif
 	
 	/*
 `ifdef SUPPORT_AUXLINE
@@ -317,13 +322,14 @@ module reg_chipwhisperer(
 		.D1(1'b0), // 1-bit data input (associated with C1)
 		.R(~registers_cwextclk[6]),   // 1-bit reset input
 		.S(1'b0)    // 1-bit set input
+
 	);
 	*/
 	
 	assign extclk_rearout_o = (registers_cwextclk[6] & (~targetio_highz)) ? rearclk : 1'bZ;
 	
 	//Output clock using DDR2 block (recommended for Spartan-6 device)
-    `ifndef __ICARUS__
+        `ifndef __ICARUS__
 	ODDR2 #(
 		// The following parameters specify the behavior
 		// of the component.
@@ -367,7 +373,7 @@ module reg_chipwhisperer(
 		.S(1'b0)    // 1-bit set input
 
 	);
-    `endif
+        `endif
 	
 	
 	 assign enable_avrprog = registers_iorouting[40];
@@ -464,7 +470,7 @@ module reg_chipwhisperer(
 	 
 	 assign trigger_o = trigger;
 	 
-	 assign fpa_trigger_int = (registers_cwtrigmod[3] == 1'b1) ? trigger : 1'bZ;
+	 wire   fpa_trigger_int = (registers_cwtrigmod[3] == 1'b1) ? trigger : 1'bZ;
 	 assign trigger_fpa_i =  fpa_trigger_int; 
 	 
 	 

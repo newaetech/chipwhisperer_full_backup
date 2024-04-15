@@ -128,6 +128,8 @@ void platform_init(void);
     #include "nrf52840/nrf52840_hal.h"   
 #elif HAL_TYPE == HAL_stm32f0_nano
     #include "stm32f0/stm32f0_hal.h" 
+    void led_error(unsigned int status);
+    void led_ok(unsigned int status);
 #elif HAL_TYPE == HAL_aurix
     #include "aurix/aurix_hal.h"
 #elif HAL_TYPE == HAL_saml11
@@ -195,13 +197,12 @@ void platform_init(void);
     
 #endif
 
+__attribute__((weak)) void led_ok(unsigned int status)
+{
+}
 
-#ifndef led_error
-#define led_error(a)
-#endif
-
-#ifndef led_ok
-#define led_ok(a)
-#endif
+__attribute__((weak)) void led_error(unsigned int status)
+{
+}
 
 #endif //HAL_H_

@@ -1242,6 +1242,9 @@ class GPIOSettings(util.DisableNewAttr):
         If the target board is powered through an external supply, this setting
         may have no effect.
 
+        .. NOTE:: Setting this value to False/0 also sets TIO1-4/HS2 to high-z
+            until power is reenabled.
+
         :Getter:  Return the current power state of the target (True or False)
 
         :Setter: Turn the target power on or off.

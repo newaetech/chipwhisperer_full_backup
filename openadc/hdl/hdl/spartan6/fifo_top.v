@@ -286,6 +286,7 @@ module fifo_top(
 	
 	*/
 		
+        `ifndef __ICARUS__
 	fifoonly_adcfifo fifoonly_adcfifo_inst (
   .rst(reset_i | (fifo_empty_longer2 & ~fifo_empty_longer3)), // input rst
   .wr_clk(adc_sampleclk), // input wr_clk
@@ -300,6 +301,7 @@ module fifo_top(
   .prog_full(prog_full), // output prog_full
   .rd_data_count(samples_o[31:4])
 );
+        `endif
 
 	assign samples_o[3:0] = 4'b0000;
 

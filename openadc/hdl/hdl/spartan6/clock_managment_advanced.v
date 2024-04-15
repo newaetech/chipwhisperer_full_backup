@@ -66,7 +66,7 @@ module clock_managment_advanced(
 	 //NOTE: Due to requirement of PHASECLK location in DCM_CLKGEN
 	 //      instance, ISE does some routing which can result in an
 	 //      error about clock & non-clock loads. Need to look into that.
-	 assign phase_clk_buf = phase_clk;
+	 wire phase_clk_buf = phase_clk;
 
 	 dcm_phaseshift_interface dcmps(.clk_i(phase_clk_buf),
 											  .reset_i(reset),
@@ -111,26 +111,28 @@ module clock_managment_advanced(
 	wire dcm_clk_in;
 	wire clkgenfx_out;
 	 
-	BUFGMUX #(
-	.CLK_SEL_TYPE("ASYNC") // Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
-	)
-	clkdcm_mux (
-	.O(dcm_clk_in), // 1-bit output: Clock buffer output
-	.I0(clkgenfx_out), // 1-bit input: Clock buffer input (S=0)
-	.I1(clk_ext), // 1-bit input: Clock buffer input (S=1)
-	.S(clkadc_source[2]) // 1-bit input: Clock buffer select
-	);	  
-	 
-	 
-	BUFGMUX #(
-	.CLK_SEL_TYPE("ASYNC") // Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
-	)
-	clkgenfx_mux (
-	.O(clkgenfx_in), // 1-bit output: Clock buffer output
-	.I0(clk_sys), // 1-bit input: Clock buffer input (S=0)
-	.I1(clk_ext), // 1-bit input: Clock buffer input (S=1)
-	.S(clkgen_source) // 1-bit input: Clock buffer select
-	); 
+        `ifndef __ICARUS__
+            BUFGMUX #(
+            .CLK_SEL_TYPE("ASYNC") // Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
+            )
+            clkdcm_mux (
+            .O(dcm_clk_in), // 1-bit output: Clock buffer output
+            .I0(clkgenfx_out), // 1-bit input: Clock buffer input (S=0)
+            .I1(clk_ext), // 1-bit input: Clock buffer input (S=1)
+            .S(clkadc_source[2]) // 1-bit input: Clock buffer select
+            );	  
+             
+             
+            BUFGMUX #(
+            .CLK_SEL_TYPE("ASYNC") // Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
+            )
+            clkgenfx_mux (
+            .O(clkgenfx_in), // 1-bit output: Clock buffer output
+            .I0(clk_sys), // 1-bit input: Clock buffer input (S=0)
+            .I1(clk_ext), // 1-bit input: Clock buffer input (S=1)
+            .S(clkgen_source) // 1-bit input: Clock buffer select
+            ); 
+        `endif
 
 	wire dcm_locked_int;
 	wire dcm_clk;
@@ -144,6 +146,7 @@ module clock_managment_advanced(
 	// DCM_SP: Digital Clock Manager
 	// Spartan-6
 	// Xilinx HDL Libraries Guide, version 13.2
+        `ifndef __ICARUS__
 	DCM_SP #(
 	.CLKFX_DIVIDE(1), // Divide value on CLKFX outputs - D - (1-32)
 	.CLKFX_MULTIPLY(4), // Multiply value on CLKFX outputs - M - (2-32)
@@ -175,6 +178,7 @@ module clock_managment_advanced(
 	.PSINCDEC(dcm_psincdec), // 1-bit input: Phase shift increment/decrement input
 	.RST(reset) // 1-bit input: Active high reset input
 	);
+        `endif
 
 	wire clkgenfx_dev_out;
 	wire dcm2_locked_int;
@@ -184,6 +188,7 @@ module clock_managment_advanced(
 	// DCM_CLKGEN: Frequency Aligned Digital Clock Manager
 	// Spartan-6
 	// Xilinx HDL Libraries Guide, version 14.3
+        `ifndef __ICARUS__
 	DCM_CLKGEN #(
 	.CLKFXDV_DIVIDE(4), // CLKFXDV divide value (2, 4, 8, 16, 32)
 	.CLKFX_DIVIDE(2), // Divide value - D - (1-256)
@@ -207,11 +212,14 @@ module clock_managment_advanced(
 	.PROGEN(clkgen_progen), // 1-bit input: Active high program enable
 	.RST(clkgen_reset) // 1-bit input: Reset input pin
 	);
+        `endif
+
 	
 	assign target_clk = clkgenfx_out;
 	
 	//Output buffers
 	wire out_from_dcmmux;
+        `ifndef __ICARUS__
 	BUFGMUX #(
 	.CLK_SEL_TYPE("ASYNC") // Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
 	)
@@ -263,5 +271,6 @@ module clock_managment_advanced(
 		.R(1'b0),   // 1-bit reset input
 		.S(1'b0)    // 1-bit set input
 	);
+        `endif // __ICARUS__
 
 endmodule

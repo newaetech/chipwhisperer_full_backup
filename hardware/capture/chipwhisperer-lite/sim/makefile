@@ -1,12 +1,19 @@
-all: compile
-
 compile:
 	iverilog -ccmdfile \
 	-g2005-sv \
- 	-I../../../../openadc/hdl/hdl/ \
-	-I../../../capture/chipwhisperer-lite/hdl/cwlite_ise/ \
+	-I../../../../openadc/hdl/hdl \
+        -I../hdl/cwlite_ise \
 	-Wportbind \
 	-Wselect-range \
 
-clean:
-	rm -f a.out
+lint:
+	verilator --lint-only -Wall \
+	--error-limit 0 \
+	-Wno-PINCONNECTEMPTY \
+	-Wno-ASSIGNDLY \
+	-f cmdfile \
+	-I../../../../openadc/hdl/hdl \
+        -I../hdl/cwlite_ise \
+	-D__ICARUS__ \
+	--top-module cwlite_interface \
+	2>&1 | tee lint.out \
