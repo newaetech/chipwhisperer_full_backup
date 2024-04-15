@@ -44,6 +44,7 @@ class USART(object):
     USART_CMD_DISABLE = 0x0012
     USART_CMD_NUMWAIT = 0x0014
     USART_CMD_NUMWAIT_TX = 0x0018
+    USART_CMD_XONXOFF = 0x0020
 
     def __init__(self, usb, timeout=200, usart_num=0):
         """
@@ -266,3 +267,22 @@ class USART(object):
         if not self.fw_read:
             self.fw_read = self._usb.readFwVersion()
         return "{}.{}.{}".format(self.fw_read[0], self.fw_read[1], self.fw_read[2])
+
+    @property
+    def xonxoff(self):
+        # TODO: check version to make sure fw has this
+        if self._usb.check_feature("XON_XOFF"):
+            return self._usartRxCmd(self.USART_CMD_XONXOFF)[0] & 0x01
+        return None
+    
+    @xonxoff.setter
+    def xonxoff(self, enable):
+        if self._usb.check_feature("XON_XOFF"):
+            enable = 1 if enable else 0
+            self._usartTxCmd(self.USART_CMD_XONXOFF, [enable])
+
+    @property
+    def currently_xoff(self):
+        if self._usb.check_feature("XON_XOFF"):
+            return self._usartRxCmd(self.USART_CMD_XONXOFF)[0] & 0x02
+        return None

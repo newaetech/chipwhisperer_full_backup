@@ -74,3 +74,16 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
 
     def hardware_read(self, num, timeout=250):
         return self.cwlite_usart.read(num, timeout)
+
+    @property
+    def xonxoff(self):
+        # TODO: check version to make sure fw has this
+        return self.cwlite_usart.xonxoff
+    
+    @xonxoff.setter
+    def xonxoff(self, enable):
+        self.cwlite_usart.xonxoff = enable
+
+    @property
+    def currently_xoff(self):
+        return self.cwlite_usart.currently_xoff
