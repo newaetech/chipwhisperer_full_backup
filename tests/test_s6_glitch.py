@@ -24,27 +24,19 @@ USAGE:
 """
 
 print('\n\n\n\n**************************************************************************************')
-print('* IMPORTANT NOTE:                                                                    *')
+print('*                                                                                    *')
+print('* IMPORTANT NOTE 1:                                                                  *')
 print('* This script is intended for basic regression testing of CW-lite/pro glitching      *')
 print('* during  development. If you are having issues connecting to your CW-lite or target *')
 print('* device, running this script is unlikely to provide you with useful information.    *')
 print('* Instead, seek assistance on forum.newae.com or discord by providing details of     *')
 print('* your setup (including the target), and the full error log from your Jupyter        *')
 print('* notebook.                                                                          *')
+print('*                                                                                    *')
+print('* IMPORTANT NOTE 2:                                                                  *')
+print('* Does not run very reliably! Working on it...                                       *')
+print('*                                                                                    *')
 print('**************************************************************************************\n\n')
-
-
-@pytest.fixture()
-def target(pytestconfig):
-    return pytestconfig.getoption("target")
-
-@pytest.fixture()
-def reps(pytestconfig):
-    return int(pytestconfig.getoption("reps"))
-
-@pytest.fixture()
-def loose(pytestconfig):
-    return int(pytestconfig.getoption("loose"))
 
 
 
@@ -58,7 +50,7 @@ def test_connect(target):
     try:
         scope = cw.scope(name=target)
     except:
-        pytest.exit("Couldn't connect to target scope")
+        pytest.exit("Couldn't connect to target scope (%s)" % target)
     if not hscope.LA.present:
         pytest.exit('Cannot test glitch without internal logic analyzer. Rebuild Husky FPGA to test.')
     # setup Husky LA:
@@ -289,9 +281,9 @@ def test_coarse_offset(target, reps, loose, positive, width, oversamp, desc):
 
             # 4. verify period of each pulse:
             partitions = np.where(glitch[1:] != glitch[:-1])[0]
-            for i in range(1, len(partitions)-2, 2):
-                period = partitions[i+2] - partitions[i]
-                if abs(period - 50) > period_margin:
+            for j in range(1, len(partitions)-2, 2):
+                period = partitions[j+2] - partitions[j]
+                if abs(period - oversamp) > period_margin:
                     errors += "Offset %f: Glitch period %d exceeds expected period margin (%d)" % (actual_offsets[i], period, period_margin)
 
         assert errors == '', "Errors seen for rep %d:\n%s" % (rep, errors)
