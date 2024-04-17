@@ -56,7 +56,7 @@ cwlite_files = [("cwlite_firmware.zip", os.path.join(hwdir, r"capture/chipwhispe
 
 cw1200_v = [1, 62]
 cw1200_files = [("cw1200_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/cw1200_firmware.zip")),
-                ("CW1200_SAM3UFW.bin", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/ChipWhisperer-Pro.bin")),
+                ("CW1200_SAM3UFW.bin", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/CW1200_SAM3UFW.bin")),
                 ("version", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/version.txt"))
                 ]
 

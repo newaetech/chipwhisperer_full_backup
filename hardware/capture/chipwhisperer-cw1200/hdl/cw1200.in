@@ -53,11 +53,15 @@ setup.v = Setup File
 ../../../common/hdl/clockglitch/clockglitch_s6.v
 ../../../common/hdl/clockglitch/reg_clockglitch.v
 ../../../common/hdl/clockglitch/trigger_resync.v
-../../../common/hdl/io_trigger/reg_iotrigger.v
 ../../../common/hdl/io_trigger/trigger_system.v
 ../../../common/hdl/reg_chipwhisperer.v
 ../../../common/hdl/reconfig/reg_reconfig.v
 ../../../common/hdl/fifo_stream/fifo_top_stream.v
+../../../common/hdl/sad_trigger/sad_auto.v
+../../../common/hdl/sad_trigger/reg_sad.v
+../../../common/hdl/io_decode_trigger/reg_decodeiotrigger.v
+../../../common/hdl/io_decode_trigger/spi_decoder.v
+../../../common/hdl/serialtarget/targ_async_receiver.v
 
 [CoreGen Files]
 #Add XCO files. You can just list the filename, OR have the CoreGen files be
