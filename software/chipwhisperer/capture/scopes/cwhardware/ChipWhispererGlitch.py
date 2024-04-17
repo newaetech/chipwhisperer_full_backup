@@ -959,8 +959,6 @@ class ChipWhispererGlitch(object):
             value = offset
             if value < self._min_offset or value > self._max_offset:
                 raise UserWarning("Can't use glitch offset %s - rounding into [%s, %s]" % (value, self._min_offset, self._max_offset))
-            if value < -45:
-                glitch_logger.warning("Negative offsets <-45 may result in double glitches!")
             if offset > self._max_offset:
                 offset = self._max_offset
             if offset < self._min_offset:
