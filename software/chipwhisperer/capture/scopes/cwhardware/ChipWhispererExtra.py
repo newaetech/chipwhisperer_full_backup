@@ -1025,7 +1025,10 @@ class GPIOSettings(util.DisableNewAttr):
     def nrst(self):
         """The state of the NRST pin.
 
-        See pdic for more information."""
+        See pdic for more information.
+        See also :class:`nrst_drive_poweroff` for behaviour with :class:`target_pwr`.
+
+        """
         return self._get_xio_str(self.GPIO_PIN_NRST)
 
     @nrst.setter
@@ -1037,6 +1040,26 @@ class GPIOSettings(util.DisableNewAttr):
         """ Reads the logic level of the nRST pin. Supported by Husky only.
         """
         return self._read_xio_pin(self.cwe.PIN_READ_NRST)
+
+    @property
+    def nrst_drive_poweroff(self):
+        """Control how the nRST pin is driven when :class:`target_pwr` is
+        False.  If set, nRST is driven (or not) as per :class:`nrst` (i.e.
+        :class:`target_pwr` has no effect on how nRST is driven). Otherwise,
+        nRST is tristated. 
+
+        .. NOTE:: our target boards pull up nRST to `target_pwr`; if 
+            `nrst_drive_poweroff` is False and nRST is driven low, then setting
+            `target_pwr` to False will cause nRST to pulse as it gets tristated
+            and pulled up for a brief moment until the target power gets
+            sufficiently low to return it to low.
+
+        """
+        return self.cwe.test_ioroute_mask(6, 2**6)
+
+    @nrst_drive_poweroff.setter
+    def nrst_drive_poweroff(self, mode):
+        self.cwe.upd_ioroute_mask(6, 2**6, mode)
 
     @property
     def miso_state(self):
@@ -1242,8 +1265,9 @@ class GPIOSettings(util.DisableNewAttr):
         If the target board is powered through an external supply, this setting
         may have no effect.
 
-        .. NOTE:: Setting this value to False/0 also sets TIO1-4/HS2 to high-z
-            until power is reenabled.
+        .. NOTE:: Setting this value to False/0 also sets the following to high-z
+            until power is reenabled: TIO1-4, HS2, PDID, PDIC, MOSI, SCK.
+            nRST is also tristated if :class:`nrst_drive_poweroff` is False.
 
         :Getter:  Return the current power state of the target (True or False)
 

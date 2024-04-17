@@ -186,6 +186,7 @@ module cwlite_interface(
 	
 	wire enable_output_nrst;
 	wire output_nrst;
+        wire nrst_ignore_highz;
 	wire enable_output_pdid;
 	wire output_pdid;
 	wire enable_output_pdic;
@@ -236,6 +237,7 @@ module cwlite_interface(
 		
 		.enable_output_nrst(enable_output_nrst),
 	   .output_nrst(output_nrst),
+           .nrst_ignore_highz(nrst_ignore_highz),
 	   .enable_output_pdid(enable_output_pdid),
 	   .output_pdid(output_pdid),
 	   .enable_output_pdic(enable_output_pdic),
@@ -304,7 +306,7 @@ module cwlite_interface(
 	                      (enable_output_pdic) ? output_pdic :
 								 1'bZ;
 	                    
-	 assign target_nRST = (target_highz) ? 1'bZ :
+	 assign target_nRST = (target_highz && ~nrst_ignore_highz) ? 1'bZ :
 	                      (enable_avrprog) ? USB_treset_i :
 								 (enable_output_nrst) ? output_nrst :
 								 1'bZ;
