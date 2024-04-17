@@ -107,6 +107,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         rtn['baud']     = self.baud
         rtn['simpleserial_last_read'] = self.simpleserial_last_read
         rtn['simpleserial_last_sent'] = self.simpleserial_last_sent
+        rtn['xonxoff'] = self.xonxoff
+        rtn['currently_xoff'] = self.currently_xoff
         #rtn['protver'] = self.protver
         return rtn
 
@@ -591,3 +593,16 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             Added public method for in_waiting_tx().
         """
         return self.ser.inWaitingTX()
+
+    @property
+    def xonxoff(self):
+        # NOTE: Firmware version checked in lower serial driver
+        return self.ser.xonxoff
+    
+    @xonxoff.setter
+    def xonxoff(self, enable):
+        self.ser.xonxoff = enable
+
+    @property
+    def currently_xoff(self):
+        return self.ser.currently_xoff
