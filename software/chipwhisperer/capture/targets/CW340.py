@@ -2,6 +2,7 @@ from .CW310 import CW310
 from ...hardware.naeusb.pll_cdce906 import PLLCDCE906
 from ...logging import *
 from ...hardware.naeusb.serial import USART
+from ...hardware.naeusb.fpga import FPGA
 
 class CW340(CW310):
     """CW340 Luna Board target object.
