@@ -75,27 +75,40 @@ class USART(object):
         self._stopbits = stopbits
         self._parity = parity
 
-        if stopbits == 1:
-            stopbits = 0
-        elif stopbits == 1.5:
-            stopbits = 1
-        elif stopbits == 2:
-            stopbits = 2
-        else:
-            raise ValueError("Invalid stop-bit spec: %s" % str(stopbits))
+        valid_stopbits = [1, 1.5, 2]
+        valid_parity = ["none", "odd", "even", "mark", "space"]
+        try:
+            stopbits = valid_stopbits.index(stopbits)
+        except ValueError:
+            raise ValueError("Invalid stop-bit {}, must be one of {}".format(stopbits, valid_stopbits))
 
-        if parity == "none":
-            parity = 0
-        elif parity == "odd":
-            parity = 1
-        elif parity == "even":
-            parity = 2
-        elif parity == "mark":
-            parity = 3
-        elif parity == "space":
-            parity = 4
-        else:
-            raise ValueError("Invalid parity spec: %s" % str(parity))
+        try:
+            parity = valid_parity.index(parity)
+        except ValueError:
+            raise ValueError("Invalid parity {}, must be one of {}".format(parity, valid_parity))
+            
+
+        # if stopbits == 1:
+        #     stopbits = 0
+        # elif stopbits == 1.5:
+        #     stopbits = 1
+        # elif stopbits == 2:
+        #     stopbits = 2
+        # else:
+        #     raise ValueError("Invalid stop-bit spec: %s" % str(stopbits))
+
+        # if parity == "none":
+        #     parity = 0
+        # elif parity == "odd":
+        #     parity = 1
+        # elif parity == "even":
+        #     parity = 2
+        # elif parity == "mark":
+        #     parity = 3
+        # elif parity == "space":
+        #     parity = 4
+        # else:
+        #     raise ValueError("Invalid parity spec: %s" % str(parity))
 
         cmdbuf = bytearray(7)
         util.pack_u32_into(cmdbuf, 0, int(baud))

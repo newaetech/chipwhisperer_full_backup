@@ -631,6 +631,34 @@ class SimpleSerial2(TargetTemplate):
         self.ser.write(data, timeout)
 
     @property
+    def parity(self):
+        if hasattr(self.ser, 'parity') and callable(self.ser.parity):
+            return self.ser.parity()
+        else:
+            raise AttributeError("Can't access parity")
+
+    @parity.setter
+    def parity(self, parity):
+        if hasattr(self.ser, 'parity') and callable(self.ser.parity):
+            return self.ser.setParity(parity)
+        else:
+            raise AttributeError("Can't access parity")
+
+    @property
+    def stop_bits(self):
+        if hasattr(self.ser, 'stopBits') and callable(self.ser.stopBits):
+            return self.ser.stopBits()
+        else:
+            raise AttributeError("Can't access parity")
+
+    @stop_bits.setter
+    def stop_bits(self, stop_bits):
+        if hasattr(self.ser, 'stopBits') and callable(self.ser.stopBits):
+            return self.ser.setStopBits(stop_bits)
+        else:
+            raise AttributeError("Can't access parity")
+
+    @property
     def baud(self):
         """The current baud rate of the serial connection.
 
@@ -736,6 +764,8 @@ class SimpleSerial2(TargetTemplate):
         rtn['simpleserial_last_sent'] = self.simpleserial_last_sent
         rtn['xonxoff'] = self.xonxoff
         rtn['currently_xoff'] = self.currently_xoff
+        rtn['parity'] = self.parity
+        rtn['stop_bits'] = self.stop_bits
         #rtn['protver'] = self.protver
         return rtn
 
