@@ -4,6 +4,8 @@
 # for now.
 
 import random, math
+import pickle
+from copy import deepcopy
 
 try:
     import ipywidgets as widgets # type: ignore
@@ -13,6 +15,38 @@ except ModuleNotFoundError:
 def apply_ticks(value, ticks, round):
     value = float(value) * ticks
     return int(round(value))
+
+class gc_data:
+    def __init__(self):     
+        self.groups = None
+        self.parameters = None
+        self.parameter_min = None
+        self.parameter_max = None
+        self.steps = None
+        self.results = None
+        
+def save_gc_results(gc, file_path):
+    x = gc_data()
+    x.groups = deepcopy(gc.groups)
+    x.parameters = deepcopy(gc.parameters)
+    x.parameter_min = deepcopy(gc.parameter_min)
+    x.parameter_max = deepcopy(gc.parameter_max)
+    x.steps = deepcopy(gc.steps)
+    x.results = deepcopy(gc.results)
+    with open(file_path, "wb") as f:
+        pickle.dump(x, f)
+    return x
+
+def load_gc_results(file_path):
+    with open(file_path, "rb") as f:
+        y = pickle.load(f)
+        new_gc = GlitchController(groups=y.groups, parameters=y.parameters)
+        new_gc.parameter_min = deepcopy(y.parameter_min)
+        new_gc.parameter_max = deepcopy(y.parameter_max)
+        new_gc.steps = deepcopy(y.steps)
+        new_gc.results = deepcopy(y.results)
+
+    return new_gc
 
 class GlitchController:
     
@@ -34,6 +68,9 @@ class GlitchController:
         self._glitch_plotdots = None
         
         self.clear()
+
+    def save(self, file_path):
+        save_gc_results(self, file_path)
 
     @property
     def steps_count(self):
@@ -489,13 +526,31 @@ class GlitchResults:
         self._result_dict[parameters][group] += 1
         self._result_dict[parameters]['total'] += 1
 
-    def res_dict_of_lists(self, results):
+    # def res_dict_of_lists(self, results):
+    #     rtn = {}
+
+    #     # create a list of values for each parameter
+    #     orig_key = next(iter(results))
+    #     for i in range(len(orig_key)):
+    #         rtn[self.parameters[i]] = [p[i] for p in results]
+
+    #     # do the same for each group/group success rate
+
+    #     orig_val = next(iter(results.values())) # grab group dict for first parameter
+
+    #     for k in orig_val:
+    #         rtn[k] = [results[p][k] for p in results] # add a list for each group success rate
+
+    #     return rtn
+
+    def res_dict_of_lists(self, results, params=None):
         rtn = {}
 
         # create a list of values for each parameter
         orig_key = next(iter(results))
-        for i in range(len(orig_key)):
-            rtn[self.parameters[i]] = [p[i] for p in results]
+        print(orig_key)
+        for i in range(len(params)):
+            rtn[params[i]] = [p[i] for p in results]
 
         # do the same for each group/group success rate
 
@@ -574,17 +629,24 @@ class GlitchResults:
 
         # remove parameters from data that we won't be plotting
         remove_params = list(range(len(self.parameters)))
+        print(remove_params)
+        keep_params = []
         if x_index > y_index:
+            keep_params.append(self.parameters[y_index])
+            keep_params.append(self.parameters[x_index])
             del(remove_params[x_index])
             del(remove_params[y_index])
         else:
+            keep_params.append(self.parameters[x_index])
+            keep_params.append(self.parameters[y_index])
             del(remove_params[y_index])
             del(remove_params[x_index])
 
         data = self.calc(remove_params)
 
         # get data as {'param0': [list], 'param1': [list], 'group0_rate': n, ...} for easy plotting
-        fmt_data = self.res_dict_of_lists(data)
+        print(keep_params)
+        fmt_data = self.res_dict_of_lists(data, keep_params)
 
 
         #We only want legend to show for first element... bit of a hack here
@@ -631,6 +693,4 @@ class GlitchResults:
             ylabel += " (" + y_units + ")"
         # plt.ylabel(ylabel)
 
-        plot.redim(y=hv.Dimension(ylabel), x=hv.Dimension(xlabel))
-
-        return plot
+        return plot.redim(y=hv.Dimension(ylabel), x=hv.Dimension(xlabel))
