@@ -514,6 +514,7 @@ class USERIOSettings(util.DisableNewAttr):
     def __init__(self, oaiface : OAI.OpenADCInterface, trace):
         super().__init__()
         self._last_mode = None
+        self._drive_data = 0
         self.oa = oaiface
         self._trace = trace
         self.disable_newattr()
@@ -651,13 +652,14 @@ class USERIOSettings(util.DisableNewAttr):
     def drive_data(self):
         """8-bit data to drive on the USERIO data bus.
         """
-        return self.oa.sendMessage(CODE_READ, "USERIO_DRIVE_DATA", maxResp=1)[0]
+        return self._drive_data
 
     @drive_data.setter
     def drive_data(self, setting):
         if not setting in range(0, 256):
             raise ValueError("Must be integer 0-255")
         else:
+            self._drive_data = setting
             self.oa.sendMessage(CODE_WRITE, "USERIO_DRIVE_DATA", [setting])
 
     @property
