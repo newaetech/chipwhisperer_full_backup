@@ -23,6 +23,11 @@
 #
 # To rebuild project do "make clean" then "make all".
 #----------------------------------------------------------------------------
+# Default target.
+all: 
+	@$(MAKE) --no-print-directory -O clean_objs .dep 
+	@$(MAKE) --no-print-directory -O begin gccversion build 
+	@$(MAKE) --no-print-directory -O sizeafter fastnote end
 
 ifeq ($(PLATFORM),)
   -include Makefile.platform
@@ -344,11 +349,6 @@ ALL_CPPFLAGS = $(MCU_FLAGS) -I. -x c++ $(CPPFLAGS) $(GENDEPFLAGS)
 ALL_ASFLAGS = $(MCU_FLAGS) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
-# Default target.
-all: 
-	@$(MAKE) --no-print-directory -O clean_objs .dep 
-	@$(MAKE) --no-print-directory -O begin gccversion build 
-	@$(MAKE) --no-print-directory -O sizeafter fastnote end
 
 allquick: .dep begin gccversion build sizeafter end
 
