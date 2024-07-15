@@ -315,19 +315,17 @@ class HuskySAD(util.DisableNewAttr):
         if len(wave) < reflen:
             scope_logger.error('Reference provided is too short, it needs to be at least %d samples long' % reflen)
         # first, trim and translate reference waveform to ints:
-        if type(wave[0]) is not int:
-            refints = []
+        refints = []
+        if type(wave[0]) not in [int, np.uint8, np.uint16]:
             for s in wave[:reflen]:
-                refints.append(int(s*2**wave_bits_per_sample) + 2**(wave_bits_per_sample-1))
+                refints.append(int(s*2**self._sad_bits_per_sample) + 2**(self._sad_bits_per_sample-1))
         else:
-            refints = wave[:reflen]
-        # next: if the reference resolution is 12 bits/sample, reduce it to 8:
+            for i in range(reflen):
+                refints.append(int(wave[i] >> (wave_bits_per_sample-self._sad_bits_per_sample)))
+
         if self._sad_bits_per_sample != 8:
             scope_logger.error('Internal error: FPGA requires SAD reference resolution to be %d bits per sample.' % self._sad_bits_per_sample)
         else:
-            if wave_bits_per_sample == 12:
-                for i in range(len(refints)):
-                    refints[i] = refints[i] >> 4
             if len(refints) > 128:
                 # in this case we have to write in blocks of 128 bytes:
                 base = 0
