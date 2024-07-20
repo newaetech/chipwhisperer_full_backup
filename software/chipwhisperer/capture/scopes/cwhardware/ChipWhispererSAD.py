@@ -256,12 +256,25 @@ class HuskySAD(util.DisableNewAttr):
     def __init__(self, oa):
         super().__init__()
         self.oa = oa
-        self._samples_enabled = self.sad_reference_length
+        self._samples_enabled = self.sad_reference_length # TODO: emode?
+        self._reference = []
+
+        # determine size of SAD_TRIGGER_TIME register:
+        regsizebits = math.ceil(math.log2(self._samples_enabled))
+        regsizebytes = regsizebits // 8
+        if regsizebits % 8:
+            regsizebytes += 1
+        self._trigger_advance_bytes = regsizebytes
+
         self.disable_newattr()
 
     def _dict_repr(self):
         rtn = {}
         rtn['threshold'] = self.threshold
+        if self._im:
+            rtn['interval_threshold'] = self.interval_threshold
+        if not self.emode:
+            rtn['trigger_advance'] = self.trigger_advance
         rtn['reference'] = self.reference
         rtn['sad_reference_length'] = self.sad_reference_length
         rtn['samples_enabled'] = self.samples_enabled
@@ -279,6 +292,7 @@ class HuskySAD(util.DisableNewAttr):
     @property
     def threshold(self):
         """Threshold for SAD triggering.
+        TODO: update for interval mode
         If the sum of absolute differences for the past
         scope.trigger.sad_reference_length ADC samples (measured in 8-bit
         resolution) is less than <threshold>, a trigger will be generated.
@@ -303,6 +317,22 @@ class HuskySAD(util.DisableNewAttr):
             raise ValueError("Out of range; maximum supported by hardware: %d" % max_threshold)
         self.oa.sendMessage(CODE_WRITE, "SAD_THRESHOLD", list(int.to_bytes(val, length=4, byteorder='little')))
 
+
+    @property
+    def interval_threshold(self):
+        """Interval threshold for SAD triggering.
+        TODO...
+        """
+        return self.oa.sendMessage(CODE_READ, "SAD_INTERVAL_THRESHOLD", Validate=False, maxResp=1)[0]
+
+    @interval_threshold.setter
+    def interval_threshold(self, val):
+        max_threshold = 2**self._sad_bits_per_sample-1
+        if not (0 < val <= max_threshold):
+            raise ValueError("Out of range; maximum supported by hardware: %d" % max_threshold)
+        self.oa.sendMessage(CODE_WRITE, "SAD_INTERVAL_THRESHOLD", [val])
+
+
     @property
     def reference(self):
         """Reference waveform used for SAD triggering. Can be provided as
@@ -311,11 +341,13 @@ class HuskySAD(util.DisableNewAttr):
         scope.trigger._sad_bits_per_sample resolution. Can be of any length
         (minimum scope.SAD.sad_reference_length) but only the first
         scope.SAD.sad_reference_length samples are used).
+        TODO: update for non-readability
 
         Args:
             wave: (list of ints or floats): reference waveform
             bits_per_sample: (int, optional): number of bits per sample in wave. If not provided, we use scope.adc.bits_per_sample.
         """
+        return self._reference
         if self.sad_reference_length > 128:
             # in this case we have to read in blocks of 128 bytes:
             base = 0
@@ -335,26 +367,38 @@ class HuskySAD(util.DisableNewAttr):
 
     @reference.setter
     def reference(self, wave, bits_per_sample=None):
+        if not self._writing_allowed:
+            import datetime
+            now = datetime.datetime.now()
+            scope_logger.error('writing not allowed! this is going to screw things up (%s)' % now)
+            return
         if bits_per_sample is None:
             wave_bits_per_sample = self.oa._bits_per_sample
         reflen = self.sad_reference_length
         if len(wave) < reflen:
             scope_logger.info('Reference provided is too short (it should be at least %d samples long); extending with zeros' % reflen)
             wave.extend([0]*(reflen-len(wave)))
+        # if emode is supported but off, we still need to write the full set of reference samples:
+        if self._emode_off:
+            reflen *= 2
+            if len(wave) < reflen:
+                scope_logger.info('XXX extending...')
+                reflen *= 2
+                wave.extend([0]*(reflen-len(wave)))
+
         # first, trim and translate reference waveform to ints:
-        if type(wave[0]) is not int:
-            refints = []
+        refints = []
+        if type(wave[0]) not in [int, np.uint8, np.uint16]:
             for s in wave[:reflen]:
-                refints.append(int(s*2**wave_bits_per_sample) + 2**(wave_bits_per_sample-1))
+                refints.append(int(s*2**self._sad_bits_per_sample) + 2**(self._sad_bits_per_sample-1))
         else:
-            refints = wave[:reflen]
-        # next: if the reference resolution is 12 bits/sample, reduce it to 8:
+            for i in range(reflen):
+                refints.append(int(wave[i] >> (wave_bits_per_sample-self._sad_bits_per_sample)))
         if self._sad_bits_per_sample != 8:
             scope_logger.error('Internal error: FPGA requires SAD reference resolution to be %d bits per sample.' % self._sad_bits_per_sample)
         else:
-            if wave_bits_per_sample == 12:
-                for i in range(len(refints)):
-                    refints[i] = refints[i] >> 4
+            # TODO: shouldn't need to break it down in blocks anymore? or does the batch transfer have an upper limit?
+            self._reference = refints
             if len(refints) > 128:
                 # in this case we have to write in blocks of 128 bytes:
                 base = 0
@@ -388,8 +432,12 @@ class HuskySAD(util.DisableNewAttr):
     @property
     def sad_reference_length(self):
         """Read-only. Returns the number of samples that are used by the SAD module. Hardware property.
+        TODO: clearly document how emode is handled here!
         """
-        return int.from_bytes(self.oa.sendMessage(CODE_READ, "SAD_REF_SAMPLES", Validate=False, maxResp=2), byteorder='little')
+        l = int.from_bytes(self.oa.sendMessage(CODE_READ, "SAD_REF_SAMPLES", Validate=False, maxResp=2), byteorder='little')
+        if self._emode_off:
+            l //= 2
+        return l
 
     @property
     def latency(self):
@@ -401,22 +449,67 @@ class HuskySAD(util.DisableNewAttr):
             # assume this is an earlier bitfile which did not implement the SAD_VERSION register, and assume its latency is 9:
             return 9
         else:
-            return raw & 0x3f
+            return raw & 0x1f
 
     @property
     def _implementation(self):
         """Read-only. Indicates which SAD module was used to create the current FPGA bitfile.
         """
         raw = self.oa.sendMessage(CODE_READ, "SAD_VERSION", Validate=False, maxResp=1)[0]
-        version_bits = (raw & 0xc0) >> 6
+        version_bits = (raw & 0xe0) >> 5
         if version_bits == 0:
-            return 'OG'
-        elif version_bits == 1:
-            return 'X2_slow'
+            return 'base'
         elif version_bits == 2:
+            return 'X2_slow'
+        elif version_bits == 4:
             return 'X4_slow'
+        elif version_bits == 5:
+            return 'X2_fast'
+        elif version_bits == 6:
+            return 'eSAD'
+        elif version_bits == 7:
+            return 'single_counter'
         else:
             raise ValueError("Unexpected version bits: %d" % version_bits)
+
+    @property
+    def _esad_support(self):
+        """Read-only. Indicates whether the SAD implementation supports eSAD.
+        """
+        raw = self.oa.sendMessage(CODE_READ, "SAD_VERSION", Validate=False, maxResp=2)[1]
+        if raw & 0x02:
+            return True
+        else:
+            return False
+
+    @property
+    def _emode_off(self):
+        """Read-only. Returns true for implementations which support emode but have it
+        turned off
+        """
+        return self._esad_support and not self.emode
+
+
+    @property
+    def _im(self):
+        """Read-only. Indicates whether the SAD implementation uses interval matching
+        """
+        # TODO-temp!
+        return True
+        raw = self.oa.sendMessage(CODE_READ, "SAD_VERSION", Validate=False, maxResp=2)[1]
+        if raw & 0x01:
+            return True
+        else:
+            return False
+
+    @property
+    def _max_threshold_bit(self):
+        """Read-only. Helps determine the max threshold supported by the SAD implementation.
+        TODO: use it to validate user-supplied max threshold
+        """
+        raw = self.oa.sendMessage(CODE_READ, "SAD_VERSION", Validate=False, maxResp=2)[1]
+        return (raw & 0x04) >> 2
+
 
     @property
     def half_pattern(self):
@@ -468,6 +561,7 @@ class HuskySAD(util.DisableNewAttr):
 
     def get_enabled_samples(self):
         """Whether specified samples are to be used in the SAD computation.
+        TODO: not readable
         """
         enables = self.read_enabled_samples()
         if type(enables) is bool:
@@ -476,6 +570,7 @@ class HuskySAD(util.DisableNewAttr):
             return Lister(enables, setter=self.set_enabled_samples, getter=self.read_enabled_samples)
 
     def read_enabled_samples(self):
+        # TODO: not readable
         raw = list(self.oa.sendMessage(CODE_READ, "SAD_REFEN", Validate=False, maxResp=self.sad_reference_length//8))
         enables = []
         for item in raw:
@@ -487,14 +582,13 @@ class HuskySAD(util.DisableNewAttr):
         return enables
 
     def set_enabled_samples(self, enables):
+        # TODO: emode/off
         raw = 0
         for i, item in enumerate(enables):
             if item: raw += 2**i
         #print('XXX DEBUG: got enables=%s, raw=%d' % (enables, raw))
         rawlist = list(int.to_bytes(raw, length=len(enables)//8, byteorder='little'))
         self.oa.sendMessage(CODE_WRITE, "SAD_REFEN", rawlist)
-
-
 
     @property
     def multiple_triggers(self):
@@ -503,17 +597,19 @@ class HuskySAD(util.DisableNewAttr):
         If True, beware that this can result in triggers being too close together which can result in
         segmenting errors (if this happens, reduce scope.adc.samples).
         """
-        if self.oa.sendMessage(CODE_READ, "SAD_MULTIPLE_TRIGGERS", Validate=False, maxResp=1)[0]:
+        if self.oa.sendMessage(CODE_READ, "SAD_CONTROL", Validate=False, maxResp=1)[0] & 0x02:
             return True
         else:
             return False
 
     @multiple_triggers.setter
     def multiple_triggers(self, val):
+        raw = self.oa.sendMessage(CODE_READ, "SAD_CONTROL", Validate=False, maxResp=1)[0]
         if val:
-            self.oa.sendMessage(CODE_WRITE, "SAD_MULTIPLE_TRIGGERS", [1])
+            raw |= 0x02
         else:
-            self.oa.sendMessage(CODE_WRITE, "SAD_MULTIPLE_TRIGGERS", [0])
+            raw &= 0xfd
+        self.oa.sendMessage(CODE_WRITE, "SAD_CONTROL", [raw])
 
     @property
     def triggered(self):
@@ -527,6 +623,18 @@ class HuskySAD(util.DisableNewAttr):
             return True
         else: 
             return False
+
+    @property
+    def _writing_allowed(self):
+        """TODO
+        """
+        raw = self.oa.sendMessage(CODE_READ, "SAD_STATUS", Validate=False, maxResp=1)[0]
+        stat = ''
+        if raw & 2:
+            return False
+        else: 
+            return True
+
 
     @triggered.setter
     def triggered(self, val):
@@ -553,12 +661,52 @@ class HuskySAD(util.DisableNewAttr):
         the ADC capture has completed, which can be very useful when
         calibrating the SAD threshold when using multiple SAD triggers.
         """
-        if self.oa.sendMessage(CODE_READ, "SAD_ALWAYS_ARMED", Validate=False, maxResp=1)[0]:
+        if self.oa.sendMessage(CODE_READ, "SAD_CONTROL", Validate=False, maxResp=1)[0] & 0x01:
             return True
         else:
             return False
 
     @always_armed.setter
     def always_armed(self, val):
-        self.oa.sendMessage(CODE_WRITE, "SAD_ALWAYS_ARMED", [val])
+        raw = self.oa.sendMessage(CODE_READ, "SAD_CONTROL", Validate=False, maxResp=1)[0]
+        if val:
+            raw |= 0x01
+        else:
+            raw &= 0xfe
+        self.oa.sendMessage(CODE_WRITE, "SAD_CONTROL", [raw])
+
+    @property
+    def emode(self):
+        """ Control whether the SAD module... TODO: block access (to setting only; read is required for all) if not _esad_support
+        """
+        if self.oa.sendMessage(CODE_READ, "SAD_CONTROL", Validate=False, maxResp=1)[0] & 0x04:
+            return True
+        else:
+            return False
+
+    @emode.setter
+    def emode(self, val):
+        raw = self.oa.sendMessage(CODE_READ, "SAD_CONTROL", Validate=False, maxResp=1)[0]
+        if val:
+            raw |= 0x04
+        else:
+            raw &= 0xfb
+        self.oa.sendMessage(CODE_WRITE, "SAD_CONTROL", [raw])
+
+    @property
+    def trigger_advance(self):
+        """ Control whether the SAD module... TODO
+        TODO: limit access to implementations that support it;
+        tie register size to # of ref samples;
+        explain that not supported in emode
+        """
+        raw = self.oa.sendMessage(CODE_READ, "SAD_TRIGGER_TIME", Validate=False, maxResp=self._trigger_advance_bytes)
+        return raw # TODO...
+
+    @trigger_advance.setter
+    def trigger_advance(self, val):
+        # TODO: sanity check on val
+        # TODO: handle emode/off?
+        triggerer_init = (-self.val-3) % self.sad_reference_length
+        self.oa.sendMessage(CODE_WRITE, "SAD_TRIGGER_TIME", list(int.to_bytes(triggerer_init, length=self._trigger_advance_bytes, byteorder='little')))
 
