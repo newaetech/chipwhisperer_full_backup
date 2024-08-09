@@ -26,6 +26,7 @@
 #=================================================
 import numpy as np
 import math
+import datetime
 from ....common.utils import util
 
 from ....logging import *
@@ -368,9 +369,7 @@ class HuskySAD(util.DisableNewAttr):
     @reference.setter
     def reference(self, wave, bits_per_sample=None):
         if not self._writing_allowed:
-            import datetime
-            now = datetime.datetime.now()
-            scope_logger.error('writing not allowed! this is going to screw things up (%s)' % now)
+            scope_logger.error('writing not allowed! this is going to screw things up (%s)' % (datetime.datetime.now()))
             return
         if bits_per_sample is None:
             wave_bits_per_sample = self.oa._bits_per_sample
@@ -414,6 +413,8 @@ class HuskySAD(util.DisableNewAttr):
                 self.oa.sendMessage(CODE_WRITE, "SAD_REFERENCE_BASE", [0])
             else:
                 self.oa.sendMessage(CODE_WRITE, "SAD_REFERENCE", refints)
+        if self._ref_fifo_errors:
+            scope_logger.error('INTERNAL SAD ERROR')
 
     @property
     def _sad_bits_per_sample(self):
@@ -583,12 +584,17 @@ class HuskySAD(util.DisableNewAttr):
 
     def set_enabled_samples(self, enables):
         # TODO: emode/off
+        if not self._writing_allowed:
+            scope_logger.error('writing not allowed! this is going to screw things up (%s)' % (datetime.datetime.now()))
+            return
         raw = 0
         for i, item in enumerate(enables):
             if item: raw += 2**i
         #print('XXX DEBUG: got enables=%s, raw=%d' % (enables, raw))
         rawlist = list(int.to_bytes(raw, length=len(enables)//8, byteorder='little'))
         self.oa.sendMessage(CODE_WRITE, "SAD_REFEN", rawlist)
+        if self._ref_fifo_errors:
+            scope_logger.error('INTERNAL SAD ERROR')
 
     @property
     def multiple_triggers(self):
@@ -618,7 +624,6 @@ class HuskySAD(util.DisableNewAttr):
         this (or num_triggers_seen) to any value or by re-arming.
         """
         raw = self.oa.sendMessage(CODE_READ, "SAD_STATUS", Validate=False, maxResp=1)[0]
-        stat = ''
         if raw & 1:
             return True
         else: 
@@ -626,14 +631,23 @@ class HuskySAD(util.DisableNewAttr):
 
     @property
     def _writing_allowed(self):
-        """TODO
+        """Some SAD implementations have a fairly complex mechanism to load and distribute
+        the reference samples, the result of which is that writing reference samples is not
+        allowed when SAD is active.
         """
         raw = self.oa.sendMessage(CODE_READ, "SAD_STATUS", Validate=False, maxResp=1)[0]
-        stat = ''
         if raw & 2:
             return False
         else: 
             return True
+
+    @property
+    def _ref_fifo_errors(self):
+        """Whether internal SAD FIFO errors have occured.
+        0 means no errors;
+        non-zero: see Verilog source file for definitions.
+        """
+        return self.oa.sendMessage(CODE_READ, "SAD_STATUS", Validate=False, maxResp=1)[0] >> 4
 
 
     @triggered.setter
