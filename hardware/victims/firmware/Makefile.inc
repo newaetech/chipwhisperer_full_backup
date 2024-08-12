@@ -23,6 +23,7 @@
 #
 # To rebuild project do "make clean" then "make all".
 #----------------------------------------------------------------------------
+# Default target.
 
 ifeq ($(PLATFORM),)
   -include Makefile.platform
@@ -35,11 +36,11 @@ endif
 
 
 include $(FIRMWAREPATH)/hal/Makefile.hal
-ifneq ($(MAKECMDGOALS),clean)
-	include $(FIRMWAREPATH)/simpleserial/Makefile.simpleserial
+# ifneq ($(MAKECMDGOALS),clean)
+include $(FIRMWAREPATH)/simpleserial/Makefile.simpleserial
 
-	include $(FIRMWAREPATH)/crypto/Makefile.crypto
-endif
+include $(FIRMWAREPATH)/crypto/Makefile.crypto
+# endif
 
 #Debug - can be useful to see variables
 #${info '$(.VARIABLES)'}
@@ -344,11 +345,6 @@ ALL_CPPFLAGS = $(MCU_FLAGS) -I. -x c++ $(CPPFLAGS) $(GENDEPFLAGS)
 ALL_ASFLAGS = $(MCU_FLAGS) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
-# Default target.
-all: 
-	@$(MAKE) --no-print-directory -O clean_objs .dep 
-	@$(MAKE) --no-print-directory -O begin gccversion build 
-	@$(MAKE) --no-print-directory -O sizeafter fastnote end
 
 allquick: .dep begin gccversion build sizeafter end
 
@@ -587,6 +583,8 @@ clean_list :
 #-include $(shell mkdir .dep 2>/dev/null) $(wildcard .dep/*)
 -include $(wildcard .dep/*)
 
+all: 
+	clean_objs .dep begin gccversion build sizeafter fastnote end
 
 # Listing of phony targets.
 .PHONY : all allquick begin finish end sizeafter gccversion \

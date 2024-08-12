@@ -27,7 +27,7 @@ from .capture.scopes.cwhardware.ChipWhispererSAM3Update import SAMFWLoader, get_
 import logging
 from .logging import *
 
-from .common.results.glitch import GlitchController
+from .common.results.glitch import GlitchController, load_gc_results
 from .common.utils.looper import *
 import sys, subprocess
 

@@ -98,9 +98,9 @@ class GlitchSettings(util.DisableNewAttr):
 
         if self._is_husky:
             rtn['enabled'] = self.enabled
-            rtn['mmcm_locked'] = self.mmcm_locked
             rtn['num_glitches'] = self.num_glitches
         rtn['clk_src'] = self.clk_src
+        rtn['mmcm_locked'] = self.mmcm_locked
         rtn['width'] = self.width
         if not self._is_husky:
             rtn['width_fine'] = self.width_fine
@@ -241,12 +241,10 @@ class GlitchSettings(util.DisableNewAttr):
 
     @property
     def mmcm_locked(self):
-        """Husky only. Whether the Xilinx MMCMs used to generate glitches are
-        locked or not.
+        """Whether the Xilinx MMCMs (aka DCMs/PLLs) used to generate glitches
+        are locked or not.
 
         """
-        if not self._is_husky:
-            raise ValueError("For CW-Husky only.")
         return self.cwg.getMMCMLocked()
 
     @property

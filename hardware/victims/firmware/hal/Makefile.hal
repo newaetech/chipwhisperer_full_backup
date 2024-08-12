@@ -147,7 +147,7 @@ ifeq ($(MCU_CLK), INT)
   CFLAGS += -DUSE_INTERNAL_CLK
 endif
 
-ifneq ($(MAKECMDGOALS),clean)
+#ifneq ($(MAKECMDGOALS),clean)
   ifeq ($(PLATFORM),CW301_AVR)
   MCU = atmega328
   HAL = avr
@@ -272,6 +272,6 @@ ifneq ($(MAKECMDGOALS),clean)
 
   include $(HALPATH)/$(HAL)/Makefile.$(HAL)
   CDEFS += -DHAL_TYPE=HAL_$(HAL) -DPLATFORM=$(PLATFORM)
-endif
+#endif
 
 
