@@ -1,6 +1,0 @@
-make.exe --dry-run --always-make --keep-going --print-directory
-make.exe: Entering directory 'c:/Users/adewa/code/chipwhisperer/hardware/victims/firmware/hal/sam4s'
-make.exe: Leaving directory 'c:/Users/adewa/code/chipwhisperer/hardware/victims/firmware/hal/sam4s'
- 
-make.exe: *** No targets specified and no makefile found.  Stop.
-
