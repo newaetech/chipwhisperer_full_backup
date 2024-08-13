@@ -331,7 +331,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         else:
             self.clock.adc_src = 'clkgen_x4'
 
-    def default_setup(self, verbose=True):
+    def default_setup(self, verbose=True, sleep=0.2):
         """Sets up sane capture defaults for this scope
 
          *  25dB gain
@@ -381,6 +381,10 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
                     raise OSError("Could not lock DCM. Try rerunning this function or calling scope.clock.reset_dcms(): {}".format(self))
 
         if verbose:
+            # on CW-lite, although scope.clock.adc_locked may indicate true, if we read scope.clock.adc_freq right now we'll get (and cache)
+            # an unsettled value, so let's wait a bit:
+            if not self._is_husky:
+                time.sleep(sleep)
             scope_dict_post = self._dict_repr()
             self.scope_diff(scope_dict_pre, scope_dict_post)
 
