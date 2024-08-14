@@ -369,7 +369,9 @@ class HuskySAD(util.DisableNewAttr):
     @reference.setter
     def reference(self, wave, bits_per_sample=None):
         if not self._writing_allowed:
-            scope_logger.error('writing not allowed! this is going to screw things up (%s)' % (datetime.datetime.now()))
+            self._allow_writes()
+        if not self._writing_allowed:
+            scope_logger.error('could not unblock writing! (%s)' % (datetime.datetime.now()))
             return
         if bits_per_sample is None:
             wave_bits_per_sample = self.oa._bits_per_sample
@@ -583,9 +585,11 @@ class HuskySAD(util.DisableNewAttr):
         return enables
 
     def set_enabled_samples(self, enables):
-        # TODO: emode/off
+        # TODO: emode/off (see how test_sad.y does it (in dut_setup)
         if not self._writing_allowed:
-            scope_logger.error('writing not allowed! this is going to screw things up (%s)' % (datetime.datetime.now()))
+            self._allow_writes()
+        if not self._writing_allowed:
+            scope_logger.error('could not unblock writing! (%s)' % (datetime.datetime.now()))
             return
         raw = 0
         for i, item in enumerate(enables):
@@ -723,4 +727,11 @@ class HuskySAD(util.DisableNewAttr):
         # TODO: handle emode/off?
         triggerer_init = (-self.val-3) % self.sad_reference_length
         self.oa.sendMessage(CODE_WRITE, "SAD_TRIGGER_TIME", list(int.to_bytes(triggerer_init, length=self._trigger_advance_bytes, byteorder='little')))
+
+    def _allow_writes(self):
+        # for some SAD implementations, after a failed capture it's necessary to do a 
+        # dummy write to the SAD_CONTROL register in order for the SAD reference to be updated.
+        raw = self.oa.sendMessage(CODE_READ, "SAD_CONTROL", Validate=False, maxResp=1)
+        self.oa.sendMessage(CODE_WRITE, "SAD_CONTROL", raw)
+
 
