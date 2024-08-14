@@ -205,7 +205,7 @@ def generate_contributing(app, config):
     pypandoc.convert_file('../contributing.md', 'rst', outputfile='contributing.rst')
 
     print('Generating simpleserial.rst')
-    pypandoc.convert_file('../hardware/victims/firmware/simpleserial/README.rst', 'rst', outputfile='simpleserial.rst')
+    pypandoc.convert_file('../firmware/mcu/simpleserial/README.rst', 'rst', outputfile='simpleserial.rst')
             
 
 
