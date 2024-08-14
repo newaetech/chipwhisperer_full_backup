@@ -1,1 +1,0 @@
-This board has been validated in hardware, and examples will build for it.
