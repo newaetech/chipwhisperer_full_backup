@@ -1,24 +1,18 @@
 [submodule "hardware/victims/firmware/crypto/secAES-ATmega8515"]
-	path = hardware/victims/firmware/crypto/secAES-ATmega8515
+	path = firmware/mcu/crypto/secAES-ATmega8515
 	url = https://github.com/jmichelp/secAES-ATmega8515.git
 [submodule "chipwhisperer-jupyter"]
 	path = jupyter
 	url = https://github.com/newaetech/chipwhisperer-jupyter.git
 [submodule "hardware/victims/firmware/crypto/SecAESSTM32"]
-	path = hardware/victims/firmware/crypto/SecAESSTM32
+	path = firmware/mcu/crypto/SecAESSTM32
 	url = https://github.com/ANSSI-FR/SecAESSTM32/
 [submodule "hardware/victims/firmware/crypto/masked-bit-sliced-aes-128"]
-	path = hardware/victims/firmware/crypto/masked-bit-sliced-aes-128
+	path = firmware/mcu/crypto/masked-bit-sliced-aes-128
 	url = https://github.com/sebastien-riou/masked-bit-sliced-aes-128/
 [submodule "hardware/victims/firmware/crypto/Higher-Order-Masked-AES-128"]
-	path = hardware/victims/firmware/crypto/Higher-Order-Masked-AES-128
+	path = firmware/mcu/crypto/Higher-Order-Masked-AES-128
 	url = https://github.com/knarfrank/Higher-Order-Masked-AES-128/
-[submodule "hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src/naeusb"]
-	path = hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src/naeusb
-	url = https://github.com/newaetech/naeusb.git
-[submodule "hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src/naeusb"]
-	path = hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src/naeusb
-	url = https://github.com/newaetech/naeusb.git
 [submodule "chipwhisperer-minimal"]
 	path = chipwhisperer-minimal
 	url = https://github.com/newaetech/chipwhisperer-minimal.git

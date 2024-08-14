@@ -1,2 +1,0 @@
-In order to compile with iverilog, this Xilinx file must be modified to declare lock_out_fbd to be a wire:
-/mnt/c/Xilinx/Vivado/2020.2/ids_lite/ISE/verilog/src/unisims//DCM_SP.v
