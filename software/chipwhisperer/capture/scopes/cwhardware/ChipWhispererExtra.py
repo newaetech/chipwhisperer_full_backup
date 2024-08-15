@@ -2155,7 +2155,7 @@ class HuskyTrigger(TriggerSettings):
                 if raw == 2**32-1 and len(times): # don't care about overflow on first entry
                     scope_logger.error('Trigger times counter overflowed (more than 2**32 cycles between successive triggers).')
                 else:
-                    times.append(raw)
+                    times.append(raw+2) # Verilog captures times that are 2 less than they should be; we fix that here
             if self._trigger_times_underflow():
                 scope_logger.error('Internal error: trigger times FIFO underflowed.')
             return times[1:]
