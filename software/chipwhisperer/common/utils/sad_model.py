@@ -21,9 +21,8 @@
 
 from chipwhisperer.common.utils import util
 from tqdm.notebook import tnrange
+import numpy as np
 
-
-# TODO: offer a way to visualize which samples were NOT covered (due to eSAD)
 
 class SADCounter(object):
     """Models the hardware logic for a single SAD counter.
@@ -95,18 +94,20 @@ class SADCounter(object):
         # returns matched, covered:
         # - matched: True on a SAD counter match
         # - covered: True is sample is covered by a counter *as the first sample of a potential match pattern*
+        # - logscore: log SAD score for the overall system, i.e. when it's time for this counter to trigger (or not)
         match = False
         covered = True
+        logscore = None
         if not armed_and_ready:
             self.reset()
-            return (match, covered)
+            return (match, covered, logscore)
 
         if not self.started:
-            return (match, covered)
+            return (match, covered, logscore)
 
         if not self.running:
             self.current_idx += 1
-            return (match, covered)
+            return (match, covered, logscore)
 
         incr = 0
         if self.refen[self.current_idx]:
@@ -139,14 +140,17 @@ class SADCounter(object):
         # Note: DUT decides to extend to full pattern a few cycles before the halfway point:
         if (self.current_idx == self.reflen//2 - 4) and self.emode:
             if self.SAD < self.half_threshold:
-                covered = False
                 self.extended_mode = 1
                 if self.verbose: print("%4d: counter %d reached halfway point and is still alive" % (time, self.idx))
             else:
                 self.extended_mode = 0
                 if self.verbose: print("%4d: counter %d stopping halfway" % (time, self.idx))
 
-        elif self.current_idx == self.reflen//2 and self.emode and not self.extended_mode:
+        elif self.current_idx == self.reflen//2 and self.emode:
+            logscore = True
+            if self.extended_mode:
+                covered = False
+            else:
                 self.current_idx = 0
 
 
@@ -154,6 +158,7 @@ class SADCounter(object):
             if self.current_idx == self.reflen:
                 self.ready2trigger = True
                 self.current_idx = 0
+                logscore = True
                 if self.verbose: print("%4d: counter %d done, SAD=%d" % (time, self.idx, self.SAD))
                 if self.SAD <= self.threshold:
                     if self.verbose: print("%4d: counter %d MATCHED at time %6d with score: %d ===============================" % (time, self.idx, time, self.SAD))
@@ -161,6 +166,7 @@ class SADCounter(object):
 
         else:
             if self.current_idx == self.triglen and self.ready2trigger:
+                logscore = True
                 if self.verbose: print("%4d: counter %d done, SAD=%d" % (time, self.idx, self.SAD))
                 if self.SAD <= self.threshold:
                     if self.verbose: print("%4d: counter %d MATCHED at time %6d with score: %d ===============================" % (time, self.idx, time, self.SAD))
@@ -169,7 +175,7 @@ class SADCounter(object):
                 self.ready2trigger = True
                 self.current_idx = 0
 
-        return (match, covered)
+        return (match, covered, logscore)
 
 
     def __repr__(self):
@@ -182,6 +188,7 @@ class SADCounter(object):
 
 class SADModel(object):
     """Python model of the Verilog SAD implementation, used for validation.
+    Efficiency in computation is not the primary objective of this class!
     Almost 100% cycle-accurate; there can be small differences when
     multiple_triggers is false because the model will only ever generate a
     single trigger, whereas some implementations can let a extra one slip
@@ -223,6 +230,7 @@ class SADModel(object):
         self.match_counters = []
         self.uncovered_samples = []
         self.covered = []
+        self.SADS = []
         self.triggered = False
         for i in range(self.num_counters):
             self.counters.append(SADCounter(i, counter_width, ref, refen, self.triglen, half_threshold, threshold, interval_threshold, startup_latency, emode, interval_matching, verbose))
@@ -254,6 +262,10 @@ class SADModel(object):
         self.covered = [1]*len(wave)
         for i in tnrange(len(wave)): # go through the full powertrace
             self.step(wave[i], True)
+        # in the case of emode, we need to change the SAD score for uncovered samples to NaN, to highlight that they could not have triggered:
+        if self.emode:
+            for u in self.uncovered_samples:
+                self.SADS[u] = np.NaN
 
     def activate_next_counter(self):
         for c in self.counters:
@@ -281,16 +293,17 @@ class SADModel(object):
         # all activated counters are in free-running mode:
         matched = False
         for c in self.counters:
-            match, covered = c.update(sample, 0, armed_and_ready)
+            match, covered, logscore = c.update(sample, 0, armed_and_ready)
+            if logscore:
+                self.SADS.append(c.SAD)
             if match:
                 matched = True
-                self.match_times.append(self.index)
+                self.match_times.append(self.index+1)
                 self.match_scores.append(c.SAD)
                 self.match_counters.append(c.idx)
                 self.triggered = True
                 if self.verbose: print("counter %d matched at time %6d with score: %d" % (self.index, c.idx, c.SAD))
             if not covered:
-                # TODO: somehow the indices in covered are off by one? not sure why?
                 self.uncovered_samples.append(self.index+1)
                 try:
                     self.covered[self.index+1] = 0 
@@ -312,12 +325,14 @@ class SADModelWrapper(object):
     """Software model of the Husky SAD implementation(s). Wrapper which
     allows providing SAD parameters from a scope.SAD object. Use this
     to run software SAD on a trace.
+    For usage and tips, see the companion Jupyter notebook.
 
     Example::
 
         sad_model = cw.SADModelWrapper(scope.SAD)
         sad_model.run(trace.wave)
         print(sad_model) # to get the results
+        print(sad_model.SADS) # to get the SAD scores for the given trace.wave
     """
     _name = 'SAD model'
 
@@ -327,7 +342,7 @@ class SADModelWrapper(object):
         counter_width = actual_sad._sad_counter_width
         reflen = actual_sad.sad_reference_length
         refen = [1]*reflen # TODO- temp
-        ref = actual_sad.reference
+        ref = actual_sad.reference[:reflen]
         triglen = None # TODO- temp
         threshold = actual_sad.threshold
         half_threshold = threshold//2
@@ -349,6 +364,12 @@ class SADModelWrapper(object):
         rtn['uncovered_samples'] = self.uncovered_samples
         rtn['missed_triggers'] = self.missed_triggers
         return rtn
+
+    @property
+    def SADS(self):
+        """SAD scores for the wave processed by run().
+        """
+        return self.sad.SADS
 
     @property
     def match_times(self):
