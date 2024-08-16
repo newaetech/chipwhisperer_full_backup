@@ -37,16 +37,20 @@ from bokeh.models import Span, Legend, LegendItem
 from ipywidgets import interact_manual, Layout, widgets
 
 import itertools
-#from ....common.utils import util
-#from ....logging import *
 from chipwhisperer.common.utils import util
 from chipwhisperer.logging import *
 import chipwhisperer as cw
 
 
 class SADExplorer(util.DisableNewAttr):
-    """TODO
+    """Class to help understand SAD and tune its parameters.
+    For usage and tips, see the companion Jupyter notebook.
+
+    Example::
+
+        explorer = cw.SADExplorer(scope, target, reftrace.wave, refstart, max_segments)
     """
+
     _name = 'Husky SAD Explorer Module'
 
     def __init__(self, scope, target, reftrace, refstart, max_segments=1, plot_width=2000, plot_height=600, plot_tools='pan, box_zoom, hover, reset, save'):
@@ -56,7 +60,7 @@ class SADExplorer(util.DisableNewAttr):
         self.SAD = scope.SAD
         self.reftrace = reftrace
         self.refstart = refstart
-        self.max_segments = max_segments # TODO: how to move this up/down dynamically? (when re-running interact)
+        self.max_segments = max_segments
         self.p = figure(plot_width=plot_width, plot_height=plot_height, tools=plot_tools)
 
         self.samples = 100 # initial value really doesn't matter
@@ -70,7 +74,6 @@ class SADExplorer(util.DisableNewAttr):
         self.quads = []
 
         # intial legend shows what to do:
-        #legend_items = get_legend_items(self.reftrace[refstart:].astype(int), segments, scope.SAD.interval_threshold)
         self.legend = self.create_legend()
         self.p.add_layout(self.legend)
 
@@ -83,7 +86,6 @@ class SADExplorer(util.DisableNewAttr):
         self.V = Span(location=self.SAD.sad_reference_length, dimension='height', line_color='black', line_width=2)
         self.p.renderers.extend([self.V])
 
-        # TODO: notebook has to have a 'explorer.textout' cell to show this; is there a way to avoid needing that?
         self.textout = widgets.Output(layout={'border': '1px solid black'})
 
         show(self.p, notebook_handle=True)
@@ -102,7 +104,6 @@ class SADExplorer(util.DisableNewAttr):
                            show_text_legend=False)
 
         display(self.textout)
-
         self.disable_newattr()
 
 
@@ -120,7 +121,7 @@ class SADExplorer(util.DisableNewAttr):
         return sad, max(exceeds)
 
 
-    def get_legend_items(self, segments):#, renderers):
+    def get_legend_items(self, segments):
         items = []
         ttimes = self.scope.trigger.get_trigger_times()
         #ttimes = [0]*(MAX_SEGMENTS-1)
@@ -135,7 +136,6 @@ class SADExplorer(util.DisableNewAttr):
                 delta = ttimes[i-1]
             else:
                 delta = 0
-              
             items.append('segment %d: SAD=%d, max over ref=%d, delta=%d' % (i, sad, max_exceeds, delta))
         if sads:
             items.append('SADs: %d / %d / %d' % (min(sads), max(sads), int(np.average(sads))))
@@ -150,13 +150,7 @@ class SADExplorer(util.DisableNewAttr):
                          
 
     def create_legend(self):
-        legend_items = []
-        for i in range(self.max_segments + 3):
-            if i == 0:
-                label='run xxx next...'
-            else:
-                label=''
-            legend_items.append(LegendItem(label=label, renderers=[]))
+        legend_items = [ LegendItem(label='', renderers=[]) ]*(self.max_segments + 3)
         return Legend(items=legend_items)
 
 
@@ -174,7 +168,6 @@ class SADExplorer(util.DisableNewAttr):
         self.p.background_fill_alpha = 0.3
         push_notebook()
 
-        
         samples = int(samples)
         self.samples = samples
         refstart = int(refstart)
@@ -191,7 +184,7 @@ class SADExplorer(util.DisableNewAttr):
         self.scope.adc.presamples = presamples
 
         trace = cw.capture_trace(self.scope, self.target, bytearray(16), bytearray(16), as_int=True)
-        
+
         if show_diffs:
             self.Rp.data_source.data = {'y': [interval_threshold]*samples,
                                         'x': range(samples)}
@@ -213,6 +206,7 @@ class SADExplorer(util.DisableNewAttr):
         if trace is None:
             self.p.background_fill_color = 'red'
             self.p.background_fill_alpha = 0.7
+            push_notebook()
             segments = []
 
         else:
@@ -234,35 +228,33 @@ class SADExplorer(util.DisableNewAttr):
                 for i in range(self.scope.adc.segments, self.max_segments):
                     self.S[i].data_source.data = {'y': [0]*samples,
                                                   'x': range(samples)}
-            
+
             self.p.renderers.remove(self.V)
             self.V = Span(location=self.SAD.sad_reference_length, dimension='height', line_color='black', line_width=2)
             self.p.renderers.extend([self.V])
 
+            self.textout.clear_output()
+            if show_text_legend or show_plot_legend:
+                items = self.get_legend_items(segments)
 
-        self.textout.clear_output()
-        if show_text_legend or show_plot_legend:
-            #items = self.get_legend_items(self.reftrace[refstart:].astype(int), segments, interval_threshold)
-            items = self.get_legend_items(segments)
+            if show_text_legend:
+                with self.textout:
+                    for i in items:
+                        print(i)
 
-        if show_text_legend:
-            with self.textout:
-                for i in items:
-                    print(i)
-            
-        if show_plot_legend:
-            self.p.legend.visible = True
-            for i in range(self.max_segments):
-                if i < self.scope.adc.segments:
-                    self.p.legend.items[i] = LegendItem(label=items[i], renderers=[self.S[i]])
-                else:
-                    self.p.legend.items[i] = (LegendItem(label='', renderers=[]))
-            # update the legend min/max lines:
-            self.p.legend.items[-3] = LegendItem(label=items[-3], renderers=[])
-            self.p.legend.items[-2] = LegendItem(label=items[-2], renderers=[])
-            self.p.legend.items[-1] = LegendItem(label=items[-1], renderers=[])
-        else:
-            self.p.legend.visible = False
+            if show_plot_legend:
+                self.p.legend.visible = True
+                for i in range(self.max_segments):
+                    if i < self.scope.adc.segments:
+                        self.p.legend.items[i] = LegendItem(label=items[i], renderers=[self.S[i]])
+                    else:
+                        self.p.legend.items[i] = (LegendItem(label='', renderers=[]))
+                # update the legend min/max lines:
+                self.p.legend.items[-3] = LegendItem(label=items[-3], renderers=[])
+                self.p.legend.items[-2] = LegendItem(label=items[-2], renderers=[])
+                self.p.legend.items[-1] = LegendItem(label=items[-1], renderers=[])
+            else:
+                self.p.legend.visible = False
 
         # TODO- re-add
         #if len(segments) > 0:
