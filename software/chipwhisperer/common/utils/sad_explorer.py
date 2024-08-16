@@ -90,18 +90,21 @@ class SADExplorer(util.DisableNewAttr):
 
         show(self.p, notebook_handle=True)
 
+        style= {'description_width': '300px'}
+        layout=Layout(width='600px')
+
         my_interact_manual = interact_manual.options(manual_name="run SAD capture")
         my_interact_manual(self.update_plot, 
-                           refstart=widgets.Text(value='14570'), 
-                           samples=widgets.Text(value=str(scope.SAD.sad_reference_length), description='scope.adc.samples'),
-                           emode=True,
-                           segments=widgets.Text(value='8'), 
-                           threshold=widgets.Text(value='20'),
-                           interval_threshold=widgets.Text(value='16'),
-                           exclude='',
-                           show_diffs=False,
-                           show_plot_legend=True,
-                           show_text_legend=False)
+                           refstart =           widgets.Text(value='14570', description='reference start sample', style=style, layout=layout),
+                           samples =            widgets.Text(value=str(scope.SAD.sad_reference_length), description='scope.adc.samples', style=style, layout=layout),
+                           segments =           widgets.Text(value='8', description='scope.adc.segments', style=style, layout=layout),
+                           threshold =          widgets.Text(value='20', description='scope.SAD.threshold', style=style, layout=layout),
+                           interval_threshold = widgets.Text(value='16', description='scope.SAD.interval_threshold', style=style, layout=layout),
+                           exclude =            widgets.Text(value='', description='excluded samples', style=style, layout=layout),
+                           emode =              widgets.Checkbox(value=False, description='scope.SAD.emode', style=style, layout=layout), 
+                           show_diffs =         widgets.Checkbox(value=False, description='show diff', style=style, layout=layout),
+                           show_text_legend =   widgets.Checkbox(value=False, description='show text legend (slower)', style=style, layout=layout),
+                           show_plot_legend =   widgets.Checkbox(value=False, description='show plot legend (slowest)', style=style, layout=layout))
 
         display(self.textout)
         self.disable_newattr()
@@ -124,7 +127,7 @@ class SADExplorer(util.DisableNewAttr):
     def get_legend_items(self, segments):
         items = []
         ttimes = self.scope.trigger.get_trigger_times()
-        #ttimes = [0]*(MAX_SEGMENTS-1)
+        #ttimes = [0]*(self.max_segments-1)
         #print('got ttimes: %s' % ttimes)
         sads = []
         for i in range(len(segments)):
@@ -154,7 +157,7 @@ class SADExplorer(util.DisableNewAttr):
         return Legend(items=legend_items)
 
 
-    def update_plot(self, refstart='', samples='', emode=True, segments='', threshold='', interval_threshold='', exclude='', show_diffs=False, show_plot_legend=True, show_text_legend=True):
+    def update_plot(self, refstart='', samples='', segments='', threshold='', interval_threshold='', exclude='', emode=False, show_diffs=False, show_text_legend=False, show_plot_legend=False):
         segments = int(segments)
         threshold = int(threshold)
         interval_threshold = int(interval_threshold)
@@ -255,6 +258,7 @@ class SADExplorer(util.DisableNewAttr):
                 self.p.legend.items[-1] = LegendItem(label=items[-1], renderers=[])
             else:
                 self.p.legend.visible = False
+
 
         # TODO- re-add
         #if len(segments) > 0:
