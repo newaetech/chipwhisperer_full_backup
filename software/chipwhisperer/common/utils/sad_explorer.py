@@ -87,6 +87,7 @@ class SADExplorer(util.DisableNewAttr):
         self.p.renderers.extend([self.V])
 
         self.textout = widgets.Output(layout={'border': '1px solid black'})
+        self.captureout = widgets.Output(layout={'border': '1px solid black'})
 
         show(self.p, notebook_handle=True)
 
@@ -107,6 +108,7 @@ class SADExplorer(util.DisableNewAttr):
                            show_plot_legend =   widgets.Checkbox(value=False, description='show plot legend (slowest)', style=style, layout=layout))
 
         display(self.textout)
+        display(self.captureout)
         self.disable_newattr()
 
 
@@ -186,7 +188,9 @@ class SADExplorer(util.DisableNewAttr):
         self.scope.adc.samples = samples
         self.scope.adc.presamples = presamples
 
-        trace = cw.capture_trace(self.scope, self.target, bytearray(16), bytearray(16), as_int=True)
+        self.captureout.clear_output()
+        with self.captureout:
+            trace = cw.capture_trace(self.scope, self.target, bytearray(16), bytearray(16), as_int=True)
 
         if show_diffs:
             self.Rp.data_source.data = {'y': [interval_threshold]*samples,
