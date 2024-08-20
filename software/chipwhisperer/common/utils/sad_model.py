@@ -240,7 +240,11 @@ class SADModel(object):
         rtn = {}
         rtn['emode'] = self.emode
         rtn['threshold'] = self.threshold
+        if self.interval_threshold: 
+            rtn['interval_threshold'] = self.interval_threshold
+        rtn['num_triggers'] = self.num_triggers
         rtn['match_times'] = self.match_times
+        rtn['match_time_deltas'] = self.match_time_deltas
         rtn['match_scores'] = self.match_scores
         rtn['match_counters'] = self.match_counters
         if self.emode: 
@@ -272,6 +276,19 @@ class SADModel(object):
             if not c.started:
                 c.activate()
                 break
+    @property
+    def num_triggers(self):
+        return len(self.match_times)
+
+    @property
+    def match_time_deltas(self):
+        if self.match_times:
+            deltas = []
+            for i in range(1, len(self.match_times)):
+                deltas.append(self.match_times[i] - self.match_times[i-1])
+            return deltas
+        else:
+            return None
 
     @property
     def trigger_allowed(self):
@@ -360,9 +377,12 @@ class SADModelWrapper(object):
 
     def _dict_repr(self):
         rtn = {}
+        rtn['num_triggers'] = self.num_triggers
         rtn['match_times'] = self.match_times
-        rtn['uncovered_samples'] = self.uncovered_samples
-        rtn['missed_triggers'] = self.missed_triggers
+        rtn['match_time_deltas'] = self.match_time_deltas
+        if self.sad.emode:
+            rtn['uncovered_samples'] = self.uncovered_samples
+            rtn['missed_triggers'] = self.missed_triggers
         return rtn
 
     @property
@@ -372,10 +392,20 @@ class SADModelWrapper(object):
         return self.sad.SADS
 
     @property
+    def num_triggers(self):
+        return self.sad.num_triggers
+
+    @property
     def match_times(self):
         """Waveform indices where a SAD match occurred. Updated after run().
         """
         return self.sad.match_times
+
+    @property
+    def match_time_deltas(self):
+        """Time deltas between SAD matches. Updated after run().
+        """
+        return self.sad.match_time_deltas
 
     @property
     def match_counters(self):
