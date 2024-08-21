@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014, NewAE Technology Inc
+# Copyright (c) 2014-2024, NewAE Technology Inc
 # All rights reserved.
 #
-# Authors: Colin O'Flynn
+# Authors: Colin O'Flynn, Jean-Pierre Thibault
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -276,7 +276,6 @@ class HuskySAD(util.DisableNewAttr):
             rtn['interval_threshold'] = self.interval_threshold
         if not self.emode:
             rtn['trigger_advance'] = self.trigger_advance
-        rtn['reference'] = self.reference
         rtn['sad_reference_length'] = self.sad_reference_length
         rtn['samples_enabled'] = self.samples_enabled
         rtn['multiple_triggers'] = self.multiple_triggers
@@ -349,6 +348,7 @@ class HuskySAD(util.DisableNewAttr):
             bits_per_sample: (int, optional): number of bits per sample in wave. If not provided, we use scope.adc.bits_per_sample.
         """
         return self._reference
+        # TODO: keep code below for implementations that support it?
         if self.sad_reference_length > 128:
             # in this case we have to read in blocks of 128 bytes:
             base = 0
@@ -368,7 +368,11 @@ class HuskySAD(util.DisableNewAttr):
 
     @reference.setter
     def reference(self, wave, bits_per_sample=None):
+        redo_always_armed = False
         if not self._writing_allowed:
+            if self.always_armed:
+                self.always_armed = False
+                redo_always_armed = True
             self._allow_writes()
         if not self._writing_allowed:
             scope_logger.error('could not unblock writing! (%s)' % (datetime.datetime.now()))
@@ -417,6 +421,8 @@ class HuskySAD(util.DisableNewAttr):
                 self.oa.sendMessage(CODE_WRITE, "SAD_REFERENCE", refints)
         if self._ref_fifo_errors:
             scope_logger.error('INTERNAL SAD ERROR')
+        if redo_always_armed:
+            self.always_armed = True
 
     @property
     def _sad_bits_per_sample(self):
@@ -586,7 +592,11 @@ class HuskySAD(util.DisableNewAttr):
 
     def set_enabled_samples(self, enables):
         # TODO: emode/off (see how test_sad.y does it (in dut_setup)
+        redo_always_armed = False
         if not self._writing_allowed:
+            if self.always_armed:
+                self.always_armed = False
+                redo_always_armed = True
             self._allow_writes()
         if not self._writing_allowed:
             scope_logger.error('could not unblock writing! (%s)' % (datetime.datetime.now()))
@@ -599,6 +609,8 @@ class HuskySAD(util.DisableNewAttr):
         self.oa.sendMessage(CODE_WRITE, "SAD_REFEN", rawlist)
         if self._ref_fifo_errors:
             scope_logger.error('INTERNAL SAD ERROR')
+        if redo_always_armed:
+            self.always_armed = True
 
     @property
     def multiple_triggers(self):
@@ -733,5 +745,6 @@ class HuskySAD(util.DisableNewAttr):
         # dummy write to the SAD_CONTROL register in order for the SAD reference to be updated.
         raw = self.oa.sendMessage(CODE_READ, "SAD_CONTROL", Validate=False, maxResp=1)
         self.oa.sendMessage(CODE_WRITE, "SAD_CONTROL", raw)
+
 
 
