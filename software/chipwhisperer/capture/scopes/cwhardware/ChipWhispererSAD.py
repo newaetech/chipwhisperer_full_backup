@@ -26,7 +26,6 @@
 #=================================================
 import numpy as np
 import math
-import datetime
 from ....common.utils import util
 
 from ....logging import *
@@ -257,12 +256,12 @@ class HuskySAD(util.DisableNewAttr):
     def __init__(self, oa):
         super().__init__()
         self.oa = oa
-        self._samples_enabled = self.sad_reference_length # TODO: emode?
         self._trigger_sample = self.sad_reference_length
         self._reference = []
+        self._enabled_samples = [True]*self.sad_reference_length*2 # 2x to allow for emode
 
         # determine size of SAD_TRIGGER_TIME register:
-        regsizebits = math.ceil(math.log2(self._samples_enabled))
+        regsizebits = math.ceil(math.log2(self.sad_reference_length))
         regsizebytes = regsizebits // 8
         if regsizebits % 8:
             regsizebytes += 1
@@ -278,7 +277,8 @@ class HuskySAD(util.DisableNewAttr):
         if not self.emode:
             rtn['trigger_sample'] = self.trigger_sample
         rtn['sad_reference_length'] = self.sad_reference_length
-        rtn['samples_enabled'] = self.samples_enabled
+        if self._esad_support:
+            rtn['emode'] = self.emode
         rtn['multiple_triggers'] = self.multiple_triggers
         rtn['num_triggers_seen'] = self.num_triggers_seen
         rtn['always_armed'] = self.always_armed
@@ -307,7 +307,8 @@ class HuskySAD(util.DisableNewAttr):
             ValueError: if setting a threshold higher than what the hardware
             supports.  If you would like a higher threshold than what's
             possible, you can turn off comparison for some samples via
-            enabled_samples, which effectively increases the threshold range.
+            enabled_samples and/or trigger_sample, which effectively
+            increases the threshold range.
         """
         return  int.from_bytes(self.oa.sendMessage(CODE_READ, "SAD_THRESHOLD", Validate=False, maxResp=4), byteorder='little')
 
@@ -376,7 +377,7 @@ class HuskySAD(util.DisableNewAttr):
                 redo_always_armed = True
             self._allow_writes()
         if not self._writing_allowed:
-            scope_logger.error('could not unblock writing! (%s)' % (datetime.datetime.now()))
+            scope_logger.error('internal error: could not unblock writing!')
             return
         if bits_per_sample is None:
             wave_bits_per_sample = self.oa._bits_per_sample
@@ -522,43 +523,6 @@ class HuskySAD(util.DisableNewAttr):
 
 
     @property
-    def half_pattern(self):
-        """If set, reduces by half the number of samples used by the SAD module.
-        Can be useful when a higher effective threshold is needed.
-        """
-        scope_logger.warning('This property no longer exists, use the samples_enabled property instead.')
-        return False
-
-    @half_pattern.setter
-    def half_pattern(self, val):
-        scope_logger.info('You can now use the samples_enabled (or, more generally, enabled_samples) property to reduce the number of samples used for SAD by any number. Executing the equivalent via samples_enabled for you.')
-        num = self.sad_reference_length
-        if val:
-            num = num//2
-        self.samples_enabled = num
-        #enables = [1]*self.sad_reference_length
-        #if val:
-        #    enables[self.sad_reference_length//2:] = [0]*(self.sad_reference_length//2)
-        #self.enabled_samples = enables
-
-
-    @property
-    def samples_enabled(self):
-        """TODO-describe
-        """
-        return self._samples_enabled
-
-    @samples_enabled.setter
-    def samples_enabled(self, num):
-        if num < 1 or num > self.sad_reference_length:
-            raise ValueError("Must be in range [1, scope.SAD.sad_reference_length]")
-        enables = [1]*self.sad_reference_length
-        enables[num:] = [0]*(self.sad_reference_length-num)
-        self._samples_enabled = num
-        self.enabled_samples = enables
-
-
-    @property
     def enabled_samples(self):
         """Control which samples of the reference pattern are enabled
         for the SAD computation.
@@ -571,7 +535,6 @@ class HuskySAD(util.DisableNewAttr):
 
     def get_enabled_samples(self):
         """Whether specified samples are to be used in the SAD computation.
-        TODO: not readable
         """
         enables = self.read_enabled_samples()
         if type(enables) is bool:
@@ -580,19 +543,13 @@ class HuskySAD(util.DisableNewAttr):
             return Lister(enables, setter=self.set_enabled_samples, getter=self.read_enabled_samples)
 
     def read_enabled_samples(self):
-        # TODO: not readable
-        raw = list(self.oa.sendMessage(CODE_READ, "SAD_REFEN", Validate=False, maxResp=self.sad_reference_length//8))
-        enables = []
-        for item in raw:
-            for bit in range(8):
-                if item & 2**bit:
-                    enables.append(True)
-                else:
-                    enables.append(False)
-        return enables
+        # TODO: do the halving here, or in the enabled_samples property?
+        if self.emode:
+            return self._enabled_samples
+        else:
+            return self._enabled_samples[:self.sad_reference_length]
 
     def set_enabled_samples(self, enables):
-        # TODO: emode/off (see how test_sad.y does it (in dut_setup)
         redo_always_armed = False
         if not self._writing_allowed:
             if self.always_armed:
@@ -600,18 +557,24 @@ class HuskySAD(util.DisableNewAttr):
                 redo_always_armed = True
             self._allow_writes()
         if not self._writing_allowed:
-            scope_logger.error('could not unblock writing! (%s)' % (datetime.datetime.now()))
+            scope_logger.error('internal error: could not unblock writing!')
             return
+        size = self.sad_reference_length//8
         raw = 0
         for i, item in enumerate(enables):
             if item: raw += 2**i
-        #print('XXX DEBUG: got enables=%s, raw=%d' % (enables, raw))
-        rawlist = list(int.to_bytes(raw, length=len(enables)//8, byteorder='little'))
+        if self._esad_support and not self.emode:
+            raw += (raw << self.sad_reference_length)
+            size *= 2
+        if self.sad_reference_length % 8:
+            size += 1
+        rawlist = list(int.to_bytes(raw, length=size, byteorder='little'))
         self.oa.sendMessage(CODE_WRITE, "SAD_REFEN", rawlist)
         if self._ref_fifo_errors:
             scope_logger.error('INTERNAL SAD ERROR')
         if redo_always_armed:
             self.always_armed = True
+        self._enabled_samples = enables * (2 if self._esad_support and not self.emode else 1)
 
     @property
     def multiple_triggers(self):
