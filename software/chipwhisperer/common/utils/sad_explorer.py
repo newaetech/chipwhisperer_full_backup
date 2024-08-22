@@ -85,8 +85,9 @@ class SADExplorer(util.DisableNewAttr):
         self.Rf = self.p.varea(x=xrange, y1=[0]*self.samples, y2=[0]*self.samples, fill_color='black', fill_alpha=0.1)
 
         # vertical line to indicate end of SAD reference:
-        self.V = Span(location=self.SAD.trigger_sample, dimension='height', line_color='black', line_width=2)
-        self.p.renderers.extend([self.V])
+        self.REFSTART = Span(location=0, dimension='height', line_color='red', line_width=2)
+        self.REFSTOP = Span(location=self.SAD.trigger_sample, dimension='height', line_color='red', line_width=2)
+        self.p.renderers.extend([self.REFSTART, self.REFSTOP])
 
         self.textout = widgets.Output(layout={'border': '1px solid black'})
         self.captureout = widgets.Output(layout={'border': '1px solid black'})
@@ -100,6 +101,7 @@ class SADExplorer(util.DisableNewAttr):
         my_interact_manual(self.update_plot, 
                            refstart =           widgets.Text(value=str(refstart), description='reference start sample', style=style, layout=layout),
                            samples =            widgets.Text(value=str(scope.SAD.sad_reference_length), description='scope.adc.samples', style=style, layout=layout),
+                           extra_presamples =   widgets.Text(value='0', description='extra presamples', style=style, layout=layout),
                            segments =           widgets.Text(value=str(max_segments), description='scope.adc.segments', style=style, layout=layout),
                            timeout =            widgets.Text(value=str(scope.adc.timeout), description='scope.adc.timeout', style=style, layout=layout),
                            threshold =          widgets.Text(value=str(scope.SAD.threshold), description='scope.SAD.threshold', style=style, layout=layout),
@@ -115,6 +117,8 @@ class SADExplorer(util.DisableNewAttr):
 
         display(self.textout)
         display(self.captureout)
+        self.trigger_sample = 0
+        self.extra_presamples = 0
         self.disable_newattr()
 
     @property
@@ -127,12 +131,15 @@ class SADExplorer(util.DisableNewAttr):
         exceeds = []
         #return 1,2
         # TODO: is the astype(int) here what's slowing things down?
-        for r,w in zip(self.reftrace[self.refstart:self.refstart+self.SAD.sad_reference_length].astype(int), wave[:self.SAD.sad_reference_length]):
+        start = self.extra_presamples
+        stop = self.extra_presamples + self.trigger_sample
+        for r,w,e in zip(self.reftrace[self.refstart:self.refstart+self.SAD.sad_reference_length].astype(int), wave[start:stop], self.SAD.enabled_samples):
         #for r,w in zip([0]*self.SAD.sad_reference_length, wave[:self.SAD.sad_reference_length]):
-            diff = abs(r-w)
-            exceeds.append(diff)
-            if diff > self.SAD.interval_threshold:
-                sad += 1
+            if e:
+                diff = abs(r-w)
+                exceeds.append(diff)
+                if diff > self.SAD.interval_threshold:
+                    sad += 1
         return sad, max(exceeds)
 
 
@@ -177,6 +184,7 @@ class SADExplorer(util.DisableNewAttr):
     def update_plot(self, 
                     refstart='', 
                     samples='', 
+                    extra_presamples='', 
                     segments='', 
                     timeout='', 
                     threshold='', 
@@ -195,7 +203,11 @@ class SADExplorer(util.DisableNewAttr):
         interval_threshold = int(interval_threshold)
         trigger_sample = int(trigger_sample)
         samples = int(samples)
+        extra_presamples = int(extra_presamples)
         refstart = int(refstart)
+
+        self.trigger_sample = trigger_sample
+        self.extra_presamples = extra_presamples
 
         self.captureout.clear_output()
         # do some basic validation:
@@ -212,6 +224,12 @@ class SADExplorer(util.DisableNewAttr):
             if refstart - self.SAD.sad_reference_length > len(self.reftrace):
                 print('reference starting sample is too late')
                 return
+            max_threshold =  2**self.SAD._sad_counter_width-1
+            if not (0 < threshold <= max_threshold):
+                print('threshold out of range: min 1, max %d' % max_threshold)
+            max_interval_threshold =  2**self.SAD._sad_bits_per_sample-1
+            if not (0 < interval_threshold <= max_interval_threshold):
+                print('interval_threshold out of range: min 1, max %d' % max_interval_threshold)
 
         self.scope.adc.segments = segments
         if segments > 1 or always_armed:
@@ -237,7 +255,7 @@ class SADExplorer(util.DisableNewAttr):
             with self.captureout:
                 self.SAD.reference = self.reftrace[refstart:]
 
-        presamples = self.SAD.trigger_sample + self.SAD.latency
+        presamples = self.SAD.trigger_sample + self.SAD.latency + extra_presamples
         samples = max(samples, presamples+2)
         samples = samples + 3 - (samples%3)
 
@@ -255,6 +273,7 @@ class SADExplorer(util.DisableNewAttr):
                 print('scope.adc.errors: %s' % self.scope.adc.errors)
                 print('scope.SAD.num_triggers_seen: %d' % self.SAD.num_triggers_seen)
 
+        refstart -= extra_presamples # from hereon it's only used for plotting
         if show_diffs:
             self.Rp.data_source.data = {'y': [interval_threshold]*samples,
                                         'x': range(samples)}
@@ -306,9 +325,29 @@ class SADExplorer(util.DisableNewAttr):
                     self.S[i].data_source.data = {'y': [0]*samples,
                                                   'x': range(samples)}
 
-            self.p.renderers.remove(self.V)
-            self.V = Span(location=self.SAD.trigger_sample, dimension='height', line_color='black', line_width=2)
-            self.p.renderers.extend([self.V])
+            # excluded samples:
+            eindices = self.parse_list_of_ints(exclude)    
+            # wish there was a way to get the y axis range of the plot!
+            loy = 0
+            hiy = 255
+            # clear any previous quads... not pretty, but it works
+            while self.quads:
+                q = self.quads.pop()
+                self.p.renderers.remove(q)
+            enables = [True]*self.SAD.sad_reference_length
+            for i in eindices:
+                start = max(0, i[0]-0.5)
+                stop = i[1]-0.5
+                self.quads.append(self.p.quad(left=start, bottom=loy, right=stop, top=hiy, color='black', alpha=0.4))
+                for j in range(i[0], i[1]):
+                    enables[j] = False
+            self.SAD.enabled_samples = enables
+
+            self.p.renderers.remove(self.REFSTART)
+            self.p.renderers.remove(self.REFSTOP)
+            self.REFSTART = Span(location=extra_presamples, dimension='height', line_color='red', line_width=2)
+            self.REFSTOP = Span(location=self.SAD.trigger_sample + extra_presamples, dimension='height', line_color='red', line_width=2)
+            self.p.renderers.extend([self.REFSTART, self.REFSTOP])
 
             self.textout.clear_output()
             if show_text_legend or show_plot_legend:
@@ -335,23 +374,6 @@ class SADExplorer(util.DisableNewAttr):
                 self.p.legend.visible = False
 
 
-        # TODO- re-add
-        #if len(segments) > 0:
-        #    eindices = parse_list_of_ints(exclude)    
-        #    loy = min(segments[0])
-        #    hiy = max(segments[0])
-        #    # clear any previous quads... not pretty, but it works
-        #    while self.quads:
-        #        q = self.quads.pop()
-        #        #q.visible = False
-        #        self.p.renderers.remove(q)
-        #        #q.data_source.data['top'] = q.data_source.data['bottom']
-        #        #q.data_source.data['alpha'] = 0
-        #        #q.destroy()
-        #    for i in eindices:
-        #        self.quads.append(self.p.quad(left=i[0], bottom=loy, right=i[1], top=hiy, color='grey', alpha=0.4))
-
-
         if trace is not None:
             self.p.background_fill_color = 'white'
 
@@ -360,7 +382,7 @@ class SADExplorer(util.DisableNewAttr):
             self.scope.errors.clear()
 
 
-    def parse_list_of_ints(l):
+    def parse_list_of_ints(self, l):
         range_regex = re.compile(r'(\d+):(\d+)')
         a = []
         if l != '':
