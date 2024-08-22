@@ -258,6 +258,7 @@ class HuskySAD(util.DisableNewAttr):
         super().__init__()
         self.oa = oa
         self._samples_enabled = self.sad_reference_length # TODO: emode?
+        self._trigger_sample = self.sad_reference_length
         self._reference = []
 
         # determine size of SAD_TRIGGER_TIME register:
@@ -275,7 +276,7 @@ class HuskySAD(util.DisableNewAttr):
         if self._im:
             rtn['interval_threshold'] = self.interval_threshold
         if not self.emode:
-            rtn['trigger_advance'] = self.trigger_advance
+            rtn['trigger_sample'] = self.trigger_sample
         rtn['sad_reference_length'] = self.sad_reference_length
         rtn['samples_enabled'] = self.samples_enabled
         rtn['multiple_triggers'] = self.multiple_triggers
@@ -707,7 +708,9 @@ class HuskySAD(util.DisableNewAttr):
 
     @property
     def emode(self):
-        """ Control whether the SAD module... TODO: block access (to setting only; read is required for all) if not _esad_support
+        """ Set whether the SAD module operates in extended mode, which
+        doubles the number of reference samples. This introduces a
+        theoretical non-zero probability of missing SAD matches.
         """
         if self.oa.sendMessage(CODE_READ, "SAD_CONTROL", Validate=False, maxResp=1)[0] & 0x04:
             return True
@@ -716,29 +719,67 @@ class HuskySAD(util.DisableNewAttr):
 
     @emode.setter
     def emode(self, val):
+        if not self._esad_support:
+            scope_logger.warning('Not supported by this SAD implementation.')
+        if val == self.emode:
+            change = False
+        else:
+            change = True
         raw = self.oa.sendMessage(CODE_READ, "SAD_CONTROL", Validate=False, maxResp=1)[0]
         if val:
             raw |= 0x04
         else:
             raw &= 0xfb
         self.oa.sendMessage(CODE_WRITE, "SAD_CONTROL", [raw])
+        if val or change: # no early trigger sample in emode; also update to default whenever switching emode value
+            self._default_trigger_sample()
 
     @property
-    def trigger_advance(self):
-        """ Control whether the SAD module... TODO
-        TODO: limit access to implementations that support it;
-        tie register size to # of ref samples;
-        explain that not supported in emode
+    def trigger_sample(self):
+        """ Sample of the reference pattern that the SAD module
+        (potentially) triggers on. Use this to effectively shorten the SAD
+        reference (and advance the trigger accordingly). Defaults to
+        :code:`scope.SAD.sad_reference_length` (i.e. full reference is
+        used). Cannot be used when scope.SAD.emode is on.
+
+        Args:
+            val (int): index of the reference waveform where triggering will
+                occur (if the triggering conditions are met).
+                Maximum: :code:`scope.SAD.sad_reference_length`
+                Minimum: 1 (in theory!)
         """
         raw = self.oa.sendMessage(CODE_READ, "SAD_TRIGGER_TIME", Validate=False, maxResp=self._trigger_advance_bytes)
-        return raw # TODO...
+        scope_logger.info('Raw value: %d ' % int.from_bytes(raw, byteorder='little'))
+        return self._trigger_sample
 
-    @trigger_advance.setter
-    def trigger_advance(self, val):
-        # TODO: sanity check on val
-        # TODO: handle emode/off?
-        triggerer_init = (-self.val-3) % self.sad_reference_length
-        self.oa.sendMessage(CODE_WRITE, "SAD_TRIGGER_TIME", list(int.to_bytes(triggerer_init, length=self._trigger_advance_bytes, byteorder='little')))
+    @trigger_sample.setter
+    def trigger_sample(self, val):
+        if val > self.sad_reference_length or val < 1 or self.emode:
+            raise ValueError('Illegal value')
+        if self.always_armed:
+            self.always_armed = False
+            redo_always_armed = True
+        else:
+            redo_always_armed = False
+        self._trigger_sample = val
+        triggerer_init = (-val-3) % self.sad_reference_length
+        scope_logger.info('setting raw value: %d ' % triggerer_init)
+        self._set_trigger_sample_raw(triggerer_init)
+        if redo_always_armed:
+            self.always_armed = True
+
+    def _set_trigger_sample_raw(self, raw):
+        scope_logger.info('setting(2) raw value: %d ' % raw)
+        self.oa.sendMessage(CODE_WRITE, "SAD_TRIGGER_TIME", list(int.to_bytes(raw, length=self._trigger_advance_bytes, byteorder='little')))
+
+
+    def _default_trigger_sample(self):
+        self._trigger_sample = self.sad_reference_length
+        if self.emode:
+            raw = (-self.sad_reference_length//2-3) % self.sad_reference_length
+        else:
+            raw = (-self.sad_reference_length-3) % self.sad_reference_length
+        self._set_trigger_sample_raw(raw)
 
     def _allow_writes(self):
         # for some SAD implementations, after a failed capture it's necessary to do a 
