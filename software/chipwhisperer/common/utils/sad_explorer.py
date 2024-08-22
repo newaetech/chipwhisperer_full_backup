@@ -85,7 +85,7 @@ class SADExplorer(util.DisableNewAttr):
         self.Rf = self.p.varea(x=xrange, y1=[0]*self.samples, y2=[0]*self.samples, fill_color='black', fill_alpha=0.1)
 
         # vertical line to indicate end of SAD reference:
-        self.V = Span(location=self.SAD.sad_reference_length, dimension='height', line_color='black', line_width=2)
+        self.V = Span(location=self.SAD.trigger_sample, dimension='height', line_color='black', line_width=2)
         self.p.renderers.extend([self.V])
 
         self.textout = widgets.Output(layout={'border': '1px solid black'})
@@ -101,8 +101,10 @@ class SADExplorer(util.DisableNewAttr):
                            refstart =           widgets.Text(value=str(refstart), description='reference start sample', style=style, layout=layout),
                            samples =            widgets.Text(value=str(scope.SAD.sad_reference_length), description='scope.adc.samples', style=style, layout=layout),
                            segments =           widgets.Text(value=str(max_segments), description='scope.adc.segments', style=style, layout=layout),
+                           timeout =            widgets.Text(value=str(scope.adc.timeout), description='scope.adc.timeout', style=style, layout=layout),
                            threshold =          widgets.Text(value=str(scope.SAD.threshold), description='scope.SAD.threshold', style=style, layout=layout),
                            interval_threshold = widgets.Text(value=str(scope.SAD.interval_threshold), description='scope.SAD.interval_threshold', style=style, layout=layout),
+                           trigger_sample =     widgets.Text(value=str(scope.SAD.trigger_sample), description='scope.SAD.trigger_sample', style=style, layout=layout),
                            exclude =            widgets.Text(value='', description='excluded samples', style=style, layout=layout),
                            emode =              widgets.Checkbox(value=scope.SAD.emode, description='scope.SAD.emode', style=style, layout=layout), 
                            always_armed =       widgets.Checkbox(value=scope.SAD.always_armed, description='scope.SAD.always_armed', style=style, layout=layout), 
@@ -176,8 +178,10 @@ class SADExplorer(util.DisableNewAttr):
                     refstart='', 
                     samples='', 
                     segments='', 
+                    timeout='', 
                     threshold='', 
                     interval_threshold='', 
+                    trigger_sample='', 
                     exclude='', 
                     emode=False, 
                     always_armed=False, 
@@ -186,28 +190,54 @@ class SADExplorer(util.DisableNewAttr):
                     show_plot_legend=False,
                     legend_sad_stats=False):
         segments = int(segments)
+        timeout = float(timeout)
         threshold = int(threshold)
         interval_threshold = int(interval_threshold)
+        trigger_sample = int(trigger_sample)
+        samples = int(samples)
+        refstart = int(refstart)
+
+        self.captureout.clear_output()
+        # do some basic validation:
+        with self.captureout:
+            if emode and trigger_sample != self.SAD.sad_reference_length:
+                print('Early triggering not supported in emode! Set scope.SAD.trigger_sample to %d' % self.SAD.sad_reference_length)
+                return
+            if trigger_sample > self.SAD.sad_reference_length:
+                print('scope.SAD.trigger_sample cannot be higher than %d' % self.SAD.sad_reference_length)
+                return
+            if segments > self.max_segments:
+                print('scope.adc.segments cannot be higher than %d; re-instantiate SADExplorer with a higher max_segments.' % self.max_segments)
+                return
+            if refstart - self.SAD.sad_reference_length > len(self.reftrace):
+                print('reference starting sample is too late')
+                return
+
         self.scope.adc.segments = segments
+        if segments > 1 or always_armed:
+            self.SAD.multiple_triggers = True
+        else:
+            self.SAD.multiple_triggers = False
+        self.scope.adc.timeout = timeout
         self.SAD.threshold = threshold
         self.SAD.interval_threshold = interval_threshold
         self.SAD.emode = emode
         self.SAD.always_armed = always_armed
+        if not emode:
+            self.SAD.trigger_sample = trigger_sample
 
-        # visually indicate that a new capture has started::
+        # visually indicate that a new capture has started:
         self.p.background_fill_color = 'yellow'
         self.p.background_fill_alpha = 0.3
         push_notebook()
 
-        samples = int(samples)
         self.samples = samples
-        refstart = int(refstart)
         if self.refstart != refstart: # no need to update if it hasn't changed
             self.refstart = refstart
             with self.captureout:
                 self.SAD.reference = self.reftrace[refstart:]
 
-        presamples = self.SAD.sad_reference_length + self.SAD.latency
+        presamples = self.SAD.trigger_sample + self.SAD.latency
         samples = max(samples, presamples+2)
         samples = samples + 3 - (samples%3)
 
@@ -215,7 +245,6 @@ class SADExplorer(util.DisableNewAttr):
         self.scope.adc.samples = samples
         self.scope.adc.presamples = presamples
 
-        self.captureout.clear_output()
         trace = None
         with self.captureout:
             if self.capture_function is None:
@@ -224,6 +253,7 @@ class SADExplorer(util.DisableNewAttr):
                 trace = self.capture_function()
             if self.scope.adc.errors:
                 print('scope.adc.errors: %s' % self.scope.adc.errors)
+                print('scope.SAD.num_triggers_seen: %d' % self.SAD.num_triggers_seen)
 
         if show_diffs:
             self.Rp.data_source.data = {'y': [interval_threshold]*samples,
@@ -277,7 +307,7 @@ class SADExplorer(util.DisableNewAttr):
                                                   'x': range(samples)}
 
             self.p.renderers.remove(self.V)
-            self.V = Span(location=self.SAD.sad_reference_length, dimension='height', line_color='black', line_width=2)
+            self.V = Span(location=self.SAD.trigger_sample, dimension='height', line_color='black', line_width=2)
             self.p.renderers.extend([self.V])
 
             self.textout.clear_output()
