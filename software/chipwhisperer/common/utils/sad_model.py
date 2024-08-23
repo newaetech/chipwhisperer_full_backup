@@ -358,9 +358,9 @@ class SADModelWrapper(object):
 
         counter_width = actual_sad._sad_counter_width
         reflen = actual_sad.sad_reference_length
-        refen = [1]*reflen # TODO- temp
+        refen = actual_sad.enabled_samples
         ref = actual_sad.reference[:reflen]
-        triglen = None # TODO- temp
+        triglen = actual_sad.trigger_sample
         threshold = actual_sad.threshold
         half_threshold = threshold//2
         interval_threshold = actual_sad.interval_threshold
