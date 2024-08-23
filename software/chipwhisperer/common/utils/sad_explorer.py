@@ -72,7 +72,7 @@ class SADExplorer(util.DisableNewAttr):
         for i in range(self.max_segments):
             self.S.append(self.p.line(xrange, [0]*self.samples, color=next(colors)))
 
-        # TODO: to indicate which samples are disabled:
+        # to indicate which samples are disabled:
         self.quads = []
 
         # intial legend shows what to do:
@@ -119,6 +119,7 @@ class SADExplorer(util.DisableNewAttr):
         display(self.captureout)
         self.trigger_sample = 0
         self.extra_presamples = 0
+        self._never_ran = True
         self.disable_newattr()
 
     @property
@@ -210,7 +211,10 @@ class SADExplorer(util.DisableNewAttr):
         self.extra_presamples = extra_presamples
 
         self.captureout.clear_output()
-        # do some basic validation:
+        trace = None
+
+        # do some basic validation; set emode first because some of the scope.SAD parameters that we check against depend on it
+        self.SAD.emode = emode
         with self.captureout:
             if emode and trigger_sample != self.SAD.sad_reference_length:
                 print('Early triggering not supported in emode! Set scope.SAD.trigger_sample to %d' % self.SAD.sad_reference_length)
@@ -231,99 +235,37 @@ class SADExplorer(util.DisableNewAttr):
             if not (0 < interval_threshold <= max_interval_threshold):
                 print('interval_threshold out of range: min 1, max %d' % max_interval_threshold)
 
-        self.scope.adc.segments = segments
-        if segments > 1 or always_armed:
-            self.SAD.multiple_triggers = True
-        else:
-            self.SAD.multiple_triggers = False
-        self.scope.adc.timeout = timeout
-        self.SAD.threshold = threshold
-        self.SAD.interval_threshold = interval_threshold
-        self.SAD.emode = emode
-        self.SAD.always_armed = always_armed
-        if not emode:
-            self.SAD.trigger_sample = trigger_sample
+            self.scope.adc.segments = segments
+            if segments > 1 or always_armed:
+                self.SAD.multiple_triggers = True
+            else:
+                self.SAD.multiple_triggers = False
+            self.scope.adc.timeout = timeout
+            self.SAD.threshold = threshold
+            self.SAD.interval_threshold = interval_threshold
+            self.SAD.always_armed = always_armed
+            if not emode:
+                self.SAD.trigger_sample = trigger_sample
 
-        # visually indicate that a new capture has started:
-        self.p.background_fill_color = 'yellow'
-        self.p.background_fill_alpha = 0.3
-        push_notebook()
+            # visually indicate that a new capture has started:
+            self.p.background_fill_color = 'yellow'
+            self.p.background_fill_alpha = 0.3
+            push_notebook()
 
-        self.samples = samples
-        if self.refstart != refstart: # no need to update if it hasn't changed
-            self.refstart = refstart
-            with self.captureout:
+            self.samples = samples
+            if self.refstart != refstart or self._never_ran: # no need to update if it hasn't changed
+                self._never_ran = False
+                self.refstart = refstart
+                #with self.captureout:
                 self.SAD.reference = self.reftrace[refstart:]
 
-        presamples = self.SAD.trigger_sample + self.SAD.latency + extra_presamples
-        samples = max(samples, presamples+2)
-        samples = samples + 3 - (samples%3)
+            presamples = self.SAD.trigger_sample + self.SAD.latency + extra_presamples
+            samples = max(samples, presamples+2)
+            samples = samples + 3 - (samples%3)
 
-        self.scope.adc.presamples = 0
-        self.scope.adc.samples = samples
-        self.scope.adc.presamples = presamples
-
-        trace = None
-        with self.captureout:
-            if self.capture_function is None:
-                trace = cw.capture_trace(self.scope, self.target, bytearray(16), bytearray(16), as_int=True)
-            else:
-                trace = self.capture_function()
-            if self.scope.adc.errors:
-                print('scope.adc.errors: %s' % self.scope.adc.errors)
-                print('scope.SAD.num_triggers_seen: %d' % self.SAD.num_triggers_seen)
-
-        refstart -= extra_presamples # from hereon it's only used for plotting
-        if show_diffs:
-            self.Rp.data_source.data = {'y': [interval_threshold]*samples,
-                                        'x': range(samples)}
-            self.Rm.data_source.data = {'y': [0]*samples,
-                                        'x': range(samples)}
-            self.Rf.data_source.data = {'y1': [0]*samples,
-                                        'y2': [interval_threshold]*samples,
-                                        'x': range(samples)}
-
-        else:
-            # prevent over/underflow!
-            top = self.reftrace[refstart:refstart+samples] + interval_threshold
-            bottom = self.reftrace[refstart:refstart+samples] - interval_threshold
-
-            top[top < self.reftrace[refstart:refstart+samples]] = 255
-            bottom[bottom > self.reftrace[refstart:refstart+samples]] = 0
-
-            self.Rp.data_source.data = {'y': top,
-                                        'x': range(samples)}
-            self.Rm.data_source.data = {'y': bottom,
-                                        'x': range(samples)}
-            self.Rf.data_source.data = {'y1': bottom,
-                                        'y2': top,
-                                        'x': range(samples)}
-
-        if trace is None:
-            self.p.background_fill_color = 'red'
-            self.p.background_fill_alpha = 0.7
-            push_notebook()
-            segments = []
-
-        else:
-            self.p.background_fill_color = 'green'
-            push_notebook()
-            segments = []
-            for i in range(self.scope.adc.segments):
-                segments.append(trace.wave[i*self.scope.adc.samples:(i+1)*self.scope.adc.samples])
-
-            for i in range(self.scope.adc.segments):
-                if show_diffs:
-                    self.S[i].data_source.data = {'y': abs(segments[i][:samples].astype(int) - self.reftrace[refstart:refstart+samples].astype(int)),
-                                                  'x': range(samples)}
-                else:
-                    self.S[i].data_source.data = {'y': segments[i][:samples],
-                                                  'x': range(samples)}
-
-            if self.scope.adc.segments < self.max_segments:
-                for i in range(self.scope.adc.segments, self.max_segments):
-                    self.S[i].data_source.data = {'y': [0]*samples,
-                                                  'x': range(samples)}
+            self.scope.adc.presamples = 0
+            self.scope.adc.samples = samples
+            self.scope.adc.presamples = presamples
 
             # excluded samples:
             eindices = self.parse_list_of_ints(exclude)    
@@ -343,36 +285,105 @@ class SADExplorer(util.DisableNewAttr):
                     enables[j] = False
             self.SAD.enabled_samples = enables
 
-            self.p.renderers.remove(self.REFSTART)
-            self.p.renderers.remove(self.REFSTOP)
-            self.REFSTART = Span(location=extra_presamples, dimension='height', line_color='red', line_width=2)
-            self.REFSTOP = Span(location=self.SAD.trigger_sample + extra_presamples, dimension='height', line_color='red', line_width=2)
-            self.p.renderers.extend([self.REFSTART, self.REFSTOP])
-
-            self.textout.clear_output()
-            if show_text_legend or show_plot_legend:
-                items = self.get_legend_items(segments, legend_sad_stats)
-
-            if show_text_legend:
-                with self.textout:
-                    for i in items:
-                        print(i)
-
-            if show_plot_legend:
-                self.p.legend.visible = True
-                for i in range(self.legend_segments):
-                    if i < self.scope.adc.segments:
-                        self.p.legend.items[i] = LegendItem(label=items[i], renderers=[self.S[i]])
-                    else:
-                        self.p.legend.items[i] = (LegendItem(label='', renderers=[]))
-                # update the legend min/max lines:
-                self.p.legend.items[-4] = LegendItem(label=items[-4], renderers=[])
-                self.p.legend.items[-3] = LegendItem(label=items[-3], renderers=[])
-                self.p.legend.items[-2] = LegendItem(label=items[-2], renderers=[])
-                self.p.legend.items[-1] = LegendItem(label=items[-1], renderers=[])
+            # get the trace!
+            #with self.captureout:
+            if self.capture_function is None:
+                trace = cw.capture_trace(self.scope, self.target, bytearray(16), bytearray(16), as_int=True)
             else:
-                self.p.legend.visible = False
+                trace = self.capture_function()
+            if self.scope.adc.errors:
+                print('scope.adc.errors: %s' % self.scope.adc.errors)
+                print('scope.SAD.num_triggers_seen: %d' % self.SAD.num_triggers_seen)
 
+            refstart -= extra_presamples # from hereon it's only used for plotting
+            if show_diffs:
+                self.Rp.data_source.data = {'y': [interval_threshold]*samples,
+                                            'x': range(samples)}
+                self.Rm.data_source.data = {'y': [0]*samples,
+                                            'x': range(samples)}
+                self.Rf.data_source.data = {'y1': [0]*samples,
+                                            'y2': [interval_threshold]*samples,
+                                            'x': range(samples)}
+
+            else:
+                # prevent over/underflow!
+                top = self.reftrace[refstart:refstart+samples] + interval_threshold
+                bottom = self.reftrace[refstart:refstart+samples] - interval_threshold
+
+                top[top < self.reftrace[refstart:refstart+samples]] = 255
+                bottom[bottom > self.reftrace[refstart:refstart+samples]] = 0
+
+                self.Rp.data_source.data = {'y': top,
+                                            'x': range(samples)}
+                self.Rm.data_source.data = {'y': bottom,
+                                            'x': range(samples)}
+                self.Rf.data_source.data = {'y1': bottom,
+                                            'y2': top,
+                                            'x': range(samples)}
+
+            if trace is None:
+                #with self.captureout:
+                print('scope.adc.errors: %s' % self.scope.adc.errors)
+                print('scope.SAD.num_triggers_seen: %d' % self.SAD.num_triggers_seen)
+                self.p.background_fill_color = 'red'
+                self.p.background_fill_alpha = 0.7
+                push_notebook()
+                segments = []
+
+            else:
+                self.p.background_fill_color = 'green'
+                push_notebook()
+                segments = []
+                for i in range(self.scope.adc.segments):
+                    segments.append(trace.wave[i*self.scope.adc.samples:(i+1)*self.scope.adc.samples])
+
+                for i in range(self.scope.adc.segments):
+                    if show_diffs:
+                        self.S[i].data_source.data = {'y': abs(segments[i][:samples].astype(int) - self.reftrace[refstart:refstart+samples].astype(int)),
+                                                      'x': range(samples)}
+                    else:
+                        self.S[i].data_source.data = {'y': segments[i][:samples],
+                                                      'x': range(samples)}
+
+                if self.scope.adc.segments < self.max_segments:
+                    for i in range(self.scope.adc.segments, self.max_segments):
+                        self.S[i].data_source.data = {'y': [0]*samples,
+                                                      'x': range(samples)}
+
+
+                # SAD start/stop visual delimiters:
+                self.p.renderers.remove(self.REFSTART)
+                self.p.renderers.remove(self.REFSTOP)
+                self.REFSTART = Span(location=extra_presamples, dimension='height', line_color='red', line_width=2)
+                self.REFSTOP = Span(location=self.SAD.trigger_sample + extra_presamples, dimension='height', line_color='red', line_width=2)
+                self.p.renderers.extend([self.REFSTART, self.REFSTOP])
+
+                # legends:
+                self.textout.clear_output()
+                if show_text_legend or show_plot_legend:
+                    items = self.get_legend_items(segments, legend_sad_stats)
+
+                if show_text_legend:
+                    with self.textout:
+                        for i in items:
+                            print(i)
+
+                if show_plot_legend:
+                    self.p.legend.visible = True
+                    for i in range(self.legend_segments):
+                        if i < self.scope.adc.segments:
+                            self.p.legend.items[i] = LegendItem(label=items[i], renderers=[self.S[i]])
+                        else:
+                            self.p.legend.items[i] = (LegendItem(label='', renderers=[]))
+                    # update the legend min/max lines:
+                    self.p.legend.items[-4] = LegendItem(label=items[-4], renderers=[])
+                    self.p.legend.items[-3] = LegendItem(label=items[-3], renderers=[])
+                    self.p.legend.items[-2] = LegendItem(label=items[-2], renderers=[])
+                    self.p.legend.items[-1] = LegendItem(label=items[-1], renderers=[])
+                else:
+                    self.p.legend.visible = False
+
+        # end of huge 'with self.captureout' block
 
         if trace is not None:
             self.p.background_fill_color = 'white'
