@@ -130,12 +130,9 @@ class SADExplorer(util.DisableNewAttr):
     def calc_sad(self, wave):
         sad = 0
         exceeds = []
-        #return 1,2
-        # TODO: is the astype(int) here what's slowing things down?
         start = self.extra_presamples
         stop = self.extra_presamples + self.trigger_sample
         for r,w,e in zip(self.reftrace[self.refstart:self.refstart+self.SAD.sad_reference_length].astype(int), wave[start:stop], self.SAD.enabled_samples):
-        #for r,w in zip([0]*self.SAD.sad_reference_length, wave[:self.SAD.sad_reference_length]):
             if e:
                 diff = abs(r-w)
                 exceeds.append(diff)
