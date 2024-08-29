@@ -790,6 +790,9 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         """
         if self._is_connected is False:
             raise OSError("Scope is not connected. Connect it first...")
+        if self._is_husky:
+            if self.XADC.status != 'good' and any(m in self.trigger.module for m in ['SAD', 'trace', 'UART']):
+                scope_logger.error('Chosen trigger module is disabled due to XADC errors (%s); clear them before proceeding.' % self.XADC.status)
         # with DelayedKeyboardInterrupt():
         try:
             self.advancedSettings.armPreScope()
