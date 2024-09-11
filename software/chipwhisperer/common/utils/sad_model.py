@@ -255,7 +255,11 @@ class SADModel(object):
     def reset(self):
         self.match_times = []
         self.match_counters = []
+        self.match_scores = []
         self.index = 0
+        self.triggered = False
+        self.SADS = []
+        self.uncovered_samples = []
         for c in self.counters:
             c.reset()
 
@@ -382,7 +386,8 @@ class SADModelWrapper(object):
         rtn['match_time_deltas'] = self.match_time_deltas
         if self.sad.emode:
             rtn['uncovered_samples'] = self.uncovered_samples
-            rtn['missed_triggers'] = self.missed_triggers
+            if self.fsad:
+                rtn['missed_triggers'] = self.missed_triggers
         return rtn
 
     @property
@@ -440,6 +445,7 @@ class SADModelWrapper(object):
         Args:
             wave (list): input waveform to the SAD model.
         """
+        self.reset()
         self.sad.run(wave)
         if self.fsad:
             self.fsad.run(wave)
