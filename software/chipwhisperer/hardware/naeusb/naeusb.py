@@ -128,6 +128,24 @@ SAM_FW_FEATURE_BY_DEVICE = {
         SAM_FW_FEATURES[18]: '1.5.0',
     },
 
+    0xACE6: {
+        SAM_FW_FEATURES[0]: '1.0.0',
+        SAM_FW_FEATURES[1]: '1.0.0',
+        SAM_FW_FEATURES[2]: '1.1.0',
+        SAM_FW_FEATURES[3]: '1.0.0',
+        SAM_FW_FEATURES[4]: '1.0.0',
+        SAM_FW_FEATURES[5]: '1.0.0',
+        SAM_FW_FEATURES[6]: '1.0.0',
+        SAM_FW_FEATURES[7]: '1.0.0',
+        SAM_FW_FEATURES[8]: '1.0.0',
+        SAM_FW_FEATURES[9]: '1.0.0',
+        SAM_FW_FEATURES[13]: '1.0.0',
+        SAM_FW_FEATURES[14]: '1.0.0',
+        SAM_FW_FEATURES[15]: '1.0.0',
+        SAM_FW_FEATURES[16]: '1.0.0',
+        SAM_FW_FEATURES[18]: '1.0.0',
+    },
+
     0xC305: {
         SAM_FW_FEATURES[0]: '0.32.0',
         SAM_FW_FEATURES[2]: '0.52.0',
@@ -340,6 +358,7 @@ NEWAE_PIDS = {
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fw_cw305.fwver},
     0xACE0: {'name': "ChipWhisperer-Nano", 'fwver': fw_nano.fwver},
     0xACE5: {'name': "ChipWhisperer-Husky",   'fwver': fw_cwhusky.fwver},
+    0xACE6: {'name': "ChipWhisperer-Husky-Plus",   'fwver': fw_cwhusky.fwver},
     0xC521: {'name': "CW521 Ballistic-Gel",   'fwver': None},
     0xC610: {'name': "PhyWhisperer-USB",   'fwver': None},
 }
@@ -442,7 +461,7 @@ class NAEUSB_Backend:
         naeusb_logger.debug('Found %s, Serial Number = %s' % (self.handle.getProduct(), self.sn))
 
         # Husky has different endpoints for faster transfer
-        if self.device.getProductID() == 0xace5:
+        if (self.device.getProductID() == 0xace5) or (self.device.getProductID() == 0xace6):
             naeusb_logger.debug("Husky found, using new endpoints")
             self.rep = 0x85
             self.wep = 0x06

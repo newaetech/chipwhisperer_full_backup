@@ -30,8 +30,12 @@ from ....common.utils import util
 
 from ....logging import *
 
+from typing import Union, List
+
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
+
+iostate_type = Union[int, None, str]
 
 class CWExtraSettings:
     PIN_FPA = 0x01
@@ -752,7 +756,7 @@ class GPIOSettings(util.DisableNewAttr):
         return self.cwe.read_tio_pins()
 
     @property
-    def tio_states(self):
+    def tio_states(self) -> tuple:
         """
         Reads the logic level of the TIO pins (1-4) and
         returns them as a tuple of the logic levels.
@@ -779,7 +783,7 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_tio_mode(self.GPIO_PIN_TIO1)
 
     @property
-    def tio1(self):
+    def tio1(self) -> str:
         """The function of the Target IO1 pin.
 
         TIO1 can be used for the following functions:
@@ -805,11 +809,11 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_tio_str(self.GPIO_PIN_TIO1)
 
     @tio1.setter
-    def tio1(self, mode):
+    def tio1(self, mode : iostate_type):
         self._set_tio_mode(self.GPIO_PIN_TIO1, mode)
 
     @property
-    def tio1_state(self):
+    def tio1_state(self) -> bool:
         return self._read_tio_pin(self.cwe.PIN_READ_TIO1)
 
     @property
@@ -817,7 +821,7 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_tio_mode(self.GPIO_PIN_TIO2)
 
     @property
-    def tio2(self):
+    def tio2(self) -> str:
         """The function of the Target IO2 pin.
 
         TIO2 can be used for the following functions:
@@ -842,11 +846,11 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_tio_str(self.GPIO_PIN_TIO2)
 
     @tio2.setter
-    def tio2(self, mode):
+    def tio2(self, mode : iostate_type):
         self._set_tio_mode(self.GPIO_PIN_TIO2, mode)
 
     @property
-    def tio2_state(self):
+    def tio2_state(self) -> bool:
         return self._read_tio_pin(self.cwe.PIN_READ_TIO2)
 
     @property
@@ -854,7 +858,7 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_tio_mode(self.GPIO_PIN_TIO3)
 
     @property
-    def tio3(self):
+    def tio3(self) -> str:
         """The function of the Target IO3 pin.
 
         TIO3 can be used for the following functions:
@@ -880,11 +884,11 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_tio_str(self.GPIO_PIN_TIO3)
 
     @tio3.setter
-    def tio3(self, mode):
+    def tio3(self, mode : iostate_type):
         self._set_tio_mode(self.GPIO_PIN_TIO3, mode)
 
     @property
-    def tio3_state(self):
+    def tio3_state(self) -> bool:
         return self._read_tio_pin(self.cwe.PIN_READ_TIO3)
 
     @property
@@ -892,7 +896,7 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_tio_mode(self.GPIO_PIN_TIO4)
 
     @property
-    def tio4(self):
+    def tio4(self) -> str:
         """The function of the Target IO4 pin.
 
         TIO4 can be used for the following functions:
@@ -917,11 +921,11 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_tio_str(self.GPIO_PIN_TIO4)
 
     @tio4.setter
-    def tio4(self, mode):
+    def tio4(self, mode : str):
         self._set_tio_mode(self.GPIO_PIN_TIO4, mode)
 
     @property
-    def tio4_state(self):
+    def tio4_state(self) -> bool:
         return self._read_tio_pin(self.cwe.PIN_READ_TIO4)
 
     def _is_valid_tio_mode(self, mode):
@@ -968,7 +972,7 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_xio_mode(self.GPIO_PIN_PDIC)
 
     @property
-    def pdic(self):
+    def pdic(self) -> str:
         """The function of the PDIC pin output pin.
 
         This is a GPIO pin. The following values are allowed:
@@ -987,11 +991,11 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_xio_str(self.GPIO_PIN_PDIC)
 
     @pdic.setter
-    def pdic(self, mode):
+    def pdic(self, mode : iostate_type):
         self._set_xio_mode(self.GPIO_PIN_PDIC, mode)
 
     @property
-    def pdic_state(self):
+    def pdic_state(self) -> bool:
         """ Reads the logic level of the PDIC pin. Supported by Husky only.
         """
         return self._read_xio_pin(self.cwe.PIN_READ_PDIC)
@@ -1001,18 +1005,18 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_xio_mode(self.GPIO_PIN_PDID)
 
     @property
-    def pdid(self):
+    def pdid(self) -> str:
         """The state of the PDID pin.
 
         See pdic for more information."""
         return self._get_xio_str(self.GPIO_PIN_PDID)
 
     @pdid.setter
-    def pdid(self, mode):
+    def pdid(self, mode : iostate_type):
         self._set_xio_mode(self.GPIO_PIN_PDID, mode)
 
     @property
-    def pdid_state(self):
+    def pdid_state(self) -> bool:
         """ Reads the logic level of the PDID pin. Supported by Husky only.
         """
         return self._read_xio_pin(self.cwe.PIN_READ_PDID)
@@ -1022,7 +1026,7 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_xio_mode(self.GPIO_PIN_NRST)
 
     @property
-    def nrst(self):
+    def nrst(self) -> str:
         """The state of the NRST pin.
 
         See pdic for more information.
@@ -1032,17 +1036,17 @@ class GPIOSettings(util.DisableNewAttr):
         return self._get_xio_str(self.GPIO_PIN_NRST)
 
     @nrst.setter
-    def nrst(self, mode):
+    def nrst(self, mode : iostate_type):
         self._set_xio_mode(self.GPIO_PIN_NRST, mode)
 
     @property
-    def nrst_state(self):
+    def nrst_state(self) -> bool:
         """ Reads the logic level of the nRST pin. Supported by Husky only.
         """
         return self._read_xio_pin(self.cwe.PIN_READ_NRST)
 
     @property
-    def nrst_drive_poweroff(self):
+    def nrst_drive_poweroff(self) -> bool:
         """Control how the nRST pin is driven when :class:`target_pwr` is
         False.  If set, nRST is driven (or not) as per :class:`nrst` (i.e.
         :class:`target_pwr` has no effect on how nRST is driven). Otherwise,
@@ -1058,23 +1062,23 @@ class GPIOSettings(util.DisableNewAttr):
         return self.cwe.test_ioroute_mask(6, 2**6)
 
     @nrst_drive_poweroff.setter
-    def nrst_drive_poweroff(self, mode):
+    def nrst_drive_poweroff(self, mode : bool):
         self.cwe.upd_ioroute_mask(6, 2**6, mode)
 
     @property
-    def miso_state(self):
+    def miso_state(self) -> bool:
         """ Reads the logic level of the MISO pin. Supported by Husky only.
         """
         return self._read_xio_pin(self.cwe.PIN_READ_MISO)
 
     @property
-    def mosi_state(self):
+    def mosi_state(self) -> bool:
         """ Reads the logic level of the MOSI pin. Supported by Husky only.
         """
         return self._read_xio_pin(self.cwe.PIN_READ_MOSI)
 
     @property
-    def sck_state(self):
+    def sck_state(self) -> bool:
         """ Reads the logic level of the SCK pin. Supported by Husky only.
         """
         return self._read_xio_pin(self.cwe.PIN_READ_SCK)
@@ -1114,7 +1118,7 @@ class GPIOSettings(util.DisableNewAttr):
         return self.cwe.read_xio_pin(read_pin);
 
     @property
-    def cdc_settings(self):
+    def cdc_settings(self) -> Union[list, None]:
         """Check or set whether USART settings can be changed via the USB CDC connection
 
         i.e. whether you can change USART settings (baud rate, 8n1) via a serial client like PuTTY
@@ -1132,7 +1136,7 @@ class GPIOSettings(util.DisableNewAttr):
         return self.cwe.oa.serial.get_cdc_settings()
 
     @cdc_settings.setter
-    def cdc_settings(self, port):
+    def cdc_settings(self, port : Union[List[int], int]):
         rawver = self.cwe.oa.serial.readFwVersion()
         ver = '{}.{}'.format(rawver[0], rawver[1])
         if ver < '0.30':
@@ -1140,7 +1144,7 @@ class GPIOSettings(util.DisableNewAttr):
         return self.cwe.oa.serial.set_cdc_settings(port)
 
     @property
-    def aux_io_mcx(self):
+    def aux_io_mcx(self) -> str:
         """Set the function of the AUX I/O MCX on Husky.
 
         Options:
@@ -1157,7 +1161,7 @@ class GPIOSettings(util.DisableNewAttr):
             return "high_z"
 
     @aux_io_mcx.setter
-    def aux_io_mcx(self, state):
+    def aux_io_mcx(self, state : str):
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
         data = self.cwe.oa.sendMessage(CODE_READ, "CW_AUX_IO", Validate=False, maxResp=1)[0]
@@ -1170,7 +1174,7 @@ class GPIOSettings(util.DisableNewAttr):
         return self.cwe.oa.sendMessage(CODE_WRITE, "CW_AUX_IO", [data])
 
     @property
-    def glitch_trig_mcx(self):
+    def glitch_trig_mcx(self) -> str:
         """Set the function of the Trigger/Glitch Out MCX on Husky.
         Options:
 
@@ -1192,7 +1196,7 @@ class GPIOSettings(util.DisableNewAttr):
         return setting
 
     @glitch_trig_mcx.setter
-    def glitch_trig_mcx(self, state):
+    def glitch_trig_mcx(self, state : str):
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
         data = self.cwe.oa.sendMessage(CODE_READ, "CW_AUX_IO", Validate=False, maxResp=1)[0]
@@ -1209,7 +1213,7 @@ class GPIOSettings(util.DisableNewAttr):
         self.cwe.oa.sendMessage(CODE_WRITE, "CW_AUX_IO", [data])
 
     @property
-    def extclk_src(self):
+    def extclk_src(self) -> str:
         """The clock signal being used as input for EXTCLK.
 
         Currently, this can only be HS1, which is the clock from the target.
@@ -1218,7 +1222,7 @@ class GPIOSettings(util.DisableNewAttr):
         return "hs1"
 
     @property
-    def hs2(self):
+    def hs2(self) -> Union[str, None]:
         """The clock signal routed to the HS2 high speed output pin.
 
         Allowed clock signals are:
@@ -1244,7 +1248,7 @@ class GPIOSettings(util.DisableNewAttr):
         raise IOError("Hardware returned unknown HS2 mode: %02x" % mode)
 
     @hs2.setter
-    def hs2(self, mode):
+    def hs2(self, mode : str):
         if mode is None:
             mode = 'disabled'
 
@@ -1255,7 +1259,7 @@ class GPIOSettings(util.DisableNewAttr):
         self.cwe.setTargetCLKOut(self.HS2_VALID[mode])
 
     @property
-    def target_pwr(self):
+    def target_pwr(self) -> bool:
         """Whether the target board is powered by the ChipWhisperer.
 
         If True, the ChipWhisperer is currently supplying power to the target
@@ -1276,11 +1280,11 @@ class GPIOSettings(util.DisableNewAttr):
         return self.cwe.getTargetPowerState()
 
     @target_pwr.setter
-    def target_pwr(self, power):
+    def target_pwr(self, power : bool):
         self.cwe.setTargetPowerState(power)
 
     @property
-    def vcc_glitcht(self):
+    def vcc_glitcht(self) -> int:
         """Gets a bitmask indicating which VCC glitch MOSFET's are enabled, based on the
         VCC_GLITCHT_* consts.
 
@@ -1297,7 +1301,7 @@ class GPIOSettings(util.DisableNewAttr):
         self.cwe.vglitch_set_mode(glitcht)
 
     @property
-    def glitch_hp(self):
+    def glitch_hp(self) -> bool:
         """Whether the high-power crowbar MOSFET is enabled.
 
         The glitch output is an SMA-connected output line that is normally
@@ -1316,7 +1320,7 @@ class GPIOSettings(util.DisableNewAttr):
         return self.cwe.vglitch_get_hp()
 
     @glitch_hp.setter
-    def glitch_hp(self, active):
+    def glitch_hp(self, active : bool):
         self.cwe.vglitch_enable(CWExtraSettings.GLITCH_OUT_HP, active)
 
     @property

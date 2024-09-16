@@ -787,7 +787,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         self.adc = adc
         self.fpga_clk_settings = fpga_clk_settings
         self.fpga_clk_settings.freq_ctr_src = "extclk"
-        self.adc_phase = 0
+        self.adc_phase = 0 # type: ignore
         self._extclk_tolerance_cached = 100e3
         self._extclk_tolerance_enabled = True
         # self.adv_settings = ChipWhispererHuskyClockAdv(pll, fpga_clk_settings)
@@ -993,7 +993,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         return self.pll.pll_locked
 
     @property
-    def adc_phase(self):
+    def adc_phase(self) -> int:
         """Changes the phase of the ADC clock relative to the target clock
 
         Positive values delay the ADC clock compared to the target clock
@@ -1011,7 +1011,28 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
         :Setter: Sets the adc_phase. Must be in the range [-255, 255]
         """
-        return int((self.pll.adc_delay - self.pll.target_delay) * 255 / 31)
+        return int((self.pll.adc_delay - self.pll.target_delay) * 255 // 31)
+
+    @property
+    def adc_phase_raw(self) -> int:
+        """Changes the phase of the ADC clock relative to the target clock
+
+        Positive values delay the ADC clock compared to the target clock
+        and vice versa.
+
+        Negative values are not possible when scope.clock.clkgen_src is
+        'extclk'.
+
+        Note: The actual phase is only a 6 bit signed value compared to
+        a 9 bit signed value on the Lite/Pro. This is mapped onto
+        the same [-255, 255] range, meaning not all phases
+        between -255 and 255 are possible.
+
+        :Getter: Gets the current adc_phase
+
+        :Setter: Sets the adc_phase. Must be in the range [-255, 255]
+        """
+        return int(self.pll.adc_delay - self.pll.target_delay)
 
     @adc_phase.setter # type: ignore
     @clear_adc_unlock

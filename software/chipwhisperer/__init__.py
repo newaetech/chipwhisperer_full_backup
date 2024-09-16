@@ -34,6 +34,8 @@ import sys, subprocess
 
 from typing import Optional, Type, Union, List
 
+opstr = Optional[str]
+
 # replace bytearray with inherited class with better repr and str.
 bytearray = util.CWByteArray # type: ignore
 
@@ -127,8 +129,8 @@ def check_for_updates() -> str:
 
 ktp = key_text_patterns #alias
 
-def program_sam_firmware(serial_port : Optional[str]=None,
-    hardware_type : Optional[str]=None, fw_path : Optional[str]=None):
+def program_sam_firmware(serial_port : opstr=None,
+    hardware_type : opstr=None, fw_path : opstr=None):
     """Program firmware onto an erased chipwhisperer scope or target
 
     See https://chipwhisperer.readthedocs.io/en/latest/firmware.html for more information
@@ -292,9 +294,9 @@ def import_project(filename : str, file_type : str='zip', overwrite : bool=False
     return proj
 
 
-def scope(scope_type : Optional[Type[scopes.ScopeTypes]]=None, name : Optional[str]=None, 
-    sn : Optional[str]=None, idProduct : Optional[int]=None,
-    bitstream : Optional[str]=None, force : bool=False,
+def scope(scope_type : Optional[Type[scopes.ScopeTypes]]=None, name : opstr=None, 
+    sn : opstr=None, idProduct : Optional[int]=None,
+    bitstream : opstr=None, force : bool=False,
     prog_speed : int=int(10E6),
     **kwargs) -> scopes.ScopeTypes:
     """Create a scope object and connect to it.

@@ -53,14 +53,15 @@ class OpenADCInterface_NAEUSBChip(DisableNewAttr):
         self.cwFirmwareConfig = {
             0xACE2:FWLoaderConfig(CWLite_Loader()),
             0xACE3:FWLoaderConfig(CW1200_Loader()),
-            0xACE5:FWLoaderConfig(CWHusky_Loader())
+            0xACE5:FWLoaderConfig(CWHusky_Loader()),
+            0xACE6:FWLoaderConfig(CWHusky_Loader()),
         }
 
     def con(self, sn=None, idProduct=None, bitstream=None, force=False, prog_speed=1E6, registers=None, **kwargs):
         if idProduct:
             nae_products = [idProduct]
         else:
-            nae_products = [0xACE2, 0xACE3, 0xACE5]
+            nae_products = [0xACE2, 0xACE3, 0xACE5, 0xACE6]
         found_id = self.ser.con(idProduct=nae_products, serial_number=sn, **kwargs)
         if force:
             self.fpga.eraseFPGA()

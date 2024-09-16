@@ -440,6 +440,8 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             return "ChipWhisperer Pro"
         elif name == "cwhusky":
             return "ChipWhisperer Husky"
+        elif name == "cwhusky-plus":
+            return "ChipWhisperer Husky Plus"
 
     def adc_test(self, samples=131070, reps=3, verbose=False):
         """Run a series of ADC sampling tests on CW-Husky.

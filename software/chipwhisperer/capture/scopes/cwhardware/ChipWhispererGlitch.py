@@ -30,6 +30,7 @@ import datetime
 import math
 from ....capture.scopes.cwhardware import PartialReconfiguration as pr
 from ....common.utils import util
+from typing import Union, List
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -123,7 +124,7 @@ class GlitchSettings(util.DisableNewAttr):
     def __str__(self):
         return self.__repr__()
 
-    def manual_trigger(self):
+    def manual_trigger(self) -> None:
         """Manually trigger the glitch output.
 
         This trigger is most useful in Manual trigger mode, where this is the
@@ -137,7 +138,7 @@ class GlitchSettings(util.DisableNewAttr):
     def manualTrigger(self):
         self.manual_trigger()
 
-    def readStatus(self):
+    def readStatus(self) -> tuple:
         """Read the status of the two glitch DCMs.
 
         Returns:
@@ -159,7 +160,7 @@ class GlitchSettings(util.DisableNewAttr):
         self.cwg.resetDCMs(keepPhase)
 
     @property
-    def clk_src(self):
+    def clk_src(self) -> str:
         """The clock signal that the glitch DCM is using as input.
 
         This DCM can be clocked from three different sources:
@@ -187,7 +188,7 @@ class GlitchSettings(util.DisableNewAttr):
             raise ValueError("Received unexpected glitch module clock source %s" % (clk_val), clk_val)
 
     @clk_src.setter
-    def clk_src(self, source):
+    def clk_src(self, source : str):
         if source == "target":
             clk_val = self.cwg.CLKSOURCE0_BIT
         elif source == "clkgen":
@@ -207,7 +208,7 @@ class GlitchSettings(util.DisableNewAttr):
         self.cwg.setGlitchClkSource(clk_val)
 
     @property
-    def phase_shift_steps(self):
+    def phase_shift_steps(self) -> int:
         """The number of phase shift steps per target clock period.
         Husky only.
         To change, modify clock.pll.update_fpga_vco()
@@ -221,7 +222,7 @@ class GlitchSettings(util.DisableNewAttr):
 
 
     @property
-    def enabled(self):
+    def enabled(self) -> bool:
         """Husky only. Whether the Xilinx MMCMs used to generate glitches are
         powered on or not. 7-series MMCMs are power hungry and are estimated
         to consume half of the FPGA's power. If you run into temperature
@@ -233,7 +234,7 @@ class GlitchSettings(util.DisableNewAttr):
         return self.cwg.getEnabled()
 
     @enabled.setter
-    def enabled(self, enable):
+    def enabled(self, enable : bool):
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
         self.cwg.setEnabled(enable)
@@ -248,7 +249,7 @@ class GlitchSettings(util.DisableNewAttr):
         return self.cwg.getMMCMLocked()
 
     @property
-    def num_glitches(self):
+    def num_glitches(self) -> int:
         """The number of glitch events to generate. CW-Husky only.
 
         Each glitch event uses the same offset and width settings. 
@@ -267,7 +268,7 @@ class GlitchSettings(util.DisableNewAttr):
         return self.cwg.getNumGlitches()
 
     @num_glitches.setter
-    def num_glitches(self, num):
+    def num_glitches(self, num : int):
         if not self._is_husky:
             raise ValueError("For CW-Husky only.")
         self.cwg.setNumGlitches(num)
@@ -298,7 +299,7 @@ class GlitchSettings(util.DisableNewAttr):
         self.cwg.resetState()
 
     @property
-    def width(self):
+    def width(self) -> Union[float, int]:
         """The width of a single glitch pulse.
         
         For CW-Husky, width is expressed as the number of phase shift steps.
@@ -328,11 +329,11 @@ class GlitchSettings(util.DisableNewAttr):
         return self.cwg.getGlitchWidth()
 
     @width.setter
-    def width(self, value):
+    def width(self, value : Union[float, int]):
         self.cwg.setGlitchWidth(value)
 
     @property
-    def width_fine(self):
+    def width_fine(self) -> int:
         """The fine adjustment value on the glitch width. N/A for Husky.
 
         This is a dimensionless number that makes small adjustments to the
@@ -351,7 +352,7 @@ class GlitchSettings(util.DisableNewAttr):
         return self.cwg.getGlitchWidthFine()
 
     @width_fine.setter
-    def width_fine(self, value):
+    def width_fine(self, value : int):
         if self._is_husky:
             glitch_logger.error("N/A for Husky")
         try:
@@ -364,7 +365,7 @@ class GlitchSettings(util.DisableNewAttr):
         self.cwg.setGlitchWidthFine(int_val)
 
     @property
-    def offset(self):
+    def offset(self) -> Union[float, int]:
         """The offset from a rising clock edge to a glitch pulse rising edge.
 
         For CW-Husky, offset is expressed as the number of phase shift steps.
@@ -398,11 +399,11 @@ class GlitchSettings(util.DisableNewAttr):
         return self.cwg.getGlitchOffset()
 
     @offset.setter
-    def offset(self, value):
+    def offset(self, value : Union[float, int]):
         self.cwg.setGlitchOffset(value)
 
     @property
-    def offset_fine(self):
+    def offset_fine(self) -> int:
         """The fine adjustment value on the glitch offset. N/A for Husky.
 
         This is a dimensionless number that makes small adjustments to the
@@ -421,7 +422,7 @@ class GlitchSettings(util.DisableNewAttr):
         return self.cwg.getGlitchOffsetFine()
 
     @offset_fine.setter
-    def offset_fine(self, value):
+    def offset_fine(self, value : int):
         if self._is_husky:
             glitch_logger.error("N/A for Husky")
         try:
@@ -434,7 +435,7 @@ class GlitchSettings(util.DisableNewAttr):
         self.cwg.setGlitchOffsetFine(int_val)
 
     @property
-    def trigger_src(self):
+    def trigger_src(self) -> str:
         """The trigger signal for the glitch pulses.
 
         The glitch module can use four different types of triggers:
@@ -466,7 +467,7 @@ class GlitchSettings(util.DisableNewAttr):
         return self._glitch_triggers[trig_src]
 
     @trigger_src.setter
-    def trigger_src(self, src):
+    def trigger_src(self, src : str):
         try:
             trig_idx = self._glitch_triggers.index(src)
         except ValueError as e:
@@ -475,7 +476,7 @@ class GlitchSettings(util.DisableNewAttr):
         self.cwg.setGlitchTrigger(trig_idx)
 
     @property
-    def arm_timing(self):
+    def arm_timing(self) -> str:
         """When to arm the glitch in single-shot mode.
 
         If the glitch module is in "ext_single" trigger mode, it must be armed
@@ -508,7 +509,7 @@ class GlitchSettings(util.DisableNewAttr):
             raise ValueError("Received unexpected glitch arm timing %s" % (timing), timing)
 
     @arm_timing.setter
-    def arm_timing(self, value):
+    def arm_timing(self, value : str):
         if value == "no_glitch":
             int_val = 0
         elif value == "before_scope":
@@ -521,7 +522,7 @@ class GlitchSettings(util.DisableNewAttr):
         self.cwg.setArmTiming(int_val)
 
     @property
-    def ext_offset(self):
+    def ext_offset(self) -> Union[int, list]:
         """How long the glitch module waits between a trigger and a glitch.
 
         After the glitch module is triggered, it waits for a number of clock
@@ -565,7 +566,7 @@ class GlitchSettings(util.DisableNewAttr):
         self.cwg.setTriggerOffset(offset)
 
     @property
-    def repeat(self):
+    def repeat(self) -> Union[int, list]:
         """The number of glitch pulses to generate per trigger.
 
         When the glitch module is triggered, it produces a number of pulses
@@ -605,7 +606,7 @@ class GlitchSettings(util.DisableNewAttr):
         self.cwg.setRepeat(value)
 
     @property
-    def output(self):
+    def output(self) -> str:
         """The type of output produced by the glitch module.
 
         There are 5 ways that the glitch module can combine the clock with its
@@ -632,7 +633,7 @@ class GlitchSettings(util.DisableNewAttr):
         return self._output_modes[output_mode]
 
     @output.setter
-    def output(self, value):
+    def output(self, value : str):
         try:
             output_idx = self._output_modes.index(value)
         except ValueError as e:
