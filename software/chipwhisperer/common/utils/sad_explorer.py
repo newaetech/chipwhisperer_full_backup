@@ -53,7 +53,7 @@ class SADExplorer(util.DisableNewAttr):
 
     _name = 'Husky SAD Explorer Module'
 
-    def __init__(self, scope, target, reftrace, refstart, max_segments=1, plot_width=2000, plot_height=600, plot_tools='pan, box_zoom, hover, reset, save', capture_function=None):
+    def __init__(self, scope, target, reftrace, refstart, max_segments=1, width=2000, height=600, plot_tools='pan, box_zoom, hover, reset, save', capture_function=None):
         super().__init__()
         self.scope = scope
         self.target = target
@@ -63,10 +63,10 @@ class SADExplorer(util.DisableNewAttr):
         self.max_segments = max_segments
         self._max_legend_segments = 10
         self.capture_function = capture_function
-        self.p = figure(plot_width=plot_width, plot_height=plot_height, tools=plot_tools)
+        self.p = figure(width=width, height=height, tools=plot_tools)
 
         self.samples = 100 # initial value really doesn't matter
-        xrange = range(self.samples)
+        xrange = list(range(self.samples))
         colors = itertools.cycle(inferno(self.max_segments))
         self.S = []
         for i in range(self.max_segments):
@@ -295,12 +295,12 @@ class SADExplorer(util.DisableNewAttr):
             refstart -= extra_presamples # from hereon it's only used for plotting
             if show_diffs:
                 self.Rp.data_source.data = {'y': [interval_threshold]*samples,
-                                            'x': range(samples)}
+                                            'x': list(range(samples))}
                 self.Rm.data_source.data = {'y': [0]*samples,
-                                            'x': range(samples)}
+                                            'x': list(range(samples))}
                 self.Rf.data_source.data = {'y1': [0]*samples,
                                             'y2': [interval_threshold]*samples,
-                                            'x': range(samples)}
+                                            'x': list(range(samples))}
 
             else:
                 # prevent over/underflow!
@@ -311,12 +311,12 @@ class SADExplorer(util.DisableNewAttr):
                 bottom[bottom > self.reftrace[refstart:refstart+samples]] = 0
 
                 self.Rp.data_source.data = {'y': top,
-                                            'x': range(samples)}
+                                            'x': list(range(samples))}
                 self.Rm.data_source.data = {'y': bottom,
-                                            'x': range(samples)}
+                                            'x': list(range(samples))}
                 self.Rf.data_source.data = {'y1': bottom,
                                             'y2': top,
-                                            'x': range(samples)}
+                                            'x': list(range(samples))}
 
             if trace is None:
                 #with self.captureout:
@@ -337,15 +337,15 @@ class SADExplorer(util.DisableNewAttr):
                 for i in range(self.scope.adc.segments):
                     if show_diffs:
                         self.S[i].data_source.data = {'y': abs(segments[i][:samples].astype(int) - self.reftrace[refstart:refstart+samples].astype(int)),
-                                                      'x': range(samples)}
+                                                      'x': list(range(samples))}
                     else:
                         self.S[i].data_source.data = {'y': segments[i][:samples],
-                                                      'x': range(samples)}
+                                                      'x': list(range(samples))}
 
                 if self.scope.adc.segments < self.max_segments:
                     for i in range(self.scope.adc.segments, self.max_segments):
                         self.S[i].data_source.data = {'y': [0]*samples,
-                                                      'x': range(samples)}
+                                                      'x': list(range(samples))}
 
 
                 # SAD start/stop visual delimiters:
