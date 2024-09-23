@@ -98,16 +98,18 @@ class SADExplorer(util.DisableNewAttr):
         layout=Layout(width='600px')
 
         my_interact_manual = interact_manual.options(manual_name="run SAD capture")
-        my_interact_manual(self.update_plot, 
-                           refstart =           widgets.Text(value=str(refstart), description='reference start sample', style=style, layout=layout),
-                           samples =            widgets.Text(value=str(scope.SAD.sad_reference_length), description='scope.adc.samples', style=style, layout=layout),
-                           extra_presamples =   widgets.Text(value='0', description='extra presamples', style=style, layout=layout),
-                           segments =           widgets.Text(value=str(max_segments), description='scope.adc.segments', style=style, layout=layout),
-                           timeout =            widgets.Text(value=str(scope.adc.timeout), description='scope.adc.timeout', style=style, layout=layout),
-                           threshold =          widgets.Text(value=str(scope.SAD.threshold), description='scope.SAD.threshold', style=style, layout=layout),
-                           interval_threshold = widgets.Text(value=str(scope.SAD.interval_threshold), description='scope.SAD.interval_threshold', style=style, layout=layout),
-                           trigger_sample =     widgets.Text(value=str(scope.SAD.trigger_sample), description='scope.SAD.trigger_sample', style=style, layout=layout),
-                           exclude =            widgets.Text(value='', description='excluded samples', style=style, layout=layout),
+        # TODO-NOTE: using Textarea() instead of Text() due to bug in ipywidgets 8.1.5: https://github.com/jupyter-widgets/ipywidgets/issues/3915
+        # when fixed, change Textarea() back to Text().
+        my_interact_manual(self.update_plot,
+                           refstart =           widgets.Textarea(value=str(refstart), description='reference start sample', style=style, layout=layout),
+                           samples =            widgets.Textarea(value=str(scope.SAD.sad_reference_length), description='scope.adc.samples', style=style, layout=layout),
+                           extra_presamples =   widgets.Textarea(value='0', description='extra presamples', style=style, layout=layout),
+                           segments =           widgets.Textarea(value=str(max_segments), description='scope.adc.segments', style=style, layout=layout),
+                           timeout =            widgets.Textarea(value=str(scope.adc.timeout), description='scope.adc.timeout', style=style, layout=layout),
+                           threshold =          widgets.Textarea(value=str(scope.SAD.threshold), description='scope.SAD.threshold', style=style, layout=layout),
+                           interval_threshold = widgets.Textarea(value=str(scope.SAD.interval_threshold), description='scope.SAD.interval_threshold', style=style, layout=layout),
+                           trigger_sample =     widgets.Textarea(value=str(scope.SAD.trigger_sample), description='scope.SAD.trigger_sample', style=style, layout=layout),
+                           exclude =            widgets.Textarea(value='', description='excluded samples', style=style, layout=layout),
                            emode =              widgets.Checkbox(value=scope.SAD.emode, description='scope.SAD.emode', style=style, layout=layout), 
                            always_armed =       widgets.Checkbox(value=scope.SAD.always_armed, description='scope.SAD.always_armed', style=style, layout=layout), 
                            show_diffs =         widgets.Checkbox(value=False, description='show diff', style=style, layout=layout),
