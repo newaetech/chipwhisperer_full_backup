@@ -385,8 +385,7 @@ class HuskySAD(util.DisableNewAttr):
         if self._emode_off:
             reflen *= 2
             if len(wave) < reflen:
-                scope_logger.info('XXX extending...')
-                reflen *= 2
+                scope_logger.info('extending reference because _emode_off')
                 wave.extend([0]*(reflen-len(wave)))
 
         # first, trim and translate reference waveform to ints:
