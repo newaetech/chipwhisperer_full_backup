@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools >= 61.0", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+#version = "0.0.1"  # Remove any existing version parameter.
+dynamic = ["version"]
+description="ChipWhisperer Side-Channel Analysis Tool"
+name = "chipwhisperer"
+authors=[{name="Colin O'Flynn", email="coflynn@newae.com"}]
+requires-python = ">=3.9"
+dependencies = [
+        "configobj",
+        "pyserial",
+        "numpy",
+        "libusb1",
+        "ECpy",
+        "fastdtw",
+        "Cython",
+        "tqdm",
+]
+license = {file = "LICENSE.txt"}
+readme = "README.md"
+
+[project.optional-dependencies]
+trace = ["cwtraces"]
+
+[project.urls]
+Homepage = "https://www.chipwhisperer.com"
+Documentation = "https://chipwhisperer.readthedocs.io/en/latest/"
+Repository = "https://github.com/newaetech/chipwhisperer"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["software"]
