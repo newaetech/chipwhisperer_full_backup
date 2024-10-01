@@ -301,7 +301,7 @@ class SADModel(object):
         else:
             return True
 
-    def step(self, sample, armed_and_ready):
+    def step(self, sample, armed_and_ready, trigger_allowed=True):
         # on the first run through, counters are started one at a time:
         #if i < self.num_counters:
         #    self.counters[i].activate(i)
@@ -317,7 +317,7 @@ class SADModel(object):
             match, covered, logscore = c.update(sample, 0, armed_and_ready)
             if logscore:
                 self.SADS.append(c.SAD)
-            if match:
+            if match and trigger_allowed:
                 matched = True
                 self.match_times.append(self.index+1)
                 self.match_scores.append(c.SAD)
