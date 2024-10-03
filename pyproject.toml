@@ -23,7 +23,7 @@ license = {file = "LICENSE.txt"}
 readme = "README.md"
 
 [project.optional-dependencies]
-trace = ["cwtraces"]
+trace = ["software"]
 
 [project.urls]
 Homepage = "https://www.chipwhisperer.com"
