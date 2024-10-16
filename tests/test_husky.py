@@ -528,7 +528,7 @@ def test_fpga_version():
     if scope._is_husky_plus:
         assert scope.fpga_buildtime == '1/12/2024, 15:19'
     else:
-        assert scope.fpga_buildtime == '1/12/2024, 09:25'
+        assert scope.fpga_buildtime == '4/11/2024, 09:41'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
