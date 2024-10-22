@@ -23,24 +23,109 @@ class CDCI6214:
         scope.pll.target_freq = 7.37E6
         scope.pll.adc_mul = 4 # any positive integer within reason that satisfies ADC specs
     """
+
+    # From datasheet (Table 13):
+    # 1st element: register address
+    # 2nd element: default value
+    # 3rd element: register name
+    # 4th element: register description
+    # (note that in the datasheet the "default value" includes the address as 16 MSB?!? we don't do that here)
+    regs = [[0x00, 0x0000, "GENERIC0",      "Generic setting, device operation mode, synchronization, control pins, reset, and power down."],
+            [0x01, 0x6882, "GENERIC1",      "Generic settings, GPIO input signal selection."], 
+            [0x02, 0x0053, "GENERIC2",      "Generic settings, GPIO output signal selection."], 
+            [0x03, 0x0000, "GENERIC3",      "Generic settings, EEPROM and frequency increment / decrement."], 
+            [0x04, 0x0055, "POWER0",        "Power-down bits, output channels."], 
+            [0x05, 0x0028, "POWER1",        "Power-down bits, phase-locked-loop."], 
+            [0x06, 0x0000, "STATUS0",       "Status information, calibration bus."], 
+            [0x07, 0x0000, "STATUS1",       "Status information, PLL lock and EEPROM."], 
+            [0x08, 0x0000, "STATUS2",       "Status information, miscellaneous"], 
+            [0x09, 0x0000, "STATUS3",       "Status information, live CRC of EEPROM"], 
+            [0x0A, 0x0000, "EEPROM0",       "EEPROM, stored CRC of EEPROM"], 
+            [0x0B, 0x0000, "EEPROM1",       "EEPROM, direct access read address"], 
+            [0x0C, 0x0000, "EEPROM2",       "EEPROM, direct access read data"], 
+            [0x0D, 0x0000, "EEPROM3",       "EEPROM, direct access write address"], 
+            [0x0E, 0x0000, "EEPROM4",       "EEPROM, direct access write data"], 
+            [0x0F, 0xA037, "STARTUP0",      "Start-up configuration, EEPROM lock, auto-calibration, and I2C glitch filter"], 
+            [0x10, 0x921F, "STARTUP1",      "Start-up configuration, digital state machine counters"], 
+            [0x11, 0x26C4, "STARTUP2",      "Start-up configuration, digital state machine counters"], 
+            [0x12, 0x0000, "unknown",       ''],
+            [0x13, 0x0000, "unknown",       ''],
+            [0x14, 0x0000, "unknown",       ''],
+            [0x15, 0x0000, "unknown",       ''],
+            [0x16, 0x0000, "unknown",       ''],
+            [0x17, 0x0000, "unknown",       ''],
+            [0x18, 0x0601, "REV0",          "Revision ID"], 
+            [0x19, 0x0000, "unknown",       ''],
+            [0x1A, 0x0718, "INPUT0",        "Input reference, buffer configuration, and crystal oscillator controls."], 
+            [0x1B, 0x0000, "INPUT1",        "Input reference, reference divider, and bypass buffers."], 
+            [0x1C, 0x0000, "INPUT_DBG0",    "Input reference debug, status pin buffers."], 
+            [0x1D, 0x400A, "PLL0",          "PLL, feedback dividers."], 
+            [0x1E, 0x5140, "PLL1",          "PLL, charge pump current and clock distribution pre-scaler dividers."], 
+            [0x1F, 0x1E72, "PLL2",          "PLL, loop filter configuration"], 
+            [0x20, 0x0000, "unknown",       ''],
+            [0x21, 0x0007, "PLL4",          "PLL, lock detector and PFD delay"], 
+            [0x22, 0x0050, "unknown",       ''],
+            [0x23, 0x8000, "CH1_CTRL0",     "Output channel 1, RESERVED"], 
+            [0x24, 0x0000, "CH1_CTRL1",     "Output channel 1, RESERVED"], 
+            [0x25, 0x0004, "CH1_CTRL2",     "Output channel 1, integer divider and mux control."], 
+            [0x26, 0x0405, "CH1_CTRL3",     "Output channel 1, synchronization, digital delay, output buffer, mux and mute controls."], 
+            [0x27, 0x0A65, "CH1_CTRL4",     "Output channel 1, divider glitchless enable and spread spectrum controls."], 
+            [0x28, 0x0008, "CH1_CTRL5",     "Output channel 1, RESERVED"], 
+            [0x29, 0x8000, "CH2_CTRL0",     "Output channel 2, RESERVED"], 
+            [0x2A, 0x0000, "CH2_CTRL1",     "Output channel 2, RESERVED"], 
+            [0x2B, 0x0004, "CH2_CTRL2",     "Output channel 2, integer divider and mux control."], 
+            [0x2C, 0x0405, "CH2_CTRL3",     "Output channel 2, synchronization, digital delay, output buffer, mux and mute controls."], 
+            [0x2D, 0x0A65, "CH2_CTRL4",     "Output channel 2, divider glitchless enable and spread spectrum controls."], 
+            [0x2E, 0x0008, "CH2_CTRL5",     "Output channel 2 ,RESERVED"], 
+            [0x2F, 0x8000, "CH3_CTRL0",     "Output channel 3, RESERVED"], 
+            [0x30, 0x0000, "CH3_CTRL1",     "Output channel 3, RESERVED"], 
+            [0x31, 0x0004, "CH3_CTRL2",     "Output channel 3, integer divider and mux control."], 
+            [0x32, 0x0405, "CH3_CTRL3",     "Output channel 3, synchronization, digital delay, output buffer, mux and mute controls."], 
+            [0x33, 0x0A65, "CH3_CTRL4",     "Output channel 3, divider glitchless enable and spread spectrum controls."], 
+            [0x34, 0x0008, "CH3_CTRL5",     "Output channel 3, RESERVED"], 
+            [0x35, 0x8000, "CH4_CTRL0",     "Output channel 4, RESERVED"], 
+            [0x36, 0x0000, "CH4_CTRL1",     "Output channel 4, RESERVED"], 
+            [0x37, 0x0004, "CH4_CTRL2",     "Output channel 4, integer divider and mux control."], 
+            [0x38, 0x0405, "CH4_CTRL3",     "Output channel 4, synchronization, digital delay, output buffer, mux and mute controls."], 
+            [0x39, 0x0A65, "CH4_CTRL4",     "Output channel 4, divider glitchless enable and spread spectrum controls."], 
+            [0x3A, 0x0008, "CH4_CTRL5",     "Output channel 4, RESERVED"], 
+            [0x3B, 0x0009, "CHX_CTRL0",     "Output channels, generic clock distribution and bypass output controls."], 
+            [0x3C, 0x0010, "CHX_CTRL1",     "Output channels, RESERVED"], 
+            [0x3D, 0x1000, "CHX_CTRL2",     "Output channels, RESERVED"], 
+            [0x3E, 0x4210, "CHX_CTRL3",     "Output channels, RESERVED"], 
+            [0x3F, 0x0210, "CHX_CTRL4",     "Output channels, RESERVED"],
+            [0x40, 0x000D, "unknown",       ''],
+            [0x41, 0x0F34, "unknown",       ''],
+            [0x42, 0x0000, "unknown",       ''],
+            [0x43, 0x0020, "unknown",       ''],
+            [0x44, 0x0000, "unknown",       ''],
+            [0x45, 0x0000, "unknown",       ''],
+            [0x46, 0x0000, "unknown",       '']]
+
     def __init__(self, naeusb, mmcm1, mmcm2):
         self.naeusb = naeusb
+        self.verbose = False # TODO: temporary
+        self._reset_required = False
+        self._given_input_freq = None
+        self._given_target_freq = None
+        self._min_vco = 2400e6
+        self._max_vco = 2800e6
+        self._min_pfd = 1e6
+        self._max_pfd = 100e6
+        self._cached_reg = []
         self._mmcm1 = mmcm1
         self._mmcm2 = mmcm2
         self._mmcm_muldiv = 0
         self._mmcm_vco_freq = 600e6
         self._mmcm_vco_min = 600e6
         self._mmcm_vco_max = 1200e6
+        self._registers_cached = False
+        self.reset_registers()
         self.setup()
-        self.set_pll_input()
-        self.set_outdiv(3, 0)
-        self.set_outdiv(1, 0)
 
         self._input_freq = 12E6 # 12MHz
         self._adc_mul = 4
         self._set_target_freq = 7.37E6
-        self.set_prescale(3, 5)
-        self.set_prescale(1, 5)
         self._fpga_clk_freq = 48E6
         self._glitch = None
         self._cached_adc_freq = None
@@ -49,23 +134,25 @@ class CDCI6214:
 
         self._old_in_freq = 0
         self._old_target_freq = 0
-        self._allow0p5 = False
+        self._allow_rdiv = False # TODO: change default to True?
         self._reset_time = 0.10 # empirically seems to work well; this is a conservative number
 
-    def write_reg(self, addr, data):
+    def write_reg(self, addr, data, msg=''):
         """Write to a CDCI6214 Register over I2C
 
         Args:
             addr (u8): Address to write to
             data (u16 or list): Data to write. u16 is big endian, list is two elements long,
                 so write_reg(0x00, [0x10, 0x20]) is the same as write_reg(0x00, 0x2010)
+            msg (optional, string): debug message to log
 
         data can be a 16-bit integer or a 2 element list
         """
         if not hasattr(data, "__getitem__"):
             tmp = [data & 0xFF, (data >> 8) & 0xFF]
             data = tmp
-
+        #if self.verbose: print('CDCI6214 writing: addr 0x%02x, payload 0x%04x; %s' % (addr, (data[0]) | (data[1] << 8), msg)) # TODO: temporary
+        scope_logger.debug('CDCI6214 writing: addr 0x%02x, payload 0x%04x; %s' % (addr, (data[0]) | (data[1] << 8), msg))
         self.naeusb.sendCtrl(0x29, data=[1, addr, 0x00, data[0], data[1]])
 
     def read_reg(self, addr, as_int=False):
@@ -86,7 +173,7 @@ class CDCI6214:
             return (data[1]) | (data[2] << 8)
         return bytearray(data[1:])
 
-    def update_reg(self, addr, bits_to_set, bits_to_clear):
+    def update_reg(self, addr, bits_to_set, bits_to_clear, msg='', update_cache_only=False):
         """Updates a CDCI6214 Register. Reads, clears bits, then sets bits.
 
         This means bits_to_set will overwrite bits_to_clear. Effectively::
@@ -102,14 +189,16 @@ class CDCI6214:
                             Big endian: 0x2010 == [0x10, 0x20]
             bits_to_clear (u16 or list): Bits to set in the register
                             Big endian: 0x2010 == [0x10, 0x20]
+            msg (optional, string): debug message to log
+            update_cache_only (bool): if True, update only the cached register value (don't actually update the PLL)
 
 
         bits_to_set/bits_to_clear can be a 16-bit integer or a 2 element list.
         The clear is applied first, so you can clear a register with 0xffff to set
         everything after.
         """
-        # print(bits_to_set, bits_to_clear)
-
+        if type(msg) is bool:
+            scope_logger.error('update_reg got a True/False msg; likely calling function forgot to pass msg!')
         if not hasattr(bits_to_set, "__getitem__"):
             tmp = [bits_to_set & 0xFF, (bits_to_set >> 8) & 0xFF]
             bits_to_set = tmp
@@ -118,16 +207,63 @@ class CDCI6214:
             tmp = [bits_to_clear & 0xFF, (bits_to_clear >> 8) & 0xFF]
             bits_to_clear = tmp
 
-        # print(bits_to_set, bits_to_clear)
-        reg_val = self.read_reg(addr, as_int=False)
+        if update_cache_only:
+            if not self._registers_cached:
+                raise Warning('Registers are not cached: this is unexpected!')
+            reg_big = self.cached_reg[addr][1]
+            reg_val = [reg_big & 0xFF, (reg_big >> 8) & 0xFF]
+        else:
+            reg_val = self.read_reg(addr, as_int=False)
         reg_val[0] &= 0xFF - bits_to_clear[0] # the not we want ;)
         reg_val[1] &= 0xFF - bits_to_clear[1]
 
         reg_val[0] |= bits_to_set[0]
         reg_val[1] |= bits_to_set[1]
 
-        # print("Writing {} to addr {:02X} pll".format(reg_val, addr))
-        self.write_reg(addr, reg_val)
+        if update_cache_only:
+            #if self.verbose: print('CDCI6214 updating register cache: addr 0x%02x, payload 0x%04x; %s' % (addr, (reg_val[0]) | (reg_val[1] << 8), msg)) # TODO: temporary
+            scope_logger.debug('CDCI6214 updating register cache: addr 0x%02x, payload 0x%04x; %s' % (addr, (reg_val[0]) | (reg_val[1] << 8), msg))
+            self.cached_reg[addr][1] = (reg_val[0]) | (reg_val[1] << 8)
+        else:
+            # scope_logger.debug logging will occur in write_reg(), so don't repeat it here
+            self.write_reg(addr, reg_val)
+
+
+    def reset_registers(self):
+        """Set PLL registers to their defaults (as per datasheet Table 13) to
+        get to a known state. Since the NRST pin is NC, this is the only way.
+        Note datasheet recommends writing register addresses in descending order.
+        """
+        for r in self.regs[::-1]:
+            addr = r[0]
+            data = r[1]
+            self.write_reg(addr, data, 'writing defaults (from reset_registers)')
+
+
+    def cache_all_registers(self):
+        """ Read all CDCI6214 registers; store them in cached_reg, where they may
+        be updated freely, then written back in the proper order.
+        """
+        self.cached_reg = []
+        if self._registers_cached:
+            raise ValueError('Oh-ho!') # TODO: temporary, for debugging...
+            #scope_logger.debug('Registers are already cached; not re-caching.') TODO: should this be promoted to an error?
+        else:
+            self._registers_cached = True
+            for addr in range(0x47):
+                val = self.read_reg(addr, True)
+                self.cached_reg.append([addr, val])
+
+    def write_cached_registers(self):
+        """ Write all CDCI6214 using cached_reg, in the proper order.
+        """
+        if not self._registers_cached:
+            raise ValueError('write_cached_registers: registers have not been cached!')
+        self._registers_cached = False
+        for r in self.cached_reg[::-1]: # datasheet recommends to write in reverse order
+            addr = r[0]
+            data = r[1]
+            self.write_reg(addr, data)
 
 
     def setup(self):
@@ -142,40 +278,28 @@ class CDCI6214:
          * Disable channel 2 and 4 (unused)
          * Set ref as AC-differential, XIN == xtal
          * Use register to select PLL input instead of pin
+         * 
         """
-        # disable GPIO1/4 as inputs
-        self.update_reg(0x00, (1 << 13) | (1 << 12), 0)
+        self.cache_all_registers()
+        self.update_reg(0x00, (1 << 13) | (1 << 12), 0, msg='disable GPIO1/4 as inputs', update_cache_only=True)
+        self.update_reg(0x04, (1 << 3) | (1 << 4), 0, msg='turn off outputs 2 and 4', update_cache_only=True)
+        self.update_reg(0x05, 0, 0b11111110111, msg='turn on power to everything', update_cache_only=True)
+        self.update_reg(0x32, 0b1, 1 << 10, msg='enable SYNC on channel 3', update_cache_only=True)
+        self.update_reg(0x26, 0b1, 1 << 10, msg='enable SYNC on channel 1', update_cache_only=True)
+        self.update_reg(0x33, 1, 1, msg='disable glitchless on channel 3', update_cache_only=True)
+        self.update_reg(0x27, 1, 1, msg='disable glitchless on channel 1', update_cache_only=True)
+        self.update_reg(0x2C, (1<<7), (0x7<<2), msg='Disable channel 2: mute=1, outbuf=off', update_cache_only=True)
+        self.update_reg(0x38, (1<<7), (0x7<<2), msg='Disable channel 4: mute-1, outbuf=off', update_cache_only=True)
+        self.update_reg(0x1A, (1 << 15) | (0x0B << 8), (1 << 15) | 0b11 | (0xFF << 8), msg='Set ref input as AC-differential, XIN to xtal', update_cache_only=True)
+        self.update_reg(0x01, 1 << 9, 0b11 << 8, msg='set ref_mux_src, ref_mux to XIN', update_cache_only=True)
+        self.update_reg(0x02, 0, 0b1111, msg='set GPIO1 output to PLL_LOCK', update_cache_only=True)
+        self.update_reg(0x32, (1) | (1 << 2), 0xFF, msg='set CH3 to LVDS', update_cache_only=True)
+        self.set_outdiv(3, 0, update_cache_only=True)
+        self.set_outdiv(1, 0, update_cache_only=True)
+        self.set_prescale(3, 5, update_cache_only=True)
+        self.set_prescale(1, 5, update_cache_only=True)
+        self.write_cached_registers()
 
-        self.update_reg(0x04, (1 << 3) | (1 << 4), 0) # turn off outputs 2 and 4
-
-        self.update_reg(0x05, 0, 0b11111110111) # turn on power to everything
-
-        # enable SYNC on channel 3
-        self.update_reg(0x32, 0b1, 1 << 10)
-
-        # enable SYNC on channel 1
-        self.update_reg(0x26, 0b1, 1 << 10)
-
-        # disable glitchless on channel 3
-        self.update_reg(0x33, 1, 1)
-
-        # disable glitchless on channel 1
-        self.update_reg(0x27, 1, 1)
-
-        # Disable channel 2: mute=1, outbuf=off
-        self.update_reg(0x2C, (1<<7), (0x7<<2))
-
-        # Disable channel 4: mute-1, outbuf=off
-        self.update_reg(0x38, (1<<7), (0x7<<2))
-
-        # Set ref input as AC-differential, XIN to xtal
-        self.update_reg(0x1A, (1 << 15) | (0x0B << 8), (1 << 15) | 0b11 | (0xFF << 8))
-
-        # use ref_mux_src bit to select input
-        self.update_reg(0x01, 1 << 9, 0b11 << 8)
-
-        # set GPIO1 output to PLL_LOCK
-        self.update_reg(0x02, 0, 0b1111)
 
     def get_pll_input(self):
         """True if XTAL or False if FPGA
@@ -216,20 +340,26 @@ class CDCI6214:
             return self.input_freq / outdiv / prescale
 
     def reset(self):
-        """Do a reset of the PLL chip. Doesn't reset registers.
+        """Do a soft reset of the PLL chip. Doesn't reset registers.
 
         Maybe need to do to lock PLL?
         """
-        self.update_reg(0x0, 1 << 2, 0x00)
+        self.update_reg(0x0, 1 << 2, 0x00, msg='soft reset', update_cache_only=False)
         # wait enough time for PLL to re-lock (obtained empirically)
         time.sleep(self._reset_time)
+
+    def _reset_if_needed(self):
+        if self._reset_required:
+            self.reset()
+            self._reset_required = False
+
 
     def sync_clocks(self):
         """Send a resync pulse to the internal synchronization blocks.
 
         Resync clocks.
         """
-        self.update_reg(0x00, 1 << 5, 0x00)
+        self.update_reg(0x00, 1 << 5, 0x00, msg='sync clocks', update_cache_only=False)
 
     # def reset_pll_lock_detection(self):
     #     """NOTE: Does not relock PLL
@@ -239,47 +369,40 @@ class CDCI6214:
     def recal(self):
         """Perform a calibration. Typically unneeded.
         """
-        self.update_reg(0x0, 1 << 4, 0x00)
+        self.update_reg(0x0, 1 << 4, 0x00, msg='recal', update_cache_only=False)
 
     def set_pll_input(self, xtal=True):
         """Set input to PLL and set input to 4MHz
 
-        If xtal, use xtal, otherwise use FPGA clock
+        If xtal, use xtal, otherwise use target clock.
+        Updates cached register values only- does not write them back.
         """
         if xtal:
-            # set input to xtal
-            self.update_reg(0x01, 0, 1 << 8)
-
-            # divide input clock by 3
-            self.update_reg(0x1B, 3, 0xFF)
+            self.update_reg(0x01, 0, 1 << 8, msg='set input to xtal', update_cache_only=True)
         else:
-            # set input to ref (FPGA clock)
-            self.update_reg(0x01, 1 << 8, 1 << 8)
+            self.update_reg(0x01, 1 << 8, 1 << 8, msg='set input to target clock', update_cache_only=True)
 
-            # divide input clock by 12
-            self.update_reg(0x1B, 12, 0xFF)
 
-        # set pll f_out = 5*125 fin (2.5GHz out)
-        self.update_reg(0x1D, 125 | (1 << 14), 0xFFFF)
-
-        # /4 on both prescaler A and B -> 650MHz out
-        self.update_reg(0x1E, 0x00, 0x0F)
-
-    def set_prescale(self, pll_out=3, prescale_val=4):
+    def set_prescale(self, pll_out=3, prescale_val=4, update_cache_only=True):
         """Set prescaler. Uses prescaler A for CH3 out, and prescaler B for CH1 out
         """
+        msg = 'pll_out %d setting prescale to %d' % (pll_out, prescale_val)
         bitshift = 0
         if pll_out == 3:
             bitshift = 0
         elif pll_out == 1:
             bitshift = 2
+        else:
+            raise ValueError
 
         if prescale_val == 4:
-            self.update_reg(0x1E, 0x00, 0b11 << bitshift)
+            self.update_reg(0x1E, 0x00, 0b11 << bitshift, msg, update_cache_only)
         elif prescale_val == 5:
-            self.update_reg(0x1E, (1 << bitshift), 0b11 << bitshift)
+            self.update_reg(0x1E, (1 << bitshift), 0b11 << bitshift, msg, update_cache_only)
         elif prescale_val == 6:
-            self.update_reg(0x1E, (2 << bitshift), 0b11 << bitshift)
+            self.update_reg(0x1E, (2 << bitshift), 0b11 << bitshift, msg, update_cache_only)
+        else:
+            raise ValueError
 
     def get_prescale(self, pll_out=3):
         reg = self.read_reg(0x1E, True)
@@ -291,15 +414,16 @@ class CDCI6214:
         prescales = [4, 5, 6]
         return prescales[(reg >> bitshift) & 0b11]
 
-    def set_outdiv(self, pll_out=3, div=10):
+    def set_outdiv(self, pll_out=3, div=10, update_cache_only=True):
         #todo, do one prescale for both output channels
         if div > 0x3FFF:
             raise ValueError("Div too big")
+        msg = 'pll_out %d setting div to %d' % (pll_out, div)
         if pll_out == 3:
-            self.update_reg(0x31, div, 0xFFFF) # set div
-            self.update_reg(0x32, (1) | (1 << 2), 0xFF) # LVDS CH3
+            self.update_reg(0x31, div, 0xFFFF, msg, update_cache_only) # set div
+            #self.update_reg(0x32, (1) | (1 << 2), 0xFF, '', update_cache_only) # LVDS CH3 TODO-NOTE: now done in setup (where it belongs?)
         elif pll_out == 1:
-            self.update_reg(0x25, div, 0xFFFF) # set div, prescaler A
+            self.update_reg(0x25, div, 0xFFFF, msg, update_cache_only) # set div, prescaler A
         else:
             raise ValueError("pll_out must be 1 or 3, not {}".format(pll_out))
 
@@ -340,6 +464,9 @@ class CDCI6214:
         lowest error will be used
         """
 
+        if self.verbose: print('set_outfreq called: input_freq=%d target_freq=%d adc_mul=%d force_recalc=%s' % (input_freq, target_freq, adc_mul, force_recalc))
+        self._given_input_freq = input_freq
+        self._given_target_freq = target_freq
         # if the target clock is off, turn off both output clocks
         if target_freq == 0:
             # TODO: turn off clocks
@@ -394,8 +521,9 @@ class CDCI6214:
             # check if this results in a remainder
             # if it does, we need to recalc clocks
             if (old_div * self.adc_mul) % adc_mul:
-                scope_logger.warning(f"Could not adjust adc_mul via output divider alone. Recalcing clocks...")
-                scope_logger.warning("Target clock has dropped for a moment. You may need to reset your target")
+                # TODO: temp to not clutter test output; return to warning when done testing! or add a switch to disable...
+                scope_logger.debug(f"Could not adjust adc_mul via output divider alone. Recalcing clocks...")
+                scope_logger.debug("Target clock has dropped for a moment. You may need to reset your target")
             else:
                 new_div = (old_div * self.adc_mul) // adc_mul
                 scope_logger.debug(f"Newdiv {new_div}, OldDiv {old_div}, old adcmul {self.adc_mul}, new adcmul {adc_mul}")
@@ -415,14 +543,14 @@ class CDCI6214:
 
         # find input divs that will give a clock
         # input to the PLL between 1MHz and 100MHz
-        okay_in_divs = list(range(1,256))
-        if self._allow0p5:
-            # setting the reference divider to 0.5 seems to result in inconsistant phase relationship between the target clock and the
-            # ADC sampling clock (the CDCI6214 datasheet hints at this in section 8.3.6); it's prevented by default:
+        if self._allow_rdiv:
+            okay_in_divs = list(range(1,256))
             okay_in_divs.append(0.5)
+        else:
+            okay_in_divs = [1]
         okay_in_divs = np.array(okay_in_divs, dtype='int64')
-        okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) >= 1E6]
-        okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) <= 100E6]
+        okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) >= self._min_pfd]
+        okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) <= self._max_pfd]
         scope_logger.debug("OK in divs: {}".format(okay_in_divs))
 
         pll_muls = np.arange(5, 2**14, dtype='int64')
@@ -437,38 +565,42 @@ class CDCI6214:
         for okay_in_div in okay_in_divs:
             pll_input = input_freq // okay_in_div
 
-            # calculate all valid PLL multiples for the current input division
-            okay_pll_muls = np.array(pll_muls, dtype='int64')
-            okay_pll_muls = okay_pll_muls[((pll_input * 5 * okay_pll_muls) >= 2400E6)]
-            okay_pll_muls = okay_pll_muls[((pll_input * 5 * okay_pll_muls) <= 2800E6)]
-
             # go through all the valid PLL multiples we calculated
             # and if we find better settings, update our best settings
-            scope_logger.info("Ok PLL muls: {}".format(okay_pll_muls))
-            for pll_mul in okay_pll_muls:
-                for prescale in [4, 5, 6]:
-                    output_input = pll_input * pll_mul * 5 // prescale
-                    out_div = int((output_input / target_freq) + 0.5)
-                    out_div -= out_div % adc_mul
+            for prescale in [4, 5, 6]:
+                for fb_prescale in [4, 5, 6]:
+                    # calculate all valid PLL multiples for the current input division and prescales:
+                    okay_pll_muls = np.array(pll_muls, dtype='int64')
+                    okay_pll_muls = okay_pll_muls[((pll_input * fb_prescale * okay_pll_muls) >= self._min_vco)]
+                    okay_pll_muls = okay_pll_muls[((pll_input * fb_prescale * okay_pll_muls) <= self._max_vco)]
+                    scope_logger.info("Ok PLL muls: {}".format(okay_pll_muls))
+                    for pll_mul in okay_pll_muls:
+                        output_input = pll_input * pll_mul * fb_prescale // prescale
+                        out_div = int((output_input / target_freq) + 0.5)
+                        out_div -= out_div % adc_mul
 
-                    real_target_freq = output_input / out_div
-                    error = abs(target_freq - real_target_freq) / target_freq
-                    scope_logger.debug("Testing settings: in_div {} out_div {} pll_mull {} prescale {} error {} freq {}".\
-                        format(okay_in_div, out_div, pll_mul, prescale, error, real_target_freq))
-                    if error < best_error:
-                        best_in_div = okay_in_div
-                        best_out_div = out_div
-                        best_pll_mul = pll_mul
-                        best_error = error
-                        best_prescale = prescale
-                        scope_logger.info("New best: in_div {} out_div {} pll_mull {} prescale {} error {} freq {}".\
-                            format(best_in_div, best_out_div, best_pll_mul, best_prescale, best_error, real_target_freq))
+                        real_target_freq = output_input / out_div
+                        error = abs(target_freq - real_target_freq) / target_freq
+                        scope_logger.debug("Testing settings: in_div {} out_div {} pll_mull {} prescale {} fb_prescale {} error {} freq {}".\
+                            format(okay_in_div, out_div, pll_mul, prescale, fb_prescale, error, real_target_freq))
+                        if error < best_error:
+                            best_in_div = okay_in_div
+                            best_out_div = out_div
+                            best_pll_mul = pll_mul
+                            best_error = error
+                            best_prescale = prescale
+                            best_fb_prescale = fb_prescale
+                            scope_logger.info("New best: in_div {} out_div {} pll_mull {} prescale {} error {} freq {}".\
+                                format(best_in_div, best_out_div, best_pll_mul, best_prescale, best_error, real_target_freq))
 
         if best_error == float('inf'):
             raise ValueError("Could not calculate pll settings for input {}, output {} with mul {}".format(input_freq, target_freq, adc_mul))
 
         # set the output settings we found
         self.set_prescale(3, best_prescale)
+        self.set_prescale(1, best_prescale)
+
+        self.set_fb_prescale(best_fb_prescale) # TODO: does this affect relock?
         
         relock = False
         if self.get_input_div() != best_in_div:
@@ -485,24 +617,78 @@ class CDCI6214:
             # if the user wants the ADC clock off, turn it off
             self.set_outdiv(3, 0)
 
-        # reset PLL (needed?)
         if (not self.pll_locked) or relock:
-            self.reset()
-        self.sync_clocks()
+            self._reset_required = True
 
         self._old_in_freq = input_freq
         self._old_target_freq = target_freq
         self._adc_mul = adc_mul
+
+        #best_fb_prescale = 5 # TODO!
+        scope_logger.info('Calculated settings: best_prescale=%d best_fb_prescale=%d best_in_div=%d best_pll_mul=%d best_out_div=%d adc_mul=%d' 
+                % (best_prescale, best_fb_prescale, best_in_div, best_pll_mul, best_out_div, adc_mul))
+
+        #scope_logger.info('f_pfd (1 MHz - 100 MHz): %0.2f MHz' % (self.f_pfd/1e6))
+        #scope_logger.info('f_vco (2.4 GHz - 2.8 GHz): %0.2f GHz' % (self.f_vco/1e9))
+        #scope_logger.info('f_out: %0.2f MHz' % (self.f_out / 1e6))
+        #scope_logger.info('f_out_adc: %0.2f MHz' % (self.f_out_adc / 1e6))
+        #scope_logger.info('f_out error: %0.1f Hz' % self.f_out_error)
+
+
+    @property
+    def f_pfd(self):
+        """ PFD freqency, using the input frequency against which PLL
+        parameters were calculated.
+        """
+        pfd = self._given_input_freq/self.get_input_div()
+        if not (self._min_pfd <= pfd <= self._max_pfd):
+            scope_logger.warning('PFD out of range!')
+        return pfd
+
+    @property
+    def f_vco(self):
+        """ VCO freqency, using the input frequency against which PLL
+        parameters were calculated.
+        """
+        vco =  self.f_pfd * self.get_fb_prescale() * self.get_pll_mul()
+        if not (self._min_vco <= vco <= self._max_vco):
+            scope_logger.warning('VCO out of range!')
+        return vco
+
+    @property
+    def f_out(self):
+        """ Target freqency, using the input frequency against which PLL
+        parameters were calculated.
+        """
+        return self.f_vco / self.get_prescale() / self.get_outdiv(1)
+
+    @property
+    def f_out_adc(self):
+        """ ADC freqency, using the input frequency against which PLL
+        parameters were calculated.
+        """
+        return self.f_vco / self.get_prescale() / self.get_outdiv(3)
+
+    @property
+    def f_out_error(self):
+        """ Difference between target freqency and requested target frequency,
+        using the input frequency against which PLL parameters were calculated.
+        """
+        return abs(self.f_out - self._given_target_freq)
+
 
     def set_bypass_adc(self, enable_bypass):
         """Routes FPGA clock input directly to ADC, bypasses PLL.
         """
         if enable_bypass:
             #fpga input
+            self.cache_all_registers()
             self.pll_src = "fpga"
+            self.write_cached_registers()
 
             #For output 3 (hard coded):
 
+            # TODO: is this correct? (test it)
             # turn on bypass buffer for CH3
             self.update_reg(0x1B, (1<<13), 0)
 
@@ -582,8 +768,8 @@ class CDCI6214:
             self.set_pll_input(False)
         else:
             raise ValueError("PLL src must be either 'xtal' or 'fpga'")
-        ## update clocks
-        self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul, True)
+        ## update clocks - TODO: move elsewhere if actually needed!
+        #self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul, True)
 
     @property
     def adc_mul(self):
@@ -602,6 +788,7 @@ class CDCI6214:
     @adc_mul.setter
     def adc_mul(self, adc_mul):
         scope_logger.debug("adc_mul: {}".format(adc_mul))
+        if self.verbose: print('adc_mul calling set_outfreqs')
         self.set_outfreqs(self.input_freq, self._set_target_freq, adc_mul)
         self._adc_mul = adc_mul
 
@@ -624,13 +811,14 @@ class CDCI6214:
         elif not outdiv:
             return 0
         else:
-            return ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv) / (self.get_prescale(3)) * 5
+            return ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv) / (self.get_prescale(3)) * self.get_fb_prescale()
 
     @target_freq.setter
     def target_freq(self, freq):
         self._cached_adc_freq = None
         self._set_target_freq = freq
         scope_logger.debug("adc_mul: {}".format(self._adc_mul))
+        if self.verbose: print('target_freq calling set_outfreqs')
         self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
         self.update_fpga_vco(self._mmcm_vco_freq)
 
@@ -647,7 +835,7 @@ class CDCI6214:
             elif not outdiv:
                 return 0
             else:
-                self._cached_adc_freq = ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv) / (self.get_prescale(3)) * 5
+                self._cached_adc_freq = ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv) / (self.get_prescale(3)) * self.get_fb_prescale()
 
         return self._cached_adc_freq
 
@@ -659,12 +847,13 @@ class CDCI6214:
         elif self.pll_src == "fpga":
             return self._fpga_clk_freq
 
-    def set_input_div(self, div):
+    def set_input_div(self, div, update_cache_only=True):
         okay_divs = [0.5]
         okay_divs.extend(range(1, 256))
         if div not in okay_divs:
             raise ValueError("Invalid input div {}".format(div))
 
+        msg = 'setting input_div to %d' % div
         if div == 0.5:
             scope_logger.warning("""Setting reference divider to 0.5;
             this may result in inconsistent phase relationship between the target clock and the ADC sampling clock.
@@ -672,7 +861,7 @@ class CDCI6214:
             div = 0
 
         div = int(div)
-        self.update_reg(0x1B, div, 0xFF)
+        self.update_reg(0x1B, div, 0xFF, msg, update_cache_only)
 
     def get_input_div(self):
         div = self.read_reg(0x1B, True) & 0xFF
@@ -680,15 +869,36 @@ class CDCI6214:
             div = 0.5
         return div
 
-    def set_pll_mul(self, mul):
+    def set_pll_mul(self, mul, update_cache_only=True):
         okay_pll_muls = range(5, 2**14)
         if mul not in okay_pll_muls:
             raise ValueError("Invalid mul {}".format(mul))
         mul = int(mul)
-        self.update_reg(0x1D, mul, 0x3FFF)
+        msg = 'setting pll_mul to %d' % mul
+        self.update_reg(0x1D, mul, 0x3FFF, msg, update_cache_only)
 
     def get_pll_mul(self):
         return self.read_reg(0x1D, True) & 0x3FFF
+
+
+    def set_fb_prescale(self, fb_prescale, update_cache_only=True):
+        if fb_prescale not in [4,5,6]:
+            raise ValueError("Invalid fb_prescale {}".format(fb_prescale))
+        msg = 'setting fb_prescale to %d' % fb_prescale
+        if fb_prescale == 4:
+            val = 0
+        elif fb_prescale == 5:
+            val = 1
+        elif fb_prescale == 6:
+            val = 2
+        else:
+            raise ValueError
+        self.update_reg(0x1D, val << 14, 0xC000, msg, update_cache_only)
+
+    def get_fb_prescale(self):
+        reg = self.read_reg(0x1D, True)
+        prescales = [4, 5, 6]
+        return prescales[(reg >> 14) & 0b11]
 
 
     def update_fpga_vco(self, vco):
@@ -745,6 +955,13 @@ class CDCI6214:
         rtn['pll_locked'] = self.pll_locked
         rtn['adc_delay'] = self.adc_delay
         rtn['target_delay'] = self.target_delay
+        rtn['f_pfd'] = self.f_pfd
+        rtn['f_vco'] = self.f_vco
+        rtn['input divider'] = self.get_input_div()
+        rtn['input multiplier'] = self.get_pll_mul()
+        rtn['feedback prescaler'] = self.get_fb_prescale()
+        rtn['prescaler'] = self.get_prescale()
+        rtn['output divider (target clock)'] = self.get_outdiv(1)
         return rtn
 
     def __repr__(self):
@@ -753,11 +970,6 @@ class CDCI6214:
     def __str__(self):
         return self.__repr__()
 
-# class ChipWhispererHuskyClockAdv:
-#     """todo"""
-#     def __init__(self, pll, fpga_clk_settings):
-#         self.pll = pll
-#         self.fpga_clk_settings = fpga_clk_settings
 
 class ChipWhispererHuskyClock(util.DisableNewAttr):
 
@@ -790,7 +1002,6 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         self.adc_phase = 0 # type: ignore
         self._extclk_tolerance_cached = 100e3
         self._extclk_tolerance_enabled = True
-        # self.adv_settings = ChipWhispererHuskyClockAdv(pll, fpga_clk_settings)
         self.disable_newattr()
 
     @property
@@ -841,12 +1052,17 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     def clkgen_src(self, clk_src):
         self._cached_adc_freq = None
         if clk_src in ["internal", "system"]:
+            self.pll.cache_all_registers()
             self.extclk_monitor_enabled = False
             clkgen_freq = self.clkgen_freq
             self.pll.pll_src = "xtal"
-            self.fpga_clk_settings.enabled = False # keep things cool
-            self.clkgen_freq = clkgen_freq
+            if self.pll.verbose: print('clkgen_src calling _clkgen_freq_setter')
+            self._clkgen_freq_setter(clkgen_freq)
+            self.pll.write_cached_registers()
+            self.pll._reset_if_needed()
+            self.pll.sync_clocks()
         elif clk_src in ["extclk", 'extclk_aux_io']:
+            self.pll.cache_all_registers()
             data = self.oa.sendMessage(CODE_READ, "CW_EXTCLK_ADDR", maxResp=1)[0]
             if clk_src == 'extclk':
                 #set bits [2:0] to 011:
@@ -857,11 +1073,13 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
                 data &= 0xf8
             self.oa.sendMessage(CODE_WRITE, "CW_EXTCLK_ADDR", [data])
             self.pll.pll_src = "fpga"
-            self.fpga_clk_settings.adc_src = "extclk_dir"
-            self.fpga_clk_settings.enabled = False # keep things cool
             self.fpga_clk_settings.freq_ctr_src = "extclk"
-            self.clkgen_freq = self.fpga_clk_settings.freq_ctr
+            if self.pll.verbose: print('clkgen_src calling _clkgen_freq_setter')
+            self._clkgen_freq_setter(self.fpga_clk_settings.freq_ctr)
             self.extclk_monitor_enabled = True
+            self.pll.write_cached_registers()
+            self.pll._reset_if_needed()
+            self.pll.sync_clocks()
         else:
             raise ValueError("Invalid src settings! Must be 'internal', 'system', 'extclk' or 'extclk_aux_io', not {}".format(clk_src))
 
@@ -912,15 +1130,28 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     @clkgen_freq.setter # type: ignore
     @clear_adc_unlock
     def clkgen_freq(self, freq):
+        # wrapper to avoid re-caching:
+        self.pll.cache_all_registers()
+        if self.pll.verbose: print('clkgen_freq calling _clkgen_freq_setter')
+        self._clkgen_freq_setter(freq)
+        self.pll.write_cached_registers()
+        self.pll._reset_if_needed()
+        self.pll.sync_clocks()
+
+    def _clkgen_freq_setter(self, freq):
         # update pll clk src
+        # note: doesn't read/write-out cache: clkgen_freq() handles that
+        # this is to avoid re-caching, when called by other properties that handle the cache
         self._cached_adc_freq = None
         if not (self.clkgen_src in ["internal", "system"]):
             self.pll._fpga_clk_freq = self.fpga_clk_settings.freq_ctr
         if self.clkgen_src == "test":
             self.pll._fpga_clk_freq = freq
+        if self.pll.verbose: print('_clkgen_freq_setter calling target_freq')
         self.pll.target_freq = freq
         self.extclk_error = None
         self._update_adc_speed_mode(self.adc_mul, freq)
+
 
     @property
     def adc_mul(self):
@@ -944,7 +1175,11 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     @clear_adc_unlock
     def adc_mul(self, mul):
         self._cached_adc_freq = None
+        self.pll.cache_all_registers()
         self.pll.adc_mul = mul
+        self.pll.write_cached_registers()
+        self.pll._reset_if_needed()
+        self.pll.sync_clocks()
         self._update_adc_speed_mode(mul, self.clkgen_freq)
 
     @property
@@ -957,7 +1192,6 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self._cached_adc_freq = self.pll.adc_freq
 
         return self._cached_adc_freq
-
         # return self.pll.adc_freq
 
     @property
@@ -1016,6 +1250,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     @property
     def adc_phase_raw(self) -> int:
         """Changes the phase of the ADC clock relative to the target clock
+        TODO: update description?
 
         Positive values delay the ADC clock compared to the target clock
         and vice versa.
