@@ -105,6 +105,7 @@ class CDCI6214:
     def __init__(self, naeusb, mmcm1, mmcm2):
         self.naeusb = naeusb
         self.verbose = False # TODO: temporary
+        self.always_recalc = False # TODO: temporary
         self._reset_required = False
         self._given_input_freq = None
         self._given_target_freq = None
@@ -514,7 +515,7 @@ class CDCI6214:
         # Depending on what frequencies we're dealing with, this may fail, meaning we have to touch the PLL settings
         # Then we need to reset the PLL to lock it, which drops the target clock for a bit
         # This often crashes the target, so the user may need to reset their target
-        if (force_recalc is False) and ((input_freq == self._old_in_freq) and (target_freq == self._old_target_freq)):
+        if (force_recalc is False) and (not self.always_recalc) and ((input_freq == self._old_in_freq) and (target_freq == self._old_target_freq)):
             scope_logger.info("Input and target frequency unchanged, avoiding PLL changes so as not to drop out target clock")
             old_div = self.get_outdiv(3)
             
@@ -634,7 +635,6 @@ class CDCI6214:
         #scope_logger.info('f_out_adc: %0.2f MHz' % (self.f_out_adc / 1e6))
         #scope_logger.info('f_out error: %0.1f Hz' % self.f_out_error)
 
-
     @property
     def f_pfd(self):
         """ PFD freqency, using the input frequency against which PLL
@@ -675,6 +675,18 @@ class CDCI6214:
         using the input frequency against which PLL parameters were calculated.
         """
         return abs(self.f_out - self._given_target_freq)
+
+    @property
+    def max_phase_percent(self):
+        """ Maximum adc_phase setting, expressed in percentage of the ADC clock period
+        (100.0 = full ADC clock period). Depends on internal PLL settings and will vary
+        depending on clkgen_freq and adc_mul settings.
+        """
+        outdiv = self.get_outdiv(3)
+        if outdiv == 0:
+            return 0
+        else:
+            return min(100.0, 31/outdiv*100)
 
 
     def set_bypass_adc(self, enable_bypass):
@@ -719,7 +731,7 @@ class CDCI6214:
 
     @target_delay.setter
     def target_delay(self, delay):
-        if self.pll_src == 'fpga':
+        if self.pll_src == 'fpga' and delay != 0:
             raise ValueError("Cannot set target_delay when scope.clock.clkgen_src is 'extclk'.")
         if (delay > 0b11111) or (delay < 0):
             raise ValueError("Invalid Delay {}, must be between 0 and 31".format(delay))
@@ -1226,9 +1238,12 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         """Checks if the Husky PLL is locked"""
         return self.pll.pll_locked
 
+
     @property
     def adc_phase(self) -> int:
-        """Changes the phase of the ADC clock relative to the target clock
+        """Changes the phase of the ADC clock relative to the target clock.
+        Expressed in percentage of the ADC clock period (100.0: one full clock
+        period.
 
         Positive values delay the ADC clock compared to the target clock
         and vice versa.
@@ -1236,46 +1251,66 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         Negative values are not possible when scope.clock.clkgen_src is
         'extclk'.
 
-        Note: The actual phase is only a 6 bit signed value compared to
-        a 9 bit signed value on the Lite/Pro. This is mapped onto
-        the same [-255, 255] range, meaning not all phases
-        between -255 and 255 are possible.
+        Note: The actual phase is a 6 bit signed value, which can be set via
+        scope.clock.adc_phase_raw. The maximum phase depends on internal PLL
+        settings (which are dependent on the target and ADC clock frequencies),
+        and is given by scope.clock.pll.max_phase_percent. The phase step size
+        is scope.clock.pll.adc_phase_step_size.
 
-        :Getter: Gets the current adc_phase
+        :Getter: Gets the current adc_phase.
 
-        :Setter: Sets the adc_phase. Must be in the range [-255, 255]
+        :Setter: Sets the adc_phase.
         """
-        return int((self.pll.adc_delay - self.pll.target_delay) * 255 // 31)
+        outdiv = self.pll.get_outdiv(3)
+        if outdiv == 0:
+            return 0
+        else:
+            raw_delay = self.pll.adc_delay - self.pll.target_delay
+            return raw_delay / outdiv * 100
 
-    @property
-    def adc_phase_raw(self) -> int:
-        """Changes the phase of the ADC clock relative to the target clock
-        TODO: update description?
-
-        Positive values delay the ADC clock compared to the target clock
-        and vice versa.
-
-        Negative values are not possible when scope.clock.clkgen_src is
-        'extclk'.
-
-        Note: The actual phase is only a 6 bit signed value compared to
-        a 9 bit signed value on the Lite/Pro. This is mapped onto
-        the same [-255, 255] range, meaning not all phases
-        between -255 and 255 are possible.
-
-        :Getter: Gets the current adc_phase
-
-        :Setter: Sets the adc_phase. Must be in the range [-255, 255]
-        """
-        return int(self.pll.adc_delay - self.pll.target_delay)
 
     @adc_phase.setter # type: ignore
     @clear_adc_unlock
     def adc_phase(self, phase):
-        self._cached_adc_freq = None
-        if abs(phase) > 255:
-            raise ValueError("Max phase +/- 255")
-        adj_phase = int((abs(phase) * 31 / 255) + 0.5)
+        if abs(phase) > self.pll.max_phase_percent:
+            raise ValueError("Max phase +/- %0.1f" % self.pll.max_phase_percent)
+        adj_phase = abs(phase)
+        phase_steps = round(adj_phase/100*self.pll.get_outdiv(3))
+        if phase >= 0:
+            self.pll.adc_delay = phase_steps
+            self.pll.target_delay = 0
+        else:
+            self.pll.target_delay = phase_steps
+            self.pll.adc_delay = 0
+
+
+    @property
+    def adc_phase_raw(self) -> int:
+        """Changes the phase of the ADC clock relative to the target clock by
+        specifying the raw PLL phase setting (chX_sync_delay register field of
+        the the CDCI6214 PLL). The phase step size is
+        scope.clock.pll.adc_phase_step_size.
+
+        Positive values delay the ADC clock compared to the target clock
+        and vice versa.
+
+        Negative values are not possible when scope.clock.clkgen_src is
+        'extclk'.
+
+        :Getter: Gets the current raw adc_phase.
+
+        :Setter: Sets the raw adc_phase.
+        """
+        return int(self.pll.adc_delay - self.pll.target_delay)
+
+    @adc_phase_raw.setter # type: ignore
+    @clear_adc_unlock
+    def adc_phase_raw(self, phase):
+        self._cached_adc_freq = None # TODO: why?
+        if abs(phase) > 31:
+            raise ValueError("Max phase +/- 31")
+        #adj_phase = int((abs(phase) * 31 / 255) + 0.5)
+        adj_phase = abs(phase)
 
         if phase >= 0:
             self.pll.adc_delay = adj_phase
@@ -1283,8 +1318,16 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
                 # can't set this otherwise:
                 self.pll.target_delay = 0
         else:
-            self.pll.target_delay = abs(adj_phase)
+            self.pll.target_delay = adj_phase
             self.pll.adc_delay = 0
+
+
+    @property
+    def adc_phase_step_size(self) -> float:
+        """ adc_phase_raw step size, in picoseconds.
+        """
+        return 1 / self.pll.f_vco * self.pll.get_prescale() * 1e9
+
 
     @clear_adc_unlock # type: ignore
     def reset_dcms(self):
