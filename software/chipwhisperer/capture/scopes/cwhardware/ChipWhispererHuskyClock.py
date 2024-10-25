@@ -12,7 +12,7 @@ import time
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
 
-class CDCI6214:
+class CDCI6214(util.DisableNewAttr):
     """PLL control for the Husky.
 
     May be merged into scope.clock in the future.
@@ -103,9 +103,12 @@ class CDCI6214:
             [0x46, 0x0000, "unknown",       '']]
 
     def __init__(self, naeusb, mmcm1, mmcm2):
+        super().__init__()
         self.naeusb = naeusb
         self.verbose = False # TODO: temporary
-        self.always_recalc = False # TODO: temporary
+        self._resets_needed = 0
+        self._resets_avoided = 0
+        self._consistant_mode = True # set to False for risky legacy behaviour that can lead to https://github.com/newaetech/chipwhisperer/issues/490
         self._reset_required = False
         self._given_input_freq = None
         self._given_target_freq = None
@@ -135,8 +138,9 @@ class CDCI6214:
 
         self._old_in_freq = 0
         self._old_target_freq = 0
-        self._allow_rdiv = False # TODO: change default to True?
+        self._allow_rdiv = True # TODO: change default to True?
         self._reset_time = 0.10 # empirically seems to work well; this is a conservative number
+        self.disable_newattr()
 
     def write_reg(self, addr, data, msg=''):
         """Write to a CDCI6214 Register over I2C
@@ -247,8 +251,7 @@ class CDCI6214:
         """
         self.cached_reg = []
         if self._registers_cached:
-            raise ValueError('Oh-ho!') # TODO: temporary, for debugging...
-            #scope_logger.debug('Registers are already cached; not re-caching.') TODO: should this be promoted to an error?
+            scope_logger.error('Registers are already cached; not re-caching.')
         else:
             self._registers_cached = True
             for addr in range(0x47):
@@ -351,8 +354,11 @@ class CDCI6214:
 
     def _reset_if_needed(self):
         if self._reset_required:
+            self._resets_needed += 1
             self.reset()
             self._reset_required = False
+        else:
+            self._resets_avoided += 1
 
 
     def sync_clocks(self):
@@ -515,25 +521,31 @@ class CDCI6214:
         # Depending on what frequencies we're dealing with, this may fail, meaning we have to touch the PLL settings
         # Then we need to reset the PLL to lock it, which drops the target clock for a bit
         # This often crashes the target, so the user may need to reset their target
-        if (force_recalc is False) and (not self.always_recalc) and ((input_freq == self._old_in_freq) and (target_freq == self._old_target_freq)):
+        # NOTE: this code block doesn't run by default (due to self._consistant_mode being True) because it can lead to:
+        # (a) non-optimal PLL settings (i.e. not as close to the requested frequency as possible); which implies:
+        # (b) setting the same scope.clock parameters in 2 different orders can lead to 2 different sets of PLL settings
+        # (c) which further implies that the actual scope.clock.adc_phase could differ significantly in these 2 cases
+        # This code block is kept in case the old behaviour is required; re-enable it by setting scope.clock.pll._consistant_mode 
+        # to False, but *** use at your own risk! ***.
+        no_freq_change = ((input_freq == self._old_in_freq) and (target_freq == self._old_target_freq))
+        if (force_recalc is False) and (not self._consistant_mode) and no_freq_change:
             scope_logger.info("Input and target frequency unchanged, avoiding PLL changes so as not to drop out target clock")
             old_div = self.get_outdiv(3)
             
             # check if this results in a remainder
             # if it does, we need to recalc clocks
             if (old_div * self.adc_mul) % adc_mul:
-                # TODO: temp to not clutter test output; return to warning when done testing! or add a switch to disable...
-                scope_logger.debug(f"Could not adjust adc_mul via output divider alone. Recalcing clocks...")
-                scope_logger.debug("Target clock has dropped for a moment. You may need to reset your target")
+                scope_logger.warning(f"Could not adjust adc_mul via output divider alone. Recalculating clocks...")
+                scope_logger.warning("Target clock has dropped for a moment. You may need to reset your target")
             else:
                 new_div = (old_div * self.adc_mul) // adc_mul
                 scope_logger.debug(f"Newdiv {new_div}, OldDiv {old_div}, old adcmul {self.adc_mul}, new adcmul {adc_mul}")
                 try:
+                    self.set_outdiv(3, new_div)
                     if not self.pll_locked:
                         scope_logger.warning("PLL unlocked after updating frequencies")
                         scope_logger.warning("Target clock has dropped for a moment. You may need to reset your target")
-                        self.reset()
-                    self.set_outdiv(3, new_div)
+                        self._reset_required = True
                     self._adc_mul = adc_mul
                     return
                 except:
@@ -549,7 +561,7 @@ class CDCI6214:
             okay_in_divs.append(0.5)
         else:
             okay_in_divs = [1]
-        okay_in_divs = np.array(okay_in_divs, dtype='int64')
+        okay_in_divs = np.array(okay_in_divs, dtype='float64')
         okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) >= self._min_pfd]
         okay_in_divs = okay_in_divs[(input_freq // okay_in_divs) <= self._max_pfd]
         scope_logger.debug("OK in divs: {}".format(okay_in_divs))
@@ -601,15 +613,17 @@ class CDCI6214:
         self.set_prescale(3, best_prescale)
         self.set_prescale(1, best_prescale)
 
-        self.set_fb_prescale(best_fb_prescale) # TODO: does this affect relock?
-        
         relock = False
+        if self.get_fb_prescale() != best_fb_prescale:
+            self.set_fb_prescale(best_fb_prescale)
+            relock = True
         if self.get_input_div() != best_in_div:
             self.set_input_div(best_in_div)
             relock = True
         if self.get_pll_mul() != best_pll_mul:
             self.set_pll_mul(best_pll_mul)
             relock = True
+        
         self.set_outdiv(1, best_out_div)
 
         if not adc_off:
@@ -619,21 +633,19 @@ class CDCI6214:
             self.set_outdiv(3, 0)
 
         if (not self.pll_locked) or relock:
+            scope_logger.info('Reset needed after changing clock settings.')
+            scope_logger.info('Target clock may drop; you may need to reset your target.')
+            if no_freq_change: # if user only changed adc_mul, a disturbance in the target clock may not be expected, so promote this to a warning:
+                scope_logger.warning('Target clock may drop; you may need to reset your target.')
             self._reset_required = True
 
         self._old_in_freq = input_freq
         self._old_target_freq = target_freq
         self._adc_mul = adc_mul
 
-        #best_fb_prescale = 5 # TODO!
         scope_logger.info('Calculated settings: best_prescale=%d best_fb_prescale=%d best_in_div=%d best_pll_mul=%d best_out_div=%d adc_mul=%d' 
                 % (best_prescale, best_fb_prescale, best_in_div, best_pll_mul, best_out_div, adc_mul))
 
-        #scope_logger.info('f_pfd (1 MHz - 100 MHz): %0.2f MHz' % (self.f_pfd/1e6))
-        #scope_logger.info('f_vco (2.4 GHz - 2.8 GHz): %0.2f GHz' % (self.f_vco/1e9))
-        #scope_logger.info('f_out: %0.2f MHz' % (self.f_out / 1e6))
-        #scope_logger.info('f_out_adc: %0.2f MHz' % (self.f_out_adc / 1e6))
-        #scope_logger.info('f_out error: %0.1f Hz' % self.f_out_error)
 
     @property
     def f_pfd(self):
