@@ -17,14 +17,17 @@ class CDCI6214(util.DisableNewAttr):
 
     May be merged into scope.clock in the future.
 
+    The methods in this class are not intended to be called by the user. Unless
+    you really know what you're doing, set the clocks via scope.clock instead.
+
     Basic usage::
 
-        scope = cw.scope() # Husky only
+        scope = cw.scope()
         scope.pll.target_freq = 7.37E6
         scope.pll.adc_mul = 4 # any positive integer within reason that satisfies ADC specs
     """
 
-    # From datasheet (Table 13):
+    # From CDCI6214 datasheet (Table 13):
     # 1st element: register address
     # 2nd element: default value
     # 3rd element: register name
@@ -138,7 +141,7 @@ class CDCI6214(util.DisableNewAttr):
 
         self._old_in_freq = 0
         self._old_target_freq = 0
-        self._allow_rdiv = True # TODO: change default to True?
+        self._allow_rdiv = False # setting True leads to (1) phase variability on XIN; (2) PLL unlocking periodically
         self._reset_time = 0.10 # empirically seems to work well; this is a conservative number
         self.disable_newattr()
 
@@ -635,7 +638,7 @@ class CDCI6214(util.DisableNewAttr):
         if (not self.pll_locked) or relock:
             scope_logger.info('Reset needed after changing clock settings.')
             scope_logger.info('Target clock may drop; you may need to reset your target.')
-            if no_freq_change: # if user only changed adc_mul, a disturbance in the target clock may not be expected, so promote this to a warning:
+            if no_freq_change and self.pll_src == 'xtal': # if user only changed adc_mul, a disturbance in the target clock may not be expected, so promote this to a warning:
                 scope_logger.warning('Target clock may drop; you may need to reset your target.')
             self._reset_required = True
 
@@ -689,6 +692,46 @@ class CDCI6214(util.DisableNewAttr):
         return abs(self.f_out - self._given_target_freq)
 
     @property
+    def parameters(self):
+        """PLL multiply, divide, and prescale settings, as a list of elements:
+        * list[0]: input divider (ip_rdiv)
+        * list[1]: feedback divider (pll_ndiv)
+        * list[2]: feedback prescaler (pll_psfb)
+        * list[3]: prescaler A/B (pll_ps[a|b])
+        * list[4]: output divider 1 (ch1_iod_div)
+        * list[5]: output divider 3 (ch3_iod_div)
+
+        :getter: obtain list of current settings
+
+        :setter: apply settings from list
+        """
+        return (self.get_input_div(),
+                self.get_pll_mul(),
+                self.get_fb_prescale(),
+                self.get_prescale(),
+                self.get_outdiv(1),
+                self.get_outdiv(3))
+
+    @parameters.setter
+    def parameters(self, params):
+        if params[4] % params[5]:
+            raise ValueError('Unsupported setting: outdiv(1) must be a multiple of outdiv(3).')
+        self.cache_all_registers()
+        self.set_input_div(params[0])
+        self.set_pll_mul(params[1])
+        self.set_fb_prescale(params[2])
+        self.set_prescale(1, params[3])
+        self.set_prescale(3, params[3])
+        self.set_outdiv(1, params[4])
+        self.set_outdiv(3, params[5])
+        self.write_cached_registers()
+        if not self.pll_locked:
+            self.reset()
+        # update adc_mul accordingly:
+        self._adc_mul = params[4]//params[5]
+
+
+    @property
     def max_phase_percent(self):
         """ Maximum adc_phase setting, expressed in percentage of the ADC clock period
         (100.0 = full ADC clock period). Depends on internal PLL settings and will vary
@@ -704,30 +747,21 @@ class CDCI6214(util.DisableNewAttr):
     def set_bypass_adc(self, enable_bypass):
         """Routes FPGA clock input directly to ADC, bypasses PLL.
         """
+        # TODO: test it!
+        self.cache_all_registers()
         if enable_bypass:
             #fpga input
-            self.cache_all_registers()
             self.pll_src = "fpga"
-            self.write_cached_registers()
-
             #For output 3 (hard coded):
-
             # TODO: is this correct? (test it)
-            # turn on bypass buffer for CH3
-            self.update_reg(0x1B, (1<<13), 0)
-
-            # Output divide by 1
-            self.update_reg(0x31, 1, 0x3FFF)
-
-            # Output source is REF
-            self.update_reg(0x31, 0xC000, 0)
+            self.update_reg(0x1B, (1<<13), 0, 'turn on bypass buffer for CH3')
+            self.update_reg(0x31, 1, 0x3FFF, 'Output divide by 1')
+            self.update_reg(0x31, 0xC000, 0, 'Output source is REF')
         else:
+            self.update_reg(0x31, 0, 0xC000, 'Output source is PSA')
+            self.update_reg(0x1B, 0, (1<<13), 'turn off bypass buffer for CH3')
 
-            # Output source is PSA
-            self.update_reg(0x31, 0, 0xC000)
-
-            # turn off bypass buffer for CH3
-            self.update_reg(0x1B, 0, (1<<13))
+        self.write_cached_registers()
 
     @property
     def target_delay(self):
@@ -805,7 +839,8 @@ class CDCI6214(util.DisableNewAttr):
 
         :setter: Multiplier to set. Recalculates both adc and target clock settings,
             so setting this will result in a short disruption of the clock
-            to the target
+            to the target. Not intended to be called by user; use
+            scope.clock.clkgen_freq instead.
         """
         return self._adc_mul
 
@@ -825,7 +860,8 @@ class CDCI6214(util.DisableNewAttr):
 
         :getter: The actual calculated target clock frequency that was set
 
-        :setter: The target frequency you want
+        :setter: The target frequency you want. Not intended to be called by
+            user; use scope.clock.clkgen_freq instead.
         """
         indiv = self.get_input_div()
         outdiv = self.get_outdiv(1)
@@ -1171,7 +1207,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.pll._fpga_clk_freq = self.fpga_clk_settings.freq_ctr
         if self.clkgen_src == "test":
             self.pll._fpga_clk_freq = freq
-        if self.pll.verbose: print('_clkgen_freq_setter calling target_freq')
+        if self.pll.verbose: print('_clkgen_freq_setter calling target_freq with freq: %f' % freq)
         self.pll.target_freq = freq
         self.extclk_error = None
         self._update_adc_speed_mode(self.adc_mul, freq)
