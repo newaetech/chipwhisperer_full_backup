@@ -561,8 +561,12 @@ class CDCI6214(util.DisableNewAttr):
         # find input divs that will give a clock
         # input to the PLL between 1MHz and 100MHz
         if self._allow_rdiv:
+            # can lead to phase variability so disabled by default
             okay_in_divs = list(range(1,256))
             okay_in_divs.append(0.5)
+        elif input_freq > self._max_pfd:
+            # in this case we *need* to divide (but we don't need the x2 option)
+            okay_in_divs = list(range(1,256))
         else:
             okay_in_divs = [1]
         okay_in_divs = np.array(okay_in_divs, dtype='float64')
@@ -654,6 +658,9 @@ class CDCI6214(util.DisableNewAttr):
 
         scope_logger.info('Calculated settings: best_prescale=%d best_fb_prescale=%d best_in_div=%d best_pll_mul=%d best_out_div=%d adc_mul=%d' 
                 % (best_prescale, best_fb_prescale, best_in_div, best_pll_mul, best_out_div, adc_mul))
+        if best_in_div != 1:
+            scope_logger.warning('PLL using reference divider; this can cause an inconsistant phase relationship between the target and sampling clocks.')
+            scope_logger.warning('(The reference divider is required when the reference (target) clock is > 100 MHz or < 1 MHz.)')
         ratio = 1 / best_in_div * best_pll_mul * best_fb_prescale / best_prescale / best_out_div
         if ratio != 1.0 and pll_src != 'xtal':
             scope_logger.error('Uh-oh, this should not happen :-/ ratio = %f' % ratio)
