@@ -20,11 +20,6 @@ class CDCI6214(util.DisableNewAttr):
     The methods in this class are not intended to be called by the user. Unless
     you really know what you're doing, set the clocks via scope.clock instead.
 
-    Basic usage::
-
-        scope = cw.scope()
-        scope.pll.target_freq = 7.37E6
-        scope.pll.adc_mul = 4 # any positive integer within reason that satisfies ADC specs
     """
 
     # From CDCI6214 datasheet (Table 13):
@@ -768,7 +763,7 @@ class CDCI6214(util.DisableNewAttr):
         self.cache_all_registers()
         if enable_bypass:
             #fpga input
-            self.pll_src = "fpga"
+            self._pll_src_setter("fpga")
             #For output 3 (hard coded):
             self._saved_parameters = list(self.parameters)
             self.update_reg(0x1B, (1<<13), 0, 'turn on bypass buffer for CH3', update_cache_only=True)
@@ -828,19 +823,16 @@ class CDCI6214(util.DisableNewAttr):
 
     @property
     def pll_src(self):
-        """Get/set the PLL src. fpga is typically useful if using an external clock
+        """Get/set the PLL src. fpga is typically useful if using an external clock.
 
         :getter: 'xtal' or 'fpga'
-
-        :setter: 'xtal' or 'fpga'
         """
         if self.get_pll_input():
             return "xtal"
         else:
             return "fpga"
 
-    @pll_src.setter
-    def pll_src(self, src):
+    def _pll_src_setter(self, src):
         self._cached_adc_freq = None
         if src == "xtal":
             self.set_pll_input(True)
@@ -858,16 +850,10 @@ class CDCI6214(util.DisableNewAttr):
         Must be an integer multiple.
 
         :getter: Last set multiplier
-
-        :setter: Multiplier to set. Recalculates both adc and target clock settings,
-            so setting this will result in a short disruption of the clock
-            to the target. Not intended to be called by user; use
-            scope.clock.clkgen_freq instead.
         """
         return self._adc_mul
 
-    @adc_mul.setter
-    def adc_mul(self, adc_mul):
+    def _adc_mul_setter(self, adc_mul):
         scope_logger.debug("adc_mul: {}".format(adc_mul))
         if self.verbose: print('adc_mul calling set_outfreqs')
         self.set_outfreqs(self.input_freq, self._set_target_freq, adc_mul)
@@ -880,13 +866,11 @@ class CDCI6214(util.DisableNewAttr):
         Due to PLL/adc_mul limitations, the actual value may differ
         from the requested value. 
 
-        :getter: When scope.clock.clkgen_src is 'system', this is the actual
-            generated clock frequency. When it is 'extclk', this is the clock
-            frequency provided by the user to scope.clock.clkgen_freq; it is
-            not necessarily the actual target clock frequency.
+        When scope.clock.clkgen_src is 'system', this is the actual
+        generated clock frequency. When it is 'extclk', this is the clock
+        frequency provided by the user to scope.clock.clkgen_freq; it is
+        not necessarily the actual target clock frequency.
 
-        :setter: The target frequency you want. Not intended to be called by
-            user; use scope.clock.clkgen_freq instead.
         """
         if self._bypass_adc:
             return self.input_freq
@@ -900,8 +884,7 @@ class CDCI6214(util.DisableNewAttr):
         else:
             return ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv) / (self.get_prescale(3)) * self.get_fb_prescale()
 
-    @target_freq.setter
-    def target_freq(self, freq):
+    def _target_freq_setter(self, freq):
         self._cached_adc_freq = None
         self._set_target_freq = freq
         scope_logger.debug("adc_mul: {}".format(self._adc_mul))
@@ -1140,7 +1123,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.pll.cache_all_registers()
             self.extclk_monitor_enabled = False
             clkgen_freq = self.clkgen_freq
-            self.pll.pll_src = "xtal"
+            self.pll._pll_src_setter("xtal")
             if self.pll.verbose: print('clkgen_src calling _clkgen_freq_setter')
             try:
                 self._clkgen_freq_setter(clkgen_freq)
@@ -1162,7 +1145,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
                 #set bits [2:0] to 000:
                 data &= 0xf8
             self.oa.sendMessage(CODE_WRITE, "CW_EXTCLK_ADDR", [data])
-            self.pll.pll_src = "fpga"
+            self.pll._pll_src_setter("fpga")
             self.fpga_clk_settings.freq_ctr_src = "extclk"
             if self.pll.verbose: print('clkgen_src calling _clkgen_freq_setter')
             try:
@@ -1239,7 +1222,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         # this is to avoid re-caching, when called by other properties that handle the cache
         self._cached_adc_freq = None
         if self.pll.verbose: print('_clkgen_freq_setter calling target_freq with freq: %f' % freq)
-        self.pll.target_freq = freq
+        self.pll._target_freq_setter(freq)
         self.extclk_error = None
         self._update_adc_speed_mode(self.adc_mul, freq)
 
@@ -1268,7 +1251,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         self._cached_adc_freq = None
         self.pll.cache_all_registers()
         try:
-            self.pll.adc_mul = mul
+            self.pll._adc_mul_setter(mul)
             self.pll.write_cached_registers()
             self.pll._reset_if_needed()
             self.pll.sync_clocks()
@@ -1553,16 +1536,16 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         self._cached_adc_freq = None
 
         if src == "clkgen_x4":
-            self.adc_mul = 4
+            self._adc_mul_setter(4)
             self.clkgen_src = 'system'
         elif src == "clkgen_x1":
-            self.adc_mul = 1
+            self._adc_mul_setter(1)
             self.clkgen_src = 'system'
         elif src == "extclk_x4":
-            self.adc_mul = 4
+            self._adc_mul_setter(4)
             self.clkgen_src = 'extclk'
         elif src == "extclk_x1":
-            self.adc_mul = 1
+            self._adc_mul_setter(1)
             self.clkgen_src = 'extclk'
         elif src == "extclk_dir":
             scope_logger.error('Call scope.clock.pll.set_bypass_adc(True|False) instead')
