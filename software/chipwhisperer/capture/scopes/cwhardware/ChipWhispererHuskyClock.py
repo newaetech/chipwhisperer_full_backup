@@ -127,6 +127,8 @@ class CDCI6214(util.DisableNewAttr):
         self._mmcm_vco_min = 600e6
         self._mmcm_vco_max = 1200e6
         self._registers_cached = False
+        self._bypass_adc = False
+        self._saved_parameters = None
         self.reset_registers()
         self.setup()
 
@@ -480,7 +482,6 @@ class CDCI6214(util.DisableNewAttr):
         self._given_target_freq = target_freq
         # if the target clock is off, turn off both output clocks
         if target_freq == 0:
-            # TODO: turn off clocks
             self.set_outdiv(3, 0)
             self.set_outdiv(1, 0)
             return
@@ -763,21 +764,26 @@ class CDCI6214(util.DisableNewAttr):
     def set_bypass_adc(self, enable_bypass):
         """Routes FPGA clock input directly to ADC, bypasses PLL.
         """
-        # TODO: test it!; don't forget try/except!
+        self._bypass_adc = enable_bypass
         self.cache_all_registers()
         if enable_bypass:
             #fpga input
             self.pll_src = "fpga"
             #For output 3 (hard coded):
-            # TODO: is this correct? (test it)
-            self.update_reg(0x1B, (1<<13), 0, 'turn on bypass buffer for CH3')
-            self.update_reg(0x31, 1, 0x3FFF, 'Output divide by 1')
-            self.update_reg(0x31, 0xC000, 0, 'Output source is REF')
+            self._saved_parameters = list(self.parameters)
+            self.update_reg(0x1B, (1<<13), 0, 'turn on bypass buffer for CH3', update_cache_only=True)
+            self.set_outdiv(1, 1)
+            self.set_outdiv(3, 1)
+            self.update_reg(0x31, 0xC000, 0, 'Output source is REF', update_cache_only=True)
+            self._adc_mul = 1
         else:
-            self.update_reg(0x31, 0, 0xC000, 'Output source is PSA')
-            self.update_reg(0x1B, 0, (1<<13), 'turn off bypass buffer for CH3')
+            self.update_reg(0x31, 0, 0xC000, 'Output source is PSA', update_cache_only=True)
+            self.update_reg(0x1B, 0, (1<<13), 'turn off bypass buffer for CH3', update_cache_only=True)
 
         self.write_cached_registers()
+        if not enable_bypass and self._saved_parameters:
+            # restore mul/div parameters:
+            self.parameters = self._saved_parameters
 
     @property
     def target_delay(self):
@@ -882,6 +888,8 @@ class CDCI6214(util.DisableNewAttr):
         :setter: The target frequency you want. Not intended to be called by
             user; use scope.clock.clkgen_freq instead.
         """
+        if self._bypass_adc:
+            return self.input_freq
         indiv = self.get_input_div()
         outdiv = self.get_outdiv(1)
         if not indiv:
@@ -905,16 +913,17 @@ class CDCI6214(util.DisableNewAttr):
     def adc_freq(self):
         """The actual calculated adc_clock freq. Read only
         """
-        if True:
-            indiv = self.get_input_div()
-            outdiv = self.get_outdiv(3)
-            if not indiv:
-                scope_logger.warning("Input divisor not set!")
-                return None
-            elif not outdiv:
-                return 0
-            else:
-                self._cached_adc_freq = ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv) / (self.get_prescale(3)) * self.get_fb_prescale()
+        if self._bypass_adc:
+            return self.input_freq
+        indiv = self.get_input_div()
+        outdiv = self.get_outdiv(3)
+        if not indiv:
+            scope_logger.warning("Input divisor not set!")
+            return None
+        elif not outdiv:
+            return 0
+        else:
+            self._cached_adc_freq = ((self.input_freq / indiv) * (self.get_pll_mul()) / outdiv) / (self.get_prescale(3)) * self.get_fb_prescale()
 
         return self._cached_adc_freq
 
@@ -1556,7 +1565,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.adc_mul = 1
             self.clkgen_src = 'extclk'
         elif src == "extclk_dir":
-            self.pll.set_bypass_adc(True)
+            scope_logger.error('Call scope.clock.pll.set_bypass_adc(True|False) instead')
         else:
             raise ValueError("Invalid ADC source (possible values: 'clkgen_x4', 'clkgen_x1', 'extclk_x4', 'extclk_x1', 'extclk_dir'")
 
