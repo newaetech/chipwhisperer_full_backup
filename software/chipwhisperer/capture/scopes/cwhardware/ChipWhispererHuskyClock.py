@@ -133,7 +133,6 @@ class CDCI6214(util.DisableNewAttr):
         self._input_freq = 12E6 # 12MHz
         self._adc_mul = 4
         self._set_target_freq = 7.37E6
-        self._fpga_clk_freq = 48E6
         self._glitch = None
         self._cached_adc_freq = None
         self._max_freq = 300e6
@@ -141,7 +140,7 @@ class CDCI6214(util.DisableNewAttr):
 
         self._old_in_freq = 0
         self._old_target_freq = 0
-        self._allow_rdiv = False # setting True leads to (1) phase variability on XIN; (2) PLL unlocking periodically
+        self._allow_rdiv = False # setting True leads to phase variability
         self._reset_time = 0.10 # empirically seems to work well; this is a conservative number
         self.disable_newattr()
 
@@ -474,6 +473,8 @@ class CDCI6214(util.DisableNewAttr):
         lowest error will be used
         """
 
+        pll_src = self.pll_src
+        scope_logger.debug('set_outfreq called: input_freq=%d target_freq=%d adc_mul=%d force_recalc=%s' % (input_freq, target_freq, adc_mul, force_recalc))
         if self.verbose: print('set_outfreq called: input_freq=%d target_freq=%d adc_mul=%d force_recalc=%s' % (input_freq, target_freq, adc_mul, force_recalc))
         self._given_input_freq = input_freq
         self._given_target_freq = target_freq
@@ -578,6 +579,8 @@ class CDCI6214(util.DisableNewAttr):
         best_error = float('inf')
 
         # go through all valid input divisions
+        # CAUTION: this set of nested for loops can see thousands of iterations, so don't do anything time-consuming here:
+        # avoid and FPGA register accesses; if any are needed, do them outside of the loop if possible (like pll_src).
         for okay_in_div in okay_in_divs:
             pll_input = input_freq // okay_in_div
 
@@ -589,7 +592,7 @@ class CDCI6214(util.DisableNewAttr):
                     okay_pll_muls = np.array(pll_muls, dtype='int64')
                     okay_pll_muls = okay_pll_muls[((pll_input * fb_prescale * okay_pll_muls) >= self._min_vco)]
                     okay_pll_muls = okay_pll_muls[((pll_input * fb_prescale * okay_pll_muls) <= self._max_vco)]
-                    scope_logger.info("Ok PLL muls: {}".format(okay_pll_muls))
+                    scope_logger.debug("Ok PLL muls: {}".format(okay_pll_muls))
                     for pll_mul in okay_pll_muls:
                         output_input = pll_input * pll_mul * fb_prescale // prescale
                         out_div = int((output_input / target_freq) + 0.5)
@@ -599,6 +602,9 @@ class CDCI6214(util.DisableNewAttr):
                         error = abs(target_freq - real_target_freq) / target_freq
                         scope_logger.debug("Testing settings: in_div {} out_div {} pll_mull {} prescale {} fb_prescale {} error {} freq {}".\
                             format(okay_in_div, out_div, pll_mul, prescale, fb_prescale, error, real_target_freq))
+                        if (error > 0) and pll_src == 'fpga':
+                            # when the clock is target-sourced, we *must* be spot on! any "error" implies that we wouldn't have *exactly* adc_mul samples per target clock
+                            continue
                         if error < best_error:
                             best_in_div = okay_in_div
                             best_out_div = out_div
@@ -638,7 +644,7 @@ class CDCI6214(util.DisableNewAttr):
         if (not self.pll_locked) or relock:
             scope_logger.info('Reset needed after changing clock settings.')
             scope_logger.info('Target clock may drop; you may need to reset your target.')
-            if no_freq_change and self.pll_src == 'xtal': # if user only changed adc_mul, a disturbance in the target clock may not be expected, so promote this to a warning:
+            if no_freq_change and pll_src == 'xtal': # if user only changed adc_mul, a disturbance in the target clock may not be expected, so promote this to a warning:
                 scope_logger.warning('Target clock may drop; you may need to reset your target.')
             self._reset_required = True
 
@@ -648,6 +654,9 @@ class CDCI6214(util.DisableNewAttr):
 
         scope_logger.info('Calculated settings: best_prescale=%d best_fb_prescale=%d best_in_div=%d best_pll_mul=%d best_out_div=%d adc_mul=%d' 
                 % (best_prescale, best_fb_prescale, best_in_div, best_pll_mul, best_out_div, adc_mul))
+        ratio = 1 / best_in_div * best_pll_mul * best_fb_prescale / best_prescale / best_out_div
+        if ratio != 1.0 and pll_src != 'xtal':
+            scope_logger.error('Uh-oh, this should not happen :-/ ratio = %f' % ratio)
 
 
     @property
@@ -747,7 +756,7 @@ class CDCI6214(util.DisableNewAttr):
     def set_bypass_adc(self, enable_bypass):
         """Routes FPGA clock input directly to ADC, bypasses PLL.
         """
-        # TODO: test it!
+        # TODO: test it!; don't forget try/except!
         self.cache_all_registers()
         if enable_bypass:
             #fpga input
@@ -855,10 +864,13 @@ class CDCI6214(util.DisableNewAttr):
     def target_freq(self):
         """The target clock frequency.
 
-        Due to PLL/adc_mul limitations, the actual value set will differ
-        from the requested value
+        Due to PLL/adc_mul limitations, the actual value may differ
+        from the requested value. 
 
-        :getter: The actual calculated target clock frequency that was set
+        :getter: When scope.clock.clkgen_src is 'system', this is the actual
+            generated clock frequency. When it is 'extclk', this is the clock
+            frequency provided by the user to scope.clock.clkgen_freq; it is
+            not necessarily the actual target clock frequency.
 
         :setter: The target frequency you want. Not intended to be called by
             user; use scope.clock.clkgen_freq instead.
@@ -905,7 +917,7 @@ class CDCI6214(util.DisableNewAttr):
         if self.pll_src == "xtal":
             return 12E6
         elif self.pll_src == "fpga":
-            return self._fpga_clk_freq
+            return self._set_target_freq
 
     def set_input_div(self, div, update_cache_only=True):
         okay_divs = [0.5]
@@ -915,9 +927,6 @@ class CDCI6214(util.DisableNewAttr):
 
         msg = 'setting input_div to %d' % div
         if div == 0.5:
-            scope_logger.warning("""Setting reference divider to 0.5;
-            this may result in inconsistent phase relationship between the target clock and the ADC sampling clock.
-            This can be prevented by setting scope.clock.pll._allow0p5 to False.""")
             div = 0
 
         div = int(div)
@@ -1117,10 +1126,15 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             clkgen_freq = self.clkgen_freq
             self.pll.pll_src = "xtal"
             if self.pll.verbose: print('clkgen_src calling _clkgen_freq_setter')
-            self._clkgen_freq_setter(clkgen_freq)
-            self.pll.write_cached_registers()
-            self.pll._reset_if_needed()
-            self.pll.sync_clocks()
+            try:
+                self._clkgen_freq_setter(clkgen_freq)
+                self.pll.write_cached_registers()
+                self.pll._reset_if_needed()
+                self.pll.sync_clocks()
+            except Exception as e:
+                scope_logger.error('Failed to update clkgen_freq: %s' % e)
+                self.pll._registers_cached = False
+
         elif clk_src in ["extclk", 'extclk_aux_io']:
             self.pll.cache_all_registers()
             data = self.oa.sendMessage(CODE_READ, "CW_EXTCLK_ADDR", maxResp=1)[0]
@@ -1135,11 +1149,15 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.pll.pll_src = "fpga"
             self.fpga_clk_settings.freq_ctr_src = "extclk"
             if self.pll.verbose: print('clkgen_src calling _clkgen_freq_setter')
-            self._clkgen_freq_setter(self.fpga_clk_settings.freq_ctr)
-            self.extclk_monitor_enabled = True
-            self.pll.write_cached_registers()
-            self.pll._reset_if_needed()
-            self.pll.sync_clocks()
+            try:
+                self._clkgen_freq_setter(self.clkgen_freq)
+                self.extclk_monitor_enabled = True
+                self.pll.write_cached_registers()
+                self.pll._reset_if_needed()
+                self.pll.sync_clocks()
+            except Exception as e:
+                scope_logger.error('Failed to update clkgen_freq: %s' % e)
+                self.pll._registers_cached = False
         else:
             raise ValueError("Invalid src settings! Must be 'internal', 'system', 'extclk' or 'extclk_aux_io', not {}".format(clk_src))
 
@@ -1181,9 +1199,6 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             to the correct value.
 
         """
-        # update pll clk src
-        if not (self.clkgen_src in ["internal", "system"]):
-            self.pll._fpga_clk_freq = self.fpga_clk_settings.freq_ctr
         return self.pll.target_freq
 
 
@@ -1193,20 +1208,20 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         # wrapper to avoid re-caching:
         self.pll.cache_all_registers()
         if self.pll.verbose: print('clkgen_freq calling _clkgen_freq_setter')
-        self._clkgen_freq_setter(freq)
-        self.pll.write_cached_registers()
-        self.pll._reset_if_needed()
-        self.pll.sync_clocks()
+        try:
+            self._clkgen_freq_setter(freq)
+            self.pll.write_cached_registers()
+            self.pll._reset_if_needed()
+            self.pll.sync_clocks()
+        except Exception as e:
+            scope_logger.error('Failed to update clkgen_freq: %s' % e)
+            self.pll._registers_cached = False
 
     def _clkgen_freq_setter(self, freq):
         # update pll clk src
         # note: doesn't read/write-out cache: clkgen_freq() handles that
         # this is to avoid re-caching, when called by other properties that handle the cache
         self._cached_adc_freq = None
-        if not (self.clkgen_src in ["internal", "system"]):
-            self.pll._fpga_clk_freq = self.fpga_clk_settings.freq_ctr
-        if self.clkgen_src == "test":
-            self.pll._fpga_clk_freq = freq
         if self.pll.verbose: print('_clkgen_freq_setter calling target_freq with freq: %f' % freq)
         self.pll.target_freq = freq
         self.extclk_error = None
@@ -1236,11 +1251,15 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     def adc_mul(self, mul):
         self._cached_adc_freq = None
         self.pll.cache_all_registers()
-        self.pll.adc_mul = mul
-        self.pll.write_cached_registers()
-        self.pll._reset_if_needed()
-        self.pll.sync_clocks()
-        self._update_adc_speed_mode(mul, self.clkgen_freq)
+        try:
+            self.pll.adc_mul = mul
+            self.pll.write_cached_registers()
+            self.pll._reset_if_needed()
+            self.pll.sync_clocks()
+            self._update_adc_speed_mode(mul, self.clkgen_freq)
+        except Exception as e:
+            scope_logger.error('Failed to update adc_mul: %s' % e)
+            self.pll._registers_cached = False
 
     @property
     def adc_freq(self):
