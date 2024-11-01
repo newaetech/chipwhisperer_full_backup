@@ -127,7 +127,6 @@ class CDCI6214(util.DisableNewAttr):
         self.reset_registers()
         self.setup()
 
-        self._input_freq = 12E6 # 12MHz
         self._adc_mul = 4
         self._set_target_freq = 7.37E6
         self._glitch = None
@@ -726,8 +725,16 @@ class CDCI6214(util.DisableNewAttr):
 
     @parameters.setter
     def parameters(self, params):
+        # validate:
+        f_pfd = self.input_freq // params[0]
+        if f_pfd > self._max_pfd or f_pfd < self._min_pfd:
+            raise ValueError('Illegal value: input divider would lead to out-of-spec PFD frequency')
+        f_vco = f_pfd * params[2] * params[1]
+        if f_vco > self._max_vco or f_vco < self._min_vco:
+            raise ValueError('Illegal values: parameters would lead to out-of-spec VCO frequency')
         if params[4] % params[5]:
             raise ValueError('Unsupported setting: outdiv(1) must be a multiple of outdiv(3).')
+        # go:
         self.cache_all_registers()
         self.set_input_div(params[0])
         self.set_pll_mul(params[1])
@@ -972,7 +979,7 @@ class CDCI6214(util.DisableNewAttr):
     def update_fpga_vco(self, vco):
         """Set the FPGA clock glitch PLL's VCO frequency.
         This isn't a property of the CDCI6214 PLL, but it is closely tied, because
-        the FPGA VCO frequency depends of this PLL's frequency.
+        the FPGA VCO frequency depends on this PLL's frequency.
         Allowed range: 600 - 1200 MHz.
         """
         # For clock glitching, FPGA clock glitch MMCMs also need to have their M/D parameters
