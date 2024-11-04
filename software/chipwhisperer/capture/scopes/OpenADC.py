@@ -684,7 +684,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.decode_IO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.sc)
 
         if cwtype in ["cwhusky", "cwhusky-plus"]:
-            self._fpga_clk = ClockSettings(self.sc, hwinfo=self.hwinfo, is_husky=True)
+            self._fpga_clk = ClockSettings(self.sc, hwinfo=self.hwinfo)
             self.glitch_drp1 = XilinxDRP(self.sc, "CG1_DRP_DATA", "CG1_DRP_ADDR", "CG1_DRP_RESET")
             self.glitch_drp2 = XilinxDRP(self.sc, "CG2_DRP_DATA", "CG2_DRP_ADDR", "CG2_DRP_RESET")
             self.la_drp = XilinxDRP(self.sc, "LA_DRP_DATA", "LA_DRP_ADDR", "LA_DRP_RESET")
@@ -711,7 +711,6 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self._is_husky = True
             self.adc._is_husky = True
             self.gain._is_husky = True
-            self._fpga_clk._is_husky = True
             self.sc._is_husky = True
             self.adc.bits_per_sample = 12
             if cwtype == "cwhusky-plus":
