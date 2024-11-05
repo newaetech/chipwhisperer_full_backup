@@ -24,7 +24,7 @@ class CDCI6214(util.DisableNewAttr):
 
     # From CDCI6214 datasheet (Table 13):
     # 1st element: register address
-    # 2nd element: default value
+    # 2nd element: default value (from datasheet)
     # 3rd element: register name
     # 4th element: register description
     # (note that in the datasheet the "default value" includes the address as 16 MSB?!? we don't do that here)
@@ -107,7 +107,6 @@ class CDCI6214(util.DisableNewAttr):
         self._resets_avoided = 0
         self._consistant_mode = True # set to False for risky legacy behaviour that can lead to https://github.com/newaetech/chipwhisperer/issues/490
         self._reset_required = False
-        self._given_input_freq = None
         self._given_target_freq = None
         self._min_vco = 2400e6
         self._max_vco = 2800e6
@@ -277,6 +276,7 @@ class CDCI6214(util.DisableNewAttr):
          * Disable channel 2 and 4 (unused)
          * Set ref as AC-differential, XIN == xtal
          * Use register to select PLL input instead of pin
+         * Set valid multiply/divide/prescale values
          * 
         """
         self.cache_all_registers()
@@ -297,6 +297,9 @@ class CDCI6214(util.DisableNewAttr):
         self.set_outdiv(1, 0, update_cache_only=True)
         self.set_prescale(3, 5, update_cache_only=True)
         self.set_prescale(1, 5, update_cache_only=True)
+        self.set_input_div(1, update_cache_only=True)
+        self.set_pll_mul(54, update_cache_only=True)
+        self.set_fb_prescale(4, update_cache_only=True)
         self.write_cached_registers()
 
 
@@ -463,7 +466,6 @@ class CDCI6214(util.DisableNewAttr):
 
         pll_src = self.pll_src
         scope_logger.debug('set_outfreq called: input_freq=%d target_freq=%d adc_mul=%d force_recalc=%s' % (input_freq, target_freq, adc_mul, force_recalc))
-        self._given_input_freq = input_freq
         self._given_target_freq = target_freq
         # if the target clock is off, turn off both output clocks
         if target_freq == 0:
@@ -656,7 +658,7 @@ class CDCI6214(util.DisableNewAttr):
         """ PFD freqency, using the input frequency against which PLL
         parameters were calculated.
         """
-        pfd = self._given_input_freq/self.get_input_div()
+        pfd = self.input_freq/self.get_input_div()
         if not (self._min_pfd <= pfd <= self._max_pfd):
             scope_logger.warning('PFD out of range!')
         return pfd
@@ -1062,7 +1064,8 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         self.fpga_clk_settings.freq_ctr_src = "extclk"
         self.adc_phase = 0 # type: ignore
         self._extclk_tolerance_cached = 100e3
-        self._extclk_tolerance_enabled = True
+        self._extclk_tolerance_enabled = False
+        self.extclk_monitor_enabled = False
         self.disable_newattr()
 
     @property
@@ -1143,10 +1146,10 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             scope_logger.debug('clkgen_src calling _clkgen_freq_setter')
             try:
                 self._clkgen_freq_setter(self.clkgen_freq)
-                self.extclk_monitor_enabled = True
                 self.pll.write_cached_registers()
                 self.pll._reset_if_needed()
                 self.pll.sync_clocks()
+                self.extclk_monitor_enabled = True
             except Exception as e:
                 scope_logger.error('Failed to update clkgen_freq: %s' % e)
                 self.pll._registers_cached = False
@@ -1417,7 +1420,6 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self._extclk_tolerance_enabled = True
         else:
             self._extclk_tolerance_enabled = False
-            self._extclk_tolerance_cached = self.extclk_tolerance
             self.oa.sendMessage(CODE_WRITE, "EXTCLK_MONITOR", [0,0,0,0])
 
     def _adc_error_enabled(self, en):
@@ -1471,9 +1473,9 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
     @extclk_tolerance.setter
     def extclk_tolerance(self, freq):
+        self._extclk_tolerance_cached = freq
         samplefreq = float(self.oa.hwInfo.sysFrequency()) / float(pow(2,23))
         freq = int(freq/samplefreq)
-        self._extclk_tolerance_cached = freq
         self.oa.sendMessage(CODE_WRITE, "EXTCLK_MONITOR", list(int.to_bytes(freq, length=4, byteorder='little')))
 
 
