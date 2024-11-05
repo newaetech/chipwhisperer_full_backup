@@ -263,6 +263,11 @@ class CDCI6214(util.DisableNewAttr):
             data = r[1]
             self.write_reg(addr, data)
 
+    def dump_cdci_regs(self):
+        for reg in self.regs:
+            val = self.read_reg(reg[0], True)
+            print('%-12s (0x%02x): 0x%04x\t(%s; default: 0x%02x)' % (reg[2], reg[0], val, reg[3], reg[1]))
+
 
     def setup(self):
         """Do required initial setup.
