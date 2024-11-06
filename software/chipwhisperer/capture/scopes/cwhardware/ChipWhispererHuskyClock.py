@@ -1071,6 +1071,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         self._extclk_tolerance_cached = 100e3
         self._extclk_tolerance_enabled = False
         self.extclk_monitor_enabled = False
+        self._quiet = False
         self.disable_newattr()
 
     @property
@@ -1214,7 +1215,8 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.pll._reset_if_needed()
             self.pll.sync_clocks()
         except Exception as e:
-            scope_logger.error('Failed to update clkgen_freq: %s' % e)
+            if not self._quiet:
+                scope_logger.error('Failed to update clkgen_freq: %s' % e)
             self.pll._registers_cached = False
 
     def _clkgen_freq_setter(self, freq):
@@ -1257,7 +1259,8 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.pll.sync_clocks()
             self._update_adc_speed_mode(mul, self.clkgen_freq)
         except Exception as e:
-            scope_logger.error('Failed to update adc_mul: %s' % e)
+            if not self._quiet:
+                scope_logger.error('Failed to update adc_mul: %s' % e)
             self.pll._registers_cached = False
 
     @property
