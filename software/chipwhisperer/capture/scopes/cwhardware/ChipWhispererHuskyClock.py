@@ -426,9 +426,9 @@ class CDCI6214(util.DisableNewAttr):
             raise ValueError("Div too big")
         msg = 'pll_out %d setting div to %d' % (pll_out, div)
         if pll_out == 3:
-            self.update_reg(0x31, div, 0xFFFF, msg, update_cache_only)
+            self.update_reg(0x31, div, 0x3FFF, msg, update_cache_only)
         elif pll_out == 1:
-            self.update_reg(0x25, div, 0xFFFF, msg, update_cache_only)
+            self.update_reg(0x25, div, 0x3FFF, msg, update_cache_only)
         else:
             raise ValueError("pll_out must be 1 or 3, not {}".format(pll_out))
 
@@ -596,7 +596,7 @@ class CDCI6214(util.DisableNewAttr):
 
                         real_target_freq = output_input / out_div
                         error = abs(target_freq - real_target_freq) / target_freq
-                        scope_logger.debug("Testing settings: in_div {} out_div {} pll_mull {} prescale {} fb_prescale {} error {} freq {}".\
+                        scope_logger.debug("Testing settings: in_div {} out_div {} pll_mul {} prescale {} fb_prescale {} error {} freq {}".\
                             format(okay_in_div, out_div, pll_mul, prescale, fb_prescale, error, real_target_freq))
                         if (error > 0) and pll_src == 'fpga':
                             # when the clock is target-sourced, we *must* be spot on! any "error" implies that we wouldn't have *exactly* adc_mul samples per target clock
@@ -608,7 +608,7 @@ class CDCI6214(util.DisableNewAttr):
                             best_error = error
                             best_prescale = prescale
                             best_fb_prescale = fb_prescale
-                            scope_logger.info("New best: in_div {} out_div {} pll_mull {} prescale {} error {} freq {}".\
+                            scope_logger.info("New best: in_div {} out_div {} pll_mul {} prescale {} error {} freq {}".\
                                 format(best_in_div, best_out_div, best_pll_mul, best_prescale, best_error, real_target_freq))
 
         if best_error == float('inf'):
