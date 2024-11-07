@@ -4,6 +4,10 @@
 Debugging with ChipWhisperer
 ############################
 
+.. warning::
+    Debugging via ChipWhisperer is done via an emulated version of FTDI's MPSSE protocol and hasn't been tested against many
+    targets. We don't guarantee that all targets will work.
+
 One of ChipWhisperer's main objectives has always been to make it easier to learn about and experiment with 
 side-channel attacks. This experience has always been best on our three primary targets - STM32F devices,
 XMega devices, and AVR devices. One reason for this is that we support programming these devices via built-in
