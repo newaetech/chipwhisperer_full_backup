@@ -30,10 +30,12 @@ import os.path
 
 #from chipwhisperer.capture.scopes.cwhardware.ztex_fwloader import Ztex1v1, IhxFile
 from ....common.utils import util
-from ....hardware.firmware.cwlite import getsome as cwlite_getsome
-from ....hardware.firmware.cwcr2 import getsome as cwcr2_getsome
-from ....hardware.firmware.cw1200 import getsome as cw1200_getsome
-from ....hardware.firmware.cwhusky import getsome as husky_getsome
+# from ....hardware.firmware.cwlite import getsome as cwlite_getsome
+# from ....hardware.firmware.cwcr2 import getsome as cwcr2_getsome
+# from ....hardware.firmware.cw1200 import getsome as cw1200_getsome
+# from ....hardware.firmware.cwhusky import getsome as husky_getsome
+
+from ....hardware.firmware.open_fw import bit_raw, bit_zip, registers
 
 from chipwhisperer.common.api.settings import Settings
 
@@ -133,8 +135,8 @@ class CWLite_Loader(CW_Loader):
         self._bsZipLoc_filename = "cwlite_interface.bit"
         self._bsLoc = self.read_setting('debugbitstream-location', def_bsLoc)
         self._fwFLoc = ""
-        self._bsBuiltinData = cwlite_getsome("cwlite_firmware.zip", filelike=True)
-        self._registers = cwlite_getsome("registers.v")
+        self._bsBuiltinData = bit_zip("cwlite") #cwlite_getsome("cwlite_firmware.zip", filelike=True)
+        self._registers = registers("cwlite")
 
     def loadRequired(self, callback, forceFirmware=False):
         callback()
@@ -166,8 +168,8 @@ class CW1200_Loader(CW_Loader):
         self._bsZipLoc_filename = "cw1200_interface.bit"
         self._bsLoc = self.read_setting('debugbitstream-location', def_bsLoc)
         self._fwFLoc = ""
-        self._bsBuiltinData = cw1200_getsome("cw1200_firmware.zip", filelike=True)
-        self._registers = cwlite_getsome("registers.v")
+        self._bsBuiltinData = bit_zip("cw1200") #cwlite_getsome("cwlite_firmware.zip", filelike=True)
+        self._registers = registers("cw1200")
 
 
     def loadRequired(self, callback, forceFirmware=False):
@@ -199,8 +201,8 @@ class CWHusky_Loader(CW_Loader):
         self._bsZipLoc_filename = "cwhusky_top.bit"
         self._bsLoc = self.read_setting('debugbitstream-location', def_bsLoc)
         self._fwFLoc = ""
-        self._bsBuiltinData = husky_getsome("husky_firmware.zip", filelike=True)
-        self._registers = husky_getsome("registers.v")
+        self._bsBuiltinData = bit_zip("cwhusky") #cwlite_getsome("cwlite_firmware.zip", filelike=True)
+        self._registers = registers("cwhusky")
 
 
     def loadRequired(self, callback, forceFirmware=False):
@@ -217,6 +219,40 @@ class CWHusky_Loader(CW_Loader):
 
     def setInterface(self, driver):
         self.driver = driver
+
+class CWHuskyPlus_Loader(CW_Loader):
+    name = "husky"
+
+    def __init__(self):
+        super().__init__()
+        self.driver = None
+
+        def_bsZipLoc = os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-cw1200/cw1200_firmware.zip"))
+        def_bsLoc = os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-cw1200/hdl/cw1200_ise/cw1200_interface.bit"))
+
+        self._bsZipLoc = self._bsZipLoc = self.read_setting('zipbitstream-location', def_bsZipLoc)
+        self._bsZipLoc_filename = "cwhusky_top.bit"
+        self._bsLoc = self.read_setting('debugbitstream-location', def_bsLoc)
+        self._fwFLoc = ""
+        self._bsBuiltinData = bit_zip("cwhuskyplus") #cwlite_getsome("cwlite_firmware.zip", filelike=True)
+        self._registers = registers("cwhuskyplus")
+
+
+    def loadRequired(self, callback, forceFirmware=False):
+        callback()
+
+    def loadFPGA(self):
+        self.save_bsLoc()
+        self.save_bsZipLoc()
+
+        if self.driver.isFPGAProgrammed() == False:
+            self.driver.FPGAProgram(self.fpga_bitstream())
+        else:
+            logging.info("FPGA Configuration skipped - detected already programmed")
+
+    def setInterface(self, driver):
+        self.driver = driver
+
 
 class FWLoaderConfig(object):
     def __init__(self, loader):
