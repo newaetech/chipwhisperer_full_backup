@@ -123,6 +123,7 @@ class CDCI6214(util.DisableNewAttr):
         self._bypass_adc = False
         self._saved_parameters = None
         self._zdm_auto = False
+        self._zdm_mode = False
         self.reset_registers()
         self.setup()
 
@@ -388,20 +389,9 @@ class CDCI6214(util.DisableNewAttr):
         """
         if xtal:
             self.update_reg(0x01, 0, 1 << 8, msg='set input to xtal', update_cache_only=True)
-            self.update_reg(0x1A, 0, 3, msg='set xin_inbuf_ctrl to XO', update_cache_only=True)
-            self.update_reg(0x00, 0, 2**8, msg='clear set zero-delay mode', update_cache_only=True)
-            self.update_reg(0x0F, 0, 2**8, msg='clear zdm_auto', update_cache_only=True)
-            self.update_reg(0x04, 2**3, 0, msg='set pdn_ch2: make ch2 inactive', update_cache_only=True)
         else:
             self.update_reg(0x01, 1 << 8, 1 << 8, msg='set input to target clock', update_cache_only=True)
-            self.update_reg(0x1A, 2, 3, msg='set xin_inbuf_ctrl to ref_inbuf_ctrl (as per Table 1 ZDM requirements)', update_cache_only=True)
-            self.update_reg(0x00, 2**8, 2**10, msg='set zero-delay mode, internal feedback', update_cache_only=True)
-            if self._zdm_auto: 
-                # unclear if this is needed; datasheet says yes, but it doesn't seem to do what it should,
-                # and everything appears to work fine without it
-                self.update_reg(0x0F, 2**8, 0, msg='set zdm_auto', update_cache_only=True)
-            self.update_reg(0x04, 0, 2**3, msg='clear pdn_ch2: make ch2 active', update_cache_only=True)
-            
+
 
     def set_prescale(self, pll_out=3, prescale_val=4, update_cache_only=True):
         """Set prescaler. Uses prescaler A for CH3 out, and prescaler B for CH1 out
@@ -919,6 +909,25 @@ class CDCI6214(util.DisableNewAttr):
         scope_logger.debug("adc_mul: {} freq: {}; target_freq calling set_outfreqs".format(self._adc_mul, freq))
         self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
         self.update_fpga_vco(self._mmcm_vco_freq)
+        if self.pll_src == 'fpga' and freq <= self._max_pfd:
+            # enable zdm mode if extclk and input <= 100 MHz:
+            self._zdm_mode = True
+            self.update_reg(0x1A, 2, 3, msg='set xin_inbuf_ctrl to ref_inbuf_ctrl (as per Table 1 ZDM requirements)', update_cache_only=True)
+            self.update_reg(0x00, 2**8, 2**10, msg='set zero-delay mode, internal feedback', update_cache_only=True)
+            if self._zdm_auto: 
+                # datasheet says this is needed, but it doesn't seem to do what it should,
+                # and everything appears to work fine without it; moreover TI confirmed that
+                # it's not actually required:
+                # https://e2e.ti.com/support/clock-timing-group/clock-and-timing/f/clock-timing-forum/1436011/cdci6214-variable-phase-relationship-between-reference-input-clock-and-output-clocks
+                self.update_reg(0x0F, 2**8, 0, msg='set zdm_auto', update_cache_only=True)
+            self.update_reg(0x04, 0, 2**3, msg='clear pdn_ch2: make ch2 active', update_cache_only=True)
+        else:
+            # disable zdm mode:
+            self._zdm_mode = False
+            self.update_reg(0x1A, 0, 3, msg='set xin_inbuf_ctrl to XO', update_cache_only=True)
+            self.update_reg(0x00, 0, 2**8, msg='clear set zero-delay mode', update_cache_only=True)
+            self.update_reg(0x0F, 0, 2**8, msg='clear zdm_auto', update_cache_only=True)
+            self.update_reg(0x04, 2**3, 0, msg='set pdn_ch2: make ch2 inactive', update_cache_only=True)
 
     @property
     def adc_freq(self):
