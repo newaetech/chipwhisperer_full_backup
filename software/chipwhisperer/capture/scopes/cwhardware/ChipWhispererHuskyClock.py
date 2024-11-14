@@ -122,6 +122,7 @@ class CDCI6214(util.DisableNewAttr):
         self._registers_cached = False
         self._bypass_adc = False
         self._saved_parameters = None
+        self._zdm_auto = False
         self.reset_registers()
         self.setup()
 
@@ -292,12 +293,13 @@ class CDCI6214(util.DisableNewAttr):
         self.update_reg(0x26, 0b1, 1 << 10, msg='enable SYNC on channel 1', update_cache_only=True)
         self.update_reg(0x33, 1, 1, msg='disable glitchless on channel 3', update_cache_only=True)
         self.update_reg(0x27, 1, 1, msg='disable glitchless on channel 1', update_cache_only=True)
-        self.update_reg(0x2C, (1<<7), (0x7<<2), msg='Disable channel 2: mute=1, outbuf=off', update_cache_only=True)
+        self.update_reg(0x2C, (1 + 1<<7), (3 + 0x7<<2), msg='Disable channel 2: mute=1, outbuf=off, ch2_mux=ch2 (for ZDM)', update_cache_only=True)
         self.update_reg(0x38, (1<<7), (0x7<<2), msg='Disable channel 4: mute-1, outbuf=off', update_cache_only=True)
         self.update_reg(0x1A, (1 << 15) | (0x0B << 8), (1 << 15) | 0b11 | (0xFF << 8), msg='Set ref input as AC-differential, XIN to xtal', update_cache_only=True)
         self.update_reg(0x01, 1 << 9, 0b11 << 8, msg='set ref_mux_src, ref_mux to XIN', update_cache_only=True)
         self.update_reg(0x02, 0, 0b1111, msg='set GPIO1 output to PLL_LOCK', update_cache_only=True)
         self.update_reg(0x32, (1) | (1 << 2), 0xFF, msg='set CH3 to LVDS', update_cache_only=True)
+        
         self.set_outdiv(3, 0, update_cache_only=True)
         self.set_outdiv(1, 0, update_cache_only=True)
         self.set_prescale(3, 5, update_cache_only=True)
@@ -381,13 +383,25 @@ class CDCI6214(util.DisableNewAttr):
         """Set input to PLL and set input to 4MHz
 
         If xtal, use xtal, otherwise use target clock.
+        For target clock, turns on zero-delay mode, which needs CH2.
         Updates cached register values only- does not write them back.
         """
         if xtal:
             self.update_reg(0x01, 0, 1 << 8, msg='set input to xtal', update_cache_only=True)
+            self.update_reg(0x1A, 0, 3, msg='set xin_inbuf_ctrl to XO', update_cache_only=True)
+            self.update_reg(0x00, 0, 2**8, msg='clear set zero-delay mode', update_cache_only=True)
+            self.update_reg(0x0F, 0, 2**8, msg='clear zdm_auto', update_cache_only=True)
+            self.update_reg(0x04, 2**3, 0, msg='set pdn_ch2: make ch2 inactive', update_cache_only=True)
         else:
             self.update_reg(0x01, 1 << 8, 1 << 8, msg='set input to target clock', update_cache_only=True)
-
+            self.update_reg(0x1A, 2, 3, msg='set xin_inbuf_ctrl to ref_inbuf_ctrl (as per Table 1 ZDM requirements)', update_cache_only=True)
+            self.update_reg(0x00, 2**8, 2**10, msg='set zero-delay mode, internal feedback', update_cache_only=True)
+            if self._zdm_auto: 
+                # unclear if this is needed; datasheet says yes, but it doesn't seem to do what it should,
+                # and everything appears to work fine without it
+                self.update_reg(0x0F, 2**8, 0, msg='set zdm_auto', update_cache_only=True)
+            self.update_reg(0x04, 0, 2**3, msg='clear pdn_ch2: make ch2 active', update_cache_only=True)
+            
 
     def set_prescale(self, pll_out=3, prescale_val=4, update_cache_only=True):
         """Set prescaler. Uses prescaler A for CH3 out, and prescaler B for CH1 out
@@ -426,18 +440,25 @@ class CDCI6214(util.DisableNewAttr):
             raise ValueError("Div too big")
         msg = 'pll_out %d setting div to %d' % (pll_out, div)
         if pll_out == 3:
-            self.update_reg(0x31, div, 0x3FFF, msg, update_cache_only)
+            addr = 0x31
+        elif pll_out == 2:
+            addr = 0x2B
         elif pll_out == 1:
-            self.update_reg(0x25, div, 0x3FFF, msg, update_cache_only)
+            addr = 0x25
         else:
-            raise ValueError("pll_out must be 1 or 3, not {}".format(pll_out))
+            raise ValueError("pll_out must be 1, 2 or 3, not {}".format(pll_out))
+        self.update_reg(addr, div, 0x3FFF, msg, update_cache_only)
 
     def get_outdiv(self, pll_out=3):
         if pll_out == 3:
-            return self.read_reg(0x31, True) & 0x3FFF
+            addr = 0x31
+        elif pll_out == 2:
+            addr = 0x2B
         elif pll_out == 1:
-            return self.read_reg(0x25, True) & 0x3FFF
-        return None
+            addr = 0x25
+        else:
+            raise ValueError("pll_out must be 1, 2 or 3, not {}".format(pll_out))
+        return self.read_reg(addr, True) & 0x3FFF
 
     def set_outfreqs(self, input_freq, target_freq, adc_mul, force_recalc=False):
         """Set an output target frequency for the target/adc using input_freq
@@ -583,7 +604,12 @@ class CDCI6214(util.DisableNewAttr):
             # go through all the valid PLL multiples we calculated
             # and if we find better settings, update our best settings
             for prescale in [4, 5, 6]:
-                for fb_prescale in [4, 5, 6]:
+                if self.pll_src == 'fpga':
+                    # in zero-delay mode, pll_psfb = pll_psa
+                    fb_prescales = [prescale]
+                else:
+                    fb_prescales = [4, 5, 6]
+                for fb_prescale in fb_prescales:
                     # calculate all valid PLL multiples for the current input division and prescales:
                     okay_pll_muls = np.array(pll_muls, dtype='int64')
                     okay_pll_muls = okay_pll_muls[((pll_input * fb_prescale * okay_pll_muls) >= self._min_vco)]
@@ -630,6 +656,8 @@ class CDCI6214(util.DisableNewAttr):
             relock = True
         
         self.set_outdiv(1, best_out_div)
+        if self.pll_src == 'fpga':
+            self.set_outdiv(2, best_out_div)
 
         if not adc_off:
             self.set_outdiv(3, best_out_div // adc_mul)
