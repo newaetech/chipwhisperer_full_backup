@@ -1278,6 +1278,8 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         # note: doesn't read/write-out cache: clkgen_freq() handles that
         # this is to avoid re-caching, when called by other properties that handle the cache
         self._cached_adc_freq = None
+        if self.clkgen_src == 'extclk' and self.fpga_clk_settings.freq_ctr_src == 'extclk' and (abs(self.fpga_clk_settings.freq_ctr - freq)/freq > 0.01):
+            scope_logger.warning('External clock frequency is measured as %0.1f MHz; setting PLL to expect %0.1f MHz, so it may not lock.' % (self.fpga_clk_settings.freq_ctr/1e6, freq/1e6))
         scope_logger.debug('_clkgen_freq_setter calling target_freq with freq: %f' % freq)
         self.pll._target_freq_setter(freq)
         self.extclk_error = None
@@ -1329,7 +1331,10 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
 
     @property
     def freq_ctr(self):
-        """Reads the frequency of the external input clock
+        """Reads the frequency of the external input clock.
+
+        Caution: the clock must be present for this to function; if there is
+        no clock, this will not return 0.
         """
         return self.fpga_clk_settings.freq_ctr
 
