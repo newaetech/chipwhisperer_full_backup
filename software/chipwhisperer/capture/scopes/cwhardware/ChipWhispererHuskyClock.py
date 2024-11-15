@@ -23,82 +23,79 @@ class CDCI6214(util.DisableNewAttr):
     """
 
     # From CDCI6214 datasheet (Table 13):
-    # 1st element: register address
-    # 2nd element: default value (from datasheet)
-    # 3rd element: register name
-    # 4th element: register description
     # (note that in the datasheet the "default value" includes the address as 16 MSB?!? we don't do that here)
-    regs = [[0x00, 0x0000, "GENERIC0",      "Generic setting, device operation mode, synchronization, control pins, reset, and power down."],
-            [0x01, 0x6882, "GENERIC1",      "Generic settings, GPIO input signal selection."], 
-            [0x02, 0x0053, "GENERIC2",      "Generic settings, GPIO output signal selection."], 
-            [0x03, 0x0000, "GENERIC3",      "Generic settings, EEPROM and frequency increment / decrement."], 
-            [0x04, 0x0055, "POWER0",        "Power-down bits, output channels."], 
-            [0x05, 0x0028, "POWER1",        "Power-down bits, phase-locked-loop."], 
-            [0x06, 0x0000, "STATUS0",       "Status information, calibration bus."], 
-            [0x07, 0x0000, "STATUS1",       "Status information, PLL lock and EEPROM."], 
-            [0x08, 0x0000, "STATUS2",       "Status information, miscellaneous"], 
-            [0x09, 0x0000, "STATUS3",       "Status information, live CRC of EEPROM"], 
-            [0x0A, 0x0000, "EEPROM0",       "EEPROM, stored CRC of EEPROM"], 
-            [0x0B, 0x0000, "EEPROM1",       "EEPROM, direct access read address"], 
-            [0x0C, 0x0000, "EEPROM2",       "EEPROM, direct access read data"], 
-            [0x0D, 0x0000, "EEPROM3",       "EEPROM, direct access write address"], 
-            [0x0E, 0x0000, "EEPROM4",       "EEPROM, direct access write data"], 
-            [0x0F, 0xA037, "STARTUP0",      "Start-up configuration, EEPROM lock, auto-calibration, and I2C glitch filter"], 
-            [0x10, 0x921F, "STARTUP1",      "Start-up configuration, digital state machine counters"], 
-            [0x11, 0x26C4, "STARTUP2",      "Start-up configuration, digital state machine counters"], 
-            [0x12, 0x0000, "unknown",       ''],
-            [0x13, 0x0000, "unknown",       ''],
-            [0x14, 0x0000, "unknown",       ''],
-            [0x15, 0x0000, "unknown",       ''],
-            [0x16, 0x0000, "unknown",       ''],
-            [0x17, 0x0000, "unknown",       ''],
-            [0x18, 0x0601, "REV0",          "Revision ID"], 
-            [0x19, 0x0000, "unknown",       ''],
-            [0x1A, 0x0718, "INPUT0",        "Input reference, buffer configuration, and crystal oscillator controls."], 
-            [0x1B, 0x0000, "INPUT1",        "Input reference, reference divider, and bypass buffers."], 
-            [0x1C, 0x0000, "INPUT_DBG0",    "Input reference debug, status pin buffers."], 
-            [0x1D, 0x400A, "PLL0",          "PLL, feedback dividers."], 
-            [0x1E, 0x5140, "PLL1",          "PLL, charge pump current and clock distribution pre-scaler dividers."], 
-            [0x1F, 0x1E72, "PLL2",          "PLL, loop filter configuration"], 
-            [0x20, 0x0000, "unknown",       ''],
-            [0x21, 0x0007, "PLL4",          "PLL, lock detector and PFD delay"], 
-            [0x22, 0x0050, "unknown",       ''],
-            [0x23, 0x8000, "CH1_CTRL0",     "Output channel 1, RESERVED"], 
-            [0x24, 0x0000, "CH1_CTRL1",     "Output channel 1, RESERVED"], 
-            [0x25, 0x0004, "CH1_CTRL2",     "Output channel 1, integer divider and mux control."], 
-            [0x26, 0x0405, "CH1_CTRL3",     "Output channel 1, synchronization, digital delay, output buffer, mux and mute controls."], 
-            [0x27, 0x0A65, "CH1_CTRL4",     "Output channel 1, divider glitchless enable and spread spectrum controls."], 
-            [0x28, 0x0008, "CH1_CTRL5",     "Output channel 1, RESERVED"], 
-            [0x29, 0x8000, "CH2_CTRL0",     "Output channel 2, RESERVED"], 
-            [0x2A, 0x0000, "CH2_CTRL1",     "Output channel 2, RESERVED"], 
-            [0x2B, 0x0004, "CH2_CTRL2",     "Output channel 2, integer divider and mux control."], 
-            [0x2C, 0x0405, "CH2_CTRL3",     "Output channel 2, synchronization, digital delay, output buffer, mux and mute controls."], 
-            [0x2D, 0x0A65, "CH2_CTRL4",     "Output channel 2, divider glitchless enable and spread spectrum controls."], 
-            [0x2E, 0x0008, "CH2_CTRL5",     "Output channel 2 ,RESERVED"], 
-            [0x2F, 0x8000, "CH3_CTRL0",     "Output channel 3, RESERVED"], 
-            [0x30, 0x0000, "CH3_CTRL1",     "Output channel 3, RESERVED"], 
-            [0x31, 0x0004, "CH3_CTRL2",     "Output channel 3, integer divider and mux control."], 
-            [0x32, 0x0405, "CH3_CTRL3",     "Output channel 3, synchronization, digital delay, output buffer, mux and mute controls."], 
-            [0x33, 0x0A65, "CH3_CTRL4",     "Output channel 3, divider glitchless enable and spread spectrum controls."], 
-            [0x34, 0x0008, "CH3_CTRL5",     "Output channel 3, RESERVED"], 
-            [0x35, 0x8000, "CH4_CTRL0",     "Output channel 4, RESERVED"], 
-            [0x36, 0x0000, "CH4_CTRL1",     "Output channel 4, RESERVED"], 
-            [0x37, 0x0004, "CH4_CTRL2",     "Output channel 4, integer divider and mux control."], 
-            [0x38, 0x0405, "CH4_CTRL3",     "Output channel 4, synchronization, digital delay, output buffer, mux and mute controls."], 
-            [0x39, 0x0A65, "CH4_CTRL4",     "Output channel 4, divider glitchless enable and spread spectrum controls."], 
-            [0x3A, 0x0008, "CH4_CTRL5",     "Output channel 4, RESERVED"], 
-            [0x3B, 0x0009, "CHX_CTRL0",     "Output channels, generic clock distribution and bypass output controls."], 
-            [0x3C, 0x0010, "CHX_CTRL1",     "Output channels, RESERVED"], 
-            [0x3D, 0x1000, "CHX_CTRL2",     "Output channels, RESERVED"], 
-            [0x3E, 0x4210, "CHX_CTRL3",     "Output channels, RESERVED"], 
-            [0x3F, 0x0210, "CHX_CTRL4",     "Output channels, RESERVED"],
-            [0x40, 0x000D, "unknown",       ''],
-            [0x41, 0x0F34, "unknown",       ''],
-            [0x42, 0x0000, "unknown",       ''],
-            [0x43, 0x0020, "unknown",       ''],
-            [0x44, 0x0000, "unknown",       ''],
-            [0x45, 0x0000, "unknown",       ''],
-            [0x46, 0x0000, "unknown",       '']]
+    # fields: addr default name         update? reset? description
+    regs = [[0x00, 0x0000, "GENERIC0",  True,   True,  "Generic setting, device operation mode, synchronization, control pins, reset, and power down."],
+            [0x01, 0x6882, "GENERIC1",  True,   True,  "Generic settings, GPIO input signal selection."], 
+            [0x02, 0x0053, "GENERIC2",  True,   True,  "Generic settings, GPIO output signal selection."], 
+            [0x03, 0x0000, "GENERIC3",  False,  True,  "Generic settings, EEPROM and frequency increment / decrement."], 
+            [0x04, 0x0055, "POWER0",    True,   True,  "Power-down bits, output channels."], 
+            [0x05, 0x0028, "POWER1",    True,   True,  "Power-down bits, phase-locked-loop."], 
+            [0x06, 0x0000, "STATUS0",   False,  False, "Status information, calibration bus."], 
+            [0x07, 0x0000, "STATUS1",   False,  False, "Status information, PLL lock and EEPROM."], 
+            [0x08, 0x0000, "STATUS2",   False,  False, "Status information, miscellaneous"], 
+            [0x09, 0x0000, "STATUS3",   False,  False, "Status information, live CRC of EEPROM"], 
+            [0x0A, 0x0000, "EEPROM0",   False,  False, "EEPROM, stored CRC of EEPROM"], 
+            [0x0B, 0x0000, "EEPROM1",   False,  False, "EEPROM, direct access read address"], 
+            [0x0C, 0x0000, "EEPROM2",   False,  False, "EEPROM, direct access read data"], 
+            [0x0D, 0x0000, "EEPROM3",   False,  False, "EEPROM, direct access write address"], 
+            [0x0E, 0x0000, "EEPROM4",   False,  False, "EEPROM, direct access write data"], 
+            [0x0F, 0xA037, "STARTUP0",  True,   True,  "Start-up configuration, EEPROM lock, auto-calibration, and I2C glitch filter"], 
+            [0x10, 0x921F, "STARTUP1",  True,   True,  "Start-up configuration, digital state machine counters"], 
+            [0x11, 0x26C4, "STARTUP2",  True,   True,  "Start-up configuration, digital state machine counters"], 
+            [0x12, 0x0000, "unknown",   False,  False, 'unknown'],
+            [0x13, 0x0000, "unknown",   False,  False, 'unknown'],
+            [0x14, 0x0000, "unknown",   False,  False, 'unknown'],
+            [0x15, 0x0000, "unknown",   False,  False, 'unknown'],
+            [0x16, 0x0000, "unknown",   False,  False, 'unknown'],
+            [0x17, 0x0000, "unknown",   False,  False, 'unknown'],
+            [0x18, 0x0601, "REV0",      False,  False, "Revision ID"], 
+            [0x19, 0x0000, "unknown",   False,  False, 'unknown'],
+            [0x1A, 0x0718, "INPUT0",    True,   True,  "Input reference, buffer configuration, and crystal oscillator controls."], 
+            [0x1B, 0x0000, "INPUT1",    True,   True,  "Input reference, reference divider, and bypass buffers."], 
+            [0x1C, 0x0000, "INPUT_DBG0",False,  False, "Input reference debug, status pin buffers."], 
+            [0x1D, 0x400A, "PLL0",      True,   True,  "PLL, feedback dividers."], 
+            [0x1E, 0x5140, "PLL1",      True,   True,  "PLL, charge pump current and clock distribution pre-scaler dividers."], 
+            [0x1F, 0x1E72, "PLL2",      False,  True,  "PLL, loop filter configuration"], 
+            [0x20, 0x0000, "unknown",   False,  False, 'unknown'],
+            [0x21, 0x0007, "PLL4",      True,   True,  "PLL, lock detector and PFD delay"], 
+            [0x22, 0x0050, "unknown",   False,  False, 'unknown'],
+            [0x23, 0x8000, "CH1_CTRL0", False,  False, "Output channel 1, RESERVED"], 
+            [0x24, 0x0000, "CH1_CTRL1", False,  False, "Output channel 1, RESERVED"], 
+            [0x25, 0x0004, "CH1_CTRL2", True,   True,  "Output channel 1, integer divider and mux control."], 
+            [0x26, 0x0405, "CH1_CTRL3", True,   True,  "Output channel 1, synchronization, digital delay, output buffer, mux and mute controls."], 
+            [0x27, 0x0A65, "CH1_CTRL4", True,   True,  "Output channel 1, divider glitchless enable and spread spectrum controls."], 
+            [0x28, 0x0008, "CH1_CTRL5", False,  False, "Output channel 1, RESERVED"], 
+            [0x29, 0x8000, "CH2_CTRL0", False,  False, "Output channel 2, RESERVED"], 
+            [0x2A, 0x0000, "CH2_CTRL1", False,  False, "Output channel 2, RESERVED"], 
+            [0x2B, 0x0004, "CH2_CTRL2", True,   True,  "Output channel 2, integer divider and mux control."], 
+            [0x2C, 0x0405, "CH2_CTRL3", True,   True,  "Output channel 2, synchronization, digital delay, output buffer, mux and mute controls."], 
+            [0x2D, 0x0A65, "CH2_CTRL4", True,   True,  "Output channel 2, divider glitchless enable and spread spectrum controls."], 
+            [0x2E, 0x0008, "CH2_CTRL5", False,  False, "Output channel 2 ,RESERVED"], 
+            [0x2F, 0x8000, "CH3_CTRL0", False,  False, "Output channel 3, RESERVED"], 
+            [0x30, 0x0000, "CH3_CTRL1", False,  False, "Output channel 3, RESERVED"], 
+            [0x31, 0x0004, "CH3_CTRL2", True,   True,  "Output channel 3, integer divider and mux control."], 
+            [0x32, 0x0405, "CH3_CTRL3", True,   True,  "Output channel 3, synchronization, digital delay, output buffer, mux and mute controls."], 
+            [0x33, 0x0A65, "CH3_CTRL4", True,   True,  "Output channel 3, divider glitchless enable and spread spectrum controls."], 
+            [0x34, 0x0008, "CH3_CTRL5", False,  False, "Output channel 3, RESERVED"], 
+            [0x35, 0x8000, "CH4_CTRL0", False,  False, "Output channel 4, RESERVED"], 
+            [0x36, 0x0000, "CH4_CTRL1", False,  False, "Output channel 4, RESERVED"], 
+            [0x37, 0x0004, "CH4_CTRL2", True,   True,  "Output channel 4, integer divider and mux control."], 
+            [0x38, 0x0405, "CH4_CTRL3", True,   True,  "Output channel 4, synchronization, digital delay, output buffer, mux and mute controls."], 
+            [0x39, 0x0A65, "CH4_CTRL4", True,   True,  "Output channel 4, divider glitchless enable and spread spectrum controls."], 
+            [0x3A, 0x0008, "CH4_CTRL5", False,  False, "Output channel 4, RESERVED"], 
+            [0x3B, 0x0009, "CHX_CTRL0", True,   True,  "Output channels, generic clock distribution and bypass output controls."], 
+            [0x3C, 0x0010, "CHX_CTRL1", False,  False, "Output channels, RESERVED"], 
+            [0x3D, 0x1000, "CHX_CTRL2", False,  False, "Output channels, RESERVED"], 
+            [0x3E, 0x4210, "CHX_CTRL3", False,  False, "Output channels, RESERVED"], 
+            [0x3F, 0x0210, "CHX_CTRL4", False,  False, "Output channels, RESERVED"],
+            [0x40, 0x000D, "unknown",   False,  False, 'unknown'],
+            [0x41, 0x0F34, "unknown",   False,  False, 'unknown'],
+            [0x42, 0x0000, "unknown",   False,  False, 'unknown'],
+            [0x43, 0x0020, "unknown",   False,  False, 'unknown'],
+            [0x44, 0x0000, "unknown",   False,  False, 'unknown'],
+            [0x45, 0x0000, "unknown",   False,  False, 'unknown'],
+            [0x46, 0x0000, "unknown",   False,  False, 'unknown']]
 
     def __init__(self, naeusb, mmcm1, mmcm2):
         super().__init__()
@@ -226,6 +223,8 @@ class CDCI6214(util.DisableNewAttr):
         if update_cache_only:
             scope_logger.debug('CDCI6214 updating register cache: addr 0x%02x, payload 0x%04x; %s' % (addr, (reg_val[0]) | (reg_val[1] << 8), msg))
             self.cached_reg[addr][1] = (reg_val[0]) | (reg_val[1] << 8)
+            if not self.regs[addr][3]:
+                scope_logger.warning('this register (%s) will NOT get written out by write_cached_registers' % self.regs[addr][2])
         else:
             # scope_logger.debug logging will occur in write_reg(), so don't repeat it here
             self.write_reg(addr, reg_val)
@@ -239,7 +238,8 @@ class CDCI6214(util.DisableNewAttr):
         for r in self.regs[::-1]:
             addr = r[0]
             data = r[1]
-            self.write_reg(addr, data, 'writing defaults (from reset_registers)')
+            if self.regs[addr][4]:
+                self.write_reg(addr, data, 'writing defaults (from reset_registers)')
 
 
     def cache_all_registers(self):
@@ -264,12 +264,13 @@ class CDCI6214(util.DisableNewAttr):
         for r in self.cached_reg[::-1]: # datasheet recommends to write in reverse order
             addr = r[0]
             data = r[1]
-            self.write_reg(addr, data)
+            if self.regs[addr][3]:
+                self.write_reg(addr, data)
 
     def dump_cdci_regs(self):
         for reg in self.regs:
             val = self.read_reg(reg[0], True)
-            print('%-12s (0x%02x): 0x%04x\t(%s; default: 0x%02x)' % (reg[2], reg[0], val, reg[3], reg[1]))
+            print('%-12s (0x%02x): 0x%04x\t(%s; default: 0x%02x)' % (reg[2], reg[0], val, reg[5], reg[1]))
 
 
     def setup(self):
