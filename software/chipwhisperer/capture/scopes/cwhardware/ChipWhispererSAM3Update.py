@@ -219,9 +219,12 @@ class SAMFWLoader:
             'cwlite',
             'cwnano',
             'cw305',
+            'cw310',
+            'cw340',
             'cw1200',
             'cwbergen',
-            'cwhusky'
+            'cwhusky',
+            'cwhuskyplus'
         ]
 
 
@@ -243,7 +246,8 @@ class SAMFWLoader:
             else:
                 from ....hardware.firmware.open_fw import mcufw
                 self.logfunc('Loading {} firmware...'.format(hardware_type))
-                fw_data = mcufw(hardware_type)
+                fw_data = mcufw(hardware_type, False)
+                name = "{}/mcufw.bin".format(hardware_type)
 
         if fw_path:
             self.logfunc("Opening firmware...")

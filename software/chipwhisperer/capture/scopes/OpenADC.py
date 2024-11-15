@@ -147,7 +147,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             from ...hardware.firmware.cwlite import fwver
         elif cw_type == "cw1200":
             from ...hardware.firmware.cw1200 import fwver # type: ignore
-        elif cw_type in ["cwhusky", "cwhusky-plus"]:
+        elif cw_type in ["cwhusky", "cwhuskyplus"]:
             from ...hardware.firmware.cwhusky import fwver # type: ignore
         else:
             raise ValueError('Unknown cw_type: %s' % cw_type)
@@ -419,7 +419,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             elif "CW1200" in hwInfoVer:
                 return "cw1200"
             elif "Husky-Plus" in hwInfoVer:
-                return "cwhusky-plus"
+                return "cwhuskyplus"
             elif "Husky" in hwInfoVer:
                 return "cwhusky"
             else:
@@ -440,7 +440,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             return "ChipWhisperer Pro"
         elif name == "cwhusky":
             return "ChipWhisperer Husky"
-        elif name == "cwhusky-plus":
+        elif name == "cwhuskyplus":
             return "ChipWhisperer Husky Plus"
 
     def adc_test(self, samples=131070, reps=3, verbose=False):
@@ -659,7 +659,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.sc = OpenADCInterface(self.scopetype.ser, self.scopetype.registers) # important to instantiate this before other FPGA components, since this does an FPGA reset
         self.hwinfo = HWInformation(self.sc)
         cwtype = self._getCWType()
-        if cwtype in ["cwhusky", "cwhusky-plus"]:
+        if cwtype in ["cwhusky", "cwhuskyplus"]:
             self.sc._is_husky = True
         self.sc._setReset(True)
         self.sc._setReset(False)
@@ -683,7 +683,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.SAD = ChipWhispererSAD.ChipWhispererSAD(self.sc)
             self.decode_IO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.sc)
 
-        if cwtype in ["cwhusky", "cwhusky-plus"]:
+        if cwtype in ["cwhusky", "cwhuskyplus"]:
             # self.pll = ChipWhispererHuskyClock.CDCI6214(self.sc)
             self._fpga_clk = ClockSettings(self.sc, hwinfo=self.hwinfo, is_husky=True)
             self.glitch_drp1 = XilinxDRP(self.sc, "CG1_DRP_DATA", "CG1_DRP_ADDR", "CG1_DRP_RESET")
@@ -715,7 +715,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self._fpga_clk._is_husky = True
             self.sc._is_husky = True
             self.adc.bits_per_sample = 12
-            if cwtype == "cwhusky-plus":
+            if cwtype == "cwhuskyplus":
                 self._is_husky_plus = True
                 self.LA._is_husky_plus = True
         else:
@@ -730,7 +730,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.io = self.advancedSettings.cwEXTRA.gpiomux
             self.trigger = self.advancedSettings.cwEXTRA.triggermux
             self.glitch = self.advancedSettings.glitch.glitchSettings
-            if cwtype in ['cwhusky', 'cwhusky-plus']:
+            if cwtype in ['cwhusky', 'cwhuskyplus']:
                 # TODO: cleaner way to do this?
                 self.glitch.pll = self.clock.pll
                 self.clock.pll._glitch = self.glitch
@@ -739,7 +739,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             if cwtype == "cw1200":
                 self.trigger = self.advancedSettings.cwEXTRA.protrigger
 
-        if cwtype in ["cwhusky", "cwhusky-plus"]:
+        if cwtype in ["cwhusky", "cwhuskyplus"]:
             # these are the power-up defaults, but just in case e.g. test script left these on:
             self.adc.test_mode = False
             self.ADS4128.mode = 'normal'
