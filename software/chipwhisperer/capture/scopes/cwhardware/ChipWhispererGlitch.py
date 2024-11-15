@@ -90,7 +90,7 @@ class GlitchSettings(util.DisableNewAttr):
     def __init__(self, cwglitch):
         super().__init__()
         self.cwg = cwglitch
-        self._is_husky = self.cwg.cwtype in ['cwhusky', 'cwhusky-plus']
+        self._is_husky = self.cwg.cwtype in ['cwhusky', 'cwhuskyplus']
         self.pll = None
         self.disable_newattr()
 
@@ -658,7 +658,7 @@ class ChipWhispererGlitch(object):
         self.prEnabled = False
         self.oa = oa
         self.cwtype = cwtype
-        if cwtype in ['cwhusky', 'cwhusky-plus']:
+        if cwtype in ['cwhusky', 'cwhuskyplus']:
             self._is_husky = True
         else:
             self._is_husky = False
@@ -702,7 +702,7 @@ class ChipWhispererGlitch(object):
                 settingprefix = "cw1200"
                 partialbasename = "cw1200"
                 self.glitchPR = pr.PartialReconfigDataMulti()
-            elif cwtype in ["cwhusky", "cwhusky-plus"]:
+            elif cwtype in ["cwhusky", "cwhuskyplus"]:
                 settingprefix = "cwhusky"
                 partialbasename = "cwhusky"
                 self.glitchPR = None

@@ -358,6 +358,8 @@ NEWAE_PIDS = {
     0xACE2: {'name': "ChipWhisperer-Lite",     'fwver': fwver("cwlite")},
     0xACE3: {'name': "ChipWhisperer-CW1200",   'fwver': fwver("cw1200")},
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fwver("cw305")},
+    0xC310: {'name': "CW305 Artix FPGA Board", 'fwver': fwver("cwbergen")},
+    0xC340: {'name': "CW305 Artix FPGA Board", 'fwver': fwver("cwluna")},
     0xACE0: {'name': "ChipWhisperer-Nano", 'fwver': fwver("cwnano")},
     0xACE5: {'name': "ChipWhisperer-Husky",   'fwver': fwver("cwhusky")},
     0xACE6: {'name': "ChipWhisperer-Husky-Plus",   'fwver': fwver("cwhuskyplus")},

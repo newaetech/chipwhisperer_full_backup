@@ -231,7 +231,7 @@ class CWHuskyPlus_Loader(CW_Loader):
         def_bsLoc = os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-cw1200/hdl/cw1200_ise/cw1200_interface.bit"))
 
         self._bsZipLoc = self._bsZipLoc = self.read_setting('zipbitstream-location', def_bsZipLoc)
-        self._bsZipLoc_filename = "cwhusky_top.bit"
+        self._bsZipLoc_filename = "bitstream.bit"
         self._bsLoc = self.read_setting('debugbitstream-location', def_bsLoc)
         self._fwFLoc = ""
         self._bsBuiltinData = bit_zip("cwhuskyplus") #cwlite_getsome("cwlite_firmware.zip", filelike=True)
