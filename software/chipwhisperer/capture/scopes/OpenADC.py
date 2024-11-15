@@ -716,6 +716,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             if cwtype == "cwhusky-plus":
                 self._is_husky_plus = True
                 self.LA._is_husky_plus = True
+                self.clock.pll._is_husky_plus = True
         else:
             self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
             self.errors = ChipWhispererSAMErrors(self._getNAEUSB())

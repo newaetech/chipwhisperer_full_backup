@@ -103,6 +103,7 @@ class CDCI6214(util.DisableNewAttr):
     def __init__(self, naeusb, mmcm1, mmcm2):
         super().__init__()
         self.naeusb = naeusb
+        self._is_husky_plus = False
         self._resets_needed = 0
         self._resets_avoided = 0
         self._consistant_mode = True # set to False for risky legacy behaviour that can lead to https://github.com/newaetech/chipwhisperer/issues/490
@@ -124,6 +125,7 @@ class CDCI6214(util.DisableNewAttr):
         self._saved_parameters = None
         self._zdm_auto = False
         self._zdm_mode = False
+        self._no_warning_freq = False
         self.reset_registers()
         self.setup()
 
@@ -132,7 +134,6 @@ class CDCI6214(util.DisableNewAttr):
         self._glitch = None
         self._cached_adc_freq = None
         self._max_freq = 300e6
-        self._warning_freq = 201e6
 
         self._old_in_freq = 0
         self._old_target_freq = 0
@@ -482,6 +483,8 @@ class CDCI6214(util.DisableNewAttr):
 
         pll_src = self.pll_src
         scope_logger.debug('set_outfreq called: input_freq=%d target_freq=%d adc_mul=%d force_recalc=%s' % (input_freq, target_freq, adc_mul, force_recalc))
+        if target_freq < 5e6 and target_freq != 0:
+            raise ValueError('Input clock must be at least 5 MHz')
         self._given_target_freq = target_freq
         # if the target clock is off, turn off both output clocks
         if target_freq == 0:
@@ -514,16 +517,16 @@ class CDCI6214(util.DisableNewAttr):
             if not adc_off:
                 scope_logger.warning("ADC frequency must be between 1MHz and {}MHz - ADC mul has been adjusted to {}".format(self._max_freq, adc_mul))
 
-        if adc_mul * target_freq > self._warning_freq:
+        if adc_mul * target_freq > self._warning_freq and not self._no_warning_freq:
             scope_logger.warning("""
-                ADC frequency exceeds specification (200 MHz). 
+                ADC frequency exceeds specification (%d MHz). 
                 This may or may not work, depending on temperature, voltage, and luck.
                 It may not work reliably.
                 You can run scope.adc_test() to check whether ADC data is sampled properly by the FPGA,
                 but this doesn't fully verify that the ADC is working properly.
-                You can adjust scope.clock.pll._warning_freq if you don't want
+                Set scope.clock.pll._no_warning_freq if you don't want
                 to see this message anymore.
-                """)
+                """ % (self._warning_freq//1e6))
 
         # If we're just changing ADC mul, try to avoid touching PLL settings
         # Depending on what frequencies we're dealing with, this may fail, meaning we have to touch the PLL settings
@@ -565,11 +568,17 @@ class CDCI6214(util.DisableNewAttr):
         # input to the PLL between 1MHz and 100MHz
         if self._allow_rdiv:
             # can lead to phase variability so disabled by default
+            scope_logger.warning('scope.clock.pll._allow_rdiv is True; this can cause an inconsistant phase relationship between the target and sampling clocks. Do you really want this?')
             okay_in_divs = list(range(1,256))
             okay_in_divs.append(0.5)
         elif input_freq > self._max_pfd:
             # in this case we *need* to divide (but we don't need the x2 option)
+            scope_logger.warning('input frequency > 100 MHz requires input divider to be used; this can cause an inconsistant phase relationship between the target and sampling clocks.')
             okay_in_divs = list(range(1,256))
+        # TODO: uncomment if support is added for frequencies < 1 MHz
+        #elif input_freq < self._min_pfd:
+        #    scope_logger.warning('input frequency < 1 MHz requires input divider to be used; this can cause an inconsistant phase relationship between the target and sampling clocks.')
+        #    okay_in_divs = [0.5]
         else:
             okay_in_divs = [1]
         okay_in_divs = np.array(okay_in_divs, dtype='float64')
@@ -589,23 +598,27 @@ class CDCI6214(util.DisableNewAttr):
         # CAUTION: this set of nested for loops can see thousands of iterations, so don't do anything time-consuming here:
         # avoid and FPGA register accesses; if any are needed, do them outside of the loop if possible (like pll_src).
         for okay_in_div in okay_in_divs:
+            if best_error == 0: break
             pll_input = input_freq // okay_in_div
 
             # go through all the valid PLL multiples we calculated
             # and if we find better settings, update our best settings
             for prescale in [4, 5, 6]:
+                if best_error == 0: break
                 if self.pll_src == 'fpga':
                     # in zero-delay mode, pll_psfb = pll_psa
                     fb_prescales = [prescale]
                 else:
                     fb_prescales = [4, 5, 6]
                 for fb_prescale in fb_prescales:
+                    if best_error == 0: break
                     # calculate all valid PLL multiples for the current input division and prescales:
                     okay_pll_muls = np.array(pll_muls, dtype='int64')
                     okay_pll_muls = okay_pll_muls[((pll_input * fb_prescale * okay_pll_muls) >= self._min_vco)]
                     okay_pll_muls = okay_pll_muls[((pll_input * fb_prescale * okay_pll_muls) <= self._max_vco)]
-                    scope_logger.debug("Ok PLL muls: {}".format(okay_pll_muls))
+                    scope_logger.debug("Ok PLL muls for pll_input={}, fb_prescale={}: {}".format(pll_input, fb_prescale, okay_pll_muls))
                     for pll_mul in okay_pll_muls:
+                        if best_error == 0: break
                         output_input = pll_input * pll_mul * fb_prescale // prescale
                         out_div = int((output_input / target_freq) + 0.5)
                         out_div -= out_div % adc_mul
@@ -624,8 +637,9 @@ class CDCI6214(util.DisableNewAttr):
                             best_error = error
                             best_prescale = prescale
                             best_fb_prescale = fb_prescale
-                            scope_logger.info("New best: in_div {} out_div {} pll_mul {} prescale {} error {} freq {}".\
-                                format(best_in_div, best_out_div, best_pll_mul, best_prescale, best_error, real_target_freq))
+                            scope_logger.info("New best: in_div {} out_div {} pll_mul {} prescale {} fb_prescale {} error {} freq {}".\
+                                format(best_in_div, best_out_div, best_pll_mul, best_prescale, best_fb_prescale, best_error, real_target_freq))
+                            scope_logger.info("F_PFD: %d MHz | F_VCO: %d GHz" % (input_freq//1e6, input_freq//1e6*best_fb_prescale*best_pll_mul))
 
         if best_error == float('inf'):
             raise ValueError("Could not calculate pll settings for input {}, output {} with mul {}".format(input_freq, target_freq, adc_mul))
@@ -668,13 +682,16 @@ class CDCI6214(util.DisableNewAttr):
 
         scope_logger.info('Calculated settings: best_prescale=%d best_fb_prescale=%d best_in_div=%d best_pll_mul=%d best_out_div=%d adc_mul=%d' 
                 % (best_prescale, best_fb_prescale, best_in_div, best_pll_mul, best_out_div, adc_mul))
-        if best_in_div != 1:
-            scope_logger.warning('PLL using reference divider; this can cause an inconsistant phase relationship between the target and sampling clocks.')
-            scope_logger.warning('(The reference divider is required when the reference (target) clock is > 100 MHz or < 1 MHz.)')
         ratio = 1 / best_in_div * best_pll_mul * best_fb_prescale / best_prescale / best_out_div
         if ratio != 1.0 and pll_src != 'xtal':
             scope_logger.error('Uh-oh, this should not happen :-/ ratio = %f' % ratio)
 
+    @property
+    def _warning_freq(self):
+        if self._is_husky_plus:
+            return 250e6
+        else:
+            return 200e6
 
     @property
     def f_pfd(self):
@@ -909,8 +926,8 @@ class CDCI6214(util.DisableNewAttr):
         scope_logger.debug("adc_mul: {} freq: {}; target_freq calling set_outfreqs".format(self._adc_mul, freq))
         self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
         self.update_fpga_vco(self._mmcm_vco_freq)
-        if self.pll_src == 'fpga' and freq <= self._max_pfd:
-            # enable zdm mode if extclk and input <= 100 MHz:
+        if self.pll_src == 'fpga' and freq <= self._max_pfd and not self._allow_rdiv:
+            # enable zdm mode if extclk, input <= 100 MHz, and we don't use the reference divider:
             self._zdm_mode = True
             self.update_reg(0x1A, 2, 3, msg='set xin_inbuf_ctrl to ref_inbuf_ctrl (as per Table 1 ZDM requirements)', update_cache_only=True)
             self.update_reg(0x00, 2**8, 2**10, msg='set zero-delay mode, internal feedback', update_cache_only=True)
