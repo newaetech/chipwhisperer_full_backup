@@ -42,3 +42,8 @@ def registers(dev_name, filelike=True):
             data = io.BytesIO(data)
         return data
     pass
+
+def _extract_file(getsome, item):
+    data = getsome(item).read()
+    with open(item, "wb") as f:
+        f.write(data)
