@@ -36,16 +36,15 @@ docs/make.bat
 *.vcd
 *.fst
 **/.vscode/*
-**/*.bin
-**/*.eep
-**/*.elf
-**/*.hex
-**/*.lss
-**/*.map
-**/*.sym
+firmware/**/*.bin
+firmware/**/*.eep
+firmware/**/*.elf
+firmware/**/*.hex
+firmware/**/*.lss
+firmware/**/*.map
+firmware/**/*.sym
 *.o.s
 **/1
-**/version.txt
 
 # Explicit listing of the build artifacts so that they are not included in
 # commits

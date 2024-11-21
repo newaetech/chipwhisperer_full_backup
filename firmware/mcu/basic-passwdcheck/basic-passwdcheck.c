@@ -77,12 +77,12 @@ int main(void)
         my_puts("*****Safe-o-matic 3000 Booting...\n");
         //Print some fancy-sounding stuff so that attackers
         //will get scared and leave us alone
-        my_puts("Aligning bits........[DONE]\n");
-        delay_2_ms();
-        my_puts("Checking Cesium RNG..[DONE]\n");
-        delay_2_ms();
-        my_puts("Masquerading flash...[DONE]\n");
-        delay_2_ms();
+        // my_puts("Aligning bits........[DONE]\n");
+        // delay_2_ms();
+        // my_puts("Checking Cesium RNG..[DONE]\n");
+        // delay_2_ms();
+        // my_puts("Masquerading flash...[DONE]\n");
+        // delay_2_ms();
         my_puts("Decrypting database..[DONE]\n");
         delay_2_ms();
         my_puts("\n\n");
