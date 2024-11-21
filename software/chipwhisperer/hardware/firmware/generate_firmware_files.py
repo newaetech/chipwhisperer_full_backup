@@ -67,6 +67,13 @@ cwhusky_files = [("husky_firmware.zip", os.path.join(hwdir, r"capture/chipwhispe
                 ("version", os.path.join(hwdir, r"capture/chipwhisperer-husky/version.txt"))
                 ]
 
+cwhusky_plus_v = [1, 0]
+cwhusky_files = [("husky_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-husky/husky_firmware.zip")),
+                ("registers.v", os.path.join(hwdir, r"capture/chipwhisperer-husky/registers.v")),
+                ("Husky.bin", os.path.join(hwdir, r"capture/chipwhisperer-husky/ChipWhisperer-Husky.bin")),
+                ("version", os.path.join(hwdir, r"capture/chipwhisperer-husky/version.txt"))
+                ]
+
 cwbergen_v = [1, 2]
 cwbergen_files = [
     ("CW310.bin", os.path.join(hwdir, r"victims/cw310_bergenboard/CW310.bin")),

@@ -21,7 +21,7 @@
 import time
 import os.path
 # import chipwhisperer.capture.scopes._qt as openadc_qt
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader, CWHusky_Loader
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader, CWHusky_Loader, CWHuskyPlus_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.logging import *
 
@@ -54,7 +54,7 @@ class OpenADCInterface_NAEUSBChip(DisableNewAttr):
             0xACE2:FWLoaderConfig(CWLite_Loader()),
             0xACE3:FWLoaderConfig(CW1200_Loader()),
             0xACE5:FWLoaderConfig(CWHusky_Loader()),
-            0xACE6:FWLoaderConfig(CWHusky_Loader()),
+            0xACE6:FWLoaderConfig(CWHuskyPlus_Loader()),
         }
 
     def con(self, sn=None, idProduct=None, bitstream=None, force=False, prog_speed=1E6, registers=None, **kwargs):

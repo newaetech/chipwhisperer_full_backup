@@ -1,0 +1,18 @@
+probes:
+  TG1001d4:
+    frequency: 200000000
+    ftdi.channel: 1
+    ftdi.gpio_dir_mask: 0x0038
+    ftdi.gpio_init_mask: 0x003b
+    ftdi.srst_mask: 0x0020
+    ftdi.trst_mask: 0x0020
+    ftdi.swd_en_mask: 0
+
+  50203220325531583330313237323034:
+    ftdi.channel: 1
+    ftdi.gpio_dir_mask: 0x001B
+    ftdi.gpio_init_mask: 0x001B
+    ftdi.std_en_mask: 0x0100
+    ftdi.stdio_en_mask: 0x0200
+#ftdi.gpio_dir_mask 0x003b
+#ftdi.gpio_init_mask 0x0038

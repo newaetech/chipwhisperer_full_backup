@@ -59,7 +59,7 @@ class CW340(CW310):
         self.jumper_warned = False
 
     def _getCWType(self):
-        return "luna"
+        return "cwluna"
 
     def _get_usart(self, num=0):
         if num == 0:
