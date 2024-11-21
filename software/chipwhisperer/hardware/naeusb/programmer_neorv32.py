@@ -27,7 +27,7 @@ import struct
 import time
 import traceback
 from datetime import datetime
-from chipwhisperer.hardware.naeusb.programmer_targetfpga import LatticeICE40
+from .programmer_targetfpga import LatticeICE40
 from functools import reduce, wraps
 from chipwhisperer.logging import *
 import numpy as np

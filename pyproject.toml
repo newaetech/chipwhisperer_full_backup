@@ -18,6 +18,7 @@ dependencies = [
         "fastdtw",
         "Cython",
         "tqdm",
+        "libusb1",
 ]
 license = {file = "LICENSE.txt"}
 readme = "README.md"
@@ -35,3 +36,6 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["software"]
+
+[tool.setuptools.dynamic]
+version = {attr = "chipwhisperer.__version__"}

@@ -8,7 +8,7 @@
 
 Main module for ChipWhisperer.
 """
-from .version import __version__
+__version__ = '5.7.0'
 
 try:
     import usb1 # type: ignore
