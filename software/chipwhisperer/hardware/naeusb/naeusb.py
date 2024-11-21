@@ -808,8 +808,8 @@ class NAEUSB:
 
 
         self.snum=self.usbtx.sn
-        fwver = self.readFwVersion()
-        fwver = "{}.{}.{}".format(fwver[0], fwver[1], fwver[2])
+        fwverraw = self.readFwVersion()
+        fwver = "{}.{}.{}".format(fwverraw[0], fwverraw[1], fwverraw[2])
         naeusb_logger.info('SAM3U Firmware version = {}'.format(fwver))
 
 
