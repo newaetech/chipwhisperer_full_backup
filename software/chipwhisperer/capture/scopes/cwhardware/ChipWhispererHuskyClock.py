@@ -123,6 +123,7 @@ class CDCI6214(util.DisableNewAttr):
         self._zdm_auto = False
         self._zdm_mode = False
         self._no_warning_freq = False
+        self._freq_warning_limit = 0.002 # warn if generate clock frequency is > 0.2 % different from requested
         self.reset_registers()
         self.setup()
 
@@ -130,7 +131,7 @@ class CDCI6214(util.DisableNewAttr):
         self._set_target_freq = 7.37E6
         self._glitch = None
         self._cached_adc_freq = None
-        self._max_freq = 300e6
+        self._max_freq = 300e6 # disallow ADC overclocking above this
 
         self._old_in_freq = 0
         self._old_target_freq = 0
@@ -501,33 +502,37 @@ class CDCI6214(util.DisableNewAttr):
 
         scope_logger.debug("adc_mul: {}".format(adc_mul))
 
-        # Adjust adc_mul if it results in an invalid adc clock
+        # Adjust adc_mul if it results in an invalid adc clock. Allows a small amount of overclocking; a separate warning
+        # is issued below for any amount of overclocking.
         old_mul = adc_mul
         if not adc_off:
             while (adc_mul * target_freq) > self._max_freq:
                 adc_mul -= 1
             while (adc_mul * target_freq) < 1E6:
                 adc_mul += 1
-        else:
-            # since the output div for the target freq
-            # needs to be divisible by adc_mul,
-            # setting it to 1 removes its effect
-            adc_mul = 1
 
         if old_mul != adc_mul:
             if not adc_off:
                 scope_logger.warning("ADC frequency must be between 1MHz and {}MHz - ADC mul has been adjusted to {}".format(self._max_freq, adc_mul))
 
         if adc_mul * target_freq > self._warning_freq and not self._no_warning_freq:
-            scope_logger.warning("""
-                ADC frequency exceeds specification (%d MHz). 
-                This may or may not work, depending on temperature, voltage, and luck.
-                It may not work reliably.
-                You can run scope.adc_test() to check whether ADC data is sampled properly by the FPGA,
-                but this doesn't fully verify that the ADC is working properly.
-                Set scope.clock.pll._no_warning_freq if you don't want
-                to see this message anymore.
-                """ % (self._warning_freq//1e6))
+            scope_logger.warning("""ADC frequency exceeds specification (%d MHz). 
+            This may or may not work, depending on temperature, voltage, and luck.
+            It may not work reliably.
+            You can run scope.adc_test() to check whether ADC data is sampled properly by the FPGA,
+            but this doesn't fully verify that the ADC is working properly.
+            Set scope.clock.pll._no_warning_freq if you don't want
+            to see this message anymore.
+            """ % (self._warning_freq//1e6))
+
+        if target_freq > self._warning_freq and not self._no_warning_freq:
+            scope_logger.warning("""clkgen frequency exceeds specification (%d MHz). 
+            This may or may not work, depending on temperature, voltage, and luck.
+            This can adversely impact *all* of ChipWhisperer Husky's functionality.
+            It may not work reliably.
+            Set scope.clock.pll._no_warning_freq if you don't want
+            to see this message anymore.
+            """ % (self._warning_freq//1e6))
 
         # If we're just changing ADC mul, try to avoid touching PLL settings
         # Depending on what frequencies we're dealing with, this may fail, meaning we have to touch the PLL settings
@@ -622,7 +627,8 @@ class CDCI6214(util.DisableNewAttr):
                         if best_error == 0: break
                         output_input = pll_input * pll_mul * fb_prescale // prescale
                         out_div = int((output_input / target_freq) + 0.5)
-                        out_div -= out_div % adc_mul
+                        if not adc_off:
+                            out_div -= out_div % adc_mul
 
                         real_target_freq = output_input / out_div
                         error = abs(target_freq - real_target_freq) / target_freq
@@ -638,12 +644,24 @@ class CDCI6214(util.DisableNewAttr):
                             best_error = error
                             best_prescale = prescale
                             best_fb_prescale = fb_prescale
+                            best_real_target_freq = real_target_freq
                             scope_logger.info("New best: in_div {} out_div {} pll_mul {} prescale {} fb_prescale {} error {} freq {}".\
                                 format(best_in_div, best_out_div, best_pll_mul, best_prescale, best_fb_prescale, best_error, real_target_freq))
                             scope_logger.info("F_PFD: %d MHz | F_VCO: %d GHz" % (input_freq//1e6, input_freq//1e6*best_fb_prescale*best_pll_mul))
 
         if best_error == float('inf'):
             raise ValueError("Could not calculate pll settings for input {}, output {} with mul {}".format(input_freq, target_freq, adc_mul))
+        elif best_error > self._freq_warning_limit:
+            scope_logger.warning("""
+                Could not calculate pll settings for the requested frequency (%d); 
+                generating a %d clock instead.
+                It may be possible to get closer to the requested frequency
+                with a different adc_mul.
+                It may also be possible to get closer to the requested
+                frequency if you set scope.clock.pll._allow_rdiv to True;
+                however this can result in an inconsistant clock phase between
+                the target and ADC clocks; use at your own risk!
+                """ % (target_freq, best_real_target_freq))
 
         # set the output settings we found
         self.set_prescale(3, best_prescale)
@@ -1231,21 +1249,20 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     def clkgen_freq(self):
         """The target clock frequency in Hz.
 
-        The PLL takes the input clock frequency and multiplies it/divides to
-        match as closely as possible to the set clkgen_freq. If set to 0,
-        turns both the target and ADC clocks off.
+        If set to 0, turns both the target and ADC clocks off.
 
         Some important notes for setting this value:
 
-        * The minimum output frequency is 500kHz and the maximum is 350MHz
-        * The ADC clock output frequency (clkgen_freq * adc_mul) must be
-            below 200MHz. Therefore, if you want to use
-            a clkgen_freq above 200MHz, you must set adc_mul=0
-        * The accuracy of the actual clkgen_freq will depend
-            on adc_mul, as the output divisor for the clkgen_freq must divide
-            cleanly by adc_mul. For example, if you try to use a clkgen_freq
-            of 7.37MHz and and adc_mul of 16, the closest valid clkgen_freq
-            will be 7.5MHz.
+        * The minimum output frequency is 5MHz.
+        * The maximum is 200MHz (Husky) or 250MHz (Husky Plus); exceeding
+            this violates the maximum frequency allowed by both the FPGA and
+            the ADC.
+        * You may not get exactly the requested frequency. Husky gets as close
+            as possible to the requested frequency, and a warning is issued if
+            the generated clock differs from the requested clock by more than
+            scope.clock.pll._freq_warning_limit (which defaults to 0.2%).
+            Whether you get the requested frequency depends on both the
+            requested frequency itself and adc_mul.
 
         :Getter: Return the calculated target clock frequency in Hz
 
