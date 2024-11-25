@@ -156,16 +156,21 @@ class CDCI6214(util.DisableNewAttr):
         scope_logger.debug('CDCI6214 writing: addr 0x%02x, payload 0x%04x; %s' % (addr, (data[0]) | (data[1] << 8), msg))
         self.naeusb.sendCtrl(0x29, data=[1, addr, 0x00, data[0], data[1]])
 
+
     def read_reg(self, addr, as_int=False):
-        """Read a CDCI6214 Register over I2C
+        """Read a CDCI6214 Register over I2C. If registers have been cached, returns cached value.
 
         Args:
             addr (u8): Address to read from
             as_int (bool): If true, return a big endian u16. Otherwise, return a two element list.
         """
 
-        self.naeusb.sendCtrl(0x29, data=[0, addr, 0x00, 0, 0])
-        data = self.naeusb.readCtrl(0x29, dlen=3)
+        if self._registers_cached:
+            intvalue = self.cached_reg[addr][1]
+            data = [2, intvalue & 0xFF, (intvalue >> 8) & 0xFF]
+        else:
+            self.naeusb.sendCtrl(0x29, data=[0, addr, 0x00, 0, 0])
+            data = self.naeusb.readCtrl(0x29, dlen=3)
 
         if data[0] != 2:
             raise IOError("PLL/I2C Error, got {}".format(data))
@@ -173,6 +178,7 @@ class CDCI6214(util.DisableNewAttr):
         if as_int is True:
             return (data[1]) | (data[2] << 8)
         return bytearray(data[1:])
+
 
     def update_reg(self, addr, bits_to_set, bits_to_clear, msg='', update_cache_only=False):
         """Updates a CDCI6214 Register. Reads, clears bits, then sets bits.
@@ -214,6 +220,8 @@ class CDCI6214(util.DisableNewAttr):
             reg_big = self.cached_reg[addr][1]
             reg_val = [reg_big & 0xFF, (reg_big >> 8) & 0xFF]
         else:
+            if self._registers_cached:
+                raise Warning('Registers are cached: this is unexpected!')
             reg_val = self.read_reg(addr, as_int=False)
         reg_val[0] &= 0xFF - bits_to_clear[0] # the not we want ;)
         reg_val[1] &= 0xFF - bits_to_clear[1]
@@ -251,10 +259,10 @@ class CDCI6214(util.DisableNewAttr):
         if self._registers_cached:
             scope_logger.error('Registers are already cached; not re-caching.')
         else:
-            self._registers_cached = True
             for addr in range(0x47):
                 val = self.read_reg(addr, True)
                 self.cached_reg.append([addr, val])
+            self._registers_cached = True
 
     def write_cached_registers(self):
         """ Write all CDCI6214 using cached_reg, in the proper order.
@@ -1193,14 +1201,14 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
     @clear_adc_unlock
     def clkgen_src(self, clk_src):
         self._cached_adc_freq = None
+        target_freq = self.clkgen_freq # this is the clock frequency we want to maintain (i.e. if clkgen_src is changing)
         if clk_src in ["internal", "system"]:
             self.pll.cache_all_registers()
             self.extclk_monitor_enabled = False
-            clkgen_freq = self.clkgen_freq
             self.pll._pll_src_setter("xtal")
             scope_logger.debug('clkgen_src calling _clkgen_freq_setter')
             try:
-                self._clkgen_freq_setter(clkgen_freq)
+                self._clkgen_freq_setter(target_freq)
                 self.pll.write_cached_registers()
                 self.pll._reset_if_needed()
                 self.pll.sync_clocks()
@@ -1224,7 +1232,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.fpga_clk_settings.freq_ctr_src = "extclk"
             scope_logger.debug('clkgen_src calling _clkgen_freq_setter')
             try:
-                self._clkgen_freq_setter(self.clkgen_freq)
+                self._clkgen_freq_setter(target_freq)
                 self.pll.write_cached_registers()
                 self.pll._reset_if_needed()
                 self.pll.sync_clocks()
