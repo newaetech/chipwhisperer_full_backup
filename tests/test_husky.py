@@ -631,7 +631,7 @@ def test_internal_ramp(fulltest, samples, presamples, testmode, clock, fastreads
         scope.sc.triggerNow()
         scope.sc.arm(False)
         assert scope.capture() == False
-        raw = scope.get_last_trace(True)
+        raw = np.int64(scope.get_last_trace(True))
         errors, first_error = check_ramp(raw, testmode, bits, samples, segment_cycles)
         assert errors == 0, "%d errors; First error: %d; scope.adc.errors: %s" % (errors, first_error, scope.adc.errors)
         assert scope.adc.errors == False
@@ -695,7 +695,7 @@ def test_adc_freq_sweep(fulltest, samples, presamples, freq_start, freq_stop, fr
             scope.sc.triggerNow()
             scope.sc.arm(False)
             assert scope.capture(poll_done=True) == False
-            raw = scope.get_last_trace(True)
+            raw = np.int64(scope.get_last_trace(True))
             errors, first_error = check_ramp(raw, testmode, bits, samples, segment_cycles)
 
             if errors or scope.adc.errors != False:
@@ -1103,7 +1103,7 @@ def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, f
         scope.adc.timeout = 10
     target.flush()
     ret = cw.capture_trace(scope, target, text, key)
-    raw = scope.get_last_trace(True)
+    raw = np.int64(scope.get_last_trace(True))
     if verbose: print('Words read before error: %d ' % int.from_bytes(scope.sc.sendMessage(0x80, 47, maxResp=4), byteorder='little'))
     if 'overflow' in desc:
         assert 'overflow' in scope.adc.errors
