@@ -944,7 +944,6 @@ class CDCI6214(util.DisableNewAttr):
         self._set_target_freq = freq
         scope_logger.debug("adc_mul: {} freq: {}; target_freq calling set_outfreqs".format(self._adc_mul, freq))
         self.set_outfreqs(self.input_freq, self._set_target_freq, self._adc_mul)
-        self.update_fpga_vco(self._mmcm_vco_freq)
         if self.pll_src == 'fpga' and freq <= self._max_pfd and not self._allow_rdiv:
             # enable zdm mode if extclk, input <= 100 MHz, and we don't use the reference divider:
             self._zdm_mode = True
@@ -1205,6 +1204,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
                 self.pll.write_cached_registers()
                 self.pll._reset_if_needed()
                 self.pll.sync_clocks()
+                self.pll.update_fpga_vco(self.pll._mmcm_vco_freq)
             except Exception as e:
                 scope_logger.error('Failed to update clkgen_freq: %s' % e)
                 self.pll._registers_cached = False
@@ -1229,6 +1229,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
                 self.pll._reset_if_needed()
                 self.pll.sync_clocks()
                 self.extclk_monitor_enabled = True
+                self.pll.update_fpga_vco(self.pll._mmcm_vco_freq)
             except Exception as e:
                 scope_logger.error('Failed to update clkgen_freq: %s' % e)
                 self.pll._registers_cached = False
@@ -1286,6 +1287,7 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
             self.pll.write_cached_registers()
             self.pll._reset_if_needed()
             self.pll.sync_clocks()
+            self.pll.update_fpga_vco(self.pll._mmcm_vco_freq)
         except Exception as e:
             if not self._quiet:
                 scope_logger.error('Failed to update clkgen_freq: %s' % e)
