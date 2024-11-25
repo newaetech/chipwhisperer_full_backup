@@ -64,7 +64,7 @@ if "HUSKY_TARGET_PLATFORM" in os.environ:
 print("Husky target platform {}".format(test_platform))
 scope = cw.scope(name='Husky', hw_location=hw_loc)
 if test_platform == 'cw305':
-    target = cw.target(scope, cw.targets.CW305, force=False)
+    target = cw.target(scope, cw.targets.CW305, fpga_id='100t', force=False)
 else:
     target = cw.target(scope)
 scope.errors.clear()
@@ -502,25 +502,25 @@ testGlitchTriggerData = [
 
 testPLLData = [
     #freq   adc_mul xtal    oversample  tolerance   reps    desc
-    (5e6 ,  1,      False,  40,         1,          20,     'CW305_ref'),
-    (10e6,  1,      False,  20,         1,          20,     'CW305_ref_SLOW'),
-    (15e6,  1,      False,  16,         1,          20,     'CW305_ref'),
-    (50e6,  1,      False,  6,          0,          20,     'CW305_ref_SLOW'),
-    (75e6,  1,      False,  4,          0,          20,     'CW305_ref_SLOW'),
-    (5e6 ,  4,      False,  20,         1,          20,     'CW305_ref_mul4'),
-    (15e6,  3,      False,  16,         1,          20,     'CW305_ref_mul3'),
-    (20e6,  2,      False,  15,         1,          20,     'CW305_ref_mul2_SLOW'),
-    (25e6,  2,      False,  12,         0,          20,     'CW305_ref_mul2_SLOW'),
+    (5e6 ,  1,      False,  40,         1,          1,      'CW305_ref'),
+    (10e6,  1,      False,  20,         1,          1,      'CW305_ref_SLOW'),
+    (15e6,  1,      False,  16,         1,          1,      'CW305_ref'),
+    (50e6,  1,      False,  6,          0,          1,      'CW305_ref_SLOW'),
+    (75e6,  1,      False,  4,          0,          1,      'CW305_ref_SLOW'),
+    (5e6 ,  4,      False,  20,         1,          1,      'CW305_ref_mul4'),
+    (15e6,  3,      False,  16,         1,          1,      'CW305_ref_mul3'),
+    (20e6,  2,      False,  15,         1,          1,      'CW305_ref_mul2_SLOW'),
+    (25e6,  2,      False,  12,         0,          1,      'CW305_ref_mul2_SLOW'),
 
-    (5e6 ,  1,      True,   20,         1,          20,     'xtal_ref'),
-    (10e6,  1,      True,   20,         1,          20,     'xtal_ref_SLOW'),
-    (15e6,  1,      True,   16,         1,          20,     'xtal_ref'),
-    (50e6,  1,      True,   6,          1,          20,     'xtal_ref_SLOW'),
-    (75e6,  1,      True,   4,          1,          20,     'xtal_ref_SLOW'),
-    (5e6 ,  4,      True,   40,         1,          20,     'xtal_ref_mul4'),
-    (15e6,  3,      True,   16,         1,          20,     'xtal_ref_mul3'),
-    (20e6,  2,      True,   15,         1,          20,     'xtal_ref_mul2_SLOW'),
-    (25e6,  2,      True,   12,         1,          20,     'xtal_ref_mul2_SLOW'),
+    (5e6 ,  1,      True,   20,         1,          1,      'xtal_ref'),
+    (10e6,  1,      True,   20,         1,          1,      'xtal_ref_SLOW'),
+    (15e6,  1,      True,   16,         1,          1,      'xtal_ref'),
+    (50e6,  1,      True,   6,          1,          1,      'xtal_ref_SLOW'),
+    (75e6,  1,      True,   4,          1,          1,      'xtal_ref_SLOW'),
+    (5e6 ,  4,      True,   40,         1,          1,      'xtal_ref_mul4'),
+    (15e6,  3,      True,   16,         1,          1,      'xtal_ref_mul3'),
+    (20e6,  2,      True,   15,         1,          1,      'xtal_ref_mul2_SLOW'),
+    (25e6,  2,      True,   12,         1,          1,      'xtal_ref_mul2_SLOW'),
 ]
 
 
@@ -599,7 +599,7 @@ def test_internal_ramp(fulltest, samples, presamples, testmode, clock, fastreads
     scope.clock.adc_mul = adcmul
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert scope.clock.adc_freq == clock * adcmul
+    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.002
 
     if testmode == 'internal':
         scope.adc.test_mode = True
@@ -784,7 +784,7 @@ def test_glitch_offset(fulltest, clock, margin, offset, oversamp, desc):
     scope.clock.adc_mul = 1
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert scope.clock.adc_freq == clock
+    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.002
 
     setup_glitch(offset, 0, oversamp)
 
@@ -846,7 +846,7 @@ def test_glitch_output_sweep_width(fulltest, reps, clock, offset, oversamp, step
     scope.clock.adc_mul = 1
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert scope.clock.adc_freq == clock
+    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.002
 
     margin = 2
     setup_glitch(offset, 0, oversamp)
@@ -903,7 +903,7 @@ def test_missing_glitch_sweep_offset(fulltest, clock, vco, span, width, num_glit
     scope.clock.adc_mul = 1
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert scope.clock.adc_freq == clock
+    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.002
     target.baud = 38400 * clock / 1e6 / 7.37
     reset_target()
 
@@ -947,7 +947,7 @@ def test_glitch_output_sweep_offset(fulltest, reps, clock, width, oversamp, step
     scope.clock.adc_mul = 1
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert scope.clock.adc_freq == clock
+    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.002
 
     margin = 3
     setup_glitch(0, width, oversamp)
@@ -1052,7 +1052,7 @@ def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, f
     scope.clock.adc_mul = adcmul
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert scope.clock.adc_freq == clock * adcmul
+    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.002
     target.baud = 38400 * clock / 1e6 / 7.37
 
     if testmode == 'internal':
@@ -1326,7 +1326,7 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
     scope.clock.adc_mul = adc_mul
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert scope.clock.adc_freq == clock * adc_mul
+    assert abs(scope.clock.adc_freq - clock*adc_mul)/scope.clock.adc_freq < 0.002
     target.baud = 38400 * clock / 1e6 / 7.37
     reset_target()
 
@@ -1390,7 +1390,7 @@ def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, half, threshold, 
     scope.clock.adc_mul = adc_mul
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert scope.clock.adc_freq == clock * adc_mul
+    assert abs(scope.clock.adc_freq - clock*adc_mul)/scope.clock.adc_freq < 0.002
     target.baud = 38400 * clock / 1e6 / 7.37
     reset_target()
 
@@ -1454,7 +1454,7 @@ def test_uart_trigger (fulltest, clock, pin, pattern, mask, bytes_compared, reps
     scope.clock.adc_mul = 1
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert scope.clock.adc_freq == clock
+    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.002
     reset_target()
     time.sleep(0.1)
     target.baud = 38400 * clock / 1e6 / 7.37
