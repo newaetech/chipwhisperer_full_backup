@@ -1411,6 +1411,11 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         and is given by scope.clock.pll.max_phase_percent. The phase step size
         is scope.clock.pll.adc_phase_step_size.
 
+        Warning: under some conditions, the phase may not be consistent (i.e.
+        vary from run to run of a notebook), or it may have a
+        frequency-dependent offset. The conditions which lead to this are
+        flagged as warnings when scope.clock properties are set.
+
         :Getter: Gets the current adc_phase.
 
         :Setter: Sets the adc_phase.
