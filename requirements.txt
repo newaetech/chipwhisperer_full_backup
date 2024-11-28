@@ -1,0 +1,10 @@
+chipwhisperer @ file:///C:/Users/alexl/code/chipwhisperer
+colorama==0.4.6
+configobj==5.0.9
+Cython==3.0.11
+ECPy==1.2.5
+fastdtw==0.3.4
+libusb1==3.1.0
+numpy==1.26.4
+pyserial==3.5
+tqdm==4.67.1
