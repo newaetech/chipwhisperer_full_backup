@@ -443,8 +443,10 @@ class SADModelWrapper(object):
     def run(self, wave):
         """Runs the SAD model.
         Args:
-            wave (list): input waveform to the SAD model.
+            wave (np.ndarray of uint8 elements): input waveform to the SAD model.
         """
+        if type(wave) != np.ndarray or wave.dtype != np.uint8:
+            raise ValueError("wave must be a numpy.ndarray of uint8's; e.g. as obtained from cw.capture_trace(as_int=True) with scope.adc.bits_per_sample=8")
         self.reset()
         self.sad.run(wave)
         if self.fsad:

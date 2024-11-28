@@ -55,6 +55,10 @@ class SADExplorer(util.DisableNewAttr):
 
     def __init__(self, scope, target, reftrace, refstart, max_segments=1, width=2000, height=600, plot_tools='pan, box_zoom, hover, reset, save', capture_function=None):
         super().__init__()
+        if type(reftrace) != np.ndarray or reftrace.dtype != np.uint8:
+            raise ValueError("wave must be a numpy.ndarray of uint8's; e.g. as obtained from cw.capture_trace(as_int=True) with scope.adc.bits_per_sample=8")
+        if scope.adc.bits_per_sample != 8:
+            raise ValueError("scope.adc.bits_per_sample must be set to 8")
         self.scope = scope
         self.target = target
         self.SAD = scope.SAD
@@ -122,6 +126,7 @@ class SADExplorer(util.DisableNewAttr):
         self.trigger_sample = 0
         self.extra_presamples = 0
         self._never_ran = True
+        self.ttimes = None
         self.disable_newattr()
 
     @property
@@ -146,6 +151,7 @@ class SADExplorer(util.DisableNewAttr):
     def get_legend_items(self, segments, sad_stats):
         items = []
         ttimes = self.scope.trigger.get_trigger_times()
+        self.ttimes = ttimes
         sads = []
         for i in range(min(len(segments), self.legend_segments)):
         #for i in range(self.legend_segments):

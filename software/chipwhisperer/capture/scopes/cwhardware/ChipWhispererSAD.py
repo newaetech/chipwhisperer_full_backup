@@ -342,7 +342,7 @@ class HuskySAD(util.DisableNewAttr):
         scope.SAD.sad_reference_length samples are used).
 
         Args:
-            wave: (list of ints or floats): reference waveform
+            wave (numpy.ndarray): reference waveform
             bits_per_sample: (int, optional): number of bits per sample in wave. If not provided, we use scope.adc.bits_per_sample.
         """
         return self._reference
@@ -366,6 +366,8 @@ class HuskySAD(util.DisableNewAttr):
 
     @reference.setter
     def reference(self, wave, bits_per_sample=None):
+        if type(wave) != np.ndarray:
+            raise ValueError("wave must be a numpy.ndarray, e.g. as obtained from cw.capture_trace()")
         redo_always_armed = False
         if not self._writing_allowed:
             if self.always_armed:
@@ -380,17 +382,18 @@ class HuskySAD(util.DisableNewAttr):
         reflen = self.sad_reference_length
         if len(wave) < reflen:
             scope_logger.info('Reference provided is too short (it should be at least %d samples long); extending with zeros' % reflen)
-            wave.extend([0]*(reflen-len(wave)))
+            wave = np.append(wave, np.asarray([0]*(reflen-len(wave)), dtype=np.uint8))
         # if emode is supported but off, we still need to write the full set of reference samples:
         if self._emode_off:
             reflen *= 2
             if len(wave) < reflen:
-                scope_logger.info('extending reference because _emode_off')
-                wave.extend([0]*(reflen-len(wave)))
+                #scope_logger.info('extending reference because _emode_off')
+                wave = np.append(wave, np.asarray([0]*(reflen-len(wave)), dtype=np.uint8))
 
         # first, trim and translate reference waveform to ints:
         refints = []
-        if type(wave[0]) not in [int, np.uint8, np.uint16]:
+        #if type(wave[0]) not in [int, np.uint8, np.uint16]:
+        if wave[0].dtype == np.float64:
             for s in wave[:reflen]:
                 refints.append(int(s*2**self._sad_bits_per_sample) + 2**(self._sad_bits_per_sample-1))
         else:
