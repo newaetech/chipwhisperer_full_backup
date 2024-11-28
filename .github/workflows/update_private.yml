@@ -2,6 +2,8 @@ name: Update private repo
 
 on: 
   push:
+    branches:
+      - 'develop'
     paths:
       - 'jupyter'
       - 'software/**'
