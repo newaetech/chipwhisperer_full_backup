@@ -656,6 +656,14 @@ class HuskySAD(util.DisableNewAttr):
         armed.  The intended use is to allow the SAD module to trigger after
         the ADC capture has completed, which can be very useful when
         calibrating the SAD threshold when using multiple SAD triggers.
+
+        Warning: SAD is very power-hungry; enabling always_armed when
+        scope.clock.adc_freq is high can get Husky very hot, since always_armed
+        keeps the SAD logic permanently active. The scope.XADC alarms provide a
+        self-preservation mechanism: SAD is automatically shut down when a VCC
+        or temperature alarm is triggered. If this happens, you can avoid it by
+        allowing Husky to periodically cool down by momentarily disabling
+        always_armed and/or reducing the ADC sampling frequency.
         """
         if self.oa.sendMessage(CODE_READ, "SAD_CONTROL", Validate=False, maxResp=1)[0] & 0x01:
             return True
