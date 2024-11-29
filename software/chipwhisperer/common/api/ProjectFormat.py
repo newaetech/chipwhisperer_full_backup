@@ -125,7 +125,7 @@ class Project(Parameterized):
     """
     untitledFileName = os.path.normpath(os.path.join(Settings().value("project-home-dir"), "tmp", "default.cwp"))
 
-    def __init__(self, prog_name="ChipWhisperer", prog_ver=""):
+    def __init__(self, prog_name="ChipWhisperer", prog_ver="", segment_length=10000):
         self.valid_traces = None
         self._trace_format = None
 
@@ -155,7 +155,7 @@ class Project(Parameterized):
         self.setProgramVersion(prog_ver)
 
         self._segments = Segments(self)
-        self._traces = Traces(self)
+        self._traces = Traces(self, segment_length)
         self._keys = IndividualIterable(self._traceManager.get_known_key, self._traceManager.num_traces)
         self._textins = IndividualIterable(self._traceManager.get_textin, self._traceManager.num_traces)
         self._textouts = IndividualIterable(self._traceManager.get_textout, self._traceManager.num_traces)
@@ -654,17 +654,16 @@ class Traces:
         self.tm = project._traceManager
 
         # segment management
-        self.cur_seg = self.project.segments.new()
+        self.cur_seg = self.project.get_new_trace_segment()
         self.project.segments.append(self.cur_seg)
         self.cur_trace_num = 0
         self.seg_len = segment_length
-        self.seg_ind_max = self.seg_len - 1
 
     @property
     def max(self):
         """Max index during iteration."""
         return self.tm.num_traces() - 1
-    
+
     @property
     def keys(self):
         return self._keys
@@ -683,9 +682,11 @@ class Traces:
             other_logger.error("Invalid type appended to traces. Try appending cw.Trace(trace_data, textin, textout, key)")
             raise TypeError("Expected Trace object, got {}.".format(type(trace)))
 
-        if self.cur_trace_num > self.seg_ind_max:
-            self.cur_seg = self.project.segments.new()
-            self.project.segments.append(self.cur_seg)
+        if self.cur_trace_num >= self.seg_len:
+            new_seg = self.project.get_new_trace_segment()
+            self.project.segments.append(new_seg)
+            self.cur_seg.saveAll()
+            self.cur_seg = new_seg
             self.cur_trace_num = 0
         self.cur_seg.add_trace(*trace, dtype=dtype)
         self.cur_trace_num += 1
@@ -800,7 +801,7 @@ class Segments:
 
     def new(self):
         """Used to get a new empty trace container (segment).
-        
+
         Returns:
             (TraceContainer) A new empty instance of a trace container.
         """
@@ -833,7 +834,7 @@ class Segments:
 
 
 class IndividualIterable:
-    
+
     def __init__(self, getter_func, trace_num_func):
         self.getter = getter_func
         self.trace_num_func = trace_num_func
@@ -852,7 +853,7 @@ class IndividualIterable:
 
         self.n += 1
         return self.getter(self.n - 1)
-    
+
     def __len__(self):
         return self.trace_num_func()
 
