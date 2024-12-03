@@ -144,16 +144,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
     def _getFWPy(self):
         from ...hardware.firmware.open_fw import fwver
         cw_type = self._getCWType()
-        fwver = fwver(cw_type)
-        # if cw_type == "cwlite":
-        #     from ...hardware.firmware.cwlite import fwver
-        # elif cw_type == "cw1200":
-        #     from ...hardware.firmware.cw1200 import fwver # type: ignore
-        # elif cw_type in ["cwhusky", "cwhuskyplus"]:
-        #     from ...hardware.firmware.cwhusky import fwver # type: ignore
-        # else:
-        #     raise ValueError('Unknown cw_type: %s' % cw_type)
-        return fwver
+        return fwver(cw_type)
 
     def reload_fpga(self, bitstream=None, reconnect=True, prog_speed=1E6):
         """(Re)loads a FPGA bitstream (even if already configured).

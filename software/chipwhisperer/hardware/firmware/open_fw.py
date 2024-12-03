@@ -43,6 +43,15 @@ def registers(dev_name, filelike=True):
         return data
     pass
 
+def getsome_generator(dev_name):
+    def getsome(item, filelike=True):
+        with open(res_file_path(dev_name, item), "rb") as f:
+            data = f.read()
+            if filelike:
+                data = io.BytesIO(data)
+            return data
+    return getsome
+
 def _extract_file(getsome, item):
     data = getsome(item).read()
     with open(item, "wb") as f:
