@@ -7,14 +7,12 @@ on:
   # Triggers the workflow on push or pull request events but only for the develop branch
   push:
     paths:
-      - 'hardware/victims/firmware/**'
-      - 'hardware/capture'
+      - 'firmware/mcu/firmware/**'
       - '.github/workflows/build_firmware.yml'
 
   pull_request:
     paths:
-      - 'hardware/victims/firmware/**'
-      - 'hardware/capture'
+      - 'firmware/mcu/**'
       - '.github/workflows/build_firmware.yml'
 
 
@@ -35,13 +33,3 @@ jobs:
       - name: Build firmware
         run: >-
           cd tests && bash test_fw_build.sh
-      - name: Build capture firmware
-        run: |
-          cd hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/src
-          git submodule update --init naeusb
-          make -j
-          cd -
-          cd hardware/capture/chipwhisperer-nano/firmware/cwnano-firmware/src
-          git submodule update --init naeusb
-          make -j
-

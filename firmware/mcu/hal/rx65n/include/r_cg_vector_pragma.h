@@ -1,6 +1,0 @@
-R_PRAGMA_INTERRUPT(bus_error_isr, 16)
-R_PRAGMA_INTERRUPT(group_bl2_handler_isr, 107)
-R_PRAGMA_INTERRUPT(group_bl0_handler_isr, 110)
-R_PRAGMA_INTERRUPT(group_bl1_handler_isr, 111)
-R_PRAGMA_INTERRUPT(group_al0_handler_isr, 112)
-R_PRAGMA_INTERRUPT(group_al1_handler_isr, 113)
