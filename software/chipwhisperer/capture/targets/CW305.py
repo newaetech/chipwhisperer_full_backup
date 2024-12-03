@@ -121,8 +121,8 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
 
 
     def _getFWPy(self):
-        from ...hardware.firmware.cw305 import fwver
-        return fwver
+        from ...hardware.firmware.open_fw import fwver
+        return fwver("cw305")
 
     def __init__(self):
         import chipwhisperer as cw
@@ -477,7 +477,8 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             if self.fpga.isFPGAProgrammed() == False or force:
                 if bsfile is None:
                     if not fpga_id is None:
-                        from chipwhisperer.hardware.firmware.cw305 import getsome
+                        from ...hardware.firmware.open_fw import getsome_generator
+                        getsome = getsome_generator("cw305")
                         if self.target_name == 'AES':
                             bsdata = getsome(f"AES_{fpga_id}.bit")
                         elif self.target_name == 'Cryptech ecdsa256-v1 pmul':
@@ -505,7 +506,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
                     target_logger.warning(("FPGA Bitstream not configured or '%s' not a file." % str(bsfile)))
                 else:
                     starttime = datetime.now()
-                    status = self.fpga.FPGAProgram(open(bsfile, "rb"), exceptOnDoneFailure=False, prog_speed=prog_speed)
+                    status = self.fpga.FPGAProgram(bsfile, exceptOnDoneFailure=False, prog_speed=prog_speed)
                     stoptime = datetime.now()
                     if status:
                         target_logger.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
@@ -533,13 +534,15 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
 
                 if bsfile is None:
                     if self.platform == 'ss2_ice40':
-                        from chipwhisperer.hardware.firmware.cwtargetice40 import getsome
+                        from ...hardware.firmware.open_fw import getsome_generator
+                        getsome = getsome_generator("cwtargetice40")
                         if self.target_name == 'AES':
                             bsfile = getsome(f"iCE40UP5K_SS2.bin")
                         else:
                             raise ValueError('Unknown target!')
                     else:
-                        from chipwhisperer.hardware.firmware.xc7a35 import getsome
+                        from ...hardware.firmware.open_fw import getsome_generator
+                        getsome = getsome_generator("xc7a35")
                         if self.target_name == 'AES':
                             bsfile = getsome(f"AES_cw312t_a35.bit")
                         elif self.target_name == 'Cryptech ecdsa256-v1 pmul':

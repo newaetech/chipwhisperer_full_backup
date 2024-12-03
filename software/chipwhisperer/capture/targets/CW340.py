@@ -94,8 +94,8 @@ class CW340(CW310):
             if fpga_id is None:
                 verilog_defines = [self.default_verilog_defines_full_path]
             else:
-                from ...hardware.firmware.cw305 import getsome
-                verilog_defines = [getsome(self.default_verilog_defines)]
+                from ...hardware.firmware.open_fw import registers
+                verilog_defines = [registers("cw305")]
         else:
             verilog_defines = defines_files
         if slurp:

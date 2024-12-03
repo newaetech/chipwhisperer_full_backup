@@ -119,11 +119,13 @@ class Neorv32Programmer:
                 devtype = devtype[0].lower()
             
             if devtype == "ice40up5k":
-                from chipwhisperer.hardware.firmware.cwtargetice40 import getsome
+                # from chipwhisperer.hardware.firmware.cwtargetice40 import getsome
+                from ..firmware.open_fw import res_file_path
             else:
                 raise ValueError("Device type: %s. I don't have a pre-built FPGA bitstream for you (or connection bad)."%devtype)
             
-            bsdata = getsome("neorv32_iCE40CW312_MinimalBoot_directclk_7370KHz.bit").read()
+            # bsdata = getsome("neorv32_iCE40CW312_MinimalBoot_directclk_7370KHz.bit").read()
+            bsdata = open(res_file_path("neorv32_iCE40CW312_MinimalBoot_directclk_7370KHz.bit"), "rb").read()
         else:
             target_logger.info("ice40: Loading bitstream from %s"%bsfile)
             f = open(bsfile, "rb")
