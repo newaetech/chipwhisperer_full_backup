@@ -104,60 +104,60 @@ void platform_init(void);
     #include "pic24f/pic24f_hal.h"
     #include "pic24f/uart.h"
 #elif HAL_TYPE == HAL_sam4l
-    #include "sam4l/sam4l_hal.h"
+    #include "chipwhisperer-fw-extra/sam4l/sam4l_hal.h"
 #elif HAL_TYPE == HAL_stm32f0
 	#include "stm32f0/stm32f0_hal.h"
 #elif HAL_TYPE == HAL_stm32f1
-	#include "stm32f1/stm32f1_hal.h"
+	#include "chipwhisperer-fw-extra/stm32f1/stm32f1_hal.h"
 #elif HAL_TYPE == HAL_stm32f2
-	#include "stm32f2/stm32f2_hal.h"
+	#include "chipwhisperer-fw-extra/stm32f2/stm32f2_hal.h"
 #elif HAL_TYPE == HAL_stm32f3
 	#include "stm32f3/stm32f3_hal.h"
 	#ifdef SECCAN
 		#include "stm32f3/stm32f3_hal_seccan.h"
 	#endif
 #elif HAL_TYPE == HAL_stm32f4
-	#include "stm32f4/stm32f4_hal.h"
+	#include "chipwhisperer-fw-extra/stm32f4/stm32f4_hal.h"
 #elif HAL_TYPE == HAL_cc2538
-	#include "cc2538/cc2538_hal.h"
+	#include "chipwhisperer-fw-extra/cc2538/cc2538_hal.h"
 #elif HAL_TYPE == HAL_k24f
-    #include "k24f/k24f_hal.h"
+    #include "chipwhisperer-fw-extra/k24f/k24f_hal.h"
 #elif HAL_TYPE == HAL_k82f
-#include "k82f/k82f_hal.h"
+#include "chipwhisperer-fw-extra/k82f/k82f_hal.h"
 #elif HAL_TYPE == HAL_nrf52840
-    #include "nrf52840/nrf52840_hal.h"   
+    #include "chipwhisperer-fw-extra/nrf52840/nrf52840_hal.h"   
 #elif HAL_TYPE == HAL_stm32f0_nano
     #include "stm32f0/stm32f0_hal.h" 
     void led_error(unsigned int status);
     void led_ok(unsigned int status);
 #elif HAL_TYPE == HAL_aurix
-    #include "aurix/aurix_hal.h"
+    #include "chipwhisperer-fw-extra/aurix/aurix_hal.h"
 #elif HAL_TYPE == HAL_saml11
-     #include "saml11/saml11_hal.h"
+     #include "chipwhisperer-fw-extra/saml11/saml11_hal.h"
 #elif HAL_TYPE == HAL_efm32tg11b
-     #include "efm32tg11b/efm32tg11b_hal.h"
+     #include "chipwhisperer-fw-extra/efm32tg11b/efm32tg11b_hal.h"
 #elif HAL_TYPE == HAL_lpc55s6x
-     #include "lpc55s6x/lpc55s6x_hal.h"
+     #include "chipwhisperer-fw-extra/lpc55s6x/lpc55s6x_hal.h"
 #elif HAL_TYPE == HAL_psoc62
-    #include "psoc62/psoc62_hal.h"
+    #include "chipwhisperer-fw-extra/psoc62/psoc62_hal.h"
 #elif HAL_TYPE == HAL_imxrt1062
-    #include "imxrt1062/imxrt1062_hal.h"
+    #include "chipwhisperer-fw-extra/imxrt1062/imxrt1062_hal.h"
 #elif HAL_TYPE == HAL_fe310
-    #include "fe310/fe310_hal.h"
+    #include "chipwhisperer-fw-extra/fe310/fe310_hal.h"
 #elif HAL_TYPE == HAL_efr32mg21a
-    #include "efr32mg21a/efr32mg21a_hal.h"
+    #include "chipwhisperer-fw-extra/efr32mg21a/efr32mg21a_hal.h"
 #elif HAL_TYPE == HAL_efm32gg11
-    #include "efm32gg11/efm32gg11_hal.h"
+    #include "chipwhisperer-fw-extra/efm32gg11/efm32gg11_hal.h"
 #elif HAL_TYPE == HAL_stm32l5
-    #include "stm32l5/stm32l5_hal.h"
+    #include "chipwhisperer-fw-extra/stm32l5/stm32l5_hal.h"
 #elif HAL_TYPE == HAL_stm32l4
-    #include "stm32l4/stm32l4_hal.h"
+    #include "chipwhisperer-fw-extra/stm32l4/stm32l4_hal.h"
 #elif HAL_TYPE == HAL_rx65n
-    #include "rx65n/rx65n_hal.h"
+    #include "chipwhisperer-fw-extra/rx65n/rx65n_hal.h"
 #elif HAL_TYPE == HAL_mpc5676r
-    #include "mpc5676r/MPC5676R_hal.h"
+    #include "chipwhisperer-fw-extra/mpc5676r/MPC5676R_hal.h"
 #elif HAL_TYPE == HAL_neorv32
-    #include "neorv32/neorv32_hal.h"
+    #include "chipwhisperer-fw-extra/neorv32/neorv32_hal.h"
 #elif HAL_TYPE == HAL_sam4s
     #include "sam4s/sam4s_hal.h"
 #elif HAL_TYPE == HAL_ibex

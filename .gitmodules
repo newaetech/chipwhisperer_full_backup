@@ -22,3 +22,6 @@
 [submodule "firmware/fpgas/fpga-common"]
 	path = firmware/fpgas/fpga-common
 	url = https://github.com/newaetech/fpga-common.git
+[submodule "firmware/mcu/hal/chipwhisperer-fw-extra"]
+	path = firmware/mcu/hal/chipwhisperer-fw-extra
+	url = https://github.com/newaetech/chipwhisperer-fw-extra
