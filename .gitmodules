@@ -25,3 +25,6 @@
 [submodule "firmware/mcu/hal/chipwhisperer-fw-extra"]
 	path = firmware/mcu/hal/chipwhisperer-fw-extra
 	url = https://github.com/newaetech/chipwhisperer-fw-extra
+[submodule "firmware/mcu/chipwhisperer-esp32"]
+	path = firmware/mcu/chipwhisperer-esp32
+	url = https://github.com/newaetech/chipwhisperer-esp32
