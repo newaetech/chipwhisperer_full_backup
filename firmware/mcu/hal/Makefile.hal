@@ -305,6 +305,11 @@ endif
   #Default stuff
   EXTRAINCDIRS += $(HALPATH)
   EXTRAINCDIRS += $(HALBASE)
+  ifneq ($(EXTRAPATH),)
+    ifeq ("$(wildcard $(HALPATH)/.gitignore)","")
+    $(error Missing fw-extra submodule. See https://github.com/newaetech/chipwhisperer-fw-extra)
+    endif
+  endif
 
   include $(HALPATH)/$(HAL)/Makefile.$(HAL)
   CDEFS += -DHAL_TYPE=HAL_$(HAL) -DPLATFORM=$(PLATFORM)
