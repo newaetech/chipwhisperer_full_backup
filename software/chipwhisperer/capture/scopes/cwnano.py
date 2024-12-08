@@ -574,8 +574,8 @@ class CWNano(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.disable_newattr()
 
     def _getFWPy(self):
-        from ...hardware.firmware.cwnano import fwver
-        return fwver
+        from ...hardware.firmware.open_fw import fwver
+        return fwver("cwnano")
 
     def default_setup(self):
         """ Sets up sane capture defaults for this scope
