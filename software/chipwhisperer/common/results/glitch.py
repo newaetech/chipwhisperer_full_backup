@@ -214,13 +214,14 @@ class GlitchController:
         self.results.add(group, parameters, strdesc, metadata)    
         
         i = self.get_group_index(group)        
-        #Basic count
+        # Basic count
         self.group_counts[i] += 1
-        if not self.widget_list_groups is None:
-            self.widget_list_groups[i].value =  self.group_counts[i]
+        if self.widget_list_groups is not None:
+            self.widget_list_groups[i].value = self.group_counts[i]
 
         if plot and self._buffers:
-            self.update_plot(parameters[self._x_index], parameters[self._y_index], group)
+            z = parameters[self._z_index] if self.plot_type == "3d" else 0
+            self.update_plot(parameters[self._x_index], parameters[self._y_index], z, group)
 
     def glitch_plot(self, plotdots, x_index=0, y_index=1, x_bound=None, y_bound=None, bufferlen=100000):
         """Create a plot that can be updated in real-time with gc.add()
@@ -251,6 +252,7 @@ class GlitchController:
         self._dmaps = {}
         self._x_index = x_index
         self._y_index = y_index
+        self.plot_type = "2d"
 
         x_label = self.parameters[x_index]
         y_label = self.parameters[y_index]
@@ -259,7 +261,7 @@ class GlitchController:
             if plotdots[k] is None:
                 continue
             self._buffers[k] = Buffer(DataFrame({'x': [], 'y': []}, columns=['x', 'y']), length=bufferlen, index=False)
-            self._dmaps[k] = hv.DynamicMap(hv.Points, streams=[self._buffers[k]]).opts(height=600, width=800, 
+            self._dmaps[k] = hv.DynamicMap(hv.Points, streams=[self._buffers[k]]).opts(height=600, width=800,
                 framewise=True, size=10, marker=plotdots[k][0], color=plotdots[k][1], tools=['hover'])
 
 
@@ -279,14 +281,94 @@ class GlitchController:
         else:
             y_bound = {"range": y_bound}
         return plot.redim(x=hv.Dimension(x_label, **x_bound), y=hv.Dimension(y_label, **y_bound))
-        
-    def update_plot(self, x, y, label):
+
+    def glitch_plot_3d(self, plotdots, x_index=0, y_index=1, z_index=2, x_bound=None, y_bound=None, z_bound=None,
+                       bufferlen=100000):
+        import holoviews as hv
+        from holoviews import opts
+        from holoviews.streams import Buffer
+        from pandas import DataFrame
+        hv.extension('plotly', logo=False)  # don't display logo, otherwise it pops up everytime this func is called.
+
+        if type(x_index) is str:
+            x_index = self.parameters.index(x_index)
+        if type(y_index) is str:
+            y_index = self.parameters.index(y_index)
+        if type(z_index) is str:
+            z_index = self.parameters.index(z_index)
+
+        self._glitch_plotdots = plotdots
+        self._buffers = {}
+        self._dmaps = {}
+        self._x_index = x_index
+        self._y_index = y_index
+        self._z_index = z_index
+        self.plot_type = "3d"
+
+        x_label = self.parameters[x_index]
+        y_label = self.parameters[y_index]
+        z_label = self.parameters[z_index]
+
+        marker_map = {
+            '+': 'cross',
+            '^': 'diamond',
+            'x': 'x'
+        }
+        color_map = {
+            'r': 'red',
+            'g': 'green',
+            'b': 'blue',
+            'y': 'yellow',
+            'k': 'black',
+        }
+
+        for k, v in plotdots.items():
+            if v is None:
+                continue
+
+            self._buffers[k] = Buffer(DataFrame({'x': [], 'y': [], 'z': []}, columns=['x', 'y', 'z']), length=bufferlen,
+                                      index=False)
+
+            dy_scatter = (hv.DynamicMap(hv.Scatter3D, streams=[self._buffers[k]]))
+            dy_scatter.opts(opts.Scatter3D(height=800, width=800, size=5, alpha=0.5, marker=marker_map[v[0]],
+                                           color=color_map[v[1]]))
+            self._dmaps[k] = dy_scatter
+
+        plot_iter = iter(self._dmaps)
+        plot = self._dmaps[next(plot_iter)]
+
+        for tmp in plot_iter:
+            plot *= self._dmaps[tmp]
+
+        if not x_bound:
+            x_bound = {}
+        else:
+            x_bound = {"range": x_bound}
+
+        if not y_bound:
+            y_bound = {}
+        else:
+            y_bound = {"range": y_bound}
+
+        if not z_bound:
+            z_bound = {}
+        else:
+            z_bound = {"range": z_bound}
+
+        return plot.redim(x=hv.Dimension(x_label + " (x)", **x_bound),
+                          y=hv.Dimension(y_label + " (y)", **y_bound),
+                          z=hv.Dimension(z_label + " (z)", **z_bound))
+
+    def update_plot(self, x, y, z, label):
         from pandas import DataFrame # type: ignore
         if label not in self._buffers:
             #raise ValueError("Invalid label {}. Valid labels are {}".format(label, self._buffers.keys()))
             return #probably a label not used
-        self._buffers[label].send(DataFrame([(x, y)], columns=['x', 'y']))
-    
+        if self.plot_type == "3d":
+            self._buffers[label].send(DataFrame([(x, y, z)], columns=['x', 'y', 'z']))
+        else:
+            self._buffers[label].send(DataFrame([(x, y)], columns=['x', 'y']))
+
     def display_stats(self):
         if widgets is None:
             raise ModuleNotFoundError("Could not load ipywidgets, display not available")
