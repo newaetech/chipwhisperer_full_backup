@@ -24,6 +24,7 @@
 # To rebuild project do "make clean" then "make all".
 #----------------------------------------------------------------------------
 # Default target.
+all: clean_all_mute .dep begin gccversion build sizeafter fastnote end
 
 ifeq ($(PLATFORM),)
   -include Makefile.platform
@@ -573,6 +574,22 @@ clean_all_objs :
 	$(REMOVE) $(SRC:.c=.d)
 	$(REMOVE) $(SRC:.c=.i)
 
+clean_all_mute :
+	@$(REMOVE) $(addsuffix .hex,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .eep,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .bin,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .cof,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .elf,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .map,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .sym,$(TARGET-ALL))
+	@$(REMOVE) $(addsuffix .lss,$(TARGET-ALL))
+	@$(REMOVE) $(OBJDIR)/*.o
+	@$(REMOVE) $(OBJDIR)/*.lst
+	@$(REMOVEDIR) $(OBJDIR)
+	@$(REMOVE) $(SRC:.c=.s)
+	@$(REMOVE) $(SRC:.c=.d)
+	@$(REMOVE) $(SRC:.c=.i)
+
 clean_list :
 	$(REMOVEDIR) .dep
 
@@ -583,8 +600,6 @@ clean_list :
 #-include $(shell mkdir .dep 2>/dev/null) $(wildcard .dep/*)
 -include $(wildcard .dep/*)
 
-all: 
-	clean_objs .dep begin gccversion build sizeafter fastnote end
 
 # Listing of phony targets.
 .PHONY : all allquick begin finish end sizeafter gccversion \
