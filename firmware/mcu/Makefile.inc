@@ -598,7 +598,7 @@ clean_list :
 
 # Include the dependency files.
 #-include $(shell mkdir .dep 2>/dev/null) $(wildcard .dep/*)
--include $(wildcard .dep/*)
+# -include $(wildcard .dep/*)
 
 
 # Listing of phony targets.
