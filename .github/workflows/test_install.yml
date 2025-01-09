@@ -19,9 +19,9 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout
       - name: Setup Python 3.10
-        uses: actions/setup-python
+        uses: actions/setup-python@v5
         with:
-            python-version: 3.10
+            python-version: 3.11
       - name: Install chipwhisperer
         run: |
             pip install -e .
