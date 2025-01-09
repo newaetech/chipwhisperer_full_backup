@@ -9,6 +9,7 @@ on:
       - 'software/**'
       - 'tests/test_husky.py'
       - '.github/workflows/update_private.yml'
+      - 'firmware/mcu/**'
 
 jobs:
   trigger_action:

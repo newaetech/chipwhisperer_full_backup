@@ -24,7 +24,7 @@
 # To rebuild project do "make clean" then "make all".
 #----------------------------------------------------------------------------
 # Default target.
-all: clean_all_mute .dep begin gccversion build sizeafter fastnote end
+all: clean_all_mute begin gccversion build sizeafter fastnote end
 
 ifeq ($(PLATFORM),)
   -include Makefile.platform
@@ -341,8 +341,8 @@ GENDEPFLAGS = -MMD -MP -MF .dep/$(@F).d
 
 # Combine all necessary flags and optional flags.
 # Add target processor to flags.
-ALL_CFLAGS = $(MCU_FLAGS) -I. $(CFLAGS) $(GENDEPFLAGS)
-ALL_CPPFLAGS = $(MCU_FLAGS) -I. -x c++ $(CPPFLAGS) $(GENDEPFLAGS)
+ALL_CFLAGS = $(MCU_FLAGS) -I. $(CFLAGS)
+ALL_CPPFLAGS = $(MCU_FLAGS) -I. -x c++ $(CPPFLAGS)
 ALL_ASFLAGS = $(MCU_FLAGS) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
@@ -364,18 +364,18 @@ LIBNAME=lib$(TARGET-PLAT).a
 lib: $(LIBNAME)
 
 
-begin:
+begin: clean_all_mute
 	@$(ECHO_BLANK)
 	@echo Welcome to another exciting ChipWhisperer target build!!
 
-end:
+end: fastnote
 	@echo   +--------------------------------------------------------
 	@echo   + Built for platform "$(PLTNAME)" with:
 	@echo   +      CRYPTO_TARGET  = "$(CRYPTO_TARGET)"
 	@echo   +      CRYPTO_OPTIONS = "$(CRYPTO_OPTIONS)"
 	@echo   +--------------------------------------------------------
 
-fastnote:
+fastnote: sizeafter
 	@echo   +--------------------------------------------------------
 	@echo   + Default target does full rebuild each time.
 	@echo   + Specify buildtarget == allquick == to avoid full rebuild
@@ -396,7 +396,7 @@ sizeafter: build
 
 $(OBJ): | $(OBJDIR)
 
-$(OBJDIR):
+$(OBJDIR): clean_all_mute
 	$(MAKEDIR) $(OBJDIR) $(call AdjustPath,$(OBJDIR),$(MKDIR_LIST) )
 
 .dep:
@@ -497,7 +497,7 @@ endif
 
 
 # Compile: create object files from C source files.
-$(OBJDIR)/%.o : %.c
+$(OBJDIR)/%.o : %.c $(OBJDIR)
 	@$(ECHO_BLANK)
 	@echo Compiling:
 	@echo -en $(COMPMSG)
@@ -506,7 +506,7 @@ $(OBJDIR)/%.o : %.c
 
 
 # Compile: create object files from C++ source files.
-$(OBJDIR)/%.o : %.cpp
+$(OBJDIR)/%.o : %.cpp $(OBJDIR)
 	@$(ECHO_BLANK)
 	@echo Compiling C++:
 	@echo -en $(COMPCPPMSG)
@@ -525,7 +525,7 @@ $(OBJDIR)/%.o : %.cpp
 
 
 # Assemble: create object files from assembler source files.
-$(OBJDIR)/%.o : %.S
+$(OBJDIR)/%.o : %.S $(OBJDIR)
 	@$(ECHO_BLANK)
 	@echo $(MSG_ASSEMBLING) $<
 	$(CC) -c $(ALL_ASFLAGS) $< -o $@
@@ -598,7 +598,7 @@ clean_list :
 
 # Include the dependency files.
 #-include $(shell mkdir .dep 2>/dev/null) $(wildcard .dep/*)
--include $(wildcard .dep/*)
+# -include $(wildcard .dep/*)
 
 
 # Listing of phony targets.
