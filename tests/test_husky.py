@@ -78,6 +78,7 @@ def reset_target():
     time.sleep(0.2)
 
 # TODO: program FW?
+scope.XADC._user_reset() # reset max/min stats
 scope.sc.reset_fpga()
 scope.adc.clip_errors_disabled = True
 scope.adc.lo_gain_errors_disabled = True
@@ -1938,7 +1939,23 @@ def test_xadc():
         # if target isn't attached, last tests run are glitch so will be hotter
         assert scope.XADC.temp < 60.0
     assert scope.XADC.max_temp < 65.0   # things can get hotter with glitching
-
+    print('\n')
+    failed = False
+    for rail, nominal in zip(['vccint', 'vccaux', 'vccbram'],  [1.0, 1.8, 1.0]):
+        for worst,limit in zip(['min', 'max'], ['lower', 'upper']):
+            vseen = scope.XADC.get_vcc(rail, worst)
+            vlimit = scope.XADC._get_vcc_limit(rail, limit)
+            if worst == 'min':
+                vmargin = vseen - vlimit
+            else:
+                vmargin = vlimit - vseen
+            if vmargin > 0:
+                status = '✅ pass'
+            else:
+                status = '❌ FAIL!'
+                failed = True
+            print('%7s: nominal: %1.2f, %s seen: %1.2f, limit: %1.2f, margin: %1.2f   %s' % (rail, nominal, worst, vseen, vlimit, vmargin, status))
+    assert not failed
 
 def test_finish():
     # just restore some defaults:
