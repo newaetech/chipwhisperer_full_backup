@@ -101,7 +101,7 @@ class XilinxMMCMDRP(util.DisableNewAttr):
         else:
             hi = lo
         if hi >= 2**6:
-            raise ValueError("Internal error: calculated hi/lo value exceeding range")
+            raise ValueError("MMCM internal error: calculated hi/lo value exceeding range")
         raw = lo + (hi<<6) + 0x1000
         self.drp.write(0x14, raw)
         self.drp.reset()

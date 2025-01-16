@@ -2486,22 +2486,15 @@ class ClockSettings(util.DisableNewAttr):
     _readMask = [0x1f, 0xff, 0xff, 0xfd]
 
     def __init__(self, oaiface : OpenADCInterface, hwinfo=None, is_husky=False):
-        from .cwhardware.ChipWhispererHuskyMisc import XilinxDRP, XilinxMMCMDRP
         super().__init__()
         self.oa = oaiface
         self._hwinfo = hwinfo
         self._freqExt = 10e6
-        self._is_husky = is_husky
         self._cached_adc_freq = None
-        if self._is_husky:
-            self.drp = XilinxDRP(oaiface, "DRP_DATA", "DRP_ADDR", "DRP_RESET")
-            self.mmcm = XilinxMMCMDRP(self.drp)
         self.disable_newattr()
 
     def _dict_repr(self):
         rtn = OrderedDict()
-        if self._is_husky:
-            rtn['enabled'] = self.enabled
         rtn['adc_src']    = self.adc_src
         rtn['adc_phase']  = self.adc_phase
         rtn['adc_freq']   = self.adc_freq
@@ -2525,25 +2518,6 @@ class ClockSettings(util.DisableNewAttr):
 
     def __str__(self):
         return self.__repr__()
-
-    @property
-    def enabled(self) -> bool:
-        """Controls whether the Xilinx MMCM used to generate the target clock
-        is powered on or not. In Husky, an external PLL is used instead; this
-        FPGA PLL is still present but disabled by default because MMCMs are
-        quite power-hungry.
-
-        """
-        if not self._is_husky:
-            raise ValueError("For CW-Husky only.")
-        return self._getEnabled()
-
-    @enabled.setter
-    def enabled(self, enable : bool):
-        if not self._is_husky:
-            raise ValueError("For CW-Husky only.")
-        self._setEnabled(enable)
-
 
     @property
     def adc_src(self) -> str:
@@ -2608,7 +2582,7 @@ class ClockSettings(util.DisableNewAttr):
         :Setter: Set a new phase offset
 
         Raises:
-           ValueError: if offset not in [-32767, 32767] (Husky) or [-255, 255] (others)
+           ValueError: if offset not in [-255, 255]
            TypeError: if offset not integer
         """
         return self._get_phase()
@@ -2885,36 +2859,29 @@ class ClockSettings(util.DisableNewAttr):
     def _getClkgenMul(self):
         timeout = 2
         while timeout > 0:
-            if self.oa.hwInfo.is_cwhusky():
-                return self._get_husky_clkgen_mul()
+            result = self.oa.sendMessage(CODE_READ, "ADVCLOCK_ADDR", maxResp=4)
+            val = result[1]
+            if val == 0:
+                val = 1  # Fix incorrect initialization on FPGA
+                self._setClkgenMul(2)
+            val += 1
 
-            else:
-                result = self.oa.sendMessage(CODE_READ, "ADVCLOCK_ADDR", maxResp=4)
-                val = result[1]
-                if val == 0:
-                    val = 1  # Fix incorrect initialization on FPGA
-                    self._setClkgenMul(2)
-                val += 1
+            if (result[3] & 0x02):
+                return val
 
-                if (result[3] & 0x02):
-                    return val
+            self._clkgenLoad()
 
-                self._clkgenLoad()
-
-                timeout -= 1
+            timeout -= 1
 
         # raise IOError("clkgen never loaded value?")
         return 0
 
 
     def _setClkgenMulWrapper(self, mul):
-        if self.oa.hwInfo.is_cwhusky():
-            self._set_husky_clkgen_mul(mul)
-        else:
-            # TODO: raise ValueError?
-            if mul < 2:
-                mul = 2
-            self._setClkgenMul(mul)
+        # TODO: raise ValueError?
+        if mul < 2:
+            mul = 2
+        self._setClkgenMul(mul)
 
     def _setClkgenMul(self, mul):
         result = self.oa.sendMessage(CODE_READ, "ADVCLOCK_ADDR", maxResp=4)
@@ -2924,13 +2891,6 @@ class ClockSettings(util.DisableNewAttr):
         self.oa.sendMessage(CODE_WRITE, "ADVCLOCK_ADDR", result, readMask=self._readMask)
         result[3] &= ~(0x01)
         self.oa.sendMessage(CODE_WRITE, "ADVCLOCK_ADDR", result, readMask=self._readMask)
-
-
-    def _set_husky_clkgen_mul(self, mul):
-        # calculate register value:
-        if type(mul) != int:
-            raise ValueError("Only integers are supported")
-        self.mmcm.set_mul(mul)
 
 
     @property
@@ -2947,73 +2907,42 @@ class ClockSettings(util.DisableNewAttr):
 
     @clkgen_div.setter
     def clkgen_div(self, div : Union[int, List[int]]):
-        if self.oa.hwInfo.is_cwhusky():
-            # Husky PLL takes two dividers; if only one was provided, set the other to 1
-            if type(div) == int:
-                div = [div, 1]
-            self._set_husky_clkgen_div(div)
-        else:
-            self._setClkgenDivWrapper(div)
+        self._setClkgenDivWrapper(div)
 
     def _getClkgenDiv(self):
         if self.oa is None:
             return 2
         timeout = 2
         while timeout > 0:
-            if self.oa.hwInfo.is_cwhusky():
-                return self._get_husky_clkgen_div()
+            result = self.oa.sendMessage(CODE_READ, "ADVCLOCK_ADDR", maxResp=4)
+            if (result[3] & 0x02):
+                # Done loading value yet
+                val = result[2]
+                val += 1
+                return val
 
-            else:
-                result = self.oa.sendMessage(CODE_READ, "ADVCLOCK_ADDR", maxResp=4)
-                if (result[3] & 0x02):
-                    # Done loading value yet
-                    val = result[2]
-                    val += 1
-                    return val
+            self._clkgenLoad()
 
-                self._clkgenLoad()
-
-                timeout -= 1
+            timeout -= 1
 
         scope_logger.error("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
                       " source settings. CLKGEN clock results are currently invalid.")
         return 1
 
 
-
-    def _set_husky_clkgen_div(self, div):
-        main_div = div[0]
-        sec_div = div[1]
-        self.mmcm.set_main_div(div[0])
-        self.mmcm.set_sec_div(div[1],0)
-
-
     def _setClkgenDivWrapper(self, div):
-        if self.oa.hwInfo.is_cwhusky():
-            self._set_husky_clkgen_div(div)
-        else:
-            if hasattr(div, "__getitem__"):
-                div = div[0]
-            if div < 1:
-                div = 1
+        if hasattr(div, "__getitem__"):
+            div = div[0]
+        if div < 1:
+            div = 1
 
-            result = self.oa.sendMessage(CODE_READ, "ADVCLOCK_ADDR", maxResp=4)
-            div -= 1
-            result[2] = div
-            result[3] |= 0x01
-            self.oa.sendMessage(CODE_WRITE, "ADVCLOCK_ADDR", result, readMask=self._readMask)
-            result[3] &= ~(0x01)
-            self.oa.sendMessage(CODE_WRITE, "ADVCLOCK_ADDR", result, readMask=self._readMask)
-
-
-    def _get_husky_clkgen_div(self):
-        maindiv = self.mmcm.get_main_div()
-        secdiv = self.mmcm.get_sec_div()
-        return maindiv*secdiv
-
-
-    def _get_husky_clkgen_mul(self):
-        return self.mmcm.get_mul()
+        result = self.oa.sendMessage(CODE_READ, "ADVCLOCK_ADDR", maxResp=4)
+        div -= 1
+        result[2] = div
+        result[3] |= 0x01
+        self.oa.sendMessage(CODE_WRITE, "ADVCLOCK_ADDR", result, readMask=self._readMask)
+        result[3] &= ~(0x01)
+        self.oa.sendMessage(CODE_WRITE, "ADVCLOCK_ADDR", result, readMask=self._readMask)
 
 
     def reset_adc(self) -> None:
@@ -3170,19 +3099,13 @@ class ClockSettings(util.DisableNewAttr):
         except ValueError as e:
             raise TypeError("Can't convert %s to int" % phase) from e
 
-        if self._is_husky:
-            if phase_int < -32767 or phase_int > 32767:
-                raise ValueError("Phase %d is outside range [-32767, 32767]" % phase_int)
-        elif phase_int < -255 or phase_int > 255:
+        if phase_int < -255 or phase_int > 255:
             raise ValueError("Phase %d is outside range [-255, 255]" % phase_int)
 
         cmd = bytearray(2)
         cmd[0] = phase_int & 0x00FF
-        if self._is_husky:
-            cmd[1] = (phase_int & 0xFF00) >> 8
-        else:
-            MSB = (phase_int & 0x0100) >> 8
-            cmd[1] = MSB | 0x02 # TODO: hmm why is this being done?
+        MSB = (phase_int & 0x0100) >> 8
+        cmd[1] = MSB | 0x02 # TODO: hmm why is this being done?
 
         self.oa.sendMessage(CODE_WRITE, "PHASE_ADDR", cmd, False)
 
@@ -3198,18 +3121,12 @@ class ClockSettings(util.DisableNewAttr):
 
         if phase_valid:
             LSB = result[0]
-            if self._is_husky:
-                MSB = result[1]
-            else:
-                MSB = result[1] & 0x01
+            MSB = result[1] & 0x01
 
             phase = LSB | (MSB << 8)
 
             #Sign Extend
-            if self._is_husky:
-                phase = SIGNEXT(phase, 16)
-            else:
-                phase = SIGNEXT(phase, 9)
+            phase = SIGNEXT(phase, 9)
 
             return phase
         else:

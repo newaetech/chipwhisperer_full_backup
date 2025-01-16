@@ -310,7 +310,6 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
         self.adc.samples = self.DEFAULT_ADC_SAMPLES
         self.adc.offset = 0
         self.adc.basic_mode = 'rising_edge'
-        self.clock.clkgen_freq = self.DEFAULT_CLOCKGEN_FREQ
         self.trigger.triggers = 'tio4'
         self.io.tio1 = self.io.GPIO_MODE_SERIAL_RX
         self.io.tio2 = self.io.GPIO_MODE_SERIAL_TX
@@ -322,6 +321,7 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.clock.clkgen_freq = self.DEFAULT_CLOCKGEN_FREQ
             self.clock.adc_mul = self.DEFAULT_ADC_MUL
         else:
+            self.clock.clkgen_freq = self.DEFAULT_CLOCKGEN_FREQ
             self.clock.adc_src = 'clkgen_x4'
 
     def default_setup(self, verbose=True, sleep=0.2):
@@ -677,7 +677,6 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self.decode_IO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.sc)
 
         if cwtype in ["cwhusky", "cwhuskyplus"]:
-            # self.pll = ChipWhispererHuskyClock.CDCI6214(self.sc)
             self._fpga_clk = ClockSettings(self.sc, hwinfo=self.hwinfo, is_husky=True)
             self.glitch_drp1 = XilinxDRP(self.sc, "CG1_DRP_DATA", "CG1_DRP_ADDR", "CG1_DRP_RESET")
             self.glitch_drp2 = XilinxDRP(self.sc, "CG2_DRP_DATA", "CG2_DRP_ADDR", "CG2_DRP_RESET")
@@ -705,12 +704,12 @@ class OpenADC(util.DisableNewAttr, ChipWhispererCommonInterface):
             self._is_husky = True
             self.adc._is_husky = True
             self.gain._is_husky = True
-            self._fpga_clk._is_husky = True
             self.sc._is_husky = True
             self.adc.bits_per_sample = 12
             if cwtype == "cwhuskyplus":
                 self._is_husky_plus = True
                 self.LA._is_husky_plus = True
+                self.clock.pll._is_husky_plus = True
         else:
             self.clock = ClockSettings(self.sc, hwinfo=self.hwinfo)
             self.errors = ChipWhispererSAMErrors(self._getNAEUSB())
