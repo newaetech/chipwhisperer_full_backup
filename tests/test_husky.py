@@ -62,7 +62,8 @@ if "HUSKY_TARGET_PLATFORM" in os.environ:
     test_platform = os.environ["HUSKY_TARGET_PLATFORM"]
 
 print("Husky target platform {}".format(test_platform))
-scope = cw.scope(name='Husky', hw_location=hw_loc)
+#scope = cw.scope(name='Husky', hw_location=hw_loc)
+scope = cw.scope(name='Husky', hw_location=hw_loc, registers='/home/jpnewae/git/cw_husky/fpga/hdl/registers.v')
 if test_platform == 'cw305':
     target = cw.target(scope, cw.targets.CW305, fpga_id='100t', force=False)
 else:
@@ -432,29 +433,35 @@ testTraceSegmentData = [
 ]
 
 testSADTriggerData = [
-    #clock  adc_mul bits   threshold   offset  reps    desc
-    (10e6,  1,      8,     250,        0,      50,     '8bits'),
-    (10e6,  1,      12,    250,        0,      50,     '12bits'),
-    (10e6,  1,      8,     250,        0,      10,     '8bits_SLOW'),
-    (10e6,  10,     8,     250,        0,      50,     'fast_SLOW'),
-    (10e6,  18,     8,     250,        0,      50,     'faster_SLOW'),
-    (10e6,  'max',  8,     250,        0,      50,     'fastest'),
-    (10e6,  'over', 8,     250,        0,      50,     'overclocked_SLOW'),
+    #clock  adc_mul bits   emode,   threshold   interval_threshold   offset  reps    desc
+    (10e6,  1,      8,     False,   10,         4,                   0,      50,     '8bits'),
+    (10e6,  1,      8,     True,    20,         4,                   0,      50,     '8bits_emode'),
+    (10e6,  1,      12,    False,   10,         4,                   0,      50,     '12bits'),
+    (10e6,  1,      8,     False,   10,         4,                   0,      10,     '8bits_SLOW'),
+    (10e6,  10,     8,     False,   10,         4,                   0,      50,     'fast_SLOW'),
+    (10e6,  18,     8,     False,   10,         4,                   0,      50,     'faster_SLOW'),
+    (10e6,  'max',  8,     False,   10,         5,                   0,      50,     'fastest'),
+    (10e6,  'max',  8,     True,    15,         5,                   0,      50,     'fastest_emode'),
+    (10e6,  1,      8,     False,   10,         4,                   0,      200,    'recover_SLOW'), # allow for temp to come down before we overclock it
+    (10e6,  'over', 8,     False,   10,         5,                   0,      20,     'overclocked_SLOW'),
+    (10e6,  'over', 8,     True,    15,         5,                   0,      20,     'overclocked_emode_SLOW'),
 ]
 
 if test_platform == "sam4s":
     testMultipleSADTriggerData = [
-        #clock  adc_mul bits   half threshold   plus_thresh segments    offset  reps    desc
-        (10e6,  4,      8,     0,   150,        2000,       10,         2700,   20,     'regular'),
-        (10e6,  4,      8,     1,   100,        500,        10,         2700,   20,     'half'),
-        (10e6,  20,     8,     0,   300,        800,        10,         13500,  20,     'fast'), # TODO: SAM4S + Plus not faring well at 250 MHz here
+        #clock  adc_mul bits   emode    threshold   interval_threshold   plus_thresh segments    offset  reps    desc
+        (10e6,  4,      8,     False,   10,         4,                   20,         10,         2035,   20,     'regular'),
+        (10e6,  4,      8,     True,    25,         4,                   30,         10,         2035,   20,     'regular_emode'),
+        (10e6,  'max',  8,     False,   15,         5,                   25,         10,         2035,   20,     'fast'),
+        (10e6,  'max',  8,     True,    35,         5,                   35,         10,         2035,   20,     'fast_emode'),
     ]
 else:
     testMultipleSADTriggerData = [
-        #clock  adc_mul bits   half threshold   plus_thresh segments    offset  reps    desc
-        (10e6,  4,      8,     0,   200,        400,        11,         3525,   20,     'regular'),
-        (10e6,  4,      8,     1,   100,        300,        11,         3525,   20,     'half'),
-        (10e6,  'max',  8,     0,   350,        600,        11,         17625,  20,     'fast'),
+        #clock  adc_mul bits   emode    threshold   interval_threshold   plus_thresh segments    offset  reps    desc
+        (10e6,  4,      8,     False,   20,         5,                   40,         11,         867,    20,     'regular'),
+        (10e6,  4,      8,     True,    25,         5,                   40,         11,         867,    20,     'regular_emode'),
+        (10e6,  'max',  8,     False,   20,         5,                   40,         11,         867,    20,     'fast'),
+        (10e6,  'max',  8,     True,    20,         5,                   40,         11,         867,    20,     'fast_emode'),
     ]
 
 
@@ -527,9 +534,9 @@ testPLLData = [
 
 def test_fpga_version():
     if scope._is_husky_plus:
-        assert scope.fpga_buildtime == '1/12/2024, 15:19'
+        assert scope.fpga_buildtime == '3/26/2024, 15:55'
     else:
-        assert scope.fpga_buildtime == '4/11/2024, 09:41'
+        assert scope.fpga_buildtime == '8/23/2024, 15:50'
 
 def test_fw_version():
     assert scope.fw_version['major'] == 1
@@ -563,6 +570,16 @@ def xadc_check(xadc, log):
                 ))
         logfile.close()
     scope.XADC.status = 0 # clear any errors after each test
+
+@pytest.fixture(autouse=True)
+def cooldown():
+    # runs before test:
+    #...
+    yield
+    # runs after test:
+    # in case the last testcase leaves scope in a high-power-consuming state that would eventually lead to XADC shutoff:
+    scope.clock.clkgen_freq = 7.37e6
+    reset_setup()
 
 @pytest.mark.parametrize("address, nbytes, reps, desc", testRWData)
 def test_reg_rw(address, nbytes, reps, desc):
@@ -1310,9 +1327,9 @@ def test_segment_trace (swo_trace, interface, triggers, desc):
     assert trace.capture.matched_pattern_data[:6] == '030820'
     trace.enabled = False
 
-@pytest.mark.parametrize("clock, adc_mul, bits, threshold, offset, reps, desc", testSADTriggerData)
+@pytest.mark.parametrize("clock, adc_mul, bits, emode, threshold, interval_threshold, offset, reps, desc", testSADTriggerData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, desc):
+def test_sad_trigger (fulltest, clock, adc_mul, bits, emode, threshold, interval_threshold, offset, reps, desc):
     if not fulltest and 'SLOW' in desc:
         pytest.skip("use --fulltest to run")
         return None
@@ -1336,6 +1353,8 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
     scope.trace.enabled = False
     scope.trace.target = None
 
+    scope.SAD.always_armed = False
+    scope.SAD.emode = emode
     scope.adc.lo_gain_errors_disabled = True
     scope.adc.clip_errors_disabled = False
     scope.adc.segment_cycle_counter_en = False
@@ -1349,13 +1368,14 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
     scope.trigger.module = 'basic'
     # scope.gain.db = 23.7
     scope.gain.db = 12
-    reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+    reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16), as_int=True)
     assert scope.adc.errors == False, (scope.adc.errors, scope.gain)
 
     scope.SAD.reference = reftrace.wave
     if scope._is_husky_plus:
-        threshold *= 3
+        pass # TODO: adjust as needed? e.g. threshold = int(threshold*1.5)
     scope.SAD.threshold = threshold
+    scope.SAD.interval_threshold = interval_threshold
     scope.trigger.module = 'SAD'
     scope.adc.offset = 0
 
@@ -1363,20 +1383,26 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, threshold, offset, reps, d
     # + sad_reference_length because trigger happens at the end of the SAD pattern;
     # + latency for the latency of the SAD triggering logic.
     scope.adc.presamples = scope.SAD.sad_reference_length + scope.SAD.latency
-    for r in range(reps):
-        sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
-        assert sadtrace is not None, 'SAD-triggered capture failed on rep {}'.format(r)
+    for rep in range(reps):
+        sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16), as_int=True)
+        assert sadtrace is not None, 'SAD-triggered capture failed on rep {}'.format(rep)
         assert scope.adc.errors == False
         sad = 0
-        for i in range(scope.SAD.sad_reference_length):
-            sad += abs(reftrace.wave[i] - sadtrace.wave[i])
-        sad = int(sad*2**scope.SAD._sad_bits_per_sample)
-        assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d)' %(sad, threshold, r)
+        samples = 0
+        for r,s,e in zip(reftrace.wave.astype(int), sadtrace.wave.astype(int), scope.SAD.enabled_samples):
+            samples += 1
+            if bits == 12:
+                s = s >> 4
+                r = r >> 4
+            if e:
+                if abs(r-s) > interval_threshold:
+                    sad += 1
+        assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d)' %(sad, threshold, rep)
 
 
-@pytest.mark.parametrize("clock, adc_mul, bits, half, threshold, plus_thresh, segments, offset, reps, desc", testMultipleSADTriggerData)
+@pytest.mark.parametrize("clock, adc_mul, bits, emode, threshold, interval_threshold, plus_thresh, segments, offset, reps, desc", testMultipleSADTriggerData)
 @pytest.mark.skipif(not target_attached, reason='No target detected')
-def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, half, threshold, plus_thresh, segments, offset, reps, desc):
+def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, emode, threshold, interval_threshold, plus_thresh, segments, offset, reps, desc):
     if not fulltest and 'SLOW' in desc:
         pytest.skip("use --fulltest to run")
         return None
@@ -1399,8 +1425,9 @@ def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, half, threshold, 
     scope.trace.enabled = False
     scope.trace.target = None
 
+    scope.SAD.always_armed = False
+    scope.SAD.emode = emode
     scope.SAD.multiple_triggers = True
-    scope.SAD.half_pattern = half
     scope.adc.lo_gain_errors_disabled = True
     scope.adc.clip_errors_disabled = False
     scope.adc.segment_cycle_counter_en = False
@@ -1408,12 +1435,12 @@ def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, half, threshold, 
     scope.adc.samples = scope.SAD.sad_reference_length * 2
     scope.adc.presamples = 0
     scope.adc.bits_per_sample = bits
-    scope.adc.offset = offset
+    scope.adc.offset = offset*adc_mul
 
     scope.trigger.module = 'basic'
     # scope.gain.db = 23.7
     scope.gain.db = 12
-    reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+    reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16), as_int=True)
     assert scope.adc.errors == False, (scope.adc.errors, scope.gain)
 
     scope.SAD.reference = reftrace.wave
@@ -1421,6 +1448,7 @@ def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, half, threshold, 
         threshold = plus_thresh
 
     scope.SAD.threshold = threshold
+    scope.SAD.interval_threshold = interval_threshold
     scope.trigger.module = 'SAD'
     scope.adc.offset = 0
 
@@ -1431,16 +1459,23 @@ def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, half, threshold, 
     scope.adc.segments = segments
     scope.adc.samples -= scope.adc.samples %3
     for r in range(reps):
-        sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
+        sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16), as_int=True)
         assert sadtrace is not None, 'SAD-triggered capture failed on rep {}'.format(r)
         assert scope.SAD.num_triggers_seen == scope.adc.segments
         assert scope.adc.errors == False
         for s in range(scope.adc.segments):
             sad = 0
-            for i in range(scope.SAD.sad_reference_length):
-                sad += abs(reftrace.wave[i] - sadtrace.wave[i+s*scope.adc.samples])
-            sad = int(sad*2**scope.SAD._sad_bits_per_sample)
-            assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d, segment %d)' %(sad, threshold, r, s)
+            samples = 0
+            for ref,strace,e in zip(reftrace.wave.astype(int), sadtrace.wave.astype(int), scope.SAD.enabled_samples):
+                samples += 1
+                if bits == 12:
+                    strace = strace >> 4
+                    ref = ref >> 4
+                if e:
+                    if abs(ref-strace) > interval_threshold:
+                        sad += 1
+            assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d)' %(sad, threshold, rep)
+
 
 
 
@@ -1851,6 +1886,7 @@ def test_pll(fulltest, freq, adc_mul, xtal, oversample, tolerance, reps, desc):
     # initial clock setup so that LA can lock:
     if xtal:
         scope.clock.clkgen_src = 'system'
+        scope.clock.adc_mul = 1
         scope.clock.clkgen_freq = freq
         scope.clock.adc_mul = adc_mul
     else:
@@ -1859,9 +1895,10 @@ def test_pll(fulltest, freq, adc_mul, xtal, oversample, tolerance, reps, desc):
         target.pll.pll_outenable_set(True, 1)
         target.pll.pll_outenable_set(False, 2)
         target.pll.pll_outfreq_set(freq, 1)
+        scope.clock.adc_mul = 1
         scope.clock.clkgen_freq = freq
-        scope.clock.clkgen_src = 'extclk'
         scope.clock.adc_mul = adc_mul
+        scope.clock.clkgen_src = 'extclk'
     # LA setup:
     scope.LA.enabled = True
     if xtal:
@@ -1890,8 +1927,8 @@ def test_pll(fulltest, freq, adc_mul, xtal, oversample, tolerance, reps, desc):
                 scope.clock.recal_pll()
             else:
                 scope.clock.reset_adc()
-            assert scope.clock.pll.pll_locked
-            assert scope.LA.locked
+            assert scope.clock.pll.pll_locked, 'failed on rep %d' % i
+            assert scope.LA.locked, 'failed on rep %d' % i
             delta = get_adc_clock_phase(refclk)
             half_period = oversample//adc_mul//2
             if delta > half_period:

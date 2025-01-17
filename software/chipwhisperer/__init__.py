@@ -29,6 +29,8 @@ from .logging import *
 
 from .common.results.glitch import GlitchController, load_gc_results
 from .common.utils.looper import *
+from .common.utils.sad_model import SADModelWrapper
+from .common.utils.sad_explorer import SADExplorer
 import sys, subprocess
 
 
