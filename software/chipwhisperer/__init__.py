@@ -382,6 +382,8 @@ def scope(scope_type : Optional[Type[scopes.ScopeTypes]]=None, name : opstr=None
     if name is not None:
         if name == 'Husky':
             kwargs['idProduct'] = 0xace5
+        elif name == 'HuskyPlus':
+            kwargs['idProduct'] = 0xace6
         elif name == 'Lite':
             kwargs['idProduct'] = 0xace2
         elif name == 'Pro':

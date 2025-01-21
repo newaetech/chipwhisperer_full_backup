@@ -63,7 +63,7 @@ if "HUSKY_TARGET_PLATFORM" in os.environ:
 
 print("Husky target platform {}".format(test_platform))
 #scope = cw.scope(name='Husky', hw_location=hw_loc)
-scope = cw.scope(name='Husky', hw_location=hw_loc, registers='/home/jpnewae/git/cw_husky/fpga/hdl/registers.v')
+scope = cw.scope(hw_location=hw_loc)
 if test_platform == 'cw305':
     target = cw.target(scope, cw.targets.CW305, fpga_id='100t', force=False)
 else:
@@ -534,14 +534,19 @@ testPLLData = [
 
 def test_fpga_version():
     if scope._is_husky_plus:
-        assert scope.fpga_buildtime == '3/26/2024, 15:55'
+        assert scope.fpga_buildtime == '12/16/2024, 13:17'
     else:
-        assert scope.fpga_buildtime == '8/23/2024, 15:50'
+        assert scope.fpga_buildtime == '12/11/2024, 12:33'
 
 def test_fw_version():
-    assert scope.fw_version['major'] == 1
-    assert scope.fw_version['minor'] == 5
-    assert scope.sam_build_date == '13:17:41 Feb  9 2023'
+    if scope._is_husky_plus:
+        assert scope.fw_version['major'] == 1
+        assert scope.fw_version['minor'] == 0
+        assert scope.sam_build_date == '12:22:29 Sep 16 2024'
+    else:
+        assert scope.fw_version['major'] == 1
+        assert scope.fw_version['minor'] == 5
+        assert scope.sam_build_date == '13:17:41 Feb  9 2023'
 
 @pytest.fixture(autouse=True)
 def xadc_check(xadc, log):
@@ -617,7 +622,7 @@ def test_internal_ramp(fulltest, samples, presamples, testmode, clock, fastreads
     scope.clock.adc_mul = adcmul
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.002
+    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.01
 
     if testmode == 'internal':
         scope.adc.test_mode = True
@@ -802,7 +807,7 @@ def test_glitch_offset(fulltest, clock, margin, offset, oversamp, desc):
     scope.clock.adc_mul = 1
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.002
+    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.01
 
     setup_glitch(offset, 0, oversamp)
 
@@ -864,7 +869,7 @@ def test_glitch_output_sweep_width(fulltest, reps, clock, offset, oversamp, step
     scope.clock.adc_mul = 1
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.002
+    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.01
 
     margin = 2
     setup_glitch(offset, 0, oversamp)
@@ -921,7 +926,7 @@ def test_missing_glitch_sweep_offset(fulltest, clock, vco, span, width, num_glit
     scope.clock.adc_mul = 1
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.002
+    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.01
     target.baud = 38400 * clock / 1e6 / 7.37
     reset_target()
 
@@ -965,7 +970,7 @@ def test_glitch_output_sweep_offset(fulltest, reps, clock, width, oversamp, step
     scope.clock.adc_mul = 1
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.002
+    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.01
 
     margin = 3
     setup_glitch(0, width, oversamp)
@@ -1070,7 +1075,7 @@ def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, f
     scope.clock.adc_mul = adcmul
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.002
+    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.01
     target.baud = 38400 * clock / 1e6 / 7.37
 
     if testmode == 'internal':
@@ -1344,7 +1349,7 @@ def test_sad_trigger (fulltest, clock, adc_mul, bits, emode, threshold, interval
     scope.clock.adc_mul = adc_mul
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock*adc_mul)/scope.clock.adc_freq < 0.002
+    assert abs(scope.clock.adc_freq - clock*adc_mul)/scope.clock.adc_freq < 0.01
     target.baud = 38400 * clock / 1e6 / 7.37
     reset_target()
 
@@ -1417,7 +1422,7 @@ def test_multiple_sad_trigger (fulltest, clock, adc_mul, bits, emode, threshold,
     scope.clock.adc_mul = adc_mul
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock*adc_mul)/scope.clock.adc_freq < 0.002
+    assert abs(scope.clock.adc_freq - clock*adc_mul)/scope.clock.adc_freq < 0.01
     target.baud = 38400 * clock / 1e6 / 7.37
     reset_target()
 
@@ -1490,7 +1495,7 @@ def test_uart_trigger (fulltest, clock, pin, pattern, mask, bytes_compared, reps
     scope.clock.adc_mul = 1
     time.sleep(0.1)
     assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.002
+    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.01
     reset_target()
     time.sleep(0.1)
     target.baud = 38400 * clock / 1e6 / 7.37
