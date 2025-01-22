@@ -71,7 +71,7 @@ class CW305_ECC(CW305):
         self.pmul_cycles = 1124157
         # Verilog defines file(s):
         self.default_verilog_defines = 'cw305_pmul_defines.v'
-        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/../../firmware/fpgas/ecc/hdl/' + self.default_verilog_defines
+        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/hardware/firmware/cw305/' + self.default_verilog_defines
         self.registers = 20 # number of registers we expect to find
         self.bytecount_size = 8 # pBYTECNT_SIZE in Verilog
         self.check_done = True

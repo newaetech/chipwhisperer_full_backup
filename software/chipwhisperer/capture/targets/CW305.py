@@ -149,7 +149,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
 
         self._woffset_sam3U = 0x000
         self.default_verilog_defines = 'cw305_aes_defines.v'
-        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/../../firmware/fpgas/aes/hdl/' + self.default_verilog_defines
+        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/hardware/firmware/cw305/' + self.default_verilog_defines
         self.registers = 12 # number of registers we expect to find
         self.bytecount_size = 7 # pBYTECNT_SIZE in Verilog
 
@@ -465,6 +465,10 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             program (bool, optional): for ss2 platforms, program the FPGA
         """
         self.platform = platform
+        if bsfile is None:
+            custom_bitstream = False
+        else:
+            custom_bitstream = True
         if platform == 'cw305':
             self._naeusb = NAEUSB()
             self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, board="CW305")
@@ -578,19 +582,13 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
 
 
         if slurp:
-            # If fpga_id is provided, Verilog defines are obtained from CW305.py.
-            # Otherwise, we look for it in a default location; if that doesn't exist, revert to CW305.py and warn user.
+            # Unless explicitly provided, Verilog defines are obtained from their default location (default_verilog_defines_full_path).
+            # Warn if defines files are not provided and a specific bsfile *is* provided, because that's probably not what one wants.
             found_defines = False
             if defines_files is None:
-                if fpga_id is None:
-                    verilog_defines = [self.default_verilog_defines_full_path]
-                    if os.path.isfile(verilog_defines[0]):
-                        found_defines = True
-                    else:
-                        target_logger.warning("Verilog defines not found in default location (%s).\nUsing defines from CW305.py.If this isn't what you want, either add 'slurp=False', or provide defines location in 'defines_files'" % verilog_defines[0])
-                if not found_defines:
-                    from chipwhisperer.hardware.firmware.cw305 import getsome
-                    verilog_defines = [getsome(self.default_verilog_defines)]
+                verilog_defines = [self.default_verilog_defines_full_path]
+                if custom_bitstream:
+                    target_logger.warning("Using default Verilog defines (%s); if this is not what you want, provide them via the defines_files argument" % self.default_verilog_defines_full_path)
             else:
                 verilog_defines = defines_files
             self.slurp_defines(verilog_defines)

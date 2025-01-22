@@ -64,7 +64,7 @@ class CW305_AES_PIPELINED(CW305):
         #self._clksleeptime = 150 # need lots of idling time
         # Verilog defines file(s):
         self.default_verilog_defines = 'cw305_aes_pipelined_defines.v'
-        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/../../hardware/victims/cw305_artixtarget/fpga/vivado_examples/aes128_pipelined/hdl/' + self.default_verilog_defines
+        self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/hardware/firmware/cw305/' + self.default_verilog_defines
         self.registers = 18 # number of registers we expect to find
         self.bytecount_size = 7 # pBYTECNT_SIZE in Verilog
         self.check_done = True
