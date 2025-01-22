@@ -227,9 +227,53 @@ class SAM4SProgrammer(Programmer):
         self.scope.io.nrst = None
         time.sleep(0.2)
         pass
-        
-    
-        
+
+
+class JLinkProgrammer(Programmer):
+
+    def __init__(self, core="unknown"):
+        try:
+            import pylink
+            self.jlink = pylink.JLink()
+        except Exception as e:
+            raise ImportError("You need to install pylink, see https://pylink.readthedocs.io/en/latest/installation.html") from e
+        self.core = core
+        super().__init__()
+
+    @save_and_restore_pins
+    def find(self):
+        if self.scope is None:
+            raise ValueError("Programmer not yet setup")
+
+        self.jlink.open()
+        self.jlink.connect(self.core)
+
+    @save_and_restore_pins
+    def erase(self):
+        self.jlink.erase()
+
+    @save_and_restore_pins
+    def program(self, filename: str, memtype="flash", verify=True):
+        if filename.endswith(".hex"):
+            f = IntelHex(filename)
+            fw_data = bytes(f.tobinarray(start=f.minaddr()))
+        else:
+            fw_data = open(filename, "rb").read()
+        self.jlink.flash(fw_data, 0x0)
+
+    def close(self):
+        self.jlink.reset()
+        self.jlink.close()
+        self.scope.io.nrst = 0
+        time.sleep(0.2)
+        self.scope.io.nrst = None
+        time.sleep(0.2)
+        pass
+
+class SAM4LProgrammer(JLinkProgrammer):
+    def __init__(self):
+        super().__init__("ATSAM4LC2AA")
+
 
 class NEORV32Programmer(Programmer):
 
