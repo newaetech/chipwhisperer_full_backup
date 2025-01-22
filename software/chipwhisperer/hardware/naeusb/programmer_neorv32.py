@@ -125,7 +125,7 @@ class Neorv32Programmer:
                 raise ValueError("Device type: %s. I don't have a pre-built FPGA bitstream for you (or connection bad)."%devtype)
             
             # bsdata = getsome("neorv32_iCE40CW312_MinimalBoot_directclk_7370KHz.bit").read()
-            bsdata = open(res_file_path("neorv32_iCE40CW312_MinimalBoot_directclk_7370KHz.bit"), "rb").read()
+            bsdata = open(res_file_path("cwtargetice40", "neorv32_iCE40CW312_MinimalBoot_directclk_7370KHz.bit"), "rb").read()
         else:
             target_logger.info("ice40: Loading bitstream from %s"%bsfile)
             f = open(bsfile, "rb")
