@@ -29,12 +29,25 @@ import math
 import datetime
 import re
 
-from bokeh.palettes import inferno
-from bokeh.plotting import figure, show
-from bokeh.resources import INLINE
-from bokeh.io import push_notebook
-from bokeh.models import Span, Legend, LegendItem
-from ipywidgets import interact_manual, Layout, widgets
+try:
+    from bokeh.palettes import inferno
+    from bokeh.plotting import figure, show
+    from bokeh.resources import INLINE
+    from bokeh.io import push_notebook
+    from bokeh.models import Span, Legend, LegendItem
+    from ipywidgets import interact_manual, Layout, widgets
+except Exception as e:
+    inferno = None
+    figure = None
+    show = None
+    INLINE = None
+    push_notebook = None
+    Span = None
+    Legend = None
+    LegendItem = None
+    interact_manual = None
+    Layout = None
+    widgets = None
 
 import itertools
 from chipwhisperer.common.utils import util
