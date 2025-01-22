@@ -30,12 +30,12 @@ import datetime
 import re
 
 try:
-    from bokeh.palettes import inferno
-    from bokeh.plotting import figure, show
-    from bokeh.resources import INLINE
-    from bokeh.io import push_notebook
-    from bokeh.models import Span, Legend, LegendItem
-    from ipywidgets import interact_manual, Layout, widgets
+    from bokeh.palettes import inferno # type: ignore
+    from bokeh.plotting import figure, show # type: ignore
+    from bokeh.resources import INLINE # type: ignore
+    from bokeh.io import push_notebook # type: ignore
+    from bokeh.models import Span, Legend, LegendItem # type: ignore
+    from ipywidgets import interact_manual, Layout, widgets # type: ignore
 except Exception as e:
     inferno = None
     figure = None
@@ -68,6 +68,8 @@ class SADExplorer(util.DisableNewAttr):
 
     def __init__(self, scope, target, reftrace, refstart, max_segments=1, width=2000, height=600, plot_tools='pan, box_zoom, hover, reset, save', capture_function=None):
         super().__init__()
+        if inferno is None:
+            raise ImportError("Bokeh and ipywidgets are required for the SADExplorer. Try installing chipwhisperer-jupyter's requirements.txt.")
         if type(reftrace) != np.ndarray or reftrace.dtype != np.uint8:
             raise ValueError("wave must be a numpy.ndarray of uint8's; e.g. as obtained from cw.capture_trace(as_int=True) with scope.adc.bits_per_sample=8")
         if scope.adc.bits_per_sample != 8:
