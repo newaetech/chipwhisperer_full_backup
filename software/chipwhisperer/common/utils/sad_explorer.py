@@ -37,17 +37,17 @@ try:
     from bokeh.models import Span, Legend, LegendItem # type: ignore
     from ipywidgets import interact_manual, Layout, widgets # type: ignore
 except Exception as e:
-    inferno = None
-    figure = None
-    show = None
-    INLINE = None
-    push_notebook = None
-    Span = None
-    Legend = None
-    LegendItem = None
-    interact_manual = None
-    Layout = None
-    widgets = None
+    inferno = None # type: ignore
+    figure = None # type: ignore
+    show = None # type: ignore
+    INLINE = None # type: ignore
+    push_notebook = None # type: ignore
+    Span = None # type: ignore
+    Legend = None # type: ignore
+    LegendItem = None # type: ignore
+    interact_manual = None # type: ignore
+    Layout = None # type: ignore
+    widgets = None # type: ignore
 
 import itertools
 from chipwhisperer.common.utils import util

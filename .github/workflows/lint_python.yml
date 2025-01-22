@@ -39,7 +39,7 @@ jobs:
       - name: Install linters
         run: |
           python -m pip install mypy
-          python -m mypy --install-types
+          python -m pip install types-tqdm
       - name: Run Mypy
         run: >-
           python -m mypy -p chipwhisperer

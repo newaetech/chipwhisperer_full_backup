@@ -610,6 +610,11 @@ class HuskySAD(util.DisableNewAttr):
         else: 
             return False
 
+    @triggered.setter
+    def triggered(self, val):
+        # value written doesn't matter: the write action clears the status flags
+        self.oa.sendMessage(CODE_WRITE, "SAD_STATUS", [1])
+
     @property
     def _writing_allowed(self):
         """Some SAD implementations have a fairly complex mechanism to load and distribute
@@ -629,12 +634,6 @@ class HuskySAD(util.DisableNewAttr):
         non-zero: see Verilog source file for definitions.
         """
         return self.oa.sendMessage(CODE_READ, "SAD_STATUS", Validate=False, maxResp=1)[0] >> 4
-
-
-    @triggered.setter
-    def triggered(self, val):
-        # value written doesn't matter: the write action clears the status flags
-        self.oa.sendMessage(CODE_WRITE, "SAD_STATUS", [1])
 
     @property
     def num_triggers_seen(self):
