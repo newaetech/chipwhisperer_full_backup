@@ -229,6 +229,7 @@ ERROR:
 
 void simpleserial_put(char c, uint8_t size, uint8_t* output)
 {
+    if (!output) return;
 	uint8_t data_buf[MAX_SS_LEN];
 	data_buf[0] = 0x00;
 	data_buf[1] = c;
@@ -424,6 +425,7 @@ void simpleserial_get(void)
 void simpleserial_put(char c, uint8_t size, uint8_t* output)
 {
 	// Write first character
+    if (!output) return;
 	putch(c);
 
 	// Write each byte as two nibbles
