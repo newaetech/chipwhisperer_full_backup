@@ -79,8 +79,8 @@ scope.clock.clkgen_freq = 10e6
 scope.clock.clkgen_src = 'system'
 scope.clock.adc_mul = 1
 time.sleep(0.1)
-assert scope.clock.pll.pll_locked == True
-assert scope.clock.adc_freq == 10e6
+assert scope.clock.pll.pll_locked == True, 'Unexpected clock-setting problem.'
+assert scope.clock.adc_freq == 10e6, 'Not getting expected ADC clock frequency.'
 target.baud = 38400 * 10 / 7.37
 
 if scope._is_husky_plus:
@@ -167,7 +167,7 @@ testRWData = [
 
 testADCTriggerData = [
     #gain       threshold   bits    reps    desc
-    (10,        0.8,        12,     5,     ''),
+    (23,        0.8,        12,     5,      ''),
 ]
 
 
@@ -230,7 +230,7 @@ def test_reg_rw(address, nbytes, reps, desc):
         scope.sc.sendMessage(0xc0, address, bytearray(data), Validate=False)
         temp = scope.fpga_buildtime # just a dummy read
         read_data = scope.sc.sendMessage(0x80, address, maxResp=nbytes)
-        assert read_data == data, "rep %d: expected %0x, got %0x" % (i, int.from_bytes(data, byteorder='little'), int.from_bytes(read_data, byteorder='little'))
+        assert read_data == data, "rep %d: expected %0x, got %0x; this is a highly unusual error which indicates inability to communicate with the FPGA" % (i, int.from_bytes(data, byteorder='little'), int.from_bytes(read_data, byteorder='little'))
 
 @pytest.mark.skipif(not target_attached, reason='No target detected')
 def test_target_power():
@@ -240,7 +240,7 @@ def test_target_power():
         time.sleep(0.2)
         scope.io.target_pwr = 1
         time.sleep(0.2)
-    assert scope.XADC.status == 'good'
+    common_xadc_check(scope, False, "failure indicates that the target soft-power-up logic needs adjustment, this needs follow-up")
 
 @pytest.mark.parametrize("samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc", testData)
 def test_internal_ramp(stress, samples, presamples, testmode, clock, fastreads, adcmul, bits, stream, segments, segment_cycles, reps, desc):
@@ -254,8 +254,8 @@ def test_internal_ramp(stress, samples, presamples, testmode, clock, fastreads, 
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = adcmul
     time.sleep(0.1)
-    assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.01
+    assert scope.clock.pll.pll_locked == True, 'Unexpected clock-setting problem.'
+    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.01, 'Not getting expected ADC clock frequency.'
 
     if testmode == 'internal':
         scope.adc.test_mode = True
@@ -286,10 +286,10 @@ def test_internal_ramp(stress, samples, presamples, testmode, clock, fastreads, 
         scope.arm()
         scope.sc.triggerNow()
         scope.sc.arm(False)
-        assert scope.capture() == False
+        assert scope.capture() == False, 'unable to capture (rep %d), highly unusual error' % i
         raw = np.int64(scope.get_last_trace(True))
         errors, first_error = check_ramp(raw, testmode, bits, samples, segment_cycles)
-        assert errors == 0, "%d errors; First error: %d; scope.adc.errors: %s" % (errors, first_error, scope.adc.errors)
+        assert errors == 0, "%d errors (rep %d); First error: %d; scope.adc.errors: %s" % (errors, i, first_error, scope.adc.errors)
         assert scope.adc.errors == False
     scope.sc._fast_fifo_read_enable = True # return to default
 
@@ -303,8 +303,8 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = adcmul
     time.sleep(0.1)
-    assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.01
+    assert scope.clock.pll.pll_locked == True, 'Unexpected clock-setting problem.'
+    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.01, 'Not getting expected ADC clock frequency.'
     target.baud = 38400 * clock / 1e6 / 7.37
 
     if testmode == 'internal':
@@ -324,7 +324,7 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
     target.flush()
     target.write('x\n')
     time.sleep(0.2)
-    assert target.read() != ''
+    assert target.read() != '', 'unable to communicate with target'
 
     scope.trigger.module = 'basic'
     scope.adc.basic_mode = "rising_edge"
@@ -362,10 +362,10 @@ def test_target_internal_ramp (samples, presamples, testmode, clock, fastreads, 
         scope.errors.clear()
         time.sleep(2)
     else:
-        assert scope.adc.errors == False
+        assert scope.adc.errors == False, 'unexpected ADC errors: %s' % scope.adc.errors
     if check: 
         errors, first_error = check_ramp(raw, testmode, bits, samples, segment_cycles)
-        assert errors == 0, "%d errors; First error: %d" % (errors, first_error)
+        assert errors == 0, "%d errors in ramp pattern; First error: %d" % (errors, first_error)
     scope.sc._fast_fifo_read_enable = True # return to default
 
 
@@ -379,8 +379,8 @@ def test_glitch_stress_test(stress, clock, offset, oversamp, reps, steps_per_poi
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = 1
     time.sleep(0.1)
-    assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock)/scope.clock.adc_freq < 0.01
+    assert scope.clock.pll.pll_locked == True, 'Unexpected clock-setting problem.'
+    assert abs(scope.clock.adc_freq - clock*1)/scope.clock.adc_freq < 0.01, 'Not getting expected ADC clock frequency.'
 
     margin = 2
     setup_glitch(scope, offset, 0, oversamp)
@@ -420,7 +420,7 @@ def test_glitch_stress_test(stress, clock, offset, oversamp, reps, steps_per_poi
 
     scope.glitch.enabled = False
     scope.LA.enabled = False
-    assert scope.XADC.status == 'good'
+    common_xadc_check(scope, False, 'Glitch stress test pushing things too far? If temperature is just above 65C, could be ok.')
 
 
 
@@ -430,7 +430,7 @@ def test_adc_trigger (gain, threshold, bits, reps, desc):
     reset_setup(scope,target)
     scope.default_setup(verbose=False)
     time.sleep(0.1)
-    assert scope.clock.pll.pll_locked == True
+    assert scope.clock.pll.pll_locked == True, 'Unexpected clock-setting problem.'
     reset_target(scope)
     time.sleep(0.1)
     target.baud = 38400
@@ -449,6 +449,7 @@ def test_adc_trigger (gain, threshold, bits, reps, desc):
         #print("Gain:%d, max:%f, min:%f" % (gain, max(reftrace.wave), min(reftrace.wave)))
         # 1. trigger on positive swing:
         scope.trigger.module = 'ADC'
+        #print('Min/Max: %3.2f / %3.2f' % (min(reftrace.wave), max(reftrace.wave)))
         scope.trigger.level = threshold * max(reftrace.wave)
         #print(scope.trigger.level)
         powertrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16))
@@ -474,8 +475,8 @@ def test_sad_trigger (stress, clock, adc_mul, bits, emode, threshold, interval_t
         adc_mul = int(OVERCLOCK2/clock)
     scope.clock.adc_mul = adc_mul
     time.sleep(0.1)
-    assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock*adc_mul)/scope.clock.adc_freq < 0.01
+    assert scope.clock.pll.pll_locked == True, 'Unexpected clock-setting problem.'
+    assert abs(scope.clock.adc_freq - clock*adc_mul)/scope.clock.adc_freq < 0.01, 'Not getting expected ADC clock frequency.'
     target.baud = 38400 * clock / 1e6 / 7.37
     reset_target(scope)
 
@@ -500,7 +501,7 @@ def test_sad_trigger (stress, clock, adc_mul, bits, emode, threshold, interval_t
     # scope.gain.db = 23.7
     scope.gain.db = 12
     reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16), as_int=True)
-    assert scope.adc.errors == False, (scope.adc.errors, scope.gain)
+    assert scope.adc.errors == False, 'Unexpected capture error on reference trace: %s' % scope.adc.errors
 
     scope.SAD.reference = reftrace.wave
     if scope._is_husky_plus:
@@ -517,7 +518,7 @@ def test_sad_trigger (stress, clock, adc_mul, bits, emode, threshold, interval_t
     for rep in range(reps):
         sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16), as_int=True)
         assert sadtrace is not None, 'SAD-triggered capture failed on rep {}'.format(rep)
-        assert scope.adc.errors == False
+        assert scope.adc.errors == False, 'Unexpected capture error: %s on rep %d' % (scope.adc.errors, rep)
         sad = 0
         samples = 0
         for r,s,e in zip(reftrace.wave.astype(int), sadtrace.wave.astype(int), scope.SAD.enabled_samples):
@@ -528,8 +529,8 @@ def test_sad_trigger (stress, clock, adc_mul, bits, emode, threshold, interval_t
             if e:
                 if abs(r-s) > interval_threshold:
                     sad += 1
-        assert sad <= threshold, 'SAD=%d, threshold=%d (iteration: %d)' %(sad, threshold, rep)
-        assert scope.XADC.status == 'good'
+        assert sad <= threshold, 'FPGA or Python bug? SAD=%d, threshold=%d (iteration %d)' %(sad, threshold, rep)
+    common_xadc_check(scope, False, 'SAD stress test pushing things too far? If temperature is just above 65C, could be ok.')
 
 
 def test_sad_timeouts(stress):
@@ -546,8 +547,8 @@ def test_sad_timeouts(stress):
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = adcmul
     time.sleep(0.1)
-    assert scope.clock.pll.pll_locked == True
-    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.01
+    assert scope.clock.pll.pll_locked == True, 'Unexpected clock-setting problem.'
+    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.01, 'Not getting expected ADC clock frequency.'
     target.baud = 38400 * clock / 1e6 / 7.37
     #print('set adc_mul: %d / %d' % (adcmul, scope.clock.adc_mul))
     
@@ -556,13 +557,6 @@ def test_sad_timeouts(stress):
     scope.adc.offset = 0
     scope.adc.bits_per_sample = 8
     scope.gain.db = 10
-
-    #scope.trigger.module = 'basic'
-    #reftrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16), as_int=True)
-    #assert reftrace is not None
-    #assert scope.adc.errors == False, scope.adc.errors
-    #refstart = 1000
-    #scope.SAD.reference = reftrace.wave[refstart:]
 
     scope.SAD.reference = np.asarray([128]*1024, dtype=np.uint8)
     scope.SAD.threshold = 1 # so low that captures will timeout
@@ -575,12 +569,12 @@ def test_sad_timeouts(stress):
 
     for i in range(reps):
         sadtrace = cw.capture_trace(scope, target, bytearray(16), bytearray(16), as_int=True)
-        assert scope.XADC.status == 'good'
+        common_xadc_check(scope, False, 'SAD stress test pushing things too far? If temperature is just above 65C, could be ok.')
 
     scope.SAD.always_armed = False
 
 def test_xadc():
-    common_xadc_check(scope)
+    common_xadc_check(scope, True, 'Final XADC check, it would be odd for this to trip now.')
 
 def test_finish():
     # just restore some defaults:

@@ -189,25 +189,32 @@ def common_fw_version_check(scope):
         assert scope.fw_version['minor'] == 5
         assert scope.sam_build_date == '13:17:41 Feb  9 2023'
 
-def common_xadc_check(scope):
-    assert scope.XADC.status == 'good'
-    assert scope.XADC.max_temp < 65.0   # things can get hotter with glitching
-    print('\n')
+def common_xadc_check(scope, verbose=False, error_msg=''):
     failed = False
-    for rail, nominal in zip(['vccint', 'vccaux', 'vccbram'],  [1.0, 1.8, 1.0]):
-        for worst,limit in zip(['min', 'max'], ['lower', 'upper']):
-            vseen = scope.XADC.get_vcc(rail, worst)
-            vlimit = scope.XADC._get_vcc_limit(rail, limit)
-            if worst == 'min':
-                vmargin = vseen - vlimit
-            else:
-                vmargin = vlimit - vseen
-            if vmargin > 0:
-                status = '✅ pass'
-            else:
-                status = '❌ FAIL!'
-                failed = True
-            print('%7s: nominal: %1.2f, %s seen: %1.2f, limit: %1.2f, margin: %1.3f   %s' % (rail, nominal, worst, vseen, vlimit, vmargin, status))
-    assert not failed
+    if verbose:
+        print('\n')
+        print('XADC status: %s' % scope.XADC.status)
+        print('max temperature: %3.1f celcius' % scope.XADC.max_temp)
+        for rail, nominal in zip(['vccint', 'vccaux', 'vccbram'],  [1.0, 1.8, 1.0]):
+            for worst,limit in zip(['min', 'max'], ['lower', 'upper']):
+                vseen = scope.XADC.get_vcc(rail, worst)
+                vlimit = scope.XADC._get_vcc_limit(rail, limit)
+                if worst == 'min':
+                    vmargin = vseen - vlimit
+                else:
+                    vmargin = vlimit - vseen
+                if vmargin > 0:
+                    status = '✅ pass'
+                else:
+                    status = '❌ FAIL!'
+                    failed = True
+                print('%7s: nominal: %1.2f, %s seen: %1.2f, limit: %1.2f, margin: %1.3f   %s' % (rail, nominal, worst, vseen, vlimit, vmargin, status))
+    if scope.XADC.status != 'good':
+        failed = True
+        print('\*** nFailing due to XADC status: %s' % scope.XADC.status)
+    if scope.XADC.max_temp >= 65.0:
+        failed = True
+        print('\n*** Failing due to high temperature: %s' % scope.XADC.max_temp)
+    assert not failed, error_msg
 
 
