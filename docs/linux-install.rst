@@ -43,7 +43,7 @@ should get you up and running:
     cd ~/
     git clone https://github.com/newaetech/chipwhisperer
     cd chipwhisperer
-    sudo cp hardware/50-newae.rules /etc/udev/rules.d/50-newae.rules
+    sudo cp 50-newae.rules /etc/udev/rules.d/50-newae.rules
     sudo udevadm control --reload-rules
     sudo groupadd -f chipwhisperer
     sudo usermod -aG chipwhisperer $USER
@@ -161,7 +161,7 @@ set of rules that give you access to NewAE USB devices:
 
 .. code:: bash
 
-    sudo cp hardware/50-newae.rules /etc/udev/rules.d/50-newae.rules
+    sudo cp 50-newae.rules /etc/udev/rules.d/50-newae.rules
     sudo udevadm control --reload-rules
 
 Those rules actually give permission to the chipwhisperer group, so
