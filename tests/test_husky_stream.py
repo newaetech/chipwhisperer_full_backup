@@ -7,8 +7,7 @@ import numpy as np
 import random
 import os
 
-# note: "import *" results in running all the tests in test_husky
-from test_husky import check_ramp, reset_target, reset_setup
+from test_common import *
 
 """ 
 Essentially a (partial) copy of test_husky.py for running much more extensive slow stream tests, to add
@@ -21,10 +20,19 @@ been requested and discussed extensively: https://github.com/pytest-dev/pytest/i
 There may be better ways to do this (e.g. define testTargetData differently based on some "test suite 
 selector" parameter -- see https://docs.pytest.org/en/7.1.x/example/parametrize.html) but this is quick & 
 dirty & it works.
+
+Should be run with -x because after one failure, all subsequent tests are quite likely to fail.
+
+Takes about 45 minutes to complete. Some failures have been known to occur with
+the longest streams (50e6 samples).
+
+Should be run for any change that could impact streaming, such as:
+    - SAM3U firmware changes
+    - FPGA FIFO changes
+    - Python streaming changes
 """
 
-test_platform = "stm32f3"
-logfilename = "test_husky_xadc.log"
+test_platform = "sam4s"
 
 if "HUSKY_HW_LOC" in os.environ:
     locboth = os.environ["HUSKY_HW_LOC"].split(',')
@@ -60,24 +68,11 @@ assert scope.clock.pll.pll_locked == True
 assert scope.clock.adc_freq == 10e6
 target.baud = 38400 * 10 / 7.37
 
-if scope._is_husky_plus:
-    MAXCLOCK = 250e6
-    OVERCLOCK1 = 255e6
-    OVERCLOCK2 = 280e6
-    MAXSAMPLES = 327828
-    MAXSEGMENTSAMPLES = 295056
-else:
-    MAXCLOCK = 200e6
-    OVERCLOCK1 = 210e6
-    OVERCLOCK2 = 250e6
-    MAXSAMPLES = 131124
-    MAXSEGMENTSAMPLES = 98352
-
-reset_setup()
+reset_setup(scope,target)
 
 time.sleep(0.2)
 if test_platform != 'cw305':
-    reset_target()
+    reset_target(scope)
 # see if a target is attached:
     target.flush()
     target.write('x\n')
@@ -89,20 +84,6 @@ if test_platform != 'cw305':
         target_attached = True
 else:
     target_attached = False
-
-# next, check for a particular FW:
-if target_attached:
-    target.simpleserial_write('i', b'')
-    time.sleep(0.1)
-    if target.read().split('\n')[0] == 'ChipWhisperer simpleserial-trace, compiled Mar 14 2022, 21:06:34':
-        trace_fw = True
-        scope.trace.target = target
-        trace = scope.trace
-    else:
-        trace_fw = False
-else:
-    trace_fw = False
-
 
 ktp = cw.ktp.Basic()
 key, text = ktp.next()
@@ -141,12 +122,13 @@ def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, f
     if not fulltest and 'SLOW' in desc:
         pytest.skip("use --fulltest to run")
         return None
-    reset_setup()
+    reset_setup(scope,target)
     scope.clock.clkgen_freq = clock
     scope.clock.adc_mul = adcmul
     time.sleep(0.1)
-    assert scope.clock.pll.pll_locked == True
-    assert scope.clock.adc_freq == clock * adcmul
+    assert scope.clock.pll.pll_locked == True, 'Unexpected clock-setting problem.'
+    assert abs(scope.clock.adc_freq - clock*adcmul)/scope.clock.adc_freq < 0.01, 'Not getting expected ADC clock frequency.'
+
     target.baud = 38400 * clock / 1e6 / 7.37
 
     if testmode == 'internal':
@@ -166,7 +148,7 @@ def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, f
     target.flush()
     target.write('x\n')
     time.sleep(0.2)
-    assert target.read() != ''
+    assert target.read() != '', 'target not responding'
 
     scope.trigger.module = 'basic'
     scope.adc.basic_mode = "rising_edge"
@@ -176,8 +158,6 @@ def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, f
     scope.io.hs2 = "clkgen"
 
     scope.sc._fast_fifo_read_enable = fastreads
-    if samples == 'max':
-        samples = MAXSAMPLES
     scope.adc.samples = samples
     scope.adc.presamples = presamples
     scope.adc.segments = segments
@@ -200,14 +180,15 @@ def test_target_internal_ramp (fulltest, samples, presamples, testmode, clock, f
     raw = scope.get_last_trace(True)
     if verbose: print('Words read before error: %d ' % int.from_bytes(scope.sc.sendMessage(0x80, 47, maxResp=4), byteorder='little'))
     if 'overflow' in desc:
-        assert 'overflow' in scope.adc.errors
+        assert 'overflow' in scope.adc.errors, 'overflow expected but instead scope.adc.errors = %s' % scope.adc.errors
         scope.errors.clear()
         time.sleep(2)
     else:
-        assert scope.adc.errors == False
+        assert scope.adc.errors == False, 'scope.adc.errors = %s' % scope.adc.errors
     if check: 
         errors, first_error = check_ramp(raw, testmode, bits, samples, segment_cycles)
         assert errors == 0, "%d errors; First error: %d" % (errors, first_error)
+    scope.errors.clear()
     scope.sc._fast_fifo_read_enable = True # return to default
 
 
