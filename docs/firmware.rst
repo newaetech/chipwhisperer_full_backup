@@ -40,13 +40,8 @@ shown at :ref:`windows-change-drivers`.
 Linux Prerequisites
 =====================
 
-If you are running natively on Linux, you will need to 
-ensure you have access to the serial ports. As of
-ChipWhisperer 5.6, a rule in :code:`chipwhisperer/hardware/50-newae.rules`
-will give serial port access to the current user
-
-Older versions do not include this rule, so it is recommended to replace :code:`/etc/udev/rules.d/50-newae.rules`
-with ChipWhisperer 5.6's :code:`chipwhisperer/hardware/50-newae.rules`, then run :code:`$ sudo udevadm control --reload-rules`
+If you are running on Linux, you will need to ensure you have access to the serial ports and USB devices.
+Instructions on how to install the udev rules can be found in the :ref:`linux install guide <linux-install>`.
 
 =================
 Mac Prerequisites
