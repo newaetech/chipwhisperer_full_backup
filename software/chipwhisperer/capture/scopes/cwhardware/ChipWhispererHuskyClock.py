@@ -1629,16 +1629,16 @@ class ChipWhispererHuskyClock(util.DisableNewAttr):
         self._cached_adc_freq = None
 
         if src == "clkgen_x4":
-            self._adc_mul_setter(4)
+            self.adc_mul = 4
             self.clkgen_src = 'system'
         elif src == "clkgen_x1":
-            self._adc_mul_setter(1)
+            self.adc_mul = 1
             self.clkgen_src = 'system'
         elif src == "extclk_x4":
-            self._adc_mul_setter(4)
+            self.adc_mul = 4
             self.clkgen_src = 'extclk'
         elif src == "extclk_x1":
-            self._adc_mul_setter(1)
+            self.adc_mul = 1
             self.clkgen_src = 'extclk'
         elif src == "extclk_dir":
             scope_logger.error('Call scope.clock.pll.set_bypass_adc(True|False) instead')
