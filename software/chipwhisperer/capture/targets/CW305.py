@@ -510,7 +510,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
                     target_logger.warning(("FPGA Bitstream not configured or '%s' not a file." % str(bsfile)))
                 else:
                     starttime = datetime.now()
-                    status = self.fpga.FPGAProgram(bsfile, exceptOnDoneFailure=False, prog_speed=prog_speed)
+                    status = self.fpga.FPGAProgram(open(bsfile, "rb"), exceptOnDoneFailure=False, prog_speed=prog_speed)
                     stoptime = datetime.now()
                     if status:
                         target_logger.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
